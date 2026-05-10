@@ -1,0 +1,5 @@
+*.md.bak
+*.swp
+.obsidian/
+.vscode/
+node_modules/
