@@ -1,124 +1,150 @@
 # Phase 流程詳細規範
 
-## Phase 總覽
+## Think → Plan → Build → Review → Test → Ship → Reflect
 
-| Phase | 名稱 | 輸出 | 強制 |
-|-------|------|------|------|
-| Phase 0 | BA 商業分析 | `docs/prd.md` | ✅ |
-| Phase 0.5 | UI/UX 設計 | `docs/design.md` | ✅ |
-| Phase 1 | SA 架構設計 | `docs/architecture.md` | ✅ |
-| Phase 2 | 執行開發 | 代碼 | — |
-| Phase 3 | SA Code Review | Review 報告 | ✅ |
-| Phase 4 | QA 測試 | 測試報告 | ✅ |
+```
+用戶需求
+    ↓
+Think ──────────────────────────────────────────────────┐
+    ↓                                                 │
+Plan ─────────────────────────────────────┐           │
+    ↓                                      │           │
+Build ─────────────────────────┐           │           │
+    ↓                           │           │           │
+Review ─────────────────┐       │           │           │
+    ↓                     │       │           │           │
+Test ───────────┐         │       │           │           │
+    ↓           │         │       │           │           │
+Ship ─┐        │         │       │           │           │
+    ↓ │        │         │       │           │           │
+Reflect ←──────┴─────────┴───────┴───────────┘  Feedback
+                                                Loop
+```
 
 ---
 
-## Phase 0: BA 商業分析
+## Phase 總覽
+
+| Phase | 名稱 | 輸出 | 負責 Subagent | 強制 |
+|-------|------|------|--------------|------|
+| Think | 市場分析 + 技術調研 | `ceo-market-analysis.md` + 調研報告 | CEO + Researcher | ✅ |
+| Plan | 商業計劃 + 需求 + 架構 | `ceo-business-plan.md` + `prd.md` + `architecture.md` | CEO + BA + Designer + Tech Lead | ✅ |
+| Build | 開發執行 | 代碼 | Frontend + Backend + DevOps + Security Engineer | — |
+| Review | 架構審查 + UX 合規 | Review 報告 | SA Reviewer + UX Reviewer | ✅ |
+| Test | 測試 + 壓測 | 測試報告 + 壓測報告 | QA + Performance Engineer | ✅ |
+| Ship | 部署上線 | 部署確認 | Release Manager | — |
+| Reflect | 復盤 | 復盤報告 | Retrospective | — |
+
+---
+
+## Think
 
 ### 目的
-挖掘真實需求，編寫 PRD 作為後續所有階段的**唯一依據**。
+市場機會評估與技術可行性調研，確保項目值得做。
 
-### 觸發條件
-收到用戶需求後，第一步必須是 BA。
+### 參與角色
+- **CEO** — 市場分析、競爭格局、財務可行性
+- **Researcher** — 技術調研、競品分析、技術選型驗證
 
-### BA 溝通原則
-- 多輪探索，不是一次性索取所有資訊
-- 目標：理解「為什麼」，不只是「做什麼」
-- 每輪問 2-3 個問題，深入挖掘
+### CEO 必須產出
+`docs/ceo-market-analysis.md`:
+- 市場規模與增長趨勢
+- 競爭對手分析（功能/定價/用戶評價）
+- 機會評估（SWOT）
+- 財務可行性（成本預估、營收模型）
+- 風險評估
 
-### BA 必須問的問題方向
-- **目的** — 為什麼需要這個？
-- **必要性** — 沒有會怎樣？
-- **使用者** — 誰會用？技術能力？
-- **成功標準** — 怎麼判斷成功了？
-- **優先級** — 只能做三個功能是哪三個？
+### Researcher 必須產出
+調研報告:
+- 技術可行性分析
+- 現有解決方案調研
+- 技術棧建議
+- 關鍵技術風險
 
 ### 觸發方式
 ```python
 delegate_task(
-    goal="BA 商業分析 — 用戶需求分析與 PRD 編寫",
-    context="用戶原始需求: ...",
-    toolsets=['terminal', 'file', 'web', 'clarify'],
+    goal="CEO 市場分析",
+    context="用戶需求: ...",
+    toolsets=['terminal', 'file', 'web'],
+    role="leaf"
+)
+
+delegate_task(
+    goal="技術調研",
+    context="用戶需求: ...",
+    toolsets=['terminal', 'file', 'web'],
     role="leaf"
 )
 ```
 
-### PRD 必須包含
+---
+
+## Plan
+
+### 目的
+综合 CEO/BA/Designer/SA 的輸出，產出可執行的完整計劃。
+
+### 參與角色
+- **CEO** — 商業計劃、成本模型、GTM
+- **BA** — 需求挖掘、用戶故事、PRD
+- **Designer** — UI/UX 設計、Design System
+- **Tech Lead** — 綜合輸出執行 plan
+
+### CEO 必須產出
+`docs/ceo-business-plan.md`:
+- 商業模式（如何賺錢）
+- 成本模型（開發/運營/營銷）
+- GTM 策略（如何獲客）
+- 里程碑規劃
+- 成功標準與 KPI
+
+### BA 必須產出
+`docs/prd.md`:
 - 產品概述與目標
 - 用戶故事列表（帶優先級 P0/P1/P2）
 - 功能需求詳情
 - 非功能需求（效能、安全、兼容性）
-- 驗收標準（每個功能如何驗證）
+- 驗收標準
 - 假設與風險清單
 
-### 重要原則
-- **PRD 是需求合約**
-- SA 架構設計必須 100% 滿足 PRD
-- QA 測試必須依據 PRD 判定 Pass/Fail
-- 嚴禁 SA/QA 自行詮釋或忽略 PRD
+### Designer 必須產出
+`docs/design.md`:
+- Overview — 設計理念與品牌定位
+- Colors — 顏色系統（HEX 值）
+- Typography — 字體系統
+- Layout & Spacing — 間距系統
+- Elevation — 陰影/層級
+- Shapes — 圓角
+- Components — 元件規範
+- Do's and Don'ts
 
----
-
-## Phase 0.5: UI/UX 設計
-
-### 目的
-基於 PRD 進行 UX 研究與介面設計，輸出 `docs/design.md`。
-
-### 觸發方式
-```python
-delegate_task(
-    goal="UI/UX 設計 — 設計系統與 Wireframe",
-    context="需求依據: docs/prd.md",
-    toolsets=['terminal', 'file', 'web'],
-    role="leaf"
-)
-```
-
-### DESIGN.md 必須包含章節
-1. Overview — 設計理念與品牌定位
-2. Colors — 顏色系統（HEX 值）
-3. Typography — 字體系統
-4. Layout & Spacing — 間距系統
-5. Elevation — 陰影/層級
-6. Shapes — 圓角
-7. Components — 元件規範（預設、hover、active、disabled）
-8. Do's and Don'ts — 設計規範
-
-### 設計原則
-- WCAG AA 對比度（文字 vs 背景 >= 4.5:1）
-- 使用相對單位（rem/em）
-- Mobile-first 響應式設計
-
----
-
-## Phase 1: SA 架構設計
-
-### 目的
-分析需求並設計系統架構，輸出 `docs/architecture.md`。
-
-### 觸發方式
-```python
-delegate_task(
-    goal="分析需求並設計系統架構",
-    context="需求依據: docs/prd.md",
-    toolsets=['terminal', 'file', 'web'],
-    role="leaf"
-)
-```
-
-### Architecture 必須包含
+### SA 必須產出
+`docs/architecture.md`:
 - 系統架構圖
 - Frontend/Backend 技術棧建議
 - 數據模型設計
 - API 端點列表
 - 開發規範和約定
 
+### Tech Lead 職責
+- 綜合 BA/Designer/SA 的輸出
+- 識別任務依賴關係
+- 制定執行計劃（Task Board）
+- 分配優先級
+
 ---
 
-## Phase 2: 執行開發
+## Build
 
-### 協調者
-由 Orchestrator Subagent 協調。
+### 目的
+並行開發，产出可运行的代码。
+
+### 參與角色
+- **Frontend** — UI 實現、API 串接
+- **Backend** — API、Business Logic、DB
+- **DevOps** — 環境、CI/CD、部署腳本
+- **Security Engineer** — Security-first 開發、SAST/DAST
 
 ### 任務調度原則
 1. 分析 task 依賴圖，確定並行度
@@ -126,21 +152,37 @@ delegate_task(
 3. 每批完成後，檢查是否有 task 解除 Blocked
 4. 持續直到所有 task 完成
 
-### Phase 2 Subagents
-- **Frontend** — UI 實現、API 串接
-- **Backend** — API、Business Logic、DB
-- **DevOps** — 環境、CI/CD、部署腳本、監控
+### Security Engineer 職責
+- 安全開發規範培訓
+- 代碼 security review（並行，不等 Phase 3）
+- SAST/DAST 自動化掃描
+- 修復 SQL Injection、XSS、Secrets 暴露等問題
+
+### 協調者
+由 Orchestrator Subagent 協調。
 
 ---
 
-## Phase 3: SA Code Review
+## Review
 
-### 觸發條件
-開發完成後、進入 QA 之前。
+### 目的
+確保代碼質量、架構合規、UI 符合設計。
 
-### 雙重審查
-1. **SA 審查** — 技術架構、代碼品質、安全性
-2. **UI/UX 審查** — 前端是否符合 design.md
+### 參與角色
+- **SA Reviewer** — 技術架構、代碼品質、安全性
+- **UX Reviewer** — 前端是否符合 design.md、截圖比對
+
+### SA Reviewer 審查重點
+- 架構是否符合 `docs/architecture.md`
+- 代碼品質與最佳實踐
+- 安全漏洞
+- 測試覆蓋率
+
+### UX Reviewer 審查重點
+- UI 是否符合 `docs/design.md`
+- 截圖比對關鍵頁面
+- 響應式佈局
+- 交互是否符合規範
 
 ### 結果處理
 | 結果 | 處理 |
@@ -156,9 +198,16 @@ delegate_task(
 
 ---
 
-## Phase 4: QA 測試
+## Test
 
-### 組成
+### 目的
+全面測試，確保交付質量。
+
+### 參與角色
+- **QA** — 自動化測試、E2E、User Simulation
+- **Performance Engineer** — Load testing、benchmark
+
+### QA 測試組成
 1. 單元測試 / Integration 測試
 2. E2E 測試（dogfood skill）
 3. User Simulation Testing
@@ -169,22 +218,75 @@ delegate_task(
 - 使用 browser_console() 讀取 JS errors
 - 使用 curl 測試 API
 
+### Performance Engineer 職責
+- Load testing（k6/Gatling）
+- Benchmark 對比
+- 瓶頸分析
+- 壓測報告
+
+---
+
+## Ship
+
+### 目的
+安全部署上線，確保穩定運行。
+
+### 參與角色
+- **Release Manager** — 部署、rollback、monitoring
+
+### Release Manager 職責
+- 部署前 smoke test
+- 藍綠部署 / Canary release
+- Rollback plan
+- 監控儀表板
+- 上線確認報告
+
+### 部署檢查清單
+```
+□ Smoke test 通過
+□ 健康檢查通過
+□ 主要功能驗證
+□ 監控指標正常
+□ Rollback plan 就緒
+```
+
+---
+
+## Reflect
+
+### 目的
+Post-mortem 復盤，沉淀經驗，更新 SOP。
+
+### 參與角色
+- **Retrospective** — 結構化復盤
+
+### Retrospective 產出
+`docs/retrospective-<project>-<date>.md`:
+- 項目概述
+- 做得好的
+- 需要改進的
+- 關鍵教訓（Lessons Learned）
+- 下次改進 Action Items
+
+### 觸發時機
+- 每個項目完成後
+- 重大故障修復後
+- 季度/年度常規复盘
+
 ---
 
 ## QA Gate 交付清單
 
-```
-□ SA Code Review: APPROVED
-□ UI/UX Design Review: APPROVED
-□ 單元測試通過
-□ Integration 測試通過
-□ E2E 測試通過
-□ User Simulation 測試通過
-□ 主要 User Flow 跑通
-□ Console 無 JS Error
-□ 截圖/報告已保存
-□ 部署驗證成功
-□ Feedback Loop 完成記錄
-```
-
 **未通過 QA Gate 嚴禁交付。**
+
+```
+□ Think: CEO 市場分析 + Researcher 調研報告
+□ Plan: CEO 商業計劃 + PRD + Design + Architecture + Tech Lead 執行計劃
+□ Build: 所有 task 完成，代碼已提交
+□ Review: SA Reviewer APPROVED + UX Reviewer APPROVED
+□ Test: QA 測試通過 + Performance Engineer 壓測通過
+□ Ship: Release Manager 部署確認
+□ Reflect: Retrospective 復盤報告完成
+□ Security: 安全掃描通過
+□ Feedback Loop: 所有問題已修復
+```

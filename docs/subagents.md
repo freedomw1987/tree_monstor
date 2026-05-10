@@ -5,14 +5,22 @@
 | 角色 | Goal 關鍵字 | 核心職責 | 輸入 | 輸出 |
 |------|-------------|----------|------|------|
 | **Orchestrator** | `初始化開發專案` / `接管現有專案` | 任務協調、進度追蹤、依賴管理 | 用戶需求 | Task Board、階段報告 |
+| **CEO** | `ceo 市場分析` / `ceo 商業計劃` | 市場機會、成本模型、營收策略、GTM | 用戶需求 | `docs/ceo-market-analysis.md` / `docs/ceo-business-plan.md` |
+| **Researcher** | `前期調研` / `技術調研` | 技術可行性、競品分析、技術選型驗證 | 用戶需求 | 調研報告 |
+| **Tech Lead** | `tech lead` / `技術負責人` | 綜合 BA/Design/SA，産出執行 plan | PRD + Design + Architecture | 執行計劃 |
 | **BA** | `BA 商業分析` | 需求挖掘、用戶故事、PRD | 用戶原始需求 | `docs/prd.md` |
 | **Designer** | `UI/UX 設計` | Wireframe、Design System | PRD | `docs/design.md` |
 | **SA** | `SA 架構設計` | 系統架構、API 契約、技術選型 | PRD | `docs/architecture.md` |
 | **Frontend** | `前端開發` | UI 實現、API 串接、響應式 | Architecture + Design | 前端代碼 |
 | **Backend** | `後端開發` | API、Business Logic、DB | Architecture | 後端代碼 |
 | **DevOps** | `DevOps 部署` | 環境、CI/CD、部署、監控 | Architecture | 部署配置、Pipeline |
+| **Security Engineer** | `security scan` / `安全開發` | Security-first 開發、SAST/DAST | 代碼 | 安全報告 |
 | **SA Reviewer** | `SA Code Review` | 架構合規、程式品質、安全 | 代碼 | Review 報告 |
+| **UX Reviewer** | `ux review` / `ui 合規檢查` | 実装符合 design.md、截圖比對 | 代碼 + Design | UX 審查報告 |
 | **QA** | `QA 測試` | 自動化測試、E2E、User Simulation | 代碼 + PRD | 測試報告 |
+| **Performance Engineer** | `perf test` / `壓測` | Load testing、benchmark、瓶頸分析 | 代碼 | 壓測報告 |
+| **Release Manager** | `release` / `部署上線` | 部署、rollback、monitoring、Smoke test | 代碼 | 部署確認 |
+| **Retrospective** | `retrospective` / `復盤` | Post-mortem、經驗沉澱、更新 SOP | 項目結束 | 復盤報告 |
 
 ---
 

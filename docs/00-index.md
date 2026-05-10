@@ -2,21 +2,21 @@
 
 ## 核心文件
 
-| 文件 | 行數目標 | 實際 | 用途 |
-|------|----------|------|------|
-| `SOUL.md` | ~80 | ~150 | 身份定位、核心原則、開發流程索引 |
-| `AGENTS.md` | ~60 | ~100 | Session 啟動流程、工作區規範 |
-| `MEMORY.md` | ~100 | — | 長期記憶、角色配置 |
+| 文件 | 行數目標 | 用途 |
+|------|----------|------|
+| `SOUL.md` | ~80 | 身份定位、核心原則、開發流程索引 |
+| `AGENTS.md` | ~60 | Session 啟動流程、工作區規範 |
+| `MEMORY.md` | ~100 | 長期記憶、角色配置 |
 
 ## 詳細規則（引用文檔）
 
 | 文檔 | 內容 |
 |------|------|
-| `docs/phases.md` | Phase 0~4 詳細流程 + QA Gate |
-| `docs/subagents.md` | Subagent 角色矩陣、Model Tiering |
+| `docs/phases.md` | Think → Plan → Build → Review → Test → Ship → Reflect 詳細流程 + QA Gate |
+| `docs/subagents.md` | Subagent 角色矩陣（14 個角色）、Model Tiering |
 | `docs/failure-policy.md` | 失敗處理機制（L1/L2/L3） |
 | `docs/task-board.md` | Task Board 格式 + 更新規則 |
-| `docs/qa-gate.md` | QA Gate 交付清單（11 項） |
+| `docs/qa-gate.md` | QA Gate 交付清單 |
 | `docs/pm.md` | PM 進度追蹤、用戶溝通原則 |
 | `docs/checkpoint.md` | Checkpoint 機制 + Feedback Loop 記錄 |
 | `docs/devops.md` | DevOps 規範、Zombie 處理 |
@@ -27,37 +27,57 @@
 ## 設計原則
 
 > **核心文件保持簡潔，詳細規則放在引用文檔。**
-> 
-> 這讓 LLM 能快速理解 Developer 的核心定位，詳細規範則在需要時查閱。
 
 ---
 
-## Phase 流程總覽
+## Think → Plan → Build → Review → Test → Ship → Reflect
 
 ```
 用戶需求
     ↓
-Phase 0 BA 商業分析 ────────────────────────────────────────┐
-    ↓                                                       │
-Phase 0.5 UI/UX 設計 ────────────────────────────────────┐  │
-    ↓                                                      │ Feedback
-Phase 1 SA 架構設計 ──────────────────────────────────┐  │  Loop
-    ↓                                                    │  │
-Phase 2 執行開發（Frontend + Backend + DevOps）        │  │
-    ↓                                                    │  │
-Phase 3 SA Code Review ←───────────────────────────────┘  │
-    ↓                                                      │
-Phase 4 QA 測試 ←─────────────────────────────────────────┘
+Think ── CEO 市場分析 + Researcher 技術調研 ──────────┐
+    ↓                                                 │
+Plan ── CEO 商業計劃 + BA + Designer + SA + Tech Lead ┤
+    ↓                                                 │ Feedback
+Build ── Frontend + Backend + DevOps + Security Eng   ┤   Loop
+    ↓                                                 │
+Review ── SA Reviewer + UX Reviewer                   ┤
+    ↓                                                 │
+Test ── QA + Performance Engineer                     ┤
+    ↓                                                 │
+Ship ── Release Manager                               ┘
     ↓
-QA Gate（11 項全部通過）
+Reflect ── Retrospective
     ↓
 交付用戶
 ```
+
+## Subagent 角色（14 個）
+
+| 角色 | 階段 |
+|------|------|
+| Orchestrator | 全域 — 任務協調 |
+| CEO | Think + Plan |
+| Researcher | Think |
+| Tech Lead | Plan |
+| BA | Plan |
+| Designer | Plan |
+| SA | Plan |
+| Frontend | Build |
+| Backend | Build |
+| DevOps | Build |
+| Security Engineer | Build + Review |
+| SA Reviewer | Review |
+| UX Reviewer | Review |
+| QA | Test |
+| Performance Engineer | Test |
+| Release Manager | Ship |
+| Retrospective | Reflect |
 
 ---
 
 ## 質量標準
 
 - **QA Gate 未通過，絕對不能交付**
-- 代碼 Review 未 APPROVED，絕對不能進入 QA
-- PRD 是需求合約，SA/QA 必須 100% 遵守
+- Review 未 APPROVED，絕對不能進入 Test
+- 所有強制 Phase 必須完成才能進入下一階段
