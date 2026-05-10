@@ -13,7 +13,7 @@
 | 文檔 | 內容 |
 |------|------|
 | `docs/phases.md` | Think → Plan → Build → Review → Test → Ship → Reflect 詳細流程 + QA Gate |
-| `docs/subagents.md` | Subagent 角色矩陣（14 個角色）、Model Tiering |
+| `docs/subagents.md` | Subagent 角色矩陣（18 個角色）、Model Tiering |
 | `docs/failure-policy.md` | 失敗處理機制（L1/L2/L3） |
 | `docs/task-board.md` | Task Board 格式 + 更新規則 |
 | `docs/qa-gate.md` | QA Gate 交付清單 |
@@ -52,7 +52,7 @@ Reflect ── Retrospective
 交付用戶
 ```
 
-## Subagent 角色（14 個）
+## Subagent 角色（18 個）
 
 | 角色 | 階段 |
 |------|------|
@@ -73,6 +73,23 @@ Reflect ── Retrospective
 | Performance Engineer | Test |
 | Release Manager | Ship |
 | Retrospective | Reflect |
+| Tech Debt Tracker | Build + Sprint |
+| Documentation Engineer | Build |
+| Sprint Manager | Plan + Reflect |
+| Dependency Manager | Build |
+| Context Manager | Build（長期任務） |
+| Observability Monitor | Build（長期任務） |
+
+---
+
+## 新增 Skills
+
+| Skill | 用途 |
+|-------|------|
+| `auto-doc-gen` | 從代碼註解自動生成 API docs |
+| `context-summarizer` | 定時壓縮 long-task context |
+| `tech-debt-register` | 記錄 tech debt 的模板 |
+| `development-watchdog` | 監控 subagent 健康、Zombie 檢測 |
 
 ---
 

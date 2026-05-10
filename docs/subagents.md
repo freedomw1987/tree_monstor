@@ -25,6 +25,8 @@
 | **Documentation Engineer** | `api docs` / `自動文檔` | 代碼即文檔，API docs 自動生成 | 代碼 | `docs/api.md` |
 | **Sprint Manager** | `sprint` / `里程碑` | 長期項目拆成 sprint，追蹤進度 | Task Board | `docs/sprint-<n>.md` |
 | **Dependency Manager** | `dependency` / `依賴管理` | library 版本追蹤、security advisory | package.json/requirements.txt | 依賴報告 |
+| **Context Manager** | `context` / `上下文管理` | 長時間任務 context 壓縮、總結 | 任務狀態 | context-summary.md |
+| **Observability Monitor** | `monitor` / `監控` | 主動監控 subagent 健康、Zombie 檢測 | Process list | 健康報告 |
 
 ---
 

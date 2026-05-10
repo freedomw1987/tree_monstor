@@ -184,6 +184,30 @@ delegate_task(
 ### 協調者
 由 Orchestrator Subagent 協調。
 
+### 長期任務支援
+**Context Manager** — 每 30 分鐘或每完成一個 task，自動總結當前進度：
+- 寫入 `docs/context-summary.md`
+- 壓縮非必要細節，保留決策和當前狀態
+- 避免 context 膨脹導致 token 爆炸
+
+**Observability Monitor** — 每 10 分鐘檢查一次：
+- Subagent processes 是否僵死（development-watchdog）
+- Cloudflare tunnels 是否斷開
+- API calls 是否正常
+- 如發現異常，立即通知 Developer 主體
+
+### Documentation Engineer 職責
+- 代碼提交時，自動更新相關文檔
+- 從 JSDoc/TSDoc 註解自動生成 API docs
+- 確保 `docs/` 下的文檔與實際代碼同步
+- 使用 `auto-doc-gen` skill 自動化
+
+### Dependency Manager 職責
+- 追蹤 `package.json` / `requirements.txt` 版本
+- 定期檢查 security advisories（NPM audit / pip-audit）
+- 記錄依賴變更日誌
+- 發現 CVE 及時上報
+
 ---
 
 ## Review
