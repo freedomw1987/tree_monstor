@@ -33,14 +33,37 @@ Reflect ←──────┴─────────┴──────
 | Review | 架構審查 + UX 合規 | Review 報告 | SA Reviewer + UX Reviewer | ✅ |
 | Test | 測試 + 壓測 | 測試報告 + 壓測報告 | QA + Performance Engineer | ✅ |
 | Ship | 部署上線 | 部署確認 | Release Manager | — |
-| Reflect | 復盤 | 復盤報告 | Retrospective | — |
+| Reflect | 復盤 | 復盤報告 | Retrospective + Sprint Manager | — |
+
+---
+
+## Sprint 概念
+
+### Sprint 0（Think 階段的一部分）
+目的：理解問題域，確認可行性，**不寫代碼**。
+- Research 技術可行性
+- 競爭對手分析
+- 用戶訪談（如果適用）
+- 風險評估
+- 確定是否繼續（Go/No-Go）
+
+### Sprint N（常規迭代）
+- 2-week sprint 為基準
+- 每個 sprint 有明确的目標和交付物
+- Sprint 結束時做 Sprint Retrospective
+
+### Sprint Retrospective（在 Reflect 階段）
+每個 sprint 结束都要做，不只是 project-level：
+- 做得好的
+- 需要改進的
+- Action items（下次 sprint 改）
 
 ---
 
 ## Think
 
 ### 目的
-市場機會評估與技術可行性調研，確保項目值得做。
+市場機會評估與技術可行性調研，確保項目值得做。包含 Sprint 0 研究。
 
 ### 參與角色
 - **CEO** — 市場分析、競爭格局、財務可行性
@@ -249,6 +272,13 @@ delegate_task(
 □ 監控指標正常
 □ Rollback plan 就緒
 ```
+
+### Feature Flag 機制
+新功能用 Feature Flag 控制，不需要等到完全 ready 才能 deploy：
+- 每個新功能都有對應的 flag
+- Flag 可以独立開關
+- 上線時默認關閉，通過測試後再逐步開啟
+- 常用方案：LaunchDarkly、Unleash、或者簡單的環境變量
 
 ---
 

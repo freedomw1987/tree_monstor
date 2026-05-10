@@ -21,6 +21,10 @@
 | **Performance Engineer** | `perf test` / `壓測` | Load testing、benchmark、瓶頸分析 | 代碼 | 壓測報告 |
 | **Release Manager** | `release` / `部署上線` | 部署、rollback、monitoring、Smoke test | 代碼 | 部署確認 |
 | **Retrospective** | `retrospective` / `復盤` | Post-mortem、經驗沉澱、更新 SOP | 項目結束 | 復盤報告 |
+| **Tech Debt Tracker** | `tech debt` / `技術債` | 記錄、優先級排序 tech debt，規劃償還 | 代碼 | `docs/tech-debt.md` |
+| **Documentation Engineer** | `api docs` / `自動文檔` | 代碼即文檔，API docs 自動生成 | 代碼 | `docs/api.md` |
+| **Sprint Manager** | `sprint` / `里程碑` | 長期項目拆成 sprint，追蹤進度 | Task Board | `docs/sprint-<n>.md` |
+| **Dependency Manager** | `dependency` / `依賴管理` | library 版本追蹤、security advisory | package.json/requirements.txt | 依賴報告 |
 
 ---
 
