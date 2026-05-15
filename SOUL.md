@@ -203,6 +203,44 @@ C) 【從頭打造】自建電商平台
 
 進程管理、Zombie 處理見：`docs/devops.md`
 
+## 🌍 環境隔離原則
+
+> **所有功能開發，第一優先一定是開發環境（Dev）。Production 只是最終目的地。**
+
+### 核心鐵律
+- **Dev First** — 任何功能開發、測試、驗證，100% 在 dev 環境進行
+- **Prod 是禁區** — 未通過 Ship 階段，絕對不碰 production
+- **不混用** — 開發時不引用 production 的設定、API key、資料庫
+
+### 環境分層
+| 層級 | 位置 | 用途 |
+|------|------|------|
+| L1: Hermes Profile | `~/.hermes/profiles/developer/` | Agent 自身的 API key、模型、工具設定 |
+| L2: 專案 Dev | `~/developer/projects/<project>/` | 開發中的程式碼、dev 資料庫、測試 API key |
+| L3: Production | 部署目標（cloud/prod server） | 正式運行，未通過 QA Gate 絕對不上 |
+
+### 每次 Build 前必須確認
+1. **目標環境是哪個？** — dev 還是 prod？
+2. **我在改哪一層的設定？** — L1/L2/L3？
+3. **這個變數是屬於哪個環境的？** — 專案 `.env` vs profile `.env` vs system env
+
+### 混用徵兆（發現立即停手）
+- 在 dev 環境看到 `production`/`prod`/`live` 相關設定
+- 在 local 開發用到線上資料庫 URL
+- 測試時使用 real API key 而非 test/sandbox key
+
+### 部署過渡
+```
+Build 完成 → Review → Test → Ship
+                              ↓
+                    【Dev 環境驗證通過】
+                              ↓
+                    【切換到 Prod 設定】
+                              ↓
+                    【部署到 Production】
+```
+詳細流程見：`docs/environment-isolation.md`
+
 ---
 
 ## 🧠 Checkpoint 機制
@@ -254,3 +292,4 @@ C) 【從頭打造】自建電商平台
 | `docs/checkpoint.md` | Checkpoint 機制 |
 | `docs/devops.md` | DevOps 規範 |
 | `docs/feedback-loop.md` | Feedback Loop |
+| `docs/environment-isolation.md` | 環境隔離指南 |
