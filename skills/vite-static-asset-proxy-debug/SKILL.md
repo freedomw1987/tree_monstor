@@ -55,5 +55,43 @@ curl -s http://localhost:5174/ai-images/img.jpg | head -c 20 | xxd
 The same problem pattern applies to any backend-served static path: `/uploads/`, `/files/`, `/attachments/`, etc. Always proxy them in Vite dev config alongside `/api/`.
 
 ## Related
-- whatsapp-ai-chatbot skill (has relevant project context)
+- whatsapp-chatbot skill (has relevant project context)
 - nginx-sse-streaming-fix skill (nginx proxy gotchas for backend-served content)
+
+---
+
+## Vite Build: `.env.production` Overrides `.env` Even in Dev
+
+### Symptoms
+- Dev website (e.g. `https://course.david-developer.com`) loads but all API calls go to production (e.g. `api.board-ai.site`)
+- `curl https://your-dev-site.com/assets/index-XXXXX.js | grep -c api.production-site.com` returns > 0
+- Dev `.env` file has correct `VITE_API_BASE_URL` but built JS contains wrong domain
+
+### Root Cause
+Vite's `loadEnv` function loads `.env.production` when `VITE_APP_ENV` is not explicitly set to `"development"`, AND when `process.env.NODE_ENV` is not `"development"`. `npm run build` defaults `NODE_ENV=production`, so it loads `.env.production` which overrides `.env`.
+
+### Always Use Explicit Env Var When Building Dev
+```bash
+VITE_API_BASE_URL=https://your-dev-api.com/api npm run build
+```
+
+Or set both explicitly:
+```bash
+NODE_ENV=development VITE_API_BASE_URL=https://your-dev-api.com/api npm run build
+```
+
+Never rely solely on `.env` file for Vite builds — always pass the target env var explicitly.
+
+### Verification After Build
+```bash
+# Check built JS for wrong API domain
+curl -s https://your-dev-site.com/assets/index-XXXXX.js | grep -o 'api\.wrong-domain\.com' | wc -l
+# Should return 0
+
+# Check for correct API domain
+curl -s https://your-dev-site.com/assets/index-XXXXX.js | grep -o 'api\.correct-domain\.com' | wc -l
+# Should return >= 1
+```
+
+### Key Insight
+This applies to any env var prefixed with `VITE_`. If you need a dev build with different values than production, always pass them explicitly during `npm run build` — never rely on `.env` file alone for build-time env vars.

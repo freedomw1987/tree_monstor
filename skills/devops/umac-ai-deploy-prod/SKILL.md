@@ -1,0 +1,145 @@
+---
+name: umac-ai-deploy-prod
+description: UMAC AI 生產部署 SOP — backend + frontend + CDK + ECS 全流程
+---
+
+# UMAC AI 生產部署流程
+
+## 概述
+UMAC AI 項目（澳門大學 AI 大賽活動網站）的生產環境部署 SOP。
+
+## 環境
+- Region: `ap-east-1`
+- SES Region: `us-east-1`
+- 生產 API: `https://api.board-ai.site`
+- 生產 Frontend: `https://board-ai.site`
+- ECS Cluster: `umac-ai-cluster`
+- Services: `umac-ai-backend`, `umac-ai-frontend`
+
+## 部署流程（完整代碼發布）
+
+### 1. 確認代碼已 commit
+```bash
+cd ~/projects/umac_ai
+git add -A && git commit -m "description"
+git push origin main
+```
+
+### 2. Prisma Migration（如 schema 有變更）
+```bash
+# 先確認有哪些 pending migrations
+aws ecs run-task \
+  --cluster umac-ai-cluster \
+  --task-definition UMacAiEcsStackBackendTaskDefEF56D88D \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-01255018d4a3a1b1f,subnet-0c5ce99b7d83c693b],securityGroups=[sg-01d213a5c6e416f40]}" \
+  --overrides '{"containerOverrides":[{"name":"umac-ai-backend","command":["sh","-c","cd /app && ./node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma"],"environment":[{"name":"DATABASE_URL","value":"postgresql://umacai:PASSWORD@umacaidatabasestack-ummaaidbinstancecd68fce1-pxp9c9hn2dv6.cd8ge4mwq7jq.ap-east-1.rds.amazonaws.com:5432/umac_ai"}]}]}' \
+  --region ap-east-1
+# 等待約 45 秒後 describe-tasks 確認 ExitCode: 0
+```
+
+**注意：`npx prisma` 在 Fargate 內會失敗（ExitCode: 127），必須用 `./node_modules/.bin/prisma` 並先 `cd /app`。**
+
+### 3. Build + Push Backend Image
+```bash
+cd ~/projects/umac_ai/backend
+sudo docker build --no-cache -t umac-ai-backend .
+sudo docker tag umac-ai-backend:latest 631807311787.dkr.ecr.ap-east-1.amazonaws.com/umac-ai-backend:latest
+aws ecr get-login-password --region ap-east-1 | sudo docker login --username AWS --password-stdin 631807311787.dkr.ecr.ap-east-1.amazonaws.com
+sudo docker push 631807311787.dkr.ecr.ap-east-1.amazonaws.com/umac-ai-backend:latest
+```
+
+### 4. Build + Push Frontend Image
+```bash
+cd ~/projects/umac_ai/frontend
+# .env.production 已有 VITE_API_BASE_URL=https://api.board-ai.site/api
+sudo docker build -t umac-ai-frontend .
+sudo docker tag umac-ai-frontend:latest 631807311787.dkr.ecr.ap-east-1.amazonaws.com/umac-ai-frontend:latest
+sudo docker push 631807311787.dkr.ecr.ap-east-1.amazonaws.com/umac-ai-frontend:latest
+```
+
+### 5. CDK Deploy（如有 Infra 變更）
+```bash
+cd ~/projects/umac_ai/infra
+npx cdk deploy UMacAiEcsStack --region ap-east-1 --require-approval never
+# CDK deploy 會 timeout（300s），但 CloudFormation 會繼續在後台執行
+# 確認：aws cloudformation describe-stacks --stack-name UMacAiEcsStack --region ap-east-1
+```
+### 6. Force ECS Deploy（拉新 Image）
+
+```bash
+# Backend
+aws ecs update-service --cluster umac-ai-cluster --service umac-ai-backend --force-new-deployment --region ap-east-1
+
+# Frontend
+aws ecs update-service --cluster umac-ai-cluster --service umac-ai-frontend --force-new-deployment --region ap-east-1
+```
+
+### 7. S3 + CloudFront 靜態部署（frontend 有變更時必做）
+
+```bash
+# 前端靜態資源需同步到 S3，ECS frontend 容器更新的只是 container 本身
+cd ~/projects/umac_ai/frontend
+npm run build
+
+aws s3 sync dist/ s3://umac-ai-frontend-631807311787-ap-east-1/ --region ap-east-1
+
+aws cloudfront create-invalidation --distribution-id E2KORZ2WAC4CZS --paths "/*"
+```
+
+**前端有 UI 改動時，否則用戶看到的是 CloudFront 緩存的舊版。**
+
+### 8. 驗證
+```bash
+curl -s https://api.board-ai.site/health
+curl -s https://board-ai.site/ | head -3
+```
+
+## 重要教訓
+
+### CDK ≠ 代碼部署
+CDK 只負責更新 AWS infrastructure（建立 S3 bucket、更新 task definition env、加 IAM policy）。**CDK 不會 build 或 push Docker image**。
+
+每次代碼變更後，必須手動：
+1. Build 新 Docker image
+2. Push 到 ECR
+3. Force ECS deploy
+
+如果忘記這步，ECS 會繼續跑舊 image。
+
+### Dev Backend 啟動方式
+```bash
+cd ~/projects/umac_ai/backend
+bun --env-file=.env src/index.ts
+```
+
+### Dev Forgot Password 需要的 env
+`.env` 必須包含：
+```
+SES_REGION=us-east-1
+SES_FROM_EMAIL=noreply@board-ai.site
+JWT_SECRET=...
+DATABASE_URL=...
+```
+
+### SES DMARC 問題
+email From 為 `noreply@board-ai.site`，envelope sender 預設是 `010001...@amazonses.com`，導致 DMARC FAIL。
+
+解決：在 Route53 加 DKIM CNAME 記錄 + DMARC TXT 記錄。
+
+## 常見問題
+
+### Q: ECS 顯示 ACTIVE 但 API 還是舊版？
+檢查是否忘記 force new deployment。CDK deploy 只更新 task definition，現有 ECS tasks 不會自動重啟。
+
+### Q: SES email 進垃圾郵件？
+檢查 DKIM 是否 Pending → 需要在 Route53 加 DKIM CNAME 記錄。
+
+### Q: CDK deploy timeout？
+正常，CloudFormation 在後台繼續執行。等 2-3 分鐘後確認 `UPDATE_COMPLETE`。
+
+## 文件位置
+- Backend: `~/projects/umac_ai/backend/`
+- Frontend: `~/projects/umac_ai/frontend/`
+- Infra: `~/projects/umac_ai/infra/`
+- ECR Repos: `631807311787.dkr.ecr.ap-east-1.amazonaws.com/umac-ai-backend` 和 `.../umac-ai-frontend`

@@ -128,9 +128,37 @@ useEffect(() => {
 
 **Note:** `useRef` ordering matters — always set `prevUserIdRef.current = userId` BEFORE the comparison check, not after, so that the initial mount with an existing token still triggers a fetch.
 
+## AuthContext — Always Use `login()` / `logout()` Methods
+
+For apps using a central `AuthContext` with `user`, `token`, `login()`, `logout()` (not a ChatContext), the same principle applies but the fix is simpler:
+
+```tsx
+// ❌ WRONG — AdminLogin bypassed AuthContext, ProtectedRoute saw stale null user
+const handleSubmit = async (e) => {
+  const { data } = await api.post('/auth/login', { email, password })
+  localStorage.setItem('token', data.token)      // React state NOT updated
+  localStorage.setItem('user', JSON.stringify(data.user))
+  navigate('/admin/dashboard')  // AdminProtectedRoute: user still null → redirects back
+}
+
+// ✅ CORRECT — useAuth().login() updates both localStorage AND React state
+const { login } = useAuth()
+const handleSubmit = async (e) => {
+  await login(email, password)  // sets user + token in context AND localStorage
+  navigate('/admin/dashboard')  // ProtectedRoute sees user immediately
+}
+```
+
+**Root cause**: `AuthContext` initializes `user`/`token` from localStorage only on mount. Direct localStorage writes don't trigger re-render of the AuthContext consumer, so ProtectedRoute components still see `null` even after storage is updated.
+
+**Rule**: Any component that modifies auth state must go through `useAuth().login()` or `useAuth().logout()`. Never write `localStorage` directly for auth in React apps.
+
+**Verified in**: UMAC AI project — `AdminLogin.tsx` was broken (wrote localStorage directly); fixed by using `useAuth().login()`.
+
 ## When This Skill Applies
 
 - React Context holding per-user data (conversations, messages, settings, profile)
 - Login/logout flows where SPA doesn't do a full page reload between users
 - Apps with multiple accounts on same device
 - WhatsApp-style chatbots with conversation lists keyed by user_id
+- AuthContext-based SPAs with ProtectedRoute components

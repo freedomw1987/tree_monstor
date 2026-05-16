@@ -24,4 +24,4 @@ scripts/
 sessions/
 state.db
 state.db-shm
-state.db-wal
+state.db-wal*.db

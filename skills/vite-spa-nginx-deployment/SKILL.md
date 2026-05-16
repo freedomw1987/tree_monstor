@@ -44,6 +44,22 @@ Email verification / password reset links go to `https://yourdomain.com/#/reset/
 
 **Fix**: Use `HashRouter` in `main.jsx`. Both the import AND the JSX tag must be updated.
 
+## Build & Deploy
+
+```bash
+# ⚠️ npm run build reads .env.production, NOT .env!
+# Always pass VITE_ vars explicitly at build time:
+VITE_API_BASE_URL=https://api.example.com npm run build
+
+# Then rsync to nginx server
+sudo rsync -av --delete /path/to/project/frontend/dist/ /var/www/your.domain.com/
+```
+
+| Symptom | Cause |
+|---------|-------|
+| Dev site still calls prod API | Browser cached old HTML — Ctrl+Shift+R or incognito |
+| Hard refresh still shows old API | Build used wrong `.env` — pass VITE_ vars at build time |
+
 ## Common Failure Modes
 
 | Symptom | Cause |

@@ -78,13 +78,95 @@ curl -s -o /dev/null -w "%{http_code}" https://<subdomain.david-developer.com>
 
 ---
 
+## 單一 Nginx 設定檔 + 重新申請 SSL（推薦）
+
+適用：nginx config 已存在但 SSL 失效或從未申請。
+
+1. **建立 nginx 設定**（不含 SSL）：
+   ```nginx
+   server {
+       listen 80;
+       listen [::]:80;
+       server_name <subdomain.david-developer.com>;
+
+       root /var/www/<subdomain.david-developer.com>;
+       index index.html;
+
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
+   }
+   ```
+2. **寫入設定**：`sudo cp <config> /etc/nginx/sites-available/<subdomain.david-developer.com>`
+3. **連結並測試**：`sudo ln -sf ... && sudo nginx -t`
+4. **用 certonly --webroot 申請 SSL**（繞過 nginx SSL 設定）：
+   ```bash
+   sudo certbot certonly --webroot \
+     -w /var/www/<subdomain.david-developer.com> \
+     -d <subdomain.david-developer.com> \
+     --non-interactive --agree-tos -m david@<domain>
+   ```
+5. **更新 nginx 設定加入 SSL**（見下方完整 template）
+6. **重載 nginx**：`sudo nginx -s reload`
+
+### 完整 Nginx Template（含 SSL + /api/ proxy）
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name <subdomain.david-developer.com>;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name <subdomain.david-developer.com>;
+
+    ssl_certificate /etc/letsencrypt/live/<subdomain.david-developer.com>-0001/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<subdomain.david-developer.com>-0001/privkey.pem;
+
+    root /var/www/<subdomain.david-developer.com>;
+    index index.html;
+
+    client_max_body_size 50M;
+    proxy_read_timeout 300s;
+
+    location /api/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 300s;
+        chunked_transfer_encoding on;
+        proxy_request_buffering off;
+        tcp_nodelay on;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+---
+
 ## 常見錯誤
 
 | 錯誤 | 原因 | 處理 |
 |------|------|------|
 | `Address already in use` on port 80 | Docker 或其他進程佔用 | 先停掉該進程 |
-| `DNS problem: NXDOMAIN` | Route53 A 紀錄未設定 | 先讓使用者在 Route53 加 A 紀錄再繼續 |
-| `nginx: [emerg] bind() to 0.0.0.0:80 failed` | 舊 nginx 進程未清除 | `sudo systemctl restart nginx` |
+| `DNS problem: NXDOMAIN` | Route53 A 紀錄未生效或本地 DNS 未刷新 | 等 2-5 分鐘或換用 `dig` 確認；Route53 可能已設定但本地 resolver 未更新 |
+| `nginx: [emerg] cannot load certificate` on restart | 之前 certbot 申請失敗但 nginx config 已有 SSL 路徑 | 用 `certonly --webroot` 而非 `--nginx`，或先移除 SSL 行再用 `--nginx` |
+| certbot fails after failed `--nginx` attempt | nginx -t 失敗，certbot 會拒絕操作 | 先清除 `/etc/letsencrypt/live/<subdomain>/`，用 `certonly --webroot` 完成 |
+
+---
+
+## DNS 傳播注意
+Route53 設定完成後，線上 dig/nslookup 可能立即回應，但本地 `host`/`nslookup` 可能持續回 NXDOMAIN（因為本地 resolver 快取）。以 `curl` 實際能訪問為準。
 
 ---
 

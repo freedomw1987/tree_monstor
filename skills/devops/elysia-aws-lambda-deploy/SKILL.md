@@ -415,6 +415,100 @@ cdk list  # if empty, no local stack exists
 cdk import arn:aws:apigateway:ap-southeast-1:631807311787:/restapis/40uo445gf0
 ```
 
+## API Gateway CORS Configuration (Critical for Browser Apps)
+
+**Important:** API Gateway REST API with Lambda `AWS_PROXY` integration does NOT automatically handle CORS. OPTIONS preflight requests must be handled at API Gateway level.
+
+### The Problem
+
+When deploying a browser app that calls the API directly (bypassing CloudFront), you'll get:
+```
+Access to XMLHttpRequest at 'https://api-gateway-url/prod/api/auth/login' 
+from origin 'https://your-domain.com' has been blocked by CORS policy: 
+Response to preflight request doesn't pass access control check: 
+No 'Access-Control-Allow-Origin' header is present
+```
+
+### The Solution: Mock Integration for OPTIONS
+
+You must configure API Gateway to respond to OPTIONS preflight requests with CORS headers:
+
+```bash
+# 1. Add OPTIONS method to the /{proxy+} resource
+aws apigateway put-method \
+  --rest-api-id <api-id> \
+  --resource-id <resource-id> \
+  --http-method OPTIONS \
+  --authorization-type NONE \
+  --no-api-key-required
+
+# 2. Create MOCK integration (returns fixed response without calling Lambda)
+aws apigateway put-integration \
+  --rest-api-id <api-id> \
+  --resource-id <resource-id> \
+  --http-method OPTIONS \
+  --integration-http-method OPTIONS \
+  --type MOCK \
+  --request-templates '{"application/json": "{\"statusCode\": 200}"}'
+
+# 3. Add method response (enable CORS header parameters)
+aws apigateway put-method-response \
+  --rest-api-id <api-id> \
+  --resource-id <resource-id> \
+  --http-method OPTIONS \
+  --status-code 200 \
+  --response-parameters '{
+    "method.response.header.Access-Control-Allow-Headers": true,
+    "method.response.header.Access-Control-Allow-Methods": true,
+    "method.response.header.Access-Control-Allow-Origin": true
+  }'
+
+# 4. Add integration response (map header values)
+python3 << 'PYEOF'
+import subprocess, json
+params = {
+    "method.response.header.Access-Control-Allow-Headers": "'*'",
+    "method.response.header.Access-Control-Allow-Methods": "'*'",
+    "method.response.header.Access-Control-Allow-Origin": "'https://your-allowed-origin.com'"
+}
+cmd = [
+    "aws", "apigateway", "put-integration-response",
+    "--rest-api-id", "<api-id>",
+    "--resource-id", "<resource-id>",
+    "--http-method", "OPTIONS",
+    "--status-code", "200",
+    "--response-parameters", json.dumps(params)
+]
+subprocess.run(cmd)
+PYEOF
+
+# 5. Deploy to activate changes
+aws apigateway create-deployment \
+  --rest-api-id <api-id> \
+  --stage-name prod \
+  --description "Add CORS support"
+```
+
+### Alternative: Allow All Origins via CloudFront
+
+If you use CloudFront in front of API Gateway, you can configure CORS headers there instead:
+- Add `Access-Control-Allow-Origin: *` (or specific domain)
+- Add `Access-Control-Allow-Methods: *`
+- Cache OPTIONS responses: `Cache Based on Selected Request Headers: None` (whitelisted headers)
+
+### Frontend API URL Configuration
+
+For browser apps calling API Gateway directly (no CloudFront):
+```env
+# .env.production
+VITE_API_BASE_URL=https://<api-gateway-id>.execute-api.<region>.amazonaws.com/prod/api
+```
+
+For apps behind CloudFront:
+```env
+VITE_API_BASE_URL=https://your-cloudfront-domain.com/api
+```
+
 ## Troubleshooting Workflow
 
 1. **Check Lambda CloudWatch logs first** — always. The error type tells you 80% of what's wrong.
