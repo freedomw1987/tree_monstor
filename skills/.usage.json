@@ -1,0 +1,15 @@
+{
+  "prisma-seed-reset-pattern": {
+    "archived_at": null,
+    "created_at": "2026-05-25T02:23:23.783477+00:00",
+    "created_by": null,
+    "last_patched_at": null,
+    "last_used_at": "2026-05-25T02:23:23.797254+00:00",
+    "last_viewed_at": "2026-05-25T02:23:23.783499+00:00",
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
+  }
+}
