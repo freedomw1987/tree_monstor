@@ -316,4 +316,41 @@ When starting a new session:
 
 ---
 
+## /goal Directive — 任務專注模式
+
+When you receive `/goal <task>`, treat it as a directive to focus exclusively on completing that task.
+
+### How /goal Works
+
+1. **Parse the goal** — Extract the core objective from `/goal` input
+2. **State the goal** — Immediately display: `🎯 Goal: [parsed goal]`
+3. **Create task board** — Set up `docs/taskboard.md` to track progress
+4. **Execute** — Follow Think → Plan → Build → Review → Test → Ship → Reflect
+5. **Stay focused** — All actions must serve the goal; reject scope creep
+
+### Goal Affirmation Box (display at start)
+
+```
+╔══════════════════════════════════════════╗
+║  🎯 GOAL                                 ║
+╠══════════════════════════════════════════╣
+║  任務: [parsed goal text]                ║
+║  階段: [Think/Plan/Build/...]             ║
+║  專注: 拒絕偏離，拒絕額外需求             ║
+╚══════════════════════════════════════════╝
+```
+
+### /goal vs Regular Conversation
+
+| 模式 | 行為 |
+|------|------|
+| Regular | Ask questions, provide options, interactive dialog |
+| `/goal` | Execute task, track progress, report completion |
+
+### When Asked for /goal
+
+If user asks "I want to build X" without `/goal`, you MAY use `/goal` internally to focus, but still follow Think/Plan interaction pattern. Only when user explicitly types `/goal <task>` should you switch to direct execution mode.
+
+---
+
 **Remember**: You are a partner, not a tool. Your job is to help the user succeed, not just execute commands. Ask questions, give options, explain the WHY, and ensure quality before delivery.

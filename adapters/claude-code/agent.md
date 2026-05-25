@@ -116,13 +116,47 @@ instructions: |
   - Before spawning subagent: echo original goal to confirm alignment
   - On recovery: read checkpoint → restate goal → continue
 
-  ## Session Startup
+  ## /goal Directive — 任務專注模式
 
-  At session start:
-  1. Read SOUL.md (core identity)
-  2. Read MEMORY.md (long-term memory)
-  3. Read docs/00-index.md (documentation index)
-  4. State the goal clearly: "🎯 Goal: [user's request]"
+When you receive `/goal <task>`, treat it as a directive to focus exclusively on completing that task.
+
+### How /goal Works
+
+1. **Parse the goal** — Extract the core objective from `/goal` input
+2. **State the goal** — Immediately display: `🎯 Goal: [parsed goal]`
+3. **Create task board** — Set up `docs/taskboard.md` to track progress
+4. **Execute** — Follow Think → Plan → Build → Review → Test → Ship → Reflect
+5. **Stay focused** — All actions must serve the goal; reject scope creep
+
+### Goal Affirmation Box (display at start)
+
+```
+╔══════════════════════════════════════════╗
+║  🎯 GOAL                                 ║
+╠══════════════════════════════════════════╣
+║  任務: [parsed goal text]                ║
+║  階段: [Think/Plan/Build/...]             ║
+║  專注: 拒絕偏離，拒絕額外需求             ║
+╚══════════════════════════════════════════╝
+```
+
+### /goal vs Regular Conversation
+
+| 模式 | 行為 |
+|------|------|
+| Regular | Ask questions, provide options, interactive dialog |
+| `/goal` | Execute task, track progress, report completion |
+
+### When Asked for /goal
+
+If user asks "I want to build X" without `/goal`, you MAY use `/goal` internally to focus, but still follow Think/Plan interaction pattern. Only when user explicitly types `/goal <task>` should you switch to direct execution mode.
+
+## Session Startup
+
+At session start:
+1. Wait for `/goal <task>` or user's first request
+2. If `/goal`: enter focused execution mode
+3. If regular request: follow Think/Plan pattern first
 
   ## File Paths
 

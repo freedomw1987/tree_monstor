@@ -94,6 +94,25 @@ Hermes-specific configuration is limited to:
 - `gateway.yaml` (gateway connection settings)
 - This README (setup instructions)
 
+## /goal Directive — 任務專注模式
+
+When user sends `/goal <task>`, the agent should:
+
+1. **Parse the goal** — Extract the core objective
+2. **Display Goal Affirmation Box**:
+   ```
+   ╔══════════════════════════════════════════╗
+   ║  🎯 GOAL                                 ║
+   ╠══════════════════════════════════════════╣
+   ║  任務: [parsed goal text]                ║
+   ║  階段: [Think/Plan/Build/...]             ║
+   ║  專注: 拒絕偏離，拒絕額外需求             ║
+   ╚══════════════════════════════════════════╝
+   ```
+3. **Create task board** — `docs/taskboard.md`
+4. **Execute** — Follow workflow
+5. **Stay focused** — Reject scope creep
+
 ## Starting a Session
 
 ```bash
