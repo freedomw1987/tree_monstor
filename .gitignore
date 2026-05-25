@@ -25,3 +25,5 @@ sessions/
 state.db
 state.db-shm
 state.db-wal*.db
+gateway/
+.update_check
