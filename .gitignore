@@ -27,3 +27,6 @@ state.db-shm
 state.db-wal*.db
 gateway/
 .update_check
+gateway/
+lsp/
+skills/.usage.json
