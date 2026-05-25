@@ -9,6 +9,11 @@ trigger: |
 ---
 # Playwright Node API 在 Container/VM 環境使用
 
+## Troubleshooting
+- **Navigation Timeout**: If you encounter a timeout error waiting for a page to load after login, increase the `await page.waitForURL()` timeout parameter to accommodate possible delays.
+- **Verifying Credentials**: Ensure that the correct login credentials are being used. Verify by checking network logs and responses in the browser's dev tools for any login flow issues.
+
+
 ## 問題
 - CLI `playwright screenshot` 只能截圖公開頁面，無法處理登入 flow
 - Node API 可以執行完整的自動化流程（登入→跳轉→截圖）

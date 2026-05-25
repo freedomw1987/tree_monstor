@@ -380,6 +380,55 @@ body: t.Object({
 
 **Key insight**: In Elysia's typed schema, `Optional(t.String())` ≠ "nullable". It means "omit the key entirely". `null` in JSON is a value, not absence — so it fails validation.
 
+## 12. Bun Production Bundle Target — Elysia Server Crashes with `Bun.serve() needs either routes or fetch`
+
+**Symptom**: ECS/Fargate or Docker production container repeatedly exits with code `1`. CloudWatch logs show the app prints its startup message, then crashes:
+
+```text
+🍃 UMAC AI API running at http://localhost:3000
+TypeError: Bun.serve() needs either:
+  - A routes object
+  - Or a fetch handler
+code: "ERR_INVALID_ARG_TYPE"
+```
+
+The service may show `desired=2`, `running=0`, API/ALB returns `503`, and login endpoints fail even though database accounts exist.
+
+**Root cause**: Dockerfile bundles an Elysia/Bun app with Node/CommonJS target:
+
+```dockerfile
+RUN bun build src/index.ts --target=node --outfile=dist/index.js --format=cjs
+CMD ["bun", "dist/index.js"]
+```
+
+When run by Bun, CommonJS/Node-targeted bundle output can be misinterpreted by Bun's auto-serve path as an invalid `Bun.serve()` config, even if the source uses `app.listen()` correctly.
+
+**Fix**: For a Bun runtime container, bundle for Bun — not Node/CJS:
+
+```dockerfile
+# ✅ Bun runtime target
+RUN bun build src/index.ts --target=bun --outfile=dist/index.js
+CMD ["bun", "dist/index.js"]
+```
+
+**Verification before deploying**:
+
+```bash
+cd backend
+bun build src/index.ts --target=bun --outfile=dist/index.js
+PORT=3999 timeout 5s bun dist/index.js
+# Expected: startup log, process stays alive until timeout (exit 124), no TypeError
+```
+
+**Production recovery pattern**:
+1. Check ECS service: `aws ecs describe-services --cluster <cluster> --services <service>` — look for `running=0` and repeated task starts/drains.
+2. Check stopped tasks: `aws ecs list-tasks --desired-status STOPPED` then `aws ecs describe-tasks` — exit code `1` points to app crash.
+3. Read recent CloudWatch log streams for the task ID.
+4. Fix Dockerfile build target to `--target=bun`, rebuild/push image, then `aws ecs update-service --force-new-deployment`.
+5. Verify `running == desired`, `/health` returns OK, then test auth endpoint.
+
+**Do not "fix" by switching to Node target unless the runtime is actually Node.js and the app code is compatible with Node. If the image uses `oven/bun` and `CMD ["bun", ...]`, use `--target=bun`.**
+
 ## Key Files (Lemontree V3)
 
 - `~/projects/lemontree_v3/src/middleware/auth.ts` — derive middleware adding `websiteId` to context

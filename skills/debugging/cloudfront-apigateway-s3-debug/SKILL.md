@@ -99,3 +99,62 @@ Keep CloudFront only for static assets.
 - Always test BOTH direct API Gateway URL AND CloudFront URL
 - When creating CloudFront distribution, add API Gateway origin FIRST with specific path pattern
 - Remember: Cache behavior order matters - specific paths (`/api/*`) must come before default (`/*`)
+
+---
+
+## Case 2: CloudFront Origin Using Internal ALB DNS Name (502 Error)
+
+### Symptoms
+- CloudFront returns HTTP 502 for all API requests
+- Direct ALB URL works fine
+- `/api/*` routes fail through CloudFront
+- CORS preflight (OPTIONS) requests also fail
+
+### Root Cause
+CloudFront is configured with an internal ALB DNS name (e.g., `UMacAi-UmmaA-uNbd4HN8HzLy-154450466.ap-east-1.elb.amazonaws.com`) as the origin. Internal ALB DNS names only resolve from within the VPC - they do NOT resolve from CloudFront edge nodes (which are on the public internet).
+
+### Debug Commands
+```bash
+# Test direct ALB - WORKS
+curl -sI "https://UMacAi-UmmaA-...elb.amazonaws.com/api/courses"
+
+# Test through CloudFront - 502 ERROR
+curl -sI "https://your-domain.com/api/courses"
+
+# Check CloudFront response headers
+curl -sI --max-time 15 "https://your-domain.com/api/courses"
+# Look for: x-cache: Error from cloudfront
+```
+
+### Fix
+Replace the ALB DNS name origin with the API subdomain CNAME that routes to the ALB:
+
+1. **In CloudFront console:**
+   - Edit the API Gateway origin
+   - Origin Domain: Change from `UMacAi-UmmaA-...elb.amazonaws.com` to `api.board-ai.site`
+   - Origin Protocol Policy: `match-viewer` (recommended for flexibility)
+
+2. **In CDK (recommended - infrastructure as code):**
+   ```typescript
+   // Before (BROKEN - internal DNS doesn't resolve from CloudFront edge)
+   const albDomain = 'UMacAi-UmmaA-uNbd4HN8HzLy-154450466.ap-east-1.elb.amazonaws.com';
+   
+   // After (WORKS - DNS resolves from anywhere)
+   const albDomain = 'api.board-ai.site';  // Route53 A record → ALB
+   ```
+
+3. **Ensure DNS is configured:**
+   - Route53 A alias record: `api.board-ai.site` → ALB target
+   - Verify: `nslookup api.board-ai.site` should return ALB IP
+
+### Key Diagnostic Signal
+| Test | Expected | Broken |
+|------|----------|--------|
+| Direct ALB URL | ✅ 200 OK | ✅ 200 OK |
+| CloudFront API path | ✅ 200 OK | ❌ 502 Error |
+| `curl -sI` response | `HTTP/2 200` | `HTTP/2 502` |
+
+### Prevention
+- Never use internal ELB/ALB DNS names as CloudFront origins
+- Always create a Route53 A alias record for the API subdomain and use that in CloudFront origin
+- Internal DNS names (`.elb.amazonaws.com`, `.compute.internal`) are only resolvable within VPC

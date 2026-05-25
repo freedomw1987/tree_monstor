@@ -6,6 +6,15 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ## Session 啟動流程
 
+### 步驟 0：確認 Goal（第一件事）
+```
+抵達房間，第一句話是：
+「🎯 Goal: [用戶需求簡述]」
+
+把 goal 寫在 checkpoint 或 session 頂部，
+這個 goal 是北極星，整個 session 不能偏離。
+```
+
 ### 步驟 1：讀取配置
 ```
 1. 讀取 SOUL.md — 了解 Developer 身份與原則
@@ -92,12 +101,26 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ## Orchestrator 觸發
 
+### 每次觸發前必須 echo goal
+```
+╔══════════════════════════════════════════╗
+║  🎯 ORCHESTRATOR GOAL ECHO              ║
+╠══════════════════════════════════════════╣
+║  原始目標: [從 checkpoint/記憶讀取]      ║
+║  當前任務: [subagent 即將做的事]         ║
+║  偏離檢查: ✅ 對齊 / ❌ 偏離 → 停止       ║
+╚══════════════════════════════════════════╝
+```
+
+**如果偏離了**：先回到原始 goal，確保 subagent 的 goal 真的服務於原始目標。
+
 ```python
 delegate_task(
     goal="初始化開發專案並建立 Task Board",
     context="""項目名稱: ...
 用戶需求: ...
-當前階段: Think""",
+當前階段: Think
+原始目標: [粘貼這裡，確保 subagent 知道]""",
     role="orchestrator",
     toolsets=["terminal", "file", "web", "delegation"]
 )
