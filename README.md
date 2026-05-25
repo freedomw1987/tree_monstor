@@ -1,9 +1,45 @@
-# 🌳 Tree Monstor — Developer Profile
+# 🌳 Tree Monstor — AI Software Development Team
 
-> **Hermes Agent 的 Developer Profile** — 你的 AI 軟件開發團隊
+> **Cross-Platform Developer Profile** — 可用於 Hermes Agent、Claude Code、Codex
 
-[![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-v2.0-blue)](https://github.com/freedomw1987/hermes-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
+---
+
+## 跨平台適配架構
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PLATFORM SHELL                           │
+│        Hermes Agent / Claude Code / Codex                   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 PLATFORM ADAPTER LAYER                      │
+│  adapters/                                                  │
+│  ├── claude-code/agent.md     — Claude Code agent 定義     │
+│  ├── codex/system-prompt.md   — Codex 系統提示             │
+│  └── hermes/                   — Hermes 配置                │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  CORE IDENTITY (跨平台共享)                 │
+│                                                              │
+│  SOUL.md + AGENTS.md + MEMORY.md + docs/ + skills/          │
+│                                                              │
+│  所有平台共用的核心：身份原則、工作流程、QA Gate、Skills     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 平台支援矩陣
+
+| 平台 | 機制 | 狀態 |
+|------|------|------|
+| **Hermes Agent** | Profile directory + gateway | ✅ 主要支援 |
+| **Claude Code** | `--agent-file` adapter | ✅ 已適配 |
+| **Codex** | `--system-prompt` 文件 | ✅ 已適配 |
 
 ---
 
@@ -105,62 +141,42 @@ Orchestrator ──── 任務協調（全局視角）
 
 ## 安裝指南
 
-### 在 Hermes Agent 中使用（原生支援）
+### Hermes Agent
 
 ```bash
-# 1. 安裝 Hermes Agent
-npm install -g hermes-agent
-
-# 2. 克隆 Developer Profile
+# 克隆 profile
 git clone git@github.com:freedomw1987/tree_monstor.git ~/.hermes/profiles/developer
 
-# 3. 配置環境變量
-cat > ~/.hermes/profiles/developer/.env << 'EOF'
-DISCORD_BOT_TOKEN=your_discord_bot_token
-OPENROUTER_API_KEY=your_openrouter_key
-MINIMAX_API_KEY=your_minimax_key
-HERMES_MAX_ITERATIONS=1500
-EOF
+# 配置環境變量（使用 adapters/hermes/.env.template）
+cp adapters/hermes/.env.template ~/.hermes/profiles/developer/.env
+# 編輯 .env 填入你的 tokens
 
-# 4. 啟動
+# 啟動
 hermes-agent --profile developer gateway run
-
-# 或使用 systemd（後台運行）
-systemctl --user enable hermes-gateway-developer.service
-systemctl --user start hermes-gateway-developer.service
 ```
 
-詳細文檔：[Hermes Agent 安裝](#1-hermes-agent)
+詳細文檔：[adapters/hermes/README.md](adapters/hermes/README.md)
 
-### 在 Claude Code 中使用
+### Claude Code
 
 ```bash
-# 安裝 Claude Code
-curl -1sLf 'https://storage.googleapis.com/claude-code/claude-code-installer.sh' | bash
+# 使用 adapter
+claude --agent-file adapters/claude-code/agent.md
 
-# 使用 Developer Profile
-claude --system-prompt-file ~/.hermes/profiles/developer/SOUL.md
-
-# 或自定義 agent
-claude --agent 'developer' --agents '{
-  "developer": {
-    "description": "AI 軟件開發團隊",
-    "system-prompt": "你是一個專業的軟件開發團隊，參考 ~/.hermes/profiles/developer/SOUL.md 工作"
-  }
-}'
+# 或使用 system-prompt
+claude --system-prompt-file SOUL.md
 ```
 
-詳細文檔：[Claude Code 安裝](#2-claude-code)
+詳細文檔：[adapters/claude-code/agent.md](adapters/claude-code/agent.md)
 
-### 在 Codex 中使用
+### Codex
 
 ```bash
-# 安裝 Codex
-pip install openai-codex
-
-# 使用 Developer Profile
-codex --system-prompt "你是一個專業的軟件開發團隊，參考 ~/.hermes/profiles/developer/SOUL.md 工作。" "幫我創建一個用戶登入系統"
+# 使用 system-prompt 文件
+codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一個用戶登入系統"
 ```
+
+詳細文檔：[adapters/codex/system-prompt.md](adapters/codex/system-prompt.md)
 
 詳細文檔：[Codex 安裝](#3-codex)
 
@@ -187,13 +203,12 @@ openclaw --profile developer gateway run
 
 | 文件 | 用途 |
 |------|------|
-| `SOUL.md` | 身份定位、核心原則、做事方式 |
-| `AGENTS.md` | Session 啟動流程、Think/Plan 互動模式 |
-| `MEMORY.md` | 長期記憶、Subagent 配置、QA Gate |
-| `docs/phases.md` | Think → Ship → Reflect 詳細流程 |
-| `docs/subagents.md` | 18 個 Subagent 角色定義 |
-| `docs/qa-gate.md` | QA Gate 交付清單 |
-| `skills/` | 可復用技能庫（自動文檔生成、壓測等） |
+| `SOUL.md` | 身份定位、核心原則、做事方式（跨平台共享） |
+| `AGENTS.md` | Session 啟動流程、Think/Plan 互動模式（跨平台共享） |
+| `MEMORY.md` | 長期記憶、Subagent 配置、QA Gate（跨平台共享） |
+| `docs/` | 詳細文檔（跨平台共享） |
+| `skills/` | 可復用技能庫（跨平台共享） |
+| `adapters/` | 平台特定適配層（Hermes/Claude Code/Codex） |
 
 ---
 
@@ -233,7 +248,7 @@ openclaw --profile developer gateway run
 > 不需要。你只需要描述你的業務需求和願景，技術細節全部交給 Developer。
 
 **Q: 支持哪些平台？**
-> Discord（主要）、Telegram、Line，以及任何支援 WebSocket 的平台。
+> Hermes Agent、Claude Code、Codex — 使用同一套核心身份，平台適配層分開。
 
 **Q: 如何更新到最新版本？**
 ```bash

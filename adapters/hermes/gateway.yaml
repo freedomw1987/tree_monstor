@@ -1,0 +1,60 @@
+# Hermes Gateway Configuration for Tree Monstor Developer Profile
+# Place this file at ~/.hermes/profiles/developer/gateway.yaml
+
+gateway:
+  # Gateway listening host
+  host: 0.0.0.0
+
+  # Gateway listening port
+  port: 3000
+
+  # Enable WebSocket connections
+  websocket: true
+
+  # Request timeout (seconds)
+  timeout: 300
+
+  # Max concurrent sessions
+  max_sessions: 10
+
+# Authentication configuration
+auth:
+  type: discord
+  bot_token: ${DISCORD_BOT_TOKEN}
+
+# Model configuration
+models:
+  # Default model tier
+  default: medium
+
+  # Model tier definitions
+  tiers:
+    simple:
+      model: gpt-4o-mini
+      max_iterations: 50
+    medium:
+      model: gpt-5.5
+      max_iterations: 300
+    complex:
+      model: gpt-5.5
+      reasoning_effort: high
+      max_iterations: 500
+
+# Logging configuration
+logging:
+  level: ${LOG_LEVEL:-info}
+  format: structured
+
+# Subagent configuration
+subagents:
+  # Max concurrent subagents
+  max_concurrent: 5
+
+  # Subagent timeout (seconds)
+  timeout: 600
+
+  # Default toolsets for subagents
+  default_toolsets:
+    - terminal
+    - file
+    - web

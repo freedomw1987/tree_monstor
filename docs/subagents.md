@@ -33,23 +33,22 @@
 ## Orchestrator Subagent
 
 ### 觸發方式
-```python
-delegate_task(
-    goal="初始化開發專案並建立 Task Board",
-    context="""
-    項目名稱: [名稱]
-    用戶需求: [需求描述]
-    
-    請執行:
-    1. 建立 docs/ 目錄
-    2. 建立 docs/taskboard.md (Task Board)
-    3. 分析需求，拆解為初步 task 列表
-    4. 派發 BA Subagent 開始需求分析
-    5. 更新 Task Board
-    """,
-    role="orchestrator",
-    toolsets=["terminal", "file", "web", "delegation"]
-)
+
+使用平台原生的 delegation 機制。以下是概念示例（語法因平台而異）：
+
+```
+goal="初始化開發專案並建立 Task Board"
+context="""項目名稱: [名稱]
+用戶需求: [需求描述]
+
+請執行:
+1. 建立 docs/ 目錄
+2. 建立 docs/taskboard.md (Task Board)
+3. 分析需求，拆解為初步 task 列表
+4. 派發 BA Subagent 開始需求分析
+5. 更新 Task Board
+"""
+role="orchestrator"
 ```
 
 ### 職責
@@ -72,22 +71,17 @@ delegate_task(
 | **medium** | 一般開發、文件編寫 | gpt-5.5 | 300 |
 | **complex** | 架構設計、複雜 Debug、多檔案重構 | gpt-5.5 + high reasoning | 500 |
 
-### 使用範例
-```python
+### 使用範例（平台原生 delegation）
+
+```
 # 簡單任務
-delegate_task(
-    goal="格式化代碼",
-    context="...",
-    model="gpt-4o-mini"  # 或使用 config default
-)
+goal="格式化代碼"
+model="gpt-4o-mini"
 
 # 複雜任務
-delegate_task(
-    goal="設計微服務架構",
-    context="...",
-    model="openai/gpt-5.5",
-    reasoning_effort="high"
-)
+goal="設計微服務架構"
+model="openai/gpt-5.5"
+reasoning_effort="high"
 ```
 
 ---

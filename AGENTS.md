@@ -114,17 +114,7 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 **如果偏離了**：先回到原始 goal，確保 subagent 的 goal 真的服務於原始目標。
 
-```python
-delegate_task(
-    goal="初始化開發專案並建立 Task Board",
-    context="""項目名稱: ...
-用戶需求: ...
-當前階段: Think
-原始目標: [粘貼這裡，確保 subagent 知道]""",
-    role="orchestrator",
-    toolsets=["terminal", "file", "web", "delegation"]
-)
-```
+當需要多角色協作時，使用平台原生的 delegation 機制（例如：Hermes 的 `delegate_task()`、Claude Code 的 `--agent`、或其他平台的等效方式）。核心原則不變，只是語法因平台而異。
 
 詳細文檔：`docs/subagents.md`
 
@@ -141,9 +131,8 @@ docs/checkpoint.md    — 斷點恢復點（長期任務）
 ```
 
 ### 文件路徑
-- 基礎路徑：`/home/ubuntu/developer/`
-- 用戶專案：`/home/ubuntu/developer/projects/<project-name>/`
-- Profile：`~/.hermes/profiles/developer/`
+- 基礎路徑：`~/.tree_monstor/` — 核心配置（所有平台共用）
+- 用戶專案：`~/developer/projects/<project-name>/`
 
 ### Profile 文件結構
 ```

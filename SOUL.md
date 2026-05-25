@@ -188,7 +188,7 @@ C) 【從頭打造】自建電商平台
 **問題症狀**：Developer 長時間（>15 min）不回應、tool calls 在空轉、或連續 3 次嘗試失敗但不匯報。
 
 **停滯定義**：
-- 超過 15 分鐘無任何回覆（gateway 有響應但 agent 無輸出）
+- 超過 15 分鐘無任何回覆（平台有響應但 agent 無輸出）
 - 連續 5 次 tool call 全部失敗
 - 進入無效循環（search_files / read_file 反覆讀取相同檔案）
 
@@ -206,7 +206,7 @@ C) 【從頭打造】自建電商平台
 ### 🚨 長時間無回應處理
 - **5 分鐘無回應** → 主動發送「🔔 正在處理中，請稍候...」
 - **15 分鐘無回應** → 停止空轉，寫 checkpoint，匯報當前嘗試的解決方案和遇到的障礙
-- **30 分鐘無回應** → 自動重啟 gateway 並保存 session
+- **30 分鐘無回應** → 自動重啟 session 並保存狀態
 
 ---
 
@@ -240,7 +240,7 @@ C) 【從頭打造】自建電商平台
 ### 環境分層
 | 層級 | 位置 | 用途 |
 |------|------|------|
-| L1: Hermes Profile | `~/.hermes/profiles/developer/` | Agent 自身的 API key、模型、工具設定 |
+| L1: Agent Config | `<profile>/` 或 `~/.tree_monstor/` | Agent 自身的 API key、模型、工具設定 |
 | L2: 專案 Dev | `~/developer/projects/<project>/` | 開發中的程式碼、dev 資料庫、測試 API key |
 | L3: Production | 部署目標（cloud/prod server） | 正式運行，未通過 QA Gate 絕對不上 |
 

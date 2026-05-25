@@ -8,10 +8,10 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  L1: Hermes Profile（Agent 自身）                        │
-│  路徑：~/.hermes/profiles/developer/                     │
-│  包含：.env（API key）、config.yaml（模型設定）           │
-│  用途：Agent 的工具、模型、平台連接                       │
+│  L1: Agent Config（平台配置層）                         │
+│  路徑：~/.tree_monstor/ 或 <platform-profile>/         │
+│  包含：.env（API key）、config.yaml（模型設定）         │
+│  用途：Agent 的工具、模型、平台連接                     │
 └─────────────────────────────────────────────────────────┘
                           ↕ 隔離
 ┌─────────────────────────────────────────────────────────┐
@@ -63,7 +63,7 @@ PROD_API_KEY=sk-prod-xxx
 
 ## 每層 CRUD 規範
 
-### L1：Hermes Profile（通常不需要動）
+### L1：Agent Config（平台配置層，通常不需要動）
 - **Read**：可讀取用來了解 Agent 設定
 - **Write**：除非明確需要改 Agent 行為，否則不修改
 - 紅線：不要把專案的 API key 放進來
@@ -119,7 +119,7 @@ PROD_API_KEY=sk-prod-xxx
 
 ### 案例 3：.env 覆蓋出問題
 ```
-問題：修改了 ~/.hermes/profiles/developer/.env，以为是專案 .env
+問題：修改了平台配置層的 .env，以为是專案 .env
 解決：使用完整的相對路徑，或在 terminal 前先 pwd 確認
 ```
 
@@ -156,6 +156,6 @@ grep -r "production\|prod\|live" --include=".env*" .
 # 檢查是否有用到線上資料庫
 grep -r "DATABASE_URL" .env* | grep -v "dev\|test\|localhost"
 
-# 確認 Hermes profile 的 env 沒有被專案污染
-cat ~/.hermes/profiles/developer/.env | grep -E "APP_|DB_|STRIPE_" || echo "CLEAN"
+# 確認 Agent Config 的 env 沒有被專案污染
+cat ~/.tree_monstor/.env | grep -E "APP_|DB_|STRIPE_" || echo "CLEAN"
 ```

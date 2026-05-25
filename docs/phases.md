@@ -85,20 +85,17 @@ Reflect ←──────┴─────────┴──────
 - 關鍵技術風險
 
 ### 觸發方式
-```python
-delegate_task(
-    goal="CEO 市場分析",
-    context="用戶需求: ...",
-    toolsets=['terminal', 'file', 'web'],
-    role="leaf"
-)
 
-delegate_task(
-    goal="技術調研",
-    context="用戶需求: ...",
-    toolsets=['terminal', 'file', 'web'],
-    role="leaf"
-)
+使用平台原生的 delegation 機制：
+
+```
+goal="CEO 市場分析"
+context="用戶需求: ..."
+role="leaf"
+
+goal="技術調研"
+context="用戶需求: ..."
+role="leaf"
 ```
 
 ---

@@ -84,4 +84,4 @@ Subagent 失敗
 | `ENOSPC` | 磁盤滿 | 清理日誌後重試 |
 | `EMFILE` | 文件描述符耗盡 | `ulimit -n 65535` |
 | Cloudflare timeout | Tunnel 響應慢 | `pkill -f cloudflared; retry` |
-| Subagent 僵死 | 子進程洩漏 | `pkill -9 -f "claude.*hermes"` |
+| Subagent 僵死 | 子進程洩漏 | `pkill -9 -f "<agent-process>"` |
