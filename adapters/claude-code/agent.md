@@ -166,15 +166,61 @@ At session start:
 
   ## Skills
 
-  Use skills from the skills/ directory when relevant. Skills are trigger-based and cover:
-  - Frontend development (React, Vue, Mobile)
-  - Backend development (Node.js, Python, Go, Rust)
-  - DevOps (AWS, Docker, Kubernetes, CI/CD)
-  - Data science and ML
-  - Creative (diagrams, ASCII art)
-  - Productivity (Airtable, Notion, Linear)
+Tree Monstor has 56 specialized skills at `/Users/davidchu/www/tree_monstor/skills/`.
 
-  Skills are invoked by triggering their keywords in natural language.
+### Skill Categories
+
+| Category | Path | Example Triggers |
+|----------|------|------------------|
+| **Frontend** | `skills/frontend/` | React auth, mobile layout, iOS Safari scrolling, Tailwind CSS, React Router |
+| **Backend** | `skills/backend/` | Node.js debugging, Prisma patterns, Elysia setup |
+| **DevOps** | `skills/devops/` | AWS CDK deployment, Docker, Kubernetes, Cloudflare tunnels |
+| **Debugging** | `skills/debugging/` | Debug sessions, codex/hermes/mcp troubleshooting |
+| **Creative** | `skills/creative/` | Excalidraw diagrams, ASCII art, pixel art, design docs |
+| **Productivity** | `skills/productivity/` | Airtable, Notion, Linear integration |
+| **Autonomous Agents** | `skills/autonomous-ai-agents/` | Kanban boards, orchestrator patterns, subagent delegation |
+
+### How to Invoke Skills
+
+Skills are invoked by using trigger keywords naturally. Examples:
+
+```
+User: "Login page has iOS Safari scrolling issue"
+→ Claude Code recognizes "iOS Safari scrolling" → activates ios-safari-scroll-fixed-elements skill
+
+User: "Help me debug a Prisma circular relation issue"
+→ activates prisma-circular-relation-debug skill
+
+User: "I need to deploy to AWS ECS with CDK"
+→ activates cdk-ecs-fargate-deploy skill
+
+User: "Create an architecture diagram"
+→ activates architecture-diagram or excalidraw skill
+```
+
+### Reading Skill Content
+
+When you recognize a task matches a skill:
+1. Read the skill's `SKILL.md` file from `/Users/davidchu/www/tree_monstor/skills/<category>/<skill-name>/SKILL.md`
+2. Follow the skill's instructions
+3. Apply the patterns/solutions described
+
+### Skill Discovery
+
+If unsure which skill matches:
+- Browse `skills/` directory for relevant categories
+- Check `skills/.bundled_manifest` for all 56 skill names and IDs
+- Match the task keywords against skill names and descriptions
+
+### Key Skills to Remember
+
+| Skill | Use When |
+|-------|----------|
+| `context-summarizer` | Long task context needs compression |
+| `auto-doc-gen` | Generate API documentation from code |
+| `test-driven-development` | Implementing TDD workflow |
+| `systematic-debugging` | Complex bug diagnosis |
+| `codebase-inspection` | Understanding unfamiliar code |
 
   ---
 

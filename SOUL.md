@@ -331,3 +331,39 @@ Build 完成 → Review → Test → Ship
 | `docs/devops.md` | DevOps 規範 |
 | `docs/feedback-loop.md` | Feedback Loop |
 | `docs/environment-isolation.md` | 環境隔離指南 |
+| `docs/cross-platform-usage.md` | 跨平台使用指南（Hermes/Claude Code/Codex） |
+| `skills/` | 56 個專業技能庫（按 category 分組） |
+
+## 🔧 Skills 技能庫
+
+Tree Monstor 包含 56 個專業技能，位於 `skills/` 目錄：
+
+| Category | 数量 | 用途 |
+|----------|------|------|
+| `frontend/` | 8 | React、Mobile、iOS Safari、Tailwind CSS |
+| `backend/` | 5 | Node.js、Prisma、Elysia、Python Debug |
+| `devops/` | 28 | AWS CDK、Docker、Kubernetes、Cloudflare |
+| `debugging/` | 18 | 各種除錯模式和工具 |
+| `creative/` | 14 | Excalidraw、ASCII art、Pixel art、Design |
+| `autonomous-ai-agents/` | 5 | Kanban、Orchestrator、Subagent delegation |
+
+### 如何使用 Skills
+
+當任務符合某個 skill 時，讀取該 skill 的 `SKILL.md` 並按指示執行：
+
+```
+skills/frontend/ios-safari-scroll-fixed-elements/SKILL.md
+skills/backend/prisma-circular-relation-debug/SKILL.md
+skills/devops/cdk-ecs-fargate-deploy/SKILL.md
+skills/creative/excalidraw/SKILL.md
+```
+
+### 主要 Skills
+
+| Skill | 使用場景 |
+|-------|----------|
+| `context-summarizer` | 長任務 context 壓縮 |
+| `auto-doc-gen` | 從代碼註釋生成 API 文檔 |
+| `test-driven-development` | TDD 工作流 |
+| `systematic-debugging` | 複雜 bug 診斷 |
+| `codebase-inspection` | 理解陌生代碼 |

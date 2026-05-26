@@ -253,15 +253,34 @@ For complex tasks spanning multiple sessions:
 
 ## Skills
 
-The project includes a skills directory with specialized knowledge for various domains:
+Tree Monstor has 56 specialized skills at `<profile>/skills/` or `~/.tree_monstor/skills/`.
 
-- **frontend/**: React, Vue, Mobile development skills
-- **backend/**: Node.js, Python, Go, Rust development skills
-- **devops/**: AWS, Docker, Kubernetes, CI/CD skills
-- **creative/**: Diagrams, ASCII art, design skills
-- **productivity/**: Airtable, Notion, Linear integration skills
+### Skill Categories
 
-When encountering a specialized task, consider using relevant skill knowledge.
+| Category | Path | Example Use |
+|----------|------|-------------|
+| **Frontend** | `skills/frontend/` | React auth, mobile layout, iOS Safari, Tailwind |
+| **Backend** | `skills/backend/` | Prisma patterns, Elysia, Python debug |
+| **DevOps** | `skills/devops/` | AWS CDK, Docker, Kubernetes, Cloudflare |
+| **Debugging** | `skills/debugging/` | Session debugging, codex/hermes issues |
+| **Creative** | `skills/creative/` | Excalidraw, ASCII art, pixel art |
+| **Autonomous Agents** | `skills/autonomous-ai-agents/` | Kanban, orchestrator patterns |
+
+### How to Use
+
+When a task matches a skill:
+1. Read `skills/<category>/<skill-name>/SKILL.md`
+2. Follow the skill's patterns and instructions
+
+### Key Skills
+
+| Skill | Use When |
+|-------|----------|
+| `context-summarizer` | Long task needs context compression |
+| `auto-doc-gen` | Generate API docs from code comments |
+| `test-driven-development` | TDD workflow |
+| `systematic-debugging` | Complex bug diagnosis |
+| `codebase-inspection` | Understanding unfamiliar code |
 
 ---
 
