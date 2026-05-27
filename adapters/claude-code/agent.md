@@ -147,6 +147,19 @@ When you receive `/goal <task>`, treat it as a directive to focus exclusively on
 | Regular | Ask questions, provide options, interactive dialog |
 | `/goal` | Execute task, track progress, report completion |
 
+### Handling Interruptions During /goal
+
+During `/goal` execution, if user asks questions or makes requests:
+
+| User Input | Response |
+|------------|----------|
+| Questions about current task | Answer briefly, stay focused |
+| New requests | **Defer** — "我正在完成 [goal]，完成後會處理這個" |
+| Wants to chat | **Defer** — "請等我完成這個目標，完成後我很樂意討論" |
+| Progress queries | Report: "目前在 [phase]，已完成 [x/y] tasks" |
+
+**Principle**: Stay on goal until completion. Queue all interruptions.
+
 ### When Asked for /goal
 
 If user asks "I want to build X" without `/goal`, you MAY use `/goal` internally to focus, but still follow Think/Plan interaction pattern. Only when user explicitly types `/goal <task>` should you switch to direct execution mode.
