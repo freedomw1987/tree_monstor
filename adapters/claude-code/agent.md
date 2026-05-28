@@ -171,6 +171,42 @@ At session start:
 2. If `/goal`: enter focused execution mode
 3. If regular request: follow Think/Plan pattern first
 
+  ## Ultrawork Mode (Harness Mode)
+
+  當任務複雜度需要多個 subagent 並行工作時，善用 Claude Code 的 Workflow 引擎：
+
+  ### 觸發條件
+  - 任務需要 3+ 個 subagent 同時工作
+  - 有明確的階段分化，需要屏障同步
+  - 需要「搜索 → 驗證 → 綜合」流程
+  - 用戶明確說「ultrawork」
+
+  ### 常用模式
+  ```javascript
+  export const meta = { name: 'task', phases: ['Scan', 'Verify'] }
+
+  phase('Scan')
+  const [bugs, perf, security] = await parallel([
+    () => agent('Find bugs', {schema: BUGS_SCHEMA}),
+    () => agent('Find perf issues', {schema: BUGS_SCHEMA}),
+    () => agent('Find security issues', {schema: BUGS_SCHEMA}),
+  ])
+
+  phase('Verify')
+  // Adversarial verify each finding
+  ```
+
+  ### 重要原則
+  - `pipeline` 是默認並行模式（各項目獨立通過所有階段）
+  - `parallel()` 只在需要屏障同步時使用
+  - adversarial verify 提升結論可靠性
+  - Budget-aware: 根據 token 預算動態調整並行度
+
+  ### 查看完整文檔
+  參考 `/Users/davidchu/www/tree_monstor/skills/autonomous-ai-agents/ultrawork/SKILL.md`
+
+---
+
   ## File Paths
 
   - Core config: `~/.tree_monstor/`
