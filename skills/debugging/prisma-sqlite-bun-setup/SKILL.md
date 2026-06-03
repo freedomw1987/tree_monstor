@@ -16,27 +16,56 @@ related_skills: ["elysia-typescript-workarounds", "elysia-aws-lambda-deploy"]
 
 ## Prisma 7 vs Prisma 5 關鍵差異
 
-### Prisma 7 必須有的設定
+> **⚠️ 實戰教訓 (2026-06-04): Prisma 7 嘅 migration 路徑極不順，強烈建議用 Prisma 5 開始新 SQLite 項目。**
 
-**1. `prisma.config.ts`（Prisma 7 新增）**
-```typescript
-import "dotenv/config"
-import { defineConfig } from "prisma/config"
+### Prisma 5（推薦用呢個做 SQLite 開發）✅
 
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: { path: "prisma/migrations" },
-  datasource: { url: process.env["DATABASE_URL"] },
-})
+最簡單、最穩定。`schema.prisma` 照常寫 `url = env("DATABASE_URL")`，`prisma migrate dev` 直接 work。
+
+```bash
+bun add prisma@5 @prisma/client@5
+bunx prisma generate
+bunx prisma migrate dev --name init
 ```
 
-若沒有這個檔案，`prisma generate` 會報錯。
+### Prisma 7 — 撞牆實錄 ❌
 
-**2. `datasource` 必須有 `url` 欄位**
+裝 `prisma@latest` 自動拉到 7.8.0，立即撞：
+
+1. **`prisma generate` 失敗**：
+   ```
+   error: The datasource property `url` is no longer supported in schema files.
+   Move connection URLs for Migrate to `prisma.config.ts` ...
+   ```
+
+2. **改用 Prisma 7 規範路徑**，要 `prisma.config.ts` + `prisma-client-js` output：
+   ```typescript
+   // prisma.config.ts
+   import "dotenv/config"
+   import { defineConfig } from "prisma/config"
+   export default defineConfig({
+     schema: "prisma/schema.prisma",
+     migrations: { path: "prisma/migrations" },
+     datasource: { url: process.env["DATABASE_URL"] },
+   })
+   ```
+   然後 `schema.prisma` 入面 `datasource db { url = env("DATABASE_URL") }` 會繼續撞牆 — 必須用新嘅 `previewFeatures = ["driverAdapters"]` + adapter 模式（極複雜）。
+
+3. **更慘**：`prisma migrate dev --name init` 跑得起，但 `prisma.answer.create()` runtime 因為 SQLite + driver adapter 配合未成熟會有微妙問題。
+
+**結論：Prisma 7 唔啱 SQLite 開發，downgrade 去 Prisma 5.22.0 一次搞掂。**
+
+### Prisma 5 schema 範例（推薦）
+
 ```prisma
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")   # ← Prisma 5 可省略，Prisma 7 不行
+  url      = env("DATABASE_URL")   # Prisma 5 直接 work
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"   # default
 }
 ```
 
