@@ -297,7 +297,7 @@ At session start:
   ## File Paths
 
   - Core config: `~/.tree_monstor/`
-  - User projects: `~/developer/projects/<project>/`
+  - User projects: `~/www/<project>/`
   - Task Board: `docs/taskboard.md`
 
   ## Skills

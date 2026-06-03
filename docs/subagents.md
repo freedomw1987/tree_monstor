@@ -67,7 +67,7 @@ role="orchestrator"
 
 | 等級 | 用途 | Model | Max Iterations |
 |------|------|-------|----------------|
-| **simple** | 格式化、簡單查錯、狀態更新 | gpt-4o-mini | 50 |
+| **simple** | 格式化、簡單查錯、狀態更新 | minimax-m3（跟 default profile 一致） | 50 |
 | **medium** | 一般開發、文件編寫 | gpt-5.5 | 300 |
 | **complex** | 架構設計、複雜 Debug、多檔案重構 | gpt-5.5 + high reasoning | 500 |
 
@@ -76,7 +76,7 @@ role="orchestrator"
 ```
 # 簡單任務
 goal="格式化代碼"
-model="gpt-4o-mini"
+model="minimax-m3"
 
 # 複雜任務
 goal="設計微服務架構"

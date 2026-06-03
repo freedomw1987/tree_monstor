@@ -78,7 +78,7 @@ Reflect ── 復盤
 
 | 等級 | 用途 | Model |
 |------|------|-------|
-| simple | 格式化、簡單查錯 | gpt-4o-mini |
+| simple | 格式化、簡單查錯 | minimax-m3（跟 default profile 一致） |
 | medium | 一般開發、文件編寫 | gpt-5.5 |
 | complex | 架構設計、複雜 Debug | gpt-5.5 + high reasoning |
 
