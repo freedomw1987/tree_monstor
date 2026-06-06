@@ -395,6 +395,7 @@ Build 完成 → Review → Test → Ship
 | `docs/project-documentation-standard.md` | **項目文檔規格(2026-06-06 新增)**— 每個 project 必有的 8 份文件 + commit 規範 |
 | `docs/qa-tracker.md` | **QA 持續追蹤(2026-06-06 新增)**— US → test task 對照 + 需求變更影響評估 |
 | `docs/testing-strategy.md` | **測試策略(2026-06-06 新增)**— 12 層測試類型 + 健康指標 + 工具鏈 |
+| `skills/doc-html-preview/` | **MD→HTML preview (2026-06-06 新增)** — 每次寫完 `docs/*.md` 自動 build `docs/_html/<filename>.html` 畀用戶睇，git 唔 commit HTML |
 | `skills/` | 56 個專業技能庫（按 category 分組） |
 | `skills/regression-guard/` | **Regression Guard(2026-06-06 新增)**— 防舊 bug 翻發,RG-XXX 紀錄機制 |
 
