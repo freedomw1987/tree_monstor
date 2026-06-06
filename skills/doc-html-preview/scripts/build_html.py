@@ -22,6 +22,8 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 TEMPLATE_DIR = SCRIPT_DIR.parent / "templates"
 CSS_FILE = TEMPLATE_DIR / "github-like.css"
 BOSS_TEMPLATE = TEMPLATE_DIR / "boss-template.html"
+DECISION_CSS_FILE = TEMPLATE_DIR / "decision-capture.css"
+DECISION_JS_FILE = TEMPLATE_DIR / "decision-capture.js"
 
 
 def load_css() -> str:
@@ -171,17 +173,30 @@ def build_boss(src: str, out: str, fname: str, project: str, built_at: str, meta
         decisions = summary.get("decisions", []) or []
         if decisions:
             decisions_inner = ""
-            for d in decisions:
+            for d_idx, d in enumerate(decisions):
                 blocking = d.get("blocking", False)
                 blocking_tag = '<span class="blocking-tag">要你拍板</span>' if blocking else ""
+                default_label = d.get("default", "")
                 options_html = ""
+                qid = f"q-{d_idx}"
                 for opt in d.get("options", []):
                     label = opt.get("label", "")
                     pros = opt.get("pros", "")
                     cons = opt.get("cons", "")
+                    # default match: either exact label match, or label starts with default
+                    # (e.g. default="A" matches "A. SendGrid SaaS")
+                    is_default = (label == default_label) or (
+                        default_label and label.startswith(default_label + ".") or
+                        default_label and label.startswith(default_label + " ")
+                    )
+                    default_marker = '<span class="default-marker">預設</span>' if is_default else ""
+                    default_class = " is-default" if is_default else ""
                     options_html += (
-                        f'<div class="option">'
+                        f'<div class="option{default_class}" '
+                        f'data-question-id="{qid}" '
+                        f'data-option-label="{label}">'
                         f'<span class="opt-label">{label}</span>'
+                        f'{default_marker}'
                         f'<span class="opt-pros">+ {pros}</span> '
                         f'<span class="opt-cons">- {cons}</span>'
                         f'</div>'
@@ -231,6 +246,29 @@ def build_boss(src: str, out: str, fname: str, project: str, built_at: str, meta
                    .replace("__BASENAME__", fname) \
                    .replace("__GENERATED_AT__", generated_at) \
                    .replace("__GENERATED_BY__", generated_by)
+
+    # Inject decision-capture CSS (inline <style>)
+    decision_css = DECISION_CSS_FILE.read_text(encoding="utf-8")
+    html = html.replace(
+        "</head>",
+        f"<style>\n{decision_css}\n</style>\n</head>",
+        1,
+    )
+
+    # Inject decision-capture JS (inline <script> before </body>)
+    decision_js = DECISION_JS_FILE.read_text(encoding="utf-8")
+    html = html.replace(
+        "</body>",
+        f'<script>\n{decision_js}\n</script>\n</body>',
+        1,
+    )
+
+    # Tag <body> with data-doc so the JS knows the storage key
+    html = html.replace(
+        "<body>",
+        f'<body data-doc="{fname}">',
+        1,
+    )
 
     Path(out).write_text(html, encoding="utf-8")
 

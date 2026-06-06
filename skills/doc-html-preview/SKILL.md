@@ -54,6 +54,21 @@ This skill produces **both HTMLs side-by-side**, generated from the same MD. The
 5. **Do NOT** send a Discord notification (David opens HTML manually via `file://`).
 6. **Do NOT** commit the HTML or meta JSON to git.
 
+### Audience-mismatch red flag (learned 2026-06-06)
+
+If David says **"stop"**, **"我想要 X version"**, **"for the boss"**, **"engineer 唔識呢啲"**, or otherwise corrects the tone/audience of docs you've already produced:
+
+- **STOP** building engineering-version HTMLs. You almost certainly picked the wrong audience. Don't apologize and re-render — re-derive the doc set.
+- Check what David actually wants: usually **two separate MDs**:
+  - `docs/PRD.md` and `docs/DESIGN.md` — executive / business-language (persona, pillars, KPIs, mockups, FAQ)
+  - `docs/architecture.md` / `database.md` / `api.md` / etc. — developer reference (schemas, code samples)
+- These have **different vocabularies**: PRD says "polymorphic line items" in one sentence + visual mockup, API doc says `t.Object({ productId: t.Optional(t.String()) })`. The PRD/Design must not contain code blocks; the reference docs may.
+- **Build the bundled HTML AFTER the doc split is right** — re-deriving the docs is the right move, not a workaround. Don't fight the audience.
+
+### When David asks "give me html version" or "show me project docs"
+
+Load this skill and run the **bundled** variant (`scripts/build_bundled_html.cjs`) — it gives the most shareable artifact in one command. The bundled variant's output goes in `docs/` (default name: `<project>-docs.html`); see [`references/bundled-html-recipe.md`](./references/bundled-html-recipe.md) for the gotchas. **Always read that reference file before running** — every pitfall there (`.cjs` extension, `</script>` escape, regex footgun, leading H1 strip) bit at least one session.
+
 ## How to use
 
 ### After writing a project doc
@@ -139,6 +154,51 @@ This is for when David wants full control over what he sees, and doesn't want AI
 - ❌ Does NOT send Discord notifications
 - ❌ Does NOT commit HTML or meta JSON to git
 
+## Bundled single-file variant (alternative output)
+
+The default `build.sh` produces **one HTML per source MD** plus a
+boss variant (N×2 files for N docs). For projects where the user
+asks for a single portable / shareable artifact, use the bundled
+variant instead:
+
+```bash
+node scripts/build_bundled_html.cjs <project-name>
+# Output: ~/www/<project>/docs/<project>-docs.html
+```
+
+The bundled variant is **one self-contained HTML file** containing
+every MD in the project, with in-browser sidebar navigation, search,
+and theme toggle. Opens directly via `file://` on any machine
+without a local server — ideal for emailing or archiving.
+
+**Differences from the per-doc output:**
+
+| Aspect | Per-doc (`build.sh`) | Bundled (`build_bundled_html.cjs`) |
+|--------|----------------------|-------------------------------------|
+| File count | N×2 (engineering + boss per MD) | 1 |
+| Navigation | Browser tab-switching | In-page sidebar + hash routing |
+| Search | None (browsers do it per file) | Client-side full-text, `/` shortcut |
+| Themes | Light + dark per file | Light + dark, persisted in localStorage |
+| Server | None (file://) | None (file://) |
+| Gitignore | `docs/_html/` | Same — the bundled file goes in `docs/` |
+| MD feature support | Full pandoc | GFM subset (headings, code, lists, tables, blockquotes, inline) — no LaTeX/Mermaid |
+| Size | ~50 KB per doc | ~20 KB + MD content (~170 KB for an 11-doc project) |
+
+The bundled script auto-discovers every `docs/*.md` and the repo-root
+`README.md`, so you don't have to list them. For a different list,
+pass extra MD paths as positional args.
+
+**Recipe + gotchas** (read this before running the bundled script
+on a new project — covers the `.cjs` extension requirement for
+`"type": "module"` projects, the `</script>` escape in content,
+and the regex-extraction footgun when verifying): see
+[`references/bundled-html-recipe.md`](./references/bundled-html-recipe.md).
+
+**When David asks for "html version of the docs" or "show me the
+project docs":** load this skill and run the **bundled** variant —
+it gives the most shareable artifact in one command.
+
+
 ## Future evolution
 
 | If you want... | Then consider... |
@@ -158,6 +218,8 @@ This is for when David wants full control over what he sees, and doesn't want AI
 | `scripts/build_html.py` | Python — renders engineering + boss HTMLs from one MD + optional meta JSON |
 | `templates/github-like.css` | Engineering version stylesheet (light + dark) |
 | `templates/boss-template.html` | Boss version template (placeholder + content slots) |
+| `scripts/build_bundled_html.cjs` | **Bundled variant** — one self-contained HTML file with sidebar + search + theme toggle |
+| `references/bundled-html-recipe.md` | Recipe + gotchas for the bundled variant (`.cjs` extension, `</script>` escape, regex footgun) |
 | `gitignore-snippet.md` | What to add to project `.gitignore` |
 
 ## Related files in developer profile
