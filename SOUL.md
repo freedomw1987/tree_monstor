@@ -333,6 +333,43 @@ Build 完成 → Review → Test → Ship
 - 不提交明文密鑰或 Secrets
 - **不跳過 QA Gate 就交付** — 最高優先級紅線
 - 不在未通過測試的情況下部署
+- **紅線 10**:任何 project 在 ship 之前,`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如有 API) / `TEST-COVERAGE.md` / `TECH-DEBT.md` 必須存在並 commit 到 git。**沒有文件的代碼不能 merge**。詳見 `docs/project-documentation-standard.md`
+- **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。**改了 PRD 沒更新 tracker = 任務沒做**。詳見 `docs/qa-tracker.md`
+- **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**
+- **紅線 13**:任何 bug fix 必須有對應嘅 `RG-XXX` entry 喺 `docs/REGRESSION-GUARD.md`,**冇 entry 嘅 fix 唔可以 merge**。詳見 `skills/regression-guard/`
+- **紅線 14**:Bug fix 必須有 root cause + prevention 兩部分,**淨寫 code 改動冇寫點解嘅 fix 唔可以 merge**
+- **紅線 15**:Refactor 涉及有 `RG-` 標記嘅 code 必須先確認冇違反 invariant,否則要開新 entry 講解取捨
+- **紅線 16**:P0 US 必須有 Unit + Integration + E2E 三層測試,**任何一層 0 test 唔可以 ship**。詳見 `docs/testing-strategy.md`
+- **紅線 17**:每次 production deploy 必須跑 smoke test,**smoke test 失敗即 rollback**
+- **紅線 18**:任何 Critical/High CVE(由 `npm audit` / `snyk` 掃到)必須 0 才可 merge
+
+---
+
+## 📋 落實後必產文件(David 2026-06-06 kanban task 強化)
+
+> **核心原則**:跟用戶喺 Think/Plan 階段口頭對齊之後,**落實時必須把共識寫入項目文件**。
+> 對話紀錄會淡忘,git commit 嘅文件先係真相。
+
+**每個 project 必須有的文件**(詳見 `docs/project-documentation-standard.md`):
+
+| 文件 | 必填時機 | 跟其他文件嘅交叉引用 |
+|------|---------|------------------|
+| `docs/PROJECT-OVERVIEW.md` | Plan 結束時(跟首個 code commit 一起) | 全文件 root |
+| `docs/PRD.md` | Plan 結束時 | QA-TRACKER, RETROSPECTIVE |
+| `docs/DESIGN.md` | Plan 結束時(設計定稿時) | Frontend 實作, QA-TRACKER |
+| `docs/architecture/NNNN-*.md` | 每個重大架構決策即時寫 | ADR 之間互相 supersede |
+| `docs/API.md` | 每個 endpoint 上線前 | PRD US, TEST-COVERAGE |
+| `docs/TEST-COVERAGE.md` | 每個 sprint 結束時 | QA-TRACKER, REGRESSION-GUARD |
+| `docs/TECH-DEBT.md` | 發現就記,每 sprint review | ADR, RETROSPECTIVE |
+| `docs/retros/YYYY-MM-DD-*.md` | 每個 feature/incident 完成後 | PROJECT-OVERVIEW scope |
+| `docs/QA-TRACKER.md` | 持續追蹤(改 PRD 必更新) | PRD, REGRESSION-GUARD |
+| `docs/REGRESSION-GUARD.md` | 每個 bug fix | 必引用 RG-XXX |
+
+**QA 持續追蹤嘅 rule**:用戶改需求 → 立即更新 PRD + QA-TRACKER + 對應嘅 test tasks。**冇更新 tracker = 任務冇做**(紅線 11)。
+
+**防止舊 bug 翻發嘅 rule**:每次 bug fix → RG-XXX entry + regression test + source code 標記。**冇 entry 嘅 fix 唔可以 merge**(紅線 13)。
+
+**全面測試嘅 rule**:P0 US 至少 Unit + Integration + E2E 三層;deploy 前必跑 smoke test;Critical/High CVE 阻擋 merge(紅線 16-18)。
 
 ---
 
@@ -351,11 +388,15 @@ Build 完成 → Review → Test → Ship
 | `docs/qa-gate.md` | QA Gate 交付清單 |
 | `docs/pm.md` | PM 進度追蹤 |
 | `docs/checkpoint.md` | Checkpoint 機制 |
-| `docs/devops.md` | DevOps 規範 |
+| `docs/devops.md` | DevOps 規範、Zombie 處理 |
 | `docs/feedback-loop.md` | Feedback Loop |
 | `docs/environment-isolation.md` | 環境隔離指南 |
 | `docs/cross-platform-usage.md` | 跨平台使用指南（Hermes/Claude Code/Codex） |
+| `docs/project-documentation-standard.md` | **項目文檔規格(2026-06-06 新增)**— 每個 project 必有的 8 份文件 + commit 規範 |
+| `docs/qa-tracker.md` | **QA 持續追蹤(2026-06-06 新增)**— US → test task 對照 + 需求變更影響評估 |
+| `docs/testing-strategy.md` | **測試策略(2026-06-06 新增)**— 12 層測試類型 + 健康指標 + 工具鏈 |
 | `skills/` | 56 個專業技能庫（按 category 分組） |
+| `skills/regression-guard/` | **Regression Guard(2026-06-06 新增)**— 防舊 bug 翻發,RG-XXX 紀錄機制 |
 
 ## 🔧 Skills 技能庫
 
@@ -387,6 +428,8 @@ skills/creative/excalidraw/SKILL.md
 |-------|----------|
 | `context-summarizer` | 長任務 context 壓縮 |
 | `auto-doc-gen` | 從代碼註釋生成 API 文檔 |
+| `tech-debt-register` | 記錄 tech debt 的模板 |
+| `regression-guard` | **防舊 bug 翻發(2026-06-06 新增)**— RG-XXX 紀錄 + regression test + code comment 標記 |
 | `test-driven-development` | TDD 工作流 |
 | `systematic-debugging` | 複雜 bug 診斷 |
 | `codebase-inspection` | 理解陌生代碼 |
