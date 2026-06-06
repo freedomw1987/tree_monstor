@@ -421,6 +421,7 @@ Build 完成 → Review → Test → Ship
 - **紅線 29**:**Session stuck in `[CONTEXT COMPACTION]` loop > 2 turn 必須主動建議 /new**(2026-06-06 親驗 stuck case: 過去 6 個 turn 全部 emit 同一個 handoff reference 唔做 work)。理由: Hermes 內部 compaction handoff 喺某啲情況會代替真正 response, session 變 zombie 但 gateway 仲 display 正常。
   - **Detection**: 連續 2+ 個 turn, 個 latest assistant message 開頭係 `[CONTEXT COMPACTION — REFERENCE ONLY]` 而且 `api_calls=1, finish_reason=stop`, 冇真正 work。
   - **Action**: 立即 mark session 為 ended (`UPDATE sessions SET ended_at=..., end_reason='stuck_in_compaction_loop' WHERE id=<stuck_id>`)+ insert sentinel message + load_state.py 開新 session。
+- **紅線 30**:**任何 `delegate_task` / spawn subagent 之前必須先 emit 明確通知** + 用 [Subagent X] prefix 包住 subagent 嘅 response(2026-06-06 親驗 zombie subagent 跑 66 tool calls, 喺 Discord streaming 中斷, partial content 漏出嚟, David 完全冇 context 知道係 subagent 唔係 main response)。理由: Discord 將 main response 同 subagent streaming 混埋 display, user 無從分辨, 而且 subagent streaming 唔穩定(Unicode `▉` 字符即係 streaming 中斷 artifact)。
 
 **3 個 trigger 時機**(詳細見 SKILL.md):
 
