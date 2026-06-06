@@ -403,6 +403,42 @@ Build 完成 → Review → Test → Ship
 
 ---
 
+## 🧠 Dev Task Memory 規約(David 2026-06-06 加 skill `dev-task-memory` 後新增)
+
+> **背景**:Hang fix 解決咗「developer 唔回應」嘅問題,但**冇解決「context 處理完之後 dev task 嘅 decisions / state 點樣唔好被遺忘」**。
+> 即使壓縮成功、session 重新開始,developer 之前做嘅 decisions (用 Hono 唔用 Express)、next steps (寫 Companies 編輯) 都會 lost — 除非 persist 落 file system。
+>
+> **修法**:新 skill `skills/dev-task-memory/` 5-layer architecture:
+> 1. **Trigger** (紅線 21-22 hook) → 2. **State file** (`docs/_meta/dev-task-state.md`) → 3. **Git checkpoint** (`hermes checkpoints` enabled) → 4. **External memory** (holographic/mem0, fallback local jsonl) → 5. **Cross-session search** (`session_search` FTS5)
+>
+> 詳見 `skills/dev-task-memory/SKILL.md`。
+
+- **紅線 24**:**每個 long dev task 開始時必須 `save_state.py --project <name> --goal "..." --trigger task-start`**, 唔可以 rely on LLM memory(會被 compression 清)。理由: 6/4-6/6 多次 hang fix 證明, 即使有 compression, decisions 仍 lost。
+- **紅線 25**:**每 30 分鐘或每 10 個 tool calls 必須 re-save**(`--trigger auto-mid-task`)+ `sync_external.py --project <name>` push facts 落 external memory。理由: 1 個鐘嘅 coding work 可能 produce 5-10 個 decisions, 唔同步等於 lost。
+- **紅線 26**:**每個 Decision 必須有 WHY** — 唔可以淨寫 "Use Hono", 要寫 "Use Hono 4x 細, edge 啱用"。理由: Compression 會 strip detail, 但 WHY 必須 keep, 否則下個 session 會重新犯同樣嘅 mistake。
+- **紅線 27**:**Resume 時必須先 `load_state.py --project <name> --search-sessions`**, 唔可以假設自己記得上一個 session 做過咩。理由: LLM memory 唔可靠, file system 至可靠。
+- **紅線 28**:**State file 唔可以 commit 落 git** — `docs/_meta/*` 同 `dev-task-state.md` 必須喺每個 project 嘅 `.gitignore`。每個新 project 必須 `bash skills/dev-task-memory/scripts/setup_gitignore.sh <path>` 一次。理由: State 係 runtime metadata, 唔係 source code。
+
+**3 個 trigger 時機**(詳細見 SKILL.md):
+
+| 時機 | 命令 | 輸出 |
+|------|------|------|
+| **Task 開始** | `python3 scripts/save_state.py --project <name> --goal "..." --trigger task-start` | 建立 fresh state file |
+| **Task 中段** | `python3 scripts/save_state.py --project <name> --trigger auto-mid-task`<br>`python3 scripts/sync_external.py --project <name>` | Update state + push facts |
+| **Resume** | `python3 scripts/load_state.py --project <name> --search-sessions` | 注入 context, 跟 "Next 3-5 Steps" 繼續 |
+
+**同其他 skills 嘅關係**:
+- `context-summarizer` (existing) — 自動壓 context, **但** decisions 會 lost。dev-task-memory 補佢嘅缺點。
+- `regression-guard` (existing) — 防舊 bug 翻發。dev-task-memory 嘅 Risks section 配 RG-XXX ID。
+- `auto-doc-gen` (existing) — 自動 API doc。dev-task-memory 嘅 Decisions 配 doc rationale。
+
+**User-visible 預期**:
+- Hang 後 resume 0 個 decision lost
+- Compression 後 30s 內 emit "📍 progress 點 N/M" + 跟住 next steps 繼續
+- 1 個鐘後再開新 session 問 "之前我哋做咗咩", agent 即時 recall top-3 relevant sessions
+
+---
+
 ## 📚 文檔索引
 
 | 文檔 | 用途 |
