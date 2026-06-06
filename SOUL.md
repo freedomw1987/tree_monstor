@@ -418,6 +418,9 @@ Build 完成 → Review → Test → Ship
 - **紅線 26**:**每個 Decision 必須有 WHY** — 唔可以淨寫 "Use Hono", 要寫 "Use Hono 4x 細, edge 啱用"。理由: Compression 會 strip detail, 但 WHY 必須 keep, 否則下個 session 會重新犯同樣嘅 mistake。
 - **紅線 27**:**Resume 時必須先 `load_state.py --project <name> --search-sessions`**, 唔可以假設自己記得上一個 session 做過咩。理由: LLM memory 唔可靠, file system 至可靠。
 - **紅線 28**:**State file 唔可以 commit 落 git** — `docs/_meta/*` 同 `dev-task-state.md` 必須喺每個 project 嘅 `.gitignore`。每個新 project 必須 `bash skills/dev-task-memory/scripts/setup_gitignore.sh <path>` 一次。理由: State 係 runtime metadata, 唔係 source code。
+- **紅線 29**:**Session stuck in `[CONTEXT COMPACTION]` loop > 2 turn 必須主動建議 /new**(2026-06-06 親驗 stuck case: 過去 6 個 turn 全部 emit 同一個 handoff reference 唔做 work)。理由: Hermes 內部 compaction handoff 喺某啲情況會代替真正 response, session 變 zombie 但 gateway 仲 display 正常。
+  - **Detection**: 連續 2+ 個 turn, 個 latest assistant message 開頭係 `[CONTEXT COMPACTION — REFERENCE ONLY]` 而且 `api_calls=1, finish_reason=stop`, 冇真正 work。
+  - **Action**: 立即 mark session 為 ended (`UPDATE sessions SET ended_at=..., end_reason='stuck_in_compaction_loop' WHERE id=<stuck_id>`)+ insert sentinel message + load_state.py 開新 session。
 
 **3 個 trigger 時機**(詳細見 SKILL.md):
 
