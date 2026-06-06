@@ -373,6 +373,36 @@ Build 完成 → Review → Test → Ship
 
 ---
 
+## 🚨 Hang Fix 規約(David 2026-06-06 親驗 hang 後新增)
+
+> **背景**:6/5-6/6 developer profile 多次出現「developer 收 message 後 10–60 分鐘先回應」,David 親驗:
+> - 7/6 19:12 `?` → 19:15 回應(193s, **history 387 messages**)
+> - 7/6 19:16 `C` → 19:33 回應(1025s,**47 API calls**,history 506)
+> - 5/6 22:42 → 6/6 01:40 回應(**10710s = 3 小時**,78 API calls)
+> - auto-compression 19:34 才觸發(85% threshold,258k tokens)
+>
+> **根因**:`agent.max_turns=150`(default 90)+ 沒 streaming feedback + context 膨脹失控 + clarify loop 600s + Discord stream delivery not confirmed。
+>
+> **修法**:見下「紅線 19-23」+ `config.yaml` v3.1.0-hang-fix。
+
+- **紅線 19**:**Subagent 跑 tool calls > 30 時必須 emit 中段 progress**(用 `send_message` 或 text response),唔可以悶頭跑到 100 calls 先出 message。理由:避免 David 誤以為 hang。
+- **紅線 20**:**Clarify loop 必須 < 180 秒**。3 條內未確認 → 自行 pick reasonable default + 標 `⚠️ 預設選擇` 繼續。理由:`config.yaml` `clarify_timeout: 180`(2026-06-06 由 600 改)。
+- **紅線 21**:**Long-running task 必須 prefer `delegate_task`** 而唔係 inline subagent routine。Subagent 跑獨立 session,**唔會污染 main session context**(即解決「history 506 messages」問題)。理由:context 膨脹係 hang 嘅 #1 root cause。
+- **紅線 22**:**Session > 50 turns 時主動建議 `/new`**。理由:`compression.threshold: 0.40` + `hygiene_hard_message_limit: 250` 雖然會自動壓,但**重新開始 session 永遠乾淨過壓縮**(David 19:34 親測「壓完 43 條就 30s 內回應」)。
+- **紅線 23**:**每次 emit final response 前 emit "📍 progress 點 N/M"** 喺 message 開頭,等 David 知道「仲未 hang」。理由:`streaming.enabled: true` + `display.platforms.discord.streaming: true` 雖然已開,**但 Discord webhook ACK 不穩定** 時仍要 fallback。
+
+**User-visible 行為改變**(v3.1.0-hang-fix 生效後):
+
+| 指標 | 之前 | 之後(預期) |
+|------|------|-----------|
+| Median response time | 629.9s (10.5 分鐘) | < 300s |
+| Turns 慢過 10 分鐘 | 17/34 (50%) | < 5/34 (15%) |
+| Hang 個案(>1hr) | 1-2 個 / day | 0 個 / day |
+| 3 小時 hang | 1 個 | 0 個 |
+| Context 膨脹 trigger | 50% threshold, 85% hard | 40% threshold, 250-msg hard |
+
+---
+
 ## 📚 文檔索引
 
 | 文檔 | 用途 |
