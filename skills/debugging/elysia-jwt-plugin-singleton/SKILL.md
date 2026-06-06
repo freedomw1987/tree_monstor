@@ -166,3 +166,68 @@ curl -s http://localhost:3000/api/courses \
 - `elysia-route-conflict-debug`: route parameter name conflicts
 - `elysia-typescript-workarounds`: TypeScript issues with Elysia
 - `systematic-debugging`: general debugging methodology
+
+---
+
+## ⚠️ Day 9: Different 401 — `.derive()` silently returns undefined on POST
+
+The singleton bug above is one source of 401s. There is a SECOND Elysia 1.2
+401 trap that looks identical from the outside (`userId: undefined`,
+handler responds 401) but has a totally different root cause: **`derive`
+hooks are not run for POST handlers when a sibling `.get()` route is also
+registered on the same Elysia instance and uses a body schema.** Elysia
+caches the validator and skips re-evaluating the `derive` chain on POST
+even though `userId` is destructured in the handler signature.
+
+**Symptom** (Day 9, crm-system):
+- `GET /auth/me` and `GET /quotations` (no body) → 200 OK
+- `POST /quotations` → 401 "Unauthorized" even with a valid bearer token
+- `console.log` inside the `derive` callback never fires on POST
+- Other routes' `POST` handlers return 500/401 depending on whether they
+  gate on `if (!userId) return 401`
+
+**Root cause**: Elysia 1.2's `derive` cache. When a route previously
+validated with a body schema (the `.get('/')` sibling), the validator
+re-uses the cached `derive` result for the chain's POST children. The
+`async derive` is never re-evaluated. The destructure `userId` works
+in TypeScript (the type is set) but at runtime it's `undefined`.
+
+**Fix (recommended — bulletproof)**: drop `derive` for auth entirely
+and inline-verify inside each protected handler. Costs one extra
+`await jwt.verify(token)` per request but bypasses the cache.
+
+```ts
+// lib/context.ts
+import { Elysia } from 'elysia';
+export const authContext = new Elysia({ name: 'auth-context' });
+
+export async function getUserIdFromRequest(
+  request: Request,
+  jwt: { verify: (token: string) => Promise<unknown> }
+): Promise<string | null> {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7);
+  const payload = await jwt.verify(token);
+  if (!payload || typeof payload !== 'object') return null;
+  return (payload as { sub?: string }).sub ?? null;
+}
+```
+
+```ts
+// In each protected route handler
+.post('/', async ({ body, jwt, set, request }) => {
+  const userId = await getUserIdFromRequest(request, jwt);
+  if (!userId) { set.status = 401; return { error: 'Unauthorized' }; }
+  // ... rest of handler
+})
+```
+
+**How to detect** (5-min diagnostic):
+1. `console.log` inside your `derive` callback
+2. Hit any POST → log never appears
+3. `userId` in the handler is `undefined` despite a valid token
+4. GET routes on the same instance work fine
+
+If you see this pattern, you have the derive-cache bug — switch to
+`getUserIdFromRequest` inline verification.

@@ -1,8 +1,8 @@
 ---
 name: dev-task-memory
 description: 5-layer persistent memory for in-progress dev tasks — survives context compression, /new, gateway restart. State file + git checkpoints + external memory + cross-session search.
-trigger: "context compression / /new / gateway restart / '繼續之前的任務' / 'where were we' / 'save state' / 'checkpoint task'"
-version: 1
+trigger: "context compression / /new / gateway restart / '繼續之前的任務' / 'where were we' / 'save state' / 'checkpoint task' / subagent 做到一半 stop 嘅 WIP"
+version: 2
 category: devops
 ---
 
@@ -23,6 +23,9 @@ category: devops
 │  • gateway restart                                          │
 │  • /new slash command                                       │
 │  • User explicit "save state" / "checkpoint"               │
+│  • **Subagent 做到一半 stop 嘅 WIP** (新 trigger — 2026-06-06)│
+│    → working tree 有 untracked / modified files, 跟住用    │
+│      `references/subagent-wip-pickup-recipe.md` 嘅 6-step   │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -70,6 +73,12 @@ category: devops
 | `scripts/load_state.py` | Read state file + 注入 context (for resume) | New session / /new / after-compression / after-restart |
 | `scripts/sync_external.py` | Extract facts → push to external memory (or local fallback) | 每次 save_state 完之後 fire |
 
+## 📂 支援 References
+
+| File | 觸發時機 |
+|------|---------|
+| `references/subagent-wip-pickup-recipe.md` | Resume 一個 subagent 做到一半停咗嘅 task — working tree 有 uncommitted WIP, 跟住 6-step recipe: snapshot → commit history → read untracked → audit side effects → finish → verify-before-declaring-done。涵蓋 duplicate gitignore entries、batch-fix 嘅 anti-pattern、revert detection 等。 |
+
 ## 📖 標準使用流程
 
 ### 1) 開新 dev task (Plan → Build 開始)
@@ -111,6 +120,18 @@ Agent 收到 output 後:
 1. Read state file content
 2. Inject 入 conversation context
 3. Resume 跟住 "Next 3-5 Steps" 繼續做
+
+### 3b) Subagent WIP Pickup (新 — 2026-06-06)
+
+Working tree 有 untracked + modified files 由前一個 subagent 留低, 唔係 from compression。
+**唔好** call `load_state.py` (冇 state file, 從未 start), **唔好** re-delegate (浪費 70-90% 嘅 WIP)。
+跟 `references/subagent-wip-pickup-recipe.md` 嘅 6-step recipe:
+1. `git status` + `git diff --stat` snapshot working tree
+2. `git log --oneline -10` check partial progress
+3. Read untracked / modified files in full
+4. Audit side effects (`.gitignore` duplicates, package.json, etc.)
+5. Finish from actual pickup point
+6. `git log --oneline origin/main..HEAD` empty + clean working tree 為止
 
 ### 4) 任務完成
 
@@ -189,3 +210,11 @@ python3 scripts/load_state.py --project crm-system --search-sessions
 - Read: 4 facts loaded back ✓
 - Search: "Prisma" → 1 hit ✓
 - Load: state file full render ✓
+
+### Subagent WIP Pickup test (2026-06-06)
+
+- 入口: User send "現在繼續做" + `git status` show 1 untracked + 2 modified
+- Recipe: 6 steps, ~15 min total
+- 結果: 1 commit (`7dc56d0`), push 成功, `git log --oneline origin/main..HEAD` empty
+- 節省 vs re-delegate: ~15 min (WIP 95% correct, 淨係 consumer page wiring 缺)
+- 新增 lessons: audit `.gitignore` for subagent duplicates, batch-fix noise 喺獨立 commit

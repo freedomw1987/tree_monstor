@@ -72,6 +72,60 @@ The requested image's platform (linux/amd64) does not match the detected host pl
 
 Backend's `src/index.ts` and `prisma/seed.ts` originally used `import.meta.dir + "../.."` to read `~/www/llm-acp/questions.json`. Worked locally but the build context `backend/` doesn't have that path. Fix: copy `questions.json` into `backend/` and use `".."` only.
 
+## Pitfall 7: Elysia 1.2 + `bun build` is broken in two ways (added 2026-06-05, `crm-system`)
+
+When the user runs an Elysia API in a Docker image, the natural instinct is to `bun build` a single-file bundle for fast startup. **Don't.** On Elysia 1.2.x two distinct failures happen:
+
+1. **`bun build --minify`** crashes at runtime with an internal minified variable error:
+   ```
+   ReferenceError: vn is not defined
+       at /app/dist/index.js:413:54034
+   ```
+   Cause: Elysia's route handler uses `compile?.()` runtime code generation that emits references to internal variables the minifier renames inconsistently. Even `--minify-whitespace` alone is risky.
+
+2. **`bun build --external @prisma/client`** (the obvious fix to keep Prisma out of the bundle) gives:
+   ```
+   ReferenceError: client is not defined
+       at /app/dist/index.js:21172:31
+   ```
+   The `--external` flag breaks the bundled output's resolution of the re-exported `@prisma/client` namespace symbol from `@crm/db`.
+
+**Fix** — run source directly, no bundling. COPY the entire workspace (excluding `node_modules` which is rebuilt) into the runtime image and start with `bun run`:
+
+```dockerfile
+# runtime stage
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api ./apps/api
+COPY --from=builder /app/packages/db ./packages/db
+COPY --from=builder /app/packages/ai ./packages/ai
+COPY --from=builder /app/packages/shared ./packages/shared
+# Prisma client is hoisted to root node_modules by Bun workspaces
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# ...
+CMD ["bun", "run", "apps/api/src/index.ts"]
+```
+
+Tradeoff: image is ~200MB larger and cold start a bit slower, but it's the only stable path on Elysia 1.2.x. Revisit when Elysia 1.3+ ships a fixed bundler story.
+
+## Pitfall 8: `USER bun` + entrypoint script permission (added 2026-06-05, `crm-system`)
+
+`oven/bun:1.2` ships a `bun` user (uid 999). If you `USER bun` after `COPY --chmod=755 entrypoint.sh`, the entrypoint fails with:
+```
+/bin/sh: 0: cannot open /usr/local/bin/entrypoint: Permission denied
+```
+And dumb-init at the front of ENTRYPOINT just keeps respawning the container.
+
+**Fix for local deployment** — run as root, add a comment for hardening later:
+```dockerfile
+# Run as root for simplicity in local deployment.
+# (For a more hardened setup, switch to USER bun and adjust file perms.)
+# USER bun
+ENTRYPOINT ["dumb-init", "/usr/local/bin/entrypoint"]
+```
+For production hardening you'd need to chown the file to `bun:bun` AND make `/app` writable.
+
 ## Frontend nginx + Elysia reverse proxy
 
 `frontend/nginx.conf`:
@@ -92,6 +146,30 @@ server {
 
 Use Docker Compose service name (`backend`) not `localhost` in `proxy_pass` — they share a network.
 
+### SPA fallback rewrite cycle (added 2026-06-05, `crm-system`)
+
+The common `try_files $uri $uri/ /index.html` pattern in `location /` will throw a 500 on the root request with this error in the nginx container log:
+
+```
+[error] rewrite or internal redirection cycle while internally
+redirecting to "/index.html"
+```
+
+Reason: when `try_files` falls through to `/index.html`, that path itself matches `location /` and the cycle repeats. Affects every SPA (React/Vue/Svelte) nginx setup, not just Vite.
+
+**Fix** — use a named location for the fallback so the rewrite target is unambiguous:
+```nginx
+location / {
+    try_files $uri $uri/ @spa;
+}
+location @spa {
+    root /usr/share/nginx/html;
+    try_files /index.html =404;
+}
+```
+
+`@spa` is a named location, never matched by URI, so no cycle.
+
 ## Reference
 
 Working repo: `~/www/llm-acp` (CodeCommit `arn:aws:codecommit:ap-east-1:646197533509:llm-acp`)
@@ -99,3 +177,5 @@ Working repo: `~/www/llm-acp` (CodeCommit `arn:aws:codecommit:ap-east-1:64619753
 - `frontend/Dockerfile`: node:20-slim multi-stage, no lockfile
 - `frontend/nginx.conf`: /api reverse proxy to backend
 - `docker-compose.yml`: backend + frontend + named volume for SQLite
+
+For a full local-deployment stack (Vite SPA + Bun/Elysia API + Postgres + nginx) with copy-paste docker-compose.yml + Dockerfiles + nginx.conf + entrypoint + verification commands, see `templates/full-local-stack.md` (proven in `~/www/crm-system`, 2026-06-05).

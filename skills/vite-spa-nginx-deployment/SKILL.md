@@ -85,6 +85,90 @@ sudo rsync -av --delete /path/to/project/frontend/dist/ /var/www/your.domain.com
 | `/#/reset/token` goes to login instead of reset page | `BrowserRouter` used instead of `HashRouter` |
 | Assets return 404 | nginx `root` still pointing to Vite dev server instead of `dist/` |
 | Vite HMR requests 404 | Production nginx proxying to Vite dev server — switch to static `dist/` |
+| `rewrite or internal redirection cycle` error in error.log, page never loads | `try_files $uri $uri/ /index.html` inside `location /` rewrites `/` to `/index.html` which matches `location /` again — see "SPA Fallback Rewrite Cycle" below |
+
+## SPA Fallback Rewrite Cycle (2026-06-05 crm-system Day 3 真實撞牆)
+
+**症狀**:
+```nginx
+location / {
+    root /usr/share/nginx/html;
+    try_files $uri $uri/ /index.html;   # ← 撞 infinite loop
+}
+```
+首次 `GET /` → `$uri` 唔 match → `$uri/` 唔 match → rewrite 去 `/index.html` → 但 `/index.html` 落入 `location /` 重新走 `try_files` → 再 rewrite 去 `/index.html` → loop, error.log 寫:
+```
+[error] rewrite or internal redirection cycle while internally redirecting to "/index.html"
+```
+
+**Fix**: 用 **named location `@spa`** + `error_page`:
+```nginx
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Static assets - serve directly
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA fallback via named location (avoids rewrite cycle)
+    location / {
+        try_files $uri $uri/ @spa;
+    }
+
+    location @spa {
+        try_files /index.html =404;
+    }
+}
+```
+**點解 work**: Named location 唔係 `location /` 個 child,nginx 唔再 re-evaluate 個 `location /` 嘅 `try_files`,所以 `/index.html` 唔會被 rewritten 多次。
+
+**為何 `try_files $uri $uri/ /index.html` 平時都 work 但有時撞**: 當 `index index.html` directive 喺 server 級別設定咗,nginx 對 `/` request 自動 resolve 個 `index.html` 而唔再 `try_files` rewrite,所以 localhost 平時 OK。但當 `index` 設定唔 match 或 `root` 唔 work(permission), 個 loop 就 surface 出嚟。`@spa` named location 係更穩陣嘅 pattern。
+
+**配 `/api` reverse proxy 嘅典型 crm-system 風格**:
+```nginx
+upstream api {
+    server api:3001;  # docker service name
+}
+
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://api/;  # note trailing slash strips /api prefix
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /health {
+        proxy_pass http://api/health;
+        access_log off;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ @spa;
+    }
+
+    location @spa {
+        try_files /index.html =404;
+    }
+}
+```
 
 ## SPA + Backend API: nginx Multi-Service Proxy
 
