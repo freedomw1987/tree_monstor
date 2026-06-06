@@ -422,6 +422,12 @@ Build 完成 → Review → Test → Ship
   - **Detection**: 連續 2+ 個 turn, 個 latest assistant message 開頭係 `[CONTEXT COMPACTION — REFERENCE ONLY]` 而且 `api_calls=1, finish_reason=stop`, 冇真正 work。
   - **Action**: 立即 mark session 為 ended (`UPDATE sessions SET ended_at=..., end_reason='stuck_in_compaction_loop' WHERE id=<stuck_id>`)+ insert sentinel message + load_state.py 開新 session。
 - **紅線 30**:**任何 `delegate_task` / spawn subagent 之前必須先 emit 明確通知** + 用 [Subagent X] prefix 包住 subagent 嘅 response(2026-06-06 親驗 zombie subagent 跑 66 tool calls, 喺 Discord streaming 中斷, partial content 漏出嚟, David 完全冇 context 知道係 subagent 唔係 main response)。理由: Discord 將 main response 同 subagent streaming 混埋 display, user 無從分辨, 而且 subagent streaming 唔穩定(Unicode `▉` 字符即係 streaming 中斷 artifact)。
+- **紅線 31**:**中斷前必須 call `recovery.sh <project> "<reason>"` 自動 save + 印 resume command**(2026-06-06 完工)。理由: David 親驗「中斷後返嚟 agent 唔知做緊咩」嘅痛點, 必須有 systematic 流程。
+  - **Triggers**: 收工 / `/new` / gateway 重啟 / context 爆 / SIGTERM / 「我今晚做到呢度」/ 任何明顯中斷。
+  - **Action**: `bash skills/interruption-recovery/scripts/recovery.sh <project> "<reason>"` 自動寫 `docs/_meta/dev-task-state.md` + interruption log, 印 3 個 resume options。
+- **紅線 32**:**David 醒返 / 開新 session 必須 `resume.sh <project>` 先睇 summary**(2026-06-06 完工)。理由: Resume 唔可以假設自己記得。
+  - **Action**: `bash skills/interruption-recovery/scripts/resume.sh <project>` 印 Goal / Decisions / Next Steps / Past Sessions 摘要 + 3 個 resume options。
+  - **Recommendation**: 過 1 日 / 50 turns → 用 Option C (fresh + state inject); < 1 小時 → Option A (`--resume`); 中間 → Option B (`--continue`)。
 
 **3 個 trigger 時機**(詳細見 SKILL.md):
 
