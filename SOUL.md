@@ -435,6 +435,14 @@ Build 完成 → Review → Test → Ship
   - `be6b1aadc9cd` auto-archive-sessions (03:00 daily) → 自動 archive > 13h inactive discord sessions
   - 兩者都用 `--no-agent` mode, output 落 `~/.hermes/cron/output/`, 唔會 spam Discord。
 - **紅線 36**:**Agent 編輯 ~/.hermes/memories/ 之前必須 backup**(2026-06-07 完工)。理由: memory_normalize.sh 自動 .bak.<ts> backup, 但直接 `write_file` MEMORY.md 唔會。寫 `~/.hermes/memories/MEMORY.md` / `USER.md` 之前先 `cp file file.bak.$(date +%s)`。
+- **紅線 37**:**長期 dev task 嘅 `write_file` / `patch` / 破壞性 `terminal` 之前必須 `pre_tool_checkpoint.sh <workdir> "<reason>"`**(2026-06-07 完工, skill: `long-task-resilience`)。理由: Hermes 0.15.1 嘅內建 CheckpointManager 雖然 config `enabled: true`, 但 AIAgent 嘅 tool_executor code path 喺 Developer Profile 從未 trigger(`hermes checkpoints status` 永遠 0 projects)。修法: 跑 `bash skills/long-task-resilience/scripts/pre_tool_checkpoint.sh "$WORKDIR" "before write_file: $FILE"` 喺 mutation 之前, 將 working tree 嘅 dirty state 落 git ref `refs/checkpoints/<dir>/<ts>`, 之後隨時 `git checkout <ref> -- <file>` 復原。Hook 自動 stash/pop 保留 working tree 不變。
+- **紅線 38**:**Session > 100 API calls 主動 emit `📊 context_status` (in/out/msgs/api/pressure)**(2026-06-07 完工)。理由: Hermes 嘅 `compression.threshold: 0.30` 雖然會自動 trigger, 但**自動 compression 唔主動通知 user**, David 會誤以為 hang。Pressure > 50% (warn) 寫 progress checkpoint, > 100% (crit) 自動 fork handoff。
+- **紅線 39**:**Context pressure ≥ warn (0.5) 唔可以再起新 subagent**(2026-06-07 完工)。理由: 起 subagent 會 push 額外 context 入 main session, 加速迫爆。改用 `delegate_task` (獨立 session, 唔污染 main context) 或者直接 fork 個 session 落 handoff。
+- **紅線 40**:**中斷 > 5 分鐘後 resume 時, 必須先睇 `~/.hermes/profiles/developer/handoffs/` 最新嘅 `<sid>.handoff.md` + 跑 `resume_task.py <sid> [--workdir <path>]`**(2026-06-07 完工)。理由: 自動 fork handoff 已經寫咗 session summary、token usage、reference state。直接 resume 唔睇 handoff = 失去 fork 嘅意義。Resume brief 包含 5 個 section: handoff / progress / dev-task-state / git log / pre-tool journal。
+- **紅線 41**:**永遠唔可以 manual delete handoff file**(2026-06-07 完工)。理由: handoff 係 self-healing 嘅 audit trail, 將來 debug 必需要。Archive 由 cron / `process_fork_queue.py` 自動清, 唔需要手動。
+- **紅線 42**:**Hermes 內建 `CheckpointManager` 唔可靠**(2026-06-07 完工)。理由: 即使 `config.yaml` 寫 `checkpoints.enabled: true`, AIAgent 嘅 `agent_init.py:1021` 雖然 init `_checkpoint_mgr`, 但 `tool_executor.py:215-228` 個 trigger code path 喺 Developer Profile 從未執行過(`hermes checkpoints status` 永遠 `Projects: 0`)。**必須用我哋自己嘅 `pre_tool_checkpoint.sh`**, 唔好 assume 內建 work。
+- **紅線 43**:**Session `api_call_count` > 200 必須主動建議 /new 或者等 context_pressure_monitor.py 自動 fork**(2026-06-07 完工)。理由: 100+ API calls 嘅 session 已經累積 4-6M cumulative input tokens, 任何 compression 都救唔到。自動 fork 會將 handoff + git state 保存, fresh session 0 包袱 resume。Fork queue: `~/.hermes/profiles/developer/session_fork_queue.jsonl`, 處理 script: `process_fork_queue.py`。
+
 
 **3 個 trigger 時機**(詳細見 SKILL.md):
 
