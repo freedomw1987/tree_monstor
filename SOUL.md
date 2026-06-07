@@ -428,6 +428,15 @@ Build 完成 → Review → Test → Ship
 - **紅線 32**:**David 醒返 / 開新 session 必須 `resume.sh <project>` 先睇 summary**(2026-06-06 完工)。理由: Resume 唔可以假設自己記得。
   - **Action**: `bash skills/interruption-recovery/scripts/resume.sh <project>` 印 Goal / Decisions / Next Steps / Past Sessions 摘要 + 3 個 resume options。
   - **Recommendation**: 過 1 日 / 50 turns → 用 Option C (fresh + state inject); < 1 小時 → Option A (`--resume`); 中間 → Option B (`--continue`)。
+- **紅線 33**:**長期跑 dev task 必須用 `terminal_preflight.sh <cmd>` 預檢 long-lived command**(2026-06-07 完工)。理由: Hermes 內建 300s timeout + long-lived server detection 攔截 foreground `npm run dev` / `docker compose up` / `vite` 等等(過去 log 入面 26 次 error)。修法: 跑 `bash skills/interruption-recovery/scripts/terminal_preflight.sh "<cmd>"` 預檢, 真正 long-lived 就改用 `terminal(background=true, notify_on_complete=true)` pattern。
+- **紅線 34**:**MEMORY.md / USER.md 編輯後必須 `memory_normalize.sh` 確保 §-delimiter round-trip clean**(2026-06-07 完工)。理由: 我哋之前直接用 `write_file` / `patch` 加 entry, 但 tool 嘅 `_detect_external_drift` 喺 line 555 會 check `raw.strip() != roundtrip`, `\n§\n` 嘅 multi-char delimiter 會撞到 drift check, 之後每次 `memory(action=add)` 都會 refuse 寫。修法: `bash skills/interruption-recovery/scripts/memory_normalize.sh` 自動 normalize (`...entry.\n§\nnext` → `entry.§next`), 跑完之後 round-trip 100% clean。
+- **紅線 35**:**Auto-maintenance cron 唔好 block**(2026-06-07 完工, 2 jobs created)。理由: 過夜 run 嘅 session 會累積 zombie, 必須自動清。Cron jobs:
+  - `757736b81b92` nightly-memory-normalize (02:00 daily) → 自動 normalize MEMORY/USER
+  - `be6b1aadc9cd` auto-archive-sessions (03:00 daily) → 自動 archive > 13h inactive discord sessions
+  - 兩者都用 `--no-agent` mode, output 落 `~/.hermes/cron/output/`, 唔會 spam Discord。
+- **紅線 36**:**Agent 編輯 ~/.hermes/memories/ 之前必須 backup**(2026-06-07 完工)。理由: memory_normalize.sh 自動 .bak.<ts> backup, 但直接 `write_file` MEMORY.md 唔會。寫 `~/.hermes/memories/MEMORY.md` / `USER.md` 之前先 `cp file file.bak.$(date +%s)`。
+
+**3 個 trigger 時機**(詳細見 SKILL.md):
 
 **3 個 trigger 時機**(詳細見 SKILL.md):
 
