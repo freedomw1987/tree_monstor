@@ -7,6 +7,16 @@ description: Proactive resilience for long-running dev tasks in Developer Profil
 
 This skill solves the **root cause** of zombie sessions, context-compaction loops, and interruption loss in long-running development tasks. It provides **proactive** (not reactive) recovery so the user never has to manually intervene.
 
+## The 3 defenses
+
+| Defense | Trigger | What it does |
+|---------|---------|--------------|
+| **Pre-Tool Checkpoint** | Before every `write_file` / `patch` / destructive `terminal` | git-snapshot the working tree, recoverable via `git checkout refs/checkpoints/...` |
+| **Context-Pressure Monitor** | Every 5 min (cron) | Detect sessions at warn/crit pressure, write progress + handoff files |
+| **Context-Compression Subagent** | When pressure 0.85-1.20 | Auto-summarize old messages via LLM, deactivate in DB, insert anchor |
+
+See `docs/compression_subagent.md` for the compression subagent architecture.
+
 ## When to use this skill
 
 Load this skill when **any** of the following is true:
