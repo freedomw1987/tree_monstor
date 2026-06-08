@@ -171,46 +171,133 @@ At session start:
 2. If `/goal`: enter focused execution mode
 3. If regular request: follow Think/Plan pattern first
 
-  ## Ultrawork Mode (Harness Mode)
+  ## Dynamic Workflow Mode (困難任務優先使用)
 
-  當任務複雜度需要多個 subagent 並行工作時，善用 Claude Code 的 Workflow 引擎：
+  > **參考**: https://code.claude.com/docs/en/workflows
+  > **要求**: Claude Code v2.1.154+，已在付費方案中可用
 
-  ### 觸發條件
-  - 任務需要 3+ 個 subagent 同時工作
-  - 有明確的階段分化，需要屏障同步
-  - 需要「搜索 → 驗證 → 綜合」流程
-  - 用戶明確說「ultrawork」
+  **Dynamic Workflow 是 Developer 處理困難任務的首選武器。** 當任務超出單一對話可協調的範圍時，由 Claude 撰寫 JavaScript 編排腳本，runtime 在背景並行執行數十至上百個 subagents，session 保持回應。
 
-  ### 常用模式
-  ```javascript
-  export const meta = { name: 'task', phases: ['Scan', 'Verify'] }
+  ### 何時必須使用 Dynamic Workflow（強制觸發）
 
-  phase('Scan')
-  const [bugs, perf, security] = await parallel([
-    () => agent('Find bugs', {schema: BUGS_SCHEMA}),
-    () => agent('Find perf issues', {schema: BUGS_SCHEMA}),
-    () => agent('Find security issues', {schema: BUGS_SCHEMA}),
-  ])
+  遇到以下情境時，**Developer 必須優先考慮以 Dynamic Workflow 執行**：
 
-  phase('Verify')
-  // Adversarial verify each finding
+  | 觸發情境 | 範例 |
+  |---------|------|
+  | 全 codebase 範圍的掃描/審計 | 全 API endpoint 缺漏 auth 檢查、全表單 XSS 風險審查 |
+  | 大規模遷移（>50 檔案） | React class → hooks、CommonJS → ESM、framework 升級 |
+  | 跨來源研究與交叉驗證 | 技術選型比較、市場分析、競品研究 |
+  | 困難計畫的多角度設計 | 架構決策需要多個獨立方案再擇優 |
+  | 高品質 review 需 adversarial verify | 安全審查、效能分析、重大重構 PR review |
+  | 任務需要 3+ subagent 並行且有階段同步 | Think→Plan→Build→Review→Test 各階段都需並行 |
+
+  **判斷原則**: 如果單一 Claude 對話的 context 裝不下中間結果，或同樣的編排需要重複執行，就用 Workflow。
+
+  ### 三種啟動方式
+
+  #### 方式 1：在 prompt 中加入 `workflow` 關鍵字（單次任務）
+
+  Developer 可主動建議用戶這樣下指令，或在自己回應時提議：
+
+  ```
+  Run a workflow to audit every API endpoint under src/routes/ for missing auth checks
   ```
 
-  ### 重要原則
-  - `pipeline` 是默認並行模式（各項目獨立通過所有階段）
-  - `parallel()` 只在需要屏障同步時使用
-  - adversarial verify 提升結論可靠性
-  - Budget-aware: 根據 token 預算動態調整並行度
+  Claude Code 會 highlight `workflow` 字眼，並撰寫腳本背景執行而非逐輪對話處理。
 
-  ### 查看完整文檔
-  參考 `/Users/davidchu/www/tree_monstor/skills/autonomous-ai-agents/ultrawork/SKILL.md`
+  #### 方式 2：使用 bundled workflow（已內建命令）
+
+  | 命令 | 用途 |
+  |------|------|
+  | `/deep-research <question>` | 多角度 web search → fetch sources → adversarial verify → 引用報告 |
+
+  研究任務（技術選型、市場分析）→ 優先建議用戶使用 `/deep-research`。
+
+  #### 方式 3：開啟 `ultracode` 模式（整 session 全自動）
+
+  ```
+  /effort ultracode
+  ```
+
+  Claude 對每個實質任務自動規劃 workflow。適用於大型專案 deep work 階段。`/effort high` 可降回。
+
+  ### Workflow 腳本撰寫慣例
+
+  Developer 撰寫的 workflow 腳本應遵循：
+
+  ```javascript
+  export const meta = {
+    name: 'audit-api-auth',
+    description: 'Scan all API routes for missing auth checks, verify each finding',
+    phases: ['Scan', 'Verify', 'Report'],
+  }
+
+  phase('Scan')
+  // 預設使用 pipeline（各項目獨立通過所有階段，無屏障）
+  const findings = await pipeline(
+    routeFiles,
+    (file) => agent(`Scan ${file} for missing auth`, { schema: FINDING_SCHEMA }),
+    (finding) => agent(`Adversarially verify: ${finding.claim}`, { schema: VERDICT_SCHEMA })
+  )
+
+  phase('Report')
+  return findings.filter(f => f.verdict === 'real')
+  ```
+
+  ### 核心原則（Developer 必遵守）
+
+  1. **`pipeline` 是預設並行模式** — 各項目獨立通過所有階段，最大化吞吐
+  2. **`parallel()` 只在需要屏障同步時用** — 例如全部 scan 完才能 dedup
+  3. **Adversarial verify 是品質關鍵** — 任何 finding 都要由獨立 agent 嘗試反駁
+  4. **Budget-aware** — 根據 token 預算動態調整並行度與深度
+  5. **No mid-run user input** — Workflow 執行中不能向用戶提問；需簽核就拆成多個 workflow
+
+  ### 約束與限制（runtime enforced）
+
+  - 同時最多 16 個 concurrent agents（依 CPU 而定）
+  - 單 workflow 最多 1,000 agents（防失控）
+  - Workflow 本身無 filesystem/shell 存取，需透過 agents
+  - 中斷後可在同一 session 內 resume（cached results 不重跑）
+
+  ### Developer 決策樹（遇到任務時）
+
+  ```
+  收到任務
+    ├─ 是否需 3+ subagents 並行 + 階段同步？
+    │   └─ 是 → 提議或啟動 Dynamic Workflow
+    ├─ 是否為深度研究 / 跨來源查證？
+    │   └─ 是 → 建議用戶使用 /deep-research
+    ├─ 是否全 session 都是困難 deep work？
+    │   └─ 是 → 建議用戶開啟 /effort ultracode
+    └─ 否 → 走常規 Think/Plan/Build 流程
+  ```
+
+  ### 範例：向用戶建議使用 Workflow
+
+  ```
+  User: "幫我審查整個 src/routes/ 下所有 API 是否缺漏 auth"
+
+  Developer: "這是 codebase-wide 審計任務，跨幾十個檔案且需要交叉驗證。
+  我建議以 dynamic workflow 執行，會更全面且可重複：
+
+  我的計畫：
+  Phase 1 (Scan): 並行掃描每個 route 檔案
+  Phase 2 (Verify): adversarial verify 每個 finding（避免 false positive）
+  Phase 3 (Report): 輸出已驗證的問題清單與修補建議
+
+  要我用 `workflow` 啟動嗎？預估會 spawn ~30 agents，使用約 50-80k tokens。"
+  ```
+
+  ### 參考完整文檔
+  - 官方文檔：https://code.claude.com/docs/en/workflows
+  - 本地 skill 補充：`/Users/davidchu/www/tree_monstor/skills/autonomous-ai-agents/ultrawork/SKILL.md`
 
 ---
 
   ## File Paths
 
   - Core config: `~/.tree_monstor/`
-  - User projects: `~/developer/projects/<project>/`
+  - User projects: `~/www/<project>/`
   - Task Board: `docs/taskboard.md`
 
   ## Skills

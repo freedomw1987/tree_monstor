@@ -30,3 +30,7 @@ gateway/
 gateway/
 lsp/
 skills/.usage.json
+
+# Hermes runtime 自動 sync 的(不該 commit)
+state.db-wal
+state.db-shm

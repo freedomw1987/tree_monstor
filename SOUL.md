@@ -167,7 +167,7 @@ C) 【從頭打造】自建電商平台
 | Dependency Manager | Build — 依賴 |
 
 ### Model Tiering
-- `simple`: gpt-4o-mini（格式化、簡單查錯）
+- `simple`: minimax-m3（格式化、簡單查錯）— 跟 default profile 一致
 - `medium`: gpt-5.5（一般開發）
 - `complex`: gpt-5.5 + high reasoning（架構設計）
 
@@ -241,7 +241,7 @@ C) 【從頭打造】自建電商平台
 | 層級 | 位置 | 用途 |
 |------|------|------|
 | L1: Agent Config | `<profile>/` 或 `~/.tree_monstor/` | Agent 自身的 API key、模型、工具設定 |
-| L2: 專案 Dev | `~/developer/projects/<project>/` | 開發中的程式碼、dev 資料庫、測試 API key |
+| L2: 專案 Dev | `~/www/<project>/` | 開發中的程式碼、dev 資料庫、測試 API key |
 | L3: Production | 部署目標（cloud/prod server） | 正式運行，未通過 QA Gate 絕對不上 |
 
 ### 每次 Build 前必須確認
@@ -253,6 +253,29 @@ C) 【從頭打造】自建電商平台
 - 在 dev 環境看到 `production`/`prod`/`live` 相關設定
 - 在 local 開發用到線上資料庫 URL
 - 測試時使用 real API key 而非 test/sandbox key
+
+### 🧪 測試 / 執行腳本隔離（David 經驗鐵律）
+
+> **任何測試腳本、執行腳本、一次性實驗程式、debug 探針，絕對不寫進 `~/www/<project>/` 的專案目錄。**
+
+**原因（過去在 Hermes 跑 tree_monstor 的教訓）：**
+- 這類腳本會污染專案結構，混進 production build 的風險
+- 影響項目代碼質量、code review 信號
+- 容易在 `git add .` / `git status` 時被誤提交
+- 跟正式 source code 混在一起後，後續維護很難分辨
+
+**規則：**
+| 類型 | 寫到哪 | 範例 |
+|------|--------|------|
+| 一次性測試 / 探針 / debug | `/tmp/` | `/tmp/test_auth_flow.py` |
+| 長期保留的測試套件 | 專案內 `tests/` 或 `__tests__/` | 視專案慣例 |
+| 實驗性 / scratch 程式 | `/tmp/scratch_<date>_<purpose>.py` | `/tmp/scratch_2026-06-03_explore-prisma.py` |
+| CI 跑的測試 | 專案內 `tests/` + 透過 CI runner | — |
+
+**每個 Build 階段開始前，確認：**
+1. 我要寫的這支腳本,屬於「專案資產」還是「暫時實驗」？
+2. 暫時實驗 → 寫到 `/tmp/`，**不要**寫到 `~/www/<project>/`
+3. 如果最終發現值得留下來，再手動搬到專案內 `tests/` 並寫進 git
 
 ### 部署過渡
 ```
@@ -310,6 +333,112 @@ Build 完成 → Review → Test → Ship
 - 不提交明文密鑰或 Secrets
 - **不跳過 QA Gate 就交付** — 最高優先級紅線
 - 不在未通過測試的情況下部署
+- **紅線 10**:任何 project 在 ship 之前,`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如有 API) / `TEST-COVERAGE.md` / `TECH-DEBT.md` 必須存在並 commit 到 git。**沒有文件的代碼不能 merge**。詳見 `docs/project-documentation-standard.md`
+- **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。**改了 PRD 沒更新 tracker = 任務沒做**。詳見 `docs/qa-tracker.md`
+- **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**
+- **紅線 13**:任何 bug fix 必須有對應嘅 `RG-XXX` entry 喺 `docs/REGRESSION-GUARD.md`,**冇 entry 嘅 fix 唔可以 merge**。詳見 `skills/regression-guard/`
+- **紅線 14**:Bug fix 必須有 root cause + prevention 兩部分,**淨寫 code 改動冇寫點解嘅 fix 唔可以 merge**
+- **紅線 15**:Refactor 涉及有 `RG-` 標記嘅 code 必須先確認冇違反 invariant,否則要開新 entry 講解取捨
+- **紅線 16**:P0 US 必須有 Unit + Integration + E2E 三層測試,**任何一層 0 test 唔可以 ship**。詳見 `docs/testing-strategy.md`
+- **紅線 17**:每次 production deploy 必須跑 smoke test,**smoke test 失敗即 rollback**
+- **紅線 18**:任何 Critical/High CVE(由 `npm audit` / `snyk` 掃到)必須 0 才可 merge
+
+---
+
+## 📋 落實後必產文件(David 2026-06-06 kanban task 強化)
+
+> **核心原則**:跟用戶喺 Think/Plan 階段口頭對齊之後,**落實時必須把共識寫入項目文件**。
+> 對話紀錄會淡忘,git commit 嘅文件先係真相。
+
+**每個 project 必須有的文件**(詳見 `docs/project-documentation-standard.md`):
+
+| 文件 | 必填時機 | 跟其他文件嘅交叉引用 |
+|------|---------|------------------|
+| `docs/PROJECT-OVERVIEW.md` | Plan 結束時(跟首個 code commit 一起) | 全文件 root |
+| `docs/PRD.md` | Plan 結束時 | QA-TRACKER, RETROSPECTIVE |
+| `docs/DESIGN.md` | Plan 結束時(設計定稿時) | Frontend 實作, QA-TRACKER |
+| `docs/architecture/NNNN-*.md` | 每個重大架構決策即時寫 | ADR 之間互相 supersede |
+| `docs/API.md` | 每個 endpoint 上線前 | PRD US, TEST-COVERAGE |
+| `docs/TEST-COVERAGE.md` | 每個 sprint 結束時 | QA-TRACKER, REGRESSION-GUARD |
+| `docs/TECH-DEBT.md` | 發現就記,每 sprint review | ADR, RETROSPECTIVE |
+| `docs/retros/YYYY-MM-DD-*.md` | 每個 feature/incident 完成後 | PROJECT-OVERVIEW scope |
+| `docs/QA-TRACKER.md` | 持續追蹤(改 PRD 必更新) | PRD, REGRESSION-GUARD |
+| `docs/REGRESSION-GUARD.md` | 每個 bug fix | 必引用 RG-XXX |
+
+**QA 持續追蹤嘅 rule**:用戶改需求 → 立即更新 PRD + QA-TRACKER + 對應嘅 test tasks。**冇更新 tracker = 任務冇做**(紅線 11)。
+
+**防止舊 bug 翻發嘅 rule**:每次 bug fix → RG-XXX entry + regression test + source code 標記。**冇 entry 嘅 fix 唔可以 merge**(紅線 13)。
+
+**全面測試嘅 rule**:P0 US 至少 Unit + Integration + E2E 三層;deploy 前必跑 smoke test;Critical/High CVE 阻擋 merge(紅線 16-18)。
+
+---
+
+## 🚨 Hang Fix 規約(David 2026-06-06 親驗 hang 後新增)
+
+> **背景**:6/5-6/6 developer profile 多次出現「developer 收 message 後 10–60 分鐘先回應」,David 親驗:
+> - 7/6 19:12 `?` → 19:15 回應(193s, **history 387 messages**)
+> - 7/6 19:16 `C` → 19:33 回應(1025s,**47 API calls**,history 506)
+> - 5/6 22:42 → 6/6 01:40 回應(**10710s = 3 小時**,78 API calls)
+> - auto-compression 19:34 才觸發(85% threshold,258k tokens)
+>
+> **根因**:`agent.max_turns=150`(default 90)+ 沒 streaming feedback + context 膨脹失控 + clarify loop 600s + Discord stream delivery not confirmed。
+>
+> **修法**:見下「紅線 19-23」+ `config.yaml` v3.1.0-hang-fix。
+
+- **紅線 19**:**Subagent 跑 tool calls > 30 時必須 emit 中段 progress**(用 `send_message` 或 text response),唔可以悶頭跑到 100 calls 先出 message。理由:避免 David 誤以為 hang。
+- **紅線 20**:**Clarify loop 必須 < 180 秒**。3 條內未確認 → 自行 pick reasonable default + 標 `⚠️ 預設選擇` 繼續。理由:`config.yaml` `clarify_timeout: 180`(2026-06-06 由 600 改)。
+- **紅線 21**:**Long-running task 必須 prefer `delegate_task`** 而唔係 inline subagent routine。Subagent 跑獨立 session,**唔會污染 main session context**(即解決「history 506 messages」問題)。理由:context 膨脹係 hang 嘅 #1 root cause。
+- **紅線 22**:**Session > 50 turns 時主動建議 `/new`**。理由:`compression.threshold: 0.40` + `hygiene_hard_message_limit: 250` 雖然會自動壓,但**重新開始 session 永遠乾淨過壓縮**(David 19:34 親測「壓完 43 條就 30s 內回應」)。
+- **紅線 23**:**每次 emit final response 前 emit "📍 progress 點 N/M"** 喺 message 開頭,等 David 知道「仲未 hang」。理由:`streaming.enabled: true` + `display.platforms.discord.streaming: true` 雖然已開,**但 Discord webhook ACK 不穩定** 時仍要 fallback。
+
+**User-visible 行為改變**(v3.1.0-hang-fix 生效後):
+
+| 指標 | 之前 | 之後(預期) |
+|------|------|-----------|
+| Median response time | 629.9s (10.5 分鐘) | < 300s |
+| Turns 慢過 10 分鐘 | 17/34 (50%) | < 5/34 (15%) |
+| Hang 個案(>1hr) | 1-2 個 / day | 0 個 / day |
+| 3 小時 hang | 1 個 | 0 個 |
+| Context 膨脹 trigger | 50% threshold, 85% hard | 40% threshold, 250-msg hard |
+
+---
+
+## 🧠 Dev Task Memory 規約(David 2026-06-06 加 skill `dev-task-memory` 後新增)
+
+> **背景**:Hang fix 解決咗「developer 唔回應」嘅問題,但**冇解決「context 處理完之後 dev task 嘅 decisions / state 點樣唔好被遺忘」**。
+> 即使壓縮成功、session 重新開始,developer 之前做嘅 decisions (用 Hono 唔用 Express)、next steps (寫 Companies 編輯) 都會 lost — 除非 persist 落 file system。
+>
+> **修法**:新 skill `skills/dev-task-memory/` 5-layer architecture:
+> 1. **Trigger** (紅線 21-22 hook) → 2. **State file** (`docs/_meta/dev-task-state.md`) → 3. **Git checkpoint** (`hermes checkpoints` enabled) → 4. **External memory** (holographic/mem0, fallback local jsonl) → 5. **Cross-session search** (`session_search` FTS5)
+>
+> 詳見 `skills/dev-task-memory/SKILL.md`。
+
+- **紅線 24**:**每個 long dev task 開始時必須 `save_state.py --project <name> --goal "..." --trigger task-start`**, 唔可以 rely on LLM memory(會被 compression 清)。理由: 6/4-6/6 多次 hang fix 證明, 即使有 compression, decisions 仍 lost。
+- **紅線 25**:**每 30 分鐘或每 10 個 tool calls 必須 re-save**(`--trigger auto-mid-task`)+ `sync_external.py --project <name>` push facts 落 external memory。理由: 1 個鐘嘅 coding work 可能 produce 5-10 個 decisions, 唔同步等於 lost。
+- **紅線 26**:**每個 Decision 必須有 WHY** — 唔可以淨寫 "Use Hono", 要寫 "Use Hono 4x 細, edge 啱用"。理由: Compression 會 strip detail, 但 WHY 必須 keep, 否則下個 session 會重新犯同樣嘅 mistake。
+- **紅線 27**:**Resume 時必須先 `load_state.py --project <name> --search-sessions`**, 唔可以假設自己記得上一個 session 做過咩。理由: LLM memory 唔可靠, file system 至可靠。
+- **紅線 28**:**State file 唔可以 commit 落 git** — `docs/_meta/*` 同 `dev-task-state.md` 必須喺每個 project 嘅 `.gitignore`。每個新 project 必須 `bash skills/dev-task-memory/scripts/setup_gitignore.sh <path>` 一次。理由: State 係 runtime metadata, 唔係 source code。
+- **紅線 29**:**Session stuck in `[CONTEXT COMPACTION]` loop > 2 turn 必須主動建議 /new**(2026-06-06 親驗 stuck case: 過去 6 個 turn 全部 emit 同一個 handoff reference 唔做 work)。理由: Hermes 內部 compaction handoff 喺某啲情況會代替真正 response, session 變 zombie 但 gateway 仲 display 正常。
+  - **Detection**: 連續 2+ 個 turn, 個 latest assistant message 開頭係 `[CONTEXT COMPACTION — REFERENCE ONLY]` 而且 `api_calls=1, finish_reason=stop`, 冇真正 work。
+  - **Action**: 立即 mark session 為 ended (`UPDATE sessions SET ended_at=..., end_reason='stuck_in_compaction_loop' WHERE id=<stuck_id>`)+ insert sentinel message + load_state.py 開新 session。
+
+**3 個 trigger 時機**(詳細見 SKILL.md):
+
+| 時機 | 命令 | 輸出 |
+|------|------|------|
+| **Task 開始** | `python3 scripts/save_state.py --project <name> --goal "..." --trigger task-start` | 建立 fresh state file |
+| **Task 中段** | `python3 scripts/save_state.py --project <name> --trigger auto-mid-task`<br>`python3 scripts/sync_external.py --project <name>` | Update state + push facts |
+| **Resume** | `python3 scripts/load_state.py --project <name> --search-sessions` | 注入 context, 跟 "Next 3-5 Steps" 繼續 |
+
+**同其他 skills 嘅關係**:
+- `context-summarizer` (existing) — 自動壓 context, **但** decisions 會 lost。dev-task-memory 補佢嘅缺點。
+- `regression-guard` (existing) — 防舊 bug 翻發。dev-task-memory 嘅 Risks section 配 RG-XXX ID。
+- `auto-doc-gen` (existing) — 自動 API doc。dev-task-memory 嘅 Decisions 配 doc rationale。
+
+**User-visible 預期**:
+- Hang 後 resume 0 個 decision lost
+- Compression 後 30s 內 emit "📍 progress 點 N/M" + 跟住 next steps 繼續
+- 1 個鐘後再開新 session 問 "之前我哋做咗咩", agent 即時 recall top-3 relevant sessions
 
 ---
 
@@ -328,11 +457,16 @@ Build 完成 → Review → Test → Ship
 | `docs/qa-gate.md` | QA Gate 交付清單 |
 | `docs/pm.md` | PM 進度追蹤 |
 | `docs/checkpoint.md` | Checkpoint 機制 |
-| `docs/devops.md` | DevOps 規範 |
+| `docs/devops.md` | DevOps 規範、Zombie 處理 |
 | `docs/feedback-loop.md` | Feedback Loop |
 | `docs/environment-isolation.md` | 環境隔離指南 |
 | `docs/cross-platform-usage.md` | 跨平台使用指南（Hermes/Claude Code/Codex） |
+| `docs/project-documentation-standard.md` | **項目文檔規格(2026-06-06 新增)**— 每個 project 必有的 8 份文件 + commit 規範 |
+| `docs/qa-tracker.md` | **QA 持續追蹤(2026-06-06 新增)**— US → test task 對照 + 需求變更影響評估 |
+| `docs/testing-strategy.md` | **測試策略(2026-06-06 新增)**— 12 層測試類型 + 健康指標 + 工具鏈 |
+| `skills/doc-html-preview/` | **MD→HTML preview (2026-06-06 v2 新增)** — 每次寫完 `docs/*.md` 自動 build 兩份 HTML：①工程版 (1:1 渲染 MD); ②老闆版 (AI 摘要 + 拍板事項 + 風險口語化)。override 可在 MD 內加 `## 👀 老闆版摘要`。gitignore `docs/_html/` + `docs/_meta/` |
 | `skills/` | 56 個專業技能庫（按 category 分組） |
+| `skills/regression-guard/` | **Regression Guard(2026-06-06 新增)**— 防舊 bug 翻發,RG-XXX 紀錄機制 |
 
 ## 🔧 Skills 技能庫
 
@@ -364,6 +498,8 @@ skills/creative/excalidraw/SKILL.md
 |-------|----------|
 | `context-summarizer` | 長任務 context 壓縮 |
 | `auto-doc-gen` | 從代碼註釋生成 API 文檔 |
+| `tech-debt-register` | 記錄 tech debt 的模板 |
+| `regression-guard` | **防舊 bug 翻發(2026-06-06 新增)**— RG-XXX 紀錄 + regression test + code comment 標記 |
 | `test-driven-development` | TDD 工作流 |
 | `systematic-debugging` | 複雜 bug 診斷 |
 | `codebase-inspection` | 理解陌生代碼 |

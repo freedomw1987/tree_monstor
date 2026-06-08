@@ -1,9 +1,9 @@
 {
-  "last_report_path": null,
-  "last_run_at": "2026-05-25T01:55:30.210091+00:00",
-  "last_run_duration_seconds": null,
-  "last_run_summary": "deferred first run — curator seeded, will run after one interval; use `hermes curator run --dry-run` to preview now",
+  "last_report_path": "/Users/davidchu/.hermes/profiles/developer/logs/curator/20260603-181224",
+  "last_run_at": "2026-06-03T18:12:24.881134+00:00",
+  "last_run_duration_seconds": 374.957614,
+  "last_run_summary": "auto: no changes; llm: ## Curator pass summary\n\nI scanned all 28 agent-created candidate skills. **The vast majority of them are already well-structured class-level umbrellas with rich, distinct content** — the user-curated set is unusually clean. After looking f…\narchived 1 skill(s):\n  • kanban-codex-lane → kanban-worker\nfull report: hermes curator status\nkeep an umbrella stable: hermes curator pin kanban-worker",
   "last_run_summary_shown_at": null,
   "paused": false,
-  "run_count": 0
+  "run_count": 1
 }

@@ -260,7 +260,7 @@ For complex tasks spanning multiple sessions:
 ## File Paths
 
 - **Core Config**: `~/.tree_monstor/` or `<profile>/`
-- **Projects**: `~/developer/projects/<project>/`
+- **Projects**: `~/www/<project>/`
 - **Task Board**: `docs/taskboard.md`
 - **Documentation**: `docs/` directory
 

@@ -142,7 +142,7 @@ docs/checkpoint.md    — 斷點恢復點（長期任務）
 
 ### 文件路徑
 - 基礎路徑：`~/.tree_monstor/` — 核心配置（所有平台共用）
-- 用戶專案：`~/developer/projects/<project-name>/`
+- 用戶專案：`~/www/<project-name>/`
 
 ### Profile 文件結構
 ```

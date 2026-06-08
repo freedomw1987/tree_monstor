@@ -21,6 +21,9 @@
 | `docs/checkpoint.md` | Checkpoint 機制 + Feedback Loop 記錄 |
 | `docs/devops.md` | DevOps 規範、Zombie 處理 |
 | `docs/feedback-loop.md` | Feedback Loop 流程 + 獎勵/罰則 |
+| `docs/project-documentation-standard.md` | **🆕 項目文檔規格** — 每個 project 必有的 8 份文件 + commit 規範 |
+| `docs/qa-tracker.md` | **🆕 QA 持續追蹤** — US → test task 對照、需求變更影響評估 |
+| `docs/testing-strategy.md` | **🆕 測試策略** — 12 層測試類型 + 健康指標 + 工具鏈 |
 
 ---
 
@@ -98,3 +101,13 @@ Reflect ── Retrospective
 - **QA Gate 未通過，絕對不能交付**
 - Review 未 APPROVED，絕對不能進入 Test
 - 所有強制 Phase 必須完成才能進入下一階段
+- **紅線 10-18(David 2026-06-06 kanban task 強化)**:
+  - 紅線 10:沒文件的代碼不能 merge(8 份必備文檔)
+  - 紅線 11:改 PRD 必更新 QA-TRACKER
+  - 紅線 12:P0/P1 US 必須有 test tasks
+  - 紅線 13:bug fix 必須有 RG-XXX entry
+  - 紅線 14:bug fix 必須有 root cause + prevention
+  - 紅線 15:refactor 不可違反 RG invariant
+  - 紅線 16:P0 US 必須三層測試(Unit + Integration + E2E)
+  - 紅線 17:deploy 前必跑 smoke test
+  - 紅線 18:Critical/High CVE 必為 0
