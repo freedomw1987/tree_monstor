@@ -288,3 +288,92 @@ This pairs with the request-side rule above: the **request path** uses the wire 
 5. Remove the now-redundant inline `manDaysFromResponse`/`manDayLines ?? manDays` normalisations in individual components (e.g. `QuickCreateServiceDialog` was doing this inline; with the boundary normaliser it can be deleted).
 
 **Anti-pattern to watch for**: someone (you, in a previous turn) may have already added defensive code like `service.manDays?.length ?? 0` in three different pages because the boundary wasn't fixed. Those workarounds then **hide** the real bug (silent "0 個 man-day role" instead of a crash). When you find the boundary fix, leave the `?? []` as belt-and-suspenders, but no longer rely on it.
+
+## Case-Transformed Invariant: backend 強制 case / format 轉換 (2026-06-06 crm-system)
+
+**Class of bug**: Backend 對某個 field 強制 value 轉換(eg. `name` 必須 ALL UPPERCASE, `slug` 必須 kebab-case, `email` 必須 lowercase),front end form 接受用戶任意 input,**冇 transform / validate**。User 提交「Senior Sales」表面合理,backend 返 400 / 422,frontend 嘅 mutation 凍住:**冇 spinner、冇 toast、冇 error banner、console 乾淨、network panel 顯示 request 4xx 但 React Query `onError` 唔 fire**。
+
+**Real case (crm-system 2026-06-06)**: `apps/api/src/routes/roles.ts:72`:
+```typescript
+if (data.name !== data.name.toUpperCase()) {
+  set.status = 400;
+  return { error: 'Role name must be ALL UPPERCASE' };
+}
+```
+
+Frontend `apps/web/src/components/role-dialog.tsx:211-219`:
+```tsx
+<Input
+  id="role-name"
+  value={name}
+  onChange={(e) => setName(e.target.value)}   // ❌ 冇 .toUpperCase()
+  placeholder={isEdit ? undefined : 'e.g. Senior Sales'}
+  disabled={isEdit && role?.isSystem}
+  required
+/>
+```
+
+User input `"Smoke Test Role"` → POST 400 → mutation 凍住冇反應,David 體驗上以為 bug。
+
+**為何呢個 case 特別陰濕**:
+- 表單 input 接受任何 char(包括 space / number / mixed case)— David 自然咁樣打「Senior Sales」
+- Backend invariant 嚴格但冇 trail (response body 入面 `error: "Role name must be ALL UPPERCASE"` 有,但 fetch 4xx 喺 frontend 唔 throw 嘅 wrapper 之下 onError 唔 fire)
+- React Query `useMutation` 個 `mutationFn` 包住個 `rolesApi.create({...})` 嘅 call,如果 wrapper 唔 throw 4xx 為 Error 個 object(只返 `{ ok: false, error: '...' }`),`onError` 唔 trigger
+- `onError` callback 寫咗 `setError(e.message)` 但有 3 個 layer fail:① fetch wrapper 唔 throw ② `e` 喺 wrapper 返 plain object 唔係 Error ③ `error` state 寫咗但 render 嘅 `{error && <p>}` 喺 dialog 高度內被忽略
+
+**Debugging 必做 sequence (用 browser DevTools)**:
+1. **睇 Network tab** 真有冇 outgoing POST。如果**冇 network request = mutation 連出發都冇出**,係 React state / form submit 嘅問題,唔係呢個 invariant(去 `react-quiz-form-state-debug` skill 睇)
+2. **有 request + 4xx**:睇 response body 有冇 error message。將個 message 對 backend source code 嘅 invariant
+3. **Bypass UI 直接打 backend 確認 invariant 嚴格度**:
+   ```bash
+   # 用 docker exec 跑 Node script,confirm UPPERCASE 接受 / lowercase 拒絕
+   docker exec crm-api sh -c '.../tmp/probe.mjs...'
+   # 期望:UPPERCASE → 201, lowercase → 400
+   ```
+4. **睇 request payload**:Network tab 撳個 request 睇 body,confirm frontend 真送咗 `name: "Smoke Test Role"`(mixed case + space)而不是 `name: "SMOKE_TEST_ROLE"`
+5. **睇 frontend onError 嘅 code path**:grep 個 file `onError:` / `setError` 嘅 source,睇係 fetch wrapper 唔 throw 定 onError 寫 dead code
+
+**Frontend fix 必做 2 部分**:
+1. **Client-side transform 喺 input onChange**:
+   ```tsx
+   <Input
+     value={name}
+     onChange={(e) => setName(e.target.value.toUpperCase().replace(/\s+/g, '_'))}
+     placeholder="e.g. SENIOR_SALES"
+   />
+   ```
+   即時令 user 睇到個 input field 變 UPPERCASE(UX hint),**根本唔需要佢提交再 fail**
+2. **Server-side error UX 必 render**:
+   ```tsx
+   const submit = useMutation({
+     mutationFn: () => rolesApi.create({ name, ... }),
+     onError: (e) => {
+       // ❌ 唔好 setError(e.message) — e 可能係 plain object
+       // ✅ 改: parseApiError(e) 統一 extract backend 嘅 error string
+       setError(parseApiError(e));
+       toast.error(parseApiError(e));   // 同時用 toast library (sonner / react-hot-toast)
+     },
+     onSuccess: () => { ... }
+   });
+   ```
+   **Inline `<p>{error}</p>` 容易喺 dialog 高度 ignore**。**Always pair with toast**
+
+**Generic rule (套用到所有 backend 強制 value 轉換嘅 invariant)**:
+| Backend invariant | Frontend mirror |
+|---|---|
+| `name === name.toUpperCase()` | `onChange: e => setName(e.target.value.toUpperCase().replace(/\s+/g, '_'))` + placeholder 提示 |
+| `slug === slug.toLowerCase().replace(/[^a-z0-9-]/g, '-')` | 個 form 開個 derived `useMemo` 顯示「將會儲存為: ...」+ onChange 即時 normalize |
+| `email === email.toLowerCase()` | `<input type="email" onChange: e => setEmail(e.target.value.toLowerCase())>` |
+| `phone` 必須 E.164 format (`+852...`) | `<input type="tel" pattern="\+[0-9]+" onChange: formatPhone>` |
+| Enum 嚴格(`status: 'ACTIVE' | 'ARCHIVED'`) | `<select>` options 限定 enum values, 唔用 text input |
+| `date` 必須 ISO 8601 | `<input type="date">` native 自動 emit `YYYY-MM-DD` |
+
+**Pre-emptive rule (新項目 / 新 form)**: 寫任何 form 之前,**先 grep backend route 入面全部 validation invariant** (`name !== name.toUpperCase()` / `enum.parse()` / `.required()` / `.min(1)` / `.max(255)` / `parseInt`),**逐個 mirror 入 form**:
+1. Step 1 — 喺 PRD / spec 寫 invariant
+2. Step 2 — Zod / Valibot schema 喺 frontend,parse + transform 喺 schema (唔係喺 input onChange)
+3. Step 3 — 個 `<Input>` placeholder 提示 user 正確 format
+4. Step 4 — submit 之前 schema.safeParse() validate 一次,error 用 toast render
+
+**Related**:
+- `visual-ui-bug-debugging` 嘅「Backend Invariant Silent-Fail」section — 同一個 class 嘅 bug,從 visual debugging 角度講
+- `react-quiz-form-state-debug` — 如果係「submit button 唔 disable 唔 fire 嘅另一面」就用呢個 skill

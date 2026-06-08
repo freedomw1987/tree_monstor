@@ -12,6 +12,8 @@ file shape on disk is the only source of truth.
 - A previous subagent is in the recent `session_search` results
 - The task description references files that don't exist yet (subagent
   was supposed to create them)
+- A `git diff <file>` shows changes that DIDN'T come from your last commit
+  (e.g. a sibling agent edited a file you already committed)
 
 ## Recipe (run in this exact order)
 
@@ -40,6 +42,8 @@ Look for:
   the rest are missing → the subagent did Phase 1 and stopped
 - Commits that touch related files but reference a feature that's
   incomplete in the working tree
+- Commits **not** from you but in your working tree (sibling agent
+  pushed in parallel) — these need a `git log --author` audit
 
 ### Step 3: Read the untracked / modified files BEFORE assuming
 
@@ -50,6 +54,31 @@ the full `git diff`. Subagents sometimes:
   page not updated)
 - Introduce side effects in `.gitignore`, `package.json`, configs
 
+This is the **only** way to know the actual pickup point. Don't guess
+from the task description.
+
+**Strong pickup signal — comment-attributed WIP (2026-06-07 lesson)**:
+If a sibling or previous subagent's `git diff` includes code comments
+that explicitly reference **your** task or step identifiers (e.g.
+`// Day 14.7 Step 12 fix:` or `// crm-system Phase 2:` or `// per
+plan A` or `// 2026-06-07 retro:`), treat the WIP as **aligned with
+your work** and **pick it up**, don't revert. The author wrote the
+WIP with knowledge of your active task; they were filling in a gap
+they could see you'd hit. Reverting = you re-discover the same bug
+in your own E2E smoke and write the same fix from scratch.
+
+Examples of strong pickup signals (any one is enough):
+- Comment contains a step number matching your plan (`Step 7`, `Step 12`)
+- Comment contains a date matching the day's work
+- Comment references a specific US / ADR / retro that you're shipping
+- Comment explains "we need X because Y" where Y matches your plan
+
+Examples of weak / ambiguous signals (default: ask David, don't
+auto-pick up):
+- Comment is a generic TODO or FIXME
+- Comment references an unrelated feature
+- The diff has zero comments (pure code change with no rationale —
+  could be a sibling session's orthogonal work)
 This is the **only** way to know the actual pickup point. Don't guess
 from the task description.
 
@@ -68,6 +97,10 @@ Common pitfalls:
 - Packages added to root `package.json` instead of workspace
 - Container rebuilds triggered by `docker compose down`
 - `.env.local` or similar accidentally created
+- **Race condition fixes** (e.g. `useEffect` sync) that the sibling
+  left half-done — read them, decide if they're correct, then EITHER
+  pick them up (and rebase / commit on top) OR revert (with comment
+  why)
 
 Fix the noise *before* committing the real work — otherwise the next
 `git status` is confusing.
@@ -82,6 +115,8 @@ Based on Steps 1-4, the pickup point is usually one of:
 | File exists but is incomplete (e.g. missing useMutation) | Finish it, build, commit |
 | File exists but has TS errors | Fix, build, commit |
 | File doesn't exist | The previous subagent lied / died — recreate from scratch |
+| **Sibling race fix left in `git status` (e.g. `useEffect` for URL→state sync)** | Read the diff, validate the fix is correct, **pick it up** as part of your next commit (don't revert, don't re-derive it yourself) |
+| **Siblings' multi-autocomplete components (untracked) that aren't related to your task** | Leave them untracked. Do NOT `git add` them. David may be in the middle of his own work. |
 
 Always run the project's build command (`npm run build` /
 `tsc --noEmit` / `cargo check`) before committing to catch subagent
@@ -116,8 +151,18 @@ on origin). Don't report "done" until this passes.
 - ❌ **Committing `.env`, `dist/`, `docs/_html/`, or `node_modules/`.**
   The subagent may have created these by accident. Always check
   `git status -uall` to see untracked files.
+- ❌ **Reverting a sibling's WIP just because it didn't come from your
+  last commit.** If the WIP is correct, critical, and on the same
+  code path, **pick it up** — re-deriving it from scratch wastes time
+  and risks introducing a different bug. Add a "sibling fix picked
+  up" note in your commit message.
+- ❌ **`git add .` / `git add -A` when there are untracked files you
+  didn't create.** Use selective `git add <file>...` to avoid
+  committing sibling WIP that may be in flight.
 
-## Worked example (2026-06-06, crm-system)
+## Worked examples
+
+### Example 1: Subagent on the same task (2026-06-06, crm-system)
 
 Subagent was supposed to do 3 frontend tasks: TASK 2L (CompanyAutocomplete
 in 2 files), TASK 2B (man-day role dropdown), TASK 2M (RoleDialog
@@ -147,10 +192,73 @@ Recipe followed:
 Time saved vs. re-delegating: ~15 min. The WIP on disk was 95% correct;
 only the consumer-page wiring was missing.
 
+### Example 2: Sibling WIP pickup (2026-06-07, crm-system Day 14.7)
+
+Concurrent session — David (or another subagent of the same David) was
+working on Day 14.7 Settings tabs at the same time as me. I was
+implementing Step 5/6/7 in my session; the sibling session was working
+on the same file (`pages/audit.tsx`) for Step 7's `useSearchParams`
+filter pre-fill.
+
+**Symptoms that triggered WIP pickup**:
+- After committing Step 7 (`bd1d107` — Tax Rate settings page), I ran
+  `git status` and saw `M apps/web/src/pages/audit.tsx` (modified, NOT
+  staged). My commit had included `audit.tsx` in its diff (`+11 lines`).
+  The fact that the file was still showing as modified after commit
+  means **someone added more changes after my commit**.
+- 3 untracked files appeared: `multi-autocomplete.tsx`,
+  `multi-company-autocomplete.tsx`, `multi-user-autocomplete.tsx`.
+  None of these were related to my Day 14.7 Settings plan.
+
+**Detection recipe applied**:
+```bash
+git diff apps/web/src/pages/audit.tsx
+# Output: a 25-line diff adding:
+#   - import { useEffect, useState } from 'react';
+#   - useEffect(() => { setAction(...); setActorId(...); setSearch(...); },
+#          [searchParams]);
+# Plus comment header: "Step 12 fix: Step 7 used `useState(searchParams.get('action'))`
+# which only reads the URL on mount. When the user navigates between audit
+# pages via in-app <Link> clicks, react-router v7 reuses the existing
+# component (no remount) so the filter state would NOT update from the
+# new query string..."
+```
+
+**The WIP analysis** (key insight from subagent-wip-pickup-recipe):
+- The diff is a **legit fix for a race condition** I'd hit on Step 12
+  smoke if I didn't have it. The comment says "Step 12 fix" — same plan
+  I was working on.
+- The fix is small (25 lines), correct, and exactly the right pattern
+  for `useSearchParams` + react-router v7 component reuse.
+- Re-deriving it from scratch would have wasted time AND risked
+  introducing a different fix.
+
+**Pickup decision**: PICK IT UP. Add a one-line note in the next
+commit's body:
+```
+feat: my new work...
+
+Note: audit.tsx has a useEffect([searchParams]) URL→state sync fix
+left in working tree from a sibling session. The fix is correct
+(see subagent-wip-pickup-recipe in dev-task-memory). Committed as
+part of this change rather than re-deriving it.
+
+Refs: react-router-v7-patterns skill (Pattern 4)
+```
+
+**Lesson**: The 3 untracked `multi-autocomplete*.tsx` files were
+**not** committed. They may be David's own WIP for an unrelated
+multi-select feature. Selective `git add <specific files>` is the
+only safe path when working concurrently with other agents.
+
 ## Related
 
 - `dev-task-memory/SKILL.md` — general state file workflow
 - `regression-guard/SKILL.md` — for bug fixes, this recipe is the
   feature-work analog
+- `react-router-v7-patterns/SKILL.md` — Pattern 4 documents the
+  `useSearchParams` + component-reuse race that the sibling WIP
+  fixed. When you see `useEffect([searchParams])` in working tree
+  WIP, this is why.
 - `SOUL.md` 紅線 24-28 — state file discipline that prevents this
   scenario from happening in the first place

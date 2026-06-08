@@ -231,3 +231,72 @@ export async function getUserIdFromRequest(
 
 If you see this pattern, you have the derive-cache bug — switch to
 `getUserIdFromRequest` inline verification.
+
+---
+
+## ⚠️ 2026-06-07: Same symptom, slightly different trigger — POST handler chained after `.use(requirePermission(...))`
+
+The Day 9 case above triggers when a POST handler sits next to a
+sibling `.get()` route. There is a SECOND configuration that produces
+the identical `userId: undefined` symptom but has a different
+trigger: **the route is `.use(requirePermission(...))` followed by
+`.post('/...', handler, { body: t.Object({...}) })`** where the
+schema-validated body somehow narrows the context such that
+`authContext`'s derived `userId` is no longer visible in the handler
+destructure.
+
+**Symptom** (crm-system 2026-06-07 `POST /deals`):
+- `GET /deals`, `GET /deals/kanban`, `GET /deals/:id` → 200 OK (userId present)
+- `POST /deals` with body schema → handler sees `userId: undefined`
+  even though `requirePermission('deal:create')` already proved the
+  user is authenticated
+- `logEvent({ actorId: userId ?? null })` writes `actorId: null` in
+  the audit log row even though the create succeeded
+- The same exact pattern (`requirePermission` + `body: t.Object({...})`)
+  on `PATCH /deals/:id/stage` and `PATCH /deals/:id` works fine on
+  its own — so this is an intermittent/context-dependent bug, not a
+  deterministic one
+
+**Detection signal**: any handler that does ALL of:
+1. Is declared on a route that calls `.use(requirePermission(...))`
+2. Defines a `body: t.Object({...})` schema
+3. Destructures `userId` from the handler arg
+4. Sees `userId === undefined` despite an authenticated request
+
+**Workaround** (crm-system's adopted fix, see
+`apps/api/src/routes/deal.ts` POST handler):
+
+```ts
+import { getUserIdFromRequest } from '../middleware/rbac';
+
+.post('/', async ({ body, set, userId, request }) => {
+  // Try the (possibly missing) derived userId, then fall back to
+  // re-decoding the JWT from the request headers. Same helper RBAC
+  // uses internally, so the result is identical to a working derive.
+  const ownerId = incoming.ownerId ?? userId ?? await getUserIdFromRequest(request);
+  // ... rest of handler
+}, {
+  body: t.Object({ ... }),
+})
+```
+
+Apply the same fallback in `logEvent({ actorId: userId ?? await
+getUserIdFromRequest(request) ?? null })` so audit rows carry the
+real user.
+
+**Root cause** (workaround, not yet root-caused): Elysia 1.2's
+typed-context schema for `body: t.Object({...})` appears to drop the
+`userId` field from the `Context` type passed into the handler.
+TypeScript stays silent because the destructure is allowed, but at
+runtime the value is `undefined`. The crm-system repo has not yet
+upgraded to Elysia 1.3+ where this is reportedly fixed. Until then,
+**always use the `getUserIdFromRequest(request)` fallback** in any
+`body: t.Object({...})` route that needs the calling user's id.
+
+**Rule of thumb for crm-system Elysia 1.2 routes**:
+- `body: t.Object({...})` route that needs `userId` → always include
+  `?? await getUserIdFromRequest(request)` fallback
+- `body: t.Object({...})` route that needs `actorId` for `logEvent` →
+  same fallback
+- `logEvent({ actorId: userId ?? null })` is suspect — verify the
+  `userId` is actually populated before relying on it for audit

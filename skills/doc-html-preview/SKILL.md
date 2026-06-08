@@ -157,6 +157,34 @@ The build script verifies **structure**. Your job is to verify the artifact serv
 
 Load this skill and run the **bundled** variant (`scripts/build_bundled_html.cjs`) — it gives the most shareable artifact in one command. The bundled variant's output goes in `docs/` (default name: `<project>-docs.html`); see [`references/bundled-html-recipe.md`](./references/bundled-html-recipe.md) for the gotchas. **Always read that reference file before running** — every pitfall there (`.cjs` extension, `</script>` escape, regex footgun, leading H1 strip) bit at least one session.
 
+### 📂 Sub-folder MDs (2026-06-07 crm-system lesson)
+
+`build.sh --project <name>` **only globs `docs/*.md`** — it does NOT recurse into subdirectories like `docs/retros/`, `docs/architecture/`, or `docs/handoff/`. To render a sub-folder MD, pass it as a positional argument:
+
+```bash
+bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/build.sh \
+  --project crm-system \
+  docs/retros/2026-06-07-system-settings-plan.md \
+  docs/architecture/0001-ai-assistant-architecture.md
+```
+
+Each path produces `<basename>.html` + `<basename>-boss.html` in `docs/_html/` (just the basename — sub-folder prefix is dropped). This is fine for one-off retro / plan / ADR documents; if you have many sub-folder MDs to publish regularly, consider either (a) flattening into `docs/` with a numbering scheme, or (b) writing a wrapper script that calls `build.sh` per-path.
+
+### 🔑 Boss JSON key is filename-derived, not semantic (2026-06-07 crm-system)
+
+`build_html.py` looks up the boss summary JSON by **exact basename match**: `<md-basename>.json` in `docs/_meta/`. If you write your MD as `2026-06-07-system-settings-plan.md`, the script looks for `docs/_meta/2026-06-07-system-settings-plan.json` — NOT a more semantically named file like `plan-system-settings.json`.
+
+Three workable patterns:
+1. **Match the name** — name the MD and JSON with the same basename from the start.
+2. **Copy/symlink** — write JSON to the semantic name, then `cp` it to the filename-derived name before building:
+   ```bash
+   cp docs/_meta/plan-system-settings.json \
+      docs/_meta/2026-06-07-system-settings-plan.json
+   ```
+3. **Use the MD override** — add `## 👀 老闆版摘要` section to the MD and the script will use that body content instead of looking up JSON. Best when you want full control over the boss view and don't want to maintain a separate JSON.
+
+The build script does NOT log which key it looked up, so if your boss HTML renders as placeholder, the first thing to check is "does the JSON basename match the MD basename exactly?"
+
 ## How to use
 
 ### After writing a project doc

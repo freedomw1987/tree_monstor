@@ -732,6 +732,336 @@ patch file
 
 **Related**: 同「Docker Compose `up -d --build` cache layers 不重 build source code」唔同 — 呢個 pitfall 係 LSP 報錯假陽性,嗰個 pitfall 係 cache 命中冇 re-build。**兩者都係話 docker build 必須 explicit 跑而唔好信 implicit 嘅 watch / LSP 通知**。
 
+## ⚠️ `bun.lock` 不被 npm / snyk 認 — 紅線 18 CVE 掃描盲點 (2026-06-07 crm-system code review 真實撞牆)
+
+**症狀**: 跑 `npm audit` 喺一個 bun-managed monorepo (`bun.lock` 而唔係 `package-lock.json`) 撞:
+
+```
+npm error code ENOLOCK
+npm error audit This command requires an existing lockfile.
+npm error audit Try creating one first with: npm i --package-lock-only
+```
+
+**根因**: `bun.lock` 係 **bun-native binary format** (text-based, 但 npm/snyk 唔識 parse)。`package-lock.json` 同 `bun.lock` 互相唔識。David 嘅紅線 18 寫明「Critical/High CVE (由 `npm audit` / `snyk` 掃到) 必須 0 才可 merge」 — **如果個 project 用 bun, 紅線 18 既有的 toolchain 直接做唔到**。
+
+**Fix (推薦, 30 秒)**: 用 `bun audit` 而唔係 `npm audit`:
+
+```bash
+# ❌ 唔好
+npm audit --json
+# → ENOLOCK (bun.lock not recognized)
+
+# ✅ 好 (bun 1.2+ 內建)
+bun audit
+# → 解析 bun.lock + 對 npm registry check 已知 CVE
+```
+
+**如果 `bun audit` 都 fail (bun 版本太舊)**: Generate 一個 npm-compatible lockfile 一次過, 之後 audit 用 npm:
+
+```bash
+# 在 root 一次過
+npm i --package-lock-only   # 根據現有 package.json + bun.lock generate package-lock.json
+npm audit --json > /tmp/cve.json
+# 然後 commit 走 package-lock.json 都可以 (但會同 bun.lock drift)
+```
+
+**Production CI 必加 step** (ship gate):
+
+```bash
+# 喺 CI YAML (.github/workflows/ci.yml) 加
+- name: CVE scan
+  run: |
+    bun audit --json > /tmp/audit.json
+    HIGH=$(python3 -c "import json; d=json.load(open('/tmp/audit.json')); print(d.get('metadata',{}).get('vulnerabilities',{}).get('high',0))")
+    CRIT=$(python3 -c "import json; d=json.load(open('/tmp/audit.json')); print(d.get('metadata',{}).get('vulnerabilities',{}).get('critical',0))")
+    if [ "$HIGH" -gt 0 ] || [ "$CRIT" -gt 0 ]; then
+      echo "❌ Critical/High CVE > 0, blocking merge (紅線 18)"
+      exit 1
+    fi
+```
+
+**Lockfile 可信度 pitfall (related)**: `bunfig.toml` 嘅 `[install] exact = false` 默認 = 用 `^5.6.3` caret range, build 唔 reproducible, 每個 developer 落地拎到唔同 patch version:
+
+```toml
+# bunfig.toml
+[install]
+exact = true    # 改 true, lockfile 死鎖 exact version
+```
+
+**Detection 撞牆嘅方法 (ship-readiness review 必做)**:
+```bash
+# 1. 確認有 lockfile
+ls -la bun.lock package-lock.json 2>/dev/null
+# Expected: 至少 bun.lock (bun project) 或 package-lock.json (npm project)
+
+# 2. 試跑 audit
+timeout 30 bun audit 2>&1 | head -20
+# Expected: 有 vulnerability table 列出
+# 如果 error: 上面 fix 步驟
+
+# 3. 確認 exact mode
+grep "exact" bunfig.toml
+# Expected: exact = true
+```
+
+## ⚠️ RBAC coverage matrix 1-liner audit — 1 個 grep 揭 14 route 嘅 access control gap (2026-06-07 crm-system 真實撞牆)
+
+**症狀**: Code review 時想 check 全部 14 個 route file 嘅 RBAC coverage, 人工逐 file 開 → 太慢, 易 miss。需要 1 個 1-liner reveal 邊個 route 公開, 邊個有 auth, 邊個有 permission check。
+
+**Fix (1-liner, 推薦 for 任何 RBAC-driven Elysia / Express / FastAPI project)**:
+
+```bash
+# 對齊 pattern: <route file> 用 authContext 幾多次 + requirePermission 幾多次
+cd ~/www/<project>
+for f in apps/api/src/routes/*.ts; do
+  name=$(basename "$f" .ts)
+  ac=$(grep -c "authContext" "$f" 2>/dev/null)
+  perm=$(grep -c "requirePermission" "$f" 2>/dev/null)
+  printf "%-20s authContext=%-3d requirePerm=%d\n" "$name" "$ac" "$perm"
+done | sort -k2 -t= -n
+# ↑ sort by authContext count ascending = 公開 routes 浮上面
+```
+
+**Expected output (crm-system 2026-06-07 真實數字)**:
+```
+ai-config            authContext=0  requirePerm=1   ← 0 auth 但有 perm: 內部 RBAC OK 但 anonymous 撞 401 = 設計 OK
+chat                 authContext=0  requirePerm=0   ← 🚨 公開 endpoint 寫 DB → CRIT
+company              authContext=0  requirePerm=0   ← 🚨 公開 endpoint 寫 DB → CRIT
+contact              authContext=0  requirePerm=0   ← 🚨 公開 endpoint 寫 DB → CRIT
+deal                 authContext=0  requirePerm=0   ← 🚨 公開 endpoint 寫 DB → CRIT
+settings             authContext=0  requirePerm=2   ← perm 蓋住, 但 anonymous 撞 401 (OK)
+audit                authContext=2  requirePerm=2   ← ✅
+man-day-role         authContext=4  requirePerm=3   ← ✅
+roles                authContext=2  requirePerm=2   ← ✅
+```
+
+**Reading the matrix**:
+| 0/0 | 公開 endpoint, **任何 internet 人都可以 hit** |
+| 0/N (N>0) | `requirePermission` plugin 蓋住, anonymous 撞 401 → **OK 但要 verify** |
+| M/0 (M>0) | 有 `authContext` 但冇 `requirePermission` → **任何 logged-in user 撞 200** (通常係 PUBLIC read-only, OK; 但寫入 route 一定要 perm) |
+| M/N (both>0) | **Fully protected** ✅ |
+
+**Generic rule (套用全部 backend stack)**:
+- Elysia: `authContext` / `requirePermission` (呢個 skill 嘅 pattern)
+- Express: `requireAuth` / `requireRole` / `requirePermission`
+- FastAPI: `Depends(get_current_user)` / `Depends(require_role)`
+- NestJS: `@UseGuards(AuthGuard)` / `@Roles(...)` decorator
+
+換 pattern name 即可, framework 唔重要。
+
+**Common hit 真實 cases (撞過嘅)**:
+1. **`POST /auth/register` 冇 requirePermission** — 公開註冊 + 可以 self-select `role: 'ADMIN'` = **公開 internet 變 admin**。Fix: 加 `requirePermission('user:create')` + body schema 刪 `role` field (新 user 預設 SALES, admin 自己 promote via PATCH /users)
+2. **List endpoint 公開 (e.g. `GET /companies`)** — 公開讀 = PII 漏 (email, phone, credit limit)。Fix: 加 `requirePermission('company:read')`
+3. **AI write tool 公開** — `/chat/send` 觸發 `prisma.company.create` 以 system actor 寫 = **silent DB write without attribution**。Fix: 加 `requirePermission('chat:use')` + audit log 入面 `actorId` 一定要有
+4. **Status / health endpoint RBAC 不一致** — `/api/ai/config/status` 公開 = 偵察 admin 環境狀態。Fix: 一律 `requirePermission('xxx:read')` 蓋住, status 都要
+
+**Related pattern (RBAC permission drift)**: 三個 source of truth 要對齊:
+1. `packages/shared/src/permissions.ts` `PERMISSIONS` map (static, system roles)
+2. `apps/api/src/middleware/rbac.ts` `requirePermission('xxx')` 字符串 (hard-coded in route files)
+3. DB `RolePermission` table (runtime state, custom roles)
+
+加新 permission 嘅流程: (1) 改 `permissions.ts` 加 entry → (2) 改 routes 加 `requirePermission('xxx')` → (3) DB seed `RolePermission` 對應 row。**3 處唔 link 易 drift**。E2E test 兜底:
+```typescript
+// 跑一次: 列舉 permissions.ts 嘅 keys, grep requirePermission(, 確認每個 key 至少 1 個 route 用
+test('permission coverage', () => {
+  const declared = new Set(Object.keys(PERMISSIONS));
+  const used = new Set<string>();
+  for (const f of glob.sync('apps/api/src/routes/*.ts')) {
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(/requirePermission\(['"]([^'"]+)['"]\)/g)) {
+      used.add(m[1]);
+    }
+  }
+  const unused = [...declared].filter(p => !used.has(p));
+  expect(unused).toEqual([]);  // 0 unused perms
+});
+```
+
+## ⚠️ `tsc --noEmit` 報 30+ silent type errors 但 runtime OK — typecheck 唔可以靠 build 兜底 (2026-06-07 crm-system 真實撞牆)
+
+**症狀 (同 LSP stale pitfall 唔同 — LSP 假報 vs tsc 真報都被忽略)**: `apps/api/src/routes/*.ts` 開咗 `// @ts-nocheck` 喺 rbac.ts + quotation.ts, 但其餘 6+ 個 route file 冇 `@ts-nocheck` 但係 runtime work。**點解 typecheck 撞但 build pass?**
+
+**根因 (Elysia + bun 雙重 source-of-truth drift)**:
+1. Elysia 1.2 d.ts 同 TypeScript 5.x 嘅 type inference 衝突(see 上面「Elysia 1.2 d.ts broken」)— `set.status` typed 做 `number | "Unauthorized" | ...` literal union, 好多 cast 寫得唔準
+2. `prisma.aiConfig` 唔存在 but code 用緊 — Prisma client 唔 export 該 model (見下面「Prisma client model names 唔 export」)
+3. `as never` cast 喺 handler 內部太多 — body validation 通過後 `body` 嘅 type 係 `unknown`, cast 做 `as never` 漏 type
+4. Bun runtime 唔 typecheck (dev mode `bun run src/index.ts` 唔 invoke tsc) — runtime 唔 care
+5. Dockerfile 嘅 `bun --env-file=... src/index.ts` production entry 仍然唔 typecheck
+6. Elysia 1.2 type check chain 對多個 `.use()` plugin 嘅 context propagation 唔 reliable — derive 出嘅 `userId` 個 type 喺 route handler 入面係 `string | null`, 但喺 `onBeforeHandle` plugin boundary 變 `unknown`
+
+**撞牆真實例子 (crm-system 2026-06-07)**:
+```
+src/lib/context.ts(9,21): error TS2339: Property 'jwt' does not exist on type '...'.
+src/routes/ai-config.ts(57,30): error TS2339: Property 'aiConfig' does not exist on type 'PrismaClient<...>'.
+src/routes/ai-config.ts(199,9): error TS2322: Type '"AI_CONFIG_UPDATED"' is not assignable to type 'AuditAction'.
+src/routes/contact.ts(33,50): error TS2353: ...'activities' does not exist in type 'ContactInclude<DefaultArgs>'.
+src/routes/deal.ts(152,7): error TS2322: Type '"DEAL_STAGE_CHANGED"' is not assignable to type 'AuditAction'.
++ 25+ more
+```
+
+**Risk**:
+- `prisma.aiConfig` 唔 export 但 code 用緊 = **prod 第一次 hit 嗰個 endpoint 一定 500** (Prisma client 識唔到 model)
+- `'DEAL_STAGE_CHANGED' as AuditAction` 唔 cast-safe = audit log 寫入失敗 silently
+- `as never` body cast = 可以 inject 任意 fields 到 Prisma create (雖然 Prisma schema filter 唔存在 column, 但 `passwordHash` / `isActive` 呢類 sensitive field 風險)
+
+**Fix (3 個 step, ship gate 必做)**:
+
+```bash
+# 1. 在 root 加 unified typecheck (唔好靠個別 package.json 嘅 typecheck script)
+cd ~/www/<project>
+cat > scripts/typecheck-all.sh <<'EOF'
+#!/bin/bash
+set -e
+echo "=== apps/api ==="
+cd apps/api && bunx tsc --noEmit --skipLibCheck
+cd ../..
+echo "=== apps/web ==="
+cd apps/web && bunx tsc --noEmit --skipLibCheck
+cd ../..
+echo "=== packages/db ==="
+cd packages/db && bunx tsc --noEmit --skipLibCheck
+EOF
+chmod +x scripts/typecheck-all.sh
+
+# 2. 在 CI 必跑 (唔可以 skip)
+# .github/workflows/ci.yml:
+# - name: TypeScript check
+#   run: ./scripts/typecheck-all.sh
+# (冇 typecheck pass = 唔 merge)
+
+# 3. Fix 撞到嘅 error — 唔可以加 @ts-nocheck 蓋住
+#   - 重新 generate prisma client: cd packages/db && bunx prisma generate
+#   - AuditAction / ItemType 等 enum 加返入 schema
+#   - Casts 用 'as Company' 而唔係 'as never' (cast 對 schema 唔等於 bypass validation)
+#   - remove 所有 @ts-nocheck (Dockerfile `bun run` 跳 typecheck, 唔代表可以 silent type drift)
+```
+
+**Critical: Dockerfile 唔可以加 typecheck step 入 build**:
+```dockerfile
+# ❌ 唔好
+RUN bun run typecheck   # 加咗 build 會 hang 在 ts error, 個 image 永遠 build 唔到
+                        # 即使 type errors 應該 fix, build 唔可以 fail 因為 type error
+                        # (本地 fix 之後先 push)
+#
+# ✅ 好
+# typecheck 留喺 CI stage + pre-commit hook, Dockerfile 維持 `bun install + bun run`
+```
+
+**Detection 工具 (code review 必跑)**:
+```bash
+# 1. 數 typecheck errors
+cd ~/www/<project> && timeout 60 bunx tsc --noEmit --skipLibCheck 2>&1 | grep -c "error TS"
+# Expected: 0 (ship gate 必過)
+# 如果 > 0: 紅線 16 嘅 test coverage fail + type drift blind spot
+
+# 2. 數 @ts-nocheck 數量
+rg -l "@ts-nocheck" apps/ packages/
+# Expected: 0 (一係 remove 一係 真嘅 disable 嘅 file 加理由 comment)
+# 如果 > 0: 全部逐個 review, 確認係 Elysia 1.2 d.ts 真正 broken 而唔係偷懶
+
+# 3. 數 'as never' cast 數量
+rg -c "as never" apps/api/src/ | awk -F: '{sum+=$2} END {print sum}'
+# Expected: 0 (cast 應該 'as ConcreteType')
+# 如果 > 5: code review 必 grep 全部 location 改 'as ConcreteType' 對應 Prisma model
+```
+
+**Related pitfall (LSP stale)**: 上面「LSP diagnostics stale after rapid patches」section 講 LSP 假報錯。**呢個 pitfall 講 tsc 真報但被忽略**。兩個都會誤導 developer 以為 type safety OK — **唯一 source of truth 係 CI 跑嘅 `tsc --noEmit` exit code 0**。
+
+## ⚠️ Self-register-as-admin trap — `POST /auth/register` 公開 + role 喺 body (2026-06-07 crm-system 真實撞牆)
+
+**症狀**: RBAC 系統有 `ADMIN / SALES / VIEWER` 三個 role 喺 DB, 有 `requirePermission('user:create')` middleware. 但 register endpoint 寫:
+
+```typescript
+// ❌ 唔好 — RBAC 完整但 register endpoint 公開 self-service admin
+.post('/register', async ({ body, set }) => {
+  const { email, password, name, role } = body as {  // ← role 喺 body
+    email: string; password: string; name: string;
+    role?: 'ADMIN' | 'SALES' | 'VIEWER';
+  };
+  // ... 直接 prisma.user.create({ data: { ..., role: role ?? 'SALES' } })
+}, {
+  body: t.Object({
+    email: t.String({ format: 'email' }),
+    password: t.String({ minLength: 8 }),
+    name: t.String({ minLength: 1 }),
+    role: t.Optional(t.Union([         // ← 接受 role 喺 body
+      t.Literal('ADMIN'),
+      t.Literal('SALES'),
+      t.Literal('VIEWER'),
+    ])),
+  }),
+})
+```
+
+**Risk (公開 internet + body role = 公開 internet 變 admin)**:
+1. 任何人用 `curl -X POST /auth/register -d '{"email":"a@b.c","password":"xxx","name":"Hacker","role":"ADMIN"}'` → 攞到 ADMIN token
+2. 如果有 seed 預設 `david@crm.local / admin123` 即係 hacker 直接用 `david@crm.local` 重置密碼 / 喺自己個 account 升級
+
+**Fix (推薦, 5 分鐘)**:
+
+```typescript
+// ✅ 好
+import { authContext } from '../lib/context';
+import { requirePermission } from '../middleware/rbac';
+
+.post('/register', async ({ body, set }) => {
+  const { email, password, name } = body as {  // ← role 唔再喺 body
+    email: string; password: string; name: string;
+  };
+  // ... prisma.user.create({ data: { email, name, passwordHash, role: 'SALES' } })
+  // 預設 SALES, admin 自己用 PATCH /users/:id 升級
+}, {
+  body: t.Object({
+    email: t.String({ format: 'email' }),
+    password: t.String({ minLength: 8 }),
+    name: t.String({ minLength: 1 }),
+    // ← 唔再接受 role
+  }),
+})
+// 同時 add: 真正 invite flow 應該 admin 用 PATCH /users/:id invite
+
+// Alternative 1 (use the existing authContext + requirePermission 蓋住)
+.use(authContext)
+.use(requirePermission('user:create'))   // ← 只有 admin 可以 create user
+
+// Alternative 2 (disable self-service,只 invite via admin UI)
+// 條 route 直接 disable, body validation 唔再 register endpoint
+```
+
+**Variant 撞牆 — status endpoint 唔 gated**:
+```typescript
+// ❌ 唔好
+.get('/ai/config/status', () => {
+  return prisma.aiConfig.findUnique({ where: { id: 1 }, select: { configured: true, model: true } });
+})
+// 公開偵察 admin 環境狀態 = recon 階段有用 info
+
+// ✅ 好
+.use(authContext)
+.use(requirePermission('ai-config:read'))
+.get('/ai/config/status', ...)
+```
+
+**Detection (code review 1-liner)**:
+```bash
+# 1. Check register / signup endpoint 有冇 permission
+rg -A 1 "post\(['\"]/?(auth/)?(register|signup)" apps/api/src/
+# 期望: 見到 .use(requirePermission(...)) 喺 register handler 之前
+# 如果冇: 即係 self-service,加 fix
+
+# 2. Check 全部 body schema 接受 role 嘅地方
+rg "t\.(Union|Literal).*(ADMIN)" apps/api/src/
+# 期望: 0 個 (role 唔應該喺 public-facing body schema)
+
+# 3. Check 全部 GET endpoint 嘅 status / config 探測
+rg "get\(['\"]?/.*(status|health|config)" apps/api/src/
+# 期望: 全部都有 .use(requirePermission) 喺之前 (除咗真正 public health check)
+```
+
+**Generic rule (套用所有 SaaS 項目)**:
+- Self-service signup → role 永遠 default 'USER' / 'MEMBER' / 'CUSTOMER', 唔可以 self-select 'ADMIN'
+- Admin invite flow → admin 自己 PATCH /users/:id 升級
+- 任何 GET /status /config endpoint → 一律 permission-gated, status 都要
+
 ## ⚠️ Subagent 600s/63-call timeout 撞 long refactor 任務 (2026-06-06 crm-system Day 11 真實撞牆)
 
 **症狀**: 派 subagent 跑 5-phase 嘅 multi-file refactor(themes token fix + 502 修 + 抽 2 個共用 component + 補 fields + Deal 編輯 + 最終 typecheck), 每個 phase 都要讀 source + patch + 自己驗 typecheck。Subagent 跑 600s timeout 撞 63 個 API call, 卡喺某個 phase(typecheck 連跑多次)唔 return。`api_calls: 63, duration_seconds: 600.17, exit_reason: timeout`。
@@ -1146,6 +1476,122 @@ Frontend 透過 Vite proxy 訪問 `/api/*` → `localhost:3200`。
 | `execute_code` 內 `subprocess.run([..., "python3", ...])` | Hermes sandbox 嘅 python interpreter 同 system `/usr/local/bin/python3` 唔同, 裝嘅 package 唔共享 | 用 `/usr/local/bin/python3` 絕對路徑, 或 `subprocess.run([sys.executable, ...])` |
 | `git commit -m "...\`code\`..."` 寫多行 commit message | Shell 將 backtick 之間嘅 inline code 當 command substitution 解析執行, 撞 `command not found` 噪音, **commit 仍成功但 body 嘅 inline code 全部被食走變空白** | 寫 commit message 入 file 然後 `git commit -F /tmp/msg.txt`。`bash <<EOF` 都會撞同樣問題(shell 解析), 必須 file 落地 |
 | `terminal(background=true)` 跑 `docker compose up -d --build` | Hermes 嘅 background process 唔 return exit code 0 即係 build 仍進行中(可能 5-15 min), 唔代表失敗 | 用 `process(action='poll')` 監察,或者 background 之後用 `process(action='wait', timeout=600)`,exit code 0 = build done 唔係 "container died" |
+
+### ⚠️ `docker compose up -d --build` 必然 trigger foreground warning — 一律 background (2026-06-06 crm-system 真實撞牆)
+
+**症狀**: 喺 `terminal()` foreground 跑 `cd ~/www/<project> && docker compose up -d --build` 一定撞:
+
+```
+This foreground command appears to start a long-lived server/watch process.
+Run it with background=true, verify readiness (health endpoint/log signal),
+then execute tests in a separate command.
+```
+
+即使個 command 係 `up -d --build`(detached mode + 純 build, 完全冇 long-lived server)— Hermes 嘅 foreground guard 都會 false positive trigger。`exit_code: -1, error: "This foreground command appears..."`。
+
+**根因**: Hermes 嘅 guard heuristic scan 個 command string 見到 `docker compose up` 就當 long-running,**唔識分辨 `-d` (detached) flag**。`--build` flag build 完即 exit,正常 60-180 秒做完。**但 Hermes 無論 `-d` 都 trigger warning**。
+
+**Fix (永遠咁用)**: 任何 `docker compose` command — `up -d`、`up -d --build`、`up -d --force-recreate`、`build --no-cache` — 一律 `background=true` + `notify_on_complete=true`:
+
+```python
+# 喺 terminal tool 入面
+terminal(
+  command="cd ~/www/<project> && docker compose up -d --build 2>&1 | tee /tmp/compose-build.log",
+  background=True,
+  notify_on_complete=True,
+  timeout=600,
+)
+# 跟住用 process(action='wait', timeout=600) 監察
+# process(action='log') 撈 output 睇 "error TS" / "exit code: 2"
+```
+
+**Foreground 必然撞 Hermes guard warning**,即使有 `-d` flag 個 daemon 即刻 detach 都撞。
+
+**Verification after build** (必須做, 因為 foreground 撞 warning 後 exit code 已經被蓋住):
+```bash
+# 1. Container 全部 healthy
+docker ps --format 'table {{.Names}}\t{{.Status}}' | grep <service>
+
+# 2. Bundle hash 真係新 (build cache 可能 skip source change)
+curl -s http://localhost/ | grep -oE 'index-[A-Za-z0-9_-]+\.js'
+docker exec <web-container> ls /usr/share/nginx/html/assets/
+# 兩個 hash 對得齊 = new build 真係 deploy
+
+# 3. 或者 force rebuild 一個 dummy file 試
+touch apps/web/src/.force-rebuild && docker compose build web
+# 應該見到 source COPY stage 唔係 CACHED
+rm apps/web/src/.force-rebuild
+```
+
+**Generic rule**: 任何 `docker compose` command 都係 background。**Foreground 必然撞 Hermes guard false positive warning**,即使 `docker compose ps`、`docker compose logs`、`docker compose down` 呢類 query-only command 都建議 background(雖然通常 warning 唔 trigger, 但保險)。
+
+**Related**: 同「Docker Compose `up -d --build` cache layers 不重 build source code」(下面) 唔同 — 嗰個 pitfall 係 Docker 自己嘅 cache miss 行為,呢個 pitfall 係 Hermes 工具 false positive warning。**兩個 pitfall 都會令你以為「build 凍咗」但其實冇凍**。
+
+### ⚠️ Build 撞「Cannot find name X」之前,先 grep 個 X 喺 codebase 邊度 define 過 (2026-06-06 crm-system 真實撞牆)
+
+**症狀**: Build 撞 `error TS2552: Cannot find name 'DealDialog'` / `Cannot find name 'QuotationBuilder'` / `Cannot find name 'kanbanStages'`。First reaction 想寫新 file / 新 component / 新 constant 補返。**但其實個 X 可能已經喺 codebase 內部 define 咗**,只係冇 export / 冇 import / 拼錯名。
+
+**例子 (crm-system 2026-06-06)**:
+```typescript
+// apps/web/src/pages/companies.tsx — WIP 改動引入咗呢行
+import { DealDialog } from '@/pages/deals';   // ❌ 'DealDialog' is not exported from '@/pages/deals'
+```
+
+實際上 `apps/web/src/pages/deals.tsx:345` 已經有:
+```typescript
+function DealDialog({...}) {  // ← internal function, 冇 export
+```
+
+**Fix = 加 1 個 keyword 9 個 char**:
+```typescript
+// apps/web/src/pages/deals.tsx line 345
+-export function DealDialog({...}) {     // 改 internal → exported
++export function DealDialog({...}) {
+```
+
+唔係寫新 `apps/web/src/components/deal-dialog.tsx`,唔係 import `pages/deals.tsx` 嘅 types / helpers,完全唔改 `DealDialog` 嘅 body。
+
+**Generic workflow (撞「Cannot find name X」/「X is not exported」必做)**:
+
+1. **唔好 assume 個 X 真係 missing**:
+   ```bash
+   # grep X 喺 codebase 邊度 define 過 (case sensitive)
+   rg "\bDealDialog\b" apps/web/src
+   # 期望: 見到一個定義(就算 internal function 都算)— 即係唔需要寫新
+   # 期望: 完全冇 hit — 先寫新
+   ```
+2. **如果 internal**,check 係 `function` / `const` / `interface` 邊個 export 規則:
+   - `function X` → 加 `export` keyword 即可
+   - `const X =` → 加 `export` keyword
+   - `interface X` / `type X` → 加 `export` keyword
+   - **如果係 anonymous `export default`** → 寫 named export `export function X`
+3. **如果真係冇 define 過**,**先 grep X 變體**:`rg "DealDialog|deal-dialog|dealDialog"` 有時命名 convention 唔同(eg. `dealDialog` 駝峰 vs `deal-dialog` kebab),可能 existing 用緊另一個名
+4. **最後先考慮寫新 file**。**多寫一個 file 引入新 export 嘅機會成本 =** 重新做 code review / 可能同現有 duplicate / 將來 refactor 要兩邊 sync
+
+**Anti-pattern**:
+```typescript
+// ❌ 撞到 first thought:寫新 file
+// apps/web/src/components/deal-dialog.tsx (全新 200 行)
+export function DealDialog({...}) { ... }
+
+// ✅ 先 grep,加 export,慳 200 行
+// apps/web/src/pages/deals.tsx (改 1 個 keyword)
+export function DealDialog({...}) { ... }
+```
+
+**Generic rule 套用到所有 X**:
+- React component(`DealDialog` / `RoleDialog` / `QuotationBuilder`)
+- Elysia route module
+- Prisma model name
+- Utility function / helper
+- Type alias / interface
+- 常數(`kanbanStages` / `BASE_REGIONS` / `ALL_PERMISSIONS`)
+
+**5 秒 grep 慳 30 分鐘 over-engineering**。撞「Cannot find name X」,**永遠先 grep X 喺 codebase 邊度 define 過**,**永遠先 assume 個 X 已經 internal 存在**。
+
+**Related**:
+- `patch-corruption-recovery` skill — 撞 syntax error 之後 restore from git + re-patch 嘅 pattern。**但** 撞「Cannot find name X」通常唔需要 restore,加 1 個 keyword 即可
+- `bun-elysia-react-vite-stack` 嘅「LSP diagnostics stale」section — LSP 報「Cannot find name」可能係 stale cache,先睇 `tsc --noEmit` 嘅真實 error 然後先 grep
 
 具體例子: `bun add tailwindcss @tailwindcss/vite` 喺 `terminal()` 會撞 "This foreground command appears to start a long-lived server/watch process", 但喺 `execute_code` 內用 `subprocess.run(["npm", "install", ...])` 就 OK。
 
@@ -1688,3 +2134,4 @@ docker logs crm-api --tail 5
 - `references/2026-06-06-crm-system-day12-fieldname-normalise-docs-hygiene.md` — crm-system Day 12 (`manDayLines` wire vs `manDays` frontend type 真正 root cause + API boundary normalize 統一 pattern + `Service.isActive` legacy drift cleanup + service detail 502 wire format + README/PROGRESS docs hygiene 維護規則 + Tailwind token 完整 audit)
 - `references/2026-06-06-crm-system-cross-page-flow-entry-points.md` — crm-system Day 10+ URL query-string prefill pattern (Company→Deal→Quotation), 5-step recipe, 3 invariants, 4-layer delivery checklist, audit script. **Read this before wiring any new model relation into the UI** — David has caught this "backend ≠ UI" gap twice (Day 7 + Day 10+).
 - `references/2026-06-06-crm-system-lsp-vs-build-trust.md` — crm-system Day 11+ LSP diagnostics stale vs `docker compose build web` ground truth. Concrete walkthrough of why LSP noise is a false signal in this stack and the correct patch-then-build-immediately workflow.
+- `references/2026-06-07-crm-system-comprehensive-code-review.md` — crm-system Day 14 comprehensive 3-pass code review (Security A + Architecture B + Ship Gate C). 53 files reviewed, 0 modified. CRIT-1/2/3 RBAC gaps + HIGH typecheck silent + bun.lock CVE blind spot + 紅線 10/12/16/18 fail. P0/P1/P2 sprint-ready fix list + 3-pass methodology + re-review baseline.

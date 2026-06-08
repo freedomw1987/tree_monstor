@@ -66,3 +66,40 @@ Check logs for `[SES] Email sent: <MessageId>` — if you see `[SES] Error:` fol
    但係 Hermes redact 機制會將 password 部分 mask 變 `***`，command 唔可靠。用 Python `os.environ['DATABASE_URL']` script 一次性跑就 OK。
 
 **Day 1 用方案 1**（`import 'dotenv/config'` 加 top-level await + `dotenv` package）— 對 `prisma db seed` 同 entry 一致。
+
+## ⚠️ `--env-file` 喺 boot-time hard-fail 嘅 testing 陷阱 (2026-06-07 crm-system Day 14)
+
+`bun --env-file=.env` 嘅 env values **會做 floor** — 即使 shell `export JWT_SECRET=*** weak_value` 都唔會 override 個 file 入面嘅 value。
+
+Concretely,寫完 boot-time `requireSecret('JWT_SECRET', { minLength: 32 })` 嘅 hard-fail 之後想 smoke test「missing secret」case 會撞牆:
+
+```bash
+# 期望: throw 因為 short secret
+# 實際: throw 因為 .env file 嘅 value 先 load,根本見唔到 shell override
+JWT_SECRET=*** src/index.ts
+```
+
+**2 個 fix 二揀一**:
+
+1. **寫 temp env file**(推薦,clean):
+   ```bash
+   cp .env /tmp/crm-env-weak
+   sed -i '' 's/JWT_SECRET=.*/JWT_SECRET=*** .2 weak' /tmp/crm-env-weak
+   bun --env-file=/tmp/crm-env-weak src/index.ts
+   # → 期望 throw
+   ```
+
+2. **入 hermes redact 嘅 masking** — `JWT_SECRET=*** 喺 shell 都會 redact,唔可靠。**唔好用。**
+
+**`bunx prisma db seed` 嘅同類陷阱**:子進程唔繼承 `bun --env-file`,見上面「seed 唔 load .env」section。
+
+**Smoke 4 個 case 必跑** 任何 boot-time secret check 之後:
+
+| Case | 期望 | 設定方法 |
+|---|---|---|
+| Short secret | throw | temp env file |
+| Dev fallback in production | throw | temp env file + `NODE_ENV=production` |
+| Missing | throw | temp env file 刪走個 var |
+| Valid | boot OK | 真嘅 `.env`(或者 shell export 喺冇 `--env-file` 嘅情況) |
+
+詳見 `backend-rbac-audit-log` skill 嘅 Step 15。

@@ -106,6 +106,43 @@ browser_vision + screenshot is the ONLY tool that actually shows what the user s
 
 **Prophylactic fix:** Add a top-level `ErrorBoundary` in `main.tsx` so future render throws show a fallback UI instead of an empty `#root`. One screen of dev cost, saves an hour of "where did my page go" each time.
 
+## Common Pattern: Backend Invariant Silent-Fail — Frontend 冇 Enforce (2026-06-06 crm-system 撞牆)
+
+**Symptom:** 個 create dialog 填完表、勾完 permissions、click Submit,**dialog 凍住冇反應**:冇 spinner、冇 error banner、冇 toast、冇 network request 出現、console 完全乾淨、submit button 唔 disable 唔 show loading。D癲果個 mutation hook 彷彿冇 trigger。
+
+**Root cause pattern:** Backend 強制某個 invariant(eg. `name !== name.toUpperCase()` 拒絕 lowercase role name),**但 frontend 冇 mirror 個 invariant**。當 user submit 一個違反 invariant 嘅 payload,server 返 400 帶 error body,**但 frontend 嘅 `onError` callback 唔 fire** / error state 唔 render。最常見 3 個原因:
+1. **HTTP client throw 唔出**:`fetch()` 返 400/422 默認 throw,但 axios 配 `validateStatus`、ofetch、自家 wrapper 可能 swallow 4xx。要查 `apps/web/src/lib/api.ts` 嘅 request helper。
+2. **React Query mutation onError 唔 fire**:`useMutation` 個 `mutationFn` 包住個 client call,如果 client 唔 throw(只返 `{ ok: false, error }`),onError 唔 trigger。`onSuccess` 雖然會 trigger 但 response 唔 success shape。
+3. **Error state 寫咗但 UI 唔 render**:`{error && <p>...</p>}` 配 React render 時序 issue,或者個 error 寫到 `useState` 但 component 喺 mutation 完成後 unmount + remount(dialog 喺 open prop toggle)。
+
+**Debugging sequence**:
+1. **Stop trusting the dialog freeze** — open **browser DevTools Network tab** 看有冇 outgoing request
+2. **冇 network request = mutation 唔 trigger**(搶 source code trace `useMutation` / form `onSubmit`)
+3. **有 network request + 4xx = client 冇 throw / onError 唔 fire**:
+   - 直接打 backend `curl` 確認 exact error response shape
+   - 對比 frontend `onError` 點 parse 個 response
+4. **Bypass UI 用 direct API probe** 確認 backend 接受邊個 shape,frontend 應該 align 邊個 invariant:
+   ```bash
+   docker exec crm-api sh -c '.../tmp/probe.mjs...'
+   # 用 UPPERCASE name → 201
+   # 用 lowercase name → 400 (證明 server 嘅 invariant 嚴格)
+   ```
+5. **Frontend fix 必須有 2 部分**:
+   - **Client-side guard 喺 input**:`<Input value={name} onChange={e => setName(e.targetValue.toUpperCase())}>` 或者 trim 完 `name.toUpperCase()` validate,直接 block 唔合法 payload
+   - **Server-side error UX 必 render**:`onError: (e) => { setError(parseApiError(e)); toast.error(...) }` — 用 toast library(sonner / react-hot-toast),唔可以淨靠 inline `<p>`(容易被 dialog 高度 ignore)
+
+**Invariant rule 鐵律(2026-06-06)**:
+- 任何 backend 嘅 invariant(eg. uppercase name / non-null field / enum check),frontend **必 mirror** 一個對應嘅 client-side validation
+- 否則 user 提交一個**表面合理**嘅 value(eg. "Senior Sales")→ server reject → frontend freeze 唔出聲 → 用戶以為 bug → 再試再失敗
+- **「enforce everywhere」鐵律: backend = 真相,frontend = 提點**。提點唔到都冇所謂唔代表 server 唔該 reject,只係代表 frontend 對 user 唔友善。
+
+**Examples in crm-system**:
+- `apps/api/src/routes/roles.ts` line 72: `if (data.name !== data.name.toUpperCase()) { /* reject */ }`
+- `apps/web/src/components/role-dialog.tsx` line 211-219: `<Input value={name} onChange={(e) => setName(e.target.value)} />` — 冇 uppercase transform,冇 client validation
+- 撞 bug 嗰陣:`name="Smoke Test Role"` (mixed case + space)→ POST 400 → useMutation onError 唔 fire / 唔 render → dialog freeze 5 秒
+
+**Pre-emptive pattern**:寫 frontend form 嗰陣,**先用 backend code grep 全部 invariant** (eg. `data.X !== data.X.toUpperCase()` / `enum.parse()` / `.required()`),**逐個 mirror 入 form 嘅 validation**。Step 1 喺 spec,Step 2 喺 Zod schema,Step 3 喺 input onChange transform。
+
 ## Common Pattern: shadcn-style Tailwind token 漏 → Panel/Dropdown 完全透明 (2026-06-06 crm-system 真實撞牆)
 
 **Symptom:** User reports 一個 popover / dropdown / autocomplete panel 透底(見到後面嘅 table / 另一個 row 嗰 column / textarea)。**冇 console error**, API call 200, 其他 page 正常。DevTools 嘅 element tree 入面個 panel 存在, 但**冇 background-color**。

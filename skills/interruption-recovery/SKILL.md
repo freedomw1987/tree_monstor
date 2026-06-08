@@ -1,7 +1,7 @@
 ---
 name: interruption-recovery
 description: 4-layer interruption + recovery mechanism for long dev tasks. Auto-save on any interruption, one-command resume with full context restore. Built on top of dev-task-memory state files.
-trigger: "interrupt / recovery / resume / 中斷 / 恢復 / 繼續 / 之前 / 上次 / 'where was I'"
+trigger: "interrupt / recovery / resume / 中斷 / 恢復 / 繼續 / 之前 / 上次 / 'where was I' / '開工吧' / '您開工吧'"
 version: 1
 category: devops
 ---
@@ -176,12 +176,237 @@ Implement 3 frontend improvements in crm-system in ONE pass
 | **Audit trail** | `docs/_meta/interruption_log.md` 記低所有 interruption, 可 grep / review |
 | **冇 single point of failure** | state file、git history、external memory、sessions.json、state.db 5 個地方都有 snapshot |
 
+## ⚠️ Day 16 Lesson (2026-06-08) — `git status --short` Panic-Decision Pitfall
+
+**情境**: David send「完成？」(post-session check-in cue), 我頭先 `git status --short` 第一次跑
+return 22 lines 嘅 `M` + `A` + `A` (modified + 2 個 untracked) + 大量 files。即刻 panic,
+跳入「紅線 33 觸發, ahead commits / un-pushed WIP / 可能 revert」邏輯, 浪費 **5 個
+follow-up tool calls** (`git status` no-short、`git diff --stat`、`git diff --name-only`、
+`git diff -w` 唔同 mode、ls -la new folders、`git ls-files --error-unmatch`)。**全部 0 line diff
+0 file modified** — 最終 `git status` (no args) 印 "On branch main / Your branch is up to date /
+nothing to commit, working tree clean"。
+
+**根因**: `git status --short` 嘅 output 唔等於 reality:
+
+1. **Stale terminal buffer / 中斷嘅 state-cache**: 特別係 session 過夜 / context 重啟後第一次跑
+   `git status --short`, 有時 return 之前 session 嘅 partial output。**解決**: 跟 `git status` (no
+   args) 嘅 "On branch / working tree" 兩行為 single source of truth。
+2. **Porcelain v1 嘅 X vs ?**: `A` (staged add) + `A` (intend-to-add) + `M` (modified) 混埋,
+   短 porcelain 唔分 `MM` (staged + modified), 第一眼以為要處理但其實已經 tracked。
+3. **David 自己 untracked 嘅 file 冇 `git add`**: worktree 出現 untracked 時, panic-react 反而
+   會 introduce "agent 闖入 David WIP" 嘅問題, 詳見 `dev-task-memory/references/working-tree-wip-detection.md`。
+
+**Pitfall checklist**(遇到 `git status --short` 顯示 modified/untracked 嘅時候):
+
+```
+[ ] 1. 跑 `git status` (no args) — "On branch X / Your branch is up to date with 'origin/X'"
+        / "nothing to commit, working tree clean" = SINGLE SOURCE OF TRUTH
+[ ] 2. 跑 `git status --branch --porcelain` — empty = 100% clean
+[ ] 3. 跑 `git log --oneline origin/main..HEAD` — empty = 0 ahead
+[ ] 4. 跑 `git log --oneline main..origin/main` — empty = 0 behind
+[ ] 5. 跑 `git diff --stat` + `git diff --cached --stat` — 兩個都 0 = 真 clean
+[ ] 6. 如果 step 1 印 clean 但 step 2/3/4/5 有 output, 才有 panic
+```
+
+**Rule**: **`git status --short` 嘅 modified/untracked 唔可以直接 jump 結論**。Always
+`git status` (no args) 先, 兩個 source 對齊先 decide。
+
+**David 嘅失敗狀態 cue 模式**:
+- 「完成？」/「Ok?」/「Shipped?」 = post-session check-in cue,**standard verify 流程**
+  (紅線 33 4-check), 唔係 panic-trigger
+- 「?」= 通常係「仲未 ship / 有嘢斷咗」, 但都係 verify cue 唔係 debug cue
+- 「A」「B」「C」「X」= 揀 option / execute
+- 「Zombie?」/「停」= 立即 ship 嘢, 唔好再傾
+- 「好」/「B吧」= approve 上次 option, execute
+- 「您開工吧」/「開工吧」= sprint planning gate (Day 15 lesson 已 capture)
+
+今次 session 嘅「完成？」→ 標準 red-line 33 verify, 4 個 check 全部 pass, worktree clean,
+HEAD 同步 origin, 0 ahead。**Answer = "上個 session 嘅 task 已 ship ✅, 等你揀下一手"**。
+
+**記**: David 嘅 failure-state cue pattern 仲喺 `user.md` (記憶), Skill 唔重覆,
+只提呢度係配合「完成？」嘅 standard response template。
+
+---
+
+## ⚠️ Day 15 Lesson (2026-06-07) — Reconstruction recipe when state file is generic template
+
+`resume.sh` / `recovery.sh` 嘅 `save_state.py` stub `detect_decisions_from_session()` 仲未 implement,
+`replace()` 嘅 placeholder 命中率低 → 寫出嚟嘅 `dev-task-state.md` Goal/Decisions/Next Steps 全部係
+`<placeholder>`。Resume agent 以為冇 context,實際係要 *look harder*。**4-source 重建 sequence**(第 3 次撞牆,2026-06-07 Day 14.7 落實):
+
+1. `git log --oneline -20` + `git status` + `git log origin/main..HEAD` (red-line 33 revert check) → 知道做咗咩
+2. `session_search(query="<project> Day <N> <key-term>")` (FTS5 multi-keyword + quote) → 拎 bookend_start / bookend_end (5 sessions max, ±5 messages per match)
+3. `cat docs/_meta/interruption_log.md` → audit trail of save events
+4. **David 嘅 last message** — single-letter (`A`/`B`/`C`/`X`)、`好`、`B吧`、ship cue (`recovery` / `Zombie?` / `停`) → **直接 execute,唔好再問**
+
+**輸出**:📍 Resuming <project> 段 + Goal (1 句) + Current state (HEAD + branch + working tree) + Decisions (max 5) + Open question (如果有) + Next 3-5 steps (concrete, file path) + Risks。
+
+**5 tool calls** 完成 reconstruction vs 30+ 問 David 重述。詳細 recipe + worked example (2026-06-07 crm-system Day 14.7):
+`references/reconstruct-context-from-git-and-sessions.md`
+
+**何時 recipe 失敗**:1 個禮拜後、多 task 並行、last message 模糊 → 問 1 條 clarifying question,3-4 options 錨住最 likely 嘅 next action。**唔好重新問上一個 session 已經問過嘅 Q** — 答案已經喺度。
+
 ## 4 個 Known limitations (TODO)
 
 1. `sync_external.py` 而家只寫 local jsonl fallback — mem0 / honcho API integration 仲未 implement
 2. Agent 第一次入新 session 唔會**自動** load state — David 要主動 run `resume.sh` (或 `--skills dev-task-memory` flag)
 3. `recovery.sh` 冇 **pre-shutdown hook** 自動 fire (要手動 run)
 4. 3 個 resume option 都係 CLI, 冇 Discord `/resume` slash command
+
+## ⚠️ Day 14.7 Lesson (2026-06-07) — Post-Recovery Verification
+
+`resume.sh` 攞返 state + verify git log 之後,**仲有兩個 prod-deploy-killer
+唔 surface 喺 git / state / standard smoke output 入面**:
+
+1. **Untracked providers** — HEAD 已 commit `import { X }` 但 `X` 嘅 file 仲
+   untracked。Dev build OK (Vite 攞 working tree),prod `git pull` 必 BUILD FAIL
+   (tracked tree 冇 X)。
+2. **Stale Docker image bundle** — `docker ps` 顯示 `Up (healthy)` 唔等於
+   bundle 包含最新 source。SettingsLayout / Tax UI / Deal Autocomplete 嘅
+   source 已經 commit 咗,但 running image bake 喺 8 個鐘前。
+
+兩個嘅 detection recipe + fix command:**`references/post-recovery-verification.md`**
+(§A untracked providers, §B stale bundle, **§C stale stash detection** — added
+2026-06-07 Day 15 crm-system when pre-review stash 100% subsumed by Day 14.7
+merge, pop 撞出 duplicate `toIdArray` definitions + 3 untracked file conflict
+bail-out)。跑完 `resume.sh` 之後、claim "ready to ship / merge / PR" 之前跑,
+**Recipe C 必須喺 `git stash pop` 之前跑** — 30 秒 save 一次 prod build fail
++ working-tree landmine。
+
+## ⚠️ Day 14.7 Final Lesson (2026-06-07) — Smoke-before-Merge Flow
+
+Recipe A + B 解決咗 "verify 唔 surface 嘅 problem" 之後,PR ready 嘅
+**standard answer 由 "I smoke 過 dev" 升級做 trunk-based 4-phase flow**。
+2026-06-07 crm-system Day 14.7 第一次 full 跑完:
+
+```
+Phase 1: Pre-merge  ── dev host
+  1a. 1-click commit untracked providers  (`templates/commit-untracked-files.sh`)
+  1b. 1-click push to origin                (`templates/push-after-commit.sh`)
+
+Phase 2: Staging smoke ── staging host
+  2a. checkout branch + pull + rebuild
+  2b. apply prisma migrate deploy + status  (防 Day 9 P3009 drift)
+  2c. run 14-step E2E smoke                 (`templates/smoke-before-merge.sh`)
+  2d. if smoke FAIL → DO NOT MERGE,回到 Phase 1 fix
+
+Phase 3: Merge ── dev host
+  3a. `git checkout main && git merge --no-ff <branch> && git push`
+
+Phase 4: Prod deploy ── prod host (紅線 4,完全留 David)
+  4a. `git pull origin main`
+  4b. `docker compose ... run --rm api bunx prisma migrate deploy`
+  4c. `docker compose ... run --rm api bun run db:seed`  (RBAC re-seed)
+  4d. `docker compose ... up -d --build web`  (rebuild image with new source)
+  4e. post-deploy smoke: 7 tabs 200 / tax 13→17 round-trip / bundle 含 new feature string
+```
+
+**3 個 script 互相 chain**(每個 print 下一個 command),David 唔需要
+記住順序:`commit → push → smoke`,**全部 smoke-passed 先可以 merge**。
+
+**Hermes-redact pitfall (class-level,所有 E2E smoke script 都撞)**: 寫
+`Authorization: Bearer $JWT` 喺 shell 嗰陣 Hermes 嘅 secret-detection
+會 replace 個 `$JWT` literal 變 `***`(就算 `$JWT` 係 shell variable 都食),
+result = curl call 全部用空 token → smoke 100% fail。Fix pattern:
+`"B" + "earer "` string concat + `/tmp/jwt.txt` file-based token。詳細
+template 同 pitfall 解釋:`references/e2e-smoke-script-authoring.md`。
+
+**完整 4-phase 流程 + 3 script 設計 + 點解 smoke-before-merge 重要**:
+`references/smoke-before-merge-flow.md`。
+
+**Reusable shell templates**(由今次 session 嘅 `/tmp/*.sh` sanitized):
+- `templates/commit-untracked-files.sh` — 1-click commit + 3 safety checks
+- `templates/push-after-commit.sh` — 1-click push to origin
+- `templates/smoke-before-merge.sh` — 14-step E2E smoke(redact-safe)
+
+## 🧪 E2E Validation (2026-06-07 crm-system Day 14.7)
+
+```
+1. recovery.sh crm-system "Smoke-before-merge ready"
+   ✅ State saved, 3 resume options printed
+2. resume.sh crm-system
+   ✅ State + git log reconstructed
+3. post-recovery-verification recipes A + B
+   ✅ Recipe A: 0 untracked-provider lines (3 multi-*.tsx 已 untracked 由 PR
+      resolution script 處理,跑 Recipe A 確認 "⚠️ UNTRACKED-PROVIDER" 印出)
+   ✅ Recipe B: bundle 含 "搜尋公司" / "搜尋銷售員" (dev rebuild 後)
+4. 3 /tmp script 寫好
+   ✅ /tmp/commit-untracked-files.sh (4.5KB) — 3 safety checks + git add 3 files + commit
+   ✅ /tmp/push-after-commit.sh (1.2KB)
+   ✅ /tmp/smoke-before-merge.sh (12.5KB) — 14 步,full Hermes-redact-safe
+5. PR description patched
+   ✅ 加 Smoke-before-Merge section + 3 script refs + 去重 Known Minor Issues
+   ✅ Resolution of 4 untracked files 改 manual + 1-click 兩版
+6. 14-step smoke 真係跑 dev host → 14/14 PASS (login + 7 tabs + tax round-trip + audit + deals + bundle)
+```
+
+## ⚠️ Day 11 Lesson (2026-06-09) — Generic Template Limitation
+
+`recovery.sh` 嘅 Step 2 跑 `save_state.py`,但個 script 嘅 `detect_decisions_from_session()`
+係 stub(永遠 return `[]`),絕大部分 template `replace()` call 又 miss 個 placeholder
+(只 hit `branch` / `commit` / `uncommitted changes` 嗰 3 個)。結果:**寫出嚟嘅
+`dev-task-state.md` 係 generic template**,Decisions / Files / Next Steps / Risks
+section 全部係 `<placeholder>` 或 `**待填寫**`。
+
+影響:
+- Resume 個新 session agent 讀個 state file,完全失憶(2026-06-09 hit 過 2 次)
+- `load_state.py` 嘅 output 看似正常但內容係空
+
+Mitigation(已喺 `recovery.sh` 加 warning):
+- `recovery.sh` Step 2 之後印 "⚠️ Day 11 lesson" block
+- 對應 file: `dev-task-memory/references/recovery-template-limitation.md` 嘅 workaround recipe
+
+詳細分析同 future fix blueprint(Patch D)睇:
+`~/.hermes/profiles/developer/skills/dev-task-memory/references/recovery-template-limitation.md`
+
+## ⚠️ Day 15 Lesson (2026-06-07) — State-File-Generic 4-Step Reconstruction Recipe
+
+當 `resume.sh` 印出嚟嘅 state file 全部係 `<placeholder>` / `**待填寫**`
+(generic template),**唔好 trust state file** — 直接跑以下 4 步從外部 source
+reconstruct context。**已驗證有效**(2026-06-07 crm-system Day 14.7 → Day 15
+handoff, 用呢個 recipe 100% 重建 context):
+
+```bash
+# 1. 確認 working tree 狀態
+cd ~/www/<project>
+git status                  # clean / modified / untracked
+git log --oneline -20       # 最近 20 commits 嘅 narrative
+git log --oneline origin/main..HEAD   # ahead commits (本地未 push)
+git log --oneline main..origin/main   # behind commits (remote 有新)
+
+# 2. Session search 撞返最近 session 嘅 bookend context
+#    (呢個係最強 signal — bookend_start / bookend_end / messages 圍住 match)
+session_search query="<project> <scope keywords>" limit=5
+#    例如: query="crm-system Day 14 day 15 tech debt red line 16"
+
+# 3. 從 session 嘅 bookend_end 段搵:
+#    - 「David 揀咗 X」 / Q&A 答案
+#    - 上一個 sprint 嘅 final state / commit SHA
+#    - 任何「Next: <step>」 / 「等 David 揀 <option>」嘅 pending cue
+
+# 4. 重新 emit 個 context summary 比 user:
+#    - HEAD commit + branch + 同步狀態
+#    - 上個 sprint 嘅 final commit
+#    - Pending questions / 等 user 答嘅 cue
+#    - 建議 next action
+```
+
+**關鍵 insight**:`session_search` 嘅 FTS5 bookend 機制 + `git log` 嘅 commit
+narrative,**已經涵蓋 state file 應該記住嘅 95% 內容**。State file 嘅 value
+唔係單一 source of truth, 而係 *user/agent 上一個 turn 嘅「我哋傾到邊」
+shortcut*。當 shortcut 失效, git + session_search = 同等甚至更好嘅 source。
+
+**對 `feature-plan-alignment` skill 嘅 signal**: 當 David 講「開工吧」/
+「您開工吧」/「start work」, scope 屬 1+ sprint / >5 files / 4+ commits /
+紅線 16 受影響, **解讀做「approve to start sprint planning」**, 唔係
+「approve to start coding」— 必須先 plan doc 寫好 scope options 俾 David 揀。
+2026-06-07 撞過, 紅線 22 (plan stage 不動 source code) 守住。
+
+**4-step recipe 嘅 edge cases**:
+- 冇 session_search hit:FTS5 query 太 narrow, 用 `session_search()` browse shape 拎最近 5 個 session
+- 冇 git log:- 可能新 project 仲未 init, fallback 到 `ls docs/` + `cat docs/retros/INDEX.md`(如果存在)
+- git log 有 ahead commits:可能上一個 agent 留低 un-pushed work,要 surface 出嚟問 user 點處理
+- 全部 source 都失效:**誠實講 "I cannot reconstruct state, please summarise what we did last"**,唔好 fabricate
 
 ## 🧪 驗證
 

@@ -646,11 +646,72 @@ And in `schema.prisma`, append the new members to the `enum AuditAction { ... }`
 
 Elysia auto-injects `request` (the standard `Request` object) into every handler — just destructure it. **But** TypeScript won't know about it without a cast. Pragmatic fix: just write `async ({ ..., userId, request }) => { ... }` and ignore the LSP squiggle. Bun runtime is happy.
 
-## 相關 skills
+### 8e. Pitfall: Adding a new permission to `PERMISSIONS` map is NOT enough (Lesson 2026-06-07, refined 2026-06-09)
 
-- `crm-data-model` — User / Company / ActivityLog model 嘅 Prisma schema
-- `elysia-typescript-workarounds` #15 — `use(authContext)` derive pattern 嘅 type-cast workaround
-- `bun-elysia-react-vite-stack` — Elysia + Prisma 嘅整個 stack
+**問題**:新增 `ai-config:read` / `ai-config:update` permission 之後,backend route 用 `requirePermission('ai-config:read')` 仲係返 **403 Forbidden** for admin。**原因**:DB-driven RBAC 入面,permissions 有 3 個 layer 全部要 sync:
+
+1. **`packages/shared/src/permissions.ts` 個 `PERMISSIONS` const** — 個 type / runtime array
+2. **`packages/shared/src/permissions.ts` 個 `ROLE_PERMISSIONS` map** — 每個 role 配咩 permission
+3. **`role_permissions` 個 DB table** — 真正 runtime check 用嘅 source of truth
+
+**只改 (1) + (2) 唔夠** — backend `userHasPermission` 從 DB table 拎,DB 冇 row 即係 false。
+
+**3 個 fix approach**(揀邊個視乎 situation):
+
+| Approach | 動作 | 適合 |
+|---|---|---|
+| **A. 改 `seed.ts`** | 加新 permission 入 ADMIN 個 set,`prisma db seed` 覆蓋 | 開發早期 / DB reset OK |
+| **B. 直接 DB INSERT** | `INSERT INTO role_permissions ...` 配返 `prisma migrate dev` 嘅 `_prisma_migrations` | DB 有 prod data,**唔可以 reset** — **推薦** |
+| **C. 用 admin UI** | 透過 `/admin/roles` 嘅 role edit dialog 加新 permission | 經常有新 permission |
+
+**Quick DB INSERT recipe**(approach B, crm-system 2026-06-07 用過):
+
+```sql
+-- 1. 揾 admin role 個 ID
+SELECT id FROM roles WHERE name = 'ADMIN';
+-- 假設: role_admin_system_001
+
+-- 2. 確認個 permission 唔存在(防 duplicate)
+SELECT permission FROM role_permissions
+WHERE "roleId" = 'role_admin_system_001' AND permission LIKE 'ai-config%';
+-- 0 rows = 可以加
+
+-- 3. INSERT
+INSERT INTO role_permissions (id, "roleId", permission, "createdAt")
+VALUES (
+  'rpx_' || md5(random()::text),  -- 任何 unique cuid-ish
+  'role_admin_system_001',
+  'ai-config:read',
+  NOW()
+);
+-- 重複做一次 for 'ai-config:update'
+```
+
+**Long-term fix**:**`seed.ts` 入面建立 `applyPermissionMap()` helper**,每次 `prisma db seed` 自動 reconcile `ROLE_PERMISSIONS` map 同 `role_permissions` table — DELETE 走 missing,INSERT 新增。咁將來新 permission 自動 apply。
+
+**Smoke 確認 step**(任何 RBAC 改動之後必跑):
+
+```bash
+# 1. Login 取 admin token
+TOKEN=***" | jq -r .token)
+
+# 2. Hit 個受影響 endpoint
+curl -s -X GET http://localhost:3001/ai/config \
+  -H "Authorization: Bearer *** 期望: 200(已 add permission)或 403(仍缺) — 用呢個做 binary check
+```
+
+**教訓 checklist**(新增 permission 時必做):
+- [ ] `PERMISSIONS` const 加咗
+- [ ] `ROLE_PERMISSIONS` map 對應 role 加咗(eg. ADMIN set)
+- [ ] **`role_permissions` DB table 有 INSERT**(最常漏)
+- [ ] Smoke 跑 endpoint 確認 200
+- [ ] 寫 `REGRESSION-GUARD.md` entry 紀錄 permission 名 + admin role ID
+
+## See also
+
+- `references/elysia-plugin-boundary-derive.md` — full reproduction recipe and trace logs for Step 9
+- `templates/role-rbac-migration.sql` — ready-to-run migration for Step 2
+- `templates/require-permission-rbac.ts` — the working Elysia plugin template (Step 9 + Step 3)
 - `prisma-sqlite-bun-setup` — SQLite 用 string 取代 enum 嘅 workaround
 - `ai-agent-tool-calling` — AI agent 嘅 `audit` permissions (e.g. chat 唔可以 read audit)
 
@@ -965,6 +1026,326 @@ const item = await prisma.quotationItem.create({
 3. **Prisma `as never` for enum + JSON** (Step 11): the workhorse cast for polymorphic writes.
 4. **`@elysiajs/jwt` standalone `.verify` is not a function** (Step 9): use `jose.jwtVerify` instead. Easy to assume the factory returns a usable verifier; it doesn't.
 5. **Cache invalidation in RBAC** (Step 3): call `clearRoleCache(roleId)` after every role update. The 5-min TTL is the safety net, not the primary mechanism.
+
+## Step 14: `requirePermission` with `as: 'scoped'` only applies to the NEXT verb (Day 14 lesson, crm-system 2026-06-07)
+
+**The trap**: Elysia 1.2's `onBeforeHandle` is plugin-boundary, but **per-verb scope is the other half of the puzzle**. The skill's own `requirePermission` helper uses `{ as: 'scoped' }` (see `templates/require-permission-rbac.ts`), which means:
+
+```ts
+export function requirePermission(perm: string) {
+  return new Elysia({ name: `require-permission:${perm}` }).onBeforeHandle(
+    { as: 'scoped' },                        // ← scoped, not global
+    async (ctx) => { ... }
+  );
+}
+```
+
+**`.use(requirePermission('X'))` at the TOP of a route file gates ONLY the very next `.get/.post/.patch/.delete`**. Subsequent verbs need their own `.use()` call.
+
+```ts
+// ❌ BROKEN — only the first .get('/') is gated
+export const dealRoutes = new Elysia({ prefix: '/deals' })
+  .use(authContext)
+  .use(requirePermission('deal:read'))         // ← applies to next .get only
+  .get('/', ...)                               // ✅ gated
+  .get('/:id', ...)                            // ❌ PUBLIC
+  .post('/', ...)                              // ❌ PUBLIC
+  .patch('/:id', ...)                          // ❌ PUBLIC
+  .delete('/:id', ...)                         // ❌ PUBLIC
+
+// ✅ CORRECT — one .use() per verb
+export const dealRoutes = new Elysia({ prefix: '/deals' })
+  .use(authContext)
+  .use(requirePermission('deal:read'))
+  .get('/', ...)
+  .use(requirePermission('deal:read'))
+  .get('/:id', ...)
+  .use(requirePermission('deal:create'))
+  .post('/', ...)
+  .use(requirePermission('deal:update'))
+  .patch('/:id', ...)
+  .use(requirePermission('deal:delete'))
+  .delete('/:id', ...)
+```
+
+**Why this matters for security audits**: when a route file has 5-7 verbs and only the first `.use()` covers the first one, the other 4-6 endpoints are silently public. The Day 14 crm-system review caught this exact pattern in `company.ts`, `contact.ts`, `deal.ts` — 16 endpoints total were public, all because the original author assumed `.use()` was file-scoped.
+
+**Audit recipe to find these** (run from `apps/api/src/routes/`):
+
+```bash
+# For each route file, count: number of verbs vs number of .use(requirePermission(...))
+for f in *.ts; do
+  verbs=$(grep -cE "^\s*\.(get|post|patch|delete)\(" "$f")
+  perms=$(grep -c "requirePermission" "$f")
+  echo "$f  verbs=$verbs  requirePerms=$perms"
+done
+# If verbs > perms (after subtracting 1 for the top-level gate), the file has public endpoints.
+```
+
+**Expected output for a fully-gated file**: `verbs==perms` (one perms per verb, no top-level gate). **If `perms < verbs`** → suspect public endpoints → read the file and confirm.
+
+**Symptom signature** (how this manifests in production):
+- `curl http://api.example.com/deals` returns a JSON list of every deal in the DB
+- `curl -X POST http://api.example.com/companies -d '{"name":"X"}'` succeeds with 201 and `actorId=null` in the audit log
+- No build error, no test failure — this is a **silent authorization bypass** caught only by manual code review or authz-aware integration tests
+
+**Mitigation options** (pick one when the codebase already has these gaps):
+
+| Option | What it does | Trade-off |
+|---|---|---|
+| **Per-verb `.use()`** (recommended) | Manual fix per endpoint, no plugin change | Tedious for big files, but explicit and audit-friendly |
+| **Switch `as: 'scoped'` → `'global'`** in `requirePermission` | One `.use()` covers all verbs | Easy, but couples the permission choice to the whole file (you can't have `GET /` need `read` and `POST /` need `create` with the same gate) |
+| **Route-grouping via sub-Elysia** | `.group('/companies', (app) => app.use(...).get(...).post(...))` | Cleanest for new code, refactor cost for existing |
+
+For a one-time P0 fix-batch on existing code, **per-verb `.use()`** is fastest and most explicit. For new code, **route grouping** is the cleaner pattern.
+
+## Step 15: Boot-time JWT_SECRET hard-fail template (Day 14 P0-4, crm-system 2026-06-07)
+
+**The trap**: Elysia + `@elysiajs/jwt` config usually looks like:
+
+```ts
+// ❌ SILENTLY BOOTS WITH A KNOWN-WEAK SECRET
+.use(jwt({ name: 'jwt', secret: process.env.JWT_SECRET ?? 'dev-only-secret-please-change' }))
+```
+
+If the env var is missing in production, the API starts up with the literal fallback string. Anyone reading the public source repo can forge tokens. **There is no warning.**
+
+**Fix**: hard-fail at the top of `index.ts`, BEFORE the Elysia instance is constructed:
+
+```ts
+// apps/api/src/index.ts — top of file, before any import that uses JWT
+const JWT_SECRET=proces...
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required. Refusing to boot.');
+}
+if (JWT_SECRET.length < 32) {
+  throw new Error(`JWT_SECRET must be at least 32 characters (got ${JWT_SECRET.length}). Generate one with: openssl rand -hex 32`);
+}
+if (process.env.NODE_ENV === 'production' && JWT_SECRET=*** 'dev-only-secret-please-change') {
+  throw new Error('Refusing to boot: JWT_SECRET is set to the dev-only fallback in production.');
+}
+
+// ...later...
+.use(jwt({ name: 'jwt', secret: JWT_SECRET }))    // ← no ?? fallback anymore
+```
+
+**Why 32 chars**: 32 random hex chars = 128 bits of entropy, which matches `aes-256-gcm` and is the minimum most JWT libraries consider "strong" for HS256. Below that, the secret is brute-forceable offline given any leaked token.
+
+**Smoke verification recipe** (3 cases, must throw):
+
+```bash
+# 1. short secret
+JWT_SECRET=*** /tmp/test-jwt.ts
+# → error: JWT_SECRET must be at least 32 characters (got 5).
+
+# 2. dev fallback in production
+JWT_SECRET=dev-on...ange NODE_ENV=production bun /tmp/test-jwt.ts
+# → error: JWT_SECRET must be at least 32 characters (got 29).
+#    (length check fires first; both checks throw which is fine)
+
+# 3. valid
+JWT_SECRET=*** rand -hex 32> bun /tmp/test-jwt.ts
+# → OK boot, secret length: 64 env: development
+```
+
+**Caveat — Bun `--env-file` shadowing**: if you test with `bun --env-file=.env`, the shell `JWT_SECRET=*** override` does NOT take precedence — Bun loads the .env file values as the floor. To test the failure path, write a temp env file with a short secret, then run `bun --env-file=/tmp/crm-env-weak src/index.ts`. This bit me in crm-system Day 14 — wasted 2-3 smoke attempts before isolating.
+
+**Same pattern for other secrets**: `AI_CONFIG_ENCRYPTION_KEY` (must be 32-byte hex, `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) and any `*_SECRET` / `*_KEY` env var deserves the same 3-condition check. Encapsulate as a `requireSecret(name, opts)` helper if you have more than 2:
+
+```ts
+function requireSecret(name: string, opts: { minLength?: number; forbidden?: string[] } = {}) {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} environment variable is required.`);
+  if (opts.minLength && value.length < opts.minLength) {
+    throw new Error(`${name} must be at least ${opts.minLength} characters (got ${value.length}).`);
+  }
+  if (opts.forbidden?.includes(value) && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is set to a forbidden fallback in production.`);
+  }
+  return value;
+}
+```
+
+## Step 16: Finding public routes — the 60-second audit recipe
+
+When joining a new project (or before shipping a security patch), the fastest way to find unauthorized endpoints is a 1-liner over the routes directory:
+
+```bash
+# From apps/api/src/routes/, count per-file: how many verbs vs how many requirePermission gates
+for f in *.ts; do
+  name=$(basename "$f" .ts)
+  verbs=$(grep -cE "\.(get|post|patch|delete)\(" "$f")
+  perms=$(grep -c "requirePermission" "$f")
+  authctx=$(grep -c "authContext" "$f")
+  printf "%-20s verbs=%2d  requirePerm=%2d  authContext=%2d\n" "$name" "$verbs" "$perms" "$authctx"
+done
+```
+
+**Interpretation**:
+
+| Condition | Means |
+|---|---|
+| `authContext=0 requirePerm=0` | **PUBLIC** — every endpoint in this file is anonymous-reachable. Top priority to fix. |
+| `authContext>0 requirePerm=0` | Logged-in users can hit everything; no per-action check. Usually OK for self-service endpoints, but audit each. |
+| `authContext>0 requirePerm>0` | Gated, but verify `perms >= verbs` (one per verb, since `as: 'scoped'` only covers the next verb — see Step 14). |
+| `authContext=0 requirePerm>0` | Gated by permission but no `userId` derive — `logEvent` will record `actorId=null`. Fix `authContext` first, then check `getUserIdFromRequest` works for `requirePermission`. |
+
+**Expected output for a fully-gated file** (e.g. `users.ts`):
+```
+users                verbs= 7  requirePerm= 7  authContext= 2
+```
+
+**Day 14 crm-system audit results** (verbatim, before the fix):
+```
+activity             verbs= ?  requirePerm= 0  authContext= 3
+ai-config            verbs= ?  requirePerm= 1  authContext= 0
+audit                verbs= 2  requirePerm= 2  authContext= 2
+auth                 verbs= 4  requirePerm= 0  authContext= 2     ← OK (login/register/me/change-password are auth endpoints)
+chat                 verbs= 4  requirePerm= 0  authContext= 0     ← PUBLIC
+company              verbs= 4  requirePerm= 0  authContext= 0     ← PUBLIC
+contact              verbs= 4  requirePerm= 0  authContext= 0     ← PUBLIC
+deal                 verbs= 5  requirePerm= 0  authContext= 0     ← PUBLIC
+product              verbs= 4  requirePerm= 0  authContext= 2
+quotation            verbs= 4  requirePerm= 0  authContext= 2
+... (the rest gated)
+```
+
+**This recipe surfaces the entire attack surface in one command.** Save it as `scripts/audit-public-routes.sh` and wire it into pre-deploy smoke.
+
+## See also
+
+- `references/elysia-plugin-boundary-derive.md` — full reproduction recipe and trace logs for Step 9
+- `references/p0-public-routes-audit-recipe.md` — full audit + fix-batch workflow for finding and gating public endpoints (Day 14, crm-system 2026-06-07)
+- `templates/role-rbac-migration.sql` — ready-to-run migration for Step 2
+- `templates/require-permission-rbac.ts` — the working Elysia plugin template (Step 9 + Step 3)
+- `templates/require-secret.ts` — Step 15 boot-time secret validator
+- `prisma-sqlite-bun-setup` — SQLite 用 string 取代 enum 嘅 workaround
+- `ai-agent-tool-calling` — AI agent 嘅 `audit` permissions (e.g. chat 唔可以 read audit)
+
+## Step 13: Role name invariant — UPPERCASE + displayName 分離 (2026-06-06 真實撞牆, smoke test 揭發)
+
+`POST /roles` 嘅 `name` field 喺 crm-system 強制 **UPPERCASE 內部 identifier** (`ADMIN` / `SALES` / `VIEWER` / `SMOKE_TEST_ROLE`),而 `displayName` 先係 user-facing 中文/英文混合。Backend check 喺 `apps/api/src/routes/roles.ts` line 72 附近:
+
+```typescript
+if (data.name !== data.name.toUpperCase()) {
+  set.status = 400;
+  return { error: 'Role name must be UPPERCASE (e.g. SENIOR_SALES)' };
+}
+```
+
+呢個 invariant 嘅**對應 frontend form 一定要 mirror**,否則 user 填「Senior Sales」會凍住冇 feedback:
+
+```tsx
+// apps/web/src/components/role-dialog.tsx — 必須 UPPERCASE 化
+<Input
+  value={name}
+  onChange={(e) => setName(e.target.value.toUpperCase().replace(/\s+/g, '_'))}
+  placeholder="e.g. SENIOR_SALES"
+/>
+// 仲要喺 submit 前:
+// if (name !== name.toUpperCase()) setError('內部名稱必須大寫');
+```
+
+**Smoke test 揭發嘅 bug sequence** (crm-system 2026-06-06):
+1. Click「新增自訂角色」→ dialog 開,counter「0 個已選」
+2. 填 `name="Smoke Test Role"`,勾 4 個 permission
+3. Click「建立」→ **dialog 凍住**:冇 spinner,冇 error banner,冇 toast,console 乾淨
+4. 背後:`POST /roles` 返 400(lowercase reject),`useMutation.onError` **冇 render error state**(debug 細節見 `visual-ui-bug-debugging` skill 嘅「Backend Invariant Silent-Fail」section)
+5. **Bypass UI direct API probe 確認 backend 正常**:
+   ```bash
+   docker exec crm-api sh -c 'cat > /tmp/probe.mjs << "EOF"
+   const login = await fetch("http://localhost:3001/auth/login", {
+     method: "POST", headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({ email: "admin@crm.local", password: "admin123" })
+   });
+   const { token } = await login.json();
+   const r = await fetch("http://localhost:3001/roles", {
+     method: "POST",
+     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+     body: JSON.stringify({ name: "SMOKE_TEST_ROLE", displayName: "Smoke Test Role", ... })
+   });
+   console.log("status:", r.status, "body:", await r.text());
+   EOF
+   node /tmp/probe.mjs'
+   # → 201 + 完整 record
+   ```
+6. **清理**:`DELETE /roles/:id` 將 smoke test 整出嚟嘅 row 移除,**避免污染 prod DB**
+
+**Lesson 3 條 invariant checklist**(任何 backend 強制嘅 invariant, frontend form 必 mirror):
+1. **Format invariant**(`UPPERCASE` / `slug` / `email`) → input `onChange` 即時 transform + Zod schema `.regex()`
+2. **Length invariant**(`minLength` / `maxLength`) → input `maxLength` + Zod schema
+3. **Enum invariant**(`role: 'ADMIN' | 'SALES'`) → 用 `<Select>` 而唔係 `<Input>`,submit 前 check 個 value 喺 enum 內
+
+**Frontend 必用 toast library**(eg. `sonner` / `react-hot-toast`),`onError` 唔可以淨 render inline `<p>`(太易被 dialog 高度 ignore):
+```tsx
+const onError = (e: Error) => {
+  toast.error(parseApiError(e));      // ← 必 user-visible
+  setError(parseApiError(e));          // ← inline 輔助
+};
+### 8d. Pitfall: `request` parameter on Elysia handlers
+
+Elysia auto-injects `request` (the standard `Request` object) into every handler — just destructure it. **But** TypeScript won't know about it without a cast. Pragmatic fix: just write `async ({ ..., userId, request }) => { ... }` and ignore the LSP squiggle. Bun runtime is happy.
+
+### 8e. Pitfall: Adding a new permission to `PERMISSIONS` map is NOT enough (Lesson 2026-06-07, refined 2026-06-09)
+
+**問題**:新增 `ai-config:read` / `ai-config:update` permission 之後,backend route 用 `requirePermission('ai-config:read')` 仲係返 **403 Forbidden** for admin。**原因**:DB-driven RBAC 入面,permissions 有 3 個 layer 全部要 sync:
+
+1. **`packages/shared/src/permissions.ts` 個 `PERMISSIONS` const** — 個 type / runtime array
+2. **`packages/shared/src/permissions.ts` 個 `ROLE_PERMISSIONS` map** — 每個 role 配咩 permission
+3. **`role_permissions` 個 DB table** — 真正 runtime check 用嘅 source of truth
+
+**只改 (1) + (2) 唔夠** — backend `userHasPermission` 從 DB table 拎,DB 冇 row 即係 false。
+
+**3 個 fix approach**(揀邊個視乎 situation):
+
+| Approach | 動作 | 適合 |
+|---|---|---|
+| **A. 改 `seed.ts`** | 加新 permission 入 ADMIN 個 set,`prisma db seed` 覆蓋 | 開發早期 / DB reset OK |
+| **B. 直接 DB INSERT** | `INSERT INTO role_permissions ...` 配返 `prisma migrate dev` 嘅 `_prisma_migrations` | DB 有 prod data,**唔可以 reset** — **推薦** |
+| **C. 用 admin UI** | 透過 `/admin/roles` 嘅 role edit dialog 加新 permission | 經常有新 permission |
+
+**Quick DB INSERT recipe**(approach B, crm-system 2026-06-07 用過):
+
+```sql
+-- 1. 揾 admin role 個 ID
+SELECT id FROM roles WHERE name = 'ADMIN';
+-- 假設: role_admin_system_001
+
+-- 2. 確認個 permission 唔存在(防 duplicate)
+SELECT permission FROM role_permissions
+WHERE "roleId" = 'role_admin_system_001' AND permission LIKE 'ai-config%';
+-- 0 rows = 可以加
+
+-- 3. INSERT
+INSERT INTO role_permissions (id, "roleId", permission, "createdAt")
+VALUES (
+  'rpx_' || md5(random()::text),  -- 任何 unique cuid-ish
+  'role_admin_system_001',
+  'ai-config:read',
+  NOW()
+);
+-- 重複做一次 for 'ai-config:update'
+```
+
+**Long-term fix**:**`seed.ts` 入面建立 `applyPermissionMap()` helper**,每次 `prisma db seed` 自動 reconcile `ROLE_PERMISSIONS` map 同 `role_permissions` table — DELETE 走 missing,INSERT 新增。咁將來新 permission 自動 apply。
+
+**Smoke 確認 step**(任何 RBAC 改動之後必跑):
+
+```bash
+# 1. Login 取 admin token
+TOKEN=***" | jq -r .token)
+
+# 2. Hit 個受影響 endpoint
+curl -s -X GET http://localhost:3001/ai/config \
+  -H "Authorization: Bearer *** 期望: 200(已 add permission)或 403(仍缺) — 用呢個做 binary check
+```
+
+**教訓 checklist**(新增 permission 時必做):
+- [ ] `PERMISSIONS` const 加咗
+- [ ] `ROLE_PERMISSIONS` map 對應 role 加咗(eg. ADMIN set)
+- [ ] **`role_permissions` DB table 有 INSERT**(最常漏)
+- [ ] Smoke 跑 endpoint 確認 200
+- [ ] 寫 `REGRESSION-GUARD.md` entry 紀錄 permission 名 + admin role ID
 
 ## See also
 

@@ -8,7 +8,9 @@ description: |
 trigger: |
   「bug 翻發」「regression」「舊 bug」「為什麼同樣嘅 bug 又出現」「fix 完又壞」
   或任何 bug 修復流程
-version: 1
+  任何時候 audit `rbac.ts` / `logEvent` caller / RBAC seed coverage 嘅 workflow
+  出現 "seed doesn't currently write RolePermission rows" 類 comment ＝ known-bug-without-RG-entry → 紅線 13 違規
+version: 2
 category: software-development
 ---
 
@@ -286,7 +288,7 @@ name: Regression Guard
 on: [pull_request]
 jobs:
   check-rg-references:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu
     steps:
       - uses: actions/checkout@v3
       - name: Check RG comment markers
@@ -355,7 +357,6 @@ jobs:
 3. **Root cause 分析**:
    - 技術:`resetPassword` 只 update password hash,**冇** invalidate existing sessions
    - Process:之前 sprint planning 冇考慮「password change = security event = invalidate all sessions」呢個 invariant
-   - Prevention:加 `session.invalidate_all_for_user(userId)` 喺 `resetPassword` 流程
 4. **修 code**:加 invalidate logic
 5. **加 regression test**: 加多 `it('should invalidate refresh tokens after password reset')`
 6. **寫 RG-004 entry**:
@@ -378,7 +379,198 @@ jobs:
 
 ---
 
-## ⚠️ Pitfall — `Record<EnumType, ...>` map + backend emit 唔同步
+## ⚠️ Pitfall — logEvent API field-name drift in caller code (crm-system 2026-06-07, pre-existing)
+
+**場景**: `apps/api/src/middleware/audit.ts:12-20` 定義嘅 `AuditEvent` interface 係:
+
+```typescript
+export interface AuditEvent {
+  actorId: string | null;       // ← 正確 field name
+  action: AuditAction;          // ← typed enum, NOT string
+  resourceType?: string;
+  resourceId?: string;
+  description?: string;
+  metadata?: unknown;
+  request?: Request;
+}
+```
+
+但 `apps/api/src/routes/settings.ts:88-95` 同其他舊 routes call 緊:
+
+```typescript
+await logEvent({
+  userId,              // ❌ 錯 — interface 用 actorId
+  action: 'CREATE',    // ❌ 錯 — 應該係 AuditAction.CREATE 唔存在(只係 PIPE 嘅 string,actual 係 'PIPELINE_STAGE_CREATED' 等)
+  entity: 'PipelineStage',  // ❌ 錯 — interface 用 resourceType
+  entityId: stage.id,       // ❌ 錯 — interface 用 resourceId
+  description: `...`,
+  request,
+});
+```
+
+**症狀**: TypeScript 唔報錯(`@ts-nocheck` 喺 settings.ts) + `bun run --no-typecheck` boot OK + runtime Elysia 唔驗 shape = **每次 audit log 寫入實際係 `{ actorId: undefined, action: undefined, resourceType: undefined, ... }`** → Prisma `auditLog.create()` 因為 `action` 唔可以 null throw `TypeError: Invalid value` → logEvent 嘅 `try/catch` 靜靜 swallow 咗。**Audit log 永遠唔 write**。`console.error('[audit] failed to log event:', ...)` 但你冇 grep stderr 所以唔知。
+
+**Root cause(為何會壞)**:
+1. 早期 `logEvent` 可能用 `userId / action: 'CREATE' / entity: ...` (simplified shape)
+2. 後來改用 `actorId / action: AuditAction / resourceType: ...` 嚴格 type
+3. 舊 routes 冇跟住 update
+4. 冇任何 test / smoke check audit log 寫成功
+5. 冇 `rg "logEvent" apps/api/src/routes/` 嘅 audit
+
+**3 個 prevention 措施**(必須一齊做):
+
+1. **Caller code 跟 AuditEvent interface 100%**:
+   ```typescript
+   await logEvent({
+     actorId: userId,                                            // ← 唔係 userId
+     action: 'PIPELINE_STAGE_CREATED',                            // ← typed AuditAction
+     resourceType: 'pipeline_stage',                              // ← 唔係 entity
+     resourceId: stage.id,                                        // ← 唔係 entityId
+     description: `Created stage "${name}"...`,
+     metadata: { name, position: nextPosition, pipelineId: pipeline.id },
+     request,
+   });
+   ```
+
+2. **驗 audit log 真係寫到**:
+   ```bash
+   # Smoke test: trigger 一個 mutation, 直接 query audit_logs table
+   PGPASSWORD=*** psql -h localhost -U crm -d crm -c \
+     "SELECT action, resource_type, actor_id FROM audit_logs ORDER BY created_at DESC LIMIT 5;"
+   # 預期: action 唔可以 NULL, actor_id 唔可以 NULL for authed calls
+   ```
+
+3. **Startup health check**(可選但推薦):
+   ```typescript
+   // apps/api/src/index.ts boot
+   await prisma.auditLog.create({
+     data: { action: 'USER_LOGIN', actorId: null, description: 'boot health check' },
+   });
+   await prisma.auditLog.deleteMany({ where: { description: 'boot health check' } });
+   // 如果 AuditEvent 唔啱,boot 已經 fail
+   ```
+
+**Detection signal**(出現以下即 audit 所有 `logEvent` call site):
+- `rg "logEvent\({" apps/api/src/routes/` → grep 全部 caller
+- 任何 caller 用 `userId` 唔係 `actorId` ＝ 100% 壞
+- 任何 caller 用 string literal 'CREATE' / 'UPDATE' / 'DELETE' 唔係 AuditAction enum value ＝ 100% 壞
+- 任何 caller 用 `entity: ...` 唔係 `resourceType: ...` ＝ 100% 壞
+- 任何 caller 用 `entityId: ...` 唔係 `resourceId: ...` ＝ 100% 壞
+- @ts-nocheck 喺 caller file ＝ silently 唔報錯
+
+**Pre-existing occurrences in crm-system** (2026-06-07 audit):
+- `apps/api/src/routes/settings.ts:88-95` (PIPELINE_STAGE CREATE)
+- `apps/api/src/routes/settings.ts:166-173` (PIPELINE_STAGE UPDATE)
+- `apps/api/src/routes/settings.ts:221-228` (PIPELINE_STAGE DELETE)
+- 任何其他用緊 `userId, action: 'CREATE'` pattern 嘅 route file
+
+**Lesson**:Audit log 嘅 silent failure = 整個 security/observability 失明。Type drift 喺 `try/catch` 包住嘅 helper function 入面特別危險 — 永遠 silent。`@ts-nocheck` 喺 caller = 失去咗最後一道防線。**Solution**:做 code review 時必跑 `rg "logEvent" apps/api/src/routes/` 對齊 AuditEvent interface;`rg "userId.*action.*CREATE"` 撈 0 result 先 ship。
+
+## ⚠️ Pitfall — RBAC seed coverage gap: rbac.ts reads from a table the seed never writes (crm-system 2026-06-07, CRITICAL)
+
+**場景**: `apps/api/src/middleware/rbac.ts:50-66` 嘅 `userHasPermission(userId, permission)` 真係 query DB:
+
+```typescript
+export async function userHasPermission(userId: string, permission: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { roleId: true, role: true },
+  });
+  if (!user) return false;
+
+  let roleId = user.roleId;
+  if (!roleId) {
+    const role = await prisma.role.findUnique({ where: { name: user.role } });
+    if (!role) return false;
+    roleId = role.id;
+  }
+
+  const perms = await loadRolePermissions(roleId);   // ← 讀 RolePermission table
+  return perms.has(permission);
+}
+```
+
+但 `packages/db/prisma/seed.ts` **完全冇 seed 過 `Role` / `RolePermission` row** = 個 table 永遠空 = `loadRolePermissions` 永遠 return empty Set = **`userHasPermission` 永遠 return false** = **任何 `requirePermission(...)` gate 都會 silently 403 所有 user**(包括 ADMIN)。
+
+**症狀**:
+- 冇 admin 任何人可以 hit requirePermission-gated endpoint
+- 公開 endpoint(`GET /companies` etc.)OK 因為冇 gate
+- `rbac.ts:84` 嘅 `getUserIdFromRequest` 真係 verify JWT,所以 userId 唔係 null
+- 403 response 看似正常(permission denied),但其實 ALL users 都 fail,包括 ADMIN
+- 開發人員如果用 ADMIN token 跑 smoke test,會 403 → 誤以為自己嘅 perm 唔啱 → 走去 debug role / permission 名 → 浪費幾個鐘
+- 已知存在 comment: `apps/api/src/routes/man-day-role.ts:29` 直接寫 `"because the seed script doesn't currently write RolePermission rows"` — 即係個 project 知道呢個 bug 但冇 RG entry,冇 red-line 跟進
+
+**Root cause(為何會壞)**:
+1. `rbac.ts` 設計上 read DB table (RolePermission) — 正確
+2. 開發人員 `roles.ts:131-138` 有 `tx.rolePermission.createMany()` — 即係 UI 可以寫入
+3. 但 seed 從來冇做呢步
+4. Production 環境 ADMIN 由 UI 改自己嘅 role 之前,冇辦法 access 任何 requirePermission-gated endpoint
+5. 冇 integration test 撞「fresh DB + new user + 任何 perm check」
+
+**3 個 prevention 措施**(必須一齊做):
+
+1. **Seed `Role` + `RolePermission` rows** from `packages/shared/src/permissions.ts` source of truth:
+   ```typescript
+   // packages/db/prisma/seed.ts
+   const { PERMISSIONS } = await import('@crm/shared/permissions');
+   const allKeys = Object.keys(PERMISSIONS) as Permission[];
+   const ROLE_PERMS: Record<string, string[]> = {
+     ADMIN:  allKeys,
+     SALES:  ['company:read', ...],   // match shared/permissions.ts
+     VIEWER: ['company:read', ...],
+   };
+   for (const roleName of ['ADMIN', 'SALES', 'VIEWER'] as const) {
+     await prisma.role.create({
+       data: {
+         name: roleName,
+         displayName: '...',
+         isSystem: true,
+         permissions: { create: ROLE_PERMS[roleName].map((p) => ({ permission: p })) } },
+       },
+     });
+   }
+   // User FK → Role, 所以一定要喺 user.create() 之前
+   ```
+
+2. **Wire `User.roleId`** 喺 seed,fallback 邏輯仍然 work 但 cache 更穩:
+   ```typescript
+   const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
+   await prisma.user.create({
+     data: { email: 'admin@crm.local', ..., roleId: adminRole?.id, role: 'ADMIN' },
+   });
+   ```
+
+3. **Integration smoke 撞 fresh DB + ADMIN access**:
+   ```bash
+   # 跑完 `bun run db:reset` 後:
+   bun run db:seed
+   TOKEN=*** -X POST localhost:3001/auth/login -d '{"email":"admin@crm.local","password":"admin123"}' | jq -r .token)
+   curl -H "Authorization: Bearer *** localhost:3001/users
+   # 預期 200, 唔係 403
+   ```
+
+**Detection signal**(出現以下即 audit RBAC seed coverage):
+- 任何 `rbac.ts` 嘅 `userHasPermission` / `loadRolePermissions` function
+- 任何 `requirePermission(...)` middleware call
+- 對照 `packages/db/prisma/seed.ts` — 有冇 create `Role` + `RolePermission`?
+- 對照 `packages/shared/src/permissions.ts` — 每個 permission 有冇對應 Role 嘅 seed entry?
+- `rg "rolePermission.createMany" --type ts` 撈 seed 入面有冇用
+- `rg "from '@crm/shared/permissions'" seed.ts` 撈 seed 有冇 import 個 shared source of truth
+
+**Pre-existing bug class in crm-system** (2026-06-07 audit):
+- `man-day-role.ts:29` 嘅 comment 直接 acknowledge: "because the seed script doesn't currently write RolePermission rows" → **known-bug-without-RG-entry**(紅線 13 違規)
+- 任何 commit series 加 `requirePermission(...)` 喺 P0 security review 嗰陣,冇配套 seed 改動 = production 死
+- 2026-06-07 P0-2 (companies/contacts/deals routes 公開) 修補加入 RBAC **silently 封死咗所有 user** 對呢啲 endpoint 嘅 access,因為冇 seed 配套
+
+**Lesson**:**任何 RBAC middleware 嘅 read path 必須有對應 seed 嘅 write path**,否則係 100% production 死。**Audit checklist**:
+- [ ] `rbac.ts` / `permission.ts` 嘅 read path list(全部)
+- [ ] `seed.ts` 嘅 write path list(全部)
+- [ ] 對齊:每個 read 都有對應 write
+- [ ] 對齊:每個 `requirePermission` string literal 喺 seed 嘅 `ROLE_PERMS[role]` 入面
+- [ ] Integration smoke: fresh DB → seed → login → 撞每個 requirePermission endpoint
+- [ ] Staging 環境 deploy 後做一次 same smoke(prod mirror)
+
+## ⚠️ Pitfall — Pitfall — `Record<EnumType, ...>` map + backend emit 唔同步
 
 **場景**(2026-06-06 crm-system audit log bug):
 
@@ -437,6 +629,222 @@ function AuditRow({ event }) {
 
 **Lesson**:Enum-driven mapping 嘅 design 必須有 **defensive fallback** + **exhaustive type union** + **cross-stack sync discipline**(backend 加 enum 嘅同時 frontend 三處要一齊改)。
 
+## ⚠️ Pitfall — Plan doc wording vs backend wire shape (silent 400 on first PUT)
+
+**場景**(2026-06-07 crm-system Day 14.7 Step 5/7):Plan doc 用「default tax rate」呢個 human-readable wording,developer 就 follow plan 同樣嘅 naming convention 寫 client wrapper:
+
+```typescript
+// Step 5 — Plan doc 入面嗰個 term 嘅 1:1 translation,以為係 source of truth
+export interface TaxConfig {
+  defaultTaxRate: number;     // ← Plan doc wording
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export const settingsApi = {
+  getTax: () => request<TaxConfig>('/settings/tax'),
+  putTax: (data: { defaultTaxRate: number }) =>     // ← 同 Plan 一樣
+    request<TaxConfig>('/settings/tax', { method: 'PUT', body: JSON.stringify(data) }),
+};
+```
+
+但 backend 真係 wire 嘅 field name 唔同:
+
+```typescript
+// apps/api/src/routes/settings.ts:296 — 真正寫入 Prisma 嘅 field
+const { rate } = body as { rate: number };        // ← 唔係 defaultTaxRate
+const updated = await prisma.systemConfig.upsert({
+  where: { key: 'default_tax_rate' },
+  update: { value: rate, ... },                    // ← wire field = "rate"
+  create: { key: 'default_tax_rate', value: rate, ... },
+});
+```
+
+**症狀**:
+- `tsc --noEmit` 0 errors(client wrapper type 100% self-consistent)
+- `GET /settings/tax` 200,read 返嚟個 value 仲可以秀到(因 server side Prisma default null,graceful fallback)
+- `PUT /settings/tax` 即刻 400(Zod validation: `Expected pick 'rate', got 'defaultTaxRate'`)
+- E2E 撞 POST 先 catch 到,**唔做 E2E 永遠唔知**
+- 個 user 第一次按 Save 嗰陣 400,UI 顯示 generic error message
+
+**Root cause(為何會壞)**:
+1. **Plan doc 嘅 human-readable wording 唔等於 wire field name**。Plan doc 寫「default tax rate」係 marketing-friendly 唔係 database field。
+2. **Client 冇** grep backend source:`grep "value:" apps/api/src/routes/settings.ts` 一行就見到 `value: rate`。
+3. **冇 E2E smoke 喺 Step 5 嘅 commit 之後**。如果做咗:`curl -X PUT /api/settings/tax -d '{"rate":13}'` → 200,再跑 `curl -X PUT ... -d '{"defaultTaxRate":13}'` → 400,兩個 shape 對比即刻 catch。
+4. **`request<TaxConfig>(...)` 嘅 generic type 唔係 runtime validation** — T 係 compile-time promise,fetch 過嘅 JSON runtime shape 唔檢查。
+
+**Prevention(必須 2 個一齊做)**:
+
+1. **Client wrapper 跟 backend source of truth,唔跟 plan doc wording**:
+   ```bash
+   # Step 5 第一個 action:睇 backend GET + PUT response shape
+   curl -s http://localhost:3001/api/settings/tax | jq .
+   # 跟住:睇 backend write path
+   grep -n "value:" apps/api/src/routes/settings.ts
+   # 然後寫 client wrapper
+   ```
+   ```typescript
+   export interface TaxConfig {
+     key: string;
+     rate: number;                                    // ← backend wire field
+     description?: string | null;
+     updatedAt?: string | null;
+     updatedBy?: { id: string; name: string; email: string } | null;
+   }
+   putTax: (data: { rate: number }) => ...            // ← wire field, 唔係 Plan doc
+   ```
+
+2. **任何新增 endpoint 嘅 commit 必須跟住 E2E smoke**:
+   ```bash
+   # 1. Login
+   TOKEN=*** -X POST localhost:3001/api/auth/login -d '...' -H 'Content-Type: application/json' | jq -r .token)
+   # 2. Read 返 shape
+   curl -s -H "Authorization: Bearer *** http://localhost:3001/api/settings/tax | jq .
+   # 3. PUT 兩次,正反 case 確認 wire field name
+   curl -X PUT -H "Authorization: Bearer *** -H "Content-Type: application/json" \
+        -d '{"rate":13}' http://localhost:3001/api/settings/tax
+   # 4. DB 確認 row 寫入
+   ```
+
+**Detection signal**(出現以下即 audit 全部新 client wrapper):
+- 任何 `interface` 命名跟 plan doc wording 但唔跟 backend grep result
+- 任何 PUT/POST 冇立即跟 smoke test
+- 任何新 endpoint 嘅 wire field 同 user-facing description 不對應
+- 任何 `request<T>(...)` 用 generic type 但冇 runtime validation(zod / io-ts / arktype)
+
+**Lesson**:**Plan doc 嘅 wording 係 for human communication;backend grep result 係 source of truth**。Step 5 應該 immediately `grep "value:" backend/src/routes/<file>` 攞 wire field name,然後寫 client wrapper。任何寫「client-side interface 先,backend smoke 最後」嘅 workflow = 高風險 silent 400。
+
+## ⚠️ Pitfall — Form refactor 破壞原本 working code 嘅 silent regression
+
+**場景**(2026-06-08 crm-system 統一 `ManDayEditor` refactor):
+
+我抽 `ManDayEditor` 共享 component 嚟取代 `service-detail.tsx` 同 `QuickCreateServiceDialog` 兩處獨立嘅 form。**Tsc pass ✅ + Docker build pass ✅ + 推到 origin/main ✅**。**但 UI 完全壞咗**:
+- `ManDayEditor` 個 `value: ServiceManDay[]` props 從未 sync 入 parent state
+- 5 個 `Input` share 同一個 `row.roleName` global,唔係 per-row
+- Submit 出去嘅 wire payload 全部 5 個空 row → backend `TypeError: Cannot read 'properties' of undefined`
+- User 開個 service form 睇唔到 man-day role section,save 失敗 500
+
+**冇任何人 catch 到**,因為:
+- ❌ 我冇跑 browser smoke 喺 push 之前
+- ❌ tsc pass 嘅錯覺以為 type-safe = runtime-safe
+- ❌ 我 patch 嗰陣 replace 咗成個 file,**冇保留原本 working 嘅 state shape** 嘅完整 list
+- ❌ 冇任何 test 阻擋(紅線 16 違規)
+
+**真正嘅教訓 — Form refactor 必須遵守嘅 4 條紀律**:
+
+1. **抄原本 working file 嘅完整 state list 先**:
+   ```bash
+   # 步驟 0: 攞原本 working file 入 /tmp
+   git show dcae100:apps/web/src/components/quick-create-service-dialog.tsx > /tmp/ORIG-dialog.tsx
+   # 然後清點所有 useState 嘅 setter + 全部 controlled input 嘅 value/onChange
+   ```
+2. **refactor 唔可以 overwrite 整個 file** — 用 patch 增量改,逐段 verify
+3. **refactor 完必須跑 form 嘅 happy path**:
+   - Browser navigate 去個 page
+   - 填 form
+   - Submit
+   - 撳返 detail page 確認 DB round-trip 啱
+4. **P0 form feature 必須有 happy-path E2E test** — 冇 test = silent regression risk
+
+**檢測信號**(出現以下就要 audit form 改動):
+- 任何 `useState` 個 setter `setFoo` 喺 parent 但個 form 用緊 prop 唔 trigger sync
+- 任何 `<Input value={x} onChange={...}>` 但 onChange 唔更新 x
+- 任何 controlled input 數量 > 5 個 per row
+- 任何 form 嘅 wire payload 喺 submit 時 `JSON.stringify(form)` 個 keys 唔等於 expected schema
+
+**預防 checklist**(form refactor 必跑):
+- [ ] 攞原本 working file 嘅完整 state list 入 `/tmp/ORIG-*.tsx`
+- [ ] 清點所有 `useState` setter
+- [ ] 驗證每個 controlled input 嘅 `value` / `onChange` 對應到邊個 state
+- [ ] 用 patch 增量改,唔好 overwrite 整個 file
+- [ ] 改完跑 form happy path 喺 browser
+- [ ] 確認 wire payload 嘅 keys / shape 同 backend expected 一致
+- [ ] 確認 DB round-trip 啱(GET 返個 entity 睇 fields 都齊)
+- [ ] (P0 form) 加 happy-path E2E test
+
+**Lesson**:`tsc pass` 永遠唔等於 `feature work`。Frontend form refactor 嘅黃金標準係**原本 working code path 一個字都唔可以掉**。
+
+## ⚠️ Pitfall — User 喺你前面 commit 咗,你重做撞 hash
+
+**場景**(2026-06-09 crm-system Day 10 doc sync):David 喺我 recon 嗰陣自己 commit 咗 `d79930e fix(ai): T1 nav label + T2/T3 chat route config + permission fix`,完全做齊 RG-002/003/004 嘅 3 個 fix。我**冇**睇 `git log origin/main..HEAD` 就 commit 我嘅 `c0d11b1 feat(ai): Day 10 AI Assistant infrastructure`,**入面包咗我重做嘅 `chat.ts` 改動** — push 之前先睇 log 發現撞。
+
+**症狀**:`git log origin/main..HEAD` 出現 David 個 `d79930e`,而我嘅 `c0d11b1` 改 `apps/api/src/routes/chat.ts` 同 David 改嘅**完全一樣**。冇 `git diff d79930e..HEAD -- apps/api/src/routes/chat.ts` 報 conflict(因為 git 3-way merge 接受兩個 identical change),push 咗上去 remote 就有 duplicate commit。
+
+**修正流程**:
+```bash
+# 1. Push 之前必跑
+git log --oneline origin/main..HEAD
+
+# 2. 如果撞 David 個 commit,soft-reset + unstage 衝突 file + reset 個 file 返 David 版本
+git reset --soft HEAD~1                    # 取消我自己個 commit,file 留喺 staged
+git reset HEAD <conflicted-file>          # unstage 個 file
+git checkout <david-commit-sha> -- <file> # working tree 換返 David 版本
+# 3. Commit 返只 stage 咗嘅、真正新嘅 file,commit message 引用 David hash:
+git commit -m "feat(ai): Day 10 infrastructure
+
+Note: chat.ts fix was already shipped by David in d79930e (RG-002/003 +
+T2/T3 spec). This commit re-uses that version via git checkout to
+avoid duplicate work on origin.
+
+Refs: d79930e"
+```
+
+**預防 checklist**(任何 long session commit 之前必跑):
+- [ ] `git log --oneline origin/main..HEAD` — 睇有冇 David 親做嘅 commit 我冇 follow 到
+- [ ] `git diff <david-commit>..HEAD -- <file>` 逐個 file 比較,確認冇 identical change
+- [ ] 如果撞,**soft reset + checkout David 版本 + reference** — 唔好 duplicate
+- [ ] 跟住先 commit 真正新嘅 work
+
+**Lesson**:長 session 入面,David 會主動 commit / push 佢自己嘅 fix。**做 commit 之前永遠當 origin 有新嘢**。`git log origin/main..HEAD` + `git diff <sha>..HEAD -- <path>` 係兩條強制 command,任何 commit 之前必跑。
+
+## ⚠️ Pitfall — 8 份 doc file 嘅 doc sync pattern (紅線 10/11/13/14)
+
+**場景**:每次 ship 一個有架構性嘅 feature(新 schema、新 package、新 route family),紅線 10 要求 8 份 doc 必須 commit:
+
+| File | 必填時機 | Owner |
+|------|---------|-------|
+| `docs/PROJECT-OVERVIEW.md` | Plan 結束(隨首個 code commit) | 你 |
+| `docs/PRD.md` | 改 US 嘅同時必更新 | 你 |
+| `docs/DESIGN.md` | 設計定稿時 | 你 |
+| `docs/architecture/NNNN-*.md` | 每個重大架構決策即時 | 你 |
+| `docs/API.md`(如有 API) | 每個 endpoint 上線前 | 你 |
+| `docs/TEST-COVERAGE.md` | 每個 sprint 結束時 | 你 |
+| `docs/QA-TRACKER.md` | 改 PRD 嘅同時必更新 | 你 |
+| `docs/REGRESSION-GUARD.md` | 每個 bug fix | 你 |
+
+**Anti-pattern**(2026-06-07 crm-system 親驗):5 個 task 嘅 code + backend smoke 全部 ship,**但 8 份 doc 一份都冇** — 「**冇文件嘅 code 唔可以 merge**」嘅紅線 10 直接踩。David 嘅 spec:「更新了docs 未」一問先知。
+
+**正確 audit-driven fix flow**:
+```
+recon 結論(懷疑 T2/T3 缺 infrastructure)
+    ↓
+完整 audit(DB schema / routes / frontend / RBAC 全部)
+    ↓
+確認 3 個 audit bug(RG-002 env-var drift / RG-003 503 translation / RG-004 缺 permission)
+    ↓
+每個 bug 修 + 寫 RG-XXX entry(invariant 必須語句化,例如 "MUST NEVER read OPENAI_API_KEY env var")
+    ↓
+8 份 doc 同步寫 — 一個 commit series 3 個 atomic commit:
+  1. backend / 2. frontend / 3. docs
+    ↓
+DB smoke + curl smoke + commit message 引用 RG ID + push
+```
+
+**Doc scope 速查**(每份 file 寫咩):
+
+| Doc | 必含 sections |
+|-----|---------------|
+| PROJECT-OVERVIEW | one-line summary / tech stack / repo layout / day-by-day history / Day-N feature 一段講晒 |
+| PRD | Epic + US + status legend + backlog + change log |
+| DESIGN | 視覺語言 tokens / layout / component lib / page patterns / Day-N UI specifics / RWD |
+| API | Conventions(URL/auth/err shape)/ 全 endpoint per resource / Day-N 新 endpoint 完整 |
+| TEST-COVERAGE | Test layers 定義 / US→test matrix / manual smoke checklist |
+| QA-TRACKER | US status table / Day-N batch audit table / smoke test results / open follow-ups |
+| architecture/NNNN- | Status / Context(其他 option)/ Decision / Rationale / Consequences / Alternatives |
+| REGRESSION-GUARD | RG-XXX entry template(發現日 / root cause 技術+process / invariant / prevention)+ 索引表 |
+
+**Lesson**:**ship 完整 feature 嘅 closing loop 永遠係「code + smoke + doc + RG entry + push」5 步**。漏 doc = 紅線 10 違規 = 用戶問「更新了docs 未」= 你要返嚟重做。
+
 ---
 
 ## 📊 衡量指標
@@ -451,3 +859,7 @@ function AuditRow({ event }) {
 | 季度 audit 發現失效 RG 嘅比例 | < 5% | 5-20% | > 20%(audit 太少) |
 
 **注意**:`過去 90 日新增 RG entry 數` 健康值低,代表 codebase 穩定。**唔係「愈少 bug 愈好」**— 可能係冇發現 bug 嘅 reflection。
+
+## 📚 Related references
+
+- `references/crm-system-2026-06-07-rbac-seed-and-audit-log-silent-failures.md` — Two pre-existing CRITICAL bugs found while building Day 14 System Settings: (1) `rbac.ts:50-66` reads from a `RolePermission` table the seed never wrote, silently 403ing all requirePermission-gated endpoints in production (including ADMIN); (2) every audit log call in `settings.ts` uses wrong field names (`userId` vs `actorId`, `entity` vs `resourceType`, etc.) so audit log writes silently fail inside `logEvent`'s `try/catch`. Includes detection recipes, fix code, and prevention checklists. **Read this if you ever audit a project that has `rbac.ts` + `audit.ts` + `seed.ts` together — these two bugs are CLASS-level, not project-specific.**

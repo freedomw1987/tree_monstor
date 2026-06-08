@@ -95,6 +95,19 @@ if ! python3 "$SKILL_DIR/scripts/save_state.py" \
     echo "  ⚠️  save_state.py failed, continuing anyway"
 fi
 
+# Day 11 (2026-06-09) lesson: the state file just written is likely a
+# GENERIC template (Decisions / Files / Next Steps are placeholders).
+# save_state.py's `detect_decisions_from_session` is a stub and most
+# template `replace()` calls don't fire. The agent that resumes in a
+# new session MUST hand-overwrite dev-task-state.md with real state
+# before continuing. See: dev-task-memory/references/recovery-template-limitation.md
+echo ""
+echo "⚠️  Day 11 lesson: the state file just written is likely a GENERIC"
+echo "    template (Decisions / Files / Next Steps are placeholders)."
+echo "    Before resuming in a new session, hand-overwrite:"
+echo "    ~/www/$PROJECT/docs/_meta/dev-task-state.md"
+echo "    with real Goal / Decisions / Files / Next Steps from today."
+
 # Step 3: Sync to external memory
 echo ""
 echo "🔌 Step 3: Syncing facts to external memory..."
