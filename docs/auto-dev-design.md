@@ -757,7 +757,82 @@ Hermes 有 hooks/ dir for session lifecycle hooks，**Phase 1D 寫呢個 hook**�
 
 _End of design doc v0.5 — ✅ IMPLEMENTATION COMPLETE 2026-06-19_
 
-## Implementation Summary
+> **v0.6 (2026-06-19)** — Added §10 痛點四：Sub-agent Supervisor (David's new ask)
+
+## 10. 痛點四設計：Sub-agent Supervisor (NEW in v0.6)
+
+### 10.1 問題描述（David 原話）
+> 「我試了一些時間，我會擔心他subagent 是否在正常去行，會不會有定期任務去檢查他們的狀態？」
+
+三個 sub-requirement：
+1. 確保未完成的任務是在行進（progressing）
+2. 如果停嘅原因係老闆有未 confirm 嘅問題，就提老闆落實
+3. 如果係 sub-agent 因為事故停咗，就要佢哋繼續做，另外查明停頓原因
+
+### 10.2 現有機制 audit
+
+| 機制 | 位置 | 狀態 |
+|---|---|---|
+| `heartbeat_worker(conn, task_id)` | `hermes_cli/kanban_db.py:4995` | ✅ Built-in，worker 自己 call |
+| `detect_stale_running(stale_timeout_seconds)` | `hermes_cli/kanban_db.py:5166` | ✅ Built-in，auto reclaim |
+| `dispatch_stale_timeout_seconds: 14400` | developer config | ✅ Set (4hr) |
+| `kanban_heartbeat` tool | `toolsets.py:68` | ✅ Exposed tool，worker 可 call |
+| `kanban_block` tool | `toolsets.py:68` | ✅ Block waiting for input |
+| **⚠️ Worker 唔識自己 call heartbeat** | — | ❌ Default workers 唔會 auto-heartbeat |
+| **⚠️ 冇 blocked task 自動 notify David** | — | ❌ David 唔知 worker 喺度等他 |
+| **⚠️ 冇 high-failure detection notify** | — | ❌ |
+
+### 10.3 解決方案：subagent_supervisor.py
+
+新增 `scripts/subagent_supervisor.py` background daemon，每 5 min 跑一次，做 4 個 check：
+
+| Check | Detection | Auto-action | Notify David |
+|---|---|---|---|
+| **Blocked** | `status='blocked'` 且 `age > 30 min` | ❌ 等 David unblock | ✅ Discord alert |
+| **Stalled** | `status='running'` + heartbeat age > 1h | ✅ Auto-reclaim (status → ready, failure +1) | ✅ Discord alert + recovery log |
+| **Ready queue** | `status='ready'` count ≥ 10 或 oldest > 2h | ❌ Informational | ✅ Discord alert |
+| **High failure** | `consecutive_failures ≥ 3` | ❌ Worker / orchestrator 自己 retry | ✅ Discord alert |
+
+### 10.4 Recovery Action (Best-Effort)
+
+Stalled task 自動 reclaim 嘅 SQL：
+```sql
+UPDATE tasks SET status = 'ready', claim_lock = NULL,
+  claim_expires = NULL, worker_pid = NULL, last_heartbeat_at = NULL,
+  consecutive_failures = consecutive_failures + 1
+WHERE id = ? AND status = 'running'
+```
+
+下次 dispatcher tick（已經 enabled，60s interval）會自動 dispatch 返去 ready queue。
+
+**Trade-off**：
+- ✅ Auto-recovery，sub-agent 唔會靜雞雞死
+- ✅ failure counter +1，等 orchestrator 知道有 problem
+- ⚠️ 冇 save 詳細 failure reason 入 last_failure_error（only manual set）
+- ⚠️ 如果 sub-agent 死嘅原因係 spec 有問題，retry 一樣死（要 orchestrator 介入）
+
+### 10.5 整合 (Cron Job)
+
+`developer-subagent-supervisor` cron job，every 5 min：
+- 跑 `subagent_supervisor.py --once`
+- 如果 output 有 🚨/⏰/💥 → Discord notify David
+- 否則 silent
+
+### 10.6 Verified (Phase 3 v0.6)
+
+Mock test 3 case：
+- ✅ Stalled task → auto-recovered
+- ✅ Blocked task → notify, status unchanged (要 David unblock)
+- ✅ High-failure task → notify, 5 failures recorded
+
+### 10.7 唔做嘅嘢
+
+- 唔動 Hermes source code（detect_stale_running / heartbeat_worker 已經夠用）
+- 唔自動 unblock task（永遠要 David confirm）
+- 唔改 worker 自己 call heartbeat 嘅 pattern（要 patch subagent-driven-development，先 Phase 4 考慮）
+- 唔自動 retry high-failure task（要 orchestrator / David 介入）
+
+---
 
 ✅ **Phase 0**: Audit 7/7 verified (3 fail → corrected, 4 direct apply)
 ✅ **Phase 1A**: approval.mode: smart + subagent_auto_approve: true
