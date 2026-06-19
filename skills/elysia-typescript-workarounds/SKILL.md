@@ -742,3 +742,120 @@ async ({ body, userId, set }) => {
 - `~/projects/lemontree_v3/src/routes/core/menu.ts` — complete example of all patterns
 - `~/projects/lemontree_v3/src/routes/core/permission.ts` — `t.Recursive` workaround example
 - `~/www/crm-system/apps/api/src/lib/context.ts` — `authContext` derive (crm-system Day 4 reference)
+
+## 19. Mixed `.use(authRoutes)` + `.group('/api', ...)` — Public Routes Mounted at Wrong Path (pm-system 2026-06-08)
+
+**Symptom**: `authRoutes` is mounted at the root via `.use(authRoutes)`, while every other route is mounted inside `.group('/api', ...)`. `POST /api/auth/login` returns **404** (`{"error":"NOT_FOUND"}`), but `POST /auth/login` works. nginx proxies `/api/*` to backend, so the frontend POST to `/api/auth/login` always 404s.
+
+```typescript
+// backend/src/index.ts
+const app = new Elysia()
+  .use(cors({ ... }))
+  .use(swagger({ ... }))
+  .use(authRoutes)                              // ← root mount, no /api prefix
+  .group('/api', (app) => app
+    .derive(async ({ headers }) => { ... })     // JWT inject lives in /api group
+    .use(projectRoutes)                          // ← these get /api/* paths
+    .use(requirementsRoutes)
+    .use(tasksRoutes)
+    // ... 16 more
+  )
+```
+
+```bash
+curl -X POST http://localhost:4001/api/auth/login -d '{...}' -H 'Content-Type: application/json'
+# Returns: {"error":"NOT_FOUND"}    ← 404 because authRoutes is at /auth/login, not /api/auth/login
+
+curl -X POST http://localhost:4001/auth/login -d '{...}' -H 'Content-Type: application/json'
+# Returns: {"accessToken":"...","refreshToken":"...","user":{...}}    ← works
+```
+
+**Why this happens**: The developer split routes into "public" (auth) and "protected" (everything else), and the derive hook for JWT injection lives in the `.group('/api', ...)` so auth routes were kept at root. But the **frontend + nginx both expect `/api/*` for everything** including auth, because nginx.conf has a single `location /api/` block proxying to the backend.
+
+**Root cause**:
+- nginx `location /api/` proxies to `http://backend:4000` — frontend NEVER calls `/auth/login` directly
+- Frontend `api.ts` wrapper uses relative `/api/auth/login` (correct path)
+- Backend mount inconsistency = 100% of frontend login attempts 404
+- Tests written against direct backend port (`http://localhost:4001`) without `/api` prefix would still pass, masking the bug
+
+**Diagnosis**:
+```bash
+# Compare what nginx proxies to what backend exposes
+grep -n "location /" frontend/nginx.conf
+# → location /api/ { proxy_pass http://backend:4000; }
+
+grep -n "authRoutes\|.use(\|.group(" backend/src/index.ts
+# → .use(authRoutes)  ← NO /api prefix here
+# → .group('/api', ...)  ← but this one has /api
+```
+
+**Solution — pick ONE of three consistent patterns**:
+
+**Option A: Mount auth inside the `/api` group too (simplest)**
+```typescript
+const app = new Elysia()
+  .use(cors({ ... }))
+  .group('/api', (app) => app
+    // Public routes (no JWT required) — still under /api for consistency
+    .use(authRoutes)
+    // Protected routes (JWT derive runs before these)
+    .use(projectRoutes)
+    .use(requirementsRoutes)
+    // ...
+  )
+```
+Then `authRoutes` is at `/api/auth/*`. The JWT derive hook only runs for routes that need it (Elysia's derive still fires for all routes in the group, but unauthed users just get `user: null`, which auth.ts handles).
+
+**Option B: Mount auth at root, configure nginx to route `/auth` to backend too**
+```nginx
+# frontend/nginx.conf
+location /api/ { proxy_pass http://backend:4000; }
+location /auth/ { proxy_pass http://backend:4000; }   # ← add this
+```
+More nginx config, but keeps the "public at root" intent.
+
+**Option C: Mount all routes at root, use a single auth context with optional JWT**
+```typescript
+const app = new Elysia()
+  .derive(async ({ headers }) => ({ user: tryDecodeJwt(headers.authorization) }))
+  .use(authRoutes)
+  .use(projectRoutes)
+  // ...
+```
+JWT decode returns `user: null` for missing/invalid token; routes that need auth check `user` themselves. Most uniform but requires every auth-checking route to do its own check (no `requirePermission` plugin auto-fires).
+
+**Recommended for pm-system** (matches its actual structure best): **Option A**. Move `authRoutes` into the `.group('/api', ...)` block. The frontend already uses `/api/auth/login`, nginx already proxies `/api/`, and the JWT derive will fire harmlessly (user=null for unauthed calls) — auth.ts handlers like `POST /auth/login` don't read `user` from context anyway.
+
+**Verification after fix**:
+```bash
+# 1. Backend direct — now works under /api
+curl -X POST http://localhost:4001/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"admin@test.com","password":"admin123"}'
+# Expected: {"accessToken":"...","refreshToken":"...","user":{...}}
+
+# 2. Frontend via nginx — same response
+curl -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"admin@test.com","password":"admin123"}'
+# Expected: same JSON as #1
+
+# 3. Old broken path returns 404 (good — we want it gone)
+curl -X POST http://localhost:4001/auth/login
+# Expected: 404 NOT_FOUND
+
+# 4. E2E test: login through UI (clicking the real submit button) succeeds
+npx playwright test e2e/tests/critical-path.spec.ts --grep "login flow"
+```
+
+**Detection signal** (audit any Elysia backend with this anti-pattern):
+- `grep -n "authRoutes\|.use(" backend/src/index.ts` shows `.use(authRoutes)` NOT inside any `.group(...)` call
+- `grep -n ".group(" backend/src/index.ts` shows a `.group('/api', ...)` (or similar prefix)
+- nginx config has a single `location /api/` proxy
+- API.md or tests use `/api/auth/login` (frontend pattern) but backend mounts auth at root
+- **Classic misread**: "curl to `/auth/login` works, so login is fine" — but no user-facing path uses `/auth/login`; they all go through nginx → `/api/auth/login`
+
+**Same class of bug — other "split-mount" mistakes**:
+- `.use(webhookRoutes)` (root, public) + `.group('/api', ...).use(otherRoutes)` — webhooks should be in `/api` too
+- `.use(adminRoutes)` (root) + `.use(userRoutes)` inside `.group('/api', ...)` — admin routes still get no auth check
+- Any route group mounted at root when **frontend + nginx expect a prefix**
+
+**Lesson**:**Pick one mounting strategy and use it for ALL routes**. The most common mistake is splitting "public" from "protected" at the mount level, but in practice both should live under the same prefix (nginx config dictates the public URL shape, not the source code organization).

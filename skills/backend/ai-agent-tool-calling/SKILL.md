@@ -1170,3 +1170,155 @@ git diff d79930e HEAD -- <file> # 睇我哋 HEAD 同 David 個 commit 嘅 diff
 
 **Lesson**:Push 之前 5 秒 `git diff origin/main --stat` 可以避免
 30 分鐘嘅 rebase cleanup。
+
+### Pitfall 12: Tool arguments that LLM can pass as either ID or natural language name — always build a name↔id resolver (added 2026-06-16, pm-system US-21.6)
+
+**Problem**: AI assistant user types "我想問範例項目的進度" in chat. The LLM, faithfully transcribing the user's intent, calls `get_project_stats({ projectId: "範例項目" })` — passing the **project name** as the projectId argument. Backend `assertProjectAccess(projectId: string)` does `prisma.project.findUnique({ where: { id: "範例項目" } })`, gets `null`, returns `{ ok: false, status: 404, message: "找不到名為『範例項目』的項目" }`. User sees the error, concludes the system is broken.
+
+This is **NOT a backend bug. It is a schema-vs-natural-language interface gap.** The LLM does the only thing its training data suggests: pass the user-named string. The tool schema accepted a generic `string` for `projectId` with no hint that names are valid.
+
+**Symptoms of this trap** (in any tool-calling AI agent):
+- User says "show me Acme's deals" → LLM calls `{ companyId: "Acme" }` → 404
+- User says "send the email to John" → LLM calls `{ userId: "John" }` → 404
+- User says "create a task in Marketing" → LLM calls `{ teamId: "Marketing" }` → 404
+- User says "filter by status=Open" → LLM calls `{ statusId: "Open" }` → 404 (vs the proper enum)
+
+**Rule — every tool argument that maps to a user-named entity MUST accept either ID or name** (and the backend must resolve). Affects any tool that operates on:
+- `projectId`, `companyId`, `teamId`, `workspaceId` (org structures)
+- `userId`, `assigneeId`, `reporterId` (people — usually email-or-name, see Pitfall 12b)
+- `tagId`, `categoryId`, `statusId` (taxonomies)
+- `customerId`, `vendorId`, `accountId` (CRM entities)
+
+**Pattern — `resolveEntityIdentifier` helper** (proven in pm-system 2026-06-16):
+
+```typescript
+// backend/src/utils/project-resolver.ts (template)
+import { isUuidLike } from "./is-uuid";
+
+export interface ResolvedEntity {
+  ok: true;
+  entity: { id: string; name: string };
+}
+export interface ResolveFailure {
+  ok: false;
+  message: string;       // user-friendly error
+  candidates?: string[]; // accessible alternatives, for LLM to retry
+}
+
+export async function resolveEntityIdentifier(
+  identifier: string,
+  opts: {
+    prisma: PrismaClient;
+    user: { id: string; role: string };     // for member scoping (privacy)
+    isAdmin: (role: string) => boolean;
+    scopeToMemberProjects?: boolean;          // true for non-admin
+    listAccessibleNames: () => Promise<string[]>;  // helper for error message
+  }
+): Promise<ResolvedEntity | ResolveFailure> {
+  if (!identifier || !identifier.trim()) {
+    return { ok: false, message: "未提供 ID 或名稱" };
+  }
+  const trimmed = identifier.trim();
+
+  // 1. Try as ID first (UUID-shaped or whatever the PK format is)
+  if (isUuidLike(trimmed)) {
+    const byId = await opts.prisma.entity.findUnique({
+      where: { id: trimmed },
+      select: { id: true, name: true },
+    });
+    if (byId) return { ok: true, entity: byId };
+  }
+
+  // 2. Try as exact name (case-insensitive)
+  const byName = await opts.prisma.entity.findFirst({
+    where: {
+      name: { equals: trimmed, mode: "insensitive" },
+      ...(opts.scopeToMemberProjects && !opts.isAdmin(opts.user.role)
+        ? { projectMembers: { some: { userId: opts.user.id } } }
+        : {}),
+    },
+    select: { id: true, name: true },
+  });
+  if (byName) return { ok: true, entity: byName };
+
+  // 3. Contains fallback (e.g. "範例" → "範例項目")
+  const contains = await opts.prisma.entity.findFirst({
+    where: {
+      name: { contains: trimmed, mode: "insensitive" },
+      ...(opts.scopeToMemberProjects && !opts.isAdmin(opts.user.role)
+        ? { projectMembers: { some: { userId: opts.user.id } } }
+        : {}),
+    },
+    select: { id: true, name: true },
+  });
+  if (contains) return { ok: true, entity: contains };
+
+  // 4. Failed — provide accessible alternatives so LLM can retry
+  const candidates = await opts.listAccessibleNames();
+  return {
+    ok: false,
+    message: `找不到名為「${trimmed}」的項目。可用的項目: ${candidates.join("、") || "(無)"}`,
+    candidates,
+  };
+}
+```
+
+**Tool handler integration** (8-line wrapper replaces the broken pattern):
+
+```typescript
+// In chat.ts tool case handler — BEFORE
+const { projectId } = args;
+const effectiveProjectId = projectId || ctx.projectId;
+if (!effectiveProjectId) return { error: "projectId required" };
+const access = await assertProjectAccess(ctx.user, effectiveProjectId);
+if (!access.ok) return { error: access.message };
+
+// AFTER
+const { projectId } = args;
+const resolved = await resolveAndAssertProject(projectId, ctx);
+if (!resolved.ok) return { error: resolved.message };
+// resolved.project.id is the canonical ID
+```
+
+**Tool description MUST hint the dual format** (LLM relies on `description` to learn arg semantics):
+
+```typescript
+// BAD — schema-only, no hint
+description: "取得項目的統計數據,用於生成圖表"
+
+// GOOD — explicit dual format
+description: "取得項目的統計數據,用於生成圖表。Sprint 21 US-21.6: projectId 參數可接受項目 ID (UUID) 或項目名稱(例如「範例項目」),會自動 resolve 到對應項目。"
+```
+
+**Test coverage required** (20 cases, all PR-merge-blocking for tools that accept user-named args):
+- `isUuidLike`: accepts UUID v1-v5 + case-insensitive
+- `resolveEntityIdentifier`:
+  - empty input → fail with "未提供"
+  - UUID exact match → ok
+  - UUID not found → fall through to name search
+  - name exact match (case-insensitive) → ok
+  - name with leading/trailing whitespace → ok
+  - name contains fallback (e.g. "範例" → "範例項目") → ok
+  - multiple matches with same prefix → returns first (deterministic sort)
+  - not found → returns candidates list (1-20 names)
+  - non-admin name search scoped to member projects (privacy)
+  - admin name search can find any project
+  - non-admin's name search for a project they're not in → not found
+- `listAccessibleNames`: respects `take: 20` limit, admin → all, sorted
+
+**Pitfall 12b — ID-for-people (email, name)**: For tool args that identify a person (`userId`, `assigneeId`, `reporterId`, `ownerId`), the same rule applies but the resolution key is usually **email** (case-insensitive exact match) rather than name. Names collide too often ("John Smith" × 2). Use `findFirst({ where: { email: { equals: identifier, mode: "insensitive" } } })` as the primary, with display name as fallback.
+
+**Pitfall 12c — Don't break the existing ID fast path**: When a tool already accepts `projectId: "uuid-string"`, the new resolver MUST short-circuit on UUID first (cost: 1 indexed lookup) and only fall through to name search on miss. Do not change behavior for callers passing real IDs — they'd hit a 10x slowdown otherwise.
+
+**Why this isn't "just add a fuzzy search"** — fuzzy search introduces ambiguity. The right model is **deterministic preference order**: UUID → exact name (case-insensitive) → contains fallback. Each step is a single query with an index (or short scan). Total cost: 1-3 DB lookups, < 50ms.
+
+**Why not push the fix into the LLM prompt** — "Always call list_projects first" is a brittle fix. The LLM forgets, the user copies different phrasings, the LLM is asked to batch with other tools. A backend resolver works in 100% of cases regardless of how the LLM chose to phrase the call.
+
+**Invariant** (write in `docs/REGRESSION-GUARD.md`):
+
+> Every tool argument that maps to a user-named entity MUST accept either
+> the canonical ID or the entity's name (and any reasonable substring).
+> The backend MUST resolve via `resolveEntityIdentifier` and return
+> friendly error messages with accessible alternatives.
+
+**Reference implementation** — pm-system `backend/src/utils/project-resolver.ts` + `project-resolver.test.ts` (20 cases), commit `9315a20` on `feat/chat-resolve-project-by-name` branch. Wrapped 8 tool handlers in `resolveAndAssertProject()` helper. Net diff: +450 / -54 lines, 0 regressions. Tool descriptions updated for `get_project_stats` and `search_wiki` to explicitly state the dual format.

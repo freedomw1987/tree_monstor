@@ -39,3 +39,8 @@ state.db-shm
 /task_state/
 /session_fork_queue.jsonl
 /checkpoints/
+cron/output
+*.backup*
+*.backup-*
+*.bak
+*.bak-*

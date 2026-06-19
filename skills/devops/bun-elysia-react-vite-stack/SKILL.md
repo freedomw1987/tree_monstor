@@ -31,6 +31,11 @@ Plan 階段**必須問**用戶要 deploy 喺邊，唔好 default 推 CDK/IaC:
 
 ## SQLite vs Postgres 點揀 (2026 經驗)
 
+> 📌 **Host test env pitfall (Docker rescues):** 如果 host 跑 `bun test` 撞
+> `Cannot find module '.prisma/client/default'`,加 `pretest: bunx prisma generate`
+> hook 即解。詳見
+> [`references/prisma-host-test-env.md`](references/prisma-host-test-env.md)。
+
 | 情境 | 用咩 |
 |---|---|
 | Exam app / 純本地練習 / 唔會上 production | **SQLite** — 零 setup, file 即可, Prisma 5 完美 support |

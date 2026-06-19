@@ -1021,7 +1021,58 @@ const item = await prisma.quotationItem.create({
 
 ## Step 12: Pitfall summary (Day 7 additions)
 
-1. **Elysia 1.2 plugin-boundary derive loss** (Step 9): use `getUserIdFromRequest` re-verifying with `jose` directly, not the `jwt()` factory. Affects EVERY plugin that needs `userId` from another plugin.
+### 8f. Pitfall — Token-claim privilege escalation via DB-vs-token role (TD-011, pm-system 2026-06-08)
+
+**場景**:`backend/src/index.ts` 嘅 derive hook 喺解析 `Authorization: Bearer <userId:role>` token 嗰陣,**用 `role` 從 token 字串攞(非 DB 攞)**。Client 可以隨意 claim role:
+
+```typescript
+// ❌ BROKEN — role 從 token 字串攞,client 寫 ':admin' 即 claim admin perms
+const [userId, role] = token.split(':')
+const permissions = role ? await loadRolePermissionsForRole(role) : []
+// → 即使 user 真實係 dev,token 寫 ':admin' 即管到 admin endpoint
+```
+
+**症狀**:
+- **Fake UUID token**:`Bearer 00000000-0000-0000-0000-000000000000:admin` POST `/api/projects` 過 RBAC check,落到 `prisma.project.create({ createdById: 'fake' })` 撞 FK → 500
+- **Token claim privilege escalation**:dev user 攞自己真實 UUID,改 token 寫 `:admin` → claim admin perms,access admin endpoint
+
+**Fix**(derive hook 加 user existence check + role 從 DB 攞):
+
+```typescript
+// ✅ CORRECT — dbUser 必須真實存在,role 必須由 DB 攞
+try {
+  const [userId, tokenRole] = token.split(':')           // tokenRole 只係 fallback hint
+  if (!userId) return { user: null }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  })
+  if (!dbUser) return { user: null }                      // ← fake UUID → graceful null
+
+  const permissions = await loadRolePermissionsForRole(dbUser.role)  // ← DB 真相,never trust client
+  return { user: { id: dbUser.id, role: dbUser.role, permissions } }
+} catch (e) {
+  console.error('[auth] derive failed:', e)
+  return { user: null }
+}
+```
+
+**3 個唔可以 miss 嘅 line**:
+- `if (!dbUser) return { user: null }` — 守住 fake UUID
+- `loadRolePermissionsForRole(dbUser.role)` 而唔係 `role` — 守住 token claim 提權
+- `id: dbUser.id` 而唔係 `id: userId` — 對齊 DB reality
+
+**同 seed coverage pitfall (Step 8e) 嘅關係**:
+- **Step 8e**(seed 冇 write RolePermission row)→ 所有 user 包括 admin 收 403
+- **呢個 (8f)**(role 從 token 攞)→ 所有 user 可以 claim 任何 role 包括 admin
+- 兩個 pitfall 方向**完全相反**,但都係「**DB 真相 vs 來源失控**」嘅變奏
+
+**Lesson**:**derive hook / auth middleware 嘅 role 必須由 DB 攞(never trust client)**。任何 token 字串入面嘅 claim,只可以做 hint,唔可以做 source of truth。
+
+完整 reproduce + RG-006 entry + 全部 patch 見 `references/pm-system-2026-06-08-sprint-1-td-011-fix-and-regression-test.md`。
+
+## Step 9: Elysia 1.2 plugin-boundary derive loss — use `getUserIdFromRequest` re-verifying with `jose` directly, not the `jwt()` factory. Affects EVERY plugin that needs `userId` from another plugin.
 2. **Bun `export *` + same-file const** (Step 10): explicit import + re-export. Affects barrel files that derive new exports from re-exported consts.
 3. **Prisma `as never` for enum + JSON** (Step 11): the workhorse cast for polymorphic writes.
 4. **`@elysiajs/jwt` standalone `.verify` is not a function** (Step 9): use `jose.jwtVerify` instead. Easy to assume the factory returns a usable verifier; it doesn't.

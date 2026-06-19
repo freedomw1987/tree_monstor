@@ -17,6 +17,7 @@ Any ONE of these triggers the protocol:
 - User has sent "stop" or single letter (A / B / C / X) or "Zombie?"
 - Long silence then short message from user (they are tired, not negotiating)
 - Working tree is empty but tool call count is over 10 for what should be a simple task
+- **User picks an option in `clarify` but does NOT supply the follow-up details** (e.g. chose "SSH access" but never gave user@host) AND a follow-up `clarify` also times out → **STOP. You do not have the access to fix the bug. Ship a retro + archive any stale skill referencing the un-fixable system. Resume path = wait for access.** (2026-06-19 umac_ai lesson)
 
 ## Why Existing Skills Do Not Cover This
 
@@ -102,6 +103,8 @@ The artifact MUST be real, not a plan. A 50-line ADR with open questions is real
 - Long silence then short msg → Tired or over it → do not propose options, just do
 - "park" / "later" / "之後" → Park task, write TODO → commit a TODO or ADR, do not keep doing
 - "X 吧" where X is an option → Pick X and execute → no discussion, run X
+- **User picks option in `clarify` BUT follow-up `clarify` for details times out** → Cannot proceed without access. **Ship a retro + mark stale skill as DEPRECATED in 4-5 calls, then stop.** Do NOT burn more tokens guessing what access they meant. (2026-06-19 umac_ai lesson: user picked "I know hosting, I'll supply access" but two 3-minute follow-ups timed out. Right move: write `/tmp/<project>_investigation/YYYY-MM-DD-<topic>-investigation.md` retro + add `> ⚠️ DEPRECATED <date>` banner to any loaded skill whose recipe references the broken infra. Memory for the next session; resume path printed for the user.)
+- "完成？" (with question mark) sent after scope is already answered → **agent emitted a confirmation question when it should have started work**. Treat as single-letter cue. Do NOT re-clarify scope. Pick the most reasonable default and ship (4-5 calls max). Common cause: agent thinks it needs one more "sub-decision confirmation" (e.g. Q1 sub-decision) when the user has already greenlit the main scope. The fix is to: (a) bundle default sub-decisions into the same answer that picked the main scope, (b) state the default explicitly in the next message so user can correct if wrong, (c) start work in the same turn if reasonable. (2026-06-16 pm-system Sprint 21 lesson — `A) 全部 5 個` was answered, then 1 more clarify for sub-decisions, then "完成？" arrived → should have just used defaults and started work.)
 
 ## Self-Detection (Stop The Loop Earlier)
 

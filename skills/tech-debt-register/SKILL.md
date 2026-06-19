@@ -98,12 +98,35 @@ maintained as a known backlog.
 
 1. **New finding** discovered → append a new `### P?-N` block with
    location, why, fix, est, linked entries.
-2. **Finding fixed** → change severity tag, append `✅ Fixed in <commit>`
-   with date, move to a `## Archive` section at the bottom.
+2. **Finding fixed** → append a `✅ Fixed in <commit>` (or
+   `✅ PARTIAL — <what's done> / <what's deferred> / <linked follow-up>`)
+   row to the existing entry. **Do not move to an archive section.**
+   The crm-system (2026-06-08) convention is to keep the original
+   P?-N entry in place and stack status updates on it, so a
+   future reader can see the full history (where, why, fix, est)
+   in one block. An archive section splits this across the doc
+   and makes "what was the original severity" hard to recover.
 3. **Finding re-prioritised** → update severity, note why in the
    entry body.
 4. **Finding deferred** → add a `⏸ Deferred: <reason>` tag. Don't
    delete — keep the historical record.
+
+### Status row format (preferred by crm-system 2026-06-08)
+
+```markdown
+- **Status (YYYY-MM-DD):** ✅ Fixed in commit <sha> — <one-line summary>
+- **Status (YYYY-MM-DD):** ✅ PARTIAL — <what's done> / <what remains>
+  (file to follow-up: <US-NNN>)
+```
+
+**Why append-in-place, not archive-move:** A TECH-DEBT.md entry
+gains value over time (status trail, follow-up links, PARTIAL
+markers). Moving it to archive makes the original "where / why /
+fix / est" 4 fields harder to find when an auditor asks "why is
+this here" — the file becomes a graveyard of fixed items instead
+of a living registry. The "Archive" section in the original
+template is preserved in the Legacy section below for projects
+that prefer that convention.
 ```
 
 ## 何時用呢個 5-field format vs 簡單 table
@@ -112,8 +135,31 @@ maintained as a known backlog.
 |--------|------|
 | **5-field 細 entry**(本 skill 推薦 default) | 25+ finding 嘅 comprehensive review、security audit、需要交 dev 跟嘅項目、需要 est 嘅 sprint planning |
 | **簡單 table**(`TD-001` 格式) | 5 個以下 finding、quick backlog、admin 唔需要 deep context |
+| **Env-only fix**(env-bootstrap problem 變體)| host 跑 test 撞 fail / missing binary / container 內 OK 但 host 唔得 — 用 5-field 但 **影響拆三段**(dev friction / ship / prod),因為 env 問題對呢三層嘅影響係 independent |
 
 **Rule of thumb**:超過 10 個 finding 就用 5-field,因為 table 太擠睇唔到 detail。
+
+### Env-only fix entry 範本 (2026-06-08 pm-system TD-012)
+
+```markdown
+### 🟡 TD-012: Host 跑 `bun test` 撞 `tasks.test.ts` fail(環境問題,非 code)
+
+- **發現日期**: <date> (Sprint <N> retro <doc>)
+- **發現來源**: <retro 文件 / QA review / David cue>
+- **症狀**: <exact error message + how to reproduce on host>
+- **根因**: <host vs container 差異 — 通常係 build step 跑咗但 install step 冇跑>
+- **影響**:
+  - 🟡 **本地 dev friction** — <誰會撞>
+  - 🟢 **唔影響 ship** — <docker / CI 點解 OK>
+  - 🟢 **唔影響 production** — <runtime 點解唔受影響>
+- **修復成本**: <日數,通常 0.01-0.1>
+- **業務影響**: Low / Medium — <一句>
+- **建議**: P2(純 DX polishing)
+- **<date> 進展**: ✅ **已修** — <fix 詳情 + commit SHA>
+- **守到**: <3 個 verify command 嘅具體 output>
+```
+
+**Why 三段影響 vs 一段 Why:** Env-only fix 嘅特有問題係「對 dev 係 friction,對 ship 係 invisible,對 prod 係 irrelevant」,合併寫會誤導 reviewer 以為係 ship blocker。拆三段令 priority tag 同影響範圍直接 visible。
 
 ## 何時用呢個 skill vs 其他
 
@@ -121,6 +167,106 @@ maintained as a known backlog.
 - **Regression Guard**(`regression-guard` skill)— 個別 bug fix 嘅 invariant,RG-XXX entry
 - **QA Tracker**(`docs/QA-TRACKER.md` 配 `qa-tracker` 規範)— US → test 對照,per-feature status
 - 三者互補,red-line 10/11/13 spec
+
+## P0/P1 closure workflow (2026-06-09 pm-system Sprint 5)
+
+當用戶問「清 N 個 P0/P1 tech debt」時嘅 recommended workflow,
+combine 咗 user 嘅 options-first preference 同 plan-then-execute 紀律。
+
+### 1. Plan 階段:逐個 TD 講 scope + 取捨,3 個選項俾 user 揀
+
+**不要悶頭做**。每個 TD 都要:
+
+- **現狀** — 1-2 行講解目前 code / config 嘅實際 state(grep 結果、import 數、call site 數)
+- **改動** — 具體 file 改動清單(切忌抽象)
+- **預期** — 量化 outcome(image size、test count、coverage %)
+- **取捨問題** — 預設合理選項 + 1-2 個 alternatives + clarify 問 user
+
+**典型 3-options template**(David preference, 2026-06-09 pm-system):
+```
+A) 【推薦】<safe practical win, 預設>
+   - <outcome>
+   - <cost>
+B) 【激進】<push 落 deeper change>
+   - <outcome>
+   - <risk>
+C) 【保守】<只做最 minimum>
+   - <outcome>
+   - <cost>
+```
+
+User 揀咗先開工。**不要假設 default,即使 plan 已經講咗。**
+
+### 2. Todo 鎖住 scope
+
+開工前 list 出所有 step 喺 `todo` tool,每個 step 一行
+(decomposition rule: 1 step = 1 file / 1 commit / 1 verify command)。
+
+**Pattern**:
+```
+TD-X: 移除 dead code <symbol list>
+TD-X: 搬 <file> → <new path>
+RG-XXX: 更新 <test file> assert 新 invariant
+RG-XXX: 寫 REGRESSION-GUARD.md entry
+TD-Y: Dockerfile multi-stage build
+TD-Y: docker build 對比 image size
+守住: bun test + playwright test 全 PASS
+更新 docs/TECH-DEBT.md 標 3 個 P1 為 ✅ + Sprint N closure
+```
+
+### 3. Build 階段:每個 step 即 verify
+
+- 改 file → `read_file` 確認未 corrupt(尤其 import line 未掉)
+- 加 test → `bun test <file>` 即跑
+- 改 Dockerfile → `docker build` 對比 size
+- **LSP stale errors 係 noise** — trust `bun --print 'import(...)'` over LSP
+  (詳見 `patch-corruption-recovery` 嘅 "Import-silently-dropped pitfall")
+
+### 4. Verify 階段:全 suite 守住
+
+```
+cd backend && bun test              # unit
+cd e2e && npx playwright test       # E2E (要 docker stack up)
+```
+
+如果 E2E 跑唔到(docker stack build 失敗),要:
+- 確認 failure 係 pre-existing(grep `git log` 確認)
+- 喺 TECH-DEBT.md 變更歷史記低 blocker
+- 唔可以靜靜雞 skip 守住
+
+### 5. Ship 階段:closure commit + doc update
+
+- **1 個 closure commit** 包含所有 TD-X + RG-XXX 改動
+  (commit message 結構:`refactor(sprintN): clear N P1 tech debt (TD-XXX/...) + RG-XXX`)
+- 列出每個 TD 嘅 outcome (file changes, test count, size delta)
+- **唔 stage sibling 嘅未 commit 改動**(用 `git add <specific files>` 唔好 `git add .`)
+- 推 origin 後 verify `git status` clean
+
+### 6. Document 階段:TECH-DEBT.md sprint closure
+
+每個 TD entry 嘅「2026-06-XX 進展」section 加:
+- 具體改動清單(file paths + lines)
+- Result 數字(test count、size delta、coverage %)
+- 守住方法(test command + expected output)
+- 詳見 link 跳到 RG-XXX entry
+
+行動計劃 section 加 `### Sprint N (P1) — ✅ DONE (date)` section
+列出 5 個 checkbox(每個 TD + RG entry + 守住)。
+
+變更歷史 section 加一行 closure 摘要(包括「E2E 跑唔到」嘅 blocker 註腳)。
+
+### 7. User-facing report (終點)
+
+4 段:
+1. **改動清單**(table format: 範疇 / 改動 / 結果)
+2. **守住**(command + pass count)
+3. **風險 / Note**(pre-existing issues、out-of-scope 但發現嘅 bug)
+4. **Commit hash + push status**
+5. **P0/P1 debt 餘下狀態**(收尾 checklist)
+
+David preference: **短、有用、不解釋 why**。每段 1-3 行。
+**忌**:14K char inline report(紅線 49 v2, 2026-06-06 crm-system retro)
+**宜**:1 個 final response < 3500 chars, hit 所有 verify point
 
 ## Legacy simple-table template(保留向後兼容)
 

@@ -60,3 +60,7 @@ sudo docker inspect <container_name> --format '{{.Image}}'
 ## Common Pitfall
 
 Running `npm run build` locally BEFORE docker build does NOT help if the build context still includes the old `dist/`. The `.dockerignore` is the only real fix.
+
+## Related references
+
+- **`references/multi-stage-builder-reuse-node-modules.md`** — The modern pattern for slim runtime images: copy builder's `node_modules` directly into the runtime stage instead of re-installing with `--production`. Avoids duplicate install + layer bloat + Prisma dependency drift. Verified -22MB on pm-system 2026-06-09.

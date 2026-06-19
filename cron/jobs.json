@@ -20,15 +20,15 @@
       "schedule_display": "0 3 * * *",
       "repeat": {
         "times": null,
-        "completed": 1
+        "completed": 12
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T08:48:26.128218+08:00",
-      "next_run_at": "2026-06-09T03:00:00+08:00",
-      "last_run_at": "2026-06-08T03:00:27.621268+08:00",
+      "next_run_at": "2026-06-20T03:00:00+08:00",
+      "last_run_at": "2026-06-19T03:00:33.766549+08:00",
       "last_status": "error",
       "last_error": "Script not found: /Users/davidchu/.hermes/profiles/developer/scripts/auto-archive-sessions.sh",
       "last_delivery_error": null,
@@ -63,15 +63,15 @@
       "schedule_display": "0 2 * * *",
       "repeat": {
         "times": null,
-        "completed": 1
+        "completed": 12
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T08:53:22.505385+08:00",
-      "next_run_at": "2026-06-09T02:00:00+08:00",
-      "last_run_at": "2026-06-08T02:00:54.687825+08:00",
+      "next_run_at": "2026-06-20T02:00:00+08:00",
+      "last_run_at": "2026-06-19T02:00:19.728477+08:00",
       "last_status": "error",
       "last_error": "Script not found: /Users/davidchu/.hermes/profiles/developer/scripts/memory-normalize.sh",
       "last_delivery_error": null,
@@ -87,5 +87,5 @@
       "profile": null
     }
   ],
-  "updated_at": "2026-06-08T03:00:27.621502+08:00"
+  "updated_at": "2026-06-19T03:00:33.767140+08:00"
 }

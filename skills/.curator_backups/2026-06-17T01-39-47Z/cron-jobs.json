@@ -1,0 +1,91 @@
+{
+  "jobs": [
+    {
+      "id": "be6b1aadc9cd",
+      "name": "auto-archive-inactive-sessions",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "auto-archive-sessions.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 3 * * *",
+        "display": "0 3 * * *"
+      },
+      "schedule_display": "0 3 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 10
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-07T08:48:26.128218+08:00",
+      "next_run_at": "2026-06-18T03:00:00+08:00",
+      "last_run_at": "2026-06-17T03:00:29.936464+08:00",
+      "last_status": "error",
+      "last_error": "Script not found: /Users/davidchu/.hermes/profiles/developer/scripts/auto-archive-sessions.sh",
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1512613434749882468",
+        "chat_name": "DavidClaw / #home / \u6211\u60f3\u5e6bdeveloper profile \u53bb\u958b\u555f\u770b\u677f\u529f\u80fd\uff1a hermes kanban init",
+        "thread_id": "1512613434749882468"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "757736b81b92",
+      "name": "nightly-memory-normalize",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "memory-normalize.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 2 * * *",
+        "display": "0 2 * * *"
+      },
+      "schedule_display": "0 2 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 10
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-07T08:53:22.505385+08:00",
+      "next_run_at": "2026-06-18T02:00:00+08:00",
+      "last_run_at": "2026-06-17T02:00:54.532782+08:00",
+      "last_status": "error",
+      "last_error": "Script not found: /Users/davidchu/.hermes/profiles/developer/scripts/memory-normalize.sh",
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1512613434749882468",
+        "chat_name": "DavidClaw / #home / \u6211\u60f3\u5e6bdeveloper profile \u53bb\u958b\u555f\u770b\u677f\u529f\u80fd\uff1a hermes kanban init",
+        "thread_id": "1512613434749882468"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    }
+  ],
+  "updated_at": "2026-06-17T03:00:29.936639+08:00"
+}

@@ -1,7 +1,7 @@
 ---
 name: doc-html-preview
 description: Sync `docs/*.md` to TWO standalone HTML previews in `docs/_html/` for user (David) confirmation — (1) engineering version for code review, (2) boss (decision) version with AI-generated summary cards, decisions, and risks in plain language. MD stays as source of truth. Trigger after any docs/*.md write or update in a project.
-version: 2.2.0
+version: 2.3.0
 platforms: [macos, linux]
 metadata:
   hermes:
@@ -59,7 +59,7 @@ This skill produces **both HTMLs side-by-side**, generated from the same MD. The
 
 **The trap**: crm-system Day 9. I ran `build.sh --project crm-system` and shipped 12 boss HTMLs. Exit code 0. File count correct (12 boss + 12 engineering). File sizes looked healthy (~20-24 KB each). David opened one and immediately said: "boss.html 都好好，但有兩三個都沒有資料了". 10 of the 12 were rendering the literal placeholder `<div class="boss-placeholder">👀 老闆版摘要待生成</div>` — but my naive `grep` had reported them as fine.
 
-**Why naive verification fails**:
+**Why naive verification fails:**
 
 | Check | Why it lies |
 |-------|-------------|
@@ -86,7 +86,7 @@ bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/verify_boss_ht
 # Exit 2: build was never run
 ```
 
-**The deeper lesson — when to generate the JSON**:
+**The deeper lesson — when to generate the JSON:**
 
 The original step ordering (build first, JSON later) was wrong. **Always generate the JSON before running the build.** The build script's silent-placeholder behavior makes post-hoc detection painful and error-prone. Reverse the steps:
 
@@ -106,6 +106,7 @@ Two build paths, **not interchangeable**. Pick by intent:
 | 「畀老闆睇」「for the boss」「畀客戶」「最重要有項目嘅 HTML doc」 | **bundled** (`build_bundled_html.cjs`) | Single shareable artifact, sidebar nav across all docs, search, theme. Email-able. |
 | 「HTML doc 是有了新要求」「你 check 一 check 設定」 (vague) | **bundled** (likely) | Almost always means "boss wants to see the project, give me the one file to share" |
 | 「我想睇下 PRD 嘅 design」 | **per-doc, boss variant** | Targeted read of one doc with decision UI |
+| 「畀客戶/新人睇 1 個 user manual」 | **per-doc, pandoc single-file fallback** | One MD, one self-contained HTML, no sidebar nav needed |
 
 **Default for projects ≤ 20 docs: use the bundled variant** — it's the most shareable, requires the least decision-making, and David's projects typically have ~10–15 docs.
 
@@ -156,6 +157,114 @@ The build script verifies **structure**. Your job is to verify the artifact serv
 ### When David asks "give me html version" or "show me project docs"
 
 Load this skill and run the **bundled** variant (`scripts/build_bundled_html.cjs`) — it gives the most shareable artifact in one command. The bundled variant's output goes in `docs/` (default name: `<project>-docs.html`); see [`references/bundled-html-recipe.md`](./references/bundled-html-recipe.md) for the gotchas. **Always read that reference file before running** — every pitfall there (`.cjs` extension, `</script>` escape, regex footgun, leading H1 strip) bit at least one session.
+
+## When David asks for a Word file (`.docx`) — use pandoc, not bundled HTML (2026-06-09 pm-system)
+
+If the request is **"畀我一份 word file" / "給我 docx" / "for printing" / "for the boss to forward"**, do **NOT** hand the boss the bundled HTML — many corporate recipients still default to Word and won't open `.html`. Generate a `.docx` from the same MD source:
+
+```bash
+# Run from inside docs/ so relative image paths (screenshots/*.png) resolve
+cd ~/www/<project>/docs
+pandoc USER-MANUAL.md -o <Project>-用户使用手册.docx \
+  --toc --toc-depth=2 \
+  --metadata title="<Project> 用户使用手册"
+# → <2-5 MB self-contained .docx with all PNG screenshots embedded
+#  -pandoc embeds images as word/media/rId<N>.png
+#  -relative paths (screenshots/01-login.png) resolve because we cd into docs/ first
+#  -TOC is built from heading depth ≤ 2 (user manual pattern; bump --toc-depth for technical docs)
+#  -Verify: python3 -c "import zipfile; z=zipfile.ZipFile('*.docx'); print(len([n for n in z.namelist() if n.startswith('word/media/')]))"
+#  → embedded: 23 images (matches the MD's <img> count)
+```
+
+**Should the `.docx` be committed to git?** Default **yes** for one-off deliverables like USER-MANUAL. Do NOT gitignore — David wants the artifact shareable. ~3 MB per doc is acceptable for project repos with < 5 manuals.
+
+**Naming**: use the project's display name in the file (e.g. `PM-System-用户使用手册.docx` not `user-manual.docx`) so the recipient immediately knows what they're opening.
+
+**Audience-aware writing for USER-MANUAL and external docs (2026-06-09 lesson)**:
+- David 嘅 conversation 用 Cantonese 口語,但**正式文件 (USER-MANUAL / API doc / onboarding guide) 要用中文書面語 (普通話)**。
+- 廣東口語特徵:`嘅 / 嗰 / 啲 / 咗 / 咩 / 唔 / 冇 / 嚟 / 㗎 / 啦 / 喇 / 睇下 / 跟住 / 幾多 / 邊個 / 點解 / 點樣`
+- 書面語對應:`的 / 该 / 些 / 了 / 什么 / 不 / 无 / 来 / （刪）/ （刪）/ （刪）/ 查看 / 然后 / 多少 / 哪个 / 为什么 / 如何`
+- 角色描述要全名化:「Admin」→「管理员」、「PM」→「项目经理」、「Developer」→「开发人员」
+- 動詞:「會/有/做/整/用」→「将会/具有/执行/创建/使用」
+- Verification: `grep -nE "嘅|嗰|啲|咗|咩|唔|冇|嚟|㗎|啦|喇" docs/USER-MANUAL.md` 必須 0 行先算書面語化完成。
+
+## Playwright screenshot recipe (2026-06-09 pm-system, see `references/playwright-screenshot-recipe.md`)
+
+When the doc includes 20+ page screenshots (USER-MANUAL, ONBOARDING, etc.), use Playwright headless Chromium to capture them. Key patterns:
+
+- **Reuse existing project playwright**: `cd e2e && node ../script.js` — pm-system / crm-system both ship `e2e/node_modules/playwright` already (no need to add to frontend deps).
+- **First run downloads chromium binary** (~120 MB) into `~/.cache/ms-playwright/chromium-NNNN/`. The `npx playwright install chromium` step in fresh projects takes ~30s; subsequent runs are instant.
+- **Verify routes before screenshotting**: `grep -rE "Route path=\"" frontend/src/App.tsx` and `grep -E "<name>Page" frontend/src/pages/*.tsx` — pm-system has `AgentMonitorPage.tsx` source but no `Route` registered → `/agent-monitor` 404. Always navigate to the **actually-routed** page.
+- **Click the right sub-tab**: `ProjectDetailPage` uses local useState tabs, not URL params. Pass a fragment `#tasks` then `await page.locator('button').filter({ hasText: /^任務\s*\(/ }).click()`.
+- **5 KB screenshots = blank page** (404, redirect to login, or modal that didn't open). After the script finishes, `ls -la screenshots/ | awk '$5<10000'` lists them — re-shoot manually.
+- **Hardcode IDs as constants** at top of script (`PROJECT_ID = 'bfba6607-...'`), reference them in routes, and re-derive from API after each fresh seed (the `req.get(...)` 包裹的 list endpoint may have changed since last run).
+
+See `references/playwright-screenshot-recipe.md` for the full 20-page script + seed-data recipe.
+
+### 🛑 Bundled HTML: `node --check` self-test FAILS to catch all bugs (2026-06-08 lesson)
+
+The bundled script (`build_bundled_html.cjs`) has a `node --check` self-test that extracts the inlined `<script>...</script>` block and runs Node syntax check on it. **This catches a lot, but it is NOT a substitute for a visually inspectable source.**
+
+Symptom I hit on pm-system 2026-06-08 while building `USER-MANUAL.md`:
+- `node build_bundled_html.cjs pm-system` → exit 1, error points at `line 188` of the inlined JS
+- The error was "Unexpected token `}`" but the source line 188 had `6 {` and `6 }` — visually balanced per-line
+- **Real cause**: `renderSearchResults` was missing ONE closing `}` for the inner `for (var j=0; ...)` loop. The function's final `}` was closing the inner for-loop, leaving the outer for-in block open. The brace count per-line was coincidentally balanced; only the SEMANTIC structure was wrong.
+- Spent ~20 minutes trying to patch the inline regex `[^)\\s]+` (which Node 22's regex literal parser DOES reject for unescaped `)`) before realising the actual bug was the missing `}`.
+
+**Three concrete bugs in the bundled script's inline JS that the `node --check` self-test fails to make easy to diagnose:**
+
+1. **Brace count per-line is misleading in a one-liner.** When the entire function body is on one line, the brace count balances by coincidence, and you can't tell from the error message which brace closes which block.
+2. **Unescaped `)` in regex character class `[^)\\s]+`.** Node 22's regex literal parser rejects this at syntax-check time. `new RegExp(string, 'g')` accepts it; the literal form does not. Fix: use `[^)\s]+` (omit `)` since `(?! )` style negative lookahead is rare in image/link URLs).
+3. **Self-test exit code is 1 on failure, but the error message points at the inlined JS line number**, which is hundreds of lines into the file. Open the inlined JS in `/tmp/inlined-app-test.js` to map it back to the source — but only IF the file wasn't auto-cleaned. The self-test deletes the temp file in its `finally` block, so if you re-run the build to investigate, you get a fresh `node --check` error pointing back at the inlined line.
+
+**Fixes applied in the bundled script (2026-06-08):**
+- All inline JS rewritten in multi-line, properly indented form. Source structure = inlined structure. Brace count by eye is now feasible.
+- Image + link regexes use `[^)\s]+` (no unescaped `)`).
+- `renderSearchResults` rewritten with explicit braces, no one-liner density.
+- CHANGE LOG added at the top of the script explaining the three fixes.
+- A new "alternative path" added below: **if the bundled script keeps giving you grief, just use pandoc for a single-file MD → HTML** — see `Pandoc single-file fallback (when bundled script misbehaves)` below.
+
+**Lesson to encode in any future inline-JS-in-template-literal scripts:**
+1. Never write the inlined JS as a one-liner. Use multi-line, properly indented.
+2. Always run `node --check` against the inlined JS (which the bundled script does) — but **also** load the file in a browser or `cat` the inlined content and inspect brace count by eye.
+3. For regex literals, prefer `new RegExp(string, 'g')` over `/literal/` when the regex contains `(` or `)` in a character class. The constructor form is more permissive.
+4. The self-test exit code is a necessary but not sufficient signal. Add a `console.log("✓ inlined JS verified")` AFTER the self-test, not just inside the `try` block — so you can tell the self-test actually ran.
+
+### Pandoc single-file fallback (when bundled script misbehaves) — 2026-06-08
+
+If `build_bundled_html.cjs` keeps self-test-failing on your MD content (e.g. your MD has a code block that contains a JS-breaking regex), **don't fight the bundled script** — fall back to pandoc for a single-file MD → HTML. This is fine for one-off user manuals, READMEs, or any non-engineering doc that doesn't need the in-page search / sidebar nav.
+
+```bash
+pandoc docs/USER-MANUAL.md -o docs/<project>-user-manual.html \
+  --standalone --metadata title="<title>" --toc --toc-depth=2 \
+  --syntax-highlighting=none
+
+# Optionally inject GitHub-like CSS (David's preferred style, no CDN)
+python3 -c "
+import re
+html = open('docs/<project>-user-manual.html').read()
+css = open('~/.hermes/profiles/developer/skills/doc-html-preview/templates/github-like.css').read()
+html = html.replace('</head>', f'<style>{css}</style>\n<style>body{{max-width:980px;margin:0 auto;padding:32px;font-family:-apple-system,\"PingFang TC\",\"Microsoft JhengHei\",sans-serif}}</style>\n</head>', 1)
+html = html.replace('<title>...</title>', '<title>... — 用戶手冊</title>')
+html = html.replace('<body>', '<body class=\"markdown-body\">')
+open('docs/<project>-user-manual.html', 'w').write(html)
+"
+```
+
+**When to use bundled vs pandoc fallback (decision table):**
+
+| Audience | Use bundled | Use pandoc fallback |
+|----------|-------------|---------------------|
+| 1-3 docs, want sidebar nav + search | ✅ | ❌ |
+| 1 doc (user manual / README) | ❌ (overkill) | ✅ |
+| ≥ 10 docs, navigation matters | ✅ | ❌ |
+| MD contains JS code samples that break inline regex | ❌ | ✅ |
+| Need print-friendly PDF export | ❌ (use pandoc `--pdf-engine=wkhtmltopdf`) | ✅ |
+| Need dark/light theme toggle | ✅ | ❌ |
+| David explicitly asks for "one HTML file" | depends on doc count | depends on doc count |
+| Time-box: pandoc builds in < 1s, bundled 5-15s for ≥ 10 docs | fallback OK | bundled OK |
+
+The pandoc fallback is **strictly worse for navigation / search** but **strictly more robust for any MD content**. Default to bundled for ≥ 5 docs, default to pandoc for 1-2 docs.
 
 ### 📂 Sub-folder MDs (2026-06-07 crm-system lesson)
 
@@ -273,6 +382,16 @@ open("docs/_meta/PRD.json", "w").write(json.dumps(summary, ensure_ascii=False, i
 
 Then run `build.sh` once, then `verify_boss_html.sh`. Done.
 
+### ⚠️ Pitfall: Bundled `build_bundled_html.cjs` has 2 real Node 22 bugs (2026-06-09 pm-system)
+
+**Bug A — Node 22 V8 regex parser rejects unescaped `)` inside character class.** The original template inlined `/!\[\[^\]\]*\]\([^)\s]+.../g` for the markdown image regex, and `/\[\[^\]]+\]\([^)\s]+\)/g` for the link regex. Node 22's `node --check` (called by the build script's self-test) refuses the literal form with **"Unmatched ')'"** even though `new RegExp(string, 'g')` with the same string is accepted. Result: `node build_bundled_html.cjs <project>` exits 1 with no useful error.
+
+**Fix**: rewrite the two regexes using the `new RegExp('...', 'g')` constructor form (the string literal is run through JS string escaping once instead of twice). The script does this in `renderInline(...)`. If you add new regex-based markdown features (e.g. footnotes, definition lists), use the constructor form too.
+
+**Bug B — `renderSearchResults` j-loop missing `}` close brace.** The original one-liner `for(var j=...){...html+='<li>...</li>'}html+='</ul>...'` closes the j-loop once but is followed immediately by `html+='</ul>...'` which closes the for-in block. So the j-loop body ended with `</li>'}` and the for-in block never closed properly — but on some Node versions the parser tolerated it (crm-system 2026-06-06 likely hid this). Node 22 surfaces "Unexpected token '}'" on the inlined JS. The script now writes `renderSearchResults` across multiple lines for clarity and the brace structure is explicit.
+
+**Detection**: if `build_bundled_html.cjs` exits 1 with `node:internal/modules/cjs/loader:1620:18` or `wrapSafe` in the stack trace, suspect either bug. Run `node --check` on `/tmp/inlined-app-test.js` after extracting the inlined `<script>` block to localize. **Already done by the script's self-test** — so the failure is the self-test, not the build itself.
+
 ### ⚠️ Pitfall: Boss HTML can silently render as placeholder when JSON is missing (2026-06-06 crm-system)
 
 **Symptom**: `build.sh --project <name>` completes without error, all `*-boss.html` files exist with similar size (~20–24 KB), but opening them in a browser shows a "👀 老闆版摘要待生成" placeholder card. The build script does **NOT** fail when JSONs are missing — it silently falls back to an empty template.
@@ -368,16 +487,18 @@ without a local server — ideal for emailing or archiving.
 
 **Differences from the per-doc output:**
 
-| Aspect | Per-doc (`build.sh`) | Bundled (`build_bundled_html.cjs`) |
-|--------|----------------------|-------------------------------------|
-| File count | N×2 (engineering + boss per MD) | 1 |
-| Navigation | Browser tab-switching | In-page sidebar + hash routing |
-| Search | None (browsers do it per file) | Client-side full-text, `/` shortcut |
-| Themes | Light + dark per file | Light + dark, persisted in localStorage |
-| Server | None (file://) | None (file://) |
-| Gitignore | `docs/_html/` | Same — the bundled file goes in `docs/` |
-| MD feature support | Full pandoc | GFM subset (headings, code, lists, tables, blockquotes, inline) — no LaTeX/Mermaid |
-| Size | ~50 KB per doc | ~20 KB + MD content (~170 KB for an 11-doc project) |
+| Aspect | Per-doc (`build.sh`) | Bundled (`build_bundled_html.cjs`) | Pandoc single-file (fallback) |
+|--------|----------------------|-------------------------------------|------------------------------|
+| File count | N×2 (engineering + boss per MD) | 1 | 1 |
+| Navigation | Browser tab-switching | In-page sidebar + hash routing | TOC only (no nav) |
+| Search | None (browsers do it per file) | Client-side full-text, `/` shortcut | None |
+| Themes | Light + dark per file | Light + dark, persisted in localStorage | Light only (default pandoc CSS) |
+| Server | None (file://) | None (file://) | None (file://) |
+| Gitignore | `docs/_html/` | `docs/<project>-docs.html` | `docs/<project>-user-manual.html` |
+| MD feature support | Full pandoc | GFM subset (headings, code, lists, tables, blockquotes, inline) — no LaTeX/Mermaid | Full pandoc |
+| Size | ~50 KB per doc | ~20 KB + MD content (~170 KB for an 11-doc project) | ~40 KB for a 600-line user manual |
+| Robustness | High (Python, no JS escaping) | Lower (Node.js inline template literal — see "🛑 Bundled HTML: `node --check` self-test FAILS to catch all bugs" above) | Highest (pandoc is bulletproof) |
+| Build time | 1-3s per doc | 5-15s for ≥ 10 docs | < 1s |
 
 The bundled script auto-discovers every `docs/*.md` and the repo-root
 `README.md`, so you don't have to list them. For a different list,
@@ -409,6 +530,8 @@ it gives the most shareable artifact in one command.
 | Auto-generate boss JSON on MD write | Hook into developer profile's write step |
 | Interactive decision capture (click A/B) | Add a tiny JS layer + localStorage |
 | Encode boss-audit as a CI check | Run the checklist in `build_bundled_html.cjs` post-build; fail loud |
+| Replace bundled script with multi-file format | Migrate to vite-plugin-md or markdown-it; drop the inlined JS entirely |
+| Drop bundled script in favor of vite + markdown-it | Pure ESM, no inline JS template literal, no `node --check` fragility |
 
 ## Files in this skill
 
@@ -417,12 +540,13 @@ it gives the most shareable artifact in one command.
 | `SKILL.md` | This file |
 | `scripts/build.sh` | Bash orchestrator — calls Python for each doc |
 | `scripts/build_html.py` | Python — renders engineering + boss HTMLs from one MD + optional meta JSON |
-| `templates/github-like.css` | Engineering version stylesheet (light + dark) |
+| `templates/github-like.css` | Engineering version stylesheet (light + dark) — also used for the pandoc single-file fallback |
 | `templates/boss-template.html` | Boss version template (placeholder + content slots) |
-| `scripts/build_bundled_html.cjs` | **Bundled variant** — one self-contained HTML file with sidebar + search + theme toggle. Embed the `node --check` self-test (see recipe §2a) or you'll ship broken HTML when MD content has JS-breaking strings. |
+| `scripts/build_bundled_html.cjs` | **Bundled variant** — one self-contained HTML file with sidebar + search + theme toggle. **Multi-line indented JS (2026-06-08 fix)** + `node --check` self-test. See `SKILL.md` "🛑 Bundled HTML: `node --check` self-test FAILS to catch all bugs" for the brace-count + regex-character-class pitfalls. CHANGELOG at top of script. |
 | `references/bundled-html-recipe.md` | Recipe + gotchas for the bundled variant (`.cjs` extension, `</script>` escape, `node --check` self-test, regex-extraction footgun) |
 | `references/bundled-html-boss-audit-checklist.md` | **9-point boss-audit** (default landing, `<title>` lang, skip link, print button, footer hint, print CSS, aria-label, tabindex). Run this **before handing the artifact to the boss** — build script only verifies structure, not audience appropriateness. Triggered by vague phrases like "check your settings" / "for the boss" / "有咩新要求" without David enumerating them. |
 | `references/crm-system-2026-06-06-bundled-html-incident.md` | Session-specific log of the line-4898 SyntaxError + the audience-mismatch correction (David asked for "PRD 和 Design 給老闆看", got engineering docs first). Read before running this skill on a new project. |
+| `references/pm-system-2026-06-08-bundled-brace-bug.md` | **NEW 2026-06-08** — session log of the line-188 missing-`}` bug that `node --check` self-test failed to make easy to diagnose. Includes the 3-bug investigation timeline + the multi-line rewrite fix. Read before trusting the bundled script on a new project. |
 | `references/boss-summary-schema-and-recipe.md` | Boss JSON schema (frozen by template), copy-pasteable example, main-agent generation pattern, and common pitfalls. Read before writing your first `docs/_meta/<doc>.json`. |
 | `scripts/verify-boss-html.sh` | One-shot verifier: greps every `*-boss.html` for the `boss-placeholder` class, exits non-zero if any are placeholder. **Run after every `build.sh` invocation** — the build script does not fail when JSONs are missing, so this is your only safety net. |
 | `references/crm-system-2026-06-06-boss-placeholder-silent-failure.md` | Session log: 10/12 boss HTMLs silently rendered placeholders despite the build exiting 0. Documents the body-region grep recipe and the main-agent-vs-CEO trade-off for JSON generation. **Read this if you ever ship a project with `docs/_html/*-boss.html` files.** |

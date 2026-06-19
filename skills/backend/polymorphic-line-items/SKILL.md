@@ -388,9 +388,20 @@ Example: Senior Engineer 1000 售 / 600 成本 × 5 days:
 ### Backend helpers (Elysia route)
 
 ```typescript
+// apps/api/src/lib/quotation-gp.ts  ← Day 17 extracted (2026-06-08)
+//
+// Why extracted: originally gpOf + costPerManDayFromSnapshot lived
+// as private functions in apps/api/src/routes/quotation.ts.
+// Importing the route file to test them would have spun up the
+// Elysia app, Prisma, and the DB connection — too heavy for a unit
+// test. Extracting to apps/api/src/lib/quotation-gp.ts lets the
+// helpers be unit-tested in isolation (14 tests in
+// apps/api/src/__tests__/quotation-gp.test.ts), and the route
+// file imports them back. No behaviour change.
+
 // Snapshot cost from a service line's man-day breakdown JSON.
 // The manDaySnapshot shape is { lines: [{ role, dayRate, days, costRate, subtotal }] }
-function costPerManDayFromSnapshot(snap: unknown): number {
+export function costPerManDayFromSnapshot(snap: unknown): number {
   const lines = (snap as { lines?: unknown[] })?.lines;
   if (!Array.isArray(lines) || lines.length === 0) return 0;
   let totalCost = 0, totalDays = 0;
@@ -401,12 +412,32 @@ function costPerManDayFromSnapshot(snap: unknown): number {
   return totalDays > 0 ? totalCost / totalDays : 0;
 }
 
-function gpOf(itemType: string, lineTotal: number, costSnapshot: number) {
+export function gpOf(itemType: string, lineTotal: number, costSnapshot: number) {
   if (itemType === 'PRODUCT') return { lineGp: lineTotal, lineGpPercent: 100 };
   const gp = lineTotal - costSnapshot;
   return { lineGp: gp, lineGpPercent: lineTotal > 0 ? (gp / lineTotal) * 100 : 0 };
 }
 ```
+
+**Helper extraction pattern** (Day 17 2026-06-08, applies to ANY
+pure function buried inside a route file):
+1. Identify pure functions inside `apps/api/src/routes/<thing>.ts`
+   (no DB calls, no `request` arg, no side effects).
+2. Move them to `apps/api/src/lib/<thing>-<helper>.ts` and `export`.
+3. The route file imports them back. Behaviour is bit-for-bit
+   identical — only relocation.
+4. Add `apps/api/src/__tests__/<thing>-<helper>.test.ts` with
+   `bun test`. Use `bun:test` (zero-install, ships with Bun).
+5. Run `bun build src/index.ts --target=bun --outdir=/tmp/x` to
+   confirm the route file still resolves and bundles (catches
+   import-cycle / typo bugs that `tsc --noResolve` would miss).
+6. Register RG entry (see REGRESSION-GUARD.md pattern) pinning
+   the formulas so a future refactor can't silently change them.
+
+**Why this matters**: GP% drives totals on the Quotation detail
+page AND the Excel export (US-A5). Wrong GP% is a deal-killer —
+sales would lose trust in the system. The 14 tests are the
+contract.
 
 ### Recalc strategy: DRAFT refreshes from live, SENT freezes
 

@@ -162,3 +162,7 @@ The compile error tells you the runtime type doesn't match. This catches
 - `prisma-migrate-private-rds`: schema migrations that change wire shape
 - `bun-elysia-react-vite-stack`: full-stack template where this class of
   bug is most common (one agent writes both ends and the plan/doc gets stale)
+- `pagination-with-preserved-aggregates`: when the new field added to the
+  response IS the full-dataset count/sum (separate from paged rows), the
+  client must read the new fields (`totalCount`, `totalHours`) and stop
+  computing them from paged data. Two-query design — see skill.

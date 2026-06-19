@@ -1,6 +1,6 @@
 ---
 name: prisma-sqlite-bun-setup
-description: Prisma schema 適配 SQLite 的正確方式 — enum 改 string、Json 改 String、Prisma 5 vs 7 差異、seed 注意事項、Bun 生態環境的常見坑
+description: Prisma schema 適配 SQLite 的正確方式 — enum 改 string、Json 改 String、Prisma 5 vs 7 差異、seed 注意事項、Bun 生態環境的常見坑。也涵蓋 Prisma 7 strict validation 嘅 generic pitfalls (適用於 SQLite / PostgreSQL),特別係 `prisma.config.ts` + Dockerfile COPY 嘅 deployment trap。
 tags: ["prisma", "sqlite", "bun", "debugging", "backend"]
 related_skills: ["elysia-typescript-workarounds", "elysia-aws-lambda-deploy"]
 ---
@@ -161,3 +161,96 @@ Prisma 7 的 client 需要正確的 adapter。若用 `@elysiajs/eden` + Prisma�
 若看到 `Cannot find @prisma/client` 在 Lambda 上，先確認：
 1. `bun run prisma generate` 有執行
 2. `node_modules/@prisma/client` 有被包含在 zip 中（不要设成 external）
+
+---
+
+## Prisma 7 strict validation 嘅 generic pitfalls (適用於 SQLite / PostgreSQL)
+
+> **2026-06-09 pm-system 實戰教訓 (RG-011)** — 即使用 PostgreSQL(非 SQLite),Prisma 7 嘅 strict validation 仲會喺 runtime container 入面炸。
+
+### `datasource.url` 必須用 `env()` helper,唔可以用 `process.env["..."]`
+
+Prisma 7 嘅 `prisma.config.ts` 對 `datasource.url` 做 strict type validation,**只接受 literal string 或 `env()` wrapper**:
+
+```typescript
+// ✅ 對:用 env() helper
+import { defineConfig, env } from "prisma/config"
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: { url: env("DATABASE_URL") },   // ← 用 env()
+})
+
+// ❌ 錯:用 process.env 直接讀
+import { defineConfig } from "prisma/config"
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: { url: process.env["DATABASE_URL"]! },   // ← 撞 "datasource.url property is required"
+})
+```
+
+### Dockerfile 漏 COPY `prisma.config.ts` 嘅 silent break
+
+**Symptom**: `docker build` 過,`docker run` 入面 `bunx prisma generate` / `prisma db push` 撞:
+```
+Prisma config file loaded from prisma.config.ts.
+error: The datasource.url property is required in your Prisma config file.
+```
+
+**Root cause**: Prisma 7 喺 runtime 重新讀 `prisma.config.ts`,而 Dockerfile 嘅 `COPY` 漏咗呢個 root-level file。
+
+**Fix recipe**(多-stage Dockerfile):
+
+```dockerfile
+# Builder stage
+FROM oven/bun:1-alpine AS builder
+WORKDIR /app
+COPY package.json bun.lock ./
+COPY prisma ./prisma
+COPY src ./src
+COPY prisma.config.ts ./          # ← 必須! root-level file 唔會被 COPY prisma/ 帶入
+ARG DATABASE_URL=dummy:placeholder@host:5432/db   # ← builder 跑 prisma generate 要
+ENV DATABASE_URL=$DATABASE_URL
+RUN bun install --frozen-lockfile
+RUN bunx prisma generate
+
+# Runtime stage
+FROM oven/bun:1-alpine
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.prisma ./.prisma
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts   # ← 同樣要 COPY
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+ENV NODE_ENV=production
+ENV DATABASE_URL=                 # runtime 由 docker-compose env 注入
+CMD ["bun", "run", "src/index.ts"]
+```
+
+**Key points**:
+1. **builder stage 嘅 `env()` strict check**:`prisma generate` 跑時 Prisma 會 require `DATABASE_URL` set(即使真 value 唔用)。用 `ARG DATABASE_URL=dummy:placeholder@host:5432/db` 過 strict check 即可。
+2. **runtime stage 嘅 DATABASE_URL**:唔寫死,`docker-compose.yml` 嘅 `environment` 注入。
+3. **`.dockerignore`**:確認 `prisma.config.ts` 唔被 ignore(`!prisma.config.ts` 喺 `.dockerignore` 入面)。
+
+### Verification 步驟
+
+```bash
+# 1. 確認 prisma.config.ts 真係入咗 image
+docker run --rm <image> ls /app/prisma.config.ts
+
+# 2. 跑一次 entrypoint,睇 log
+docker compose up backend
+# 期待 log: "Loaded Prisma config from prisma.config.ts." (無 error)
+
+# 3. 確認 migrations 跑得通
+docker compose exec backend bunx prisma migrate status
+```
+
+### Why 容易 miss 呢個 pitfall
+
+- **本地 dev 唔撞**:`bun run dev` 直接讀 local `prisma.config.ts`。
+- **CI build 唔撞**:`prisma generate` 通常喺 CI 跑,但 CI 設咗 dummy `DATABASE_URL` 過 strict check。
+- **Production image build 過**:`prisma.config.ts` 唔喺 `prisma/` 入面,build 過唔代表 file 入咗 image。
+- **Production runtime 先撞**:`bunx prisma db push`(entrypoint script 跑)撞 "datasource.url required"。
+
+**Lesson**:任何 Prisma 7 嘅 Dockerfile change → 必須 `docker run --rm <image> ls <prisma.config.path>` 確認 + 跑一次 entrypoint 睇 log。CI build 過唔代表 runtime 冇事。

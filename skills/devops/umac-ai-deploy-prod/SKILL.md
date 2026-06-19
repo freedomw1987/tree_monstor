@@ -3,6 +3,8 @@ name: umac-ai-deploy-prod
 description: UMAC AI 生產部署 SOP — backend + frontend + CDK + ECS 全流程
 ---
 
+> ⚠️ **DEPRECATED 2026-06-19** — `umac-ai-cluster` ECS cluster、SES verified identities、Route53 hosted zone、S3 bucket 全部不存在(0 個)。DNS 解析去 Hetzner + hosting reseller,項目已搬離 AWS。Recipe 過時,等 David 確認 hosting 位置 + supply access 再 update。
+
 # UMAC AI 生產部署流程
 
 ## 概述
@@ -173,6 +175,52 @@ DATABASE_URL=...
 email From 為 `noreply@board-ai.site`，envelope sender 預設是 `010001...@amazonses.com`，導致 DMARC FAIL。
 
 解決：在 Route53 加 DKIM CNAME 記錄 + DMARC TXT 記錄。
+
+## ⚠️ DEPRECATED 2026-06-19
+
+`umac-ai-cluster` ECS cluster、SES verified identities、Route53 hosted zone、S3 bucket 全部不存在(0 個)。`api.board-ai.site` DNS 解析去 Hetzner `95.41.26.30` + hosting reseller (`16.163.242.148` AMAZO-4 block),項目已搬離 AWS。Recipe 過時 — AWS infra 0/6 services 全部 missing,等 David 確認 hosting 位置 + supply access 再 update。
+
+## Infra Drift Detection Recipe (2026-06-19 lesson)
+
+**情境**: 用戶投訴功能唔 work,你以為係 code bug,先查 AWS 卻發現成個 project 已搬走 — code bug 唔存在, infra drift 嘅 root cause 喺別處。
+
+**6 個 5-second probes**(全部唔需要 project source code access,只需要 AWS credentials 同 `dig`):
+
+```bash
+# 1. DNS 指去邊
+dig api.<project>.site +short                # 預期 AWS 內: ELB/CloudFront IP
+                                             # 實際 Hetzner/DO/Linode = infra 已搬走
+
+# 2. ECS cluster 仲在唔在
+aws ecs list-clusters --region ap-east-1     # 預期有 project-cluster, 0 = gone
+
+# 3. SES verified identities
+aws sesv2 list-email-identities --region us-east-1
+                                             # 預期有 project-domain.com 或 no-reply@...
+                                             # 0 = SES 沙盒空, 邊個 email 都 send 唔出
+
+# 4. SES Production Access
+aws sesv2 get-account --region us-east-1 --query 'ProductionAccessEnabled,SendQuota' --output text
+                                             # false + Max24HourSend: 200 = 沙盒 mode
+
+# 5. Route53 hosted zones
+aws route53 list-hosted-zones --query 'HostedZones[?Name==`<project>.site.`].Id' --output text
+                                             # 0 = DNS 都唔喺 AWS
+
+# 6. S3 buckets
+aws s3api list-buckets --query 'Buckets[?contains(Name, `<project>`)].Name' --output text
+                                             # 0 = frontend hosting 都唔喺 AWS
+```
+
+**Decision matrix**:
+
+| 6 probes 結果 | 結論 | Action |
+|---------------|------|--------|
+| 全部預期值 | infra 仲喺 AWS | 查 code bug / env 變更 / recent deploy |
+| 1-2 missing | partial drift | 逐個 probe, fix 缺失嗰個 (e.g. verify SES identity 走咗就 re-verify) |
+| 3+ missing | **infra 已搬走** | **STOP**。搵實際 hosting (SSH / control panel / GitHub repo)。悶頭做 AWS recipe 係 waste token |
+
+**Lesson codification**: 任何「用戶投訴功能壞咗」嘅 task,**第一步唔係睇 code**,係跑呢 6 probes 10 秒。If 3+ missing → project 唔再你以為嘅 hosting,investigation 路徑完全唔同。
 
 ## 常見問題
 

@@ -282,6 +282,13 @@ python3 scripts/load_state.py --project crm-system --search-sessions
 - **Holographic** provider 雖然係 local-only 但需要 config, 默認未啟用 — 可以之後 setup
 - **State file 唔會 auto-update** — 必須人手 call save_state.py
   (將來可以做 background curator 自動 trigger)
+- **`memory` tool round-trip drift guard (2026-06-19 lesson)** — Hermes 嘅 `memory(action='add')` 會 refuse write 當 `~/.hermes/profiles/developer/memories/MEMORY.md` 有 manual edit / shell append / patch tool 嘅 content 唔可以 round-trip through `memory()` call。**Detection**: error message 提 "MEMORY.md.bak.<timestamp>" + "Resolve the drift first — either rewrite the file as a clean §-delimited list of entries, or move the extra content out"。**Resolution recipe**:
+  1. `cat ~/.hermes/profiles/developer/memories/MEMORY.md.bak.<timestamp>` 拎 backup
+  2. Manual integrate missing entries into clean §-delimited list (one at a time via `memory(action='add', content='...')`)
+  3. Remove or rewrite original MEMORY.md to clean state
+  4. Retry `memory(action='add')`
+  
+  **唔可以** force overwrite — guard 嘅存在係防止 silent data loss (Hermes issue #26045)。**唔可以** retry 5 次(浪費 token + 撞同一個 error)。**Lesson codification**: 如果個 lesson 必須 persist 但 memory tool 拒絕,fallback 落 skill(SKILL.md body)或者講畀 David 知要人手 sync。
 
 ## 🆕 Plan Z — Mid-Handoff Single-Step Commit Cycle (2026-06-07)
 

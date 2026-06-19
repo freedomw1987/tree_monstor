@@ -7,6 +7,14 @@ standard smoke output**, but bite you at prod deploy time. Run them after a
 A third check (Recipe C) was added 2026-06-07 crm-system Day 15 — stale
 stash detection. See end of file.
 
+A fourth check (Recipe D) was added 2026-06-16 PM-System Sprint 21 —
+**pre-existing uncommitted sprint detection**. See end of file. This
+catches the case where the user's "do X" cue is actually a re-prompt of
+work that was already coded in the working tree but never committed.
+**Run Recipe D FIRST, before any other recovery recipe, whenever the
+user says "做 X" / "fix X" / "ship Y" and the topic sounds like a
+recent sprint scope.**
+
 ---
 
 ## Recipe A — HEAD self-consistency check (untracked providers)
@@ -285,3 +293,139 @@ without verification.
 - `crm-system` `docs/retros/2026-06-07-system-settings.md` — the
   real-world finding that prompted Recipes A & B
 - `crm-system` Day 15 sprint plan (`8cdcd8a`) — Recipe C's source case
+
+---
+
+## Recipe D — Pre-existing uncommitted sprint detection (the "code is already done" trap)
+
+**Symptom** (2026-06-16 PM-System Sprint 21): David sent "做以下必要性的修正: 1. Wiki 上傳可以支援到 doc, xls, txt 檔案; ..." (5 items, all matching Sprint 21 scope). The agent started surveying source code and found `Sprint 21 US-21.4` / `US-21.1` / `US-21.3` / `US-21.5` comments in `chat.ts`, `documents.ts`, `wikis.ts` and a 51-line retro doc already drafted at `docs/retros/2026-06-16-sprint-21-wiki-improvements.md`. Initial reaction: "almost done, just need to commit and push" — but `git status` showed **7 files modified + 3 untracked, zero commits ahead of master**. The working tree contained the full implementation of all 5 US, but every bit of it was uncommitted WIP from a previous session.
+
+**Why it hides from existing tools**:
+- `git status` shows modified/untracked files but no obvious flag that says "this is a complete sprint you should ship, not WIP"
+- `git log --all --oneline --grep="Sprint 21"` returns nothing — the work is uncommitted, not lost
+- Reading the source code reveals `Sprint 21 US-XX.Y` comments but a fresh agent treats those as "future planned scope" rather than "already implemented"
+- Retro doc with the matching title and `## Implementation plan` section exists in `docs/retros/` — but uncommitted
+- `bun test` will pass (710/710 in PM-System case) because the code is functional, not broken — easy to mistake "tests pass" for "work is shipped"
+
+**Why it matters**: If you start writing fresh US-21.1 code on top of this working tree, you'll either (a) duplicate existing work, (b) get confused by interleaved hunks between US, or (c) blow away existing logic with a "from scratch" implementation. The correct move is **verify → commit → push**, not "re-implement".
+
+**Detection recipe** (run BEFORE writing any code for a "do X" cue that sounds like sprint scope):
+
+```bash
+# 1. Working tree state — modified/untracked count tells you if work is in flight
+cd ~/www/<project>
+git status --short | wc -l         # > 0 = work in progress
+git diff --stat | tail -1          # "+X -Y" total change footprint
+git status                         # (no args) the "On branch / working tree" 2 lines = truth
+
+# 2. Check if the uncommitted changes match the user's request
+#    a. If the request mentions US numbers (e.g. "US-21.3") or feature names
+#       that match a recent sprint, search the working tree for those markers:
+git diff | grep -E "^\+.*Sprint [0-9]+ US-|^\+.*US-[0-9]+\.[0-9]+"
+#    b. If those markers are present in +lines (not -lines), the work is being
+#       added, not removed → likely a half-done or in-progress sprint
+
+# 3. Check for an in-flight retro doc that matches the sprint topic
+ls docs/retros/$(date +%Y-%m-%d)-*.md 2>/dev/null
+# If a retro doc exists with "Implementation plan" + commit-style "Backend/Frontend"
+# section AND is untracked, it's a draft from a previous session
+
+# 4. Run the test suite to confirm the code is functional (not half-broken WIP)
+cd backend && bun test 2>&1 | tail -3   # PM-System case: "710 pass 0 fail"
+# If tests pass + working tree has changes + retro doc exists + comments match
+# request → this is a "ship a pre-existing uncommitted sprint" case, NOT a
+# "implement from scratch" case
+
+# 5. Cross-check against all branches (the work might be on a feature branch
+#    that wasn't merged)
+git branch -a | grep -iE "sprint|wiki|feat"
+git log --all --oneline --grep="<sprint-name>"   # e.g. "Sprint 21"
+# If a branch like `feat/sprint-21-*` exists with the same work, the agent
+# likely checked out an empty branch and the actual commits are elsewhere
+```
+
+**Decision matrix after running Recipe D**:
+
+| Detection result | Correct action |
+|------------------|----------------|
+| Working tree has changes + `Sprint NN US-X.Y` comments in +lines + retro doc drafted + tests pass | **Verify each file's diff is correct → split into per-US commits → push**. This is "ship a pre-existing sprint", not "implement". |
+| Working tree has changes + tests fail | **Diagnose failures first**. Likely a half-broken WIP. Don't push until green. |
+| Working tree clean + branch `feat/sprint-NN-*` exists with commits | **Merge the feature branch** instead of re-implementing. |
+| Working tree clean + no matching branch + no uncommitted work | **Implement from scratch** as the user expects. |
+
+**Fix pattern** (PM-System Sprint 21 worked example, 2026-06-16):
+
+```bash
+# 1. Working tree had 7 modified + 3 untracked files = pre-existing sprint WIP
+git checkout -b feat/sprint-21-wiki-improvements   # or use existing branch
+
+# 2. Run full test suite to verify code is functional
+cd backend && bun test    # 710 pass / 0 fail
+
+# 3. Split the monolithic working-tree diff into per-US commits.
+#    IMPORTANT: hunks for different US are often interleaved within a single
+#    file (US-21.1 parser + US-21.3 dup-check call in the same documents.ts).
+#    When hunks can't be cleanly separated with `git add -p`, fall back to
+#    file-level commit boundaries and document the cross-US scope leak in
+#    the commit message body. The honest commit message:
+#
+#    "feat(docs): wiki upload supports .doc/.xls/.txt (US-21.1)
+#     Note: this commit also includes some pre-existing US-21.3 hunks in
+#     documents.ts (findExistingWikiPage call) and WikiPage.tsx
+#     (handleReplace function) because hunks are interleaved. US-21.3
+#     commit will add the wiki-dedup util + wikis.ts route changes."
+#
+#    is much better than hiding the leak or forcing impossible splits.
+
+# 4. Commit each US + retro doc separately
+git add backend/Dockerfile backend/src/routes/documents.ts ...   # C1: US-21.1
+git commit -m "feat(docs): ..."
+git add backend/src/utils/wiki-dedup.ts backend/src/routes/wikis.ts   # C2: US-21.3
+git commit -m "feat(wiki): ..."
+git add backend/src/routes/chat.ts frontend/src/pages/ChatPage.tsx   # C3: US-21.4+21.5
+git commit -m "feat(chat): ..."
+git add docs/retros/<date>-sprint-NN-*.md   # C4: retro
+git commit -m "docs(retro): Sprint NN closure ..."
+
+# 5. Verify, push, merge
+git log --oneline -5        # confirm N commits
+cd backend && bun test      # still 710 pass
+git push -u origin feat/sprint-NN-...
+git checkout master
+git merge --no-ff feat/sprint-NN-... -m "merge: Sprint NN — <one-line summary>"
+git push origin master
+```
+
+**Lesson**: When the user sends a "do X" cue, **the first 30 seconds of investigation should be
+"is X already done in the working tree?"** — not "how do I implement X?". A `git status` showing
+non-zero changes + `Sprint NN US-X.Y` markers in `git diff` output + a matching retro doc is
+the universal signature of "this is a re-prompt of a half-shipped sprint". Recognize it,
+verify the work, and ship it as a series of per-US commits.
+
+**Tell-tale signs of a pre-existing uncommitted sprint** (any 2 of these = almost certainly WIP):
+- `git status --short` shows > 5 files modified OR > 2 untracked
+- `git diff | grep "Sprint NN US-"` returns > 0 hits in `+` lines
+- `docs/retros/<recent-date>-<sprint-topic>.md` exists and is untracked
+- The user's cue mentions the same feature names that appear in the `+` lines
+- `bun test` / `npm test` passes despite the changes
+- A `feat/sprint-NN-*` branch already exists (but is empty / 0 commits ahead of master)
+
+**Anti-patterns to avoid**:
+- ❌ Starting fresh implementation when `git status` shows the work is in flight
+- ❌ Writing the retro doc from scratch when an uncommitted draft exists
+- ❌ Forcing `git add -p` to split per-US hunks when the file has interleaved US (use file boundaries + honest commit message)
+- ❌ Skipping the test suite check ("I'll trust the working tree compiles") — half-done sprints sometimes have partial-test failures
+- ❌ Asking the user "is this work already done?" — the working tree IS the answer, just verify it
+
+---
+
+## When to run (updated to include Recipe D)
+
+| Moment | Why |
+|--------|-----|
+| **First action on a "do X" / "fix Y" / "ship Z" cue** | Recipe D — check if work is already in the working tree before starting fresh |
+| After `bash resume.sh <project>` (post-Recover) | The reconstructed context may describe a branch that no longer builds |
+| Before claiming "Step X passed / E2E verified" | Standard smoke (curl + UI nav) misses stale-bundle issues |
+| Before opening a PR with "all N commits ahead" | Catch untracked providers before reviewer has to |
+| Before saying "ready to merge to main" | Catch the prod-build-fail class of issues pre-merge, not post-deploy |
+| **Before `git stash pop` after a Recover cue** | Recipe C — detect a 100% stale stash before it dumps duplicates into your working tree |

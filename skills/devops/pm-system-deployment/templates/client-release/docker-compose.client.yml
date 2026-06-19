@@ -1,0 +1,105 @@
+# ============================================================
+# PM-System 客戶交付 — docker-compose template
+# Copy 落 <project>/deploy/docker-compose.client.yml 然後改 image tag
+#
+# 設計原則(2026-06-09):
+# - 唔用 `build:`,只用 `image:`(客戶冇 source)
+# - backend / db port 唔公開 bind host,只 internal `expose:`
+# - frontend 經 nginx proxy 訪問 backend
+# - restart: unless-stopped 全部 service 都有
+# - json-file log driver + 10MB × 3 rotation
+# - named volume(客戶 update 唔會 data loss)
+# - named network(隔離用)
+# ============================================================
+services:
+  frontend:
+    image: pm-system-frontend:${VERSION:-v1.0.0}
+    container_name: pm-system-frontend
+    restart: unless-stopped
+    ports:
+      # Host port 80(可改)-:80(nginx 入面)
+      - "${FRONTEND_HOST_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - pm-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    image: pm-system-backend:${VERSION:-v1.0.0}
+    container_name: pm-system-backend
+    restart: unless-stopped
+    # Backend port 唔公開 bind host,只 internal network
+    expose:
+      - "4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:***@db:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必填}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      NODE_ENV: production
+      PORT: "4000"
+    networks:
+      - pm-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:4000/api/projects >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    # ⚠️ 用 migrate deploy 而非 db push
+    # ⚠️ 唔跑 db seed(seed 屬 source 不外流)
+    command: ["sh", "-c", "bunx prisma migrate deploy && bun src/index.ts"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: postgres:15-alpine
+    container_name: pm-system-db
+    restart: unless-stopped
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pm-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    name: pm-system-postgres-data
+
+networks:
+  pm-net:
+    name: pm-system-net
+    driver: bridge

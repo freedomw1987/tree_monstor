@@ -176,6 +176,105 @@ Implement 3 frontend improvements in crm-system in ONE pass
 | **Audit trail** | `docs/_meta/interruption_log.md` 記低所有 interruption, 可 grep / review |
 | **冇 single point of failure** | state file、git history、external memory、sessions.json、state.db 5 個地方都有 snapshot |
 
+## ⚠️ Day 21 Lesson (2026-06-16) — Pre-existing Uncommitted Sprint Detection
+
+**情境**: David send「做以下必要性的修正: 1. Wiki 上傳可以支援到 doc, xls, txt ...」(5 個 item,完全 match Sprint 21 scope)。Agent 一開始 survey 個 source code 見到
+`Sprint 21 US-21.4` / `US-21.1` / `US-21.3` / `US-21.5` 嘅 comment 散落喺 `chat.ts` /
+`documents.ts` / `wikis.ts`,仲有 1 份 51-line retro doc 寫咗喺
+`docs/retros/2026-06-16-sprint-21-wiki-improvements.md`。即時反應以為
+「快做晒,淨係 commit + push」— 但 `git status` 顯示 **7 modified + 3 untracked,
+0 commits ahead of master**。Working tree 入面 5 個 US 全部 implementation 已經
+喺度,**只係 uncommitted WIP**。
+
+**根因**:**「worktree 有 changes」≠「work 係 WIP 唔好郁」**。一個 sprint 嘅 work
+可以係完全 functional (710 tests pass) 但從未 commit 過。前一個 session 嘅 agent
+可能做咗 implementation + draft retro doc + verify 過 bun test,然後就斷咗/session
+zombie 咗/被 `/new` cut 咗,**冇 commit 過任何嘢**。
+
+**Anti-pattern**: Agent 見到 `git status` non-zero changes 之後 default 反應係
+「**從零 implement** 個 user 嘅 request」,會撞 (a) duplicate work,(b) confused by
+interleaved hunks,(c) blow 走 existing logic。**正確反應係「verify + commit + push」**。
+
+**Detection recipe** (Recipe D,5 步,20 秒):
+
+```bash
+# 1. Working tree size
+git status --short | wc -l          # > 0 = work in progress
+git diff --stat | tail -1           # "+X -Y" 總 change footprint
+
+# 2. US markers in +lines
+git diff | grep -E "^\+.*Sprint [0-9]+ US-|^\+.*US-[0-9]+\.[0-9]+"
+# Hit 喺 +lines = work 喺度加,唔係移走
+
+# 3. In-flight retro doc
+ls docs/retros/$(date +%Y-%m-%d)-*.md 2>/dev/null
+# 出現 untracked retro doc with "Implementation plan" 段 = 上一個 session 留低嘅 draft
+
+# 4. Tests pass 唔 pass
+cd backend && bun test 2>&1 | tail -3
+# "710 pass 0 fail" + worktree 有 changes + retro doc = 「ship pre-existing uncommitted sprint」
+
+# 5. Cross-check feature branches
+git branch -a | grep -iE "sprint|feat"
+# `feat/sprint-NN-*` 存在但 0 commits ahead of master = agent checkout 咗 empty branch
+```
+
+**Decision matrix**:
+
+| Detection | Action |
+|-----------|--------|
+| Changes + US comments in +lines + retro doc + tests pass | **Verify each file → split per-US commits → push** (唔係從零寫) |
+| Changes + tests fail | Diagnose failures 先,唔好 push |
+| Clean working tree + `feat/sprint-NN-*` branch 有 commits | **Merge feature branch** |
+| Clean + 冇 matching branch + 冇 WIP | **從零 implement**(正常 flow) |
+
+**Fix pattern** (PM-System Sprint 21 worked example,2026-06-16):
+
+```bash
+# 1. Branch out (or use existing)
+git checkout -b feat/sprint-21-wiki-improvements
+
+# 2. Verify code functional
+cd backend && bun test    # 710 pass / 0 fail
+
+# 3. Split monolithic worktree diff into per-US commits
+#    ⚠️ Hunk-level split 通常唔 work — US 嘅 hunks 喺同一 file 內
+#    interleaved (US-21.1 parser + US-21.3 dup-check call 都喺 documents.ts)
+#    落到 file-level commit boundary + honest commit message 講明 cross-US leak:
+#
+#    "feat(docs): wiki upload supports .doc/.xls/.txt (US-21.1)
+#     Note: this commit also includes some pre-existing US-21.3 hunks in
+#     documents.ts (findExistingWikiPage call) and WikiPage.tsx
+#     (handleReplace function) because hunks are interleaved."
+
+git add backend/Dockerfile backend/src/routes/documents.ts ...   # C1: US-21.1
+git commit -m "feat(docs): ..."
+git add backend/src/utils/wiki-dedup.ts backend/src/routes/wikis.ts   # C2: US-21.3
+git commit -m "feat(wiki): ..."
+git add backend/src/routes/chat.ts frontend/src/pages/ChatPage.tsx   # C3: US-21.4+21.5
+git commit -m "feat(chat): ..."
+git add docs/retros/<date>-sprint-NN-*.md   # C4: retro
+git commit -m "docs(retro): Sprint NN closure ..."
+
+# 4. Verify, push, merge
+git log --oneline -5
+git push -u origin feat/sprint-NN-...
+git checkout master
+git merge --no-ff feat/sprint-NN-... -m "merge: Sprint NN — <one-line summary>"
+git push origin master
+```
+
+**完整 detection recipe + decision matrix + fix pattern + anti-pattern list**:
+`references/post-recovery-verification.md` § Recipe D
+
+**David 嘅「做 X」cue 解讀**:
+- 「做 X」+ working tree 有大量 changes = re-prompt of uncommitted sprint
+- 「做 X」+ clean working tree = implement from scratch (正常 flow)
+- 「修 X」「ship X」同樣 rule
+- **永遠先 `git status` + `git diff` 30 秒 verify**,唔好 assume clean start
+
+---
+
 ## ⚠️ Day 16 Lesson (2026-06-08) — `git status --short` Panic-Decision Pitfall
 
 **情境**: David send「完成？」(post-session check-in cue), 我頭先 `git status --short` 第一次跑

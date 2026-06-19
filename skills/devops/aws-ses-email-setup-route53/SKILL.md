@@ -215,6 +215,64 @@ export AWS_SDK_LOAD_CONFIG=1
 ```
 This forces the SDK to use `~/.aws/credentials`/`~/.aws/config` files properly.
 
+## ⚠️ Critical Invariant — "API 返 200 唔等於 email 真係 send 出"
+
+**2026-06-19 umac_ai lesson**: 用戶投訴 forgot-password 冇 email 收到。POST `/api/auth/forgot-password` 返 HTTP 200 + `{"ok":true,"message":"如果該電郵存在，重設連結已發送"}` — 表象完美。但實查 SES `us-east-1` `list-email-identities` → 0 個 identity,`get-account` → `ProductionAccessEnabled: false` 仲喺沙盒。**整個 backend 嘅 email code path 由始至終冇 call SES,或者 call SES 但失敗被 generic success handler 食咗**。
+
+### 5 個 verify commands (10 秒,唔需要 project source code)
+
+```bash
+# 1. SES region 有冇 verified identity
+aws sesv2 list-email-identities --region us-east-1 --output json | jq '.EmailIdentities'
+# 預期: ["yourdomain.com", "noreply@yourdomain.com"] 或同類
+# 0 = SES 沙盒空,邊個 email 都 send 唔出
+
+# 2. SES 喺沙盒定 production
+aws sesv2 get-account --region us-east-1 --query '{sandbox:ProductionAccessEnabled,quota:SendQuota.Max24HourSend}' --output text
+# 預期: False<TAB>50000 = production access
+# 0 個 200 = 沙盒 mode + 未申請 production
+
+# 3. Backend 端 health (確認 process 仲在返)
+curl -fsS https://api.<your-domain>.site/health
+# 200 = backend alive; 5xx = backend crash, fix 嗰個先
+
+# 4. 直接 trigger forgot-password (用你 controlled 嘅 email)
+curl -sS -X POST https://api.<your-domain>.site/api/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your-test@your-domain.com"}' \
+  -w "\nHTTP %{http_code} time %{time_total}s\n"
+# 200 + generic success message 唔等於 send 成功 — 必須 cross-check 下面 SES send log
+
+# 5. SES send quota usage (確認有冇真係 call 過 SES)
+aws sesv2 get-account --region us-east-1 --query 'SendQuota.{SentLast24:SentLast24Hours,Max24:Max24HourSend}' --output text
+# SentLast24 = 0.0 + API 返 200 = backend 根本冇 call SES = bug 喺 backend code
+# SentLast24 > 0 = backend 試過 send, 但 SES 入面查 send events 拎 detail
+```
+
+### SES Send Event Audit (找出邊個 call 失敗)
+
+```bash
+# 配 SES Event Destination (CloudWatch / SNS) — 拎最近 24h 嘅 send attempt
+aws sesv2 list-configuration-sets --region us-east-1
+# 0 個 = 冇 setup event tracking, send log 永遠查唔到
+
+# 用 CloudWatch Logs Insights query SES log group
+aws logs start-query \
+  --log-group-name /aws/ses/<configuration-set> \
+  --start-time $(date -u -v-24H +%s) \
+  --end-time $(date -u +%s) \
+  --query-string 'fields @timestamp, eventType, mail.messageId, mail.source, mail.destination, complaint.feedbackType, bounce.bounceType, reject.reason | filter eventType = "Send" or eventType = "Bounce" or eventType = "Reject"' \
+  --region us-east-1
+```
+
+**3 個 pitfall**(almost 100% 撞):
+
+1. **Generic 200 success handler 食咗 exception** — backend catch SES `MessageRejected` 但 `return { ok: true }` 冇 log。Fix: `console.error('SES send failed', err)` + alerting。
+2. **Wrong SES region** — backend `.env` 寫 `SES_REGION=ap-east-1` 但 SES identity 只喺 `us-east-1` verified。Fix: `aws sesv2 get-email-identity --region <code-region>` 確認。
+3. **Sandbox + unverified recipient** — production mode 未申請 OR 申請咗但個 recipient email 唔喺 verified list。Fix: 申請 production access, 或 `aws sesv2 create-email-identity --email-identity <recipient>` verify 佢。
+
+**心法**: **報 email 唔 work 嘅 bug,**第一步唔係睇 code,**係跑呢 5 個 verify command**。If 1/2/5 三個入面有 1+ 個 fail,**code path 一定有問題**(根本冇 call SES / region 錯 / recipient unverified),**唔需要讀 source code 都知 root cause 喺邊**。
+
 ## 6. Test Send (SESv2)
 
 ```bash

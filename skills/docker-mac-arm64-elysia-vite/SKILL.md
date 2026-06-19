@@ -296,6 +296,139 @@ shell-based verifier. The 3 `/tmp` smoke scripts shipped on
 follow this pattern — see `code-review-pipeline/templates/` for
 copy-pasteable templates.
 
+## Pitfall 12: Verify every Alpine package in `apk add` with `apk search` before writing the Dockerfile (added 2026-06-16, pm-system Sprint 21)
+
+If you write `RUN apk add --no-cache foo bar baz` based on a blog post, a Stack Overflow answer, or even a previous project's Dockerfile, **one of those packages may not exist in the current Alpine repo** for the base image version you're using. The build will fail at the `RUN apk add` layer with:
+
+```
+ERROR: unable to select packages:
+  catdoc (no such package):
+    required by: world[catdoc]
+  xls2csv (no such package):
+    required by: world[xls2csv]
+```
+
+This exact failure happened on 2026-06-16 in pm-system Sprint 21 — Dockerfile specified `apk add poppler-utils antiword xls2csv catdoc` based on a plan-stage design doc. `antiword` exists, but `catdoc` and `xls2csv` are **not** in the Alpine v3.22 official repo. The first `docker build` failed at layer 2, 30 seconds of build time wasted, and required a hotfix commit on top of the merged Sprint 21 work.
+
+**Rule — verify before writing** (5 seconds, no build needed):
+
+```bash
+# Run against the EXACT base image you're about to FROM
+docker run --rm oven/bun:1-alpine sh -c "apk search 2>&1 | grep -E '^(<pkg1>-|<pkg2>-|<pkg3>-)' | head -10"
+```
+
+If a package isn't in the output, it's not in the repo. Find a real alternative (`apk search <keyword>` returns the full candidate list).
+
+**Real alternatives for the pm-system Sprint 21 case** (verified against `dl-cdn.alpinelinux.org` v3.22 via `apk search`):
+
+| Wanted | Available alternative | Notes |
+|--------|----------------------|-------|
+| `catdoc` (`.doc` fallback) | `wv` (provides `wvText`) | Same purpose, different binary |
+| `xls2csv` (`.xls` parser) | `gnumeric` (provides `ssconvert`) | Single binary replaces xls2csv + ssconvert fallback |
+| `antiword` (`.doc` parser) | `antiword` (0.37) | Exists as-is, no swap needed |
+
+So the working `apk add` is:
+```dockerfile
+RUN apk add --no-cache poppler-utils antiword wv gnumeric
+```
+
+**Other Alpine package pitfalls worth knowing** (verified same way on 2026-06-16):
+- `libreoffice` (~1GB+) is available but overkill for headless parse — `gnumeric` ~30MB does `.xls` fine
+- `pandoc-cli` exists (~30MB) — universal format converter, viable if you want one binary for `.doc`/`.xls`/`.rtf`/`.odt`
+- `wv` (AbiWord) provides `wvText`, `wvSummary`, `wvWare` — for `.doc` parsing only
+
+**Why this trap is hard to spot before build**:
+- The packages are real and well-known (catdoc is a classic `.doc` reader, xls2csv is the standard Perl script). They DO exist in Debian/Ubuntu repos, in Homebrew, and in older Alpine versions (pre-v3.18).
+- Plan docs / blog posts / Stack Overflow answers quote them without version-checking.
+- The base image `oven/bun:1-alpine` ships with **no man pages and no docs** for what Alpine version it tracks, so you can't `cat /etc/alpine-release` to guess package availability.
+
+**Fix workflow when build fails on `apk add`** (don't try to "patch around" the missing package in the existing Dockerfile line):
+1. Note which package(s) failed.
+2. `docker run --rm <base> sh -c "apk search <keyword>"` for the closest matching package name.
+3. If a real alternative exists, swap it in AND update the corresponding code in `src/` that calls the binary (e.g. swap `catdoc` command → `wvText`, update error messages, update tests).
+4. If no alternative exists, fall back to pure JS: `word-extractor` (npm, .doc) or `read-excel-file` (npm, .xls/.xlsx) — but verify they're CVE-clean first via `npm audit`.
+5. **Always patch the retro / ADR doc** with the spec error audit trail (the "Why NOT X" section), even if the fix is post-merge. Future agents reading the merged code need to know which package was swapped and why.
+
+**Connection to `regression-guard`**: this is exactly the kind of "old assumption comes back" trap. The "Plan: use SheetJS xlsx" assumption also came from upstream docs; the Alpine `apk add` line was written the same way. Both were unchecked before commit. Document the fix path in retro, not just the fix itself.
+
+## Pitfall 11: "docker compose up --build fails" is often a TS error, not a Docker error (added 2026-06-10, pm-system)
+
+When a user says "docker compose up -d --build has issues" with no
+error log, **the failure is almost always inside the multi-stage
+build's frontend `RUN bun run build` (or `npm run build`)** —
+specifically `tsc -p tsconfig.app.json && vite build` blowing up
+with TypeScript errors. The Docker daemon reports it as
+`target frontend: failed to solve: process "/bin/sh -c bun run
+build" did not complete successfully: exit code: 2` — which looks
+like a Docker problem but is in fact a source-code TS error.
+
+**Don't ask the user to paste logs.** Reproduce it locally — the
+build is fully local, and the error is in the captured `docker
+compose` stdout. Use `terminal(background=true, notify_on_complete=true)`
+on `docker compose up -d --build 2>&1 | tail -120`, then
+`process(action='wait')` to capture the tsc output.
+
+**Two recurring TS error classes** in Bun + Vite + React + tsc-strict
+projects (seen 2026-06-10 in pm-system):
+
+1. **Call-site argument count mismatch** — handler signature
+   `(e: FormEvent) => async {}` invoked as `onSubmit={(e) => {
+   e.preventDefault(); handleAddTask() }}` (passing 0 args to a
+   handler that requires the event). Fix: forward the event
+   directly — `onSubmit={handleAddTask}`. Don't wrap the handler
+   just to call `preventDefault()` if the handler already uses
+   the event.
+
+2. **JSX-shape vs data-shape mix in `<select>` options** — code
+   pattern:
+   ```tsx
+   // BAD — typed as JSX.Element[], breaks typed MemberOption[] consumers
+   const assigneeOptions = project?.members?.map((m) => (
+     <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
+   )) || []
+   ```
+   When a downstream component (e.g. `<AddTaskModal
+   assigneeOptions={assigneeOptions} />`) types that prop as
+   `MemberOption[]` ({id, name}), TS errors: `Type 'Element[]' is
+   not assignable to type 'MemberOption[]'`.
+
+   **Fix** — produce data, render in consumer. Upstream returns
+   `{id, name}[]`, consumers `.map()` to `<option>`:
+   ```tsx
+   const assigneeOptions: MemberOption[] = project?.members?.map(
+     (m) => ({ id: m.user.id, name: m.user.name })
+   ) || []
+   // then in the consumer:
+   {assigneeOptions.map((m) => (
+     <option key={m.id} value={m.id}>{m.name}</option>
+   ))}
+   ```
+   And **explicit-annotate the const** as `MemberOption[]` —
+   the inferred type leaks through `any` props on `function
+   Component({assigneeOptions}: any)` helpers in the same file,
+   so without the annotation `assigneeOptions.map((m) => ...)`
+   inside a `<select>` will hit `Parameter 'm' implicitly has
+   an 'any' type [7006]`.
+
+**Audit checklist** when this happens (5 sites to check in pm-system
+class code):
+- The producer (`const assigneeOptions = ...`)
+- Every call site of the producer as a prop
+- Every direct `{assigneeOptions}` JSX interpolation (used as
+  children inside `<select>`)
+- The `MemberOption` type import (must `import AddTaskModal, { type
+  MemberOption } from '../components/AddTaskModal'`)
+- Helper functions in the same file that use `any` for props —
+  they cascade the `any` type back to all consumers
+
+**Why this matters for Docker-debugging workflow** — the user's
+mental model is "Docker is broken". The actual fix is a 1-line
+TS annotation. Capturing the build output, finding the offending
+line, and applying the right TS fix unblocks the whole stack
+(backend + frontend + db) in one cycle. If you only fix the
+Docker side (e.g. base image), the next `tsc` run will fail
+the same way.
+
 ## Reference
 
 Working repo: `~/www/llm-acp` (CodeCommit `arn:aws:codecommit:ap-east-1:646197533509:llm-acp`)

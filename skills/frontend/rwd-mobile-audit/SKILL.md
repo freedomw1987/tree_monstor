@@ -122,6 +122,24 @@ vision_analyze(
 3. **flex-wrap 加 grid-cols** 容易爆 — 要 `min-width: 0` 或者 `truncate` 喺 text node 上面。
 4. **safe-area** (iPhone notch) — mobile-first app 最好加 `pb-safe` 或者 `env(safe-area-inset-bottom)`。
 5. **Dont use `px-6`** 喺 mobile — `px-4` 就夠，慳 16px 兩邊。
+6. **`fullPage: true` 對無限 scroll / 大量 list render 嘅 page 會爆 100k px tall screenshot** (撞過 2026-06-10 pm-system Dashboard: 196 個項目 card render 晒 → screenshot 91834px tall，PIL 都開唔到，verify 流程完全冇 feedback)。**Root cause**:`fullPage: true` 會 capture 整個 `scrollHeight`，**唔係 viewport**。**Fix**:
+   - **方案 A (推薦,源頭修)**:Page 本身要 `pagination` / `slice(0, N)` — 即係根本唔應該有「無限 render」嘅 page。參考 `pagination-with-preserved-aggregates` skill 嘅「`limit: -1` 唔好用喺 dashboard」 pitfall
+   - **方案 B (quick audit)**:Audit script 改用 `page.screenshot({ path, fullPage: false, clip: { x: 0, y: 0, width: 390, height: 844 * 4 } })` — clip 限死範圍(e.g. 4 個 viewport height)，避免無限長
+   - **方案 C (預 check)**:用 `await page.evaluate('document.body.scrollHeight')` 預先 check，**>10000px 就 abort + flag** + 提示需要先 fix page:
+     ```js
+     const scrollH = await page.evaluate('document.body.scrollHeight')
+     if (scrollH > 8000) {
+       console.log(`  ${name}: WARN scrollHeight=${scrollH}px — page 可能有 list render 太多，audit screenshot 會爆`)
+       continue
+     }
+     ```
+7. **SPA page 嘅 RWD audit 一定要先 auth** — 否則 render 嘅係 login page / blank / redirect。**Node Playwright 嘅正確順序**:
+   - 1) `await page.goto('http://localhost:8080/login')` — 去 login page 攞 token
+   - 2) `const loginResult = await page.evaluate(async () => { const res = await fetch('http://localhost:4001/auth/login', {...}); return await res.json() })` — **唔好用 template literal** 寫 `evaluate` body (見 pitfall 8)
+   - 3) `await page.evaluate((t) => { localStorage.setItem('accessToken', t); localStorage.setItem('user', JSON.stringify({...})) }, loginResult.accessToken)`
+   - 4) **之後**先 `await page.goto(targetUrl)` — target page 嘅 AuthContext 攞到 localStorage 嘅 user 就有 state
+   - **Common mistake**:Step 3 之前已經 `page.goto(targetUrl)` → target 嘅 AuthContext check localStorage 仲未 set → render 個 login / blank → screenshot 完全冇用
+8. **Node Playwright 嘅 `page.evaluate` ESM serialization trick** — 用 `await page.evaluate(async () => {...})` 而非 `` await page.evaluate(`async () => {}`) `` template literal。Hermes sandbox 嘅 template literal 喺 ESM mode (`file://...mjs`) 有時候 `evaluate` return undefined (具體證據: 2026-06-10 rwd-audit-s14.mjs 用 template literal 版 `evaluate`，返 undefined → login result 冇 `accessToken` field → audit script crash)。改用函數 literal 即 fix。
 
 ## 驗證完成嘅 checklist
 
