@@ -1,22 +1,36 @@
 ---
 name: context-summarizer
 description: 定時壓縮長時間任務的 context，避免 token 爆炸。寫入 context-summary.md 保留決策和當前狀態，丢棄細節。
-trigger: "context / 上下文管理 / 總結進度 / 壓縮 context"
-version: 1
+trigger: "context / 上下文管理 / 總結進度 / 壓縮 context / resume from previous session"
+version: 2
 category: productivity
 ---
 
-# Context Summarizer
+# Context Summarizer v2 (auto-invocation guide)
 
-長時間任務 context 會越來越長，每個 subagent 的 intermediate results 堆積導致 token 爆炸。Context Manager 定期壓縮，保留決策和當前狀態。
+> **Patched 2026-06-19 (auto-dev Phase 2C)**: Auto-trigger guide + hallucination detection + session resume handshake. See §0 below.
 
-## 觸發時機
+## 0. v2 Changelog
 
-1. 每 30 分鐘自動觸發
-2. 每完成一個大 task 後
-3. 預計還有 > 1 小時工作時
+- ✅ 改 trigger 邏輯：由「每 30 分鐘」改為「每 25 個 message / 30% token / 60% 強制 / detect loop」
+- ✅ 加 hallucination detection（agent 問 David 同樣嘢 3 次 / reference 唔存在 file 2 次 → trigger summary）
+- ✅ 加 session resume handshake（新 session 第一件事 read `docs/context-summary.md`）
+- ✅ 標明由 orchestrator / agent 自己 trigger，唔再等 David 問
 
-## 工作流程
+## 1. 觸發時機（AUTO — 唔等 David 問）
+
+下列 trigger 全部**自動 fire**：
+
+| Trigger | 條件 | 動作 |
+|---|---|---|
+| **每 25 個新 message** | agent 自己 count 緊 | 自動 write summary |
+| **每次 sub-agent 跑完** | 任何 size | 自動 write summary（sub-agent 結果會 push context） |
+| **Token usage 過 30% context** | `compression.threshold: 0.3` 已 trigger | 自動 write summary |
+| **Context 用到 60% 強制** | 60% 已 trigger | 強制 write summary + log warning |
+| **Detect hallucination (NEW)** | 問 David 同樣嘢 3 次 / reference 唔存在 file 2 次 | 強制 write summary + notify David |
+| **David 講「/context」** | manual | 即刻 write summary |
+
+## 2. 工作流程
 
 ```python
 # 1. 讀取當前 context
@@ -25,7 +39,7 @@ current_context = read_file("docs/context-summary.md")  # 如果存在
 # 2. 讀取 task board 狀態
 task_board = read_file("docs/taskboard.md")
 
-# 3. 讀取最近 subagent 輸出（最後 5 個）
+# 3. 讀取最近 sub-agent 輸出（最後 5 個）
 recent_outputs = get_recent_subagent_results(limit=5)
 
 # 4. 生成總結
@@ -57,7 +71,7 @@ write_file("docs/context-summary.md", summary)
 # 6. 通知 Orchestrator 可以丢棄 intermediate
 ```
 
-## Context Summary 格式
+## 3. Context Summary 格式
 
 ```markdown
 # Context Summary — 2026-05-10 18:30
@@ -91,26 +105,73 @@ write_file("docs/context-summary.md", summary)
 - 預計完成時間：今日 22:00
 ```
 
-## 保留 vs 丢棄
+## 4. 保留 vs 丢棄
 
 **保留**：
 - 所有決策（架構、技術選型、API contract）
 - 當前任務狀態
 - 識別的風險
 - Task Board 進度
-- 任何對未來有影響的判斷
+- Capabilities Table（per test-coverage-table skill）
 
-**丢棄**：
-- 詳細的錯誤堆疊
-- 試探性的代碼（已廢棄的方案）
-- 中間過程的調試輸出
-- 已經修復的 bug 記錄
-- 具體的代碼片段（除非是重要參考）
+**丢棄**（寫完 summary 之後可以清）：
+- 中間 sub-agent 嘅 raw output
+- 探索性 search / read 嘅 file path
+- 失敗咗 retry 嘅 attempt log
+- 重覆嘅 system reminder
 
-## 工具
+## 5. Hallucination Detection (NEW in v2)
 
-使用 `execute_code` 處理：
-- 讀取 `docs/taskboard.md`
-- 讀取 `docs/context-summary.md`（如果存在）
-- 獲取最近 subagent results
-- 寫入新的 `docs/context-summary.md`
+Agent 要**主動** detect 自己 hallucinate 嘅 signal：
+
+| Signal | 計數 | 動作 |
+|---|---|---|
+| 問 David 同樣嘅 question 3 次 | ≥3 | 強制 trigger summary + 通知 David「我似乎行 loop」 |
+| Reference 唔存在嘅 file path 2 次 | ≥2 | 強制 trigger summary + 通知 David「我 reference 咗唔存在 file」 |
+| 同一個 tool call 重覆 3 次冇 progress | ≥3 | Hermes 嘅 `idempotent_no_progress: 2` rule 會 trigger warning；agent 收到 warning 就 trigger summary |
+| 開始 output 「as an AI」/「I cannot」呢類 disclaimer | 出現 | 強制 trigger summary — 已經過咗 task scope |
+
+**Notification format**（critical 級別）：
+```
+🚨 Hallucination Detected (signal: <X>)
+- Trigger: <description>
+- Action taken: 強制寫 context-summary.md
+- Recommendation: David 用 /new session，context 自動 resume
+```
+
+## 6. Session Resume Handshake (NEW in v2)
+
+**新 session 開頭，agent 自動**：
+
+```python
+# 7. 新 session 第一件事
+summary_path = Path("~/.hermes/profiles/developer/docs/context-summary.md").expanduser()
+if summary_path.exists():
+    content = summary_path.read_text()
+    echo_to_david = f"📋 **Resume from previous session:**\n\n{content}\n\n---\n"
+else:
+    echo_to_david = "📋 No previous session summary found. Starting fresh.\n"
+```
+
+Agent 開新 session 嘅 first message 一定要 echo 上面嘅 block，**唔可以 skip**。
+
+**為何咁做**：避免 David 要手動 paste context-summary.md 過去（David 痛點三）。
+
+## 7. 邊個 trigger
+
+| Trigger type | 邊個 fire |
+|---|---|
+| 25 message / 30% / 60% threshold | Agent 自己 count 住（pre-turn check） |
+| Sub-agent 完 | Main agent 收到 sub-agent result 之後自動 |
+| Hallucination detect | Agent 自己 detect |
+| David 講「/context」 | 即刻 |
+
+**永遠唔好等 David 講先 trigger**。Compression 係 safety net，唔係 feature toggle。
+
+## 8. 永遠唔做
+
+- 唔寫 context summary 直接 continue（會 token 爆）
+- Skip 30% / 60% threshold（要提早 trigger）
+- 問 David 同樣嘢而唔 detect（要 count 住）
+- 新 session 唔 echo resume block
+- 寫完 summary 但唔清掉 intermediate（要通知 orchestrator 丢棄）

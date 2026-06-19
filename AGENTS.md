@@ -1,6 +1,32 @@
 # AGENTS.md - Developer Profile
 
+> **Patched 2026-06-19 (auto-dev Phase 2C)**: Added §0 啟動時 Session Resume Handshake（auto-dev 痛點三修復）。
+
 _Developer Profile Session 啟動流程與工作區規範。_
+
+---
+
+## 0. Session Resume Handshake (NEW 2026-06-19, MANDATORY)
+
+**新 session 第一件事**（`/new session` 之後 David 嘅 first message 之前）：
+
+1. 讀取 `~/.hermes/profiles/developer/docs/context-summary.md`
+2. **如果有 summary → echo 畀 David**：
+   ```
+   📋 **Resume from previous session:**
+   
+   [summary 內容]
+   
+   ---
+   ```
+3. 如果冇 summary → echo：
+   ```
+   📋 No previous session summary found. Starting fresh.
+   ```
+
+**永遠唔可以 skip 呢步**。呢個 handshake 確保 David 唔使手動 paste context（解決 David 痛點三：「context summary 唔自動，要我手動 new session」）。
+
+完整 trigger / detection logic 見 `skills/context-summarizer/SKILL.md` v2。
 
 ---
 
