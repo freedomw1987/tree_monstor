@@ -758,7 +758,7 @@ Hermes 有 hooks/ dir for session lifecycle hooks，**Phase 1D 寫呢個 hook**�
 _End of design doc v0.5 — ✅ IMPLEMENTATION COMPLETE 2026-06-19_
 
 > **v0.6 (2026-06-19)** — Added §10 痛點四：Sub-agent Supervisor (David's new ask)
-
+> **v0.7 (2026-06-19)** — Added §11 Supervisor Independence (3-layer monitoring)
 ## 10. 痛點四設計：Sub-agent Supervisor (NEW in v0.6)
 
 ### 10.1 問題描述（David 原話）
@@ -861,3 +861,62 @@ Mock test 3 case：
 **Next steps (David 監督下)**:
 - Phase 4: Real project test with new flow
 - Phase 5: Cleanup (53 stale memory backups, 63 skills audit)
+
+## 11. Supervisor Independence (NEW 2026-06-19 ~18:05, v0.7)
+
+### 11.1 問題
+Supervisor 同 cost alarm 原本喺 Hermes cron 跑。**問題**：Hermes hang 咗 → cron 都停 → supervisor 冇人看住。**單點失敗**。
+
+### 11.2 Solution: 3-Layer Monitoring Stack
+
+```
+Layer 1: launchd (macOS system level) — INDEPENDENT of Hermes
+  ├─ com.developer.supervisor.plist (KeepAlive=true)
+  │   └─ Runs scripts/subagent_supervisor.py --loop
+  └─ com.developer.cost-alarm.plist (KeepAlive=true)
+      └─ Runs scripts/cost_alarm_monitor.py --loop
+
+Layer 2: Hermes cron (this profile) — INDEPENDENT of Layer 1
+  └─ developer-subagent-supervisor (every 5 min)
+  └─ developer-cost-alarm-watchdog (every 5 min)
+  └─ Future: supervisor-monitor (every 1h) — checks Layer 1 health
+
+Layer 3: David (human) — Gets alerts if Layers 1+2 fail
+```
+
+### 11.3 Files (Layer 1 — launchd)
+
+- `~/Library/LaunchAgents/com.developer.supervisor.plist`
+- `~/Library/LaunchAgents/com.developer.cost-alarm.plist`
+
+Both with `KeepAlive=true` (auto-restart on crash) + `RunAtLoad=true`.
+
+### 11.4 Files (Layer 2 — Skill)
+
+- `~/.hermes/profiles/developer/skills/devops/supervisor-monitor.md` (new)
+  - 3 checks: plist loaded / process alive / log recent (10 min)
+  - Decision matrix for 6 status combinations
+  - Designed for future cron `every 1h` (not enabled yet)
+
+### 11.5 Verified 18:05
+
+- ✅ 2 launchd plists loaded (PID 80080 supervisor + 80083 cost-alarm)
+- ✅ 2 processes alive
+- ✅ Logs recent (both started 18:05:15)
+- ✅ Hermes cron also still active (per David Option 1, kept redundant)
+
+### 11.6 Trade-off
+
+- ✅ Supervisor/cost-alarm independent of Hermes (won't die with gateway)
+- ✅ launchd KeepAlive auto-restart on crash
+- ⚠️ Double notification risk: Layer 1 + Layer 2 both notify on same alert
+- ⚠️ More processes (2 extra Python daemons) = slight memory overhead
+
+### 11.7 Next Steps
+
+- Enable supervisor-monitor cron (every 1h) when ready — Layer 2 watches Layer 1
+- Decision: keep Hermes cron (Layer 2 redundant) or remove (Layer 1 only)
+  - Per v0.7 design, recommend: keep both for now, remove later when
+    supervisor-monitor skill proves itself
+
+---
