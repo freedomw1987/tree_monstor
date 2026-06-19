@@ -348,6 +348,16 @@ runtime impact.
    - Suggest manual commands David can run
    - NOT pretend to have more power than it has
 
+_Recovery 2026-06-19 ~17:18 — David ran `kill -9 88441 88442` from terminal.
+Both PIDs already dead ("no such process"). launchd auto-spawned new gateways
+(PID 54270 default + 54275 developer) at 17:17. Gateway log shows clean
+reconnect: "Gateway running with 1 platform(s) ... kanban dispatcher: embedded
+in gateway". Both cron jobs (cost-alarm + subagent-supervisor) re-resumed at
+17:12, ran auto-checks at 17:17, reported "No active tasks — supervisor idle"
+and "0 events fired". State stable. Two-gateway conflict still present (not
+fixed) but no observable impact._
+
 ---
 
 _Draft 2026-06-19 ~17:05 — v2 incident, awaiting David manual intervention_
+_Recovery added 2026-06-19 ~17:18 — incident closed, system stable_
