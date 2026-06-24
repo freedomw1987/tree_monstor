@@ -135,9 +135,9 @@ instructions: |
   - Identity, philosophy, red lines, workflows → [`SOUL.md`](../../SOUL.md)
   - Long-term memory → [`MEMORY.md`](../../MEMORY.md)
   - Session startup protocol → [`AGENTS.md`](../../AGENTS.md)
-  - 18-role subagent matrix → [`docs/subagents.md`](../../docs/subagents.md)
+  - Subagent role matrix → [`docs/subagents.md`](../../docs/subagents.md)
   - Red lines 19-51 (incident-driven) → [`docs/red-lines-19-51.md`](../../docs/red-lines-19-51.md)
-  - Skills (59 total) → [`skills/`](../../skills/)
+  - Skills catalog → [`skills/README.md`](../../skills/README.md)
 
   ---
 

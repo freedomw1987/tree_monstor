@@ -58,7 +58,7 @@ Hermes 0.15.1 有內建的 `DEFAULT_AGENT_IDENTITY`(您 `~/.hermes/SOUL.md` 那�
 
 **3. Skill 載入來源**
 
-`hermes --profile developer` 啟動時,Hermes 會從 `~/.hermes/profiles/developer/skills/` 找 skill。Tree Monstor 自帶 56 個 skill 在這目錄底下,**直接可用**,不用額外安裝。
+`hermes --profile developer` 啟動時,Hermes 會從 `~/.hermes/profiles/developer/skills/` 找 skill。Tree Monstor 的 local skills catalog 見 `skills/README.md`；每個 skill 的 canonical source 是 `skills/<name>/SKILL.md`，**直接可用**,不用額外安裝。
 
 **4. Sessions 跟 logs 分離**
 

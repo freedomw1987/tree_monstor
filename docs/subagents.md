@@ -43,7 +43,7 @@ context="""項目名稱: [名稱]
 
 請執行:
 1. 建立 docs/ 目錄
-2. 建立 docs/taskboard.md (Task Board)
+2. 建立 docs/task-board.md (Task Board)
 3. 分析需求，拆解為初步 task 列表
 4. 派發 BA Subagent 開始需求分析
 5. 更新 Task Board
@@ -52,7 +52,7 @@ role="orchestrator"
 ```
 
 ### 職責
-- 創建並維護 Task Board (`docs/taskboard.md`)
+- 創建並維護 Task Board (`docs/task-board.md`)
 - 派發 BA / SA / Designer / Frontend / Backend / DevOps
 - 追蹤進度、管理依賴、處理失敗
 - 定期向 Developer 主體彙報

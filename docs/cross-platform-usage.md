@@ -22,7 +22,7 @@ The following are **always the same** regardless of platform:
 - **Think/Plan/Build/Review/Test/Ship/Reflect workflow**
 - **QA Gate** — Quality standards never waived
 - **Red Lines** — Security, secrets, no-skip-QA
-- **Subagent Role Matrix** — 22 roles (CEO, Researcher, BA, Designer, SA, Frontend, Backend, DevOps, QA, etc.)
+- **Subagent Role Matrix** — canonical role matrix lives in `docs/subagents.md`
 - **Environment Isolation** — L1/L2/L3 architecture
 - **Checkpoint Mechanism** — Long-task recovery
 
@@ -57,14 +57,16 @@ delegate_task(
 ### Startup
 
 ```bash
-hermes-agent --profile developer gateway run
+hermes --profile developer gateway run
 ```
 
 ### Configuration
 
 See `adapters/hermes/`:
+- `README.md` — Hermes adapter guide
 - `.env.template` — Environment variables
-- `gateway.yaml` — Gateway configuration
+
+Current Hermes versions use `config.yaml` under the profile directory for gateway/runtime settings; old `gateway.yaml` references are historical.
 
 ---
 

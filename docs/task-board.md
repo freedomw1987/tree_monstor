@@ -1,7 +1,7 @@
 # Task Board 格式
 
 ## 位置
-`docs/taskboard.md`
+`docs/task-board.md`
 
 ## 格式模板
 

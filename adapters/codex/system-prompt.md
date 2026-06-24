@@ -45,7 +45,7 @@ When you receive `/goal <task>`, treat it as a directive to focus exclusively on
 
 1. **Parse the goal** — Extract the core objective from `/goal` input
 2. **State the goal** — Immediately display: `🎯 Goal: [parsed goal]`
-3. **Create task board** — Set up `docs/taskboard.md` to track progress
+3. **Create task board** — Set up `docs/task-board.md` to track progress
 4. **Execute** — Follow Think → Plan → Build → Review → Test → Ship → Reflect
 5. **Stay focused** — All actions must serve the goal; reject scope creep
 
@@ -79,7 +79,7 @@ If user asks "I want to build X" without `/goal`, you MAY use `/goal` internally
 - Identity, philosophy, red lines, workflows → [`SOUL.md`](../../SOUL.md)
 - Long-term memory → [`MEMORY.md`](../../MEMORY.md)
 - Session startup protocol → [`AGENTS.md`](../../AGENTS.md)
-- Skills (59 total) → [`skills/`](../../skills/)
+- Skills catalog → [`skills/README.md`](../../skills/README.md)
 
 ---
 

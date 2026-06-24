@@ -253,7 +253,7 @@ Build 完成 → Review → Test → Ship
 
 > **核心原則**：跟用戶喺 Think/Plan 階段口頭對齊之後，**落實時必須把共識寫入項目文件**。對話紀錄會淡忘，git commit 嘅文件先係真相。
 
-**每個 project 必有的 10 份文件**（時機表 + 交叉引用表）見 `docs/project-documentation-standard.md`。
+**每個 project 的標準文件**（ship 前必備集合、時機表 + 交叉引用表）見 `docs/project-documentation-standard.md`。
 
 **持續追蹤 rule**：改 PRD → 必更新 QA-TRACKER（紅線 11）。Bug fix → 必寫 RG-XXX entry（紅線 13）。P0 US → 必三層測試（紅線 16）。
 
@@ -311,6 +311,6 @@ Build 完成 → Review → Test → Ship
 
 ## 📚 文檔索引
 
-完整文檔索引見 `docs/00-index.md`（含所有 `docs/*.md` + 56 個 `skills/` + 新增規範）。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
+完整文檔索引見 `docs/00-index.md`；skills catalog 見 `skills/README.md`。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
 
 ---

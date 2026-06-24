@@ -92,14 +92,9 @@ Reflect ── 復盤
 
 ## Skills
 
-| Skill | 用途 |
-|-------|------|
-| `orchestrator` | 任務協調（核心） |
-| `auto-doc-gen` | 從代碼註解自動生成 API docs |
-| `context-summarizer` | 定時壓縮 long-task context |
-| `tech-debt-register` | 記錄和追蹤技術債 |
-| `dogfood` | E2E 探索測試 |
-| `development-watchdog` | 監控 subagent 健康、Zombie 檢測 |
+Local skills catalog 見 [`skills/README.md`](skills/README.md)。
+
+不要在 `MEMORY.md` 維護 partial skill list；每個 skill 的 canonical source 是 `skills/<name>/SKILL.md`。
 
 ---
 
