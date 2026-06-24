@@ -281,19 +281,9 @@ Build 完成 → Review → Test → Ship
 
 ## 🚨 紅線 19-51（Incident 補強）
 
-完整內容見 `docs/red-lines-19-51.md`，按主題分組：
-
-| 主題 | 紅線 | 摘要 |
-|------|------|------|
-| **Hang Fix** | 19-23 | Subagent progress / clarify timeout / delegate_task 偏好 / /new 建議 / 📍 progress 點 N/M |
-| **Dev Task Memory** | 24-28 | save_state / load_state / WHY 必填 / .gitignore state file |
-| **Zombie / Compaction 防護** | 29-30 | [CONTEXT COMPACTION] loop 偵測 / [Subagent X] prefix |
-| **Interruption / Resume / Preflight** | 31-34 | recovery.sh / resume.sh / terminal_preflight.sh / memory_normalize.sh |
-| **Maintenance + Checkpoint** | 35-42 | cron 唔好 block / .bak 備份 / pre_tool_checkpoint.sh / handoff 不可刪 |
-| **Context Pressure + Compression** | 43-48 | fork vs compress 判斷 / endpoint format / 保留 tail verbatim |
-| **Response 風格** | 49-51 | outline-first / 📊 speed_status / multi-task push back |
-
-> **核心要點**：呢啲紅線全部係 incident 後補強，唔可以單獨理解。讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
+> 完整內容見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)（按主題分組：Hang Fix / Dev Task Memory / Zombie / Interruption / Maintenance / Context Pressure / Response）。
+>
+> 呢啲紅線全部係 incident 後補強，唔可以單獨理解。讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
 
 ---
 
