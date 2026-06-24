@@ -1,6 +1,11 @@
-# Developer Profile — Auto-Development Design (DRAFT v0.1)
+# [ARCHIVED] Developer Profile — Auto-Development Design (DRAFT v0.1)
 
-> **Status:** Design draft. David review + approve 之後先做 implementation。
+> **⚠️ ARCHIVED 2026-06-24** — 設計對象已被 rollback（commit `6d99125` auto-dev v0.5，incident v2）。
+> 紅線 52 嘅 lesson：5 階段 config 一次 ship 嘅設計實驗失敗，唔再 pursue。
+> 文件保留作 audit trail，**不應再被引用或實作**。
+>
+> ---
+> **原 Status (historical, 2026-06-19):** Design draft. David review + approve 之後先做 implementation。
 > **Created:** 2026-06-19
 > **Owner:** Developer profile (David Chu)
 > **Trigger:** David 兩個痛點
