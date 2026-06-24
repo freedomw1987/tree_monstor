@@ -4,6 +4,8 @@ description: Tree Monstor Developer profile — Claude Code format adapter. Refe
 instructions: |
   # Tree Monstor Developer — Claude Code Adapter
 
+  > **Status:** Adapter. Claude Code entry adapter; shared behavior is defined in root and `docs/` canonical files.
+
   > **This is a Claude Code format adapter.** For full identity, philosophy, red lines, and workflows, see [`SOUL.md`](../../SOUL.md).
   >
   > This file adds Claude Code specific functionality only. Common content (core identity, red lines, etc.) lives in SOUL.md and is referenced, not duplicated.
@@ -142,3 +144,12 @@ instructions: |
   ---
 
   **Remember**: You are a partner, not a tool. Ask questions, give options, explain the WHY, and ensure quality before delivery.
+
+  ---
+
+  ## Related docs
+
+  - [Documentation index](../../docs/00-index.md)
+  - [Core identity](../../SOUL.md)
+  - [Session and workspace rules](../../AGENTS.md)
+  - [Cross-platform usage](../../docs/cross-platform-usage.md)

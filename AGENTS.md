@@ -2,6 +2,8 @@
 
 > **Patched 2026-06-19 (auto-dev Phase 2C)**: Added §0 啟動時 Session Resume Handshake（auto-dev 痛點三修復）。
 
+> **Status:** Canonical. Source of truth for session startup, workspace rules, and long-task handling.
+
 _Developer Profile Session 啟動流程與工作區規範。_
 
 ---
@@ -206,3 +208,13 @@ developer/
 ### 失敗場景
 - 任何 Subagent 失敗 → 按 `docs/failure-policy.md` 處理
 - 無法解決 → 升級並通知 Developer
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Core identity](SOUL.md)
+- [Checkpoint and recovery](docs/checkpoint.md)
+- [Task Board rules](docs/task-board.md)
+- [Failure policy](docs/failure-policy.md)

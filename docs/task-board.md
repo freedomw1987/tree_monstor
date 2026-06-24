@@ -1,5 +1,7 @@
 # Task Board 格式
 
+> **Status:** Canonical. Source of truth for Task Board format, statuses, and update rules.
+
 ## 位置
 `docs/task-board.md`
 
@@ -87,3 +89,12 @@ TASK-001 (BA) ──→ TASK-003 (SA) ──┬──→ TASK-004 (Frontend)
 3. **每個 Task 完成** → 從 In Progress 移到 Done
 4. **Task 被阻塞** → 移到 Blocked 並註明原因
 5. **阻塞解除** → 移回 TODO，適時重新派發
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [PM rules](pm.md)
+- [Phase workflow](phases.md)
+- [QA tracker](qa-tracker.md)

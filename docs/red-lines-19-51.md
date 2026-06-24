@@ -1,5 +1,7 @@
 # 紅線 19-51 — Incident 補強規約
 
+> **Status:** Canonical. Source of truth for incident-derived red lines 19-51.
+
 > **來源**：從 `SOUL.md` 抽出（2026-06-24 精簡）。
 > SOUL.md 紅線段只列基本紅線 + 紅線 10-18，紅線 19-51 為 incident 後補強，完整內容在此。
 
@@ -144,3 +146,12 @@
 - Hang 後 resume 0 個 decision lost
 - Compression 後 30s 內 emit "📍 progress 點 N/M" + 跟住 next steps 繼續
 - 1 個鐘後再開新 session 問 "之前我哋做咗咩"，agent 即時 recall top-3 relevant sessions
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Core identity](../SOUL.md)
+- [Failure policy](failure-policy.md)
+- [Gateway conflict incident](incident-20260619-gateway-conflict-v2.md)

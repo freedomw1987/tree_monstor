@@ -1,5 +1,7 @@
 # DevOps 規範
 
+> **Status:** Runbook. DevOps process management, zombie handling, and operational safeguards.
+
 ## 進程生命週期鐵律
 
 **每個啟動的進程都必須明確回答三個問題：**
@@ -83,3 +85,12 @@ tail -100 /tmp/vite.log
 ```
 
 找到問題後才行動，不要盲目重啟。
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Environment isolation](environment-isolation.md)
+- [Failure policy](failure-policy.md)
+- [macOS setup runbook](../setup-macos.md)

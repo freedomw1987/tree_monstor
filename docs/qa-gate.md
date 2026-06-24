@@ -1,5 +1,7 @@
 # QA Gate — 完整交付流程
 
+> **Status:** Canonical. Source of truth for QA Gate release and merge requirements.
+
 > **核心原則**: 未通過 QA Gate 的結果，絕對不能交付給用戶。
 > **本文檔**: 係 SOUL.md § 紅線 10/11/16/17 嘅 detailed workflow。
 > SOUL.md 只列條件，本文檔講執行 protocol。
@@ -198,3 +200,12 @@ Bug 反饋 — P1/P2 — [描述]
 ## 未通過嚴禁交付
 
 未通過 §4 任何步驟嘅代碼嚴禁交付。如果用戶堅持要，必須明確告知風險並記錄喺 §5。
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Testing strategy](testing-strategy.md)
+- [QA tracker](qa-tracker.md)
+- [Project documentation standard](project-documentation-standard.md)

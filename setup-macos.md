@@ -1,5 +1,7 @@
 # Tree Monstor — macOS + Hermes 0.15.1 啟動指南
 
+> **Status:** Runbook. macOS setup and launchd operations for the Developer profile.
+
 > **適用版本**:Hermes Agent v0.15.1+ (macOS)
 > **Profile 路徑**:`~/.hermes/profiles/developer/`
 
@@ -129,3 +131,12 @@ hermes --profile default
 ```
 
 這是「借用行為模式」,不是「真的切到 developer profile」。要完整切過去還是要用 `LAUNCH.sh` 啟新 session。
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Hermes adapter guide](adapters/hermes/README.md)
+- [Cross-platform usage](docs/cross-platform-usage.md)
+- [DevOps runbook](docs/devops.md)

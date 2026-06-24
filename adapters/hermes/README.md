@@ -1,5 +1,7 @@
 # Tree Monstor — Hermes Adapter (macOS 版)
 
+> **Status:** Adapter. Hermes-specific setup and operations for this profile.
+
 > **適用平台**:macOS + Hermes Agent v0.15.1+
 > **本檔案位置**:`~/.hermes/profiles/developer/adapters/hermes/README.md`
 
@@ -123,3 +125,12 @@ Tree Monstor 的舊版 `gateway.yaml` 是給 Linux systemd 部署寫的,schema �
 - `skills/` — developer 專用 local skills（catalog 見 `skills/README.md`）
 
 每個平台只差「怎麼把這份核心載入 prompt」,不差核心內容。
+
+---
+
+## Related docs
+
+- [Documentation index](../../docs/00-index.md)
+- [Core identity](../../SOUL.md)
+- [Session and workspace rules](../../AGENTS.md)
+- [macOS setup runbook](../../setup-macos.md)

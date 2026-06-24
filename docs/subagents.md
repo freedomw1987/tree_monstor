@@ -1,5 +1,7 @@
 # Subagent 角色矩陣
 
+> **Status:** Canonical. Source of truth for subagent roles, responsibilities, and model tiering.
+
 ## 角色列表
 
 | 角色 | Goal 關鍵字 | 核心職責 | 輸入 | 輸出 |
@@ -100,3 +102,12 @@ B (Design) ────────→ E (Design System)
 2. 首批：所有無依賴的 task 同時派發
 3. 每批完成後，檢查是否有 task 解除 Blocked
 4. 持續直到所有 task 完成
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Phase workflow](phases.md)
+- [Session and workspace rules](../AGENTS.md)
+- [Task Board rules](task-board.md)

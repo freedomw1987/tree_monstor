@@ -1,5 +1,7 @@
 # 項目文檔規格（Project Documentation Standard）
 
+> **Status:** Standard. Source of truth for project documentation requirements and commit expectations.
+
 > **為什麼要有這份規格** — David 在 2026-06-06 的 kanban task 明確指出：
 > 「用戶給您需求，您要和他設計及思考。我想要您可以落實了之後，多些在項目中編寫文件，包括設計、架構及技術文件。」
 >
@@ -449,3 +451,12 @@ retros/*.md (事後改進)
 - `docs/qa-gate.md` 嘅交付清單加一條:`□ 所有強制文件已 commit`
 - `docs/qa-tracker.md`(新文檔)會持續追蹤 TEST-COVERAGE.md 嘅進度
 - `docs/feedback-loop.md` 的罰則套用到「沒寫文件就 ship」
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [QA Gate](qa-gate.md)
+- [QA tracker](qa-tracker.md)
+- [Testing strategy](testing-strategy.md)

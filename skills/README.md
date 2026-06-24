@@ -1,5 +1,7 @@
 # Skills Catalog
 
+> **Status:** Catalog. Local skills index; each skill's source of truth is its own `SKILL.md`.
+
 This catalog lists **local Tree Monstor skills** stored as immediate child directories of `skills/` with a `SKILL.md` file.
 
 Each skill’s canonical source is its own `skills/<name>/SKILL.md`. This catalog is a navigation aid, not a replacement for reading the skill itself.
@@ -95,3 +97,12 @@ When adding, removing, or renaming a local skill:
 ## Bundled / external manifest note
 
 `skills/.bundled_manifest` may list bundled or external entries available in other environments. It is **not** the canonical catalog for this profile’s immediate local skills. For local Tree Monstor skills, use this file plus `skills/<name>/SKILL.md`.
+
+---
+
+## Related docs
+
+- [Documentation index](../docs/00-index.md)
+- [README](../README.md)
+- [Core identity](../SOUL.md)
+- [Cross-platform usage](../docs/cross-platform-usage.md)

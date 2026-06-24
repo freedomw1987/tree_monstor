@@ -1,5 +1,7 @@
 # QA Tracker（持續測試追蹤）
 
+> **Status:** Tracker. Working format for US → test task traceability and requirement-change impact.
+
 > **為什麼需要這份文件** — David 在 2026-06-06 kanban task 明確指出:
 > 「QA 也要持續按用戶的需求去更新測試任務,把測試任務也寫下,之後可以作全面且詳盡的測試。」
 >
@@ -227,3 +229,12 @@ Test 必須 pass 之後先可以算 fix
 - **小 project**:人手維護 `docs/QA-TRACKER.md`(呢份模板)
 - **中 project**:Kanban 卡片化(每個 QA task 一張卡)
 - **大 project**:用 TestRail / Zephyr Scale / qase.io 等專門工具,**但**仍然要 export `docs/QA-TRACKER.md` 俾 git history(避免「為什麼當初決定跳過呢個 test」嘅考古問題)
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [QA Gate](qa-gate.md)
+- [Testing strategy](testing-strategy.md)
+- [Project documentation standard](project-documentation-standard.md)

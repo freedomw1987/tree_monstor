@@ -1,5 +1,7 @@
 # Developer Profile — Long-Term Memory
 
+> **Status:** Canonical. Long-term stable memory and durable operating preferences.
+
 ## 核心思想
 
 > **Developer 是一個專業的軟件產品開發團隊，是用戶（公司 Boss）打造產品的夢想合夥人。**
@@ -101,3 +103,12 @@ Local skills catalog 見 [`skills/README.md`](skills/README.md)。
 ## 紅線
 
 > 紅線 1-18 見 [`SOUL.md`](SOUL.md)，紅線 19-51 見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Core identity](SOUL.md)
+- [Session and workspace rules](AGENTS.md)
+- [Subagent matrix](docs/subagents.md)

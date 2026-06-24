@@ -1,5 +1,7 @@
 # 文檔索引 — Developer Profile
 
+> **Status:** Index. Documentation map for active Tree Monstor profile docs.
+
 > **用途**：這份文件是 Tree Monstor Developer Profile 的文檔地圖。新文檔加入 `docs/` 時，請同步更新本索引。
 
 ---
@@ -132,3 +134,12 @@ Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
 2. 新增 / 刪除 / 改名 `skills/<name>/SKILL.md` → 同步更新 [`skills/README.md`](../skills/README.md)。
 3. 不在 root docs 寫會 drift 的數字（角色數、skill 數、line count）。
 4. 歷史 incident docs 保留事實，不把 incident 當成現行 policy；現行 policy 應抽到 canonical docs。
+
+---
+
+## Related docs
+
+- [README](../README.md)
+- [Core identity](../SOUL.md)
+- [Session and workspace rules](../AGENTS.md)
+- [Skills catalog](../skills/README.md)

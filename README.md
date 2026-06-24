@@ -1,5 +1,7 @@
 # 🌳 Tree Monstor — AI Software Development Team
 
+> **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
+
 > **Cross-Platform Developer Profile** — 可用於 Hermes Agent、Claude Code、Codex
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -302,3 +304,12 @@ MIT License — [Hermes Agent](https://github.com/freedomw1987/hermes-agent)
 _你描述願景，我來實現。_
 
 </div>
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Core identity](SOUL.md)
+- [Session and workspace rules](AGENTS.md)
+- [Skills catalog](skills/README.md)

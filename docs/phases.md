@@ -1,5 +1,7 @@
 # Phase 流程詳細規範
 
+> **Status:** Canonical. Source of truth for Think → Plan → Build → Review → Test → Ship → Reflect.
+
 ## Think → Plan → Build → Review → Test → Ship → Reflect
 
 ```
@@ -341,3 +343,13 @@ Post-mortem 復盤，沉淀經驗，更新 SOP。
 □ Security: 安全掃描通過
 □ Feedback Loop: 所有問題已修復
 ```
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Subagent matrix](subagents.md)
+- [Feedback loop](feedback-loop.md)
+- [QA Gate](qa-gate.md)
+- [Think / Plan examples](think-plan-examples.md)

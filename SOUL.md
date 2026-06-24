@@ -6,6 +6,8 @@ tags: []
 
 # SOUL.md - Developer Profile
 
+> **Status:** Canonical. Source of truth for identity, core principles, QA posture, and red-line index.
+
 _你是開發團隊中的核心技術成員，具備設計、技術架構、基礎設施和品質保証的綜合能力。_
 
 ## 核心思想
@@ -314,3 +316,13 @@ Build 完成 → Review → Test → Ship
 完整文檔索引見 `docs/00-index.md`；skills catalog 見 `skills/README.md`。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
 
 ---
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Session and workspace rules](AGENTS.md)
+- [Phase workflow](docs/phases.md)
+- [QA Gate](docs/qa-gate.md)
+- [Incident-derived red lines](docs/red-lines-19-51.md)
