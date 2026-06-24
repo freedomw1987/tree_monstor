@@ -16,6 +16,7 @@ When adding, removing, or renaming a local skill:
 2. Do **not** add skill counts to `README.md`, `SOUL.md`, `MEMORY.md`, `AGENTS.md`, or `docs/00-index.md`.
 3. If a count is needed for release notes or verification, compute it from `skills/*/SKILL.md` at verification time.
 4. Keep descriptions short enough to scan; detailed instructions belong in each skill’s own `SKILL.md`.
+5. After catalog changes, run `python3 scripts/docs_consistency_check.py` from the repository root.
 
 ---
 
@@ -27,7 +28,6 @@ When adding, removing, or renaming a local skill:
 | [`context-summarizer`](context-summarizer/SKILL.md) | Compresses long-task context into `docs/context-summary.md`. | Context pressure, resume preparation, long sessions, loop detection. |
 | [`dev-task-memory`](dev-task-memory/SKILL.md) | Persistent memory for in-progress dev tasks across compression, `/new`, and restarts. | Long implementation tasks that must survive interruption. |
 | [`interruption-recovery`](interruption-recovery/SKILL.md) | Interruption and recovery mechanism layered on top of dev-task-memory. | Crash / interruption / gateway restart recovery. |
-| [`long-task-resilience`](long-task-resilience/SKILL.md) | Proactive long-task checkpointing, compression, and handoff discipline. | Tasks likely to exceed one session or heavy context usage. |
 
 ---
 

@@ -40,7 +40,7 @@
 | 文檔 | 狀態 | 內容 |
 |------|------|------|
 | [`docs/00-index.md`](00-index.md) | Index | 本文檔地圖；所有 top-level `docs/*.md` 應在此列出 |
-| [`docs/auto-dev-design.md`](auto-dev-design.md) | Design record | auto-dev 設計與階段規劃；屬設計紀錄，不是唯一現行規範 |
+| [`docs/archive/auto-dev-design.md`](archive/auto-dev-design.md) | Design record | auto-dev 設計與階段規劃；屬 archived design record，不是唯一現行規範 |
 | [`docs/checkpoint.md`](checkpoint.md) | Canonical | Checkpoint 機制、長任務中斷恢復 |
 | [`docs/cross-platform-usage.md`](cross-platform-usage.md) | Reference | Hermes / Claude Code / Codex / 相關 shell 跨平台使用指南 |
 | [`docs/devops.md`](devops.md) | Runbook | DevOps 規範、process 管理、Zombie 處理 |
@@ -134,6 +134,7 @@ Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
 2. 新增 / 刪除 / 改名 `skills/<name>/SKILL.md` → 同步更新 [`skills/README.md`](../skills/README.md)。
 3. 不在 root docs 寫會 drift 的數字（角色數、skill 數、line count）。
 4. 歷史 incident docs 保留事實，不把 incident 當成現行 policy；現行 policy 應抽到 canonical docs。
+5. 文檔 / skills 導航改動後，執行 `python3 scripts/docs_consistency_check.py`，確保 index、catalog、status markers、related links 與本地連結沒有 drift。
 
 ---
 
