@@ -296,9 +296,83 @@ Build 完成 → Review → Test → Ship
 > **核心要點**：呢啲紅線全部係 incident 後補強，唔可以單獨理解。讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
 
 ---
+
+## 🛡️ 紅線 52（增量交付紀律，2026-06-24 新增 — incident v2 P1 教訓）
+
+> **背景**：incident v2（2026-06-19, `docs/incident-20260619-gateway-conflict-v2.md`）嘅 R1+R2+R4 連環爆，根因之一係「5 階段 config 一次 ship」，無法 isolate 個別階段嘅 root cause，事後要 revert 2 個 commit（`6d99125` + `0e1e359`）。增量交付可將 incident blast radius 縮到 1 個 commit。
+
+### 規則
+
+單次 config / runtime 改動必須**同時**符合以下 3 條：
+
+| 限制 | 數值 | 例外 |
+|------|------|------|
+| **≤ 1 階段** | 唔可以一次 ship 多個 Phase 嘅 config | 純文檔 / 純 skill 改動 |
+| **≤ 200 行** | 單一 commit/config 改動總行數上限 | 純文檔 / 純 skill 改動 |
+| **≤ 1 紅線新增** | 多條紅線必須拆 commit | — |
+
+### 多階段必須拆 commit + 30 分鐘測試窗口
+
+```
+階段 1 commit + 觀察 30 分鐘 + 階段 2 commit + 觀察 30 分鐘 + ...
+```
+
+- 每個 commit 必須有**獨立可回滙 script**（`rollback.sh <commit-sha>` 或 `config.yaml.backup-<ts>` + restore script）
+- 唔可以只靠 backup snapshot，要寫**主動 rollback 邏輯**（測試過真正可執行）
+- 觀察期 David 確認無異常 → 進下一階段
+
+### 為何寫呢條紅線
+
+| 痛點 | incident v2 證據 |
+|------|-----------------|
+| 多階段一次 ship | auto-dev v0.5（commit `6d99125`）一次過包 Phase 1A+1B+1C+1D+2A+2B+2C |
+| Root cause 難 isolate | v2 報告列出 R1+R2+R4 3 個 independent root causes，但無法確定邊個先 trigger |
+| Revert 成本高 | David 考慮 `git revert 6d99125 0e1e359`（2 個 commit），比 revert 1 個 commit 慢 2x |
+| Backup 不足 | 雖然有 `config.yaml.backup-*`，但**冇主動 rollback script**，要人手恢復 |
+
+### 例外清單（不受紅線 52 限制）
+
+- ✅ 純文檔改動（`docs/*.md` 新建 / 重排 / typo 修正）
+- ✅ 純 skill 改動（`skills/*/SKILL.md` 新建 / 改 SKILL.md）
+- ✅ 文檔索引更新（`docs/00-index.md` 加 row）
+
+---
+
+
 ## 📚 文檔索引
 
 完整文檔索引見 `docs/00-index.md`（含所有 `docs/*.md` + 56 個 `skills/` + 新增規範）。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
 
 ---
 
+## 🪞 自我察覺 Checklist（C-min，2026-06-24 新增）
+
+> **目的**：不寫新 skill，只在 SOUL.md 加一個 emit-final-response 前嘅 checklist，引用既有紅線。治 P3 — agent 卡在 loop 不知。**最小版本**，避免自我監控變成 self-referential loop 嘅新源頭。
+>
+> **觸發時機**：emit final response **之前**（或者每 5 個 tool call 中段 check 一次）。
+
+### 6 個 checkbox
+
+- [ ] 我最近 5 個 tool call 有冇重複讀同一個檔案？→ 有嘅話改用 `search_files`（→ 紅線 50）
+- [ ] 我嘅 response 開頭有冇 outline？→ 冇嘅話加 1-3 個 emoji bullet（→ 紅線 49）
+- [ ] Session messages > 50？→ 考慮主動建議 `/new`（→ 紅線 22）
+- [ ] API calls > 50？→ emit `📊 speed_status: api=N/150, time=Ns`（→ 紅線 50）
+- [ ] Pressure ≥ 0.5（warn）？→ 唔好起新 subagent，改用 `delegate_task`（→ 紅線 39）
+- [ ] 連續 2+ turn 嘅 latest assistant message 開頭係 `[CONTEXT COMPACTION — REFERENCE ONLY]`？→ 主動建議 /new（→ 紅線 29）
+
+### 唔通過嘅處理
+
+| 唔通過數量 | 動作 |
+|-----------|------|
+| 1 個 | 立即 emit progress notification + 修正 + 再 check |
+| 2 個 | 主動停下嚟寫 checkpoint + 通知 David「我可能卡住咗」 |
+| 3+ 個 | 立即建議 /new（無論 user 想唔想）+ 寫 incident draft |
+
+### 為何唔寫 skill 而只做 checklist
+
+- **自我監控 loop 本身可能係 P3 嘅 root cause** — 如果 health-check skill 跑得太頻密、又 hit 到 false positive、又 auto-fix，可能製造新嘅 loop
+- **Checklist 形式係「被動提醒」**（user-triggered，emit response 前先 check），skill 形式係「主動監控」（system-triggered），後者風險高
+- **如果 checklist 真係有效**，未來先升級做 skill（呼應紅線 52 嘅增量精神：先試水溫，再 commit skill）
+- **Skill 觸發**：`/reflect` 或 David 講「你健康嗎」/「你卡住咗？」
+
+---
