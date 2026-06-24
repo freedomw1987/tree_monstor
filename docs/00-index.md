@@ -101,13 +101,4 @@ Reflect ── Retrospective
 - **QA Gate 未通過，絕對不能交付**
 - Review 未 APPROVED，絕對不能進入 Test
 - 所有強制 Phase 必須完成才能進入下一階段
-- **紅線 10-18(David 2026-06-06 kanban task 強化)**:
-  - 紅線 10:沒文件的代碼不能 merge(8 份必備文檔)
-  - 紅線 11:改 PRD 必更新 QA-TRACKER
-  - 紅線 12:P0/P1 US 必須有 test tasks
-  - 紅線 13:bug fix 必須有 RG-XXX entry
-  - 紅線 14:bug fix 必須有 root cause + prevention
-  - 紅線 15:refactor 不可違反 RG invariant
-  - 紅線 16:P0 US 必須三層測試(Unit + Integration + E2E)
-  - 紅線 17:deploy 前必跑 smoke test
-  - 紅線 18:Critical/High CVE 必為 0
+- **紅線 10-18**（文檔 gate、QA tracker、test tasks、regression guard、root cause、refactor invariant、三層測試、smoke test、CVE 0）→ 見 [`SOUL.md`](../SOUL.md)
