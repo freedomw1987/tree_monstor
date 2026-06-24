@@ -1,5 +1,7 @@
 # Tree Monstor — Hermes Adapter (macOS 版)
 
+> **Status:** Adapter. Hermes-specific setup and operations for this profile.
+
 > **適用平台**:macOS + Hermes Agent v0.15.1+
 > **本檔案位置**:`~/.hermes/profiles/developer/adapters/hermes/README.md`
 
@@ -13,7 +15,7 @@ Hermes 0.15.1 內建 **profile 機制**,可以讓多個獨立 Hermes 實例並�
 - `SOUL.md` / `AGENTS.md` / `MEMORY.md`(身份)
 - `config.yaml`(設定)
 - `.env`(API keys / tokens)
-- `skills/`(自帶 56 個 developer 專用 skills)
+- `skills/`(developer 專用 local skills；catalog 見 `skills/README.md`)
 - `sessions/`、`logs/`、`state.db`(對話紀錄跟 log)
 
 把 Tree Monstor 裝成 `developer` profile,**完全不影響** `default` profile 跑您平常的對話助理。兩個 profile 並存,各自有各自的 Discord bot。
@@ -57,7 +59,7 @@ nano ~/.hermes/profiles/developer/.env
 | 身份檔 | `~/.hermes/SOUL.md`(Hermes 內建) | `~/.hermes/profiles/developer/SOUL.md`(Tree Monstor) |
 | 設定 | `~/.hermes/config.yaml` | `~/.hermes/profiles/developer/config.yaml` |
 | 環境變數 | `~/.hermes/.env` | `~/.hermes/profiles/developer/.env` |
-| Skills | `~/.hermes/skills/`(32 個) | `~/.hermes/profiles/developer/skills/`(56 個) |
+| Skills | `~/.hermes/skills/` | `~/.hermes/profiles/developer/skills/`（catalog 見 `skills/README.md`） |
 | 對話紀錄 | `~/.hermes/sessions/` | `~/.hermes/profiles/developer/sessions/` |
 | Discord bot | 您現在用的那個 | **新建的另一個**(必須用不同 Application) |
 | 預設模型 | MiniMax-M3 | MiniMax-M3(跟 default 一致) |
@@ -120,6 +122,15 @@ Tree Monstor 的舊版 `gateway.yaml` 是給 Linux systemd 部署寫的,schema �
 - `AGENTS.md` — 啟動流程
 - `MEMORY.md` — 長期記憶
 - `docs/` — 詳細規範
-- `skills/` — 56 個專業 skill
+- `skills/` — developer 專用 local skills（catalog 見 `skills/README.md`）
 
 每個平台只差「怎麼把這份核心載入 prompt」,不差核心內容。
+
+---
+
+## Related docs
+
+- [Documentation index](../../docs/00-index.md)
+- [Core identity](../../SOUL.md)
+- [Session and workspace rules](../../AGENTS.md)
+- [macOS setup runbook](../../setup-macos.md)

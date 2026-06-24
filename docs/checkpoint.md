@@ -1,5 +1,7 @@
 # Checkpoint 機制
 
+> **Status:** Canonical. Source of truth for checkpoint and long-task recovery behavior.
+
 ## 目的
 長期任務中斷後能從斷點恢復，不需要從頭開始。
 
@@ -93,3 +95,12 @@
 ```
 
 **沒有這個紀律，開發會像迷路的螞蟻 — 很忙，但不知道去哪裡。**
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Session and workspace rules](../AGENTS.md)
+- [Failure policy](failure-policy.md)
+- [Feedback loop](feedback-loop.md)

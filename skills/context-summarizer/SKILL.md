@@ -37,7 +37,7 @@ category: productivity
 current_context = read_file("docs/context-summary.md")  # 如果存在
 
 # 2. 讀取 task board 狀態
-task_board = read_file("docs/taskboard.md")
+task_board = read_file("docs/task-board.md")
 
 # 3. 讀取最近 sub-agent 輸出（最後 5 個）
 recent_outputs = get_recent_subagent_results(limit=5)

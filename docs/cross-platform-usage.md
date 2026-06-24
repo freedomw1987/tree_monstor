@@ -1,5 +1,7 @@
 # Cross-Platform Usage Guide
 
+> **Status:** Reference. Cross-platform usage guide for Hermes, Claude Code, and Codex.
+
 This document explains how the same Tree Monstor core identity works across different agent platforms.
 
 ---
@@ -22,7 +24,7 @@ The following are **always the same** regardless of platform:
 - **Think/Plan/Build/Review/Test/Ship/Reflect workflow**
 - **QA Gate** — Quality standards never waived
 - **Red Lines** — Security, secrets, no-skip-QA
-- **Subagent Role Matrix** — 22 roles (CEO, Researcher, BA, Designer, SA, Frontend, Backend, DevOps, QA, etc.)
+- **Subagent Role Matrix** — canonical role matrix lives in `docs/subagents.md`
 - **Environment Isolation** — L1/L2/L3 architecture
 - **Checkpoint Mechanism** — Long-task recovery
 
@@ -57,14 +59,16 @@ delegate_task(
 ### Startup
 
 ```bash
-hermes-agent --profile developer gateway run
+hermes --profile developer gateway run
 ```
 
 ### Configuration
 
 See `adapters/hermes/`:
+- `README.md` — Hermes adapter guide
 - `.env.template` — Environment variables
-- `gateway.yaml` — Gateway configuration
+
+Current Hermes versions use `config.yaml` under the profile directory for gateway/runtime settings; old `gateway.yaml` references are historical.
 
 ---
 
@@ -251,3 +255,13 @@ Recovery process is the same:
 | Single-task coding | Codex |
 | Complex multi-agent orchestration | Hermes Agent or Claude Code |
 | Quick prototyping | Codex or Claude Code |
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [README](../README.md)
+- [Claude Code adapter](../adapters/claude-code/agent.md)
+- [Codex adapter](../adapters/codex/system-prompt.md)
+- [Hermes adapter guide](../adapters/hermes/README.md)

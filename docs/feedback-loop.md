@@ -1,5 +1,7 @@
 # Feedback Loop
 
+> **Status:** Canonical. Source of truth for review/test failure loops and iteration rules.
+
 ## 核心概念
 
 > **Feedback Loop 是持續的循環過程，直至最終結果完美符合用戶需求為止。用戶只會收到最終的好結果。**
@@ -66,3 +68,12 @@
 ## 記錄方式
 
 每次迭代記錄在 `docs/checkpoint.md` 或 `memory/YYYY-MM-DD.md`。
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Phase workflow](phases.md)
+- [Failure policy](failure-policy.md)
+- [QA Gate](qa-gate.md)

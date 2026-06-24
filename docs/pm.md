@@ -1,5 +1,7 @@
 # PM 進度追蹤
 
+> **Status:** Canonical. Source of truth for PM progress tracking and user communication rules.
+
 ## 目的
 定期向用戶彙報進度，屏蔽技術細節，讓用戶專注於業務決策。
 
@@ -80,3 +82,12 @@ PM 進度更新在以下時機自動觸發：
 2. 每個 Phase 完成時
 3. 用戶詢問進度時
 4. 遇到重大問題需要用戶決策時
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Task Board rules](task-board.md)
+- [Phase workflow](phases.md)
+- [QA tracker](qa-tracker.md)

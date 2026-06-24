@@ -1,5 +1,7 @@
 # 🌳 Tree Monstor — AI Software Development Team
 
+> **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
+
 > **Cross-Platform Developer Profile** — 可用於 Hermes Agent、Claude Code、Codex
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -40,6 +42,23 @@
 | **Hermes Agent** | Profile directory + gateway | ✅ 主要支援 |
 | **Claude Code** | `--agent-file` adapter | ✅ 已適配 |
 | **Codex** | `--system-prompt` 文件 | ✅ 已適配 |
+| **OpenClaw** | system-prompt import | 🧪 實驗 / 社群使用 |
+
+---
+
+## Where to start
+
+| 如果你想... | 先讀 |
+|-------------|------|
+| 5 分鐘內了解這個 profile | [`SOUL.md`](SOUL.md) |
+| 啟動一個 session / 理解工作規範 | [`AGENTS.md`](AGENTS.md) |
+| 理解長期記憶與穩定偏好 | [`MEMORY.md`](MEMORY.md) |
+| 找完整文檔地圖 | [`docs/00-index.md`](docs/00-index.md) |
+| 查 subagent 角色矩陣 | [`docs/subagents.md`](docs/subagents.md) |
+| 查 QA Gate / 交付門檻 | [`docs/qa-gate.md`](docs/qa-gate.md) |
+| 找可復用 skills | [`skills/README.md`](skills/README.md) |
+
+> **Canonical rule**: README 只做入口與概覽；角色、QA、skills 的完整清單以 `docs/` 與 `skills/README.md` 為準。
 
 ---
 
@@ -66,7 +85,7 @@
 
 ### Subagent 團隊矩陣
 
-18 個專業角色，涵蓋軟件開發完整生命週期：
+完整角色矩陣以 [`docs/subagents.md`](docs/subagents.md) 為 canonical source；README 只展示核心工作流視角：
 
 ```
 Orchestrator ──── 任務協調（全局視角）
@@ -80,12 +99,12 @@ Orchestrator ──── 任務協調（全局視角）
     ├── Frontend ───── React / Vue / Mobile
     ├── Backend ────── Node.js / Python / Go / Rust
     ├── DevOps ─────── CI/CD、Docker、K8s、AWS
-    ├── Security ───── 安全審計、滲透測試
+    ├── Security Engineer ─ 安全審計、滲透測試
     │
     ├── SA Reviewer ── 架構合規審查
     ├── UX Reviewer ── 用戶體驗審查
     ├── QA ─────────── 自動化測試、測試用例
-    ├── Performance ── 壓測、效能優化
+    ├── Performance Engineer ─ 壓測、效能優化
     │
     ├── Release Manager 部署、迴滾策略
     └── Retrospective ─ 復盤、持續改進
@@ -189,9 +208,7 @@ codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一�
 
 詳細文檔：[adapters/codex/system-prompt.md](adapters/codex/system-prompt.md)
 
-詳細文檔：[Codex 安裝](#3-codex)
-
-### 在 OpenClaw 中使用
+### 在 OpenClaw 中使用（實驗 / 社群）
 
 ```bash
 # 安裝 OpenClaw
@@ -206,7 +223,7 @@ openclaw agents add developer \
 openclaw --profile developer gateway run
 ```
 
-詳細文檔：[OpenClaw 安裝](#4-openclaw)
+OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定義、工作流程、QA Gate 仍以 `SOUL.md`、`AGENTS.md`、`MEMORY.md`、`docs/`、`skills/` 為 canonical source。
 
 ---
 
@@ -287,3 +304,12 @@ MIT License — [Hermes Agent](https://github.com/freedomw1987/hermes-agent)
 _你描述願景，我來實現。_
 
 </div>
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Core identity](SOUL.md)
+- [Session and workspace rules](AGENTS.md)
+- [Skills catalog](skills/README.md)

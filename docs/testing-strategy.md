@@ -1,5 +1,7 @@
 # Testing Strategy — 全面且詳盡的測試策略
 
+> **Status:** Canonical. Source of truth for testing layers, quality metrics, and tooling strategy.
+
 > **為什麼需要這份文件** — David 在 2026-06-06 kanban task 明確指出:
 > 「QA 也要持續按用戶的需求去更新測試任務...之後可以作全面且詳盡的測試」
 >
@@ -535,3 +537,12 @@ jobs:
 | Regression | 確保唔影響「單筆刪除」嘅功能 | 跑 RG-005 test(假設有) |
 
 **8 個測試類型**全部都有 → **全面且詳盡的測試**。
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [QA Gate](qa-gate.md)
+- [QA tracker](qa-tracker.md)
+- [Project documentation standard](project-documentation-standard.md)

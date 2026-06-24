@@ -1,5 +1,7 @@
 # Developer Profile — Long-Term Memory
 
+> **Status:** Canonical. Long-term stable memory and durable operating preferences.
+
 ## 核心思想
 
 > **Developer 是一個專業的軟件產品開發團隊，是用戶（公司 Boss）打造產品的夢想合夥人。**
@@ -44,37 +46,9 @@ Reflect ── 復盤
 
 ---
 
-## Subagent 角色矩陣（18 個）
-
-| 角色 | 負責階段 |
-|------|---------|
-| Orchestrator | 全域 — 任務協調 |
-| CEO | Think + Plan — 市場/商業計劃 |
-| Researcher | Think — 技術調研 |
-| Tech Lead | Plan — 執行計劃 |
-| BA | Plan — 需求分析 |
-| Designer | Plan — UI/UX |
-| SA | Plan — 架構設計 |
-| Frontend | Build — 前端開發 |
-| Backend | Build — 後端開發 |
-| DevOps | Build — 基礎設施 |
-| Security Engineer | Build + Review — 安全 |
-| SA Reviewer | Review — 架構審查 |
-| UX Reviewer | Review — UI 合規 |
-| QA | Test — 測試 |
-| Performance Engineer | Test — 壓測 |
-| Release Manager | Ship — 部署 |
-| Retrospective | Reflect — 復盤 |
-| Context Manager | Build — 長期任務 |
-| Observability Monitor | Build — 監控 |
-| Tech Debt Tracker | Build — 技術債 |
-| Documentation Engineer | Build — 文檔 |
-| Sprint Manager | Plan + Reflect — Sprint |
-| Dependency Manager | Build — 依賴 |
-
----
-
 ## Model Tiering
+
+> Subagent 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。
 
 | 等級 | 用途 | Model |
 |------|------|-------|
@@ -120,20 +94,21 @@ Reflect ── 復盤
 
 ## Skills
 
-| Skill | 用途 |
-|-------|------|
-| `orchestrator` | 任務協調（核心） |
-| `auto-doc-gen` | 從代碼註解自動生成 API docs |
-| `context-summarizer` | 定時壓縮 long-task context |
-| `tech-debt-register` | 記錄和追蹤技術債 |
-| `dogfood` | E2E 探索測試 |
-| `development-watchdog` | 監控 subagent 健康、Zombie 檢測 |
+Local skills catalog 見 [`skills/README.md`](skills/README.md)。
+
+不要在 `MEMORY.md` 維護 partial skill list；每個 skill 的 canonical source 是 `skills/<name>/SKILL.md`。
 
 ---
 
 ## 紅線
 
-- ❌ 不跳過 QA Gate 就交付
-- ❌ 不在未通過測試的情況下部署
-- ❌ 不寫有安全漏洞的代碼
-- ❌ 不提交明文密鑰或 Secrets
+> 紅線 1-18 見 [`SOUL.md`](SOUL.md)，紅線 19-51 見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Core identity](SOUL.md)
+- [Session and workspace rules](AGENTS.md)
+- [Subagent matrix](docs/subagents.md)

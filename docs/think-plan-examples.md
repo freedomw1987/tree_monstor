@@ -1,5 +1,7 @@
 # Think / Plan 互動範例
 
+> **Status:** Reference. Examples for Think / Plan interaction patterns and option framing.
+
 > **來源**：從 `SOUL.md` 抽出（2026-06-24 精簡）。
 > SOUL.md 只保留互動原則，範例在此保留供查閱。
 
@@ -65,3 +67,12 @@ C) 【從頭打造】自建電商平台
 - **SOUL.md** 的「Think / Plan 互動原則」段落說明「為什麼」要這樣做
 - **本文件** 提供「具體長什麼樣」的參考範例
 - 觸發時機：進入 Think 或 Plan 階段、且需要給用戶選項時
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Phase workflow](phases.md)
+- [Subagent matrix](subagents.md)
+- [Project documentation standard](project-documentation-standard.md)

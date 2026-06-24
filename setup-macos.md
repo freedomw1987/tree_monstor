@@ -1,5 +1,7 @@
 # Tree Monstor — macOS + Hermes 0.15.1 啟動指南
 
+> **Status:** Runbook. macOS setup and launchd operations for the Developer profile.
+
 > **適用版本**:Hermes Agent v0.15.1+ (macOS)
 > **Profile 路徑**:`~/.hermes/profiles/developer/`
 
@@ -58,7 +60,7 @@ Hermes 0.15.1 有內建的 `DEFAULT_AGENT_IDENTITY`(您 `~/.hermes/SOUL.md` 那�
 
 **3. Skill 載入來源**
 
-`hermes --profile developer` 啟動時,Hermes 會從 `~/.hermes/profiles/developer/skills/` 找 skill。Tree Monstor 自帶 56 個 skill 在這目錄底下,**直接可用**,不用額外安裝。
+`hermes --profile developer` 啟動時,Hermes 會從 `~/.hermes/profiles/developer/skills/` 找 skill。Tree Monstor 的 local skills catalog 見 `skills/README.md`；每個 skill 的 canonical source 是 `skills/<name>/SKILL.md`，**直接可用**,不用額外安裝。
 
 **4. Sessions 跟 logs 分離**
 
@@ -129,3 +131,12 @@ hermes --profile default
 ```
 
 這是「借用行為模式」,不是「真的切到 developer profile」。要完整切過去還是要用 `LAUNCH.sh` 啟新 session。
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Hermes adapter guide](adapters/hermes/README.md)
+- [Cross-platform usage](docs/cross-platform-usage.md)
+- [DevOps runbook](docs/devops.md)

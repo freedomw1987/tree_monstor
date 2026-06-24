@@ -1,5 +1,7 @@
 # 環境隔離指南
 
+> **Status:** Canonical. Source of truth for Dev / Prod / Agent Config environment isolation.
+
 > 所有功能開發，第一優先一定是開發環境（Dev）。Production 只是最終目的地。
 
 ---
@@ -159,3 +161,12 @@ grep -r "DATABASE_URL" .env* | grep -v "dev\|test\|localhost"
 # 確認 Agent Config 的 env 沒有被專案污染
 cat ~/.tree_monstor/.env | grep -E "APP_|DB_|STRIPE_" || echo "CLEAN"
 ```
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [DevOps runbook](devops.md)
+- [Cross-platform usage](cross-platform-usage.md)
+- [Failure policy](failure-policy.md)

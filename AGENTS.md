@@ -2,6 +2,8 @@
 
 > **Patched 2026-06-19 (auto-dev Phase 2C)**: Added §0 啟動時 Session Resume Handshake（auto-dev 痛點三修復）。
 
+> **Status:** Canonical. Source of truth for session startup, workspace rules, and long-task handling.
+
 _Developer Profile Session 啟動流程與工作區規範。_
 
 ---
@@ -60,7 +62,7 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ### 步驟 2：建立工作區（長期任務）
 - 創建 `memory/YYYY-MM-DD.md`
-- 創建 `docs/taskboard.md`（如有需要）
+- 創建 `docs/task-board.md`（如有需要）
 - 初始化 checkpoint（如任務需要中斷恢復）
 
 ### 步驟 3：判斷任務類型
@@ -161,7 +163,7 @@ _Developer Profile Session 啟動流程與工作區規範。_
 ### 長期任務工作區
 ```
 memory/YYYY-MM-DD.md  — 當前任務的記憶文件
-docs/taskboard.md     — 任務面板
+docs/task-board.md     — 任務面板
 docs/context-summary.md — 長期任務 context 總結
 docs/checkpoint.md    — 斷點恢復點（長期任務）
 ```
@@ -179,7 +181,7 @@ developer/
 ├── docs/
 │   ├── 00-index.md      — 文檔索引
 │   ├── phases.md        — Think→Plan→Build→Review→Test→Ship→Reflect
-│   ├── subagents.md     — Subagent 角色矩陣（18 個）
+│   ├── subagents.md     — Subagent 角色矩陣（canonical）
 │   ├── failure-policy.md — 失敗處理機制
 │   ├── task-board.md    — Task Board 格式
 │   ├── qa-gate.md       — QA Gate 交付清單
@@ -188,9 +190,8 @@ developer/
 │   ├── devops.md        — DevOps 規範
 │   └── feedback-loop.md — Feedback Loop
 └── skills/
-    ├── auto-doc-gen/    — API 文檔自動生成
-    ├── context-summarizer/ — Context 壓縮
-    └── tech-debt-register/  — 技術債追蹤
+    ├── README.md        — Local skills catalog
+    └── <skill>/SKILL.md — 每個 skill 的 canonical source
 ```
 
 ---
@@ -207,3 +208,13 @@ developer/
 ### 失敗場景
 - 任何 Subagent 失敗 → 按 `docs/failure-policy.md` 處理
 - 無法解決 → 升級並通知 Developer
+
+---
+
+## Related docs
+
+- [Documentation index](docs/00-index.md)
+- [Core identity](SOUL.md)
+- [Checkpoint and recovery](docs/checkpoint.md)
+- [Task Board rules](docs/task-board.md)
+- [Failure policy](docs/failure-policy.md)

@@ -1,5 +1,7 @@
 # 失敗處理機制
 
+> **Status:** Canonical. Source of truth for L1/L2/L3 failure handling.
+
 ## 失敗等級
 
 | 等級 | 定義 | 處理方式 | 嘗試次數 |
@@ -112,3 +114,12 @@ Subagent 失敗
 | `EMFILE` | 文件描述符耗盡 | `ulimit -n 65535` |
 | Cloudflare timeout | Tunnel 響應慢 | `pkill -f cloudflared; retry` |
 | Subagent 僵死 | 子進程洩漏 | `pkill -9 -f "<agent-process>"` |
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Feedback loop](feedback-loop.md)
+- [Checkpoint and recovery](checkpoint.md)
+- [QA Gate](qa-gate.md)

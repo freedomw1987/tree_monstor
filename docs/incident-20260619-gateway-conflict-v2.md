@@ -1,5 +1,7 @@
 # Incident Report v2 — 2026-06-19 ~14:55–17:05 — Developer Profile Streaming Loop
 
+> **Status:** Incident record. Historical root-cause record; current policy should live in canonical docs.
+
 **Status**: 🟡 Open — Awaiting manual intervention
 **Severity**: High (David 觀察到 developer profile agent 不斷 push 重覆 response)
 **Reporter**: David Chu
@@ -361,3 +363,12 @@ fixed) but no observable impact._
 
 _Draft 2026-06-19 ~17:05 — v2 incident, awaiting David manual intervention_
 _Recovery added 2026-06-19 ~17:18 — incident closed, system stable_
+
+---
+
+## Related docs
+
+- [Documentation index](00-index.md)
+- [Incident-derived red lines](red-lines-19-51.md)
+- [Failure policy](failure-policy.md)
+- [Checkpoint and recovery](checkpoint.md)
