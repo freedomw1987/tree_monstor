@@ -65,56 +65,7 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 2. **提供選項** — 在關鍵決策點，主動提供 2-4 個選項
 3. **問對問題** — 用問題引導用戶思考他可能忽略的事
 
-### Think 階段 — 選項 / 問題示例
-
-```
-「我想做一個電商網站」
-    ↓
-[CEO 市場分析 + Researcher 技術調研]
-    ↓
-提供選項：
-「根據您的需求，我看到三種可能的方向：
-
-A) 【快速驗證】用 SaaS 方案（WooCommerce/Shopify）
-   - 1-2 週可以上線
-   - 每月 $50-500 成本
-   - 適合 MVP 驗證
-
-B) 【靈活控制】用開源方案（MedusaJS/Saleor）
-   - 2-3 個月開發
-   - 每月基礎設施 $200-500
-   - 完全控制，可以二次開發
-
-C) 【從頭打造】自建電商平台
-   - 4-6 個月
-   - 開發成本高
-   - 適合有獨特商業模式的項目
-
-您是哪種情況？我可以進一步分析。」
-```
-
-### Plan 階段 — 選項 / 問題示例
-
-```
-「我想做一個庫存管理系統」
-    ↓
-[CEO 商業計劃 + BA + Designer + SA + Tech Lead]
-    ↓
-提供選項：
-「在開始之前，我想確認幾個方向：
-
-技術架構：
-1. 【傳統 Web】單體架構 + React 前端（最穩定）
-2. 【現代微服務】微服務 + React（適合未來擴展）
-3. 【極簡方案】Next.js 全端（最快速）
-
-部署方式：
-1. 【自己托管】AWS/EC2（完全控制）
-2. 【Serverless】Vercel + AWS Lambda（最省心）
-3. 【混合】Vercel 前端 + AWS 後端（平衡）
-
-您對哪個方向更有興趣？或者我先根據您的情況推薦一個？」
-```
+**完整互動範例**（電商 SaaS vs 開源 vs 自建、技術架構 3 選 1、部署方式 3 選 1 等）見 `docs/think-plan-examples.md`。
 
 ---
 
@@ -175,7 +126,7 @@ C) 【從頭打造】自建電商平台
 
 ## ❌ 失敗處理 + 進度停滯檢測
 
-詳細機制見：`docs/failure-policy.md`
+完整機制見 `docs/failure-policy.md`（L1/L2/L3 分級 + 失敗報告模板 + 自動康復 + **進度停滯檢測** + 常見錯誤自動處理）。
 
 | 等級 | 定義 | 處理 |
 |------|------|------|
@@ -183,38 +134,11 @@ C) 【從頭打造】自建電商平台
 | L2 | 需修復後重試 | 分析原因、修正後派發（最多2次） |
 | L3 | 需 Developer 介入 | 寫失敗報告，升級 |
 
-### ⏱️ 任務進度停滯檢測（新增）
-
-**問題症狀**：Developer 長時間（>15 min）不回應、tool calls 在空轉、或連續 3 次嘗試失敗但不匯報。
-
-**停滯定義**：
-- 超過 15 分鐘無任何回覆（平台有響應但 agent 無輸出）
-- 連續 5 次 tool call 全部失敗
-- 進入無效循環（search_files / read_file 反覆讀取相同檔案）
-
-**處理流程**：
-```
-進度停滯檢測
-    ↓
-[停止並匯報] → 「我已經卡住了，需要幫忙」
-    ↓
-寫入 checkpoint：當前嘗試的方案、錯誤日誌
-    ↓
-等待 Developer / 用戶介入
-```
-
-### 🚨 長時間無回應處理
-- **5 分鐘無回應** → 主動發送「🔔 正在處理中，請稍候...」
-- **15 分鐘無回應** → 停止空轉，寫 checkpoint，匯報當前嘗試的解決方案和遇到的障礙
-- **30 分鐘無回應** → 自動重啟 session 並保存狀態
-
 ---
 
 ## 📊 Task Board
 
-位置：`docs/taskboard.md`
-
-格式和更新規則見：`docs/task-board.md`
+位置 + 格式 + 更新規則：`docs/task-board.md`
 
 ---
 
@@ -345,194 +269,36 @@ Build 完成 → Review → Test → Ship
 
 ---
 
-## 📋 落實後必產文件(David 2026-06-06 kanban task 強化)
+## 📋 落實後必產文件
 
-> **核心原則**:跟用戶喺 Think/Plan 階段口頭對齊之後,**落實時必須把共識寫入項目文件**。
-> 對話紀錄會淡忘,git commit 嘅文件先係真相。
+> **核心原則**：跟用戶喺 Think/Plan 階段口頭對齊之後，**落實時必須把共識寫入項目文件**。對話紀錄會淡忘，git commit 嘅文件先係真相。
 
-**每個 project 必須有的文件**(詳見 `docs/project-documentation-standard.md`):
+**每個 project 必有的 10 份文件**（時機表 + 交叉引用表）見 `docs/project-documentation-standard.md`。
 
-| 文件 | 必填時機 | 跟其他文件嘅交叉引用 |
-|------|---------|------------------|
-| `docs/PROJECT-OVERVIEW.md` | Plan 結束時(跟首個 code commit 一起) | 全文件 root |
-| `docs/PRD.md` | Plan 結束時 | QA-TRACKER, RETROSPECTIVE |
-| `docs/DESIGN.md` | Plan 結束時(設計定稿時) | Frontend 實作, QA-TRACKER |
-| `docs/architecture/NNNN-*.md` | 每個重大架構決策即時寫 | ADR 之間互相 supersede |
-| `docs/API.md` | 每個 endpoint 上線前 | PRD US, TEST-COVERAGE |
-| `docs/TEST-COVERAGE.md` | 每個 sprint 結束時 | QA-TRACKER, REGRESSION-GUARD |
-| `docs/TECH-DEBT.md` | 發現就記,每 sprint review | ADR, RETROSPECTIVE |
-| `docs/retros/YYYY-MM-DD-*.md` | 每個 feature/incident 完成後 | PROJECT-OVERVIEW scope |
-| `docs/QA-TRACKER.md` | 持續追蹤(改 PRD 必更新) | PRD, REGRESSION-GUARD |
-| `docs/REGRESSION-GUARD.md` | 每個 bug fix | 必引用 RG-XXX |
-
-**QA 持續追蹤嘅 rule**:用戶改需求 → 立即更新 PRD + QA-TRACKER + 對應嘅 test tasks。**冇更新 tracker = 任務冇做**(紅線 11)。
-
-**防止舊 bug 翻發嘅 rule**:每次 bug fix → RG-XXX entry + regression test + source code 標記。**冇 entry 嘅 fix 唔可以 merge**(紅線 13)。
-
-**全面測試嘅 rule**:P0 US 至少 Unit + Integration + E2E 三層;deploy 前必跑 smoke test;Critical/High CVE 阻擋 merge(紅線 16-18)。
+**持續追蹤 rule**：改 PRD → 必更新 QA-TRACKER（紅線 11）。Bug fix → 必寫 RG-XXX entry（紅線 13）。P0 US → 必三層測試（紅線 16）。
 
 ---
 
-## 🚨 Hang Fix 規約(David 2026-06-06 親驗 hang 後新增)
+## 🚨 紅線 19-51（Incident 補強）
 
-> **背景**:6/5-6/6 developer profile 多次出現「developer 收 message 後 10–60 分鐘先回應」,David 親驗:
-> - 7/6 19:12 `?` → 19:15 回應(193s, **history 387 messages**)
-> - 7/6 19:16 `C` → 19:33 回應(1025s,**47 API calls**,history 506)
-> - 5/6 22:42 → 6/6 01:40 回應(**10710s = 3 小時**,78 API calls)
-> - auto-compression 19:34 才觸發(85% threshold,258k tokens)
->
-> **根因**:`agent.max_turns=150`(default 90)+ 沒 streaming feedback + context 膨脹失控 + clarify loop 600s + Discord stream delivery not confirmed。
->
-> **修法**:見下「紅線 19-23」+ `config.yaml` v3.1.0-hang-fix。
+完整內容見 `docs/red-lines-19-51.md`，按主題分組：
 
-- **紅線 19**:**Subagent 跑 tool calls > 30 時必須 emit 中段 progress**(用 `send_message` 或 text response),唔可以悶頭跑到 100 calls 先出 message。理由:避免 David 誤以為 hang。
-- **紅線 20**:**Clarify loop 必須 < 180 秒**。3 條內未確認 → 自行 pick reasonable default + 標 `⚠️ 預設選擇` 繼續。理由:`config.yaml` `clarify_timeout: 180`(2026-06-06 由 600 改)。
-- **紅線 21**:**Long-running task 必須 prefer `delegate_task`** 而唔係 inline subagent routine。Subagent 跑獨立 session,**唔會污染 main session context**(即解決「history 506 messages」問題)。理由:context 膨脹係 hang 嘅 #1 root cause。
-- **紅線 22**:**Session > 50 turns 時主動建議 `/new`**。理由:`compression.threshold: 0.40` + `hygiene_hard_message_limit: 250` 雖然會自動壓,但**重新開始 session 永遠乾淨過壓縮**(David 19:34 親測「壓完 43 條就 30s 內回應」)。
-- **紅線 23**:**每次 emit final response 前 emit "📍 progress 點 N/M"** 喺 message 開頭,等 David 知道「仲未 hang」。理由:`streaming.enabled: true` + `display.platforms.discord.streaming: true` 雖然已開,**但 Discord webhook ACK 不穩定** 時仍要 fallback。
-
-**User-visible 行為改變**(v3.1.0-hang-fix 生效後):
-
-| 指標 | 之前 | 之後(預期) |
-|------|------|-----------|
-| Median response time | 629.9s (10.5 分鐘) | < 300s |
-| Turns 慢過 10 分鐘 | 17/34 (50%) | < 5/34 (15%) |
-| Hang 個案(>1hr) | 1-2 個 / day | 0 個 / day |
-| 3 小時 hang | 1 個 | 0 個 |
-| Context 膨脹 trigger | 50% threshold, 85% hard | 40% threshold, 250-msg hard |
-
----
-
-## 🧠 Dev Task Memory 規約(David 2026-06-06 加 skill `dev-task-memory` 後新增)
-
-> **背景**:Hang fix 解決咗「developer 唔回應」嘅問題,但**冇解決「context 處理完之後 dev task 嘅 decisions / state 點樣唔好被遺忘」**。
-> 即使壓縮成功、session 重新開始,developer 之前做嘅 decisions (用 Hono 唔用 Express)、next steps (寫 Companies 編輯) 都會 lost — 除非 persist 落 file system。
->
-> **修法**:新 skill `skills/dev-task-memory/` 5-layer architecture:
-> 1. **Trigger** (紅線 21-22 hook) → 2. **State file** (`docs/_meta/dev-task-state.md`) → 3. **Git checkpoint** (`hermes checkpoints` enabled) → 4. **External memory** (holographic/mem0, fallback local jsonl) → 5. **Cross-session search** (`session_search` FTS5)
->
-> 詳見 `skills/dev-task-memory/SKILL.md`。
-
-- **紅線 24**:**每個 long dev task 開始時必須 `save_state.py --project <name> --goal "..." --trigger task-start`**, 唔可以 rely on LLM memory(會被 compression 清)。理由: 6/4-6/6 多次 hang fix 證明, 即使有 compression, decisions 仍 lost。
-- **紅線 25**:**每 30 分鐘或每 10 個 tool calls 必須 re-save**(`--trigger auto-mid-task`)+ `sync_external.py --project <name>` push facts 落 external memory。理由: 1 個鐘嘅 coding work 可能 produce 5-10 個 decisions, 唔同步等於 lost。
-- **紅線 26**:**每個 Decision 必須有 WHY** — 唔可以淨寫 "Use Hono", 要寫 "Use Hono 4x 細, edge 啱用"。理由: Compression 會 strip detail, 但 WHY 必須 keep, 否則下個 session 會重新犯同樣嘅 mistake。
-- **紅線 27**:**Resume 時必須先 `load_state.py --project <name> --search-sessions`**, 唔可以假設自己記得上一個 session 做過咩。理由: LLM memory 唔可靠, file system 至可靠。
-- **紅線 28**:**State file 唔可以 commit 落 git** — `docs/_meta/*` 同 `dev-task-state.md` 必須喺每個 project 嘅 `.gitignore`。每個新 project 必須 `bash skills/dev-task-memory/scripts/setup_gitignore.sh <path>` 一次。理由: State 係 runtime metadata, 唔係 source code。
-- **紅線 29**:**Session stuck in `[CONTEXT COMPACTION]` loop > 2 turn 必須主動建議 /new**(2026-06-06 親驗 stuck case: 過去 6 個 turn 全部 emit 同一個 handoff reference 唔做 work)。理由: Hermes 內部 compaction handoff 喺某啲情況會代替真正 response, session 變 zombie 但 gateway 仲 display 正常。
-  - **Detection**: 連續 2+ 個 turn, 個 latest assistant message 開頭係 `[CONTEXT COMPACTION — REFERENCE ONLY]` 而且 `api_calls=1, finish_reason=stop`, 冇真正 work。
-  - **Action**: 立即 mark session 為 ended (`UPDATE sessions SET ended_at=..., end_reason='stuck_in_compaction_loop' WHERE id=<stuck_id>`)+ insert sentinel message + load_state.py 開新 session。
-- **紅線 30**:**任何 `delegate_task` / spawn subagent 之前必須先 emit 明確通知** + 用 [Subagent X] prefix 包住 subagent 嘅 response(2026-06-06 親驗 zombie subagent 跑 66 tool calls, 喺 Discord streaming 中斷, partial content 漏出嚟, David 完全冇 context 知道係 subagent 唔係 main response)。理由: Discord 將 main response 同 subagent streaming 混埋 display, user 無從分辨, 而且 subagent streaming 唔穩定(Unicode `▉` 字符即係 streaming 中斷 artifact)。
-- **紅線 31**:**中斷前必須 call `recovery.sh <project> "<reason>"` 自動 save + 印 resume command**(2026-06-06 完工)。理由: David 親驗「中斷後返嚟 agent 唔知做緊咩」嘅痛點, 必須有 systematic 流程。
-  - **Triggers**: 收工 / `/new` / gateway 重啟 / context 爆 / SIGTERM / 「我今晚做到呢度」/ 任何明顯中斷。
-  - **Action**: `bash skills/interruption-recovery/scripts/recovery.sh <project> "<reason>"` 自動寫 `docs/_meta/dev-task-state.md` + interruption log, 印 3 個 resume options。
-- **紅線 32**:**David 醒返 / 開新 session 必須 `resume.sh <project>` 先睇 summary**(2026-06-06 完工)。理由: Resume 唔可以假設自己記得。
-  - **Action**: `bash skills/interruption-recovery/scripts/resume.sh <project>` 印 Goal / Decisions / Next Steps / Past Sessions 摘要 + 3 個 resume options。
-  - **Recommendation**: 過 1 日 / 50 turns → 用 Option C (fresh + state inject); < 1 小時 → Option A (`--resume`); 中間 → Option B (`--continue`)。
-- **紅線 33**:**長期跑 dev task 必須用 `terminal_preflight.sh <cmd>` 預檢 long-lived command**(2026-06-07 完工)。理由: Hermes 內建 300s timeout + long-lived server detection 攔截 foreground `npm run dev` / `docker compose up` / `vite` 等等(過去 log 入面 26 次 error)。修法: 跑 `bash skills/interruption-recovery/scripts/terminal_preflight.sh "<cmd>"` 預檢, 真正 long-lived 就改用 `terminal(background=true, notify_on_complete=true)` pattern。
-- **紅線 34**:**MEMORY.md / USER.md 編輯後必須 `memory_normalize.sh` 確保 §-delimiter round-trip clean**(2026-06-07 完工)。理由: 我哋之前直接用 `write_file` / `patch` 加 entry, 但 tool 嘅 `_detect_external_drift` 喺 line 555 會 check `raw.strip() != roundtrip`, `\n§\n` 嘅 multi-char delimiter 會撞到 drift check, 之後每次 `memory(action=add)` 都會 refuse 寫。修法: `bash skills/interruption-recovery/scripts/memory_normalize.sh` 自動 normalize (`...entry.\n§\nnext` → `entry.§next`), 跑完之後 round-trip 100% clean。
-- **紅線 35**:**Auto-maintenance cron 唔好 block**(2026-06-07 完工, 2 jobs created)。理由: 過夜 run 嘅 session 會累積 zombie, 必須自動清。Cron jobs:
-  - `757736b81b92` nightly-memory-normalize (02:00 daily) → 自動 normalize MEMORY/USER
-  - `be6b1aadc9cd` auto-archive-sessions (03:00 daily) → 自動 archive > 13h inactive discord sessions
-  - 兩者都用 `--no-agent` mode, output 落 `~/.hermes/cron/output/`, 唔會 spam Discord。
-- **紅線 36**:**Agent 編輯 ~/.hermes/memories/ 之前必須 backup**(2026-06-07 完工)。理由: memory_normalize.sh 自動 .bak.<ts> backup, 但直接 `write_file` MEMORY.md 唔會。寫 `~/.hermes/memories/MEMORY.md` / `USER.md` 之前先 `cp file file.bak.$(date +%s)`。
-- **紅線 37**:**長期 dev task 嘅 `write_file` / `patch` / 破壞性 `terminal` 之前必須 `pre_tool_checkpoint.sh <workdir> "<reason>"`**(2026-06-07 完工, skill: `long-task-resilience`)。理由: Hermes 0.15.1 嘅內建 CheckpointManager 雖然 config `enabled: true`, 但 AIAgent 嘅 tool_executor code path 喺 Developer Profile 從未 trigger(`hermes checkpoints status` 永遠 0 projects)。修法: 跑 `bash skills/long-task-resilience/scripts/pre_tool_checkpoint.sh "$WORKDIR" "before write_file: $FILE"` 喺 mutation 之前, 將 working tree 嘅 dirty state 落 git ref `refs/checkpoints/<dir>/<ts>`, 之後隨時 `git checkout <ref> -- <file>` 復原。Hook 自動 stash/pop 保留 working tree 不變。
-- **紅線 38**:**Session > 100 API calls 主動 emit `📊 context_status` (in/out/msgs/api/pressure)**(2026-06-07 完工)。理由: Hermes 嘅 `compression.threshold: 0.30` 雖然會自動 trigger, 但**自動 compression 唔主動通知 user**, David 會誤以為 hang。Pressure > 50% (warn) 寫 progress checkpoint, > 100% (crit) 自動 fork handoff。
-- **紅線 39**:**Context pressure ≥ warn (0.5) 唔可以再起新 subagent**(2026-06-07 完工)。理由: 起 subagent 會 push 額外 context 入 main session, 加速迫爆。改用 `delegate_task` (獨立 session, 唔污染 main context) 或者直接 fork 個 session 落 handoff。
-- **紅線 40**:**中斷 > 5 分鐘後 resume 時, 必須先睇 `~/.hermes/profiles/developer/handoffs/` 最新嘅 `<sid>.handoff.md` + 跑 `resume_task.py <sid> [--workdir <path>]`**(2026-06-07 完工)。理由: 自動 fork handoff 已經寫咗 session summary、token usage、reference state。直接 resume 唔睇 handoff = 失去 fork 嘅意義。Resume brief 包含 5 個 section: handoff / progress / dev-task-state / git log / pre-tool journal。
-- **紅線 41**:**永遠唔可以 manual delete handoff file**(2026-06-07 完工)。理由: handoff 係 self-healing 嘅 audit trail, 將來 debug 必需要。Archive 由 cron / `process_fork_queue.py` 自動清, 唔需要手動。
-- **紅線 42**:**Hermes 內建 `CheckpointManager` 唔可靠**(2026-06-07 完工)。理由: 即使 `config.yaml` 寫 `checkpoints.enabled: true`, AIAgent 嘅 `agent_init.py:1021` 雖然 init `_checkpoint_mgr`, 但 `tool_executor.py:215-228` 個 trigger code path 喺 Developer Profile 從未執行過(`hermes checkpoints status` 永遠 `Projects: 0`)。**必須用我哋自己嘅 `pre_tool_checkpoint.sh`**, 唔好 assume 內建 work。
-- **紅線 43**:**Session `api_call_count` > 200 必須主動建議 /new 或者等 context_pressure_monitor.py 自動 fork**(2026-06-07 完工)。理由: 100+ API calls 嘅 session 已經累積 4-6M cumulative input tokens, 任何 compression 都救唔到。自動 fork 會將 handoff + git state 保存, fresh session 0 包袱 resume。Fork queue: `~/.hermes/profiles/developer/session_fork_queue.jsonl`, 處理 script: `process_fork_queue.py`。
-- **紅線 44**:**Long task 達到 pressure 0.85-1.20 必須執行 `compression_executor.py auto`** 自動 LLM-summarize 舊 messages, 唔可以等 Hermes 內建 silent auto-compress(2026-06-07 完工, skill: `long-task-resilience/compression_subagent`)。理由: Hermes 內建 `compression.threshold: 0.30` 雖然自動 trigger 但**唔主動通知 user**, 而且**冇 structured summary** — David 醒返睇唔明 session 做過咩。我哋個 executor 用 minimax-m3 LLM 產生 6 sections (Goal/Decisions/State/Next/Insights/Risks), 寫入新 system message, 將 head messages mark `active=0`, 保留 tail verbatim。Compression 唔等如 kill — session ID 唔變, 淨係清 context。
-- **紅線 45**:**Pressure > 1.20 必須 fork 而唔可以壓縮**(2026-06-07 完工)。理由: 超過 1.20 pressure 嘅 session 即使 compressed 都有 >50K tokens, 任何後續 tool call 嘅 cumulative cost 會爆。Fork + fresh session 係唯一可持續做法。判斷喺 `compression_executor.py:decide_action` 自動做。
-- **紅線 46**:**Compression 之後必須保留最後 4 個 exchanges (16 messages) verbatim**(2026-06-07 完工)。理由: 純 compressed summary 唔可以取代「最近 user 講咗咩」+「最近 tool result」, 否則 agent 會失去即時 context。`partition_head_tail` fallback: zombie session < 4 user turns → 保留最後 16 條 total messages。
-- **紅線 47**:**永遠唔好手動 DELETE `active=0` 嘅 compressed messages**(2026-06-07 完工)。理由: `active=0` 係「壓縮咗但保留 audit trail」, 將來 debug 同 /rollback 必需要。SQL: `UPDATE messages SET active=1 WHERE session_id=<sid> AND observed=1` 隨時 un-compress。刪除 = 永久失去 history。
-- **紅線 48**:**Compression executor 用 LLM 之前必 verify endpoint format**(2026-06-07 完工, 已撞牆教訓)。理由: 個 endpoint URL 含 `/anthropic` 嘅時候用 Messages API (`/v1/messages` + `x-api-key` header), 否則用 OpenAI chat.completions (`Authorization: Bearer`)。Developer Profile 個 minimax endpoint 係 anthropic format (`/anthropic/v1/messages`), 唔係 chat.completions。`call_llm_summarize` 自動 detect by URL pattern, fallback extractive summary 如果 LLM fail。
-- **紅線 49**:**Response > 2000 chars 必須先列 outline, 唔好 3000+ chars 嘅單一 response**(2026-06-07 完工 v2, evidence: 過去 24h 39% response > 3000 chars, 90-percentile 6171 chars, 最高 34827 chars; 同日 17:23 「A+B+C」multi-task 個 agent 14,158 chars inline report 證明原 wording 失效)。理由: David 明確投訴「不斷出詳細」係 verbose 唔係 zombie。規則: (1) Response 開始時 1-3 個 emoji bullet 列 outline, 畀用戶睇到 scope; (2) Detail 部分如果 < 2000 chars 就 inline, > 2000 chars 就開 sub-section 折疊; (3) 唔好 repeat 解釋同一個 concept; (4) Default 用 markdown list, 唔用 paragraph。例外: Build 階段嘅 detail code block / file content 唔算 response chars。**v2 加強**: Final response 本身有 hard cap — 就算 outline-first, 最終 deliverable 都唔可以 > 3500 chars (≈ 700-1000 中文字)。如需多過, **必須 emit 多次 final response**, 中間用 `📍 progress 點 N/M` 標記, 用戶可以中途插嘴 / 修正 scope。
-- **紅線 50**:**慢 response (avg > 200s) 主動 emit `📊 speed_status` + 自動 fork 高-API-call session**(2026-06-07 完工, evidence: 過去 24h avg response time 453s, p90 1450s, 27/56 (48%) responses > 3 API calls, 最長 2326s + 97 API calls)。理由: Hermes 嘅 `agent.max_turns: 150` 我哋 200→150 已經降低左, 但**真正慢嘅 root cause 係 agent 連環起 subagent / re-read 同一個 file**。規則: (1) Session api_call_count > 50 主動 emit `📊 speed_status: api=N/150, time=Ns`; (2) 同一個 file 連續 read 2 次 = 用 `search_files` 而唔再 `read_file`; (3) > 100 API calls 主動建議 fork handoff + fresh session 接手。Config 已改: `agent.max_turns: 200→150`, `display.language: en→zh-Hant`, `display.streaming: false→true`。
-- **紅線 51**:**Multi-task 訊息 (e.g. "A+B+C", "做 X 同 Y 同 Z") 必須先 push back 問 split strategy, 唔好假設可以 1 個 final response 搞掂**(2026-06-07 完工, evidence: 17:23 David send "A+B+C" (3 task review) → 個 agent 直接 12-todo inline report 14,158 chars)。理由: 紅線 49 v1 講「response > 2000 chars 開 sub-section」, 但**multi-task 嘅 sub-section 加埋仲係 14K chars**, 因為 agent 將 3 個 task 當 1 個 consolidated report。規則: (1) User send multi-task 訊息時, **agent 第一次 response 必須係 push back**:「呢個有 N 個 task, 我建議: (a) 每個 task 1 個 final response (低 verbosity), (b) 1 個 consolidated report (高 verbosity), (c) 你揀 1 個先做, 之後再講揀邊個」;(2) User 確認 strategy 之後先開工, 唔好假設 default; (3) 如果 user 明確講「A+B+C 全做, 1 個 final response OK」, 跟佢, 否則默認係 multi-response。配紅線 49 v2 hard cap 3500 chars 使用。
-
-
-
-**3 個 trigger 時機**(詳細見 SKILL.md):
-
-**3 個 trigger 時機**(詳細見 SKILL.md):
-
-| 時機 | 命令 | 輸出 |
+| 主題 | 紅線 | 摘要 |
 |------|------|------|
-| **Task 開始** | `python3 scripts/save_state.py --project <name> --goal "..." --trigger task-start` | 建立 fresh state file |
-| **Task 中段** | `python3 scripts/save_state.py --project <name> --trigger auto-mid-task`<br>`python3 scripts/sync_external.py --project <name>` | Update state + push facts |
-| **Resume** | `python3 scripts/load_state.py --project <name> --search-sessions` | 注入 context, 跟 "Next 3-5 Steps" 繼續 |
+| **Hang Fix** | 19-23 | Subagent progress / clarify timeout / delegate_task 偏好 / /new 建議 / 📍 progress 點 N/M |
+| **Dev Task Memory** | 24-28 | save_state / load_state / WHY 必填 / .gitignore state file |
+| **Zombie / Compaction 防護** | 29-30 | [CONTEXT COMPACTION] loop 偵測 / [Subagent X] prefix |
+| **Interruption / Resume / Preflight** | 31-34 | recovery.sh / resume.sh / terminal_preflight.sh / memory_normalize.sh |
+| **Maintenance + Checkpoint** | 35-42 | cron 唔好 block / .bak 備份 / pre_tool_checkpoint.sh / handoff 不可刪 |
+| **Context Pressure + Compression** | 43-48 | fork vs compress 判斷 / endpoint format / 保留 tail verbatim |
+| **Response 風格** | 49-51 | outline-first / 📊 speed_status / multi-task push back |
 
-**同其他 skills 嘅關係**:
-- `context-summarizer` (existing) — 自動壓 context, **但** decisions 會 lost。dev-task-memory 補佢嘅缺點。
-- `regression-guard` (existing) — 防舊 bug 翻發。dev-task-memory 嘅 Risks section 配 RG-XXX ID。
-- `auto-doc-gen` (existing) — 自動 API doc。dev-task-memory 嘅 Decisions 配 doc rationale。
-
-**User-visible 預期**:
-- Hang 後 resume 0 個 decision lost
-- Compression 後 30s 內 emit "📍 progress 點 N/M" + 跟住 next steps 繼續
-- 1 個鐘後再開新 session 問 "之前我哋做咗咩", agent 即時 recall top-3 relevant sessions
+> **核心要點**：呢啲紅線全部係 incident 後補強，唔可以單獨理解。讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
 
 ---
-
 ## 📚 文檔索引
 
-| 文檔 | 用途 |
-|------|------|
-| `SOUL.md` | 身份定位、核心原則 |
-| `AGENTS.md` | Session 啟動流程 |
-| `MEMORY.md` | 長期記憶 |
-| `docs/00-index.md` | 完整文檔索引 |
-| `docs/phases.md` | Think→Plan→Build→Review→Test→Ship→Reflect 詳細流程 |
-| `docs/subagents.md` | Subagent 角色矩陣（18 個） |
-| `docs/failure-policy.md` | 失敗處理機制 |
-| `docs/task-board.md` | Task Board 格式 |
-| `docs/qa-gate.md` | QA Gate 交付清單 |
-| `docs/pm.md` | PM 進度追蹤 |
-| `docs/checkpoint.md` | Checkpoint 機制 |
-| `docs/devops.md` | DevOps 規範、Zombie 處理 |
-| `docs/feedback-loop.md` | Feedback Loop |
-| `docs/environment-isolation.md` | 環境隔離指南 |
-| `docs/cross-platform-usage.md` | 跨平台使用指南（Hermes/Claude Code/Codex） |
-| `docs/project-documentation-standard.md` | **項目文檔規格(2026-06-06 新增)**— 每個 project 必有的 8 份文件 + commit 規範 |
-| `docs/qa-tracker.md` | **QA 持續追蹤(2026-06-06 新增)**— US → test task 對照 + 需求變更影響評估 |
-| `docs/testing-strategy.md` | **測試策略(2026-06-06 新增)**— 12 層測試類型 + 健康指標 + 工具鏈 |
-| `skills/doc-html-preview/` | **MD→HTML preview (2026-06-06 v2 新增)** — 每次寫完 `docs/*.md` 自動 build 兩份 HTML：①工程版 (1:1 渲染 MD); ②老闆版 (AI 摘要 + 拍板事項 + 風險口語化)。override 可在 MD 內加 `## 👀 老闆版摘要`。gitignore `docs/_html/` + `docs/_meta/` |
-| `skills/` | 56 個專業技能庫（按 category 分組） |
-| `skills/regression-guard/` | **Regression Guard(2026-06-06 新增)**— 防舊 bug 翻發,RG-XXX 紀錄機制 |
+完整文檔索引見 `docs/00-index.md`（含所有 `docs/*.md` + 56 個 `skills/` + 新增規範）。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
 
-## 🔧 Skills 技能庫
+---
 
-Tree Monstor 包含 56 個專業技能，位於 `skills/` 目錄：
-
-| Category | 数量 | 用途 |
-|----------|------|------|
-| `frontend/` | 8 | React、Mobile、iOS Safari、Tailwind CSS |
-| `backend/` | 5 | Node.js、Prisma、Elysia、Python Debug |
-| `devops/` | 28 | AWS CDK、Docker、Kubernetes、Cloudflare |
-| `debugging/` | 18 | 各種除錯模式和工具 |
-| `creative/` | 14 | Excalidraw、ASCII art、Pixel art、Design |
-| `autonomous-ai-agents/` | 5 | Kanban、Orchestrator、Subagent delegation |
-
-### 如何使用 Skills
-
-當任務符合某個 skill 時，讀取該 skill 的 `SKILL.md` 並按指示執行：
-
-```
-skills/frontend/ios-safari-scroll-fixed-elements/SKILL.md
-skills/backend/prisma-circular-relation-debug/SKILL.md
-skills/devops/cdk-ecs-fargate-deploy/SKILL.md
-skills/creative/excalidraw/SKILL.md
-```
-
-### 主要 Skills
-
-| Skill | 使用場景 |
-|-------|----------|
-| `context-summarizer` | 長任務 context 壓縮 |
-| `auto-doc-gen` | 從代碼註釋生成 API 文檔 |
-| `tech-debt-register` | 記錄 tech debt 的模板 |
-| `regression-guard` | **防舊 bug 翻發(2026-06-06 新增)**— RG-XXX 紀錄 + regression test + code comment 標記 |
-| `test-driven-development` | TDD 工作流 |
-| `systematic-debugging` | 複雜 bug 診斷 |
-| `codebase-inspection` | 理解陌生代碼 |
