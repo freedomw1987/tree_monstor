@@ -105,7 +105,4 @@ Reflect ── 復盤
 
 ## 紅線
 
-- ❌ 不跳過 QA Gate 就交付
-- ❌ 不在未通過測試的情況下部署
-- ❌ 不寫有安全漏洞的代碼
-- ❌ 不提交明文密鑰或 Secrets
+> 紅線 1-18 見 [`SOUL.md`](SOUL.md)，紅線 19-51 見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。
