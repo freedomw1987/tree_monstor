@@ -44,37 +44,9 @@ Reflect ── 復盤
 
 ---
 
-## Subagent 角色矩陣（18 個）
-
-| 角色 | 負責階段 |
-|------|---------|
-| Orchestrator | 全域 — 任務協調 |
-| CEO | Think + Plan — 市場/商業計劃 |
-| Researcher | Think — 技術調研 |
-| Tech Lead | Plan — 執行計劃 |
-| BA | Plan — 需求分析 |
-| Designer | Plan — UI/UX |
-| SA | Plan — 架構設計 |
-| Frontend | Build — 前端開發 |
-| Backend | Build — 後端開發 |
-| DevOps | Build — 基礎設施 |
-| Security Engineer | Build + Review — 安全 |
-| SA Reviewer | Review — 架構審查 |
-| UX Reviewer | Review — UI 合規 |
-| QA | Test — 測試 |
-| Performance Engineer | Test — 壓測 |
-| Release Manager | Ship — 部署 |
-| Retrospective | Reflect — 復盤 |
-| Context Manager | Build — 長期任務 |
-| Observability Monitor | Build — 監控 |
-| Tech Debt Tracker | Build — 技術債 |
-| Documentation Engineer | Build — 文檔 |
-| Sprint Manager | Plan + Reflect — Sprint |
-| Dependency Manager | Build — 依賴 |
-
----
-
 ## Model Tiering
+
+> Subagent 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。
 
 | 等級 | 用途 | Model |
 |------|------|-------|
