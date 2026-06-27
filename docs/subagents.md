@@ -10,9 +10,9 @@
 | **CEO** | `ceo 市場分析` / `ceo 商業計劃` | 市場機會、成本模型、營收策略、GTM | 用戶需求 | `docs/ceo-market-analysis.md` / `docs/ceo-business-plan.md` |
 | **Researcher** | `前期調研` / `技術調研` | 技術可行性、競品分析、技術選型驗證 | 用戶需求 | 調研報告 |
 | **Tech Lead** | `tech lead` / `技術負責人` | 綜合 BA/Design/SA，産出執行 plan | PRD + Design + Architecture | 執行計劃 |
-| **BA** | `BA 商業分析` | 需求挖掘、用戶故事、PRD | 用戶原始需求 | `docs/prd.md` |
-| **Designer** | `UI/UX 設計` | Wireframe、Design System | PRD | `docs/design.md` |
-| **SA** | `SA 架構設計` | 系統架構、API 契約、技術選型 | PRD | `docs/architecture.md` |
+| **BA** | `BA 商業分析` | 需求挖掘、用戶故事、PRD | 用戶原始需求 | `docs/PRD.md` |
+| **Designer** | `UI/UX 設計` | Wireframe、Design System | PRD | `docs/DESIGN.md` |
+| **SA** | `SA 架構設計` | 系統架構、API 契約、技術選型 | PRD | `docs/architecture/0001-*.md` / ADR |
 | **Frontend** | `前端開發` | UI 實現、API 串接、響應式 | Architecture + Design | 前端代碼 |
 | **Backend** | `後端開發` | API、Business Logic、DB | Architecture | 後端代碼 |
 | **DevOps** | `DevOps 部署` | 環境、CI/CD、部署、監控 | Architecture | 部署配置、Pipeline |
@@ -23,8 +23,8 @@
 | **Performance Engineer** | `perf test` / `壓測` | Load testing、benchmark、瓶頸分析 | 代碼 | 壓測報告 |
 | **Release Manager** | `release` / `部署上線` | 部署、rollback、monitoring、Smoke test | 代碼 | 部署確認 |
 | **Retrospective** | `retrospective` / `復盤` | Post-mortem、經驗沉澱、更新 SOP | 項目結束 | 復盤報告 |
-| **Tech Debt Tracker** | `tech debt` / `技術債` | 記錄、優先級排序 tech debt，規劃償還 | 代碼 | `docs/tech-debt.md` |
-| **Documentation Engineer** | `api docs` / `自動文檔` | 代碼即文檔，API docs 自動生成 | 代碼 | `docs/api.md` |
+| **Tech Debt Tracker** | `tech debt` / `技術債` | 記錄、優先級排序 tech debt，規劃償還 | 代碼 | `docs/TECH-DEBT.md` |
+| **Documentation Engineer** | `api docs` / `自動文檔` | Build 前文檔 baseline、代碼即文檔、API docs 自動生成 | Plan + 代碼 | `docs/API.md` / doc-code sync 報告 |
 | **Sprint Manager** | `sprint` / `里程碑` | 長期項目拆成 sprint，追蹤進度 | Task Board | `docs/sprint-<n>.md` |
 | **Dependency Manager** | `dependency` / `依賴管理` | library 版本追蹤、security advisory | package.json/requirements.txt | 依賴報告 |
 | **Context Manager** | `context` / `上下文管理` | 長時間任務 context 壓縮、總結 | 任務狀態 | context-summary.md |

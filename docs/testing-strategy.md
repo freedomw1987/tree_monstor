@@ -116,7 +116,78 @@
 - 每個 API endpoint 至少 1 個 happy path + 1 個 error path
 - 每個 US 至少 1 個 integration test(端到端但 mock 外部)
 
-### Layer 4: E2E (End-to-End) Tests
+
+### Layer 4: Regression Mode Hooks / Switches
+
+**目標**:讓 QA 可以友善、穩定、可重跑地啟用 regression fixtures / hooks，驗證 `US-XXX` / `RG-XXX` 的行為仍正常，同時確保 regression mode **不是** production bypass。
+
+#### Frontend regression hooks
+
+**允許**:
+- 穩定 selector：semantic HTML、`name`、`aria-label`，必要時使用 `data-testid`
+- dev/staging-only QA panel（例如 `/__qa/regression`）
+- visual regression controls：freeze animation / time / random seed
+- regression fixture selector，但資料動作必須呼叫 backend QA endpoint，由 backend 驗證
+- 顯示 test tenant、seed version、active role、API base URL 等 QA 診斷資訊
+
+**安全要求**:
+- Production build 不包含 QA route / QA panel
+- Frontend switch 永遠不是 security boundary；不能靠 localStorage/cookie/header 取得權限
+- Visual controls 只能穩定 screenshot，不可改 business behavior
+- `data-testid` 是 QA contract，改名必須同時更新 E2E test
+
+**禁止**:
+- production 中存在 regression 後門
+- hardcoded admin token
+- 隱藏 error、跳過 validation
+- 因為 E2E flaky 就 disable auth / permission / rate limit
+
+#### Backend regression hooks
+
+**允許 examples**:
+- `GET /__qa/health` — regression mode 狀態、seed version、test tenant、mock service status
+- `POST /__qa/seed` — idempotent 建 test fixture，只寫 test tenant / test schema / test DB
+- `POST /__qa/reset` — scoped reset，嚴禁全庫 destructive reset
+- `GET /__qa/mailbox` — fake/test mailbox
+- `POST /__qa/time` — test clock
+- `POST /__qa/jobs/drain` — queue drain，方便 E2E 等 async work
+- `GET /__qa/regression/:rgId` — 檢查某個 `RG-XXX` fixture 是否 ready
+
+**安全要求**:
+- 只在 dev/test/staging mount；production 不可 mount `/__qa/*`
+- `NODE_ENV=production` + `REGRESSION_MODE=true` 必須 hard fail 或 loudly reject
+- QA endpoint 必須有 auth / QA secret / staging SSO / IP allowlist 至少一種
+- 所有 QA actions 必須 audit log
+- 只使用 test tenant / test DB / test schema；外部服務必須 sandbox/fake
+- Seed/reset 必須 idempotent，可重跑，不依賴順序
+
+**禁止**:
+- production DB reset / seed
+- 真 email / SMS / payment side effect
+- `if regressionMode then skipAuth()` / `bypassPermission()` / `rateLimit = false`
+- 信任 `x-regression-mode` header 作為權限來源
+
+#### QA script naming convention
+
+各 project 可按 stack 實作，但語意應一致：
+
+```bash
+npm run test:regression
+npm run test:regression:unit
+npm run test:regression:integration
+npm run test:regression:e2e
+npm run test:regression:visual
+npm run test:regression:rg -- RG-004
+npm run qa:seed -- RG-004
+npm run qa:reset
+npm run qa:health
+```
+
+非 Node project 可用等價命名，例如 `make test-regression` / `pytest -m regression`。
+
+**Anti-pattern**:唔好 disable rate limit 來令 E2E pass；應使用 test tenant / test user / per-test caller identity，讓 backend 真實 rate limit behavior 仍被覆蓋。
+
+### Layer 5: E2E (End-to-End) Tests
 
 **目標**:模擬**真實用戶**操作,覆蓋 critical user flow。
 
@@ -167,7 +238,7 @@ test('user can sign up, verify email, and log in', async ({ page, request }) => 
 });
 ```
 
-### Layer 5: Performance Tests
+### Layer 6: Performance Tests
 
 **目標**:確保系統喺**預期 load** 下表現正常。
 
@@ -214,7 +285,7 @@ export default function () {
 }
 ```
 
-### Layer 6: Security Tests
+### Layer 7: Security Tests
 
 **目標**:發現**安全漏洞**,符合 compliance。
 
@@ -234,7 +305,7 @@ export default function () {
 - 自動化掃描每次 PR 必跑
 - 季度手動 pentest(外聘或自 team)
 
-### Layer 7: Accessibility (A11y) Tests
+### Layer 8: Accessibility (A11y) Tests
 
 **目標**:確保**所有用戶**(包括殘障人士)能用。
 
@@ -254,7 +325,7 @@ export default function () {
 - Lighthouse a11y score ≥ 95 才算 PASS
 - 唔好只靠自動化(axe 只 find ~30% issues),重要 flow 季度手動驗證
 
-### Layer 8: Visual Regression Tests
+### Layer 9: Visual Regression Tests
 
 **目標**:確保 UI 改動**唔會**意外破壞現有視覺。
 
@@ -269,7 +340,7 @@ export default function () {
 - PR 改 UI 自動 compare,**意外改動阻擋 merge**
 - Visual test 嘅 baseline 必須 review(唔好盲目 accept)
 
-### Layer 9: Contract Tests
+### Layer 10: Contract Tests
 
 **目標**:確保 **API provider 同 consumer 對 contract 嘅共識**保持一致(避免 breaking change)。
 
@@ -283,7 +354,7 @@ export default function () {
 - Schema 變更 = breaking change,需要 major version bump
 - 自動跑喺 CI,失敗即阻擋
 
-### Layer 10: Smoke Tests
+### Layer 11: Smoke Tests
 
 **目標**:**部署後**快速驗證「最基本嘅嘢未死」。
 
@@ -315,7 +386,7 @@ echo "✅ Smoke test passed"
 
 **規則**:**必須喺 production deploy 後跑**。失敗即 rollback。
 
-### Layer 11: Chaos / Resilience Tests
+### Layer 12: Chaos / Resilience Tests
 
 **目標**:確保系統喺**部分失敗**時仍能運作。
 
@@ -330,7 +401,7 @@ echo "✅ Smoke test passed"
 - 確認 auto-recovery / graceful degradation 有效
 - Production 唔可以默認啟用 chaos,只在 staging
 
-### Layer 12: Compatibility Tests
+### Layer 13: Compatibility Tests
 
 **目標**:確保**跨瀏覽器 / 跨 OS / 跨 device** 一致體驗。
 

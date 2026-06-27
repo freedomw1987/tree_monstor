@@ -28,6 +28,49 @@
 
 ---
 
+## 🧭 Documentation-First Rule（Build 前強制）
+
+> **核心原則**：Think / Plan 的共識必須先變成 project docs，才可以進入 Build。對話紀錄會消失，git 裡的文檔才是可交接、可驗收、可 QA 的真相。
+
+### Baseline vs Final
+
+Build 前要求的是 **baseline / skeleton / N/A**，不是所有細節 final；但 baseline 必須足以回答：做什麼、為誰做、驗收標準是什麼、架構決策是什麼、測試計劃是什麼。
+
+| 文件 | Build 前 baseline | Build 中更新 | Ship 前 final |
+|------|------------------|-------------|---------------|
+| `docs/PROJECT-OVERVIEW.md` | 一句話、目標用戶、scope、成功標準 | scope / KPI / risk 變更即更新 | 反映最終 scope 與風險 |
+| `docs/PRD.md` | P0/P1 US + acceptance criteria | 新需求 / 修正 / 刪減即更新 changelog | 所有 shipped US 最新 |
+| `docs/DESIGN.md` | UI/UX baseline；無 UI 標 N/A | UI、component、layout、token 變更即更新 | 與實作一致 |
+| `docs/architecture/0001-*.md` | 至少一個初始 ADR / architecture decision | 重大架構決策即新增 ADR | 所有重大決策可追溯 |
+| `docs/API.md` | API contract draft；無 API 標 N/A | endpoint、request、response、error code 變更即更新 | 與實際 API 一致 |
+| `docs/QA-TRACKER.md` | 每個 PRD US 有對應 row | PRD 改即同步，P0/P1 test task 保持最新 | 無 PRD ↔ tracker drift |
+| `docs/TEST-COVERAGE.md` | test plan skeleton | 測試新增 / 變更 / coverage gap 即更新 | US → test 對照完整 |
+| `docs/TECH-DEBT.md` | register skeleton | debt、refactor、dependency、trade-off 發現即記 | 已知 debt 完整 |
+
+**Build-blocking rule**：baseline 不存在、PRD 與 QA-TRACKER 不同步、或 API / Design / ADR / Test / Tech Debt 沒有 baseline / N/A 說明時，任務停留在 Plan，不能開始 Build。
+
+### 需求變更同步 Protocol
+
+David 在 Build 中、Review 後、Test 後或 Ship 前提出新需求 / 修正時，先停手做 doc sync：
+
+| 變更類型 | 必須同步文檔 |
+|---------|-------------|
+| scope / business goal / 成功標準 | `docs/PROJECT-OVERVIEW.md` + `docs/PRD.md` + `docs/QA-TRACKER.md` |
+| 新增 / 修改 / 刪除 User Story | `docs/PRD.md` + `docs/QA-TRACKER.md`（新 US 加 row，改 US 標 PARTIAL，刪 US 標 DEPRECATED） |
+| UI / component / layout / token | `docs/DESIGN.md` + `docs/TEST-COVERAGE.md` |
+| API contract / endpoint / error code | `docs/API.md` + `docs/TEST-COVERAGE.md` |
+| 架構 / data model / infrastructure | 新 ADR + 受影響文檔 |
+| test plan / coverage | `docs/QA-TRACKER.md` + `docs/TEST-COVERAGE.md` |
+| refactor / dependency / known trade-off | `docs/TECH-DEBT.md` |
+| bug fix | `docs/REGRESSION-GUARD.md` + `docs/TEST-COVERAGE.md` + 相關 US row 備註 |
+
+### Commit expectations
+
+- 首個有意義 code commit 之前，必須已有 documentation baseline commit；如同一 commit 包含 baseline docs + 初始 scaffolding，可接受但要清楚標示。
+- PRD 改動必須與 QA-TRACKER 改動同 commit / 同 PR；否則視為未完成。
+- Code 改動必須與受影響文檔同 commit / 同 PR；否則視為 doc-code drift。
+
+
 ## 📄 文件 1 — PROJECT-OVERVIEW.md
 
 **目的**:讓任何新人(包含 3 個月後的自己)在 5 分鐘內掌握這個 project 嘅全貌。
@@ -109,7 +152,7 @@
 |------|-------|------|------|
 ```
 
-**User Story 編號規則**:`US-` + 3 位數(US-001, US-002 ...)。**所有 test case 都引用 US 編號**。
+**User Story 編號規則**:`US-` + 3 位數（`US-001`, `US-002` ...）；如需拆細 sub-task，可用 `US-001.1` / `US-001.2`。**所有 test case 都引用 US 編號**。
 
 **更新時機**:
 - 每次新功能加入 → 新增 US
@@ -309,7 +352,9 @@
 - 完全自動:OpenAPI/Swagger codegen
 
 **更新時機**:
+- Build 前 → 先寫 API contract draft；無 API 則明確標 N/A
 - 新 endpoint → 加段落 + commit
+- Request / response / error code 改動 → 同步更新 endpoint contract + TEST-COVERAGE
 - Breaking change → 升 major version,保留舊版文件
 
 ---
@@ -340,6 +385,13 @@
 - E2E tests: K
 - Manual smoke tests: L
 
+## Regression Mode / Hooks
+
+| ID | Type | US/RG | Frontend hook | Backend hook | QA enablement | Test command | Env | Production safety | Status |
+|----|------|-------|---------------|--------------|---------------|--------------|-----|-------------------|--------|
+| RG-001 | Bug regression | RG-001 / US-001 | `data-testid=login-form` | `/__qa/regression/RG-001` | `qa:seed -- RG-001` | `test:regression:rg -- RG-001` | dev/test/staging | `/__qa/*` not mounted in production | READY |
+| US-002 | P0 flow | US-002 | fake mailbox panel | `/__qa/mailbox` | `qa:seed -- US-002` | `test:regression:e2e` | staging | sandbox mailbox only | PARTIAL |
+
 ## 已知未覆蓋區域
 - [ ] US-005 edge case: empty list
 - [ ] US-012 性能測試未做
@@ -354,7 +406,10 @@
 **更新時機**:
 - 每個 sprint 結束
 - 重大功能上線前
+- 新增 / 修改 regression hook、`/__qa/*` endpoint、QA panel、test fixture、fake mailbox、test clock 時
 - 詳見 `docs/qa-tracker.md`
+
+**Regression rule**:`docs/REGRESSION-GUARD.md` 不是無 bug project 的必備文件；但 project 一旦有 bug fix / `RG-XXX` entry，就必須存在，且 `TEST-COVERAGE.md` 必須在 Regression Mode / Hooks matrix 收錄對應 QA 啟用方式。
 
 ---
 
@@ -438,13 +493,13 @@ retros/*.md (事後改進)
 
 加入 `SOUL.md` 嘅紅線清單:
 
-> **紅線 10**:任何 project 在 ship 之前,`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如有 API)/ `TEST-COVERAGE.md` / `TECH-DEBT.md` 必須存在並 commit 到 git。**沒有文件的代碼不能 merge**。
+> **紅線 10**:任何 project 在 Build 前必須有 documentation baseline；ship / merge 前 `docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(無 API 則 N/A)/ `TEST-COVERAGE.md` / `TECH-DEBT.md` 必須存在、commit 到 git，並與 code 當前狀態同步。**沒有 baseline / 文件過期 / 文件與 code drift 的代碼不能 build、merge 或 ship**。
 
 ---
 
 ## 📚 跟其他文件的關係
 
-- `docs/phases.md` §Plan 提及的 `prd.md` / `design.md` / `architecture.md` 跟本文件對齊,但**本文件加強**:
+- `docs/phases.md` §Plan 的 project artifacts 以本文件的 `docs/PRD.md` / `docs/DESIGN.md` / `docs/architecture/0001-*.md` 為準,本文件加強:
   - 強制 commit(不只是寫了就好)
   - 統一編號(US-XXX, ADR-NNNN)
   - 加入 PROJECT-OVERVIEW / TEST-COVERAGE / Retrospective

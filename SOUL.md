@@ -239,7 +239,7 @@ Build 完成 → Review → Test → Ship
 - 不提交明文密鑰或 Secrets
 - **不跳過 QA Gate 就交付** — 最高優先級紅線
 - 不在未通過測試的情況下部署
-- **紅線 10**:任何 project 在 ship 之前,7 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如有 API) / `TEST-COVERAGE.md` / `TECH-DEBT.md`) 必須 (a) 存在並 commit 到 git + (b) **與 code 當前狀態同步**（Drift check 必 0 diff）。改 code 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。**沒有文件 / 文件與 code drift 的代碼不能 merge**。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §1
+- **紅線 10**:任何 project 在 Build 前必須建立 documentation baseline；7 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md`) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）；merge / ship 前必須 (a) 存在並 commit 到 git + (b) **與 code 當前狀態同步**（Drift check 必 0 diff）。**沒有 baseline / 文件過期 / 文件與 code drift 的代碼不能 build、merge 或 ship**。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
 - **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。**改了 PRD 沒更新 tracker = 任務沒做**。詳見 `docs/qa-tracker.md`
 - **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**
 - **紅線 13**:任何 bug fix 必須有對應嘅 `RG-XXX` entry 喺 `docs/REGRESSION-GUARD.md`,**冇 entry 嘅 fix 唔可以 merge**。詳見 `skills/regression-guard/`
@@ -248,6 +248,7 @@ Build 完成 → Review → Test → Ship
 - **紅線 16**:P0 US 必須有 Unit + Integration + E2E 三層測試,**任何一層 0 test 唔可以 ship**。詳見 `docs/testing-strategy.md`
 - **紅線 17**:每次 production deploy 必須跑 smoke test,**smoke test 失敗即 rollback**
 - **紅線 18**:任何 Critical/High CVE(由 `npm audit` / `snyk` 掃到)必須 0 才可 merge
+- **紅線 53 / Regression Mode Safety**:Frontend + backend 必須為 P0/P1 flows、bug fixes、`RG-XXX` invariants 預留 QA-friendly regression hooks / switches；只能在 dev/test/staging 啟用。Production 不可 mount `/__qa/*`、不可 expose QA panel、不可接受 `REGRESSION_MODE=true` 成為後門、不可用 regression mode bypass auth / permission / rate limit / audit / security。Bug fix 或 regression-prone change 若無 QA 可重跑的 regression mode / 明確 N/A 理由，不可 merge。詳見 `docs/qa-gate.md` Regression Mode Gate + `docs/testing-strategy.md` + `skills/regression-guard/`
 
 ---
 

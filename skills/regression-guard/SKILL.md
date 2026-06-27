@@ -43,6 +43,8 @@ Step 4: 修代碼 → test 變 green
     ↓
 Step 5: 寫 regression test(就算原 bug test 已修好,再加邊界情況)
     ↓
+Step 5.5: 補 / 驗證 frontend + backend regression hook,記錄 QA 啟用方式與 production safety；如不需要 hook 必須寫 N/A 理由
+    ↓
 Step 6: 寫 regression-guard entry 喺 `docs/REGRESSION-GUARD.md`
     ↓
 Step 7: 喺 source code 加 comment 標記(防止 refactor 破壞)
@@ -50,7 +52,7 @@ Step 7: 喺 source code 加 comment 標記(防止 refactor 破壞)
 Step 8: 提交 + commit message 引用 entry ID
 ```
 
-**紅線**:**冇 step 3 (root cause) 同 step 6 (guard entry) 嘅 bug fix 唔可以 merge**。
+**紅線**:**冇 step 3 (root cause) 同 step 6 (guard entry) 嘅 bug fix 唔可以 merge**。有 regression test 但 QA 無法友善啟用 / 重跑 / 驗證，且冇明確 N/A 理由，視為 regression guard 不完整。
 
 ---
 
@@ -105,6 +107,16 @@ Step 8: 提交 + commit message 引用 entry ID
 - [x] **Code comment**: `apiClient.ts` 嘅 interceptor 加 `// RG-001: 唔好 silent fail,要 force logout if refresh fails`
 - [x] **Invariant statement**: 「401 + refresh 失敗 = 強制登出」寫入 `docs/architecture/0007-auth-state-machine.md`
 - [x] **Linting rule**: ESLint custom rule 禁止 `catch (err) { /* silent */ }` 在 auth-related code
+
+#### QA Regression Mode
+- **Frontend hook**: [例如 `data-testid`, QA panel, visual freeze control；無則 N/A + 理由]
+- **Backend hook**: [例如 `/__qa/regression/RG-001`, seed/reset/mailbox/test clock；無則 N/A + 理由]
+- **QA enablement**: [QA 如何啟用 fixture / switch]
+- **Seed/reset data**: [test tenant / fake mailbox / sandbox data]
+- **Test command**: [`test:regression:rg -- RG-001` 或等價命令]
+- **Expected result**: [QA 應看到什麼]
+- **Safety boundary**: [dev/test/staging only; auth/permission/rate limit 不可 bypass]
+- **Production exposure check**: [`/__qa/*` production 404/403, `REGRESSION_MODE=true` production hard fail / reject]
 
 #### 相關 Issue / Discussion
 - [GitHub Issue #234](...)
@@ -200,6 +212,19 @@ describe('Image upload edge cases', () => {
 ```
 
 **原則**:**預防性測試 > 反應性測試**。等個 bug 出咗先寫 test 永遠慢人一步。
+
+
+### Step 5.5: 補 / 驗證 QA Regression Mode
+
+Regression test 寫完後，必須讓 QA 知道點樣重跑同驗證：
+
+1. **Frontend hook** — `data-testid` / `aria-label` / QA panel / visual freeze control；無需要則寫 N/A 理由
+2. **Backend hook** — `/__qa/seed` / `/__qa/reset` / fake mailbox / test clock / queue drain / `RG-XXX` fixture；無需要則寫 N/A 理由
+3. **QA enablement** — 寫明 test command、seed command、expected output
+4. **Safety boundary** — 只限 dev/test/staging；production 不 mount `/__qa/*`，不接受 regression mode 作為 bypass
+5. **No bypass** — 不可 disable auth / permission / rate limit / audit / security behavior；測試要配合真實 production behavior
+
+**規則**:Regression mode 係 deterministic fixture / observability / orchestration，唔係後門。QA hook 若會動資料，backend 必須重新驗證 env + auth + tenant scope。
 
 ### Step 6: 寫 REGRESSION-GUARD entry
 

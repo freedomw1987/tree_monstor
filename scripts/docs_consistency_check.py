@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -107,6 +108,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--quiet", action="store_true", help="Only print failures.")
     parser.add_argument("--json", action="store_true", help="Emit JSON instead of text.")
+    parser.add_argument("--project-docs", action="store_true", help="Check downstream project documentation baseline and PRD/QA tracker sync.")
+    parser.add_argument("--base-ref", help="Base git ref for diff-based doc-code sync checks.")
+    parser.add_argument("--doc-code-sync", action="store_true", help="Require changed code to update corresponding project docs. Requires --base-ref.")
     return parser.parse_args(argv)
 
 
@@ -360,6 +364,242 @@ def check_local_links_and_paths(root: Path) -> list[Issue]:
     return issues
 
 
+
+US_ID_RE = re.compile(r"\bUS-\d+(?:\.\d+)?\b")
+PROJECT_REQUIRED_DOCS = [
+    "docs/PROJECT-OVERVIEW.md",
+    "docs/PRD.md",
+    "docs/DESIGN.md",
+    "docs/API.md",
+    "docs/QA-TRACKER.md",
+    "docs/TEST-COVERAGE.md",
+    "docs/TECH-DEBT.md",
+]
+PROJECT_DOC_PATHS = set(PROJECT_REQUIRED_DOCS) | {
+    "docs/REGRESSION-GUARD.md",
+}
+PROJECT_DOC_PREFIXES = (
+    "docs/architecture/",
+    "docs/retros/",
+)
+CODE_EXTENSIONS = {
+    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
+    ".py", ".go", ".rs", ".java", ".kt", ".swift",
+    ".php", ".rb", ".cs", ".css", ".scss", ".vue", ".svelte",
+}
+DEPENDENCY_FILES = {
+    "package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lock", "bun.lockb",
+    "requirements.txt", "pyproject.toml", "poetry.lock", "Pipfile", "Pipfile.lock",
+    "Gemfile", "Gemfile.lock", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock",
+    "composer.json", "composer.lock",
+}
+API_PATH_HINTS = ("/api/", "/routes/", "/controllers/", "/endpoints/")
+API_NAME_HINTS = ("route", "routes", "controller", "controllers", "endpoint", "endpoints")
+
+
+def extract_us_ids(text: str) -> set[str]:
+    return set(US_ID_RE.findall(strip_fenced_code_blocks(text)))
+
+
+def active_tracker_us_ids(text: str) -> set[str]:
+    ids: set[str] = set()
+    for line in strip_fenced_code_blocks(text).splitlines():
+        if "DEPRECATED" in line.upper():
+            continue
+        ids.update(US_ID_RE.findall(line))
+    return ids
+
+
+def has_na_marker(path: Path) -> bool:
+    if not path.exists():
+        return False
+    text = read_text(path).lower()
+    return "n/a" in text or "not applicable" in text or "無 api" in text or "無 ui" in text
+
+
+def check_project_docs_baseline(root: Path) -> list[Issue]:
+    issues: list[Issue] = []
+    for path_rel in PROJECT_REQUIRED_DOCS:
+        path = root / path_rel
+        if not path.exists():
+            issues.append(Issue("project-docs", path_rel, None, "required project documentation baseline file is missing"))
+    architecture_dir = root / "docs" / "architecture"
+    adr_files = sorted(architecture_dir.glob("*.md")) if architecture_dir.exists() else []
+    if not adr_files:
+        issues.append(Issue("project-docs", "docs/architecture", None, "at least one ADR / architecture baseline file is required"))
+
+    prd = root / "docs" / "PRD.md"
+    if prd.exists() and not extract_us_ids(read_text(prd)):
+        issues.append(Issue("project-docs", "docs/PRD.md", None, "PRD must contain at least one US-* user story"))
+
+    overview = root / "docs" / "PROJECT-OVERVIEW.md"
+    if overview.exists():
+        text = read_text(overview)
+        for section in ("## 一句話", "## 目標用戶", "## 成功標準", "## 範圍"):
+            if section not in text:
+                issues.append(Issue("project-docs", "docs/PROJECT-OVERVIEW.md", None, f"missing required section: {section}"))
+
+    design = root / "docs" / "DESIGN.md"
+    if design.exists() and "## Overview" not in read_text(design) and not has_na_marker(design):
+        issues.append(Issue("project-docs", "docs/DESIGN.md", None, "DESIGN must include ## Overview or an explicit N/A marker"))
+
+    api = root / "docs" / "API.md"
+    if api.exists() and "## Endpoints" not in read_text(api) and not has_na_marker(api):
+        issues.append(Issue("project-docs", "docs/API.md", None, "API must include ## Endpoints or an explicit N/A marker"))
+
+    tracker = root / "docs" / "QA-TRACKER.md"
+    if tracker.exists() and "## User Story → Test Task 對照" not in read_text(tracker):
+        issues.append(Issue("project-docs", "docs/QA-TRACKER.md", None, "QA tracker must include User Story → Test Task 對照 section"))
+
+    coverage = root / "docs" / "TEST-COVERAGE.md"
+    if coverage.exists() and "## User Story → Test Case 對照" not in read_text(coverage):
+        issues.append(Issue("project-docs", "docs/TEST-COVERAGE.md", None, "test coverage must include User Story → Test Case 對照 section"))
+
+    return issues
+
+
+def check_prd_tracker_sync(root: Path) -> list[Issue]:
+    prd = root / "docs" / "PRD.md"
+    tracker = root / "docs" / "QA-TRACKER.md"
+    if not prd.exists() or not tracker.exists():
+        return []
+    prd_ids = extract_us_ids(read_text(prd))
+    tracker_ids = active_tracker_us_ids(read_text(tracker))
+    issues: list[Issue] = []
+    for missing in sorted(prd_ids - tracker_ids):
+        issues.append(Issue("prd-tracker-sync", "docs/QA-TRACKER.md", None, f"missing active tracker row for {missing} from PRD"))
+    for stale in sorted(tracker_ids - prd_ids):
+        issues.append(Issue("prd-tracker-sync", "docs/QA-TRACKER.md", None, f"has active {stale} not present in PRD; mark DEPRECATED or update PRD"))
+    return issues
+
+
+def changed_files_since_base(root: Path, base_ref: str) -> tuple[list[str], list[Issue]]:
+    try:
+        proc = subprocess.run(
+            ["git", "diff", "--name-only", f"{base_ref}...HEAD"],
+            cwd=root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError as exc:
+        return [], [Issue("doc-code-sync", ".", None, f"failed to run git diff: {exc}")]
+    if proc.returncode != 0:
+        return [], [Issue("doc-code-sync", ".", None, f"git diff failed for base ref {base_ref}: {proc.stderr.strip()}")]
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()], []
+
+
+def is_project_doc(path: str) -> bool:
+    return path in PROJECT_DOC_PATHS or any(path.startswith(prefix) for prefix in PROJECT_DOC_PREFIXES)
+
+
+def is_code_path(path: str) -> bool:
+    if path.startswith(("docs/", "skills/", "adapters/")):
+        return False
+    suffix = Path(path).suffix
+    if suffix in CODE_EXTENSIONS:
+        return True
+    return path in DEPENDENCY_FILES or Path(path).name in DEPENDENCY_FILES
+
+
+def is_dependency_path(path: str) -> bool:
+    return path in DEPENDENCY_FILES or Path(path).name in DEPENDENCY_FILES
+
+
+def is_api_path(path: str) -> bool:
+    lower = path.lower()
+    if any(hint in lower for hint in API_PATH_HINTS):
+        return True
+    stem = Path(lower).stem
+    return any(hint in stem for hint in API_NAME_HINTS)
+
+
+
+REGRESSION_ID_RE = re.compile(r"\bRG-\d+\b")
+REGRESSION_TERMS_RE = re.compile(r"/__qa|REGRESSION_MODE|Regression Hook|Regression Mode|regression hook|regression mode", re.I)
+REGRESSION_SAFETY_RE = re.compile(r"production|dev/test/staging|dev.*test.*staging|staging|env guard|NODE_ENV|APP_ENV|N/A|not applicable", re.I)
+UNSAFE_REGRESSION_WORDING = [
+    re.compile(r"disable\s+rate\s+limit", re.I),
+    re.compile(r"turn\s+off\s+auth", re.I),
+    re.compile(r"skip\s+permission", re.I),
+    re.compile(r"bypass\s+security", re.I),
+    re.compile(r"bypass\s+auth", re.I),
+]
+UNSAFE_ALLOWED_MARKERS = (
+    "禁止", "forbidden", "anti-pattern", "anti pattern", "❌", "不要", "不可以", "不可", "唔好", "ng:"
+)
+
+
+def project_markdown_files(root: Path) -> list[Path]:
+    docs = root / "docs"
+    if not docs.exists():
+        return []
+    return sorted(docs.rglob("*.md"))
+
+
+def is_allowed_unsafe_wording(line: str) -> bool:
+    lower = line.lower()
+    return any(marker in lower or marker in line for marker in UNSAFE_ALLOWED_MARKERS)
+
+
+def check_regression_docs(root: Path) -> list[Issue]:
+    issues: list[Issue] = []
+    tracker = root / "docs" / "QA-TRACKER.md"
+    if tracker.exists():
+        tracker_text = read_text(tracker)
+        if "Regression Hook" not in tracker_text and "Regression Mode" not in tracker_text:
+            issues.append(Issue("regression-docs", "docs/QA-TRACKER.md", None, "QA tracker must include Regression Hook or Regression Mode columns"))
+
+    coverage = root / "docs" / "TEST-COVERAGE.md"
+    if coverage.exists() and "## Regression Mode / Hooks" not in read_text(coverage):
+        issues.append(Issue("regression-docs", "docs/TEST-COVERAGE.md", None, "test coverage must include ## Regression Mode / Hooks section"))
+
+    guard = root / "docs" / "REGRESSION-GUARD.md"
+    if guard.exists():
+        guard_text = read_text(guard)
+        if REGRESSION_ID_RE.search(guard_text) and "QA Regression Mode" not in guard_text:
+            issues.append(Issue("regression-docs", "docs/REGRESSION-GUARD.md", None, "RG entries must include a QA Regression Mode section"))
+
+    safety_sensitive = {
+        "docs/API.md",
+        "docs/DESIGN.md",
+        "docs/TEST-COVERAGE.md",
+        "docs/REGRESSION-GUARD.md",
+    }
+    for path in project_markdown_files(root):
+        path_rel = rel(root, path)
+        text = read_text(path)
+        if path_rel in safety_sensitive and REGRESSION_TERMS_RE.search(text) and not REGRESSION_SAFETY_RE.search(text):
+            issues.append(Issue("regression-docs", path_rel, None, "mentions regression hooks/mode but does not mention production/dev-test-staging safety boundary"))
+        for line_no, line in enumerate(text.splitlines(), start=1):
+            if any(pattern.search(line) for pattern in UNSAFE_REGRESSION_WORDING) and not is_allowed_unsafe_wording(line):
+                issues.append(Issue("regression-docs", path_rel, line_no, "unsafe regression wording must be marked as forbidden/anti-pattern, not guidance"))
+    return issues
+
+def check_doc_code_sync(root: Path, changed: list[str]) -> list[Issue]:
+    issues: list[Issue] = []
+    changed_set = set(changed)
+    changed_docs = {path for path in changed if is_project_doc(path)}
+    changed_code = [path for path in changed if is_code_path(path)]
+
+    if "docs/PRD.md" in changed_set and "docs/QA-TRACKER.md" not in changed_set:
+        issues.append(Issue("doc-code-sync", "docs/QA-TRACKER.md", None, "docs/PRD.md changed but docs/QA-TRACKER.md did not change"))
+
+    if changed_code and not changed_docs:
+        issues.append(Issue("doc-code-sync", ".", None, "code changed but no project documentation file changed"))
+
+    api_changes = [path for path in changed_code if is_api_path(path)]
+    if api_changes and "docs/API.md" not in changed_set:
+        issues.append(Issue("doc-code-sync", "docs/API.md", None, f"API-looking code changed but docs/API.md did not change: {', '.join(api_changes[:5])}"))
+
+    dep_changes = [path for path in changed if is_dependency_path(path)]
+    if dep_changes and "docs/TECH-DEBT.md" not in changed_set:
+        issues.append(Issue("doc-code-sync", "docs/TECH-DEBT.md", None, f"dependency files changed but docs/TECH-DEBT.md did not change: {', '.join(dep_changes[:5])}"))
+
+    return issues
+
+
 def report(issues: list[Issue], *, json_output: bool, quiet: bool) -> None:
     if json_output:
         print(json.dumps({"ok": not issues, "issue_count": len(issues), "issues": [asdict(i) for i in issues]}, ensure_ascii=False, indent=2))
@@ -373,8 +613,8 @@ def report(issues: list[Issue], *, json_output: bool, quiet: bool) -> None:
         print(issue.format())
 
 
-def run(root: Path) -> list[Issue]:
-    checks = [
+def run(root: Path, *, project_docs: bool = False, base_ref: str | None = None, doc_code_sync: bool = False) -> list[Issue]:
+    profile_checks = [
         check_required_files,
         check_docs_index,
         check_skills_catalog,
@@ -382,9 +622,24 @@ def run(root: Path) -> list[Issue]:
         check_stale_refs,
         check_local_links_and_paths,
     ]
+    project_checks = [
+        check_project_docs_baseline,
+        check_prd_tracker_sync,
+        check_regression_docs,
+        check_local_links_and_paths,
+    ]
+    checks = project_checks if project_docs else profile_checks
     issues: list[Issue] = []
     for check in checks:
         issues.extend(check(root))
+    if doc_code_sync:
+        if not base_ref:
+            issues.append(Issue("doc-code-sync", ".", None, "--doc-code-sync requires --base-ref"))
+        else:
+            changed, diff_issues = changed_files_since_base(root, base_ref)
+            issues.extend(diff_issues)
+            if not diff_issues:
+                issues.extend(check_doc_code_sync(root, changed))
     return issues
 
 
@@ -394,7 +649,7 @@ def main(argv: list[str] | None = None) -> int:
     if not root.exists() or not root.is_dir():
         print(f"invalid root: {root}", file=sys.stderr)
         return 2
-    issues = run(root)
+    issues = run(root, project_docs=args.project_docs, base_ref=args.base_ref, doc_code_sync=args.doc_code_sync)
     report(issues, json_output=args.json, quiet=args.quiet)
     return 1 if issues else 0
 

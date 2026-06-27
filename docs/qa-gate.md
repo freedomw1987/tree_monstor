@@ -29,28 +29,59 @@ git log --oneline -5
 
 ---
 
+## 0A. Pre-Build Documentation Gate（進 Build 前必跑）
+
+**Think / Plan 共識必須先落到 project docs，才能開始 Build。** Build 前確認：
+
+```bash
+python3 scripts/docs_consistency_check.py --project-docs
+```
+
+必須滿足：
+- `docs/PROJECT-OVERVIEW.md`：目標用戶、scope、成功標準已寫
+- `docs/PRD.md`：P0/P1 User Stories + acceptance criteria 已寫
+- `docs/DESIGN.md`：UI/UX baseline；無 UI 則標 N/A
+- `docs/architecture/0001-*.md`：至少一個初始 ADR / architecture baseline
+- `docs/API.md`：API contract draft；無 API 則標 N/A
+- `docs/QA-TRACKER.md`：所有 PRD US 有對應 row
+- `docs/TEST-COVERAGE.md`：test plan skeleton
+- `docs/TECH-DEBT.md`：tech debt register skeleton
+
+**未通過 = 停留在 Plan，不可 Build。** David 在 Build / Review / Test / Ship 前提出新需求或修正時，也要先回到此 gate 的 doc sync，再繼續。
+
+---
+
 ## 1. Doc-Code Sync Check（任何改動後必跑）
 
 **任何 code 或文檔改動** → 必須 sync 對應文檔：
 
 | 改動類型 | 必須同步嘅文檔 |
 |---------|---------------|
-| **新 API endpoint** | `API.md`（+ `TEST-COVERAGE.md` 加 test case）|
-| **架構改動** | 新 `ADR` + `DESIGN.md`（更新架構圖）|
+| **Scope / business goal / 成功標準改動** | `PROJECT-OVERVIEW.md` + `PRD.md` + `QA-TRACKER.md` |
+| **新 API endpoint / API contract 改動** | `API.md`（+ `TEST-COVERAGE.md` 加 test case）|
+| **架構 / data model / infrastructure 改動** | 新 `ADR` + 受影響 docs（如 `API.md` / `TECH-DEBT.md`）|
+| **UI / component / layout / token 改動** | `DESIGN.md` + `TEST-COVERAGE.md` |
 | **User Story 改動** | `PRD.md`（更新 US）+ `QA-TRACKER.md`（PARTIAL / 新 row）|
-| **Bug fix** | `REGRESSION-GUARD.md`（新 RG-XXX）+ `TEST-COVERAGE.md`（regression test）|
+| **David 在 Build 中提出新需求 / 修正** | 暫停 Build → 更新 `PRD.md` + `QA-TRACKER.md` + 受影響 docs → 再繼續 |
+| **Bug fix** | `REGRESSION-GUARD.md`（新 RG-XXX）+ `TEST-COVERAGE.md`（regression test）+ 相關 US row 備註 |
+| **新增 / 修改 regression hook 或 switch** | `TEST-COVERAGE.md` Regression Mode / Hooks matrix + `QA-TRACKER.md` regression 欄位；如涉及 bug fix 則同步 `REGRESSION-GUARD.md`，如新增 `/__qa/*` 或 QA panel 則同步 `API.md` / `DESIGN.md` |
 | **Refactor** | `TECH-DEBT.md`（新 row，標 DEPRECATED 嘅債務）|
 | **依賴升級** | `TECH-DEBT.md`（upgrade 記錄）|
 
 **Drift 檢測**（每次 commit 前）：
 
 ```bash
-# 檢查 PRD 嘅 US 列表 vs QA-TRACKER 嘅 US 列表
-grep -oP 'US-\d+\.\d+' docs/PRD.md | sort -u > /tmp/prd_us.txt
-grep -oP 'US-\d+\.\d+' docs/QA-TRACKER.md | sort -u > /tmp/tracker_us.txt
-diff /tmp/prd_us.txt /tmp/tracker_us.txt
-# 任何 diff = drift = 不可 ship
+# profile / navigation consistency
+python3 scripts/docs_consistency_check.py
+
+# downstream project documentation baseline + PRD ↔ QA-TRACKER sync
+python3 scripts/docs_consistency_check.py --project-docs
+
+# branch / PR doc-code sync against base ref
+python3 scripts/docs_consistency_check.py --project-docs --base-ref origin/main --doc-code-sync
 ```
+
+人手理解版：比較 `docs/PRD.md` 與 `docs/QA-TRACKER.md` 的 `US-001` / `US-001.1` / `US-21.1` 清單，任何 diff = drift = 不可 ship。
 
 **Drift = 不可 ship**。冇例外。
 
@@ -72,8 +103,8 @@ diff /tmp/prd_us.txt /tmp/tracker_us.txt
 
 **Tracker 對應嘅粒度**：
 
-- 1 個 US 對 1 row
-- US 細分嘅 sub-task（如 US-21.1 / US-21.3）拆 row
+- 1 個主 US（如 `US-001`）對 1 row
+- US 細分嘅 sub-task（如 `US-001.1` / `US-21.1`）拆 row
 - bug fix / refactor = RG-XXX / TD-XXX row（唔可以只 inline 講）
 
 ---
@@ -116,6 +147,47 @@ test("login_with_valid_creds_returns_jwt", async () => {
 });
 ```
 
+
+---
+
+## 3A. Regression Mode Gate（QA-friendly hooks / switches）
+
+Regression mode 係 deterministic fixture / observability / seed / reset / test orchestration，**唔係 bypass mode**。
+
+### 何時必須有 regression hook / switch
+
+- 任何 bug fix（必須有 `RG-XXX` + regression test + QA 啟用方式）
+- 任何 `RG-XXX` invariant 或 refactor 觸碰 `RG-` 標記 code
+- P0/P1 User Story 的 critical path
+- auth / RBAC / payment / upload / cache / queue / notification / audit-log 等高 regression 風險區域
+
+### 必備 artifacts
+
+- `docs/REGRESSION-GUARD.md`：bug fix 的 RG entry + QA Regression Mode
+- `docs/TEST-COVERAGE.md`：Regression Mode / Hooks matrix
+- `docs/QA-TRACKER.md`：Regression Hook / Regression Mode 欄位
+- `docs/API.md`：backend `/__qa/*` 或等效 QA endpoint（dev/test/staging-only、安全限制、auth）
+- `docs/DESIGN.md`：frontend QA panel / visual regression controls（非 production UX）
+- ADR：如 regression mode 引入 test tenant、fake mailbox、test clock、queue drain 或 test-only architecture
+
+### Production safety checks
+
+- Production build 不包含 frontend QA panel / QA route
+- Backend production 不 mount `/__qa/*`
+- `NODE_ENV=production` + `REGRESSION_MODE=true` 必須 hard fail 或 loudly reject
+- QA endpoint 必須有 auth / QA secret / staging SSO / IP allowlist 至少一種
+- Regression helper 不可 disable auth、permission、rate limit、audit log、security behavior
+- QA seed/reset 只能作用於 test tenant / test DB / test schema，不能動 production data 或真實 email/SMS/payment side effect
+
+### Merge blockers
+
+- `REGRESSION_MODE`、`/__qa`、`x-regression`、`seedRegression` 等 hook 無 env guard
+- `skipAuth`、`bypassPermission`、`disableRateLimit`、`rateLimit = false` 等繞過語義出現在 regression code
+- QA endpoint 無 auth / internal secret / staging allowlist
+- Frontend QA panel 可在 production build 訪問
+
+未通過 Regression Mode Gate = 不可 merge / ship。
+
 ---
 
 ## 4. Pre-Ship Verification Flow
@@ -123,15 +195,17 @@ test("login_with_valid_creds_returns_jwt", async () => {
 **順序固定，唔可以跳**：
 
 ```
-1. Read docs/PRD.md → 確認當前 scope
-2. Read docs/QA-TRACKER.md → 確認當前 status
-3. Run drift check (§1) → 0 diff 才繼續
-4. Run test suite → 3 層全部 pass + coverage 達 §3 要求
-5. Run doc-code sync check → 所有改動有對應 doc
-6. Update tracker → 反映當前 sprint 嘅真實狀態
-7. 跑 smoke test（紅線 17）→ production-like env 0 error
-8. Run security scan（紅線 18）→ 0 Critical/High CVE
-9. 寫 post-delivery log（§5）
+1. Run default docs consistency check → profile docs / links / catalog 0 issue
+2. Run project docs baseline check (`--project-docs`) → required docs + PRD ↔ QA-TRACKER 0 drift
+3. Run doc-code sync check (`--base-ref origin/main --doc-code-sync`) → code 改動有對應 docs
+4. Read docs/PRD.md → 確認當前 scope
+5. Read docs/QA-TRACKER.md → 確認當前 status
+6. Run test suite → 3 層全部 pass + coverage 達 §3 要求
+7. Run Regression Mode Gate (§3A) → hooks documented, QA-runnable, production-safe
+8. Update tracker → 反映當前 sprint 嘅真實狀態
+9. 跑 smoke test（紅線 17）→ production-like env 0 error
+10. Run security scan（紅線 18）→ 0 Critical/High CVE
+11. 寫 post-delivery log（§5）
 ```
 
 任何步驟 fail → 唔可以 ship，回到 phase 1-8 修正。
@@ -190,7 +264,7 @@ Bug 反饋 — P1/P2 — [描述]
 
 **Developer 嘅職責係最後一道防線**：
 
-- 每次交付前，必須完成 §4 嘅 9 步流程
+- 每次交付前，必須完成 §4 嘅 11 步流程
 - 發現 bug → 記錄喺 §5 → 修復後重新驗證
 - 無法驗證嘅功能 → 明確告知用戶風險
 - **未經驗證就交付 → 等同 P1 過**（紅線）

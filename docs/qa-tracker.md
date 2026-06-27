@@ -32,7 +32,7 @@ TEST-COVERAGE.md (累積覆蓋率)
 
 ## 📋 QA Tracker 模板
 
-每個 project 在 `docs/QA-TRACKER.md` 用以下結構:
+每個 project 在 `docs/QA-TRACKER.md` 用以下結構（本文 `docs/qa-tracker.md` 是 profile 規則 / 模板；`docs/QA-TRACKER.md` 是每個 project 的實際 tracker artifact）:
 
 ```markdown
 # QA Tracker — <Project Name>
@@ -49,13 +49,13 @@ TEST-COVERAGE.md (累積覆蓋率)
 
 ## User Story → Test Task 對照
 
-| US | 描述 | 優先級 | Unit | Integration | E2E | Status | 負責人 | 最後更新 | 備註 |
-|----|------|--------|------|-------------|-----|--------|--------|---------|------|
-| US-001 | 登入 | P0 | ✅ 3 ✅ | ✅ 1 ✅ | ✅ 1 ✅ | PASS | @QA-Alice | 2026-06-06 | |
-| US-002 | 註冊 | P0 | ✅ 5 ✅ | ✅ 2 ✅ | 🟡 1 | PARTIAL | @QA-Alice | 2026-06-05 | E2E 1 個 case 卡喺 email verification step |
-| US-003 | 忘記密碼 | P1 | ✅ 2 ✅ | ✅ 1 ✅ | ✅ 1 ✅ | PASS | @QA-Alice | 2026-06-04 | |
-| US-005 | 修改個人資料 | P2 | 🟡 0 | ❌ 0 | ❌ 0 | NOT_STARTED | TBD | - | 新 US,sprint planning 後啟動 |
-| US-007 | 圖片上傳 | P1 | ❌ 0 | ❌ 0 | ❌ 0 | NOT_STARTED | TBD | - | Backend 改緊,Sprint N+1 啟動 |
+| US | 描述 | 優先級 | Unit | Integration | E2E | Regression Hook | Regression Mode | Status | 負責人 | 最後更新 | 備註 |
+|----|------|--------|------|-------------|-----|-----------------|-----------------|--------|--------|---------|------|
+| US-001 | 登入 | P0 | ✅ 3 ✅ | ✅ 1 ✅ | ✅ 1 ✅ | `/__qa/seed?case=US-001` | READY | PASS | @QA-Alice | 2026-06-06 | |
+| US-002 | 註冊 | P0 | ✅ 5 ✅ | ✅ 2 ✅ | 🟡 1 | fake mailbox + `data-testid` | PARTIAL | PARTIAL | @QA-Alice | 2026-06-05 | E2E 1 個 case 卡喺 email verification step |
+| US-003 | 忘記密碼 | P1 | ✅ 2 ✅ | ✅ 1 ✅ | ✅ 1 ✅ | N/A | READY | PASS | @QA-Alice | 2026-06-04 | |
+| US-005 | 修改個人資料 | P2 | 🟡 0 | ❌ 0 | ❌ 0 | TBD | BLOCKED | NOT_STARTED | TBD | - | 新 US,sprint planning 後啟動 |
+| US-007 | 圖片上傳 | P1 | ❌ 0 | ❌ 0 | ❌ 0 | `/__qa/seed?case=US-007` | UNSAFE | NOT_STARTED | TBD | - | Backend 改緊,Sprint N+1 啟動 |
 
 **Status 定義**:
 - `NOT_STARTED`: 還沒開始寫 test
@@ -64,6 +64,14 @@ TEST-COVERAGE.md (累積覆蓋率)
 - `PASS`: 全部 test 通過
 - `FAIL`: 有 test 失敗,需要修
 - `BLOCKED`: 等待其他 dependency(例:backend API 未 ready)
+
+**Regression Mode 定義**:
+- `N/A`: 不需要特殊 hook / switch
+- `READY`: QA 可按文檔自行啟用 / 重跑
+- `PARTIAL`: 部分 hook / test 已有，但未覆蓋完整 flow
+- `BLOCKED`: 缺 frontend/backend hook 或 fixture
+- `UNSAFE`: hook 存在但違反 production / security boundary，阻擋 merge
+- `DEPRECATED`: 舊 hook 不再使用，保留歷史原因
 
 ## 需求變更影響評估
 
@@ -79,6 +87,7 @@ TEST-COVERAGE.md (累積覆蓋率)
 | QA-001 | 寫 US-005 unit tests | US-005 | M | P2 | Sprint N planning |
 | QA-002 | 補 US-002 E2E email verification case | US-002 | S | P0 | US-002 PARTIAL |
 | QA-003 | 加 US-007 嘅 S3 mock tests | US-007 | M | P1 | 需求變更 2026-06-06 |
+| QA-006 | 為 RG-004 補 `/__qa/regression/RG-004` fixture + Playwright helper | RG-004 | M | P0 | Bug report |
 | QA-004 | Performance test: 1000 concurrent logins | US-001 | L | P2 | Retro 2026-06-01 |
 | QA-005 | A11y test: 全站 keyboard nav | ALL | XL | P2 | Retro 2026-06-01 |
 
@@ -104,12 +113,14 @@ TEST-COVERAGE.md (累積覆蓋率)
 
 ### 1. 需求變更時(David 改要求)
 
+此流程適用於 Plan、Build、Review、Test、Ship 前的任何時刻；不可以用「已經開始開發」作理由跳過 doc sync。Build 中收到新需求 / 修正時，先暫停 Build，完成 PRD + QA-TRACKER + 受影響文檔更新，再繼續。
+
 ```
 David 提出新需求
     ↓
 Developer 跟 David 對齊(updated US 列表)
     ↓
-更新 PRD.md(改 US、加 US、刪 US 都記)
+更新 PRD.md(改 US、加 US、刪 US 都記；主 US 如 `US-001`，sub-task 可用 `US-001.1`)
     ↓
 更新 QA-TRACKER.md:
     - 新 US → 加 row 喺「User Story → Test Task 對照」表
@@ -124,7 +135,7 @@ QA owner 寫/改 test
 Status 從 NOT_STARTED → IN_PROGRESS → PASS
 ```
 
-**紅線**:**改了 PRD 但沒更新 QA-TRACKER = 偷懶**,等同改了代碼但沒 commit。
+**紅線**:**改了 PRD 但沒更新 QA-TRACKER = 偷懶**,等同改了代碼但沒 commit。checker 會比較 `docs/PRD.md` 與 `docs/QA-TRACKER.md` 的 US 清單；任何 drift = 不可 ship。
 
 ### 2. Sprint Planning 時
 
@@ -150,6 +161,7 @@ Developer reproduce + fix
 更新 QA-TRACKER.md:
     - 加 regression test task 喺 backlog
     - 喺對應 US 嘅 row 加備註
+    - 記錄 Regression Hook / Regression Mode，讓 QA 知道點樣啟用 fixture / switch / test command
     ↓
 QA owner 寫 regression test
     ↓

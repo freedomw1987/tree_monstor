@@ -30,7 +30,7 @@ Reflect ←──────┴─────────┴──────
 | Phase | 名稱 | 輸出 | 負責 Subagent | 強制 |
 |-------|------|------|--------------|------|
 | Think | 市場分析 + 技術調研 | `ceo-market-analysis.md` + 調研報告 | CEO + Researcher | ✅ |
-| Plan | 商業計劃 + 需求 + 架構 | `ceo-business-plan.md` + `prd.md` + `architecture.md` | CEO + BA + Designer + Tech Lead | ✅ |
+| Plan | 商業計劃 + 需求 + 架構 + 文檔 baseline | `ceo-business-plan.md` + `docs/PRD.md` + `docs/DESIGN.md` + ADR + `docs/QA-TRACKER.md` baseline | CEO + BA + Designer + SA + Tech Lead + Documentation Engineer | ✅ |
 | Build | 開發執行 | 代碼 | Frontend + Backend + DevOps + Security Engineer | — |
 | Review | 架構審查 + UX 合規 | Review 報告 | SA Reviewer + UX Reviewer | ✅ |
 | Test | 測試 + 壓測 | 測試報告 + 壓測報告 | QA + Performance Engineer | ✅ |
@@ -122,7 +122,7 @@ role="leaf"
 - 成功標準與 KPI
 
 ### BA 必須產出
-`docs/prd.md`:
+`docs/PRD.md`（project artifact；模板見 `docs/project-documentation-standard.md`）:
 - 產品概述與目標
 - 用戶故事列表（帶優先級 P0/P1/P2）
 - 功能需求詳情
@@ -131,7 +131,7 @@ role="leaf"
 - 假設與風險清單
 
 ### Designer 必須產出
-`docs/design.md`:
+`docs/DESIGN.md`（project artifact；無 UI 必須標 N/A 原因）:
 - Overview — 設計理念與品牌定位
 - Colors — 顏色系統（HEX 值）
 - Typography — 字體系統
@@ -142,7 +142,7 @@ role="leaf"
 - Do's and Don'ts
 
 ### SA 必須產出
-`docs/architecture.md`:
+`docs/architecture/0001-*.md`（ADR / architecture baseline）:
 - 系統架構圖
 - Frontend/Backend 技術棧建議
 - 數據模型設計
@@ -154,6 +154,20 @@ role="leaf"
 - 識別任務依賴關係
 - 制定執行計劃（Task Board）
 - 分配優先級
+
+### Pre-Build Documentation Gate（Build 前強制）
+
+Plan 結束、Build 開始前，Documentation Engineer + Tech Lead 必須確認 project documentation baseline：
+- `docs/PROJECT-OVERVIEW.md`：目標用戶、scope、成功標準
+- `docs/PRD.md`：P0/P1 User Stories + acceptance criteria
+- `docs/DESIGN.md`：UI/UX baseline，無 UI 則標 N/A
+- `docs/architecture/0001-*.md`：至少一個初始 ADR / architecture decision
+- `docs/API.md`：API contract draft，無 API 則標 N/A
+- `docs/QA-TRACKER.md`：所有 PRD US 對應 rows
+- `docs/TEST-COVERAGE.md`：test plan skeleton
+- `docs/TECH-DEBT.md`：tech debt register skeleton
+
+未通過此 gate → 留在 Plan，不能開始 Build。
 
 ---
 
@@ -196,9 +210,11 @@ role="leaf"
 - 如發現異常，立即通知 Developer 主體
 
 ### Documentation Engineer 職責
+- Build 開始前驗證 Pre-Build Documentation Gate
 - 代碼提交時，自動更新相關文檔
 - 從 JSDoc/TSDoc 註解自動生成 API docs
 - 確保 `docs/` 下的文檔與實際代碼同步
+- David 在 Build / Review / Test / Ship 前提出新需求或修正時，暫停 Build → 更新 `docs/PRD.md`、`docs/QA-TRACKER.md` 與受影響文檔 → 再繼續
 - 使用 `auto-doc-gen` skill 自動化
 
 ### Dependency Manager 職責
@@ -335,7 +351,8 @@ Post-mortem 復盤，沉淀經驗，更新 SOP。
 ```
 □ Think: CEO 市場分析 + Researcher 調研報告
 □ Plan: CEO 商業計劃 + PRD + Design + Architecture + Tech Lead 執行計劃
-□ Build: 所有 task 完成，代碼已提交
+□ Pre-Build Documentation Gate: project docs baseline 已建立，PRD ↔ QA-TRACKER 已同步
+□ Build: 所有 task 完成，代碼已提交，相關文檔已同步
 □ Review: SA Reviewer APPROVED + UX Reviewer APPROVED
 □ Test: QA 測試通過 + Performance Engineer 壓測通過
 □ Ship: Release Manager 部署確認

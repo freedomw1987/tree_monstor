@@ -27,9 +27,10 @@
 | Phase workflow | [`docs/phases.md`](phases.md) | Think → Plan → Build → Review → Test → Ship → Reflect |
 | Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、Model Tiering；不要在其他文件硬寫角色數量 |
 | Task Board format | [`docs/task-board.md`](task-board.md) | Canonical spelling uses hyphen: `docs/task-board.md` |
-| QA Gate | [`docs/qa-gate.md`](qa-gate.md) | Release / merge 交付門檻 |
+| QA Gate | [`docs/qa-gate.md`](qa-gate.md) | Pre-Build documentation gate、doc-code sync、release / merge 交付門檻 |
 | Testing strategy | [`docs/testing-strategy.md`](testing-strategy.md) | 測試層級、P0/P1 測試深度、健康指標 |
-| Project documentation standard | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | 每個 project 的標準文件與 commit 規範 |
+| Regression hooks / QA regression mode | [`docs/testing-strategy.md`](testing-strategy.md) + [`docs/qa-gate.md`](qa-gate.md) + [`skills/regression-guard/SKILL.md`](../skills/regression-guard/SKILL.md) | Frontend/backend regression hooks、QA 啟用方式、production safety boundary |
+| Project documentation standard | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | 每個 project 的標準文件、Build 前 documentation baseline 與 commit 規範 |
 | Skills catalog | [`skills/README.md`](../skills/README.md) | Local skills catalog；每個 skill 的 source 是 `skills/<name>/SKILL.md` |
 | Incident-derived red lines | [`docs/red-lines-19-51.md`](red-lines-19-51.md) | Hang / memory / zombie / interruption / response 等 incident 後補強 |
 
@@ -118,7 +119,7 @@ Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
 
 ## 質量標準
 
-- **QA Gate 未通過，絕對不能交付** → 見 [`docs/qa-gate.md`](qa-gate.md)
+- **QA Gate 未通過，絕對不能交付**；Build 前 documentation baseline / doc-code sync 亦屬 gate → 見 [`docs/qa-gate.md`](qa-gate.md) + [`docs/project-documentation-standard.md`](project-documentation-standard.md)
 - Review 未 APPROVED，絕對不能進入 Test → 見 [`docs/feedback-loop.md`](feedback-loop.md)
 - 所有強制 Phase 必須完成才能進入下一階段 → 見 [`docs/phases.md`](phases.md)
 - **紅線 10-18**（文檔 gate、QA tracker、test tasks、regression guard、root cause、refactor invariant、三層測試、smoke test、CVE 0）→ 見 [`SOUL.md`](../SOUL.md) + [`docs/qa-gate.md`](qa-gate.md)
