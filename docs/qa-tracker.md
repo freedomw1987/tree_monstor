@@ -66,12 +66,19 @@ TEST-COVERAGE.md (累積覆蓋率)
 - `BLOCKED`: 等待其他 dependency(例:backend API 未 ready)
 
 **Regression Mode 定義**:
-- `N/A`: 不需要特殊 hook / switch
-- `READY`: QA 可按文檔自行啟用 / 重跑
+- `N/A`: 不需要特殊 hook / switch；必須在備註寫 N/A 理由與替代驗證方式
+- `READY`: QA 可按文檔自行啟用 / 重跑；必須已有 test command、seed/reset instructions（如適用）、production safety boundary，且 QA 不需 developer 介入
 - `PARTIAL`: 部分 hook / test 已有，但未覆蓋完整 flow
 - `BLOCKED`: 缺 frontend/backend hook 或 fixture
 - `UNSAFE`: hook 存在但違反 production / security boundary，阻擋 merge
 - `DEPRECATED`: 舊 hook 不再使用，保留歷史原因
+
+**Regression Hook 欄位規則**:
+- 如 hook 是 `/__qa/*`，必須寫 exact endpoint path，並確保 `docs/API.md` 有對應 QA / Regression Endpoints entry。
+- 如不需要 hook，寫 `N/A + reason`；不可只寫空白。
+- P0 / P1 或 `RG-XXX` 工作到 ship 前不可仍是 `TBD`。
+- `UNSAFE` 是 merge blocker，不是可交付狀態。
+- `READY` 必須能讓 QA 用 tracker + TEST-COVERAGE + API docs 自行重跑。
 
 ## 需求變更影響評估
 
@@ -161,7 +168,9 @@ Developer reproduce + fix
 更新 QA-TRACKER.md:
     - 加 regression test task 喺 backlog
     - 喺對應 US 嘅 row 加備註
+    - 記錄 related `RG-XXX`
     - 記錄 Regression Hook / Regression Mode，讓 QA 知道點樣啟用 fixture / switch / test command
+    - 如有 `/__qa/*` backend hook，記錄 endpoint path、production exposure verification result，並確認 `docs/API.md` + `docs/TEST-COVERAGE.md` 已同步
     ↓
 QA owner 寫 regression test
     ↓

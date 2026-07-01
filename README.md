@@ -40,7 +40,7 @@
 | 平台 | 機制 | 狀態 |
 |------|------|------|
 | **Hermes Agent** | Profile directory + gateway | ✅ 主要支援 |
-| **Claude Code** | `--agent-file` adapter | ✅ 已適配 |
+| **Claude Code** | root `CLAUDE.md` bridge + optional `--agent-file` adapter | ✅ 已適配 |
 | **Codex** | `--system-prompt` 文件 | ✅ 已適配 |
 | **OpenClaw** | system-prompt import | 🧪 實驗 / 社群使用 |
 
@@ -189,15 +189,26 @@ macOS / launchd 背景服務化、故障排除、跟 default profile 的並存�
 
 ### Claude Code
 
-```bash
-# 使用 adapter
-claude --agent-file adapters/claude-code/agent.md
+推薦方式：在 repo root 直接開啟 Claude Code，讓 root [`CLAUDE.md`](CLAUDE.md) 自動 bridge 到 `SOUL.md`、`AGENTS.md`、`MEMORY.md`、`docs/00-index.md`、`skills/README.md` 與 Claude Code adapter。
 
-# 或使用 system-prompt
+```bash
+cd ~/.hermes/profiles/developer  # 或你的 tree_monstor clone path
+claude
+```
+
+進階 / explicit adapter mode（如你的 Claude Code 版本支援）：
+
+```bash
+claude --agent-file adapters/claude-code/agent.md
+```
+
+Fallback system-prompt mode（較少 Claude Code-specific routing）：
+
+```bash
 claude --system-prompt-file SOUL.md
 ```
 
-詳細文檔：[adapters/claude-code/agent.md](adapters/claude-code/agent.md)
+詳細文檔：[`CLAUDE.md`](CLAUDE.md) + [adapters/claude-code/agent.md](adapters/claude-code/agent.md)
 
 ### Codex
 

@@ -490,6 +490,23 @@ def changed_files_since_base(root: Path, base_ref: str) -> tuple[list[str], list
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()], []
 
 
+def changed_diff_since_base(root: Path, base_ref: str) -> tuple[str, list[Issue]]:
+    try:
+        proc = subprocess.run(
+            ["git", "diff", "--unified=0", f"{base_ref}...HEAD"],
+            cwd=root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError as exc:
+        return "", [Issue("doc-code-sync", ".", None, f"failed to run git diff: {exc}")]
+    if proc.returncode != 0:
+        return "", [Issue("doc-code-sync", ".", None, f"git diff failed for base ref {base_ref}: {proc.stderr.strip()}")]
+    return proc.stdout, []
+
+
 def is_project_doc(path: str) -> bool:
     return path in PROJECT_DOC_PATHS or any(path.startswith(prefix) for prefix in PROJECT_DOC_PREFIXES)
 
@@ -517,17 +534,63 @@ def is_api_path(path: str) -> bool:
 
 
 REGRESSION_ID_RE = re.compile(r"\bRG-\d+\b")
+QA_ENDPOINT_RE = re.compile(r"/__qa(?:/[A-Za-z0-9_:{}/.?=&-]*)?", re.I)
 REGRESSION_TERMS_RE = re.compile(r"/__qa|REGRESSION_MODE|Regression Hook|Regression Mode|regression hook|regression mode", re.I)
+REGRESSION_CODE_MARKER_RE = re.compile(r"REGRESSION_MODE|x-regression|seedRegression|qa:seed|qa:reset", re.I)
 REGRESSION_SAFETY_RE = re.compile(r"production|dev/test/staging|dev.*test.*staging|staging|env guard|NODE_ENV|APP_ENV|N/A|not applicable", re.I)
+QA_ENDPOINT_REQUIRED_TERMS = {
+    "production boundary": re.compile(r"production|生產|not mounted|404|403|hard reject|NODE_ENV", re.I),
+    "auth / access control": re.compile(r"auth|secret|SSO|allowlist|allow-list|IP|權限|驗證", re.I),
+    "test data scope": re.compile(r"test tenant|test DB|test database|test schema|sandbox|測試租戶|測試 DB|測試 schema", re.I),
+    "audit logging": re.compile(r"audit|審計", re.I),
+    "idempotency": re.compile(r"idempotent|idempotency|safe to rerun|可重跑", re.I),
+    "US/RG mapping": re.compile(r"\b(?:US|RG)-\d+\b"),
+    "test command / QA enablement": re.compile(r"test:regression|qa:seed|qa:reset|test command|QA enablement|測試命令", re.I),
+}
+COVERAGE_QA_REQUIRED_TERMS = {
+    "production safety": re.compile(r"production|not mounted|404|403|hard reject|Production safety|生產", re.I),
+    "test command / QA enablement": re.compile(r"test:regression|qa:seed|qa:reset|Test command|QA enablement", re.I),
+}
+RG_QA_REQUIRED_FIELDS = (
+    "Frontend hook",
+    "Backend hook",
+    "QA enablement",
+    "Seed/reset data",
+    "Test command",
+    "Expected result",
+    "Safety boundary",
+    "Production exposure check",
+)
 UNSAFE_REGRESSION_WORDING = [
     re.compile(r"disable\s+rate\s+limit", re.I),
+    re.compile(r"disableRateLimit", re.I),
+    re.compile(r"disable[_-]?auth", re.I),
+    re.compile(r"disable[_-]?audit", re.I),
+    re.compile(r"disable[_-]?permission", re.I),
     re.compile(r"turn\s+off\s+auth", re.I),
     re.compile(r"skip\s+permission", re.I),
+    re.compile(r"skipAuth", re.I),
+    re.compile(r"skip[_-]?validation", re.I),
     re.compile(r"bypass\s+security", re.I),
     re.compile(r"bypass\s+auth", re.I),
+    re.compile(r"bypassPermission", re.I),
+    re.compile(r"bypass[_-]?permission", re.I),
+    re.compile(r"rateLimit\s*=\s*false", re.I),
+    re.compile(r"auth\s*=\s*false", re.I),
+    re.compile(r"permission\s*=\s*false", re.I),
+    re.compile(r"without\s+auth", re.I),
+    re.compile(r"no\s+auth\s+required", re.I),
+    re.compile(r"ignore\s+RBAC", re.I),
+    re.compile(r"hardcoded\s+admin\s+token", re.I),
+    re.compile(r"x-regression-mode.*(?:authority|permission|auth|權限|驗證)", re.I),
+    re.compile(r"跳過.*(?:auth|permission|權限|驗證|validation)", re.I),
+    re.compile(r"繞過.*(?:auth|permission|權限|驗證|security|安全)", re.I),
+    re.compile(r"關閉.*(?:rate limit|限流|audit|審計)", re.I),
+    re.compile(r"禁用.*(?:rate limit|限流|audit|審計)", re.I),
 ]
 UNSAFE_ALLOWED_MARKERS = (
-    "禁止", "forbidden", "anti-pattern", "anti pattern", "❌", "不要", "不可以", "不可", "唔好", "ng:"
+    "禁止", "forbidden", "anti-pattern", "anti pattern", "❌", "不要", "不可以", "不可", "唔好", "ng:",
+    "blocked", "merge blocker", "must not", "never", "嚴禁", "不准"
 )
 
 
@@ -543,6 +606,14 @@ def is_allowed_unsafe_wording(line: str) -> bool:
     return any(marker in lower or marker in line for marker in UNSAFE_ALLOWED_MARKERS)
 
 
+def check_required_terms(text: str, required: dict[str, re.Pattern[str]], path_rel: str, check_name: str, subject: str) -> list[Issue]:
+    issues: list[Issue] = []
+    for label, pattern in required.items():
+        if not pattern.search(text):
+            issues.append(Issue(check_name, path_rel, None, f"{subject} is missing {label}"))
+    return issues
+
+
 def check_regression_docs(root: Path) -> list[Issue]:
     issues: list[Issue] = []
     tracker = root / "docs" / "QA-TRACKER.md"
@@ -552,14 +623,29 @@ def check_regression_docs(root: Path) -> list[Issue]:
             issues.append(Issue("regression-docs", "docs/QA-TRACKER.md", None, "QA tracker must include Regression Hook or Regression Mode columns"))
 
     coverage = root / "docs" / "TEST-COVERAGE.md"
-    if coverage.exists() and "## Regression Mode / Hooks" not in read_text(coverage):
-        issues.append(Issue("regression-docs", "docs/TEST-COVERAGE.md", None, "test coverage must include ## Regression Mode / Hooks section"))
+    coverage_text = read_text(coverage) if coverage.exists() else ""
+    if coverage.exists():
+        if "## Regression Mode / Hooks" not in coverage_text:
+            issues.append(Issue("regression-docs", "docs/TEST-COVERAGE.md", None, "test coverage must include ## Regression Mode / Hooks section"))
+        if QA_ENDPOINT_RE.search(coverage_text):
+            issues.extend(check_required_terms(coverage_text, COVERAGE_QA_REQUIRED_TERMS, "docs/TEST-COVERAGE.md", "regression-endpoint-policy", "TEST-COVERAGE.md /__qa coverage"))
+
+    api = root / "docs" / "API.md"
+    api_text = read_text(api) if api.exists() else ""
+    if api.exists() and QA_ENDPOINT_RE.search(api_text):
+        if "QA / Regression Endpoints" not in api_text and "Regression Endpoints" not in api_text:
+            issues.append(Issue("regression-endpoint-policy", "docs/API.md", None, "docs/API.md mentions /__qa but lacks a QA / Regression Endpoints section"))
+        issues.extend(check_required_terms(api_text, QA_ENDPOINT_REQUIRED_TERMS, "docs/API.md", "regression-endpoint-policy", "docs/API.md /__qa endpoint policy"))
 
     guard = root / "docs" / "REGRESSION-GUARD.md"
     if guard.exists():
         guard_text = read_text(guard)
-        if REGRESSION_ID_RE.search(guard_text) and "QA Regression Mode" not in guard_text:
-            issues.append(Issue("regression-docs", "docs/REGRESSION-GUARD.md", None, "RG entries must include a QA Regression Mode section"))
+        if REGRESSION_ID_RE.search(guard_text):
+            if "QA Regression Mode" not in guard_text:
+                issues.append(Issue("regression-docs", "docs/REGRESSION-GUARD.md", None, "RG entries must include a QA Regression Mode section"))
+            for field in RG_QA_REQUIRED_FIELDS:
+                if field not in guard_text:
+                    issues.append(Issue("regression-docs", "docs/REGRESSION-GUARD.md", None, f"RG entries must include {field}"))
 
     safety_sensitive = {
         "docs/API.md",
@@ -577,7 +663,7 @@ def check_regression_docs(root: Path) -> list[Issue]:
                 issues.append(Issue("regression-docs", path_rel, line_no, "unsafe regression wording must be marked as forbidden/anti-pattern, not guidance"))
     return issues
 
-def check_doc_code_sync(root: Path, changed: list[str]) -> list[Issue]:
+def check_doc_code_sync(root: Path, changed: list[str], diff_text: str = "") -> list[Issue]:
     issues: list[Issue] = []
     changed_set = set(changed)
     changed_docs = {path for path in changed if is_project_doc(path)}
@@ -596,6 +682,23 @@ def check_doc_code_sync(root: Path, changed: list[str]) -> list[Issue]:
     dep_changes = [path for path in changed if is_dependency_path(path)]
     if dep_changes and "docs/TECH-DEBT.md" not in changed_set:
         issues.append(Issue("doc-code-sync", "docs/TECH-DEBT.md", None, f"dependency files changed but docs/TECH-DEBT.md did not change: {', '.join(dep_changes[:5])}"))
+
+    if changed_code and diff_text:
+        added_lines = "\n".join(line[1:] for line in diff_text.splitlines() if line.startswith("+") and not line.startswith("+++"))
+        if QA_ENDPOINT_RE.search(added_lines):
+            for required_doc in ("docs/API.md", "docs/TEST-COVERAGE.md", "docs/QA-TRACKER.md"):
+                if required_doc not in changed_set:
+                    issues.append(Issue("doc-code-sync", required_doc, None, f"/__qa appears in changed code but {required_doc} did not change"))
+            if REGRESSION_ID_RE.search(added_lines) and "docs/REGRESSION-GUARD.md" not in changed_set:
+                issues.append(Issue("doc-code-sync", "docs/REGRESSION-GUARD.md", None, "/__qa and RG-* appear in changed code but docs/REGRESSION-GUARD.md did not change"))
+        if REGRESSION_CODE_MARKER_RE.search(added_lines):
+            for required_doc in ("docs/TEST-COVERAGE.md", "docs/QA-TRACKER.md"):
+                if required_doc not in changed_set:
+                    issues.append(Issue("doc-code-sync", required_doc, None, "regression mode marker appears in changed code but regression docs did not change"))
+        if REGRESSION_ID_RE.search(added_lines):
+            for required_doc in ("docs/REGRESSION-GUARD.md", "docs/TEST-COVERAGE.md"):
+                if required_doc not in changed_set:
+                    issues.append(Issue("doc-code-sync", required_doc, None, "RG-* marker appears in changed code but regression guard/test coverage docs did not change"))
 
     return issues
 
@@ -639,7 +742,9 @@ def run(root: Path, *, project_docs: bool = False, base_ref: str | None = None, 
             changed, diff_issues = changed_files_since_base(root, base_ref)
             issues.extend(diff_issues)
             if not diff_issues:
-                issues.extend(check_doc_code_sync(root, changed))
+                diff_text, diff_text_issues = changed_diff_since_base(root, base_ref)
+                issues.extend(diff_text_issues)
+                issues.extend(check_doc_code_sync(root, changed, diff_text))
     return issues
 
 

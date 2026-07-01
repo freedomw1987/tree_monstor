@@ -8,11 +8,15 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ---
 
-## 0. Session Resume Handshake (NEW 2026-06-19, MANDATORY)
+## 0. Session Resume Handshake (MANDATORY, platform-aware)
 
 **新 session 第一件事**（`/new session` 之後 David 嘅 first message 之前）：
 
-1. 讀取 `~/.hermes/profiles/developer/docs/context-summary.md`
+1. 依 active workspace lookup resume summary：
+   - active workspace `docs/context-summary.md`
+   - active workspace `memory/context-summary.md`
+   - profile repo `docs/context-summary.md`（維護 Tree Monstor profile 時）
+   - Hermes install path `~/.hermes/profiles/developer/docs/context-summary.md`（只限明確維護 Hermes profile install 時）
 2. **如果有 summary → echo 畀 David**：
    ```
    📋 **Resume from previous session:**
@@ -26,7 +30,7 @@ _Developer Profile Session 啟動流程與工作區規範。_
    📋 No previous session summary found. Starting fresh.
    ```
 
-**永遠唔可以 skip 呢步**。呢個 handshake 確保 David 唔使手動 paste context（解決 David 痛點三：「context summary 唔自動，要我手動 new session」）。
+**永遠唔可以 skip 呢步**。呢個 handshake 確保 David 唔使手動 paste context（解決 David 痛點三：「context summary 唔自動，要我手動 new session」）。Claude Code 中不可假設 Hermes path 存在；先使用 active git / project root 的 workspace-local path。
 
 完整 trigger / detection logic 見 `skills/context-summarizer/SKILL.md` v2。
 
@@ -122,6 +126,8 @@ _Developer Profile Session 啟動流程與工作區規範。_
    - `docs/PRD.md` 有 US → `docs/QA-TRACKER.md` 必須有對應 row；P0/P1 US 必須有 test task baseline
    - baseline 未存在或無法回答「做什麼 / 為誰 / 驗收標準 / 架構決策 / 測試計劃」→ 停留在 Plan，**不能進 Build**
    - Build 中或之後 David 提出新需求 / 修正 → 暫停 Build，先更新 PRD、QA-TRACKER 及受影響文檔，再繼續
+   - 現有 project 的 docs / tests / regression hooks 不完整或未驗證時，先執行 `skills/existing-project-intake/SKILL.md`；完成 source-first docs baseline、QA/test inventory、regression gaps 記錄後才可 Build，除非 David 明確只要 read-only intake
+   - Review / QA / code-review feedback 改變需求、驗收標準、設計、API、架構、測試、regression 行為或 tech debt 時，必須執行 `skills/docs-sync/SKILL.md`，把項目 apply / defer / reject 的結論寫入受影響 project docs；只留在 chat 的 feedback 不算 resolved
 
 ### 觸發 Clarify 的時機
 
@@ -177,6 +183,7 @@ docs/checkpoint.md    — 斷點恢復點（長期任務）
 ### 文件路徑
 - 基礎路徑：`~/.tree_monstor/` — 核心配置（所有平台共用）
 - 用戶專案：`~/www/<project-name>/`
+- Claude Code：先偵測 active git / project root；`docs/task-board.md`、`docs/checkpoint.md`、`memory/YYYY-MM-DD.md` 等相對路徑預設屬於 active project root，除非 David 明確說正在維護 Tree Monstor profile repo
 
 ### Profile 文件結構
 ```

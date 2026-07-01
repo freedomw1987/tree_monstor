@@ -8,6 +8,7 @@ description: |
 trigger: |
   「bug 翻發」「regression」「舊 bug」「為什麼同樣嘅 bug 又出現」「fix 完又壞」
   或任何 bug 修復流程
+  `/__qa`、`REGRESSION_MODE`、`Regression Hook`、`Regression Mode`、`qa:seed`、`qa:reset`、QA endpoint、test fixture endpoint 相關變更
   任何時候 audit `rbac.ts` / `logEvent` caller / RBAC seed coverage 嘅 workflow
   出現 "seed doesn't currently write RolePermission rows" 類 comment ＝ known-bug-without-RG-entry → 紅線 13 違規
 version: 2
@@ -111,6 +112,13 @@ Step 8: 提交 + commit message 引用 entry ID
 #### QA Regression Mode
 - **Frontend hook**: [例如 `data-testid`, QA panel, visual freeze control；無則 N/A + 理由]
 - **Backend hook**: [例如 `/__qa/regression/RG-001`, seed/reset/mailbox/test clock；無則 N/A + 理由]
+- **Endpoint contract**: [如有 `/__qa/*`，連到 `docs/API.md` endpoint section；無則 N/A + 理由]
+- **Auth guard**: [QA secret / staging SSO / IP allowlist / authenticated test role]
+- **Environment guard**: [dev/test/staging only；production not mounted / 404 / 403 / hard reject]
+- **Data scope**: [test tenant / test DB / test schema only]
+- **Audit event**: [QA action 如何記錄 actor、scope、US/RG、fixture version]
+- **Idempotency**: [seed/reset 是否 safe to rerun]
+- **External side effects**: [fake / sandbox only；真 email / SMS / payment N/A]
 - **QA enablement**: [QA 如何啟用 fixture / switch]
 - **Seed/reset data**: [test tenant / fake mailbox / sandbox data]
 - **Test command**: [`test:regression:rg -- RG-001` 或等價命令]
@@ -218,13 +226,31 @@ describe('Image upload edge cases', () => {
 
 Regression test 寫完後，必須讓 QA 知道點樣重跑同驗證：
 
-1. **Frontend hook** — `data-testid` / `aria-label` / QA panel / visual freeze control；無需要則寫 N/A 理由
-2. **Backend hook** — `/__qa/seed` / `/__qa/reset` / fake mailbox / test clock / queue drain / `RG-XXX` fixture；無需要則寫 N/A 理由
-3. **QA enablement** — 寫明 test command、seed command、expected output
-4. **Safety boundary** — 只限 dev/test/staging；production 不 mount `/__qa/*`，不接受 regression mode 作為 bypass
-5. **No bypass** — 不可 disable auth / permission / rate limit / audit / security behavior；測試要配合真實 production behavior
+1. **Hook decision** — 先判斷是否真的需要新 hook；現有 deterministic fixture / unit setup / integration setup 足夠時，不要為了方便而加 `/__qa/*`
+2. **Frontend hook** — `data-testid` / `aria-label` / QA panel / visual freeze control；無需要則寫 N/A 理由
+3. **Backend hook** — `/__qa/seed` / `/__qa/reset` / fake mailbox / test clock / queue drain / `RG-XXX` fixture；無需要則寫 N/A 理由
+4. **Endpoint contract** — 如新增 / 修改 `/__qa/*`，必須同步 `docs/API.md`、`docs/TEST-COVERAGE.md`、`docs/QA-TRACKER.md`；bug fix / `RG-XXX` 亦同步 `docs/REGRESSION-GUARD.md`
+5. **QA enablement** — 寫明 test command、seed command、expected output
+6. **Safety boundary** — 只限 dev/test/staging；production 不 mount `/__qa/*`，不接受 regression mode 作為 bypass
+7. **No bypass** — 不可 disable auth / permission / rate limit / audit / security behavior；測試要配合真實 production behavior
+8. **Production exposure check** — 寫明 production 404 / 403 / hard reject 或 boot-time hard fail 的驗證方式
 
-**規則**:Regression mode 係 deterministic fixture / observability / orchestration，唔係後門。QA hook 若會動資料，backend 必須重新驗證 env + auth + tenant scope。
+**規則**:Regression mode 係 deterministic fixture / observability / orchestration，唔係後門。QA hook 若會動資料，backend 必須重新驗證 env + auth + tenant scope。`/__qa/*` endpoint 是 security-sensitive API contract，不是 debug backdoor。
+
+#### Pitfall: `/__qa/*` endpoint 變成 accidental backdoor
+
+`/__qa/*` 只可以建立 deterministic fixture、reset test scope、觀察 sandbox output、控制 test clock / queue；不可為了令 E2E pass 而繞過真實 security behavior。
+
+- ❌ `skipAuth` / `bypassPermission` / `disableRateLimit` / `rateLimit = false`
+- ❌ unscoped reset / seed production DB
+- ❌ 真 email / SMS / payment side effect
+- ❌ 信任 `x-regression-mode` header 作為權限來源
+- ✅ authenticated test role / QA secret / staging SSO / IP allowlist
+- ✅ test tenant / test DB / test schema only
+- ✅ production not mounted / 404 / 403 / hard reject
+- ✅ audit log actor、scope、US/RG、fixture version
+
+**判斷準則**:如果測試是因為 bypass 真實行為而 pass，這不是 regression guard；這是新的 production risk。
 
 ### Step 6: 寫 REGRESSION-GUARD entry
 

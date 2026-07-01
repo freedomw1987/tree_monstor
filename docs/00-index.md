@@ -11,6 +11,7 @@
 | 文件 | 狀態 | 用途 |
 |------|------|------|
 | [`../README.md`](../README.md) | Overview | 人類入口、平台支援、快速開始 |
+| [`../CLAUDE.md`](../CLAUDE.md) | Adapter / Bridge | Claude Code auto-discovery bridge；指向 canonical profile docs 與 Claude Code adapter |
 | [`../SOUL.md`](../SOUL.md) | Canonical | 身份定位、核心原則、QA 姿態、紅線索引 |
 | [`../AGENTS.md`](../AGENTS.md) | Canonical | Session 啟動流程、工作區規範、長任務判斷 |
 | [`../MEMORY.md`](../MEMORY.md) | Canonical | 長期記憶、穩定偏好、常用流程摘要 |
@@ -24,6 +25,7 @@
 | Identity / philosophy | [`SOUL.md`](../SOUL.md) | 只放身份、流程、紅線和引用；避免變成完整 inventory |
 | Session startup / workspace | [`AGENTS.md`](../AGENTS.md) | `/goal`、resume handshake、工作區規範 |
 | Long-term memory | [`MEMORY.md`](../MEMORY.md) | 穩定記憶摘要；不維護完整 skills / roles 清單 |
+| Claude Code entry bridge | [`CLAUDE.md`](../CLAUDE.md) + [`adapters/claude-code/agent.md`](../adapters/claude-code/agent.md) | Claude Code startup / routing only；canonical behavior 仍在 SOUL / AGENTS / MEMORY / docs / skills |
 | Phase workflow | [`docs/phases.md`](phases.md) | Think → Plan → Build → Review → Test → Ship → Reflect |
 | Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、Model Tiering；不要在其他文件硬寫角色數量 |
 | Task Board format | [`docs/task-board.md`](task-board.md) | Canonical spelling uses hyphen: `docs/task-board.md` |

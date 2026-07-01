@@ -51,6 +51,31 @@ python3 scripts/docs_consistency_check.py --project-docs
 
 ---
 
+## 0B. Existing Project Intake Gate（現有項目接手前）
+
+接手 existing / inherited project，或 project docs / tests / QA tracker / regression hooks 狀態未知時，先執行 `skills/existing-project-intake/SKILL.md`，不可直接進 Build。
+
+觸發情況：
+
+- project 是現有項目，agent 未完成 source-first analysis
+- docs baseline 缺失、過期或與 source 矛盾
+- tests / QA tracker 狀態未知
+- regression hooks / `/__qa/*` endpoints 狀態未知
+- David 要求「總結齊全 docs 後再繼續開發」
+
+Intake report 必須識別：
+
+- docs baseline status
+- PRD ↔ QA tracker sync status
+- test inventory / known test commands
+- regression mode / hook inventory
+- `/__qa/*`、`/debug`、`/dev`、seed/reset endpoint 的 safety state
+- minimum task-scoped baseline before Build
+
+缺 `/__qa/*` 不自動 blocking；intake 要判斷 requested task 是否需要 deterministic setup / reset / time / queue / mailbox / external fixture / per-`RG-XXX` hook。若不需要，寫 `N/A + reason`。若 existing debug endpoint 不安全，先標 blocker 或 tech debt，不可盲用。
+
+---
+
 ## 1. Doc-Code Sync Check（任何改動後必跑）
 
 **任何 code 或文檔改動** → 必須 sync 對應文檔：
@@ -64,6 +89,7 @@ python3 scripts/docs_consistency_check.py --project-docs
 | **User Story 改動** | `PRD.md`（更新 US）+ `QA-TRACKER.md`（PARTIAL / 新 row）|
 | **David 在 Build 中提出新需求 / 修正** | 暫停 Build → 更新 `PRD.md` + `QA-TRACKER.md` + 受影響 docs → 再繼續 |
 | **Bug fix** | `REGRESSION-GUARD.md`（新 RG-XXX）+ `TEST-COVERAGE.md`（regression test）+ 相關 US row 備註 |
+| **Review / QA / code-review feedback** | Apply and update affected docs, or record deferral / rejection rationale in `TECH-DEBT.md`, `QA-TRACKER.md`, `REGRESSION-GUARD.md`, ADR, or the affected canonical doc |
 | **新增 / 修改 regression hook 或 switch** | `TEST-COVERAGE.md` Regression Mode / Hooks matrix + `QA-TRACKER.md` regression 欄位；如涉及 bug fix 則同步 `REGRESSION-GUARD.md`，如新增 `/__qa/*` 或 QA panel 則同步 `API.md` / `DESIGN.md` |
 | **Refactor** | `TECH-DEBT.md`（新 row，標 DEPRECATED 嘅債務）|
 | **依賴升級** | `TECH-DEBT.md`（upgrade 記錄）|
@@ -179,12 +205,29 @@ Regression mode 係 deterministic fixture / observability / seed / reset / test 
 - Regression helper 不可 disable auth、permission、rate limit、audit log、security behavior
 - QA seed/reset 只能作用於 test tenant / test DB / test schema，不能動 production data 或真實 email/SMS/payment side effect
 
+### `/__qa/*` endpoint merge policy
+
+新增 / 修改 `/__qa/*` 或等效 backend QA endpoint 屬於 API contract change，必須同步：
+
+- `docs/API.md`：method / path、purpose、request / response、auth / secret / allowlist、environment guard、tenant / data scope、audit logging、idempotency / reset behavior、production exposure expectation、相關 `US-XXX` / `RG-XXX`、test command / QA enablement
+- `docs/TEST-COVERAGE.md`：Regression Mode / Hooks matrix row
+- `docs/QA-TRACKER.md`：Regression Hook / Regression Mode status
+- `docs/REGRESSION-GUARD.md`：如 endpoint tied to `RG-XXX` bug fix
+- `docs/DESIGN.md`：如涉及 frontend QA panel / visual controls
+
+`/__qa/*` 可以 seed / reset / observe deterministic fixtures，但不可 grant privilege、不可 bypass 真實 auth / permission / rate limit / audit / security behavior。Production 驗證必須證明 route 404 / 403 / hard reject 且沒有 side effect。
+
 ### Merge blockers
 
 - `REGRESSION_MODE`、`/__qa`、`x-regression`、`seedRegression` 等 hook 無 env guard
-- `skipAuth`、`bypassPermission`、`disableRateLimit`、`rateLimit = false` 等繞過語義出現在 regression code
+- 禁止 / merge blocker: `skipAuth`、`bypassPermission`、`disableRateLimit`、`rateLimit = false` 等繞過語義出現在 regression code
 - QA endpoint 無 auth / internal secret / staging allowlist
 - Frontend QA panel 可在 production build 訪問
+- `/__qa/*` 出現在 changed code，但 `docs/API.md` 未更新
+- `/__qa/*` docs 缺 production boundary 或 auth / control language
+- state-changing QA endpoint 缺 tenant / test DB / test schema scope
+- unsafe bypass wording 作為 guidance，而不是 forbidden / anti-pattern / merge blocker
+- `RG-XXX` entry 提到 backend hook，但缺 Production exposure check
 
 未通過 Regression Mode Gate = 不可 merge / ship。
 
@@ -198,10 +241,11 @@ Regression mode 係 deterministic fixture / observability / seed / reset / test 
 1. Run default docs consistency check → profile docs / links / catalog 0 issue
 2. Run project docs baseline check (`--project-docs`) → required docs + PRD ↔ QA-TRACKER 0 drift
 3. Run doc-code sync check (`--base-ref origin/main --doc-code-sync`) → code 改動有對應 docs
+3a. Review feedback sync check → no review / QA / code-review suggestion remains only in chat or PR comments; each is reflected in docs or explicitly deferred / rejected with rationale.
 4. Read docs/PRD.md → 確認當前 scope
 5. Read docs/QA-TRACKER.md → 確認當前 status
 6. Run test suite → 3 層全部 pass + coverage 達 §3 要求
-7. Run Regression Mode Gate (§3A) → hooks documented, QA-runnable, production-safe
+7. Run Regression Mode Gate (§3A) → hooks documented, QA-runnable, production-safe；如有 `/__qa/*`，驗證 production 404 / 403 / hard reject 且無 side effect
 8. Update tracker → 反映當前 sprint 嘅真實狀態
 9. 跑 smoke test（紅線 17）→ production-like env 0 error
 10. Run security scan（紅線 18）→ 0 Critical/High CVE

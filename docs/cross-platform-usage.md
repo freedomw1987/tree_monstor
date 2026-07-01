@@ -11,7 +11,7 @@ This document explains how the same Tree Monstor core identity works across diff
 | Platform | Delegation Mechanism | Tool Access | Session Persistence | Multi-Agent |
 |----------|---------------------|-------------|---------------------|--------------|
 | **Hermes Agent** | `delegate_task()` via gateway | Full toolset via gateway | Built-in session management | ✅ Full subagent system |
-| **Claude Code** | `--agent` spawning | Terminal, file, web, read | Per-session | ✅ Via `--agent` flag |
+| **Claude Code** | root `CLAUDE.md`, optional adapter file, Claude Code-native subagents/workflows when available | Claude Code tools | Per-session / repo-local context | ✅ Via Claude Code-native mechanisms when available |
 | **Codex** | Single-agent only | Codex tools | Per-session | ❌ Role-switching pattern |
 
 ---
@@ -76,41 +76,54 @@ Current Hermes versions use `config.yaml` under the profile directory for gatewa
 
 ### How It Works
 
-Use the adapter file at `adapters/claude-code/agent.md`:
+Recommended usage: open the repository normally and let Claude Code read root `CLAUDE.md`.
+
+```bash
+cd ~/.hermes/profiles/developer  # or your tree_monstor clone path
+claude
+```
+
+`CLAUDE.md` bridges Claude Code to:
+
+- `SOUL.md`
+- `AGENTS.md`
+- `MEMORY.md`
+- `docs/00-index.md`
+- `skills/README.md`
+- `adapters/claude-code/agent.md`
+
+### Explicit Adapter Mode
+
+If your Claude Code installation supports explicit adapter files, you can still use:
 
 ```bash
 claude --agent-file adapters/claude-code/agent.md
 ```
 
-### Delegation
-
-Use `--agent` to spawn subagents:
-
-```bash
-claude --agent "researcher" "Research tech stack for real-time chat app"
-```
-
 ### System Prompt Alternative
+
+Fallback mode with fewer Claude Code-specific routing instructions:
 
 ```bash
 claude --system-prompt-file SOUL.md
 ```
 
+### Delegation
+
+Use the Claude Code-native subagent / workflow mechanism available in the current installation. In some CLI environments this may look like `--agent`; in harness environments it may be exposed as subagent tools, slash skills, or workflow support.
+
+Examples are conceptual; verify the mechanism supported by your Claude Code runtime:
+
+```bash
+# Example only, if supported by your Claude Code install
+claude --agent "researcher" "Research tech stack for real-time chat app"
+```
+
 ### Multi-Agent Pattern
 
-Claude Code supports multi-agent via `--agent` flag. In the agent definition, we specify:
+When Claude Code supports subagents/workflows, map Tree Monstor roles from `docs/subagents.md` onto the runtime mechanism. If not available, use the Codex-style role-switching pattern inside a single agent.
 
-```yaml
-instructions: |
-  # Tree Monstor instructions for Claude Code
-  # Includes SOUL.md core + spawning patterns
-```
-
-Spawn subagents for complex tasks:
-```
-claude --agent "frontend" "Build React component for user dashboard"
-claude --agent "backend" "Create user authentication API"
-```
+Local Tree Monstor skills under `skills/<name>/SKILL.md` are markdown instructions unless separately registered as Claude Code runtime skills. Use `skills/README.md` to route to the right local skill.
 
 ---
 
@@ -160,15 +173,17 @@ The Codex adapter (`adapters/codex/system-prompt.md`) includes:
 
 ## Adapting Subagents for Single-Agent Platforms
 
-### Hermes / Claude Code (Multi-Agent)
+### Hermes / Claude Code (Multi-Agent when supported)
 
-Subagents are separate processes/agents with their own context:
+Subagents are separate processes/agents/tools with their own context:
 
 ```
 Orchestrator → spawns → CEO agent
                       → spawns → Researcher agent
                       → spawns → BA agent
 ```
+
+Claude Code support depends on the active runtime. Use native subagent/workflow mechanisms when available; otherwise use role-switching.
 
 ### Codex (Single-Agent)
 
@@ -234,9 +249,11 @@ Recovery process is the same:
 - Discord/Telegram/etc. as messaging platforms
 
 ### Claude Code
-- `--agent` for subagent spawning
-- Tool access: terminal, file, web, read
-- Session state per-invocation
+- Root `CLAUDE.md` is the preferred integration point
+- Explicit `adapters/claude-code/agent.md` remains available for adapter-file usage
+- Local Tree Monstor skills are markdown instructions unless installed as Claude Code runtime skills
+- Dynamic Workflow / subagents are availability-dependent; use them when supported and appropriate
+- Session state is per session / repo-local context
 
 ### Codex
 - Single agent only
@@ -253,7 +270,7 @@ Recovery process is the same:
 | Discord/Telegram bot | Hermes Agent |
 | CLI development assistant | Claude Code |
 | Single-task coding | Codex |
-| Complex multi-agent orchestration | Hermes Agent or Claude Code |
+| Complex multi-agent orchestration | Hermes Agent or Claude Code when native subagents/workflows are available |
 | Quick prototyping | Codex or Claude Code |
 
 ---
@@ -262,6 +279,7 @@ Recovery process is the same:
 
 - [Documentation index](00-index.md)
 - [README](../README.md)
+- [Claude Code bridge](../CLAUDE.md)
 - [Claude Code adapter](../adapters/claude-code/agent.md)
 - [Codex adapter](../adapters/codex/system-prompt.md)
 - [Hermes adapter guide](../adapters/hermes/README.md)

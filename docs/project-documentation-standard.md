@@ -49,6 +49,20 @@ Build 前要求的是 **baseline / skeleton / N/A**，不是所有細節 final�
 
 **Build-blocking rule**：baseline 不存在、PRD 與 QA-TRACKER 不同步、或 API / Design / ADR / Test / Tech Debt 沒有 baseline / N/A 說明時，任務停留在 Plan，不能開始 Build。
 
+### Existing Project Intake / Bootstrap Mode
+
+現有 project 未必一開始就有完整 docs baseline。接手 existing / inherited project 時，先執行 `skills/existing-project-intake/SKILL.md`，用 source-first intake 建立真實現狀，而不是直接套用理想模板或憑記憶補文件。
+
+原則：
+
+- 不 fabricate missing PRD / API / design details；source code、routes、schemas、tests、git history、existing docs 才是 evidence base。
+- 如果 docs 與 source 矛盾，標記 docs stale，並以 source-derived baseline 更新。
+- Unknown details 必須標 `TBD`、`Unknown` 或 `N/A + reason`。
+- 第一個 code change 前，至少要為受影響範圍建立 task-scoped baseline：affected requirement、API/design behavior、test/regression plan、QA tracker row。
+- 非當前任務需要的缺失 docs，可記入 `docs/TECH-DEBT.md` 或 intake report follow-up；不可 silently ignore。
+- 缺 `/__qa/*` endpoint 不自動阻擋 Build；intake 必須判斷 requested task 是否真的需要 deterministic QA hook。
+- 行為變更、bug fix、API/design/test 變更仍必須在 Build / Ship 前更新受影響 docs。
+
 ### 需求變更同步 Protocol
 
 David 在 Build 中、Review 後、Test 後或 Ship 前提出新需求 / 修正時，先停手做 doc sync：
@@ -59,10 +73,35 @@ David 在 Build 中、Review 後、Test 後或 Ship 前提出新需求 / 修正�
 | 新增 / 修改 / 刪除 User Story | `docs/PRD.md` + `docs/QA-TRACKER.md`（新 US 加 row，改 US 標 PARTIAL，刪 US 標 DEPRECATED） |
 | UI / component / layout / token | `docs/DESIGN.md` + `docs/TEST-COVERAGE.md` |
 | API contract / endpoint / error code | `docs/API.md` + `docs/TEST-COVERAGE.md` |
+| 新增 / 修改 / 刪除 `/__qa/*` endpoint 或 regression hook | `docs/API.md` + `docs/TEST-COVERAGE.md` + `docs/QA-TRACKER.md`；如 bug / `RG-XXX` 相關則加 `docs/REGRESSION-GUARD.md`；如 frontend QA panel 則加 `docs/DESIGN.md`；如引入 test tenant / fake mailbox / test clock / queue drain 等 test-only architecture 則新增 ADR |
 | 架構 / data model / infrastructure | 新 ADR + 受影響文檔 |
 | test plan / coverage | `docs/QA-TRACKER.md` + `docs/TEST-COVERAGE.md` |
 | refactor / dependency / known trade-off | `docs/TECH-DEBT.md` |
 | bug fix | `docs/REGRESSION-GUARD.md` + `docs/TEST-COVERAGE.md` + 相關 US row 備註 |
+
+### Review Feedback → Docs Sync Protocol
+
+Review / QA / code-review feedback 在改變 scope、acceptance criteria、design、API、architecture、test coverage、regression behavior 或 known debt 時，即屬於 durable project knowledge，不能只留在 chat、PR comments 或臨時 notes。
+
+一個 feedback item 只有在以下任一條件成立時才算完成：
+
+1. suggestion 已 apply，且受影響 docs 在同一 change 中同步更新；
+2. suggestion 已 defer，且 defer 原因記錄在 `docs/TECH-DEBT.md`、`docs/QA-TRACKER.md` 或受影響 doc 的 changelog / notes；
+3. suggestion 已 reject，且 reject rationale 記錄在受影響 doc 或 review summary。
+
+最小同步 mapping：
+
+| Feedback type | Required docs |
+|---|---|
+| requirement / acceptance criteria | `docs/PRD.md` + `docs/QA-TRACKER.md` |
+| UI / UX / component / layout | `docs/DESIGN.md` + `docs/TEST-COVERAGE.md` |
+| API / wire shape / error code | `docs/API.md` + `docs/TEST-COVERAGE.md` |
+| architecture / data model / infrastructure | ADR under `docs/architecture/NNNN-<short-title>.md` + affected docs |
+| test gap / QA finding | `docs/QA-TRACKER.md` + `docs/TEST-COVERAGE.md` |
+| bug / regression risk | `docs/REGRESSION-GUARD.md` + `docs/TEST-COVERAGE.md` + related tracker row |
+| refactor / cleanup / trade-off | `docs/TECH-DEBT.md` |
+
+Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ### Commit expectations
 
@@ -344,6 +383,29 @@ David 在 Build 中、Review 後、Test 後或 Ship 前提出新需求 / 修正�
 
 ### GET /users/{id}
 ...
+
+## QA / Regression Endpoints
+
+> Scope: dev/test/staging only. Production must not mount `/__qa/*` or must hard reject before side effects.
+
+| Method | Path | Purpose | Auth / Guard | Data Scope | Audit | Production Behavior | Related US/RG |
+|--------|------|---------|--------------|------------|-------|---------------------|---------------|
+| POST | /__qa/seed | Seed deterministic fixture | QA secret + staging auth | test tenant only | yes | 404 / 403 | US-001 / RG-001 |
+
+### POST /__qa/seed
+**描述**: Idempotently seed regression fixture for a `US-XXX` or `RG-XXX` scenario.
+
+**Allowed caller**: QA / CI / test automation only.
+**Allowed environments**: dev/test/staging only.
+**Production behavior**: Not mounted or returns 404 / 403 before side effects.
+**Auth / access control**: QA secret / staging SSO / IP allowlist / authenticated test role.
+**Tenant / data scope**: test tenant / test DB / test schema only.
+**Side effects**: No real email / SMS / payment; sandbox / fake services only.
+**Audit event**: Record actor, endpoint, tenant, US/RG, fixture version.
+**Idempotency**: Safe to rerun.
+**對應 US/RG**: US-001 / RG-001
+**對應 Test**: `test:regression:rg -- RG-001` or equivalent.
+**Safety verification**: production 404 / 403; `REGRESSION_MODE=true` production hard fail / reject.
 ```
 
 **生成方式**:
@@ -410,6 +472,8 @@ David 在 Build 中、Review 後、Test 後或 Ship 前提出新需求 / 修正�
 - 詳見 `docs/qa-tracker.md`
 
 **Regression rule**:`docs/REGRESSION-GUARD.md` 不是無 bug project 的必備文件；但 project 一旦有 bug fix / `RG-XXX` entry，就必須存在，且 `TEST-COVERAGE.md` 必須在 Regression Mode / Hooks matrix 收錄對應 QA 啟用方式。
+
+**`/__qa/*` hook rule**:Backend hook 以 `/__qa/` 開頭時，必須在 `docs/API.md` 的 QA / Regression Endpoints section 有對應 endpoint contract。該 row 的 `Production safety` 不可留空，且必須明確寫 production not mounted / 404 / 403 / hard reject、test tenant / test DB / test schema scope、auth / secret / allowlist。`READY` row 必須同時有 test command、QA enablement、environment 與 production safety。
 
 ---
 

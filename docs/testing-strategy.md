@@ -138,9 +138,9 @@
 
 **禁止**:
 - production 中存在 regression 後門
-- hardcoded admin token
-- 隱藏 error、跳過 validation
-- 因為 E2E flaky 就 disable auth / permission / rate limit
+- 禁止 / anti-pattern: hardcoded admin token
+- 禁止 / anti-pattern: 隱藏 error、跳過 validation
+- 禁止 / anti-pattern: 因為 E2E flaky 就 disable auth / permission / rate limit
 
 #### Backend regression hooks
 
@@ -164,8 +164,41 @@
 **禁止**:
 - production DB reset / seed
 - 真 email / SMS / payment side effect
-- `if regressionMode then skipAuth()` / `bypassPermission()` / `rateLimit = false`
-- 信任 `x-regression-mode` header 作為權限來源
+- 禁止 / anti-pattern: `if regressionMode then skipAuth()` / `bypassPermission()` / `rateLimit = false`
+- 禁止 / anti-pattern: 信任 `x-regression-mode` header 作為權限來源
+
+#### `/__qa/*` endpoint policy
+
+`/__qa/*` endpoints 只可以用作 deterministic QA / test controls，不是 product API，也不是 user-facing feature。
+
+**允許用途**:
+- health / status：`GET /__qa/health`
+- seed：`POST /__qa/seed`，建立 deterministic fixture
+- reset：`POST /__qa/reset`，只 reset test tenant / test DB / test schema
+- fake mailbox / notification inbox：檢查 email / SMS / notification 的 sandbox output
+- test clock：freeze / travel / reset time，驗證 TTL、trial、subscription、scheduled job
+- queue drain：讓 async jobs 可重跑、可觀察，不靠 sleep
+- external fixture control：控制 payment / webhook / LLM / storage 等 sandbox response
+- per-`RG-XXX` setup / assert / cleanup：例如 `/__qa/regression/RG-004`
+
+**endpoint contract**:
+- 只在 dev/test/staging 或等價 non-production environment mount
+- production 必須 not mounted / 404，或在任何 side effect 前 hard reject 403 / 410
+- `NODE_ENV=production` + `REGRESSION_MODE=true` 必須 boot-time hard fail 或 loudly reject before routes mount
+- state-changing endpoint 必須有 auth / QA secret / staging SSO / IP allowlist 至少一種；destructive action 建議至少兩種 control
+- 所有 QA action 必須 audit log actor、scope、US/RG、fixture version
+- mutation 只可作用於 test tenant / test DB / test schema；不可碰 production data
+- seed / reset 必須 idempotent，可安全重跑
+- external side effect 必須使用 fake / sandbox；不可送真 email / SMS / payment
+- 不可 disable auth、permission、rate limit、validation、audit 或 security behavior；要建立可測試狀態，而不是 bypass 真實行為
+
+**docs sync**:
+- backend `/__qa/*` endpoint → `docs/API.md` + `docs/TEST-COVERAGE.md` + `docs/QA-TRACKER.md`
+- `RG-XXX` bug fix endpoint → 同步 `docs/REGRESSION-GUARD.md`
+- frontend QA panel / visual control → 同步 `docs/DESIGN.md`
+- test tenant / fake mailbox / test clock / queue drain 等 test-only architecture → 視影響新增 ADR
+
+Unsafe wording（例如 `skipAuth`、`bypassPermission`、`disableRateLimit`、`rateLimit = false`、`x-regression-mode` 作權限來源）只可以出現在「禁止 / anti-pattern / merge blocker」語境；不能作為實作指引。
 
 #### QA script naming convention
 

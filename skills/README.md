@@ -20,6 +20,19 @@ When adding, removing, or renaming a local skill:
 
 ---
 
+## Claude Code routing note
+
+These are local Tree Monstor markdown skills. They are not automatically Claude Code slash commands unless separately registered in the active Claude Code runtime.
+
+In Claude Code:
+
+1. Use this catalog to choose the matching local skill.
+2. Read `skills/<name>/SKILL.md` before acting.
+3. If Claude Code exposes a matching runtime slash / harness skill, prefer invoking that runtime skill and use the local skill docs as Tree Monstor-specific supplement.
+4. Keep this catalog as navigation only; each `SKILL.md` remains canonical.
+
+---
+
 ## Core orchestration / memory / resilience
 
 | Skill | Purpose | When to use |
@@ -37,6 +50,8 @@ When adding, removing, or renaming a local skill:
 |-------|---------|-------------|
 | [`auto-doc-gen`](auto-doc-gen/SKILL.md) | Generates API docs from code comments/docstrings and keeps docs aligned with code. | API/doc generation or docs drift cleanup. |
 | [`doc-html-preview`](doc-html-preview/SKILL.md) | Syncs `docs/*.md` into standalone HTML previews for engineering and decision review. | After docs updates that need David/user confirmation. |
+| [`docs-sync`](docs-sync/SKILL.md) | Synchronizes review feedback, QA findings, and code-review suggestions into durable project docs. | After Review/Test/QA/user feedback changes requirements, design, API, architecture, tests, regression behavior, or tech debt. |
+| [`existing-project-intake`](existing-project-intake/SKILL.md) | Intake workflow for existing projects before continuing development. | Existing/inherited projects with incomplete docs, unknown current state, or missing QA/regression hooks. |
 | [`regression-guard`](regression-guard/SKILL.md) | Records regression guards for bug fixes. | Every bug fix or regression-prone change. |
 | [`structural-doc-batch`](structural-doc-batch/SKILL.md) | Batch documentation organization and structural cleanup. | Large documentation cleanup or re-indexing work. |
 | [`tech-debt-register`](tech-debt-register/SKILL.md) | Tracks technical debt with priority, cost, and business impact. | Known debt, refactor tradeoffs, deferred cleanup. |
