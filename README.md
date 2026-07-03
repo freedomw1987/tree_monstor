@@ -8,6 +8,20 @@
 
 ---
 
+## 🛡️ 代碼品質鐵律（最高優先級，跨平台適用）
+
+> **2026-07-03 新增**：過往品質規則偏重「文檔存在」，出現文檔齊全但代碼有 bug 的情況。以下三條紅線將品質判準翻轉為「實際執行、觀察行為」，**優先於所有流程規則**。
+
+| 紅線 | 規則 | 違反後果 |
+|---|---|---|
+| **54 先重現** | Bug fix 動手前必須用最小步驟實際重現並觀察錯誤輸出 | 盲修、治標不治本、新 bug 引入 |
+| **55 實證驗證** | 交付前必須實際跑 lint/typecheck/test/build 並回報真實輸出 | 假裝驗證、未被發現的 bug 上線 |
+| **56 先讀後寫** | 改 code 前先讀懂周邊代碼、慣例、依賴 | 猜測 API 簽名、命名不一致、破壞 invariant |
+
+**文檔齊全 ≠ 代碼正確。測試檔案存在 ≠ 測試通過。** 判斷標準永遠是「實際跑過、觀察到正確行為」。
+
+---
+
 ## 跨平台適配架構
 
 ```
@@ -50,6 +64,7 @@
 
 | 如果你想... | 先讀 |
 |-------------|------|
+| 了解代碼品質鐵律（紅線 54-56） | 本 README 開頭「代碼品質鐵律」段 |
 | 5 分鐘內了解這個 profile | [`SOUL.md`](SOUL.md) |
 | 啟動一個 session / 理解工作規範 | [`AGENTS.md`](AGENTS.md) |
 | 理解長期記憶與穩定偏好 | [`MEMORY.md`](MEMORY.md) |
@@ -189,23 +204,55 @@ macOS / launchd 背景服務化、故障排除、跟 default profile 的並存�
 
 ### Claude Code
 
-推薦方式：在 repo root 直接開啟 Claude Code，讓 root [`CLAUDE.md`](CLAUDE.md) 自動 bridge 到 `SOUL.md`、`AGENTS.md`、`MEMORY.md`、`docs/00-index.md`、`skills/README.md` 與 Claude Code adapter。
+Claude Code 的 `CLAUDE.md` auto-discovery 只在 current working directory 及其 parent chain 內有效。**直接 `cd tree_monstor && claude` 不會自動載入**（你的下游 project 才是 cwd）。
 
-```bash
-cd ~/.hermes/profiles/developer  # 或你的 tree_monstor clone path
-claude
+推薦做法：建立一個 thin global bridge 指向這個 profile repo。
+
+**1. 全局載入 profile（推薦，所有 project 自動生效）**
+
+建立 `~/.claude/CLAUDE.md`：
+
+```markdown
+# David 的全局 Claude Code profile
+
+@~/Sites/localhost/tree_monstor/CLAUDE.md
 ```
 
-進階 / explicit adapter mode（如你的 Claude Code 版本支援）：
+之後 `claude` 開任何 session 都會自動載入 Tree Monstor 紅線、QA Gate、文件索引。
+
+**2. 註冊 skills**
+
+profile 裡的 `skills/*/SKILL.md` 不是 Claude Code 標準位置，需要 symlink：
 
 ```bash
-claude --agent-file adapters/claude-code/agent.md
+mkdir -p ~/.claude/skills
+for skill in ~/Sites/localhost/tree_monstor/skills/*/; do
+  ln -s "$skill" ~/.claude/skills/
+done
 ```
 
-Fallback system-prompt mode（較少 Claude Code-specific routing）：
+之後 `/regression-guard`、`/existing-project-intake` 等 skill 直接 invoke。
+
+**3. Per-project 載入（只在某個 project 用）**
+
+在下游 project 根目錄的 `CLAUDE.md` 加：
+
+```markdown
+@~/Sites/localhost/tree_monstor/CLAUDE.md
+```
+
+**4. 一次性 session（測試用，不展開 import）**
 
 ```bash
-claude --system-prompt-file SOUL.md
+claude --append-system-prompt-file ~/Sites/localhost/tree_monstor/CLAUDE.md
+```
+
+**5. 整個 session 跑成 Tree Monstor agent**
+
+把 profile 包成自訂 subagent 放 `~/.claude/agents/tree-monstor.md`，然後：
+
+```bash
+claude --agent tree-monstor
 ```
 
 詳細文檔：[`CLAUDE.md`](CLAUDE.md) + [adapters/claude-code/agent.md](adapters/claude-code/agent.md)
@@ -255,6 +302,14 @@ OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定�
 
 未通過以下清單，**絕對不會交付**：
 
+### 驗證驅動（最高優先，所有平台適用）
+
+- [ ] **紅線 54**：Bug fix 已用最小步驟實際重現，錯誤輸出已記錄
+- [ ] **紅線 55**：lint / typecheck / test / build 全部實際跑過，**真實輸出**附上
+- [ ] **紅線 56**：改動前已讀懂周邊代碼、慣例、依賴
+
+### QA Gate（已採用文檔基線的 project）
+
 - [ ] Think: CEO 市場分析 + Researcher 調研報告完成
 - [ ] Plan: 商業計劃 + PRD + Design + Architecture 確認
 - [ ] Build: 所有代碼已提交
@@ -264,9 +319,13 @@ OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定�
 - [ ] Ship: 生產環境部署確認
 - [ ] Reflect: 復盤報告完成
 
+> **文檔紀律紅線 10-18 為條件式**：只適用於已採用文檔基線的 project（已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 等）。小型任務或未採用基線的 project，文檔要求降為建議，**不可以因文檔缺失而拒絕交付經實證驗證的代碼**。
+
 ---
 
 ## 紅線（底線原則）
+
+### 通用（所有平台適用）
 
 ```
 ❌ 不跳過 QA Gate 就交付
@@ -274,6 +333,19 @@ OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定�
 ❌ 不寫有安全漏洞的代碼（SQL Injection、XSS 等）
 ❌ 不提交明文密鑰或 Secrets
 ❌ 不只執行命令 — Think/Plan 階段必須問對問題
+
+❌ 紅線 54：修 bug 不重現就動手
+❌ 紅線 55：交付前沒實際跑過驗證
+❌ 紅線 56：基於猜測寫 code 不先讀 source
+```
+
+### 平台專用（Hermes runtime 限定，Claude Code / Codex 不適用）
+
+```
+⚠️ 紅線 19-51：Hermes gateway / process 管理 incident 補強
+⚠️ 紅線 52：config / runtime 增量交付紀律（commit ≤1 階段、≤200 行、≤1 紅線）
+⚠️ Checkpoint 節奏（每 20-30 tool calls）、Goal echo box、Resume handshake
+⚠️ Model Tiering 表（minimax-m3 / gpt-5.5）
 ```
 
 ---
