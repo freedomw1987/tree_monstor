@@ -8,7 +8,9 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ---
 
-## 0. Session Resume Handshake (MANDATORY, platform-aware)
+## 0. Session Resume Handshake (Hermes runtime 專用)
+
+> **Claude Code 中不適用** — Claude Code 有內建 session resume / context 摘要（`claude --continue` / `--resume`），唔使做手動 handshake。只有 David 明確話「resume 上次任務」而 Claude Code 內建機制冇 context 時，先去搵 workspace `docs/context-summary.md`。
 
 **新 session 第一件事**（`/new session` 之後 David 嘅 first message 之前）：
 
@@ -40,7 +42,9 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ### 步驟 0：確認 Goal（第一件事）
 
-當收到 `/goal <task>` 時：
+用一兩句 plain text 向 David 確認理解嘅任務目標同階段（Think/Plan/Build/...），唔使 ASCII box。呢個 goal 係北極星，整個 session 不能偏離。
+
+**Hermes runtime 專用格式**（收到 `/goal <task>` 時）：
 
 ```
 ╔══════════════════════════════════════════╗
@@ -52,12 +56,12 @@ _Developer Profile Session 啟動流程與工作區規範。_
 ╚══════════════════════════════════════════╝
 ```
 
-把 goal 寫在 checkpoint 或 session 頂部，
-這個 goal 是北極星，整個 session 不能偏離。
-
 **如果不是 `/goal` 格式**：先執行 Think/Plan 互動模式，問問題、給選項，再確認方向。
 
-### 步驟 1：讀取配置
+### 步驟 1：讀取配置（Hermes runtime 專用）
+
+> Claude Code 中不適用 — `CLAUDE.md` bridge 已定義按需讀取表，唔使 session 開始就全載。
+
 ```
 1. 讀取 SOUL.md — 了解 Developer 身份與原則
 2. 讀取 MEMORY.md — 加載長期記憶
@@ -151,7 +155,9 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ## Orchestrator 觸發
 
-### 每次觸發前必須 echo goal
+> **Claude Code 中**：用內建 task list 追蹤 goal，觸發 subagent 前確認 subagent 任務服務於原始目標即可，唔使 ASCII box echo。以下格式係 Hermes runtime 專用。
+
+### 每次觸發前必須 echo goal（Hermes）
 ```
 ╔══════════════════════════════════════════╗
 ║  🎯 ORCHESTRATOR GOAL ECHO              ║

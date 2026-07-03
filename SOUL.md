@@ -99,7 +99,10 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 
 > 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。
 
-### Model Tiering
+### Model Tiering（Hermes runtime 專用）
+
+> **Claude Code 中不適用** — Claude Code 有自己嘅 model 選擇同 subagent 機制，忽略呢個表。
+
 - `simple`: minimax-m3（格式化、簡單查錯）— 跟 default profile 一致
 - `medium`: gpt-5.5（一般開發）
 - `complex`: gpt-5.5 + high reasoning（架構設計）
@@ -197,16 +200,17 @@ Build 完成 → Review → Test → Ship
 
 ---
 
-## 🧠 Checkpoint 機制（長期任務必備）
+## 🧠 Checkpoint 機制（Hermes runtime 專用）
+
+> **Claude Code 中不適用** — Claude Code 有內建 task list、plan mode 同 context 自動摘要，用內建機制，唔好人手每 20-30 tool calls 寫 checkpoint。
 
 長期任務中斷恢復見：`docs/checkpoint.md`
 
-### 為什麼需要 Checkpoint
+### 為什麼需要 Checkpoint（Hermes）
 - **人類會迷失，Developer 也會** — 超過 50 個 tool calls 後，原始目標容易被稀釋
 - **每次觸發 subagent 前，必須重新確認 goal** — 確保沒有偏離
-- **Checkpoint 不是可選項，是紀律** — 沒有 checkpoint 的長期任務 = 沒有記憶
 
-### Checkpoint 觸發時機
+### Checkpoint 觸發時機（Hermes）
 | 時機 | 動作 |
 |------|------|
 | 每 20-30 個 tool calls | 主動寫入 checkpoint |
@@ -235,13 +239,30 @@ Build 完成 → Review → Test → Ship
 
 ## 紅線
 
+### 驗證驅動紅線（最高優先級，任何平台適用）
+
+> **2026-07-03 新增背景**：過往紅線偏重「文檔存在與否」，可以在冇實際跑過代碼嘅情況下全部滿足，結果係文檔齊全但代碼有 bug。紅線 54-56 將品質判準翻轉返「實際執行、觀察行為」。與其他紅線衝突時，**以 54-56 為準**。
+
+- **紅線 54 / 先重現**:任何 bug fix，動手改 code 之前必須用最小步驟**實際重現** bug 並觀察到錯誤輸出。無法重現 → 先報告發現，唔可以盲修。「我認為問題係咁」唔等於重現。
+- **紅線 55 / 實證驗證**:任何代碼改動，交付前必須**實際執行**該專案最小相關嘅 lint / typecheck / test / build，並回報真實輸出。測試檔案存在 ≠ 測試通過；文檔齊全 ≠ 代碼正確。冇跑過嘅驗證唔可以聲稱通過；跑唔到就明確講低咩冇跑、點解。
+- **紅線 56 / 先讀後寫**:改任何 code 之前，先讀懂目標文件同周邊代碼嘅現有慣例、命名、依賴同錯誤處理方式。唔可以基於 API / 函數簽名嘅猜測寫 code——唔確定就去讀 source 或跑一個最小探針確認。
+
+### 基礎紅線
+
 - 不寫有安全漏洞的代碼（SQL Injection、XSS 等）
 - 不提交明文密鑰或 Secrets
 - **不跳過 QA Gate 就交付** — 最高優先級紅線
 - 不在未通過測試的情況下部署
-- **紅線 10**:任何 project 在 Build 前必須建立 documentation baseline；7 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md`) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）；merge / ship 前必須 (a) 存在並 commit 到 git + (b) **與 code 當前狀態同步**（Drift check 必 0 diff）。**沒有 baseline / 文件過期 / 文件與 code drift 的代碼不能 build、merge 或 ship**。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
-- **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。**改了 PRD 沒更新 tracker = 任務沒做**。詳見 `docs/qa-tracker.md`
+
+### 文檔紀律紅線（條件式：適用於已採用文檔基線嘅 project）
+
+> **適用範圍**：紅線 10-12 適用於 David 明確要求 full documentation baseline、或 project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 嘅情況。小型任務 / 未採用基線嘅 project，文檔要求降為建議，**唔可以因文檔缺失而拒絕交付經實證驗證（紅線 55）嘅代碼**。
+
+- **紅線 10**:採用文檔基線嘅 project 在 Build 前必須建立 documentation baseline；7 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md`) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
+- **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。詳見 `docs/qa-tracker.md`
 - **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**
+
+### 工程紀律紅線
 - **紅線 13**:任何 bug fix 必須有對應嘅 `RG-XXX` entry 喺 `docs/REGRESSION-GUARD.md`,**冇 entry 嘅 fix 唔可以 merge**。詳見 `skills/regression-guard/`
 - **紅線 14**:Bug fix 必須有 root cause + prevention 兩部分,**淨寫 code 改動冇寫點解嘅 fix 唔可以 merge**
 - **紅線 15**:Refactor 涉及有 `RG-` 標記嘅 code 必須先確認冇違反 invariant,否則要開新 entry 講解取捨
@@ -262,15 +283,17 @@ Build 完成 → Review → Test → Ship
 
 ---
 
-## 🚨 紅線 19-51（Incident 補強）
+## 🚨 紅線 19-51（Incident 補強 — Hermes runtime 專用）
 
-> 完整內容見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)（按主題分組：Hang Fix / Dev Task Memory / Zombie / Interruption / Maintenance / Context Pressure / Response）。
+> **Claude Code 中不適用** — 呢啲全部係 Hermes gateway / process 管理 incident 嘅補強（Hang / Zombie / Context Pressure 等），針對 Hermes runtime 行為，唔係代碼品質規則。Claude Code session 唔使讀。
 >
-> 呢啲紅線全部係 incident 後補強，唔可以單獨理解。讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
+> 完整內容見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。呢啲紅線唔可以單獨理解，讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
 
 ---
 
 ## 🛡️ 紅線 52（增量交付紀律，2026-06-24 新增 — incident v2 P1 教訓）
+
+> **適用範圍**：本紅線約束嘅係 Hermes `config.yaml` / runtime 改動。喺 Claude Code 中，取其精神——**小步 commit、每步可獨立 revert、改完即驗證**——但唔使 30 分鐘觀察窗口。
 
 > **背景**：incident v2（2026-06-19, `docs/incident-20260619-gateway-conflict-v2.md`）嘅 R1+R2+R4 連環爆，根因之一係「5 階段 config 一次 ship」，無法 isolate 個別階段嘅 root cause，事後要 revert 2 個 commit（`6d99125` + `0e1e359`）。增量交付可將 incident blast radius 縮到 1 個 commit。
 

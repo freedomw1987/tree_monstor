@@ -121,11 +121,12 @@ Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
 
 ## 質量標準
 
-- **QA Gate 未通過，絕對不能交付**；Build 前 documentation baseline / doc-code sync 亦屬 gate → 見 [`docs/qa-gate.md`](qa-gate.md) + [`docs/project-documentation-standard.md`](project-documentation-standard.md)
+- **紅線 54-56（驗證驅動，最高優先級）**：修 bug 先重現、交付前實證驗證、改 code 前先讀後寫 → 見 [`SOUL.md`](../SOUL.md)
+- **QA Gate 未通過，絕對不能交付**；Build 前 documentation baseline / doc-code sync 亦屬 gate（適用於已採用文檔基線嘅 project）→ 見 [`docs/qa-gate.md`](qa-gate.md) + [`docs/project-documentation-standard.md`](project-documentation-standard.md)
 - Review 未 APPROVED，絕對不能進入 Test → 見 [`docs/feedback-loop.md`](feedback-loop.md)
 - 所有強制 Phase 必須完成才能進入下一階段 → 見 [`docs/phases.md`](phases.md)
 - **紅線 10-18**（文檔 gate、QA tracker、test tasks、regression guard、root cause、refactor invariant、三層測試、smoke test、CVE 0）→ 見 [`SOUL.md`](../SOUL.md) + [`docs/qa-gate.md`](qa-gate.md)
-- **紅線 19-51**（incident 後補強）→ 見 [`docs/red-lines-19-51.md`](red-lines-19-51.md)
+- **紅線 19-51**（incident 後補強，Hermes runtime 專用）→ 見 [`docs/red-lines-19-51.md`](red-lines-19-51.md)
 
 ---
 

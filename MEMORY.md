@@ -46,7 +46,17 @@ Reflect ── 復盤
 
 ---
 
-## Model Tiering
+## 代碼品質鐵律（所有平台適用，優先於流程規則）
+
+1. **先讀後寫** — 改 code 前先讀懂周邊代碼、慣例、依賴（紅線 56）
+2. **修 bug 先重現** — 觀察到真實錯誤輸出先動手（紅線 54）
+3. **實證驗證** — 交付前實際跑最小相關 lint/typecheck/test/build 並回報真實輸出（紅線 55）
+4. **小步改動** — 一次一個邏輯改動，改完即驗證
+5. **文檔不能替代驗證** — 文檔齊全 ≠ 代碼正確
+
+---
+
+## Model Tiering（Hermes runtime 專用；Claude Code 不適用）
 
 > Subagent 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。
 
@@ -102,7 +112,7 @@ Local skills catalog 見 [`skills/README.md`](skills/README.md)。
 
 ## 紅線
 
-> 紅線 1-18 見 [`SOUL.md`](SOUL.md)，紅線 19-51 見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。
+> 驗證驅動紅線 54-56 + 紅線 1-18 見 [`SOUL.md`](SOUL.md)；紅線 19-51（Hermes runtime 專用）見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。
 
 ---
 
