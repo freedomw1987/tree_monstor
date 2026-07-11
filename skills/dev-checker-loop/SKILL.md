@@ -7,7 +7,7 @@ description: |
   until all items are VERIFIED or escalation limits are hit.
 trigger: |
   "dev checker loop" / "dev-loop" / "STATE.md" / "checker agent" / "雙 agent 開發" / "自動檢查循環" / "開發檢查協作"
-version: 1
+version: 2
 category: software-development
 ---
 
@@ -46,7 +46,7 @@ category: software-development
 | 角色 | 執行者 | 職責 | 禁止事項 |
 |------|--------|------|---------|
 | **Dev agent** | 主對話 / 主 agent | **按原有完整開發流程工作**（鐵律、plan mode、skill routing 照常），外加：拆解計畫為 work items；完成 item 時自跑最小驗證並更新 `docs/STATE.md`；回應 checker findings 並修復 | 不可跳過自我驗證直接標 DEV_DONE；不可為了讓 checker 通過而弱化/刪除測試；不可以「loop 在跑」為由省略原流程步驟 |
-| **Checker agent** | 獨立 fresh subagent（每輪新 spawn） | 讀 STATE.md 中 DEV_DONE items；讀相關 diff；**實際執行**該專案最小相關 lint / typecheck / test / build；把 findings + 真實輸出證據寫回 STATE.md | 不可只讀 STATE.md 聲稱就下判斷；不可直接改實作代碼（發現問題交回 dev 修）；不可在沒跑驗證的情況下標 VERIFIED |
+| **Checker agent** | 獨立 fresh subagent（每輪新 spawn） | 讀 STATE.md（含 Verification Commands、Resolved Findings）；按範圍讀 DEV_DONE items 的 diff；**實際執行**驗證命令；行為可見改動做 runtime 驗證；覆核 FIXED findings；對照 Goal 做完整性檢查；把 findings + 真實輸出證據寫回 STATE.md | 不可只讀 STATE.md 聲稱就下判斷；不可直接改實作代碼（發現問題交回 dev 修）；不可在沒跑驗證的情況下標 VERIFIED；不可無新證據重提已裁決 finding；不可用純懷疑標 blocker/major |
 
 Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態欄）。
 
@@ -64,23 +64,34 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
 > **Status:** Dev/Checker loop coordination state.
 > **Goal:** <用戶需求一句話>
 > **Round:** 3 / 10 (max)
+> **Check depth:** normal | deep
 > **Last updated:** YYYY-MM-DD HH:MM by <dev-agent|checker-agent>
+
+## Verification Commands
+
+<第一輪確立本專案的驗證命令，之後每輪 checker 直接使用，不重新摸索>
+
+| 檢查 | 命令 | 備註 |
+|------|------|------|
+| typecheck | `bun tsc --noEmit` | |
+| test | `bun test` | |
+| runtime smoke | <啟動方式 + 觀察路徑> | 行為可見改動必跑 |
 
 ## Work Items
 
-| ID | 描述 | 狀態 | 打回次數 | 最後更新 |
-|----|------|------|---------|---------|
-| WI-001 | ... | VERIFIED | 1 | ... |
-| WI-002 | ... | CHECK_FAILED | 2 | ... |
+| ID | 描述 | 涉及檔案 / commits | 狀態 | 打回次數 | 最後更新 |
+|----|------|-------------------|------|---------|---------|
+| WI-001 | ... | `src/a.ts`, `src/b.ts` / abc1234 | VERIFIED | 1 | ... |
+| WI-002 | ... | `src/api/x.ts` / def5678..HEAD | CHECK_FAILED | 2 | ... |
 
 狀態: TODO / IN_PROGRESS / DEV_DONE / CHECKING / CHECK_FAILED / VERIFIED / ESCALATED
 
 ## Checker Findings (open)
 
 ### CK-003 — WI-002: <finding 標題>
-- **Severity:** blocker | major | minor
+- **Severity:** blocker | major | minor | needs-info
 - **問題:** <具體問題>
-- **證據:** <命令 + 真實輸出摘錄>
+- **證據:** <命令 + 真實輸出摘錄；blocker/major 必須是實際觀察到的失敗>
 - **要求:** <dev 需要做什麼>
 - **狀態:** OPEN / FIXED / DISPUTED
 
@@ -92,7 +103,7 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
 
 ## Resolved Findings
 
-<CK-XXX 關閉後移到這裡，保留審計線索>
+<CK-XXX 關閉後移到這裡，保留審計線索。含 DISPUTED 後被裁決不成立的 finding 及裁決理由>
 
 ## Escalation
 
@@ -103,8 +114,11 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
 
 - Work item ID 格式 `WI-XXX`，checker finding ID 格式 `CK-XXX`，各自遞增。
 - 每次寫入必須更新 header 的 `Round` 和 `Last updated`（含寫入者身份）。
-- Finding 關閉後從 `Checker Findings (open)` 移到 `Resolved Findings`，不刪除。
+- Dev 標 DEV_DONE 時必須填「涉及檔案 / commits」欄 — checker 據此定位本輪 diff 範圍，不會被跨回合累積的整體 diff 淹沒。
+- `Verification Commands` 由第一輪 checker（或 dev 啟動時）確立並持續修正；後續 checker 直接使用，省去每輪重新摸索專案。
+- Finding 關閉後從 `Checker Findings (open)` 移到 `Resolved Findings`，不刪除。已裁決不成立的 finding 也要留在 Resolved 並記裁決理由 — 防止後續 fresh checker 重提。
 - `Verification Evidence` 只接受真實執行過的命令 + 真實輸出摘錄；沒跑的檢查明確寫「未跑 + 原因」。
+- `Check depth` 預設 `normal`；David 要求或 item 涉及 production / 安全敏感 / 高 regression 風險時可設 `deep`（見 Checker standards）。
 
 ---
 
@@ -117,14 +131,17 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
     │ dev: 取一個 TODO item → IN_PROGRESS               │
     │ dev: 小步實作 + 自跑最小驗證 → DEV_DONE           │
     │ dev: spawn fresh checker subagent                  │
-    │ checker: 讀 STATE.md DEV_DONE items + git diff     │
-    │ checker: 實際執行 lint/typecheck/test/build        │
+    │ checker: 讀整份 STATE.md（commands/resolved 在內） │
+    │ checker: 按範圍讀 DEV_DONE items 的 diff           │
+    │ checker: 實際執行驗證命令 + runtime 行為驗證       │
+    │ checker: 覆核 FIXED findings（重跑原證據命令）     │
+    │ checker: 完整性檢查（items 集合 vs Goal）          │
     │ checker: 寫 evidence + findings 回 STATE.md        │
     │   ├─ 無問題 → VERIFIED                             │
     │   └─ 有問題 → CHECK_FAILED + CK-XXX（打回次數+1）  │
     │ dev: 讀 STATE.md → 修復 open findings → 重新 DEV_DONE│
     └────────────────────────────────────────────────────┘
-  → 全部 items VERIFIED 且無 open finding → 向 David 總結報告（引 STATE.md 證據）
+  → 全部 items VERIFIED、無 open finding、Goal 覆蓋確認 → 向 David 總結報告（引 STATE.md 證據）
   → 或觸發終止條件 → 寫 Escalation section → 停下問 David
 ```
 
@@ -135,21 +152,43 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
 
 ## Checker standards（檢查清單）
 
-Checker 每輪至少做齊：
+Checker 每輪的固定順序：
 
-1. **實證驗證** — 實際執行該專案最小相關的 lint / typecheck / test / build，把命令和真實輸出摘錄寫進 `Verification Evidence`。跑不了的檢查明確寫明什麼沒跑、為什麼。
-2. **Diff 核對** — 讀該 item 相關的 `git diff`，核對代碼實際做的事是否符合 item 描述聲稱的行為，檢查明顯邏輯錯誤、遺漏邊界、hardcode。
-3. **Bug fix 專項** — item 屬於 bug fix 時，依 [`regression-guard`](../regression-guard/SKILL.md) 標準檢查：有無重現證據、有無 red→green 測試、有無 `docs/REGRESSION-GUARD.md` entry 和 `RG-XXX` 代碼標記。
-4. **文檔≠驗證** — 「測試檔案存在」「文檔已更新」不等於通過；判斷只基於實際執行結果。
-5. **不確定就打回** — 無法確認正確性時標 CHECK_FAILED 並說明缺什麼證據，而不是放行。
+**Step 0 — 讀 context（先做，避免重複勞動和重提舊案）**
 
-Severity 定義：
+- 讀整份 `docs/STATE.md`，包括 `Verification Commands`（直接用，不重新摸索專案）和 `Resolved Findings`。
+- **不得重提已裁決不成立的 finding**，除非有新證據（新 diff 觸及同一處、新的失敗輸出）；重提時必須引用新證據並註明與舊 finding 的差異。
 
-| Severity | 含義 | 對狀態的影響 |
-|----------|------|-------------|
-| blocker | 功能錯誤、驗證失敗、regression 風險 | 必須 CHECK_FAILED |
-| major | 明顯品質問題（遺漏邊界、錯誤處理缺失） | 必須 CHECK_FAILED |
-| minor | 風格 / 可讀性 / 非必要優化 | 記錄 finding 但可 VERIFIED，dev 自行決定是否處理 |
+**Step 1 — 逐 item 檢查（DEV_DONE items）**
+
+1. **Diff 核對（按範圍）** — 依 Work Items 表的「涉及檔案 / commits」欄讀該 item 的 diff（`git diff <range> -- <files>`），核對代碼實際做的事是否符合 item 聲稱的行為，檢查明顯邏輯錯誤、遺漏邊界、hardcode。範圍欄缺失 = 直接 CHECK_FAILED（needs-info），要求 dev 補填。
+2. **實證驗證** — 按 `Verification Commands` 實際執行該專案最小相關的 lint / typecheck / test / build，命令和真實輸出摘錄寫進 `Verification Evidence`。跑不了的檢查明確寫明什麼沒跑、為什麼。
+3. **Runtime 行為驗證** — item 的改動行為可見時（UI、API endpoint、CLI 輸出、任何用戶可觀察的行為），靜態檢查不夠：實際啟動 app / 呼叫 endpoint / 走一次 happy path 並觀察行為（typecheck 通過不是 runtime 證明）。純內部重構且測試已覆蓋者可豁免，但要在 evidence 註明豁免理由。
+4. **FIXED finding 覆核** — 對每個 dev 標了 `FIXED` 的 finding，**重跑該 finding 證據欄的原命令**（或重走原觀察路徑）並貼新輸出，確認該問題本身真的修好（而不是整體測試碰巧通過）。覆核通過才移進 Resolved Findings。
+5. **Bug fix 專項** — item 屬於 bug fix 時，依 [`regression-guard`](../regression-guard/SKILL.md) 標準檢查：有無重現證據、有無 red→green 測試、有無 `docs/REGRESSION-GUARD.md` entry 和 `RG-XXX` 代碼標記。
+6. **Dev 流程合規** — 順帶檢查：diff 是否小步（一個 item 塞了多個無關邏輯改動 = major）；有無弱化 / 跳過 / 刪除測試的跡象（= blocker，升級）；行為 / API / 測試變更有無按專案規則同步文檔。
+
+**Step 2 — 完整性檢查（對照 Goal，不只對照 items）**
+
+- 對照 STATE.md header 的 **Goal**，判斷現有 work items 集合是否真的覆蓋用戶需求。逐 item 全 VERIFIED ≠ 需求完成。
+- 發現缺口（漏掉的功能面、未處理的明顯場景）→ 寫 `SCOPE` 類 finding（`CK-XXX`，severity 按影響定），建議新增 work item。此檢查每輪都做，最後一輪（所有 items 都 VERIFIED 時）**必做**且要在摘要中明確回答「Goal 是否已被覆蓋」。
+
+**證據門檻與 severity：**
+
+| Severity | 含義 | 證據要求 | 對狀態的影響 |
+|----------|------|---------|-------------|
+| blocker | 功能錯誤、驗證失敗、regression 風險、弱化測試 | **必須附實際觀察到的失敗**（命令輸出 / runtime 行為） | 必須 CHECK_FAILED，計入打回次數 |
+| major | 明顯品質問題（遺漏邊界、錯誤處理缺失、非小步 diff） | **必須附實際觀察到的失敗或具體代碼位置** | 必須 CHECK_FAILED，計入打回次數 |
+| minor | 風格 / 可讀性 / 非必要優化 | 具體代碼位置即可 | 記錄 finding 但可 VERIFIED，dev 自行決定 |
+| needs-info | 無法確認正確性、缺證據、範圍欄缺失 | 說明缺什麼、dev 要補什麼 | CHECK_FAILED，但**不計入打回次數** |
+
+純懷疑（沒有觀察到的失敗）不得標 blocker/major——標 needs-info 要 dev 補證據，或標 minor。這防止猜測性 finding 燒掉打回額度、製造假性乒乓。
+
+**Deep 模式（header `Check depth: deep` 時）：**
+
+- 對高風險 item（production 相關、安全敏感、高 regression 風險），dev 並行 spawn 2–3 個不同視角的 fresh checker：**正確性**（上述清單）、**regression**（會不會弄壞現有行為，跑既有測試全集 + RG guards）、**安全**（輸入驗證、權限、秘密洩漏）。
+- 各自寫 findings 進 STATE.md（ID 不衝突：spawn 前 dev 在 prompt 裡分配 ID 區段）；任一 checker 標 blocker/major 即 CHECK_FAILED。
+- Token 成本明顯較高，預設 normal；由 David 要求或 dev 判斷 item 風險後升級，並在 header 註明。
 
 ---
 
@@ -157,7 +196,7 @@ Severity 定義：
 
 | 條件 | 動作 |
 |------|------|
-| 全部 work items VERIFIED 且無 open blocker/major finding | Loop 正常結束，dev 向 David 總結（引用 STATE.md evidence） |
+| 全部 work items VERIFIED、無 open blocker/major finding、且最後一輪 checker 明確確認 Goal 已被覆蓋（完整性檢查） | Loop 正常結束，dev 向 David 總結（引用 STATE.md evidence） |
 | 同一 work item 打回次數達 **3** | 該 item 標 ESCALATED，停 loop，寫 Escalation section，問 David |
 | 總回合數達上限（預設 **10**，可在 STATE.md header 調整） | 停 loop，寫 Escalation section（含剩餘 items 狀態），問 David |
 | dev 與 checker 對同一 finding 標 DISPUTED 往返達 **2** 次 | 停 loop，把雙方理據寫進 Escalation section，交 David 裁決 |
@@ -188,6 +227,9 @@ Escalation section 必須包含：卡住的 item、finding 全文、dev 已嘗�
 4. **同一個 checker context 重用多輪** — 會累積對 dev 實作的熟悉和偏見，失去獨立性。每輪必須 fresh spawn。
 5. **沒設回合上限就開 loop** — 收斂不了的問題會無限燒 token。開 loop 前 header 必須有 max round。
 6. **把 STATE.md 當 dev 的個人筆記** — 它是兩個 agent 的協作契約，格式亂了 checker 會漏檢。遵守模板欄位。
+7. **逐 item 全 VERIFIED 就宣告完成 = 漏了完整性檢查。** Items 是 dev 自己拆的，拆漏了 checker 逐 item 檢查也看不見；最後一輪必須對照 Goal 確認覆蓋。
+8. **靜態檢查通過就放行行為可見的改動 = runtime 盲區。** TypeScript / lint 通過不是 runtime 證明；UI / API / CLI 行為改動必須實際跑起來觀察。
+9. **Fresh checker 重提已裁決的舊 finding = 假性乒乓。** Step 0 先讀 Resolved Findings；無新證據不得重提。
 
 ---
 
