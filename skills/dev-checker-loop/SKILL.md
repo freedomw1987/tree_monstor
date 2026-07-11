@@ -19,6 +19,7 @@ category: software-development
 
 ## Core rule
 
+0. **Loop 是外加層，不是替代流程。** Dev 階段就是原本的完整開發流程，原封不動——鐵律、Think/Plan 互動、plan mode、skill routing（regression-guard、docs-sync、existing-project-intake…）、專案本地規則，在 loop 內全部照常適用。Loop 只外加兩件事：(a) 開發單位記錄為 STATE.md work items；(b) 每輪獨立 checker 實證覆核。任何「因為在跑 loop 所以省略原流程某一步」都是誤用。
 1. **Checker 的判斷標準永遠是「實際跑過、觀察到正確行為」**（代碼品質鐵律 3/5）。文檔寫齊、測試檔案存在、dev 聲稱通過，都不構成 VERIFIED。
 2. **Checker 必須是 fresh、獨立的 subagent** — 不沿用 dev 的 context，不帶 dev 的偏見。Checker 的職責是找問題，不是幫 dev 通過。
 3. **所有協作狀態必須寫進 `docs/STATE.md`** — findings 只留在對話中不算數；dev 的完成聲明沒寫進 STATE.md 就不會被檢查。
@@ -44,7 +45,7 @@ category: software-development
 
 | 角色 | 執行者 | 職責 | 禁止事項 |
 |------|--------|------|---------|
-| **Dev agent** | 主對話 / 主 agent | 拆解需求為 work items；一次實作一個 item（小步改動）；自己先跑最小驗證；更新 `docs/STATE.md`；回應 checker findings 並修復 | 不可跳過自我驗證直接標 DEV_DONE；不可為了讓 checker 通過而弱化/刪除測試 |
+| **Dev agent** | 主對話 / 主 agent | **按原有完整開發流程工作**（鐵律、plan mode、skill routing 照常），外加：拆解計畫為 work items；完成 item 時自跑最小驗證並更新 `docs/STATE.md`；回應 checker findings 並修復 | 不可跳過自我驗證直接標 DEV_DONE；不可為了讓 checker 通過而弱化/刪除測試；不可以「loop 在跑」為由省略原流程步驟 |
 | **Checker agent** | 獨立 fresh subagent（每輪新 spawn） | 讀 STATE.md 中 DEV_DONE items；讀相關 diff；**實際執行**該專案最小相關 lint / typecheck / test / build；把 findings + 真實輸出證據寫回 STATE.md | 不可只讀 STATE.md 聲稱就下判斷；不可直接改實作代碼（發現問題交回 dev 修）；不可在沒跑驗證的情況下標 VERIFIED |
 
 Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態欄）。
@@ -180,6 +181,7 @@ Escalation section 必須包含：卡住的 item、finding 全文、dev 已嘗�
 
 ## Pitfalls
 
+0. **把 loop 的精簡步驟當成完整開發流程 = 最常見誤用。** Loop lifecycle 描述的是協作節奏，不是開發方法；dev 階段的開發方法永遠是原有流程（鐵律 + Think/Plan + skill routing）。實測發現 dev agent 跑 loop 時會退化成只照 loop 步驟走、丟失原流程——所以本檔和操作版都明文：loop 從不豁免任何原有步驟。
 1. **Checker 只看 STATE.md 聲稱不看代碼 / 不跑命令 = 失職。** VERIFIED 沒有 evidence 行支撐就是無效判定。
 2. **Dev 為了讓 checker 通過而弱化、跳過或刪除測試 = 紅線。** 發現此行為時 checker 必須標 blocker 並升級。
 3. **Findings 只留在 subagent 回覆、沒寫進 STATE.md = 不算數。** 下一輪 checker 是 fresh 的，STATE.md 是唯一協作媒介。
