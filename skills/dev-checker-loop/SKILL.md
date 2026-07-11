@@ -2,12 +2,14 @@
 name: dev-checker-loop
 description: |
   Dev-agent / checker-agent collaboration loop driven by downstream project docs/STATE.md.
-  Dev agent implements and records work items; an independent checker agent verifies each
-  item with real lint/typecheck/test/build evidence and writes findings back; loop continues
-  until all items are VERIFIED or escalation limits are hit.
+  Dev agent implements work items and ships a regression test (behind a project-wide
+  regression switch with logged output) for every user-visible feature; an independent
+  checker agent runs the full regression suite, reads the logs, audits feature coverage,
+  and writes findings back; loop continues until all items are VERIFIED, coverage has no
+  gaps, or escalation limits are hit.
 trigger: |
-  "dev checker loop" / "dev-loop" / "STATE.md" / "checker agent" / "雙 agent 開發" / "自動檢查循環" / "開發檢查協作"
-version: 2
+  "dev checker loop" / "dev-loop" / "STATE.md" / "checker agent" / "雙 agent 開發" / "自動檢查循環" / "開發檢查協作" / "regression 開關"
+version: 3
 category: software-development
 ---
 
@@ -24,6 +26,7 @@ category: software-development
 2. **Checker 必須是 fresh、獨立的 subagent** — 不沿用 dev 的 context，不帶 dev 的偏見。Checker 的職責是找問題，不是幫 dev 通過。
 3. **所有協作狀態必須寫進 `docs/STATE.md`** — findings 只留在對話中不算數；dev 的完成聲明沒寫進 STATE.md 就不會被檢查。
 4. **Loop 有硬性上限** — 不允許無限打乒乓。達到上限就停下向 David 升級，帶著完整證據。
+5. **每個功能都要有可開關、有日誌的 regression test** — dev 交付一個 item 不只交代碼，還要交該功能的 regression test（掛在專案統一的 regression 開關下，執行時輸出結構化日誌）。Checker 每輪開開關實跑全套 regression、讀日誌、並審計前端+後端功能覆蓋——漏測的功能就是 finding。這把 regression 保護從「靠 agent 自覺」變成「留在專案裡的機器可執行物」。
 
 ---
 
@@ -45,10 +48,51 @@ category: software-development
 
 | 角色 | 執行者 | 職責 | 禁止事項 |
 |------|--------|------|---------|
-| **Dev agent** | 主對話 / 主 agent | **按原有完整開發流程工作**（鐵律、plan mode、skill routing 照常），外加：拆解計畫為 work items；完成 item 時自跑最小驗證並更新 `docs/STATE.md`；回應 checker findings 並修復 | 不可跳過自我驗證直接標 DEV_DONE；不可為了讓 checker 通過而弱化/刪除測試；不可以「loop 在跑」為由省略原流程步驟 |
-| **Checker agent** | 獨立 fresh subagent（每輪新 spawn） | 讀 STATE.md（含 Verification Commands、Resolved Findings）；按範圍讀 DEV_DONE items 的 diff；**實際執行**驗證命令；行為可見改動做 runtime 驗證；覆核 FIXED findings；對照 Goal 做完整性檢查；把 findings + 真實輸出證據寫回 STATE.md | 不可只讀 STATE.md 聲稱就下判斷；不可直接改實作代碼（發現問題交回 dev 修）；不可在沒跑驗證的情況下標 VERIFIED；不可無新證據重提已裁決 finding；不可用純懷疑標 blocker/major |
+| **Dev agent** | 主對話 / 主 agent | **按原有完整開發流程工作**（鐵律、plan mode、skill routing 照常），外加：拆解計畫為 work items；完成 item 時自跑最小驗證並更新 `docs/STATE.md`；**為每個功能型 item 寫 regression test 並掛進專案 regression 開關**；維護 STATE.md 的 Regression Coverage 表；回應 checker findings 並修復 | 不可跳過自我驗證直接標 DEV_DONE；不可為了讓 checker 通過而弱化/刪除測試；不可以「loop 在跑」為由省略原流程步驟；不可交付沒有 regression test 的功能型 item |
+| **Checker agent** | 獨立 fresh subagent（每輪新 spawn） | 讀 STATE.md（含 Verification Commands、Resolved Findings、Regression Coverage）；按範圍讀 DEV_DONE items 的 diff；**實際執行**驗證命令；**開 regression 開關實跑全套 regression suite 並逐條讀日誌**；行為可見改動做 runtime 驗證；覆核 FIXED findings；**審計前端+後端功能的 regression 覆蓋**；對照 Goal 做完整性檢查；把 findings + 真實輸出證據寫回 STATE.md | 不可只讀 STATE.md 聲稱就下判斷；不可直接改實作代碼（發現問題交回 dev 修）；不可在沒跑驗證的情況下標 VERIFIED；不可無新證據重提已裁決 finding；不可用純懷疑標 blocker/major；不可只看 runner 的 exit code 不讀日誌內容 |
 
 Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態欄）。
+
+---
+
+## Regression harness contract（專案內的 regression test 基建）
+
+Loop 啟動時，如果專案還沒有以下三件東西，**建立它們就是第一批 work items**（同樣走 dev→checker 流程檢查）：
+
+### 1. Regression 開關
+
+專案統一的開關控制 regression suite 是否執行，形式依專案技術棧（環境變數如 `REGRESSION_MODE=1`、test runner tag/filter 如 `--grep @regression`、或 npm/bun script 如 `test:regression`）。要求：
+
+- **一個開關跑全套** — checker 不需要知道每個測試怎麼跑，開開關執行 runner 就是全部。
+- 開關 off 時 regression suite 不干擾正常 dev/test 流程。
+- 開關和 runner 命令記錄在 STATE.md 的 `Verification Commands` 表（`regression` 一行）。
+- 沿用 [`regression-guard`](../regression-guard/SKILL.md) 的安全邊界：涉及 `/__qa/*` endpoints 或 runtime fixture 時，只在 dev/test/staging 掛載，production 必須 404/403；開關不得繞過 auth / 權限 / audit。
+
+### 2. 結構化日誌輸出
+
+開關 on 執行時，每條 regression test 輸出機器可讀的一行日誌（寫到 stdout 或約定的日誌檔，位置記錄在 Verification Commands 備註），至少含：
+
+```text
+[REGRESSION] <RT-ID> | <feature 名稱> | <frontend|backend|e2e> | PASS|FAIL | <耗時> | <失敗時：錯誤摘要>
+```
+
+結尾輸出總結行：`[REGRESSION SUMMARY] total=N pass=N fail=N skip=N`。要求日誌**逐功能可對賬**——checker 靠日誌行對照 Coverage 表，而不是只看 exit code。
+
+### 3. STATE.md 的 Regression Coverage 表
+
+專案所有用戶可見功能（前端頁面/交互 + 後端 endpoint/服務行為）的清單，每個功能對應它的 regression test。這是 checker 覆蓋審計的對賬單（格式見 File contract）。
+
+- Loop 第一輪先盤點現有功能建立初版（existing project 可結合 [`existing-project-intake`](../existing-project-intake/SKILL.md)）。
+- Dev 每完成一個功能型 item，必須同步在表中登記新功能和對應 `RT-XXX`。
+- 純內部重構（無用戶可見行為變化）可標 N/A，但要寫理由。
+
+### Dev 的每 item regression 義務
+
+功能型 item 標 DEV_DONE 的前提，除了原有自驗，還包括：
+
+1. 該功能的 regression test 已寫好、掛進開關、本地開開關跑過一次真實通過。
+2. Coverage 表已登記（feature → `RT-XXX` → 類型 frontend/backend/e2e）。
+3. 測試斷言的是**用戶可觀察的行為**（頁面渲染結果、API response、狀態變化），不是實作細節——這樣重構不會誤殺，真 regression 逃不掉。
 
 ---
 
@@ -75,7 +119,21 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
 |------|------|------|
 | typecheck | `bun tsc --noEmit` | |
 | test | `bun test` | |
+| regression | <開關 + runner，如 `REGRESSION_MODE=1 bun test:regression`> | 日誌位置：<stdout / 檔案路徑> |
 | runtime smoke | <啟動方式 + 觀察路徑> | 行為可見改動必跑 |
+
+## Regression Coverage
+
+<專案所有用戶可見功能的對賬單。checker 每輪據此審計覆蓋；dev 新增功能必須同步登記>
+
+| Feature | 類型 | RT-ID | 狀態 | 備註 |
+|---------|------|-------|------|------|
+| 登入流程 | frontend | RT-001 | COVERED | |
+| POST /api/orders | backend | RT-002 | COVERED | |
+| 訂單列表分頁 | frontend | — | **MISSING** | CK-012 |
+| 內部 util 重構 | — | — | N/A | 無用戶可見行為，單元測試覆蓋 |
+
+狀態: COVERED / MISSING / N/A(附理由)
 
 ## Work Items
 
@@ -112,7 +170,7 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
 
 規則：
 
-- Work item ID 格式 `WI-XXX`，checker finding ID 格式 `CK-XXX`，各自遞增。
+- Work item ID 格式 `WI-XXX`，checker finding ID 格式 `CK-XXX`，regression test ID 格式 `RT-XXX`，各自遞增。`RT-XXX` 同時出現在測試代碼（測試名或註解）和日誌行，保持可對賬。
 - 每次寫入必須更新 header 的 `Round` 和 `Last updated`（含寫入者身份）。
 - Dev 標 DEV_DONE 時必須填「涉及檔案 / commits」欄 — checker 據此定位本輪 diff 範圍，不會被跨回合累積的整體 diff 淹沒。
 - `Verification Commands` 由第一輪 checker（或 dev 啟動時）確立並持續修正；後續 checker 直接使用，省去每輪重新摸索專案。
@@ -134,6 +192,8 @@ Checker 唯一允許的寫入是 `docs/STATE.md`（findings、evidence、狀態�
     │ checker: 讀整份 STATE.md（commands/resolved 在內） │
     │ checker: 按範圍讀 DEV_DONE items 的 diff           │
     │ checker: 實際執行驗證命令 + runtime 行為驗證       │
+    │ checker: 開 regression 開關跑全套 + 逐條讀日誌     │
+    │ checker: 覆蓋審計（Coverage 表 vs 實際功能/日誌）  │
     │ checker: 覆核 FIXED findings（重跑原證據命令）     │
     │ checker: 完整性檢查（items 集合 vs Goal）          │
     │ checker: 寫 evidence + findings 回 STATE.md        │
@@ -165,10 +225,28 @@ Checker 每輪的固定順序：
 2. **實證驗證** — 按 `Verification Commands` 實際執行該專案最小相關的 lint / typecheck / test / build，命令和真實輸出摘錄寫進 `Verification Evidence`。跑不了的檢查明確寫明什麼沒跑、為什麼。
 3. **Runtime 行為驗證** — item 的改動行為可見時（UI、API endpoint、CLI 輸出、任何用戶可觀察的行為），靜態檢查不夠：實際啟動 app / 呼叫 endpoint / 走一次 happy path 並觀察行為（typecheck 通過不是 runtime 證明）。純內部重構且測試已覆蓋者可豁免，但要在 evidence 註明豁免理由。
 4. **FIXED finding 覆核** — 對每個 dev 標了 `FIXED` 的 finding，**重跑該 finding 證據欄的原命令**（或重走原觀察路徑）並貼新輸出，確認該問題本身真的修好（而不是整體測試碰巧通過）。覆核通過才移進 Resolved Findings。
-5. **Bug fix 專項** — item 屬於 bug fix 時，依 [`regression-guard`](../regression-guard/SKILL.md) 標準檢查：有無重現證據、有無 red→green 測試、有無 `docs/REGRESSION-GUARD.md` entry 和 `RG-XXX` 代碼標記。
-6. **Dev 流程合規** — 順帶檢查：diff 是否小步（一個 item 塞了多個無關邏輯改動 = major）；有無弱化 / 跳過 / 刪除測試的跡象（= blocker，升級）；行為 / API / 測試變更有無按專案規則同步文檔。
+5. **Regression test 交付檢查** — 功能型 item 必須帶 regression test：測試存在且掛在開關下、`RT-XXX` 已登記 Coverage 表、斷言的是用戶可觀察行為而非實作細節。缺任一項 = CHECK_FAILED（major）。
+6. **Bug fix 專項** — item 屬於 bug fix 時，依 [`regression-guard`](../regression-guard/SKILL.md) 標準檢查：有無重現證據、有無 red→green 測試、有無 `docs/REGRESSION-GUARD.md` entry 和 `RG-XXX` 代碼標記。
+7. **Dev 流程合規** — 順帶檢查：diff 是否小步（一個 item 塞了多個無關邏輯改動 = major）；有無弱化 / 跳過 / 刪除測試的跡象（= blocker，升級）；行為 / API / 測試變更有無按專案規則同步文檔。
 
-**Step 2 — 完整性檢查（對照 Goal，不只對照 items）**
+**Step 2 — Regression suite 全套執行 + 日誌檢查（每輪必做，不限本輪 items）**
+
+1. 按 `Verification Commands` 的 `regression` 行，**開開關實跑全套 regression suite**——不是只跑本輪 item 的測試。這是抓「本輪改動弄壞舊功能」的主要手段。
+2. **逐條讀日誌**（`[REGRESSION]` 行），不是只看 exit code：
+   - 任何 `FAIL` → 寫 `CK-XXX` finding（blocker），引用該日誌行 + 錯誤摘要，指向對應 feature 和 `RT-XXX`。
+   - 日誌行數 / summary 與 Coverage 表 COVERED 條目對不上（表裡有 RT 但日誌沒出現 = 測試沒跑或被 skip）→ finding（major）。
+   - Runner exit 0 但 summary 有 fail、或日誌格式壞掉無法對賬 → finding（major，harness 本身壞了也是問題）。
+3. 全套結果（total/pass/fail + 失敗清單）寫進 `Verification Evidence`。
+
+**Step 3 — Regression 覆蓋審計（前端 + 後端功能都要有測試）**
+
+1. 盤點實際功能面：讀路由定義（前端 routes / 後端 endpoints）、對照 STATE.md Goal 和已 VERIFIED items，列出用戶可見功能清單。
+2. 對照 `Regression Coverage` 表：
+   - 實際存在但表裡沒有的功能 → 補進表標 `MISSING` + 寫 `CK-XXX` finding（major，coverage gap 類），要求 dev 補 regression test。
+   - 表標 N/A 的條目抽查理由是否成立（有用戶可見行為卻標 N/A = finding）。
+3. 本輪新增 / 修改的功能**必須**當輪覆蓋；存量缺口（loop 開始前就沒測試的舊功能）逐輪補——最後一輪結束時 Coverage 表不得有無 finding 記錄的 MISSING。
+
+**Step 4 — 完整性檢查（對照 Goal，不只對照 items）**
 
 - 對照 STATE.md header 的 **Goal**，判斷現有 work items 集合是否真的覆蓋用戶需求。逐 item 全 VERIFIED ≠ 需求完成。
 - 發現缺口（漏掉的功能面、未處理的明顯場景）→ 寫 `SCOPE` 類 finding（`CK-XXX`，severity 按影響定），建議新增 work item。此檢查每輪都做，最後一輪（所有 items 都 VERIFIED 時）**必做**且要在摘要中明確回答「Goal 是否已被覆蓋」。
@@ -196,7 +274,7 @@ Checker 每輪的固定順序：
 
 | 條件 | 動作 |
 |------|------|
-| 全部 work items VERIFIED、無 open blocker/major finding、且最後一輪 checker 明確確認 Goal 已被覆蓋（完整性檢查） | Loop 正常結束，dev 向 David 總結（引用 STATE.md evidence） |
+| 全部 work items VERIFIED、無 open blocker/major finding、最後一輪 regression 全套 PASS、Coverage 表無未處理 MISSING、且 checker 明確確認 Goal 已被覆蓋 | Loop 正常結束，dev 向 David 總結（引用 STATE.md evidence + regression summary） |
 | 同一 work item 打回次數達 **3** | 該 item 標 ESCALATED，停 loop，寫 Escalation section，問 David |
 | 總回合數達上限（預設 **10**，可在 STATE.md header 調整） | 停 loop，寫 Escalation section（含剩餘 items 狀態），問 David |
 | dev 與 checker 對同一 finding 標 DISPUTED 往返達 **2** 次 | 停 loop，把雙方理據寫進 Escalation section，交 David 裁決 |
@@ -213,7 +291,7 @@ Escalation section 必須包含：卡住的 item、finding 全文、dev 已嘗�
 | `docs/STATE.md`（downstream project） | 本 loop 專用的 committed 協作檔 | 本 skill 擁有；task 級粒度 |
 | `docs/task-board.md` | 整體專案 task board（orchestrator 擁有） | 不取代。大型多階段專案中，STATE.md 對應 task board 上一個任務的內部 loop |
 | `docs/_meta/dev-task-state.md` | gitignored runtime resume state（dev-task-memory 擁有） | 不取代。中斷恢復仍走該機制 |
-| `docs/REGRESSION-GUARD.md` | bug fix 防護記錄 | 不取代。bug fix item 通過 loop 後仍要有 RG entry，checker 負責檢查 |
+| `docs/REGRESSION-GUARD.md` | bug fix 防護記錄（`RG-XXX`，bug 觸發） | 不取代，互補：`RG-XXX` 記「修過的 bug 不復發」，本 loop 的 `RT-XXX` 記「每個功能都有可開關重跑的 regression test」。bug fix item 兩者都要：RG entry + 掛進開關的 regression test |
 | `docs/QA-TRACKER.md` / `docs/TEST-COVERAGE.md` | QA / 測試基線 | 不取代。需求級測試追蹤仍走原文檔 |
 
 ---
@@ -230,6 +308,9 @@ Escalation section 必須包含：卡住的 item、finding 全文、dev 已嘗�
 7. **逐 item 全 VERIFIED 就宣告完成 = 漏了完整性檢查。** Items 是 dev 自己拆的，拆漏了 checker 逐 item 檢查也看不見；最後一輪必須對照 Goal 確認覆蓋。
 8. **靜態檢查通過就放行行為可見的改動 = runtime 盲區。** TypeScript / lint 通過不是 runtime 證明；UI / API / CLI 行為改動必須實際跑起來觀察。
 9. **Fresh checker 重提已裁決的舊 finding = 假性乒乓。** Step 0 先讀 Resolved Findings；無新證據不得重提。
+10. **只看 regression runner 的 exit code = 白裝了日誌。** Runner 可能吞掉失敗、skip 掉測試而 exit 0；checker 必須逐條對賬日誌行和 Coverage 表。
+11. **Regression test 斷言實作細節而非用戶可觀察行為** — 重構時大片誤報，dev 為了過檢查開始刪測試，整個 harness 失去公信力。寫測試時就要斷言行為。
+12. **Coverage 表只登記不維護** — 功能改名 / 刪除後表沒更新，checker 對賬全是噪音。dev 改動功能時同步維護表。
 
 ---
 
