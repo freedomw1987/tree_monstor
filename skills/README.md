@@ -38,6 +38,7 @@ In Claude Code:
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
 | [`orchestrator`](orchestrator/SKILL.md) | Coordinates subagents, task board, dependencies, progress, and failures. | Long multi-phase tasks, parallel subagent work, dependency tracking. |
+| [`dev-checker-loop`](dev-checker-loop/SKILL.md) | Dev-agent / checker-agent collaboration loop coordinated through a downstream project's `<project>/docs/STATE.md`, with evidence-based verification and escalation limits. | Multi-item development needing a built-in quality gate; "dev-loop" / checker-agent requests. |
 | [`context-summarizer`](context-summarizer/SKILL.md) | Compresses long-task context into `docs/context-summary.md`. | Context pressure, resume preparation, long sessions, loop detection. |
 | [`dev-task-memory`](dev-task-memory/SKILL.md) | Persistent memory for in-progress dev tasks across compression, `/new`, and restarts. | Long implementation tasks that must survive interruption. |
 | [`interruption-recovery`](interruption-recovery/SKILL.md) | Interruption and recovery mechanism layered on top of dev-task-memory. | Crash / interruption / gateway restart recovery. |
