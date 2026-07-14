@@ -520,6 +520,12 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 1. ...
 2. ...
 
+## 決策回訪（每次 retro 必做一個）
+- 抽查對象: [隨機抽一個過去的 ADR / 技術選擇 / Think-Plan 決策]
+- 當初的理由: [當時為什麼這樣選]
+- 以現在所知: [會不會選不同？為什麼]
+- 結論: [維持 / 需要新 ADR 修正 / 記入 TECH-DEBT]
+
 ## 下次改進 Action Items
 - [ ] AI: ...
 - [ ] Owner: ...
@@ -535,6 +541,8 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 - 每個 feature 完成後
 - 每次重大 incident 之後
 - 每個 sprint 結束時(sprint retro)
+
+**決策回訪 rule**：incident 驅動嘅改進只會修正「出咗事」嘅決策；安靜嘅次優決策（架構其實唔啱、更好方案冇上桌）唔會自己浮現。所以每次 retro 必須隨機抽一個過去嘅 ADR / 技術選擇，用「以現在所知會唔會選唔同」重新審視一次，結論寫入 retro。答案係「會」時，開新 ADR（標 Supersedes）或記入 `docs/TECH-DEBT.md`，唔可以只留喺 retro。
 
 ---
 
