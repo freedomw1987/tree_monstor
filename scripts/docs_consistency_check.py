@@ -7,6 +7,8 @@ Validates the navigation invariants established by the documentation cleanup:
 - skills/README.md's generated section covers nested skills/*/*/SKILL.md and is fresh
 - active docs have Status markers and Related docs footers
 - stale path/count references do not reappear
+- red lines 54-56 full definitions appear only in SOUL.md
+- no git-tracked or stale root-level backup files
 - local markdown links and concrete backticked repo paths resolve
 """
 
@@ -34,7 +36,7 @@ class Issue:
         return f"[{self.check}] {loc} {self.message}"
 
 
-CORE_FILES = ["README.md", "SOUL.md", "AGENTS.md", "MEMORY.md", "setup-macos.md"]
+CORE_FILES = ["README.md", "CLAUDE.md", "SOUL.md", "AGENTS.md", "MEMORY.md", "setup-macos.md"]
 ADAPTER_FILES = [
     "adapters/claude-code/agent.md",
     "adapters/codex/system-prompt.md",
@@ -337,6 +339,67 @@ def check_stale_refs(root: Path) -> list[Issue]:
                         Issue("stale-refs", path_rel, line_no, "has hard-coded dynamic role/skill count; link canonical source instead")
                     )
                     break
+    return issues
+
+
+# Red lines 54-56 full definitions live only in SOUL.md. Other files may
+# reference them (紅線 54-56, （紅線 55）, checklist rows) but must not restate
+# the definition (`**紅線 5X / <name>**:` form) or the old README table rows.
+REDLINE_FULLTEXT_PATTERNS = [
+    re.compile(r"紅線\s*5[456]\s*/"),
+    re.compile(r"\*\*5[456]\s+(?:先重現|實證驗證|先讀後寫)\*\*"),
+]
+BACKUP_STALE_DAYS = 30
+
+
+def check_redline_single_source(root: Path) -> list[Issue]:
+    issues: list[Issue] = []
+    for path in active_markdown_files(root):
+        path_rel = rel(root, path)
+        if path_rel == "SOUL.md":
+            continue
+        clean = strip_fenced_code_blocks(read_text(path))
+        for line_no, line in enumerate(clean.splitlines(), start=1):
+            if any(pattern.search(line) for pattern in REDLINE_FULLTEXT_PATTERNS):
+                issues.append(
+                    Issue(
+                        "redline-single-source",
+                        path_rel,
+                        line_no,
+                        "restates red line 54-56 definition; SOUL.md is the only full-text source — link it instead",
+                    )
+                )
+    return issues
+
+
+def check_stale_backups(root: Path) -> list[Issue]:
+    import time
+
+    issues: list[Issue] = []
+    proc = subprocess.run(
+        ["git", "ls-files", "*.backup*", "*.bak", "*.bak-*"],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if proc.returncode == 0:
+        for tracked in [line.strip() for line in proc.stdout.splitlines() if line.strip()]:
+            issues.append(
+                Issue("stale-backups", tracked, None, "backup file is git-tracked; .gitignore bans backups — untrack it")
+            )
+    cutoff = time.time() - BACKUP_STALE_DAYS * 86400
+    for candidate in sorted(root.glob("*.backup*")) + sorted(root.glob("*.bak*")):
+        if candidate.is_file() and candidate.stat().st_mtime < cutoff:
+            issues.append(
+                Issue(
+                    "stale-backups",
+                    rel(root, candidate),
+                    None,
+                    f"root-level backup older than {BACKUP_STALE_DAYS} days; archive or delete (git history keeps it)",
+                )
+            )
     return issues
 
 
@@ -763,6 +826,8 @@ def run(root: Path, *, project_docs: bool = False, base_ref: str | None = None, 
         check_nested_skills_catalog,
         check_doc_markers,
         check_stale_refs,
+        check_redline_single_source,
+        check_stale_backups,
         check_local_links_and_paths,
     ]
     project_checks = [
