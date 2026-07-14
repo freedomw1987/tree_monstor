@@ -53,7 +53,13 @@ Build 前要求的是 **baseline / skeleton / N/A**，不是所有細節 final�
 
 ### Existing Project Intake / Bootstrap Mode
 
-現有 project 未必一開始就有完整 docs baseline。接手 existing / inherited project 時，先執行 `skills/existing-project-intake/SKILL.md`，用 source-first intake 建立真實現狀，而不是直接套用理想模板或憑記憶補文件。
+**Greenfield project**：用一鍵 bootstrap 生成全套 baseline skeleton（不覆蓋既有檔案，生成後自動跑 `--project-docs` 檢查）：
+
+```bash
+python3 <profile-root>/scripts/bootstrap_project.py --root <project-root> --name "<Project Name>"
+```
+
+現有 project 未必一開始就有完整 docs baseline。接手 existing / inherited project 時，先執行 `skills/existing-project-intake/SKILL.md`，用 source-first intake 建立真實現狀，而不是直接套用理想模板或憑記憶補文件。bootstrap 腳本在 existing project 只可用來補「確實缺失」的 skeleton（它會跳過既有檔案），不可取代 source-first intake。
 
 原則：
 
