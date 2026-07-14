@@ -53,7 +53,7 @@
 
 ## Verification gates
 
-- **代碼改動**：跑該專案最小相關的 lint / typecheck / test / build（鐵律 3）。這是最高優先的 gate。
+- **代碼改動**：優先跑該專案 `docs/VERIFY.md` 定義的驗證命令；沒有 VERIFY.md 就跑最小相關的 lint / typecheck / test / build（鐵律 3）。這是最高優先的 gate。
 - **本 profile 的 docs / skills / adapter 改動**：`python3 scripts/docs_consistency_check.py`
 - **Downstream 專案文檔**（僅當該專案已採用文檔基線時）：`python3 <profile-root>/scripts/docs_consistency_check.py --root <project-root> --project-docs`
 

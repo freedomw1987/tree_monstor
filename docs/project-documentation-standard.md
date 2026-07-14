@@ -23,8 +23,9 @@
 | 6 | Test Coverage Report | `docs/TEST-COVERAGE.md` | Test | 每個 sprint 結束時 |
 | 7 | Tech Debt Register | `docs/TECH-DEBT.md` | Build + Reflect | 發現就記,每 sprint review |
 | 8 | Retrospective | `docs/retros/YYYY-MM-DD-<feature>.md` | Reflect | 每個 feature/incident 完成後 |
+| 9 | Verify Commands | `docs/VERIFY.md` | Plan + Build | 首個 code commit 前(跟 baseline 一起) |
 
-**紅線:任何 project 在 ship 之前,1-7 號文件必須存在 + commit 到 git**。
+**紅線:任何 project 在 ship 之前,1-7 號及 9 號文件必須存在 + commit 到 git**。
 
 ---
 
@@ -46,6 +47,7 @@ Build 前要求的是 **baseline / skeleton / N/A**，不是所有細節 final�
 | `docs/QA-TRACKER.md` | 每個 PRD US 有對應 row | PRD 改即同步，P0/P1 test task 保持最新 | 無 PRD ↔ tracker drift |
 | `docs/TEST-COVERAGE.md` | test plan skeleton | 測試新增 / 變更 / coverage gap 即更新 | US → test 對照完整 |
 | `docs/TECH-DEBT.md` | register skeleton | debt、refactor、dependency、trade-off 發現即記 | 已知 debt 完整 |
+| `docs/VERIFY.md` | lint / typecheck / test / build 各一條命令或 N/A + reason | 驗證命令變更（scripts、tooling）即更新 | 命令與專案實際 tooling 一致 |
 
 **Build-blocking rule**：baseline 不存在、PRD 與 QA-TRACKER 不同步、或 API / Design / ADR / Test / Tech Debt 沒有 baseline / N/A 說明時，任務停留在 Plan，不能開始 Build。
 
@@ -78,6 +80,7 @@ David 在 Build 中、Review 後、Test 後或 Ship 前提出新需求 / 修正�
 | test plan / coverage | `docs/QA-TRACKER.md` + `docs/TEST-COVERAGE.md` |
 | refactor / dependency / known trade-off | `docs/TECH-DEBT.md` |
 | bug fix | `docs/REGRESSION-GUARD.md` + `docs/TEST-COVERAGE.md` + 相關 US row 備註 |
+| 驗證命令 / test runner / build tooling 變更 | `docs/VERIFY.md` |
 
 ### Review Feedback → Docs Sync Protocol
 
@@ -529,6 +532,44 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
+## 📄 文件 9 — VERIFY.md (Verify Commands)
+
+**目的**:紅線 55（實證驗證）的**執行入口**。把「這個專案的最小驗證命令是什麼」寫死在一個固定位置，agent 交付前照跑，不用每次重新推斷、不會跑錯或漏跑。
+
+**必填區塊**:
+```markdown
+# Verify — <Project Name>
+
+> 最後核對: YYYY-MM-DD（命令與 package.json / tooling 一致）
+
+## Verification commands
+
+| Gate | Command | N/A + reason |
+|------|---------|--------------|
+| Lint | `bun run lint` | |
+| Typecheck | `bun run typecheck` | |
+| Test | `bun test` | |
+| Build | `bun run build` | |
+| Smoke (deploy 後) | `curl -fsS https://<host>/health` | |
+
+## Regression suite
+
+- Full regression: `bun run test:regression`（或 N/A + reason）
+
+## 規則
+
+- 每個 gate 必須有 command 或明確 N/A + reason，**不可留空**。
+- 代碼改動交付前，跑最小相關 gates 並回報真實輸出（紅線 55）。
+- `package.json` scripts / test runner / build tooling 變更時，本檔必須同 commit 更新。
+```
+
+**更新時機**:
+- Build 前 baseline 必須存在（跟其他 baseline 文件一起 commit）
+- 任何驗證命令變更 → 同 commit 更新
+- 每次 Ship 前核對「最後核對」日期與實際 tooling 是否一致
+
+---
+
 ## 🔗 文件之間的交叉引用
 
 ```
@@ -557,7 +598,7 @@ retros/*.md (事後改進)
 
 加入 `SOUL.md` 嘅紅線清單:
 
-> **紅線 10**:任何 project 在 Build 前必須有 documentation baseline；ship / merge 前 `docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(無 API 則 N/A)/ `TEST-COVERAGE.md` / `TECH-DEBT.md` 必須存在、commit 到 git，並與 code 當前狀態同步。**沒有 baseline / 文件過期 / 文件與 code drift 的代碼不能 build、merge 或 ship**。
+> **紅線 10**:任何 project 在 Build 前必須有 documentation baseline；ship / merge 前 `docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(無 API 則 N/A)/ `TEST-COVERAGE.md` / `TECH-DEBT.md` / `VERIFY.md`(跑唔到嘅 gate 標 N/A + reason) 必須存在、commit 到 git，並與 code 當前狀態同步。**沒有 baseline / 文件過期 / 文件與 code drift 的代碼不能 build、merge 或 ship**。
 
 ---
 

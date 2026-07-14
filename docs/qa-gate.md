@@ -15,7 +15,7 @@
 ```bash
 # 1. 文檔清單確認
 ls docs/PROJECT-OVERVIEW.md docs/PRD.md docs/DESIGN.md docs/API.md \
-   docs/TEST-COVERAGE.md docs/TECH-DEBT.md docs/QA-TRACKER.md 2>&1
+   docs/TEST-COVERAGE.md docs/TECH-DEBT.md docs/QA-TRACKER.md docs/VERIFY.md 2>&1
 
 # 2. QA-Tracker 當前 row 數
 grep -c "^| US-" docs/QA-TRACKER.md
@@ -46,6 +46,7 @@ python3 scripts/docs_consistency_check.py --project-docs
 - `docs/QA-TRACKER.md`：所有 PRD US 有對應 row
 - `docs/TEST-COVERAGE.md`：test plan skeleton
 - `docs/TECH-DEBT.md`：tech debt register skeleton
+- `docs/VERIFY.md`：lint / typecheck / test / build 的最小驗證命令；跑唔到嘅 gate 標 N/A + reason（紅線 55 執行入口）
 
 **未通過 = 停留在 Plan，不可 Build。** David 在 Build / Review / Test / Ship 前提出新需求或修正時，也要先回到此 gate 的 doc sync，再繼續。
 

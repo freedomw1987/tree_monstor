@@ -81,6 +81,7 @@ ALLOW_MISSING_PATH_PATTERNS = [
     re.compile(r"^docs/API\.md$"),
     re.compile(r"^docs/TEST-COVERAGE\.md$"),
     re.compile(r"^docs/TECH-DEBT\.md$"),
+    re.compile(r"^docs/VERIFY\.md$"),
     re.compile(r"^docs/QA-TRACKER\.md$"),
     re.compile(r"^docs/REGRESSION-GUARD\.md$"),
     re.compile(r"^docs/PROJECT-OVERVIEW\.md$"),
@@ -476,6 +477,7 @@ PROJECT_REQUIRED_DOCS = [
     "docs/QA-TRACKER.md",
     "docs/TEST-COVERAGE.md",
     "docs/TECH-DEBT.md",
+    "docs/VERIFY.md",
 ]
 PROJECT_DOC_PATHS = set(PROJECT_REQUIRED_DOCS) | {
     "docs/REGRESSION-GUARD.md",
@@ -556,6 +558,14 @@ def check_project_docs_baseline(root: Path) -> list[Issue]:
     coverage = root / "docs" / "TEST-COVERAGE.md"
     if coverage.exists() and "## User Story → Test Case 對照" not in read_text(coverage):
         issues.append(Issue("project-docs", "docs/TEST-COVERAGE.md", None, "test coverage must include User Story → Test Case 對照 section"))
+
+    verify = root / "docs" / "VERIFY.md"
+    if verify.exists():
+        verify_text = read_text(verify)
+        if "## Verification commands" not in verify_text:
+            issues.append(Issue("project-docs", "docs/VERIFY.md", None, "VERIFY must include ## Verification commands section"))
+        elif "`" not in verify_text and not has_na_marker(verify):
+            issues.append(Issue("project-docs", "docs/VERIFY.md", None, "VERIFY must contain at least one backticked command or an explicit N/A marker"))
 
     return issues
 

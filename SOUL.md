@@ -258,7 +258,7 @@ Build 完成 → Review → Test → Ship
 
 > **適用範圍**：紅線 10-12 適用於 David 明確要求 full documentation baseline、或 project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 嘅情況。小型任務 / 未採用基線嘅 project，文檔要求降為建議，**唔可以因文檔缺失而拒絕交付經實證驗證（紅線 55）嘅代碼**。
 
-- **紅線 10**:採用文檔基線嘅 project 在 Build 前必須建立 documentation baseline；7 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md`) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
+- **紅線 10**:採用文檔基線嘅 project 在 Build 前必須建立 documentation baseline；8 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md` / `VERIFY.md`(最小驗證命令；某 gate 跑唔到必須標 N/A + reason)) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
 - **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。詳見 `docs/qa-tracker.md`
 - **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**
 
