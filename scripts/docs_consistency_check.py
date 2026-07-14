@@ -4,6 +4,7 @@
 Validates the navigation invariants established by the documentation cleanup:
 - docs/00-index.md covers top-level docs/*.md
 - skills/README.md covers immediate skills/*/SKILL.md
+- skills/README.md's generated section covers nested skills/*/*/SKILL.md and is fresh
 - active docs have Status markers and Related docs footers
 - stale path/count references do not reappear
 - local markdown links and concrete backticked repo paths resolve
@@ -208,7 +209,7 @@ def docs_links_in_index(root: Path) -> set[str]:
     return found
 
 
-def skills_links_in_catalog(root: Path) -> set[str]:
+def skills_links_in_catalog(root: Path, pattern: str = r"^skills/[^/]+/SKILL\.md$") -> set[str]:
     catalog = root / "skills" / "README.md"
     found: set[str] = set()
     if not catalog.exists():
@@ -221,7 +222,7 @@ def skills_links_in_catalog(root: Path) -> set[str]:
             repo_rel = resolved.relative_to(root.resolve()).as_posix()
         except ValueError:
             continue
-        if re.match(r"^skills/[^/]+/SKILL\.md$", repo_rel):
+        if re.match(pattern, repo_rel):
             found.add(repo_rel)
     return found
 
@@ -262,6 +263,44 @@ def check_skills_catalog(root: Path) -> list[Issue]:
         issues.append(Issue("skills-catalog", catalog_rel, None, f"does not list {missing}"))
     for stale in sorted(listed - actual):
         issues.append(Issue("skills-catalog", catalog_rel, None, f"lists missing {stale}"))
+    return issues
+
+
+def check_nested_skills_catalog(root: Path) -> list[Issue]:
+    issues: list[Issue] = []
+    catalog_rel = "skills/README.md"
+    if not (root / catalog_rel).exists():
+        return []  # check_skills_catalog already reports the missing catalog
+    actual = {rel(root, p) for p in sorted((root / "skills").glob("*/*/SKILL.md"))}
+    listed = skills_links_in_catalog(root, pattern=r"^skills/[^/]+/[^/]+/SKILL\.md$")
+    for missing in sorted(actual - listed):
+        issues.append(Issue("nested-skills-catalog", catalog_rel, None, f"does not list {missing}"))
+    for stale in sorted(listed - actual):
+        issues.append(Issue("nested-skills-catalog", catalog_rel, None, f"lists missing {stale}"))
+    if not actual:
+        return issues
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from generate_skills_catalog import apply as regenerate_catalog
+
+        current, updated = regenerate_catalog(root)
+        if current != updated:
+            issues.append(
+                Issue(
+                    "nested-skills-catalog",
+                    catalog_rel,
+                    None,
+                    "generated section is stale; run python3 scripts/generate_skills_catalog.py",
+                )
+            )
+    except SystemExit as exc:
+        issues.append(Issue("nested-skills-catalog", catalog_rel, None, str(exc)))
+    except ImportError:
+        issues.append(
+            Issue("nested-skills-catalog", "scripts/generate_skills_catalog.py", None, "generator script is missing")
+        )
+    finally:
+        sys.path.remove(str(Path(__file__).resolve().parent))
     return issues
 
 
@@ -721,6 +760,7 @@ def run(root: Path, *, project_docs: bool = False, base_ref: str | None = None, 
         check_required_files,
         check_docs_index,
         check_skills_catalog,
+        check_nested_skills_catalog,
         check_doc_markers,
         check_stale_refs,
         check_local_links_and_paths,
