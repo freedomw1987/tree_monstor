@@ -82,6 +82,7 @@ ALLOW_MISSING_PATH_PATTERNS = [
     re.compile(r"^docs/TEST-COVERAGE\.md$"),
     re.compile(r"^docs/TECH-DEBT\.md$"),
     re.compile(r"^docs/VERIFY\.md$"),
+    re.compile(r"^docs/verify-log(/|$)"),
     re.compile(r"^docs/QA-TRACKER\.md$"),
     re.compile(r"^docs/REGRESSION-GUARD\.md$"),
     re.compile(r"^docs/PROJECT-OVERVIEW\.md$"),
@@ -786,6 +787,16 @@ def check_doc_code_sync(root: Path, changed: list[str], diff_text: str = "") -> 
 
     if changed_code and not changed_docs:
         issues.append(Issue("doc-code-sync", ".", None, "code changed but no project documentation file changed"))
+
+    if changed_code and not any(path.startswith("docs/verify-log/") for path in changed_set):
+        issues.append(
+            Issue(
+                "doc-code-sync",
+                "docs/verify-log",
+                None,
+                "code changed but no verification log was added (docs/verify-log/YYYY-MM-DD-<task>.txt with commands, real output, exit code)",
+            )
+        )
 
     api_changes = [path for path in changed_code if is_api_path(path)]
     if api_changes and "docs/API.md" not in changed_set:

@@ -93,7 +93,8 @@ Intake report 必須識別：
 | **Review / QA / code-review feedback** | Apply and update affected docs, or record deferral / rejection rationale in `TECH-DEBT.md`, `QA-TRACKER.md`, `REGRESSION-GUARD.md`, ADR, or the affected canonical doc |
 | **新增 / 修改 regression hook 或 switch** | `TEST-COVERAGE.md` Regression Mode / Hooks matrix + `QA-TRACKER.md` regression 欄位；如涉及 bug fix 則同步 `REGRESSION-GUARD.md`，如新增 `/__qa/*` 或 QA panel 則同步 `API.md` / `DESIGN.md` |
 | **Refactor** | `TECH-DEBT.md`（新 row，標 DEPRECATED 嘅債務）|
-| **依賴升級** | `TECH-DEBT.md`（upgrade 記錄）|
+| **依賴升級** | `TECH-DEBT.md`（upgrade 記錄）+ `docs/verify-log/` 新驗證紀錄 |
+| **任何 code 改動** | `docs/verify-log/YYYY-MM-DD-<task>.txt`（命令 + 真實輸出 + exit code，同 commit）|
 
 **Drift 檢測**（每次 commit 前）：
 

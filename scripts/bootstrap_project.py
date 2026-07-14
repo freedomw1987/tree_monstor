@@ -214,6 +214,8 @@ auth / test tenant / audit / idempotency 欄位必填）。
 
 - 每個 gate 必須有 command 或明確 N/A + reason，不可留空。
 - 代碼改動交付前，跑最小相關 gates 並回報真實輸出（紅線 55）。
+- 驗證輸出必須落地：`docs/verify-log/YYYY-MM-DD-<task>.txt`
+  （命令原文 + 真實輸出摘要 + exit code），與 code 改動同 commit。
 - 驗證命令變更時，本檔必須同 commit 更新。
 """,
         "docs/REGRESSION-GUARD.md": f"""# Regression Guard — {name}
@@ -289,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
         target.write_text(content, encoding="utf-8")
         created.append(rel_path)
     (root / "docs" / "retros").mkdir(parents=True, exist_ok=True)
+    (root / "docs" / "verify-log").mkdir(parents=True, exist_ok=True)
 
     for rel_path in created:
         print(f"created  {rel_path}")
