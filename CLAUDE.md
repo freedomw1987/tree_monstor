@@ -47,7 +47,7 @@
 | Bug fix / 舊 bug 復發 / `RG-*` 工作 | `skills/regression-guard/SKILL.md` |
 | 接手現有專案、docs/tests 狀態未知 | `skills/existing-project-intake/SKILL.md` |
 
-其他 local skills 見 `skills/README.md`，僅在任務明確匹配時讀取。不要假設 local markdown skills 已註冊為 Claude Code slash commands。
+其他 local skills 見 `skills/README.md`，僅在任務明確匹配時讀取。`regression-guard`、`existing-project-intake`、`dev-checker-loop` 已註冊為 Claude Code user skills（wrapper 在 `adapters/claude-code/skills/`，symlink 自 `~/.claude/skills/`）；其他 local markdown skills 不要假設已註冊。
 
 ---
 

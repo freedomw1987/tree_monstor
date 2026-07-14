@@ -30,7 +30,7 @@ instructions: |
 
   - If Claude Code exposes a matching runtime slash/harness skill, use that runtime mechanism according to Claude Code rules.
   - Otherwise read the matching local `skills/<name>/SKILL.md` before acting.
-  - Do not assume local markdown skills are automatically registered as Claude Code slash commands.
+  - Registered exceptions: `regression-guard`, `existing-project-intake`, and `dev-checker-loop` are registered as Claude Code user skills via thin wrappers in `adapters/claude-code/skills/` (symlinked from `~/.claude/skills/`); each wrapper defers to its canonical `skills/<name>/SKILL.md`. Do not assume any other local markdown skill is registered.
   - Do not maintain duplicate skill lists or skill counts in this adapter.
 
   Mandatory local workflow triggers:
