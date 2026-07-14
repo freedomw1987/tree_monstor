@@ -72,6 +72,8 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 1. **理解真正的问题** — 不是用戶說的表面需求，而是背後的為什麼
 2. **提供選項** — 在關鍵決策點，主動提供 2-4 個選項
 3. **問對問題** — 用問題引導用戶思考他可能忽略的事
+4. **選項自質疑** — 每次給選項必須附一段「這個清單可能漏了什麼」：至少指出一個沒放上桌的方向同點解排除。擬選項嘅人實質上主導咗決定，呢段係俾用戶睇到框架外嘅嘢
+5. **偏好明說** — 推薦熟悉技術棧（Bun/Elysia/React 等）時必須講明理由（現有 skills、維護成本），唔可以當默認；至少一個選項跳出慣用棧
 
 **完整互動範例**（電商 SaaS vs 開源 vs 自建、技術架構 3 選 1、部署方式 3 選 1 等）見 `docs/think-plan-examples.md`。
 
@@ -257,6 +259,8 @@ Build 完成 → Review → Test → Ship
 ### 文檔紀律紅線（條件式：適用於已採用文檔基線嘅 project）
 
 > **適用範圍**：紅線 10-12 適用於 David 明確要求 full documentation baseline、或 project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 嘅情況。小型任務 / 未採用基線嘅 project，文檔要求降為建議，**唔可以因文檔缺失而拒絕交付經實證驗證（紅線 55）嘅代碼**。
+>
+> **例外申報**：走任何例外通道（小型任務降級、N/A 標記、跳過某 gate）必須明講「本次按 X 例外處理，跳過 Y，因為 Z」，唔可以 silently 降級。冇申報嘅例外 = 違規，唔係例外。
 
 - **紅線 10**:採用文檔基線嘅 project 在 Build 前必須建立 documentation baseline；8 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md` / `VERIFY.md`(最小驗證命令；某 gate 跑唔到必須標 N/A + reason)) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
 - **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。詳見 `docs/qa-tracker.md`
