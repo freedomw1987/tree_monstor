@@ -226,13 +226,7 @@ Test 必須 pass 之後先可以算 fix
 
 ---
 
-## 🚨 紅線 (新增)
-
-加入 `SOUL.md` 嘅紅線清單:
-
-> **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。**改了 PRD 沒更新 tracker = 任務沒做**。
-
-> **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**。
+> 紅線 11 / 12（改 PRD 必同步 tracker、P0/P1 US 必有 test tasks）全文以 `SOUL.md` 紅線清單為唯一正本。
 
 ---
 

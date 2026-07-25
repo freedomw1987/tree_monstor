@@ -121,26 +121,20 @@
 
 **目標**:讓 QA 可以友善、穩定、可重跑地啟用 regression fixtures / hooks，驗證 `US-XXX` / `RG-XXX` 的行為仍正常，同時確保 regression mode **不是** production bypass。
 
+> **安全邊界與 merge blocker 條件以 `docs/qa-gate.md` §3A（Regression Mode Gate）為唯一正本**——production safety checks、`/__qa/*` merge policy、docs sync 要求、禁止嘅 bypass 語義（skipAuth / bypassPermission / disableRateLimit 等）全部見該節。本節只講實作 pattern（how-to）。
+
 #### Frontend regression hooks
 
 **允許**:
 - 穩定 selector：semantic HTML、`name`、`aria-label`，必要時使用 `data-testid`
 - dev/staging-only QA panel（例如 `/__qa/regression`）
-- visual regression controls：freeze animation / time / random seed
+- visual regression controls：freeze animation / time / random seed（只用嚟穩定 screenshot，不可改 business behavior）
 - regression fixture selector，但資料動作必須呼叫 backend QA endpoint，由 backend 驗證
 - 顯示 test tenant、seed version、active role、API base URL 等 QA 診斷資訊
 
-**安全要求**:
-- Production build 不包含 QA route / QA panel
-- Frontend switch 永遠不是 security boundary；不能靠 localStorage/cookie/header 取得權限
-- Visual controls 只能穩定 screenshot，不可改 business behavior
+**實作慣例**:
 - `data-testid` 是 QA contract，改名必須同時更新 E2E test
-
-**禁止**:
-- production 中存在 regression 後門
-- 禁止 / anti-pattern: hardcoded admin token
-- 禁止 / anti-pattern: 隱藏 error、跳過 validation
-- 禁止 / anti-pattern: 因為 E2E flaky 就 disable auth / permission / rate limit
+- Frontend switch 永遠不是 security boundary；權限判斷一律由 backend 做
 
 #### Backend regression hooks
 
@@ -148,57 +142,15 @@
 - `GET /__qa/health` — regression mode 狀態、seed version、test tenant、mock service status
 - `POST /__qa/seed` — idempotent 建 test fixture，只寫 test tenant / test schema / test DB
 - `POST /__qa/reset` — scoped reset，嚴禁全庫 destructive reset
-- `GET /__qa/mailbox` — fake/test mailbox
-- `POST /__qa/time` — test clock
-- `POST /__qa/jobs/drain` — queue drain，方便 E2E 等 async work
-- `GET /__qa/regression/:rgId` — 檢查某個 `RG-XXX` fixture 是否 ready
+- `GET /__qa/mailbox` — fake/test mailbox，檢查 email / SMS / notification 的 sandbox output
+- `POST /__qa/time` — test clock：freeze / travel / reset time，驗證 TTL、trial、subscription、scheduled job
+- `POST /__qa/jobs/drain` — queue drain，讓 async jobs 可重跑、可觀察，不靠 sleep
+- external fixture control — 控制 payment / webhook / LLM / storage 等 sandbox response
+- `GET /__qa/regression/:rgId` — per-`RG-XXX` setup / assert / cleanup（例如 `/__qa/regression/RG-004`）
 
-**安全要求**:
-- 只在 dev/test/staging mount；production 不可 mount `/__qa/*`
-- `NODE_ENV=production` + `REGRESSION_MODE=true` 必須 hard fail 或 loudly reject
-- QA endpoint 必須有 auth / QA secret / staging SSO / IP allowlist 至少一種
-- 所有 QA actions 必須 audit log
-- 只使用 test tenant / test DB / test schema；外部服務必須 sandbox/fake
-- Seed/reset 必須 idempotent，可重跑，不依賴順序
-
-**禁止**:
-- production DB reset / seed
-- 真 email / SMS / payment side effect
-- 禁止 / anti-pattern: `if regressionMode then skipAuth()` / `bypassPermission()` / `rateLimit = false`
-- 禁止 / anti-pattern: 信任 `x-regression-mode` header 作為權限來源
-
-#### `/__qa/*` endpoint policy
-
-`/__qa/*` endpoints 只可以用作 deterministic QA / test controls，不是 product API，也不是 user-facing feature。
-
-**允許用途**:
-- health / status：`GET /__qa/health`
-- seed：`POST /__qa/seed`，建立 deterministic fixture
-- reset：`POST /__qa/reset`，只 reset test tenant / test DB / test schema
-- fake mailbox / notification inbox：檢查 email / SMS / notification 的 sandbox output
-- test clock：freeze / travel / reset time，驗證 TTL、trial、subscription、scheduled job
-- queue drain：讓 async jobs 可重跑、可觀察，不靠 sleep
-- external fixture control：控制 payment / webhook / LLM / storage 等 sandbox response
-- per-`RG-XXX` setup / assert / cleanup：例如 `/__qa/regression/RG-004`
-
-**endpoint contract**:
-- 只在 dev/test/staging 或等價 non-production environment mount
-- production 必須 not mounted / 404，或在任何 side effect 前 hard reject 403 / 410
-- `NODE_ENV=production` + `REGRESSION_MODE=true` 必須 boot-time hard fail 或 loudly reject before routes mount
-- state-changing endpoint 必須有 auth / QA secret / staging SSO / IP allowlist 至少一種；destructive action 建議至少兩種 control
-- 所有 QA action 必須 audit log actor、scope、US/RG、fixture version
-- mutation 只可作用於 test tenant / test DB / test schema；不可碰 production data
-- seed / reset 必須 idempotent，可安全重跑
-- external side effect 必須使用 fake / sandbox；不可送真 email / SMS / payment
-- 不可 disable auth、permission、rate limit、validation、audit 或 security behavior；要建立可測試狀態，而不是 bypass 真實行為
-
-**docs sync**:
-- backend `/__qa/*` endpoint → `docs/API.md` + `docs/TEST-COVERAGE.md` + `docs/QA-TRACKER.md`
-- `RG-XXX` bug fix endpoint → 同步 `docs/REGRESSION-GUARD.md`
-- frontend QA panel / visual control → 同步 `docs/DESIGN.md`
-- test tenant / fake mailbox / test clock / queue drain 等 test-only architecture → 視影響新增 ADR
-
-Unsafe wording（例如 `skipAuth`、`bypassPermission`、`disableRateLimit`、`rateLimit = false`、`x-regression-mode` 作權限來源）只可以出現在「禁止 / anti-pattern / merge blocker」語境；不能作為實作指引。
+**實作慣例**:
+- seed / reset 必須 idempotent，可重跑，不依賴順序
+- `/__qa/*` 只可以用作 deterministic QA / test controls，不是 product API，也不是 user-facing feature；目標係建立可測試狀態，而不是 bypass 真實行為
 
 #### QA script naming convention
 
@@ -611,15 +563,7 @@ jobs:
 
 ---
 
-## 🚨 紅線 (新增)
-
-加入 `SOUL.md` 嘅紅線清單:
-
-> **紅線 16**:P0 US 必須有 Unit + Integration + E2E 三層測試,**任何一層 0 test 唔可以 ship**。
-
-> **紅線 17**:每次 production deploy 必須跑 smoke test,**smoke test 失敗即 rollback**。
-
-> **紅線 18**:任何 Critical/High CVE(由 `npm audit` / `snyk` 掃到)必須 0 才可 merge。
+> 紅線 16 / 17 / 18（三層測試、smoke test、CVE 0）全文以 `SOUL.md` 紅線清單為唯一正本。
 
 ---
 

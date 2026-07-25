@@ -619,11 +619,7 @@ retros/*.md (事後改進)
 
 ---
 
-## 🚨 紅線 (新增)
-
-加入 `SOUL.md` 嘅紅線清單:
-
-> **紅線 10**:任何 project 在 Build 前必須有 documentation baseline；ship / merge 前 `docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(無 API 則 N/A)/ `TEST-COVERAGE.md` / `TECH-DEBT.md` / `VERIFY.md`(跑唔到嘅 gate 標 N/A + reason) 必須存在、commit 到 git，並與 code 當前狀態同步。**沒有 baseline / 文件過期 / 文件與 code drift 的代碼不能 build、merge 或 ship**。
+> 紅線 10（Build 前 documentation baseline、doc-code drift 即 blocker）全文以 `SOUL.md` 紅線清單為唯一正本；本文件係該清單嘅內容規格。
 
 ---
 
