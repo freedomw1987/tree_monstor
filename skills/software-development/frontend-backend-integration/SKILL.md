@@ -26,6 +26,41 @@ cat apps/api/src/routes/<feature>.ts | grep -A 20 "GET\|PUT\|POST\|.use(requireP
 
 **Why this matters**: A Plan doc written 2 days ago may have been reworded, the backend may have been refactored, or the implementer may have used different vocabulary. The 60 seconds of grep saves a runtime bug that would have been caught at code-review time anyway. Plan docs are spec; backend source is truth. (User's standing rule from 2026-06-04: "後端 API 答案為最終依歸".)
 
+## Wire-Shape Verification Recipe (before committing any API wrapper)
+
+For every new or modified typed client call (`request<T>()`, fetch wrapper, zod schema ↔ DTO):
+
+1. **Locate the actual backend route handler** — `rg -n "'/settings/tax'" apps/api/src/routes/` — and read its real `return { ... }` value. The handler decides the wire shape, not the Prisma model: a `value Json` column can hold anything; the handler wraps it before sending.
+2. **For PUT/POST, read the body validator** (`rg -n "body: t\.|t\.Object\(" <route file>`). The validator gives the exact field names the backend accepts — if the client sends `defaultTaxRate` and the validator says `rate`, that's a 400.
+3. **Check the Prisma `include`/`select`** — the response has the *selected* shape, not the full model. Common drift: `updatedBy` is a `{ id, name, email }` user object (or `null` for seeded rows), not a string id. Mark nullable fields `T | null`.
+4. **Record the verified shape in the Plan doc** — add a "Wire shape (verified against backend <date>)" section listing `GET /x → { ... }` / `PUT /x body → { ... }`, so the next agent inherits the contract instead of re-guessing from prose.
+5. **Re-grep before the wrapper commit** — the backend may have changed since the plan stage. A second grep is cheap insurance, not paranoia.
+6. **Curl-smoke the first real wire call before committing it** (5 minutes: login, GET, eyeball the field names), and paste the actual response into the commit message as evidence.
+
+**Skip only when**: pure frontend refactor with no contract change; the wire shape was already grepped-and-committed at plan stage by a trusted pass; or the change is cosmetic/internal and never touches the wire.
+
+### Why TypeScript won't save you
+
+- `tsc --noEmit` validates call-site argument shape against the generic; it cannot validate that the endpoint actually *returns* what `request<TaxConfig>` claims. The runtime response is opaque to TS.
+- `as Type` casts are lies at the boundary — the runtime is still whatever the backend sent.
+- Optimistic `useEffect(() => setQueryData(...))` can mask wire drift for one round-trip before the truth comes back. Always test a full read → write → re-read cycle in dev.
+- Backend field renames land with zero client-side TS errors. For endpoints you control, an optional compile-time shape assertion (`type Assert = TaxConfig['rate'] extends number ? true : false; const _c: Assert = true;`) next to the wrapper catches "backend drifted, wrapper didn't".
+
+### Diagnosis when "tsc passes but the endpoint 400s"
+
+1. Run the backend in dev mode and curl the endpoint with a real token.
+2. Diff the JSON keys against the TS type — every missing/extra/null field is a drift.
+3. For PUT: send the client's payload and read the Zod/validator error message — it names the exact field the backend expected.
+
+### Observed drift cases (crm-system 2026-06)
+
+| Client wrapper assumed | Backend actually used | Symptom |
+|---|---|---|
+| `defaultTaxRate` (plan doc wording) | `rate` (route handler return) | PUT 400 (Zod) |
+| `s.manDays` | Prisma relation `manDayLines` | silent crash, "0 man-day roles" |
+| `String @default("ACTIVE")` column | typed enum `status ServiceStatus` | Prisma emits enum cast → 42704 |
+| `updatedBy: string` (admin id) | full user object `{id,name,email} \| null` | `.name` on undefined |
+
 ## Reference Docs (Specific Patterns)
 
 - `references/url-driven-tabs.md` — shadcn `<Tabs>` with URL as source of truth

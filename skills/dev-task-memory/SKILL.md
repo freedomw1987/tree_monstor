@@ -376,7 +376,7 @@ explicitly says "do it all in one go".
 - Plan doc 有「Options A/B/C 決定」但冇記 wire shape 嘅 section → 自己加,喺 Plan stage commit 嗰陣 grep 一次 backend
 - Build stage 寫 wrapper 嗰陣,跟 backend source 唔跟 plan doc(紅線:「按後端 source code 為最終依歸」)
 
-**Prevention recipe**(`references/wire-shape-verification-recipe.md` 有詳細 case study):
+**Prevention recipe**(`skills/software-development/frontend-backend-integration/SKILL.md` 有詳細 recipe + case study):
 1. Plan stage 寫完 doc → `git grep` backend route / zod schema → 對齊 wire field name
 2. Plan doc 開一個 "Wire shape (verified against backend)" section 記低 `GET /x → { fieldA, fieldB }` / `PUT /x body → { fieldA }`
 3. Build stage wrapper commit 之前再 grep 一次(backend 可能 plan stage 之後改咗)
@@ -395,7 +395,7 @@ explicitly says "do it all in one go".
 3. **Legacy route URL 保留**。`<Route path="/old"><Navigate to="/new" replace /></Route>` 做 backward-compat 5-10 個 redirect 一次過加,bookmark/email link 唔會死。
 4. **Query-string 預填 filter 嗰啲 page**。例如 audit page 接受 `?action=SYSTEM_CONFIG_UPDATED` 從 settings 跳過來即 filtered → 入 page 嗰陣 `useSearchParams()` 攞 initial state,1-2 行 code。
 
-**完整 7-step walkthrough + 對應 crm-system commit hash 對照** 喺 `references/wire-shape-verification-recipe.md` 嘅 "Sub-route tab navigation" section。
+**詳細 wire-shape recipe + sub-route/tab patterns** 喺 `skills/software-development/frontend-backend-integration/SKILL.md`(及其 `references/url-driven-tabs.md`、`references/layout-refactor-chrome.md`)。
 
 ## 📝 E2E test result (2026-06-06)
 

@@ -243,7 +243,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 
 | Skill | Description |
 |-------|-------------|
-| [`client-api-wire-shape-verification`](general/client-api-wire-shape-verification/SKILL.md) | Verify client-side API wrapper shapes (TypeScript request types, request bodies, response parsing) against the BACKEND SOURCE before committing — not against p… |
 | [`feature-plan-alignment`](general/feature-plan-alignment/SKILL.md) | Plan-stage alignment workflow for non-trivial feature work where David wants to review direction BEFORE code is written. Produces a structured plan doc (MD + b… |
 | [`subagent-timeout-recovery`](general/subagent-timeout-recovery/SKILL.md) | 1) Subagent 執行超時後嘅接管流程 (搶救 partial outputs 而唔係重新 delegation)。 2) Subagent 準時 return `completed` 之後 parent 必須做嘅 trust-but-verify 步驟 (subagent summary 係 self-rep… |
 

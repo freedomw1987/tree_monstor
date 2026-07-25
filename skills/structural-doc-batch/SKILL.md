@@ -576,7 +576,7 @@ test.describe('RBAC negative E2E', () => {
 | `context-summarizer` | 長 task context 壓縮 | Doc batch 通常 < 1 hour,唔需要壓 context |
 | `dev-task-memory` | Long task state persistence | Doc batch < 50 tool calls,通常唔需要 |
 | **`pagination-with-preserved-aggregates`** | Server-side 分頁 + 守住 stats | Worklog 分頁 test derive 自呢個 skill 嘅 pattern |
-| **`client-api-wire-shape-verification`** | Frontend type ↔ backend source | E2E test derive 自真實 wire shape,唔靠 PRD 文字 |
+| **`frontend-backend-integration`** | Frontend type ↔ backend source | E2E test derive 自真實 wire shape,唔靠 PRD 文字 |
 | **`playwright-node-api-container`** | Playwright in container/VM | 我用 local docker,呢個 skill 偏 remote container |
 | **🆕 Test Batch Phase 2** | 補 unit + E2E + 守 RBAC | Doc batch 完成後嘅下一個 sprint 行動,見新 skill `test-batch-supplement` |
 

@@ -371,8 +371,8 @@ Smoke failed = `git merge --abort`(如果 merge 已開始) 或者
 - `interruption-recovery` — `/tmp` script naming convention + state file
 - `docker-mac-arm64-elysia-vite` Pitfall 9-10 — Hermes redact
   workaround + bash 3.2 subshell PATH
-- `client-api-wire-shape-verification` — 探 backend routes before
-  smoke script 假設 URL
+- `frontend-backend-integration` — 探 backend routes before
+  smoke script 假設 URL(wire-shape verification recipe)
 - `regression-guard` — 任何 smoke 期間發現嘅 bug 落 RG-XXX
 
 ## Pitfalls (lessons hard-won)
