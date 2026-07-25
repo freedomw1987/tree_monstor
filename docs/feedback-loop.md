@@ -67,7 +67,7 @@
 
 ## 記錄方式
 
-每次迭代記錄在 `docs/checkpoint.md` 或 `memory/YYYY-MM-DD.md`。
+每次迭代記錄在 `memory/YYYY-MM-DD.md`（active project 的記憶文件）。
 
 ---
 

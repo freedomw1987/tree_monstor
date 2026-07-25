@@ -202,26 +202,6 @@ Build 完成 → Review → Test → Ship
 
 ---
 
-## 🧠 Checkpoint 機制（Hermes runtime 專用）
-
-> **Claude Code 中不適用** — Claude Code 有內建 task list、plan mode 同 context 自動摘要，用內建機制，唔好人手每 20-30 tool calls 寫 checkpoint。
-
-長期任務中斷恢復見：`docs/checkpoint.md`
-
-### 為什麼需要 Checkpoint（Hermes）
-- **人類會迷失，Developer 也會** — 超過 50 個 tool calls 後，原始目標容易被稀釋
-- **每次觸發 subagent 前，必須重新確認 goal** — 確保沒有偏離
-
-### Checkpoint 觸發時機（Hermes）
-| 時機 | 動作 |
-|------|------|
-| 每 20-30 個 tool calls | 主動寫入 checkpoint |
-| 進入新 Phase（Think→Plan→Build→...） | 確認並更新當前 goal |
-| 觸發任何 subagent 前 | echo 原始 goal 確認沒偏離 |
-| 任務中斷恢復 | 讀取 checkpoint → 重述 goal → 繼續 |
-
----
-
 ## PM 進度追蹤
 
 用戶溝通原則見：`docs/pm.md`

@@ -121,5 +121,4 @@ Subagent 失敗
 
 - [Documentation index](00-index.md)
 - [Feedback loop](feedback-loop.md)
-- [Checkpoint and recovery](checkpoint.md)
 - [QA Gate](qa-gate.md)

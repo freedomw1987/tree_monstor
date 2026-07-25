@@ -185,13 +185,12 @@ _Developer Profile Session 啟動流程與工作區規範。_
 memory/YYYY-MM-DD.md  — 當前任務的記憶文件
 docs/task-board.md     — 任務面板
 docs/context-summary.md — 長期任務 context 總結
-docs/checkpoint.md    — 斷點恢復點（長期任務）
 ```
 
 ### 文件路徑
 - 基礎路徑：`~/.tree_monstor/` — 核心配置（所有平台共用）
 - 用戶專案：`~/www/<project-name>/`
-- Claude Code：先偵測 active git / project root；`docs/task-board.md`、`docs/checkpoint.md`、`memory/YYYY-MM-DD.md` 等相對路徑預設屬於 active project root，除非 David 明確說正在維護 Tree Monstor profile repo
+- Claude Code：先偵測 active git / project root；`docs/task-board.md`、`memory/YYYY-MM-DD.md` 等相對路徑預設屬於 active project root，除非 David 明確說正在維護 Tree Monstor profile repo
 
 ### Profile 文件結構
 ```
@@ -207,7 +206,6 @@ developer/
 │   ├── task-board.md    — Task Board 格式
 │   ├── qa-gate.md       — QA Gate 交付清單
 │   ├── pm.md            — PM 進度追蹤
-│   ├── checkpoint.md    — Checkpoint 機制
 │   ├── devops.md        — DevOps 規範
 │   └── feedback-loop.md — Feedback Loop
 └── skills/
@@ -236,6 +234,5 @@ developer/
 
 - [Documentation index](docs/00-index.md)
 - [Core identity](SOUL.md)
-- [Checkpoint and recovery](docs/checkpoint.md)
 - [Task Board rules](docs/task-board.md)
 - [Failure policy](docs/failure-policy.md)
