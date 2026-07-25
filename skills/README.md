@@ -11,6 +11,12 @@ Each skill’s canonical source is its own `SKILL.md`. This catalog is a navigat
 
 ---
 
+## Archived skills
+
+單一專案專用嘅 SOP（如 UMAC AI、pm-system、llm-acp）已移到 top-level `archive/skills/`，唔再屬於 active catalog；需要時去嗰度搵返。
+
+---
+
 ## Maintenance rule
 
 When adding, removing, or renaming a local skill:
@@ -108,7 +114,6 @@ In Claude Code:
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| [`llm-acp-discord`](llm-acp-discord/SKILL.md) | Discord-based LLM-ACP quiz practice flow. | David uses Discord `acp` quiz workflow. |
 | [`yuanbao`](yuanbao/SKILL.md) | Yuanbao groups: @mention users, query info/members. | Yuanbao group/member operations. |
 
 ---
@@ -141,7 +146,6 @@ Skills for spawning and orchestrating autonomous AI coding agents and multi-agen
 | Skill | Description |
 |-------|-------------|
 | [`ai-agent-tool-calling`](backend/ai-agent-tool-calling/SKILL.md) | Build a tool-calling AI agent (function calling + tool registry + conversation memory + RAG over app data) for any product — CRM, support, internal tools. Use… |
-| [`assignment-quiz-work-submission`](backend/assignment-quiz-work-submission/SKILL.md) | Student assignment (作品題) upload + teacher download flow for UMAC AI — S3 presigned URLs, answers JSON storage, filename metadata pattern, nullable score |
 | [`backend-rbac-audit-log`](backend/backend-rbac-audit-log/SKILL.md) | Add role-based access control (RBAC) + audit log to any backend API (Elysia, Express, Fastify, Hono, NestJS). Pattern: centralized permission map in shared pac… |
 | [`crm-data-model`](backend/crm-data-model/SKILL.md) | Design a modern CRM data model (HubSpot / Pipedrive inspired) — Company, Contact, Product, Quotation, Deal, Pipeline, ActivityLog, Tag, Conversation. Use when… |
 | [`elysia-file-upload-multer`](backend/elysia-file-upload-multer/SKILL.md) | Add file upload to Elysia.js (Bun) backend — hand-rolled multipart parser (RECOMMENDED for Elysia 1.2) OR Multer with static file serving. Use when the user sa… |
@@ -216,11 +220,8 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`nginx-sse-streaming-fix`](devops/nginx-sse-streaming-fix/SKILL.md) | Fix nginx reverse proxy buffering SSE responses so streaming works correctly |
 | [`node-static-proxy-cloudflare`](devops/node-static-proxy-cloudflare/SKILL.md) | Start a Node.js static+proxy server and Cloudflare tunnel in the correct sequence with proper process management |
 | [`patch-replace-all-pitfalls`](devops/patch-replace-all-pitfalls/SKILL.md) | Avoid syntax errors when using patch replace_all on source code — regex token replacement can corrupt parentheses and expressions. |
-| [`pm-system-deployment`](devops/pm-system-deployment/SKILL.md) | PM System deployment and development guide |
 | [`prisma-seed-reset-pattern`](devops/prisma-seed-reset-pattern/SKILL.md) | Prisma seed 一定要每次重設 role 關聯，否則 AdminPanel 自訂角色會失效 |
 | [`route53-nginx-https`](devops/route53-nginx-https/SKILL.md) | 使用 AWS Route53 + nginx + Let's Encrypt 為測試網域建立穩定 HTTPS URL。適用於需要在 AWS 管理的網域上對外暴露測試服務，取代 Cloudflare Tunnel。 |
-| [`umac-ai-deploy-prod`](devops/umac-ai-deploy-prod/SKILL.md) | UMAC AI 生產部署 SOP — backend + frontend + CDK + ECS 全流程 |
-| [`umac-ai-ecs-migration`](devops/umac-ai-ecs-migration/SKILL.md) | 在 UMAC AI production RDS 無法從本地直接訪問時，用 ECS run-task 執行 Prisma migration 的流程 |
 
 ### `frontend/`
 
@@ -230,7 +231,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`ios-safari-scroll-fixed-elements`](frontend/ios-safari-scroll-fixed-elements/SKILL.md) | Fix iOS Safari scrolling issues for elements using position:fixed inside overflow:hidden bodies. For React apps where a page (Login, Settings, etc.) uses a fix… |
 | [`list-search-box`](frontend/list-search-box/SKILL.md) | Add a search box to an existing React list page — client-side filter on the visible page (no server roundtrip). Covers the two-layer empty state (raw empty vs… |
 | [`mobile-chat-layout-css`](frontend/mobile-chat-layout-css/SKILL.md) | Fix WhatsApp-style mobile chat layout with fixed input bar — missing CSS classes and padding issues |
-| [`quiz-attempt-result-display`](frontend/quiz-attempt-result-display/SKILL.md) | Teacher quiz/assignment results page — score null display, fileName parsing, CSV export, download button logic. UMAC AI project. |
 | [`react-context-auth-user-switch`](frontend/react-context-auth-user-switch/SKILL.md) | Detect user login/logout within same tab using React Context + localStorage — fixes stale user data when switching accounts without full page reload |
 | [`react-html5-drag-drop-pitfalls`](frontend/react-html5-drag-drop-pitfalls/SKILL.md) | Build correct HTML5 drag-and-drop in React (Kanban, sortable lists, file drop zones). Covers the most common silent-failure mode — forgetting `e.dataTransfer.s… |
 | [`react-quiz-form-state-debug`](frontend/react-quiz-form-state-debug/SKILL.md) | Debug React quiz forms where submit button stays disabled for mixed question types (choice/text/assignment) |
@@ -239,7 +239,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`related-entity-entry-points`](frontend/related-entity-entry-points/SKILL.md) | Build the full UI flow that lets users navigate from a parent entity (Company, Deal, Order, Project) to a child entity (Deal, Quotation, LineItem, Task) and cr… |
 | [`rwd-mobile-audit`](frontend/rwd-mobile-audit/SKILL.md) | Audit and fix a web app for mobile RWD (responsive web design) using Playwright at iPhone viewport (390x844). Use when user says 'RWD', '手機兼容', 'mobile compati… |
 | [`tailwindcss-v4-plugin-typography`](frontend/tailwindcss-v4-plugin-typography/SKILL.md) | Fix Tailwind CSS v4 plugin registration for @tailwindcss/typography and prose classes |
-| [`whatsapp-chatbot-landing-page`](frontend/whatsapp-chatbot-landing-page/SKILL.md) | WhatsApp-style landing page for empty state — model selector, auto-create conversation and send first message, jump to chat |
 
 ### `general/`
 
