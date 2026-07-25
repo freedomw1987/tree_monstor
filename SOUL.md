@@ -149,7 +149,7 @@ L1/L2/L3 分級、失敗報告模板、進度停滯檢測，以 [`docs/failure-p
 >
 > **例外申報**：走任何例外通道（小型任務降級、N/A 標記、跳過某 gate）必須明講「本次按 X 例外處理，跳過 Y，因為 Z」，唔可以 silently 降級。冇申報嘅例外 = 違規，唔係例外。
 
-- **紅線 10**:採用文檔基線嘅 project 在 Build 前必須建立 documentation baseline；8 份必備文檔 (`docs/PROJECT-OVERVIEW.md` / `PRD.md` / `DESIGN.md` / 至少一個 ADR / `API.md`(如無 API 必須標 N/A) / `TEST-COVERAGE.md` / `TECH-DEBT.md` / `VERIFY.md`(最小驗證命令；某 gate 跑唔到必須標 N/A + reason)) 必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
+- **紅線 10**:採用文檔基線嘅 project 在 Build 前必須建立 documentation baseline；8 份必備文檔清單以 `docs/project-documentation-standard.md` 為唯一正本，必須在首個有意義 code work 前存在 skeleton / baseline。任何 code / scope / user requirement change 必須同步更新對應文檔（見 `docs/qa-gate.md` §1 對應表）。詳見 `docs/project-documentation-standard.md` + `docs/qa-gate.md` §0A/§1
 - **紅線 11**:改 PRD 嘅同時必須更新 `docs/QA-TRACKER.md`(新 US 加 row,改 US 標 PARTIAL,刪 US 標 DEPRECATED)。詳見 `docs/qa-tracker.md`
 - **紅線 12**:每個 P0/P1 US 必須有對應的 test tasks,Status = PARTIAL / PASS 才算完成。**0 test 嘅 US 唔可以 ship**
 

@@ -37,16 +37,7 @@ git log --oneline -5
 python3 scripts/docs_consistency_check.py --project-docs
 ```
 
-必須滿足：
-- `docs/PROJECT-OVERVIEW.md`：目標用戶、scope、成功標準已寫
-- `docs/PRD.md`：P0/P1 User Stories + acceptance criteria 已寫
-- `docs/DESIGN.md`：UI/UX baseline；無 UI 則標 N/A
-- `docs/architecture/0001-*.md`：至少一個初始 ADR / architecture baseline
-- `docs/API.md`：API contract draft；無 API 則標 N/A
-- `docs/QA-TRACKER.md`：所有 PRD US 有對應 row
-- `docs/TEST-COVERAGE.md`：test plan skeleton
-- `docs/TECH-DEBT.md`：tech debt register skeleton
-- `docs/VERIFY.md`：lint / typecheck / test / build 的最小驗證命令；跑唔到嘅 gate 標 N/A + reason（紅線 55 執行入口）
+必備文檔清單（每份文檔的 baseline 內容要求、N/A 規則）以 `docs/project-documentation-standard.md` 為唯一正本；本 gate 檢查該清單全部存在且 baseline 足以回答「做什麼 / 為誰 / 驗收標準 / 架構決策 / 測試計劃」。
 
 **未通過 = 停留在 Plan，不可 Build。** David 在 Build / Review / Test / Ship 前提出新需求或修正時，也要先回到此 gate 的 doc sync，再繼續。
 

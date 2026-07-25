@@ -157,15 +157,7 @@ role="leaf"
 
 ### Pre-Build Documentation Gate（Build 前強制）
 
-Plan 結束、Build 開始前，Documentation Engineer + Tech Lead 必須確認 project documentation baseline：
-- `docs/PROJECT-OVERVIEW.md`：目標用戶、scope、成功標準
-- `docs/PRD.md`：P0/P1 User Stories + acceptance criteria
-- `docs/DESIGN.md`：UI/UX baseline，無 UI 則標 N/A
-- `docs/architecture/0001-*.md`：至少一個初始 ADR / architecture decision
-- `docs/API.md`：API contract draft，無 API 則標 N/A
-- `docs/QA-TRACKER.md`：所有 PRD US 對應 rows
-- `docs/TEST-COVERAGE.md`：test plan skeleton
-- `docs/TECH-DEBT.md`：tech debt register skeleton
+Plan 結束、Build 開始前，Documentation Engineer + Tech Lead 必須確認 project documentation baseline：必備文檔清單以 `docs/project-documentation-standard.md` 為唯一正本，執行 protocol 見 `docs/qa-gate.md` §0A。
 
 未通過此 gate → 留在 Plan，不能開始 Build。
 

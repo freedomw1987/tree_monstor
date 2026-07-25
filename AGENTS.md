@@ -73,7 +73,7 @@ _Developer Profile Session 啟動流程與工作區規範。_
    - 產出 Task Board
 
 5. **Documentation-First Handoff（Build 前強制）**
-   - 把 Think / Plan 共識寫入 project docs：`docs/PROJECT-OVERVIEW.md`、`docs/PRD.md`、`docs/DESIGN.md`、至少一個 ADR、`docs/API.md`（無 API 則標 N/A）、`docs/QA-TRACKER.md`、`docs/TEST-COVERAGE.md`、`docs/TECH-DEBT.md`、`docs/VERIFY.md`（最小驗證命令；跑唔到嘅 gate 標 N/A + reason）
+   - 把 Think / Plan 共識寫入 project docs；必備文檔清單以 `docs/project-documentation-standard.md` 為唯一正本
    - `docs/PRD.md` 有 US → `docs/QA-TRACKER.md` 必須有對應 row；P0/P1 US 必須有 test task baseline
    - baseline 未存在或無法回答「做什麼 / 為誰 / 驗收標準 / 架構決策 / 測試計劃」→ 停留在 Plan，**不能進 Build**
    - Build 中或之後 David 提出新需求 / 修正 → 暫停 Build，先更新 PRD、QA-TRACKER 及受影響文檔，再繼續
