@@ -74,10 +74,7 @@ In Claude Code:
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| [`ai-image-display-handling`](ai-image-display-handling/SKILL.md) | Handles AI-generated images arriving as base64/data URLs in text fields. | Generated images do not appear in chat/UI despite model response data. |
-| [`chat-frontend-backend-debug`](chat-frontend-backend-debug/SKILL.md) | Debugs chat UI/API mismatch, missing dispatch, React state, and mobile layout issues. | WhatsApp-style chat UI does not respond or render correctly. |
-| [`debug-ai-image-generation`](debug-ai-image-generation/SKILL.md) | Finds the correct image data path in OpenRouter/Gemini SSE responses. | AI image generation succeeds but display path is unknown/wrong. |
-| [`multimodal-image-chat`](multimodal-image-chat/SKILL.md) | Builds chat frontends with image attachment/base64 support for multimodal LLM APIs. | Adding image upload or multimodal chat support. |
+| [`chat-frontend-backend-debug`](chat-frontend-backend-debug/SKILL.md) | Debugs chat UI/API mismatch, SSE streaming, AI image display/generation paths, multimodal attachments, React state, and mobile layout issues. | Chat UI does not respond, stream, or render images correctly. |
 | [`react-browser-automation-gotchas`](react-browser-automation-gotchas/SKILL.md) | Debugs React synthetic-event/state issues during browser automation. | Browser clicks/fills do not trigger React state updates. |
 | [`react-router-sibling-route-conflict`](react-router-sibling-route-conflict/SKILL.md) | Diagnoses sibling route shadowing in React Router v6/v7. | `/settings` vs `/settings/*`-style route conflicts. |
 | [`react-router-tab-subroute-refactor`](react-router-tab-subroute-refactor/SKILL.md) | Refactors top-level pages into shared tabbed subroutes. | Consolidating page clusters into tab navigation. |
@@ -190,7 +187,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`sse-chunk-boundary-debug`](debugging/sse-chunk-boundary-debug/SKILL.md) | Diagnose and fix SSE JSON parse errors caused by HTTP chunked transfer encoding splitting SSE lines mid-JSON |
 | [`visual-ui-bug-debugging`](debugging/visual-ui-bug-debugging/SKILL.md) | Debug visual UI bugs where user reports something doesn't work but API/terminal checks pass. Use browser + vision analysis instead of just terminal tools. |
 | [`vite-nginx-stale-cache-debug`](debugging/vite-nginx-stale-cache-debug/SKILL.md) | Debug why Vite React app changes are not reflected after rebuild - Nginx serving stale cached JS. Key signal is immutable cache headers and JS file content unc… |
-| [`whatsapp-chatbot-debug`](debugging/whatsapp-chatbot-debug/SKILL.md) | Debug image generation in the WhatsApp-style chatbot where AI-generated images don't appear in the browser even though the backend SSE stream is correct. |
 
 ### `devops/`
 

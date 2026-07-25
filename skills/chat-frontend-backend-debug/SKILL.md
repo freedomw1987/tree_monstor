@@ -715,3 +715,148 @@ location /uploads/ {
 - AI response correctly describes the image content
 
 **Key principle:** Database NEVER stores base64. Store clean file paths. Convert to base64 only at AI API call time.
+
+---
+
+## Layer 6: AI-Generated Image Display (base64 in the text field)
+
+### Bug N: AI image arrives as base64 data URL in `message.text`, renders as raw string
+
+**Symptom:** Image-generation models (e.g. Gemini Flash image preview) return the image as a base64 data URL in the text/content stream. The bubble shows a long unreadable string instead of an image.
+
+**Key distinction:**
+- **User-uploaded images** → arrive in `message.attachments[]` as `{ id, name, type, url }`
+- **AI-generated images** → arrive as a base64 data URL in `message.text`
+
+Both render as `<img>`, but via different code paths.
+
+**Fix — detect data URLs in the bubble component:**
+```jsx
+function isDataUrlImage(text) {
+  return typeof text === 'string' && /^data:image\/[^;]+;base64,/i.test(text.trim())
+}
+// In MessageBubble: isDataUrlImage(text) ? <img src={text.trim()} .../> : <span>{text}</span>
+```
+
+**Anchored-regex constraint:** the check requires the string to START with `data:image/...;base64,`. Any text before or after the base64 (e.g. `"Here's the image: data:..."` or `"data:...BASE64ACK"`) breaks detection. Therefore the **backend must send the image as a clean, isolated event and suppress subsequent text chunks** once an image was sent in that response:
+
+```js
+if (hasImage) continue;  // skip delta.content chunks after the image event
+```
+
+Gemini streams image first, then a trailing text chunk ("ACK"/description); without the skip, the frontend concatenates them into an invalid data URL.
+
+**Cosmetic gotcha:** a dark generated image can visually blend into a dark bubble background. Add `box-shadow: 0 1px 3px rgba(0,0,0,0.3)` or a faint border to the inline-image CSS.
+
+### Bug O: Finding the real image data path in OpenRouter/Gemini SSE deltas
+
+**Symptom:** Backend receives SSE chunks from OpenRouter for `google/gemini-3.1-flash-image-preview` but no usable image is forwarded. `delta.content` is empty for image-only responses.
+
+**The two candidate paths:**
+
+| Path | Content | Usable? |
+|------|---------|---------|
+| `delta.images[0].image_url.url` | Already a `data:image/png;base64,...` URL | Yes — use this |
+| `delta.reasoning_details[0].data` | Encrypted binary reasoning trace | No — cannot be decoded client-side |
+
+An early fix wrapped `reasoning_details[].data` in a `data:image/png;base64,` prefix — it looked plausible but the bytes are encrypted, not image base64. The reliable path is `delta.images`.
+
+**Diagnostic — probe the raw stream with a Node one-off before touching the app:**
+```js
+// node -e script: call openai.chat.completions.create({ ..., stream: true })
+for await (const chunk of stream) {
+  const delta = chunk.choices[0]?.delta;
+  if (delta?.images?.length) console.log('IMAGES:', delta.images[0]?.image_url?.url?.slice(0, 60));
+  if (delta?.reasoning_details?.length) console.log('RD type:', delta.reasoning_details[0]?.type,
+    'len:', delta.reasoning_details[0]?.data?.length);
+}
+```
+
+**Key insight:** providers routed through OpenRouter may put image data in multiple delta fields. Always inspect the actual response structure with a probe script — not just the documented one — then forward `delta.images[0].image_url.url` as the SSE `image` event.
+
+---
+
+## Layer 7: User Image Attachments → Multimodal LLM
+
+Pipeline: File input → `URL.createObjectURL(file)` blob preview → convert to base64 → POST with `attachments` → backend formats the provider's image block → LLM sees the image.
+
+**Blob URLs cannot leave the browser.** `blob:` URLs are browser-local pointers and expire; convert back to real bytes before sending:
+
+```javascript
+async function blobToBase64(blobUrl) {
+  const blob = await (await fetch(blobUrl)).blob()
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result) // data:image/jpeg;base64,...
+    reader.readAsDataURL(blob)
+  })
+}
+```
+
+**Provider image-block formats** (backend converts base64 → block; `content` must be an ARRAY of blocks when mixing image + text, not a plain string):
+
+| Provider | Block `type` | Shape |
+|----------|-------------|-------|
+| Anthropic / MiniMax (Anthropic-compatible) | `'image'` | `{ source: { type: 'base64', media_type, data } }` (prefix stripped) |
+| OpenAI-compatible | `'image_url'` | `{ image_url: { url: 'data:<mime>;base64,<data>', detail: 'low'\|'high' } }` (prefix kept) |
+
+**Pitfalls:**
+1. Sending a `blob:` URL to the backend — it's meaningless outside the browser.
+2. Storing the blob URL in message state — dead after page reload; store the base64 data URL or an uploaded file path.
+3. Forgetting to strip (Anthropic) or keep (OpenAI) the `data:image/...;base64,` prefix.
+4. Large images — resize/compress before base64 to avoid API limits.
+5. If the AI says "I don't see any image", the base64 never reached the API or the block format is wrong — curl the chat endpoint with a known-good attachment to isolate.
+
+---
+
+## Layer 8: Process / Environment-Level Bugs
+
+### Bug P: Duplicate `getReader()` — stream consumed twice
+
+A response body can only be read once. If the SSE handler calls `response.body.getReader()` twice (e.g. once directly and once via an intermediate variable), the second reader gets an empty stream and the UI silently shows nothing. Keep exactly one reader per response.
+
+### Bug Q: `PayloadTooLargeError` on image requests
+
+Base64 attachments inflate request bodies. Raise the body-parser limit: `app.use(express.json({ limit: '50mb' }))`.
+
+### Bug R: Duplicate backend processes — cross-account data leakage
+
+**Symptom:** User A's conversations appear in User B's account; sporadic 403s on `/api/conversations/:id/messages`; JWT verification code is correct.
+
+**Root cause:** two `node server.js` processes listening on the same port — requests round-robin between them with mixed in-memory state.
+
+**Diagnosis:** `ps aux | grep "node server"` (two PIDs = root cause) and `ss -tlnp | grep <port>` (must show exactly ONE listener). Then verify DB-level ownership directly with a query before suspecting the auth code.
+
+**Fix:** `pkill` all instances, restart one, re-verify the port has a single listener.
+
+### Bug S: Missing Authorization header in a hand-rolled fetch
+
+**Symptom:** `POST /api/chat` returns 401 while the user is logged in; other endpoints work.
+
+**Root cause:** most components use an `apiFetch()` wrapper that auto-injects the Bearer token, but one component hand-wrote `fetch('/api/chat', ...)` without the header.
+
+**Debug tip:** Network tab → the failing request → Request Headers → no `Authorization: Bearer eyJ...` → this bug. Fix by using the shared wrapper (preferred) or injecting the token explicitly.
+
+### Bug T: `attachments` arrives as a JSON string (double-encode)
+
+If the backend receives `attachments` as `'[{"type":"image",...}]'` (string) instead of an array, a stringify happened twice on the way out. Defensive fix in the route: `if (typeof attachments === 'string') try { attachments = JSON.parse(attachments) } catch {}` — then fix the frontend serialization.
+
+### Bug U: Two SSE parsers, one field-name mismatch (`chunk` vs `content`)
+
+**Symptom:** Main chat streams fine, but a second entry point (e.g. landing-page chat) shows the spinner then nothing — backend curl confirms correct `{"chunk":"..."}` events.
+
+**Root cause:** the app has more than one SSE parser, and one of them reads a different field name than the backend sends.
+
+**Rule:** when fixing any streaming bug, grep for ALL SSE parsers (`getReader()` call sites) and verify each one reads the field names the backend actually emits. Parse with `parsed.chunk || parsed.content` style fallbacks if both exist historically.
+
+### Vite dev proxy must cover every backend-served path
+
+If images are served from `/ai-images/` (or `/uploads/`) by the backend, the Vite dev proxy needs an entry for each path — otherwise dev mode returns the SPA's HTML (404 fallback) instead of the image binary, and images show as broken even though production nginx works.
+
+### Quick debug sequence (images don't appear but backend is correct)
+
+1. `tail -50 /tmp/backend.log` — look for `PayloadTooLargeError`, image-path debug lines, SSE sends.
+2. Browser console: `document.querySelectorAll('img').length` — 0 means the frontend never rendered an image node.
+3. Check the SSE reader (single `getReader()`, buffer accumulator, done-after-image ordering — Bugs E/H/P).
+4. Check the DB row (`image_url` NULL → attachment never reached the chat route; truncated → Bug I).
+5. `localStorage.clear(); location.reload()` to reset poisoned client state before re-testing.
