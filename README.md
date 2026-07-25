@@ -2,7 +2,7 @@
 
 > **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
 
-> **Cross-Platform Developer Profile** — 可用於 Hermes Agent、Claude Code、Codex
+> **Cross-Platform Developer Profile** — 可用於 Claude Code、Codex
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
@@ -23,7 +23,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PLATFORM SHELL                           │
-│        Hermes Agent / Claude Code / Codex                   │
+│              Claude Code / Codex                            │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
@@ -31,8 +31,7 @@
 │                 PLATFORM ADAPTER LAYER                      │
 │  adapters/                                                  │
 │  ├── claude-code/agent.md     — Claude Code agent 定義     │
-│  ├── codex/system-prompt.md   — Codex 系統提示             │
-│  └── hermes/                   — Hermes 配置                │
+│  └── codex/system-prompt.md   — Codex 系統提示             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
@@ -49,10 +48,8 @@
 
 | 平台 | 機制 | 狀態 |
 |------|------|------|
-| **Hermes Agent** | Profile directory + gateway | ✅ 主要支援 |
-| **Claude Code** | root `CLAUDE.md` bridge + optional `--agent-file` adapter | ✅ 已適配 |
+| **Claude Code** | root `CLAUDE.md` bridge + optional `--agent-file` adapter | ✅ 主要支援 |
 | **Codex** | `--system-prompt` 文件 | ✅ 已適配 |
-| **OpenClaw** | system-prompt import | 🧪 實驗 / 社群使用 |
 
 ---
 
@@ -75,7 +72,7 @@
 
 ## 這是什麼？
 
-**Tree Monstor** 是一個運行在 [Hermes Agent](https://github.com/freedomw1987/hermes-agent) 框架內的 AI 軟件開發 Profile。它不是普通的 AI 聊天機械人，而是一個具備完整軟件工程能力的**虛擬開發團隊**。
+**Tree Monstor** 是一個跨平台的 AI 軟件開發 Profile。它不是普通的 AI 聊天機械人，而是一個具備完整軟件工程能力的**虛擬開發團隊**。
 
 ### 核心能力
 
@@ -235,23 +232,6 @@ codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一�
 
 詳細文檔：[adapters/codex/system-prompt.md](adapters/codex/system-prompt.md)
 
-### 在 OpenClaw 中使用（實驗 / 社群）
-
-```bash
-# 安裝 OpenClaw
-npm install -g openclaw
-
-# 添加 Developer Agent
-openclaw agents add developer \
-  --system-prompt-file ~/.hermes/profiles/developer/SOUL.md \
-  --description "AI 軟件開發團隊"
-
-# 啟動
-openclaw --profile developer gateway run
-```
-
-OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定義、工作流程、QA Gate 仍以 `SOUL.md`、`AGENTS.md`、`MEMORY.md`、`docs/`、`skills/` 為 canonical source。
-
 ---
 
 ## 核心文件
@@ -263,7 +243,7 @@ OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定�
 | `MEMORY.md` | 長期記憶、Subagent 配置、QA Gate（跨平台共享） |
 | `docs/` | 詳細文檔（跨平台共享） |
 | `skills/` | 可復用技能庫（跨平台共享） |
-| `adapters/` | 平台特定適配層（Hermes/Claude Code/Codex） |
+| `adapters/` | 平台特定適配層（Claude Code/Codex） |
 
 ---
 
@@ -308,15 +288,6 @@ OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定�
 ❌ 紅線 56：基於猜測寫 code 不先讀 source
 ```
 
-### 平台專用（Hermes runtime 限定，Claude Code / Codex 不適用）
-
-```
-⚠️ 紅線 19-51：Hermes gateway / process 管理 incident 補強
-⚠️ 紅線 52：config / runtime 增量交付紀律（commit ≤1 階段、≤200 行、≤1 紅線）
-⚠️ Checkpoint 節奏（每 20-30 tool calls）、Goal echo box、Resume handshake
-⚠️ Model Tiering 表（minimax-m3 / gpt-5.5）
-```
-
 ---
 
 ## 常見問題
@@ -328,11 +299,11 @@ OpenClaw 只負責把 Developer Profile 接入 orchestration shell；角色定�
 > 不需要。你只需要描述你的業務需求和願景，技術細節全部交給 Developer。
 
 **Q: 支持哪些平台？**
-> Hermes Agent、Claude Code、Codex — 使用同一套核心身份，平台適配層分開。
+> Claude Code、Codex — 使用同一套核心身份，平台適配層分開。
 
 **Q: 如何更新到最新版本？**
 ```bash
-cd ~/.hermes/profiles/developer && git pull origin master
+cd ~/Sites/localhost/tree_monstor && git pull origin master
 ```
 
 ---
@@ -345,7 +316,7 @@ cd ~/.hermes/profiles/developer && git pull origin master
 
 ## License
 
-MIT License — [Hermes Agent](https://github.com/freedomw1987/hermes-agent)
+MIT License
 
 ---
 
