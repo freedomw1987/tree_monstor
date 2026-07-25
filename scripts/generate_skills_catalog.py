@@ -33,14 +33,36 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def frontmatter_description(frontmatter_text: str) -> str:
+    """Extract the description value, following YAML block scalars (>-, |, ...) onto their indented continuation lines."""
+    lines = frontmatter_text.splitlines()
+    for i, line in enumerate(lines):
+        match = re.match(r"^description:\s*(.*)$", line)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if value and not re.fullmatch(r"[>|][+-]?", value):
+            return value.strip("\"'")
+        parts: list[str] = []
+        for cont in lines[i + 1:]:
+            if not cont.strip():
+                if parts:
+                    break
+                continue
+            if cont[0] in (" ", "\t"):
+                parts.append(cont.strip())
+            else:
+                break
+        return " ".join(parts)
+    return ""
+
+
 def skill_description(skill_md: Path) -> str:
     text = skill_md.read_text(encoding="utf-8")
     frontmatter = FRONTMATTER_RE.match(text)
     description = ""
     if frontmatter:
-        match = DESCRIPTION_KEY_RE.search(frontmatter.group(1))
-        if match:
-            description = match.group(1).strip().strip("\"'")
+        description = frontmatter_description(frontmatter.group(1))
     if not description:
         body = FRONTMATTER_RE.sub("", text)
         for line in body.splitlines():

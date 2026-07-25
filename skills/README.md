@@ -125,7 +125,7 @@ Apple/macOS-specific skills — iMessage, Reminders, Notes, FindMy, and macOS au
 
 | Skill | Description |
 |-------|-------------|
-| [`macos-computer-use`](apple/macos-computer-use/SKILL.md) | \| |
+| [`macos-computer-use`](apple/macos-computer-use/SKILL.md) | Drive the macOS desktop in the background — screenshots, mouse, keyboard, scroll, drag — without stealing the user's cursor, keyboard focus, or Space. Works wi… |
 
 ### `autonomous-ai-agents/`
 
@@ -179,7 +179,7 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`elysia-jwt-plugin-singleton`](debugging/elysia-jwt-plugin-singleton/SKILL.md) | Fix "401 Unauthorized" in Elysia.js when JWT tokens signed by auth routes are rejected by protected routes — caused by multiple JWT plugin instances. |
 | [`elysia-lambda-response-body-debug`](debugging/elysia-lambda-response-body-debug/SKILL.md) | Debug and fix empty response body when deploying Elysia.js to AWS Lambda |
 | [`elysia-route-conflict-debug`](debugging/elysia-route-conflict-debug/SKILL.md) | Debug Elysia.js route conflicts — server fails to start with "different parameter name" error, or requests hit wrong handler. |
-| [`patch-route-field-silently-dropped`](debugging/patch-route-field-silently-dropped/SKILL.md) | >- |
+| [`patch-route-field-silently-dropped`](debugging/patch-route-field-silently-dropped/SKILL.md) | Diagnose HTTP routes where a field appears to save but disappears after refresh, OR the request returns 502/500 because a Prisma relation key is silently strip… |
 | [`pdf-parse-v2-bun-fix`](debugging/pdf-parse-v2-bun-fix/SKILL.md) | Fix pdf-parse v2 "not a function" error in Bun — breaking API change from v1 |
 | [`prisma-json-field-api-serialization`](debugging/prisma-json-field-api-serialization/SKILL.md) | Fix runtime errors caused by Prisma field types that serialize as strings over REST (Json / Decimal / BigInt / Date / Bytes) instead of their JS-typed equivale… |
 | [`prisma-relation-debugging`](debugging/prisma-relation-debugging/SKILL.md) | Debug Prisma schema vs code mismatches: explicit @relation fields need { connect: { id } } syntax, not shorthand. Also covers the UncheckedCreateInput vs Creat… |
@@ -205,7 +205,7 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`cdk-route53-apigateway-alias`](devops/cdk-route53-apigateway-alias/SKILL.md) | CDK v2 Route53 ARecord alias to API Gateway custom domain — workaround for missing IAliasRecordTarget bind() method |
 | [`cloudflare-tunnel-vite-dev`](devops/cloudflare-tunnel-vite-dev/SKILL.md) | Workaround for Vite dev server HMR WebSocket 403 errors when using Cloudflare Tunnel |
 | [`cross-role-subagent`](devops/cross-role-subagent/SKILL.md) | QA Feedback Loop — 持續循環直至 QA 通過，用戶只看到最終好結果。 |
-| [`dependency-cve-audit`](devops/dependency-cve-audit/SKILL.md) | \| |
+| [`dependency-cve-audit`](devops/dependency-cve-audit/SKILL.md) | Audit project dependencies for known CVEs — fulfills 紅線 18 (Critical/High CVE must be 0 to merge). Class-level skill that covers BOTH npm + bun projects, lockf… |
 | [`docker-build-cache-debug`](devops/docker-build-cache-debug/SKILL.md) | Docker build cache causes stale code to run in containers despite source changes |
 | [`docker-caddy-elysia-deploy`](devops/docker-caddy-elysia-deploy/SKILL.md) | Docker + Caddy reverse proxy + Elysia.js (Bun) SPA 部署攻略 |
 | [`docker-multi-stage-dist-overwrite`](devops/docker-multi-stage-dist-overwrite/SKILL.md) | Fix Docker multi-stage build where COPY . . overwrites fresh dist/ with stale host files due to missing .dockerignore |
@@ -237,7 +237,7 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`react-html5-drag-drop-pitfalls`](frontend/react-html5-drag-drop-pitfalls/SKILL.md) | Build correct HTML5 drag-and-drop in React (Kanban, sortable lists, file drop zones). Covers the most common silent-failure mode — forgetting `e.dataTransfer.s… |
 | [`react-quiz-form-state-debug`](frontend/react-quiz-form-state-debug/SKILL.md) | Debug React quiz forms where submit button stays disabled for mixed question types (choice/text/assignment) |
 | [`react-router-v7-params-debug`](frontend/react-router-v7-params-debug/SKILL.md) | Debug route params not being passed in react-router-dom v7 components |
-| [`react-router-v7-patterns`](frontend/react-router-v7-patterns/SKILL.md) | \| |
+| [`react-router-v7-patterns`](frontend/react-router-v7-patterns/SKILL.md) | React Router v7 patterns and pitfalls for nested-route SPA refactors. Class-level lessons from 2026-06-07 crm-system Day 14.7 (Settings tabs): URL as source of… |
 | [`related-entity-entry-points`](frontend/related-entity-entry-points/SKILL.md) | Build the full UI flow that lets users navigate from a parent entity (Company, Deal, Order, Project) to a child entity (Deal, Quotation, LineItem, Task) and cr… |
 | [`rwd-mobile-audit`](frontend/rwd-mobile-audit/SKILL.md) | Audit and fix a web app for mobile RWD (responsive web design) using Playwright at iPhone viewport (390x844). Use when user says 'RWD', '手機兼容', 'mobile compati… |
 | [`tailwindcss-v4-plugin-typography`](frontend/tailwindcss-v4-plugin-typography/SKILL.md) | Fix Tailwind CSS v4 plugin registration for @tailwindcss/typography and prose classes |
@@ -249,7 +249,7 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 |-------|-------------|
 | [`client-api-wire-shape-verification`](general/client-api-wire-shape-verification/SKILL.md) | Verify client-side API wrapper shapes (TypeScript request types, request bodies, response parsing) against the BACKEND SOURCE before committing — not against p… |
 | [`feature-plan-alignment`](general/feature-plan-alignment/SKILL.md) | Plan-stage alignment workflow for non-trivial feature work where David wants to review direction BEFORE code is written. Produces a structured plan doc (MD + b… |
-| [`subagent-timeout-recovery`](general/subagent-timeout-recovery/SKILL.md) | > |
+| [`subagent-timeout-recovery`](general/subagent-timeout-recovery/SKILL.md) | 1) Subagent 執行超時後嘅接管流程 (搶救 partial outputs 而唔係重新 delegation)。 2) Subagent 準時 return `completed` 之後 parent 必須做嘅 trust-but-verify 步驟 (subagent summary 係 self-rep… |
 
 ### `media/`
 
@@ -281,7 +281,7 @@ Skills for interacting with social platforms and social-media workflows — post
 
 | Skill | Description |
 |-------|-------------|
-| [`code-review-pipeline`](software-development/code-review-pipeline/SKILL.md) | \| |
+| [`code-review-pipeline`](software-development/code-review-pipeline/SKILL.md) | Three-axis code review → TECH-DEBT.md catalog → P0 patch sprint → evidence retro → merge pipeline. Use when user asks for "code review", "security audit", "arc… |
 | [`debugging-hermes-tui-commands`](software-development/debugging-hermes-tui-commands/SKILL.md) | Debug Hermes TUI slash commands: Python, gateway, Ink UI. |
 | [`frontend-backend-integration`](software-development/frontend-backend-integration/SKILL.md) | Discipline for writing frontend code that wraps backend endpoints — verify wire shape against backend source (not plan/spec doc), handle prefill races, refacto… |
 | [`hermes-agent-skill-authoring`](software-development/hermes-agent-skill-authoring/SKILL.md) | Author in-repo SKILL.md: frontmatter, validator, structure. |
@@ -297,8 +297,8 @@ Skills for interacting with social platforms and social-media workflows — post
 | Skill | Description |
 |-------|-------------|
 | [`playwright-e2e-design-patterns`](testing/playwright-e2e-design-patterns/SKILL.md) | E2E test design patterns for Playwright + full-stack (Docker) apps — caller IP isolation vs backend rate limit (RG-008/RG-012 invariant), per-test setup hooks,… |
-| [`playwright-node-api-container`](testing/playwright-node-api-container/SKILL.md) | \| |
-| [`unit-test-coverage-push`](testing/unit-test-coverage-push/SKILL.md) | \| |
+| [`playwright-node-api-container`](testing/playwright-node-api-container/SKILL.md) | 使用 Node.js Playwright API 在 container/VM 環境中截圖和自動化測試。 適用於需要登入後才能截圖的頁面（CLI screenshot 無法做到）。 |
+| [`unit-test-coverage-push`](testing/unit-test-coverage-push/SKILL.md) | Systematically add unit test coverage to a project's P0 US with NONE/PARTIAL/PASS-E2E-only test status. Trigger when user says "test 未做的都要做", "補 unit test", "P… |
 
 <!-- END GENERATED: nested-skills-catalog -->
 
