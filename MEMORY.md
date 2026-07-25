@@ -2,69 +2,22 @@
 
 > **Status:** Canonical. Long-term stable memory and durable operating preferences.
 
-## 核心思想
+## 身份與流程（pointers）
 
-> **Developer 是一個專業的軟件產品開發團隊，是用戶（公司 Boss）打造產品的夢想合夥人。**
-
-- 我們不是「工具」，而是**有靈魂的團隊**
-- 用戶不是「老闆下命令」，而是**一起追夢的夥伴**
-- 每一行代碼、每一個功能，都是為了實現用戶的願景
-
-**用戶只需要描述他的夢想和願景** — 你說出來，我來實現。
-
----
-
-## 完整開發流程
-
-Think → Plan → Build → Review → Test → Ship → Reflect — 詳細流程與各階段 gate 以 [`docs/phases.md`](docs/phases.md) 為唯一正本。
+- 核心思想、身份定位、紅線全文 → [`SOUL.md`](SOUL.md)（唯一正本）
+- 開發流程 Think → Plan → Build → Review → Test → Ship → Reflect → [`docs/phases.md`](docs/phases.md)
+- 代碼品質鐵律（先重現、實證驗證、先讀後寫）→ [`SOUL.md`](SOUL.md) 紅線 54-56
+- 失敗處理 L1/L2/L3 → [`docs/failure-policy.md`](docs/failure-policy.md)
+- Feedback Loop 迭代規則 → [`docs/feedback-loop.md`](docs/feedback-loop.md)
+- QA Gate 交付清單 → [`docs/qa-gate.md`](docs/qa-gate.md)
 
 ---
 
-## 圖片生成
+## 穩定偏好
 
-**使用 OpenRouter 的 `google/gemini-flash-latest` model 生成圖片。**
+### 圖片生成
 
-當需要生成圖片時（如架構圖、示意圖、UI 預覽），使用此 model。
-
----
-
-## 代碼品質鐵律（所有平台適用，優先於流程規則）
-
-先重現、實證驗證、先讀後寫、小步改動、文檔不能替代驗證 — 全文以 [`SOUL.md`](SOUL.md) 紅線 54-56 為唯一正本。
-
----
-
-## Failure Policy
-
-| 等級 | 定義 | 處理 |
-|------|------|------|
-| L1 | 可自動修復 | 30s 後自動重試 (最多3次) |
-| L2 | 需修復後重試 | 分析原因、修正後派發 (最多2次) |
-| L3 | 需 Developer 介入 | 寫失敗報告，升級 |
-
----
-
-## Feedback Loop 規則
-
-- **循環繼續條件：** SA Code Review 發現 CRITICAL/IMPORTANT 問題、QA 測試發現任何問題
-- **循環終止條件：** SA Code Review: APPROVED、E2E 測試: 100% 通過、User Simulation: 100% 通過
-- **每次迭代必須記錄** 到 `memory/YYYY-MM-DD.md`
-
----
-
-## QA Gate 交付清單
-
-□ Think: CEO 市場分析 + Researcher 調研報告
-□ Plan: CEO 商業計劃 + PRD + Design + Architecture
-□ Build: 所有 task 完成，代碼已提交
-□ Review: SA Reviewer APPROVED + UX Reviewer APPROVED
-□ Test: QA 測試通過 + Performance Engineer 壓測通過
-□ Ship: Release Manager 部署確認
-□ Reflect: Retrospective 復盤報告完成
-□ Security: 安全掃描通過
-□ Feedback Loop: 所有問題已修復
-
-**未通過 QA Gate 嚴禁交付。**
+需要生成圖片時（架構圖、示意圖、UI 預覽），優先用 Gemini flash 系 image model（過往經 OpenRouter `google/gemini-flash-latest`；用當前平台可用的等效 model）。
 
 ---
 
@@ -73,12 +26,6 @@ Think → Plan → Build → Review → Test → Ship → Reflect — 詳細流�
 Local skills catalog 見 [`skills/README.md`](skills/README.md)。
 
 不要在 `MEMORY.md` 維護 partial skill list；每個 skill 的 canonical source 是 `skills/<name>/SKILL.md`。
-
----
-
-## 紅線
-
-> 驗證驅動紅線 54-56 + 紅線 1-18 見 [`SOUL.md`](SOUL.md)。
 
 ---
 
