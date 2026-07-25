@@ -386,15 +386,9 @@ jobs:
 
 ---
 
-## 🚨 紅線 (新增)
+## 🚨 對應紅線
 
-加入 `SOUL.md` 嘅紅線清單:
-
-> **紅線 13**:任何 bug fix 必須有對應嘅 `RG-XXX` entry 喺 `docs/REGRESSION-GUARD.md`,**冇 entry 嘅 fix 唔可以 merge**。
-
-> **紅線 14**:Bug fix 必須有 root cause + prevention 兩部分,**淨寫 code 改動冇寫點解嘅 fix 唔可以 merge**。
-
-> **紅線 15**:Refactor 涉及有 `RG-` 標記嘅 code 必須先確認冇違反 invariant,否則要開新 entry 講解取捨。
+本 skill 執行紅線 13-15（RG entry 必備、root cause + prevention、refactor invariant 確認）；全文以 `SOUL.md` 為唯一正本。
 
 ---
 
