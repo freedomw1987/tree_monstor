@@ -19,13 +19,13 @@
 ## 階段狀態
 | Phase | 狀態 | 負責 | 備註 |
 |-------|------|------|------|
-| Phase 0 BA | ✅ Done | BA Subagent | - |
-| Phase 0.5 UI/UX | 🔄 In Progress | Designer | 70% |
-| Phase 1 SA | ⏳ TODO | SA Subagent | 等待 BA 完成 |
-| Phase 2 Frontend | ⏳ TODO | - | - |
-| Phase 2 Backend | ⏳ TODO | - | - |
-| Phase 3 Code Review | ⏳ TODO | - | - |
-| Phase 4 QA | ⏳ TODO | - | - |
+| Think | ✅ Done | CEO + Researcher | - |
+| Plan | 🔄 In Progress | BA + Designer + SA + Tech Lead | 70% |
+| Build | ⏳ TODO | Frontend + Backend Subagent | 等待 Plan 完成 |
+| Review | ⏳ TODO | SA Reviewer + UX Reviewer | - |
+| Test | ⏳ TODO | QA | - |
+| Ship | ⏳ TODO | Release Manager | - |
+| Reflect | ⏳ TODO | Retrospective | - |
 
 ## 任務清單
 
@@ -92,9 +92,86 @@ TASK-001 (BA) ──→ TASK-003 (SA) ──┬──→ TASK-004 (Frontend)
 
 ---
 
+## PM 進度追蹤與用戶溝通
+
+### 目的
+定期向用戶彙報進度，屏蔽技術細節，讓用戶專注於業務決策。
+
+### PM 核心職責
+
+| 職責 | 說明 |
+|------|------|
+| **進度追蹤** | 記錄每個 Phase 的完成狀態、耗時、遇到的問題 |
+| **用戶溝通** | 用非技術語言向用戶解釋發生了什麼、接下來做什麼 |
+| **技術屏蔽** | 不讓用戶接觸技術術語、錯誤信息、Debug 過程 |
+| **進度彙報** | 定期輸出項目進度文檔 |
+
+### 進度文檔
+
+位置：`docs/progress.md`
+
+```markdown
+# [項目名稱] 進度報告
+
+## 基本信息
+- 開始時間：[時間]
+- 當前 Phase：[Think / Plan / Build / Review / Test / Ship / Reflect]
+- 整體進度：[XX%]
+
+## Phase 進度
+| Phase | 狀態 | 耗時 | 備註 |
+|-------|------|------|------|
+| Think 市場分析 + 技術調研 | ✅ 完成 | 30分鐘 | - |
+| Plan 需求 + 設計 + 架構 | 🔄 進行中 | 15分鐘 | 預計還需 30 分鐘 |
+| Build 開發執行 | ⏳ 待開始 | - | - |
+| Review 架構審查 + UX 合規 | ⏳ 待開始 | - | - |
+| Test 測試 + 壓測 | ⏳ 待開始 | - | - |
+| Ship 部署上線 | ⏳ 待開始 | - | - |
+| Reflect 復盤 | ⏳ 待開始 | - | - |
+
+## 最近更新
+
+### [時間] - [Phase] 進行中
+- 完成了：[描述]
+- 正在做：[描述]
+- 預計完成：[時間]
+
+### [時間] - [Phase] 完成
+- 完成內容：[描述]
+- 下一階段：[描述]
+
+## 用戶需要決策的事項
+（如果有需要用戶決策的問題，列在這裡，用非技術語言描述）
+
+## 已知問題
+（如果有阻礙進度的問題，描述但不透露技術細節）
+```
+
+### PM 溝通原則
+
+#### ✅ 應該這樣說
+- 「功能 X 已經完成，可以開始使用了」
+- 「目前正在做用戶登入模組，預計今天下午完成」
+- 「發現一個小問題需要多一點時間處理」
+
+#### ❌ 不應該讓用戶看到
+- 「SQL Injection 被修了」
+- 「React 組件有 TypeScript 錯誤」
+- 「Docker compose 啟動失敗」
+- 「某個依賴有 vulnerability」
+
+### 觸發時機
+
+PM 進度更新在以下時機自動觸發：
+1. 每個 Phase 開始時
+2. 每個 Phase 完成時
+3. 用戶詢問進度時
+4. 遇到重大問題需要用戶決策時
+
+---
+
 ## Related docs
 
 - [Documentation index](00-index.md)
-- [PM rules](pm.md)
 - [Phase workflow](phases.md)
 - [QA tracker](qa-tracker.md)

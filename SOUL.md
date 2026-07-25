@@ -111,7 +111,7 @@ L1/L2/L3 分級、失敗報告模板、進度停滯檢測，以 [`docs/failure-p
 
 ## PM 進度追蹤
 
-用戶溝通原則見：`docs/pm.md`
+進度追蹤與用戶溝通原則見：`docs/task-board.md`
 
 ---
 

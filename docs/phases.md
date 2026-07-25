@@ -182,7 +182,7 @@ Plan 結束、Build 開始前，Documentation Engineer + Tech Lead 必須確認 
 
 ### Security Engineer 職責
 - 安全開發規範培訓
-- 代碼 security review（並行，不等 Phase 3）
+- 代碼 security review（並行，不等 Review 階段）
 - SAST/DAST 自動化掃描
 - 修復 SQL Injection、XSS、Secrets 暴露等問題
 
@@ -224,16 +224,16 @@ Plan 結束、Build 開始前，Documentation Engineer + Tech Lead 必須確認 
 
 ### 參與角色
 - **SA Reviewer** — 技術架構、代碼品質、安全性
-- **UX Reviewer** — 前端是否符合 design.md、截圖比對
+- **UX Reviewer** — 前端是否符合 `docs/DESIGN.md`、截圖比對
 
 ### SA Reviewer 審查重點
-- 架構是否符合 `docs/architecture.md`
+- 架構是否符合 `docs/architecture/0001-*.md`（ADRs）
 - 代碼品質與最佳實踐
 - 安全漏洞
 - 測試覆蓋率
 
 ### UX Reviewer 審查重點
-- UI 是否符合 `docs/design.md`
+- UI 是否符合 `docs/DESIGN.md`
 - 截圖比對關鍵頁面
 - 響應式佈局
 - 交互是否符合規範

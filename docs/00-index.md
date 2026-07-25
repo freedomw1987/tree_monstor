@@ -48,12 +48,11 @@
 | [`docs/failure-policy.md`](failure-policy.md) | Canonical | 失敗處理機制（L1/L2/L3） |
 | [`docs/feedback-loop.md`](feedback-loop.md) | Canonical | Feedback Loop 流程、Review/Test fail 後如何迭代 |
 | [`docs/phases.md`](phases.md) | Canonical | Think → Plan → Build → Review → Test → Ship → Reflect 詳細流程 |
-| [`docs/pm.md`](pm.md) | Canonical | PM 進度追蹤、用戶溝通原則 |
 | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | Standard | Project 標準文檔、commit 規範、文件 drift 要求 |
 | [`docs/qa-gate.md`](qa-gate.md) | Canonical | QA Gate 交付清單、文檔 gate、tracker gate、testing gate |
 | [`docs/qa-tracker.md`](qa-tracker.md) | Tracker | QA 持續追蹤；US → test task 對照、需求變更影響評估 |
 | [`docs/subagents.md`](subagents.md) | Canonical | Subagent 角色矩陣、Goal 關鍵字、調度規則、model 選擇原則 |
-| [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則 |
+| [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則、PM 進度追蹤與用戶溝通原則 |
 | [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 分層測試類型、健康指標、工具鏈 |
 | [`docs/think-plan-examples.md`](think-plan-examples.md) | Reference | Think / Plan 互動範例、架構選項與提問方式 |
 

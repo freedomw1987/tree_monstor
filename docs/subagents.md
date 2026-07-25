@@ -18,7 +18,7 @@
 | **DevOps** | `DevOps 部署` | 環境、CI/CD、部署、監控 | Architecture | 部署配置、Pipeline |
 | **Security Engineer** | `security scan` / `安全開發` | Security-first 開發、SAST/DAST | 代碼 | 安全報告 |
 | **SA Reviewer** | `SA Code Review` | 架構合規、程式品質、安全 | 代碼 | Review 報告 |
-| **UX Reviewer** | `ux review` / `ui 合規檢查` | 実装符合 design.md、截圖比對 | 代碼 + Design | UX 審查報告 |
+| **UX Reviewer** | `ux review` / `ui 合規檢查` | 實裝符合 `docs/DESIGN.md`、截圖比對 | 代碼 + Design | UX 審查報告 |
 | **QA** | `QA 測試` | 自動化測試、E2E、User Simulation | 代碼 + PRD | 測試報告 |
 | **Performance Engineer** | `perf test` / `壓測` | Load testing、benchmark、瓶頸分析 | 代碼 | 壓測報告 |
 | **Release Manager** | `release` / `部署上線` | 部署、rollback、monitoring、Smoke test | 代碼 | 部署確認 |
