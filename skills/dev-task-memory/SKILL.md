@@ -1,12 +1,14 @@
 ---
 name: dev-task-memory
-description: 5-layer persistent memory for in-progress dev tasks — survives context compression, /new, gateway restart. State file + git checkpoints + external memory + cross-session search.
+description: Concept + recipes for persisting in-progress dev-task state (state file, git checkpoints, WIP detection, handoff docs). Hermes runtime automation retired; platform-neutral references remain valid.
 trigger: "context compression / /new / gateway restart / '繼續之前的任務' / 'where were we' / 'save state' / 'checkpoint task' / subagent 做到一半 stop 嘅 WIP / **multi-phase dev task (>30 min, e.g. security review → fix-batch sprint)**"
 version: 2
 category: devops
 ---
 
 # Dev Task Memory
+
+> **⚠️ Runtime 自動化已退役（2026-07-25）**：本 skill 嘅 `scripts/` 自動化係為 Hermes runtime 寫嘅，已隨 Hermes 退役刪除（git 歷史可尋）；文中提及嘅 script 命令屬歷史紀錄。Claude Code 用內建 task list / plan mode / session resume 代替自動化部分。本文件保留為 **concept + recipes**：`references/` 同 `templates/` 入面嘅配方（WIP 偵測、恢復後驗證、handoff 文檔、state file 格式等）係平台中立、仍然有效。
 
 解決 David 2026-06-06 hang fix 嘅延伸問題：**context 處理完之後, dev task 點樣唔好被遺忘**。
 5-layer architecture 確保 task 嘅 decisions、current state、next steps 全部 persist 喺 file system,
