@@ -93,76 +93,13 @@
 
 ### Subagent 團隊矩陣
 
-完整角色矩陣以 [`docs/subagents.md`](docs/subagents.md) 為 canonical source；README 只展示核心工作流視角：
-
-```
-Orchestrator ──── 任務協調（全局視角）
-    │
-    ├── CEO ───────── 市場分析、商業計劃
-    ├── Researcher ─── 技術調研、技術選型
-    ├── BA ────────── 需求分析、PRD 編寫
-    ├── Designer ───── UI/UX 設計、Design System
-    ├── SA ────────── 架構設計、技術方案
-    │
-    ├── Frontend ───── React / Vue / Mobile
-    ├── Backend ────── Node.js / Python / Go / Rust
-    ├── DevOps ─────── CI/CD、Docker、K8s、AWS
-    ├── Security Engineer ─ 安全審計、滲透測試
-    │
-    ├── SA Reviewer ── 架構合規審查
-    ├── UX Reviewer ── 用戶體驗審查
-    ├── QA ─────────── 自動化測試、測試用例
-    ├── Performance Engineer ─ 壓測、效能優化
-    │
-    ├── Release Manager 部署、迴滾策略
-    └── Retrospective ─ 復盤、持續改進
-```
+Orchestrator 協調 CEO / Researcher / BA / Designer / SA / Frontend / Backend / DevOps / Security / Reviewer / QA / Release 等角色。完整角色矩陣以 [`docs/subagents.md`](docs/subagents.md) 為唯一正本。
 
 ---
 
 ## 開發流程
 
-```
-你：「我想做一個線上課程平台」
-
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Think                                │
-    │  「您是 B2C 還是 B2B？目標用戶是誰？」 │
-    └───────────────────────────────────────┘
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Plan                                 │
-    │  提供 2-3 個技術架構選項               │
-    │  確認商業模式、優先級、MVP 範圍       │
-    └───────────────────────────────────────┘
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Build                                │
-    │  Frontend + Backend + DevOps 同時開發  │
-    └───────────────────────────────────────┘
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Review                               │
-    │  SA Reviewer 審查架構                 │
-    │  UX Reviewer 審查介面                 │
-    └───────────────────────────────────────┘
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Test                                 │
-    │  E2E 測試、效能測試、安全掃描         │
-    └───────────────────────────────────────┘
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Ship                                 │
-    │  部署到生產環境、監控、告警           │
-    └───────────────────────────────────────┘
-         ↓
-    ┌───────────────────────────────────────┐
-    │  Reflect                              │
-    │  復盤總結、記錄技術債、持續改進       │
-    └───────────────────────────────────────┘
-```
+**Think → Plan → Build → Review → Test → Ship → Reflect**，帶 Feedback Loop。你描述願景，我問對問題、給選項、確認方向，QA 測試通過才交付。詳細流程與各階段 gate 見 [`docs/phases.md`](docs/phases.md)（唯一正本）。
 
 ---
 
@@ -249,44 +186,12 @@ codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一�
 
 ## QA Gate（嚴格執行）
 
-未通過以下清單，**絕對不會交付**：
+未通過 QA Gate，**絕對不會交付**。驗證驅動紅線 54-56（先重現、實證驗證、先讀後寫）優先於一切流程規則。
 
-### 驗證驅動（最高優先，所有平台適用）
+- 完整交付清單與 gate 定義 → [`docs/qa-gate.md`](docs/qa-gate.md)（唯一正本）
+- 紅線全文（基礎紅線 + 文檔紀律 10-12 + 工程紀律 13-18 + 驗證驅動 54-56）→ [`SOUL.md`](SOUL.md)（唯一正本）
 
-- [ ] **紅線 54**：Bug fix 已用最小步驟實際重現，錯誤輸出已記錄
-- [ ] **紅線 55**：lint / typecheck / test / build 全部實際跑過，**真實輸出**附上
-- [ ] **紅線 56**：改動前已讀懂周邊代碼、慣例、依賴
-
-### QA Gate（已採用文檔基線的 project）
-
-- [ ] Think: CEO 市場分析 + Researcher 調研報告完成
-- [ ] Plan: 商業計劃 + PRD + Design + Architecture 確認
-- [ ] Build: 所有代碼已提交
-- [ ] Review: SA Reviewer APPROVED + UX Reviewer APPROVED
-- [ ] Test: E2E 測試 100% 通過、效能測試通過
-- [ ] Security: 安全掃描通過
-- [ ] Ship: 生產環境部署確認
-- [ ] Reflect: 復盤報告完成
-
-> **文檔紀律紅線 10-18 為條件式**：只適用於已採用文檔基線的 project（已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 等）。小型任務或未採用基線的 project，文檔要求降為建議，**不可以因文檔缺失而拒絕交付經實證驗證的代碼**。
-
----
-
-## 紅線（底線原則）
-
-### 通用（所有平台適用）
-
-```
-❌ 不跳過 QA Gate 就交付
-❌ 不在未通過測試的情況下部署
-❌ 不寫有安全漏洞的代碼（SQL Injection、XSS 等）
-❌ 不提交明文密鑰或 Secrets
-❌ 不只執行命令 — Think/Plan 階段必須問對問題
-
-❌ 紅線 54：修 bug 不重現就動手
-❌ 紅線 55：交付前沒實際跑過驗證
-❌ 紅線 56：基於猜測寫 code 不先讀 source
-```
+> **文檔紀律紅線 10-18 為條件式**：只適用於已採用文檔基線的 project。小型任務或未採用基線的 project，文檔要求降為建議，**不可以因文檔缺失而拒絕交付經實證驗證的代碼**。
 
 ---
 

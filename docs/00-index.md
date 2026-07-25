@@ -23,11 +23,11 @@
 | Topic | Canonical source | Notes |
 |-------|------------------|-------|
 | Identity / philosophy | [`SOUL.md`](../SOUL.md) | 只放身份、流程、紅線和引用；避免變成完整 inventory |
-| Session startup / workspace | [`AGENTS.md`](../AGENTS.md) | `/goal`、resume handshake、工作區規範 |
+| Session startup / workspace | [`AGENTS.md`](../AGENTS.md) | Goal 確認、Think/Plan 互動、工作區規範 |
 | Long-term memory | [`MEMORY.md`](../MEMORY.md) | 穩定記憶摘要；不維護完整 skills / roles 清單 |
 | Claude Code entry bridge | [`CLAUDE.md`](../CLAUDE.md) + [`adapters/claude-code/agent.md`](../adapters/claude-code/agent.md) | Claude Code startup / routing only；canonical behavior 仍在 SOUL / AGENTS / MEMORY / docs / skills |
 | Phase workflow | [`docs/phases.md`](phases.md) | Think → Plan → Build → Review → Test → Ship → Reflect |
-| Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、Model Tiering；不要在其他文件硬寫角色數量 |
+| Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、model 選擇原則；不要在其他文件硬寫角色數量 |
 | Task Board format | [`docs/task-board.md`](task-board.md) | Canonical spelling uses hyphen: `docs/task-board.md` |
 | QA Gate | [`docs/qa-gate.md`](qa-gate.md) | Pre-Build documentation gate、doc-code sync、release / merge 交付門檻 |
 | Testing strategy | [`docs/testing-strategy.md`](testing-strategy.md) | 測試層級、P0/P1 測試深度、健康指標 |
@@ -52,9 +52,9 @@
 | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | Standard | Project 標準文檔、commit 規範、文件 drift 要求 |
 | [`docs/qa-gate.md`](qa-gate.md) | Canonical | QA Gate 交付清單、文檔 gate、tracker gate、testing gate |
 | [`docs/qa-tracker.md`](qa-tracker.md) | Tracker | QA 持續追蹤；US → test task 對照、需求變更影響評估 |
-| [`docs/subagents.md`](subagents.md) | Canonical | Subagent 角色矩陣、Goal 關鍵字、調度規則、Model Tiering |
+| [`docs/subagents.md`](subagents.md) | Canonical | Subagent 角色矩陣、Goal 關鍵字、調度規則、model 選擇原則 |
 | [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則 |
-| [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 12 層測試類型、健康指標、工具鏈 |
+| [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 分層測試類型、健康指標、工具鏈 |
 | [`docs/think-plan-examples.md`](think-plan-examples.md) | Reference | Think / Plan 互動範例、架構選項與提問方式 |
 
 ---
@@ -74,27 +74,7 @@
 
 ## Think → Plan → Build → Review → Test → Ship → Reflect
 
-```
-用戶需求
-    ↓
-Think ── CEO 市場分析 + Researcher 技術調研 ──────────┐
-    ↓                                                 │
-Plan ── CEO 商業計劃 + BA + Designer + SA + Tech Lead ┤
-    ↓                                                 │ Feedback
-Build ── Frontend + Backend + DevOps + Security Eng   ┤   Loop
-    ↓                                                 │
-Review ── SA Reviewer + UX Reviewer                   ┤
-    ↓                                                 │
-Test ── QA + Performance Engineer                     ┤
-    ↓                                                 │
-Ship ── Release Manager                               ┘
-    ↓
-Reflect ── Retrospective
-    ↓
-交付用戶
-```
-
-完整 phase 定義見 [`docs/phases.md`](phases.md)。
+完整 phase 定義、各階段角色與 gate 見 [`docs/phases.md`](phases.md)（唯一正本）。
 
 ---
 
