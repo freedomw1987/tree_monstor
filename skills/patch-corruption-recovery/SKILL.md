@@ -1,20 +1,51 @@
 ---
 name: patch-corruption-recovery
-description: When a patch edit corrupts a file (syntax error, mismatched braces, nested function inside wrong scope) — restore from git and re-patch cleanly instead of patching the broken state.
-version: 1.0.0
-author: Hermes Agent
-license: MIT
-metadata:
-  hermes:
-    tags: [debugging, patch, git, recovery, troubleshooting]
-    related_skills: [systematic-debugging]
+description: Prevent and recover from corrupted patch/edit states — replace-all regex pitfalls (any editor's replace-all, including Claude Code Edit replace_all), fuzzy-match mis-anchoring, and the git-restore + re-patch recovery workflow when a file's syntax is already broken.
+version: 1.1.0
+tags: [debugging, patch, edit, replace-all, git, recovery, troubleshooting]
 ---
 
-# Patch Corruption Recovery
+# Patch Corruption — Prevention & Recovery
 
-## When to Use
+Covers two halves of the same problem, for ANY patch/edit tool (a patch tool's `replace_all`, Claude Code's Edit `replace_all`, `sed -i`, IDE find-and-replace):
 
-These symptoms mean a patch landed incorrectly and the file is corrupted:
+1. **Prevention** — bulk/replace-all substitutions on source code are the most common way to corrupt a file in the first place.
+2. **Recovery** — once a file's structure is broken, restore from git and re-patch cleanly instead of patching the broken state.
+
+## Prevention: replace-all pitfalls on source code
+
+> **Bulk token replacement on code files is dangerous.** Replacing a short token like `user.role` with `user?.role` across a file can double-replace, corrupt parenthesis balance, and produce malformed expressions that are hard to spot.
+
+**The failure mode:**
+
+```
+Original:
+  if (!user || (user.role !== 'admin')) {
+
+After replace-all user.role → user?.role:
+  if (!user || (user?.user?.id !== 'admin'))   ← WRONG: double replacement
+  if (!user || (user?.role !== 'admin') {       ← WRONG: missing ) carried over
+```
+
+Real cases: a `replace_all` of `user.role` inside `!user || (user.role !== 'admin')` compounded a missing `)` from a prior bad replacement in one route file, and produced unbalanced parens in another (`... .includes(membership.role)))`).
+
+**Rules:**
+
+1. **Never use replace-all on code files for short token replacements** (e.g. `user.role`, `user.id`). Short tokens appear inside larger expressions you haven't read.
+2. **Prefer single targeted replacements with unique context** — include enough surrounding code that the match is unambiguous:
+   ```
+   old_string: "if (!user || (user.role !== 'admin')) {"
+   new_string: "if (!user || (user?.role !== 'admin')) {"
+   ```
+3. **Always re-read the file (or the diff) after any bulk replacement** to verify syntax.
+4. After a bulk replacement, scan for the classic corruption patterns: double replacements (`user?.user?.id`), missing `)`/`}`, orphaned `(`.
+5. Run the project's typecheck immediately: `npx tsc --noEmit 2>&1 | head -30` (or the project equivalent).
+
+If prevention failed and the file is already broken, switch to the recovery workflow below.
+
+## When to Use the Recovery Workflow
+
+These symptoms mean a patch/edit landed incorrectly and the file is corrupted:
 
 - `SyntaxError: Unexpected }` or `Unexpected token` after a patch
 - `bun run typecheck` shows NEW errors in a file that was clean before the patch
@@ -91,7 +122,7 @@ Corrupted file → git restore to last clean → re-patch correctly
 | **One concept per patch** | If a 50-line file becomes 120 lines after a patch meant to add 20, something went wrong |
 | **Check `git diff --stat`** | Always look at what actually changed |
 | **Verify startup for server files** | `timeout 5 bun src/index.ts` catches runtime errors typecheck misses |
-| **Re-read the full file with `read_file` (no offset/limit) before patching a region that has nearby lookalike blocks** | Avoids `patch` fuzzy-match anchoring on the wrong copy of a repeated anchor (see "Adjacent-anchor pitfall" below) |
+| **Re-read the full file (no offset/limit windowing) before patching a region that has nearby lookalike blocks** | Avoids the patch/edit tool anchoring on the wrong copy of a repeated anchor (see "Adjacent-anchor pitfall" below) |
 | **Pause on "Found 2 matches for old_string" errors** | It means the file has near-duplicate anchor regions (e.g. two consecutive `import { ... }` blocks). Add MORE surrounding context, don't blindly `replace_all` |
 
 ## Adjacent-anchor pitfall (2026-06-08, crm-system ChartBlock.tsx)
@@ -101,20 +132,20 @@ above the intended anchor, while the actual edit lands correctly.
 Typecheck / build passes because the deleted lines were a comment —
 so the corruption is INVISIBLE until someone reads the file.
 
-**Root cause**: I had used `read_file(..., offset=15, limit=20)` to
-inspect a region of `ChartBlock.tsx`. The first 20 lines contained
+**Root cause**: I had inspected a region of `ChartBlock.tsx` with a
+windowed read (offset 15, limit 20). The first 20 lines contained
 one occurrence of a 5-line "Register the controllers..." comment.
 A few lines below, the actual `ChartJS.register(...)` block started.
 When I later tried to delete the "5 lines before `ChartJS.register`"
 (so I could move the comment to a different position), my `old_string`
-matched the comment by its textual content — but `patch` was also
-fuzzy-matching on the lines AFTER it, which were the `import` block.
+matched the comment by its textual content — but the patch tool was
+also fuzzy-matching on the lines AFTER it, which were the `import` block.
 Fuzzy match picked a different region that happened to have the same
 trailing pattern, and the comment in that OTHER region got deleted.
 
 **Import-silently-dropped pitfall (2026-06-09, pm-system agent/runtime.ts)**
 
-**Symptom**: After a `patch` that *should* have only modified a
+**Symptom**: After a patch that *should* have only modified a
 middle block of `agent/runtime.ts`, the `import { Elysia } from 'elysia'`
 line at the top of the file vanished. TypeScript compiler reported:
 ```
@@ -126,8 +157,8 @@ corruption, so the real issue (missing import) was buried.
 **Root cause (the bit that actually bit me)**: My `old_string`
 matched a **second occurrence** of the import block deeper in the
 file (a copy-pasted fragment in a function body, which I had no
-reason to know existed because I'd only `read_file` a windowed
-view). `patch`'s fuzzy-match picked that second occurrence, leaving
+reason to know existed because I'd only read a windowed view of the
+file). The tool's fuzzy-match picked that second occurrence, leaving
 the actual top-of-file import block in an intermediate state
 where the `Elysia` import line was no longer reachable by
 post-patch `new_string`.
@@ -139,7 +170,7 @@ post-patch `new_string`.
    ```
    If the import resolves and `Object.keys` returns the expected
    exports, the file is fine — LSP is stale.
-2. **Read the file fresh** (`read_file(path)` with NO `offset/limit`)
+2. **Read the file fresh** (full read, NO offset/limit windowing)
    to see the actual top-of-file imports, then check each
    `import { X }` against every usage site of `X` in the file.
 3. **Diff against HEAD**: `git diff path/to/file` — if you see a
@@ -149,7 +180,7 @@ post-patch `new_string`.
 **Recovery if it happens**:
 1. `git diff path/to/file` to confirm what got dropped.
 2. **Manually re-add the missing import** at the top of the file
-   (a one-line `patch` is safer than trying to chain more patches
+   (a one-line edit is safer than trying to chain more patches
    on a partially-broken state).
 3. Re-run `bun --print 'import(...)'` to confirm fix.
 
@@ -158,7 +189,7 @@ post-patch `new_string`.
   if the file has multiple import blocks. Anchor on a more specific
   pattern (a unique comment, a function signature, the line just
   before *and* just after the target).
-- **After every `patch` on a file**, run
+- **After every patch/edit on a file**, run
   `git diff path/to/file | head -30` to eyeball what changed at
   the top, even if the patch was supposed to touch only line 50.
 - If a session has introduced a corrupt intermediate state and LSP
@@ -174,40 +205,7 @@ post-patch `new_string`.
 - The real bug — missing `Elysia` import — only surfaces as ONE
   error line among 30+ noise lines, easy to miss
 
-**Detection recipe (use this when you see many LSP errors at once)**:
-1. **Verify with the actual runtime**, not LSP. For Bun:
-   ```bash
-   bun --print 'import("./src/path/file.ts").then(m => Object.keys(m))'
-   ```
-   If the import resolves and `Object.keys` returns the expected
-   exports, the file is fine — LSP is stale.
-2. **Read the file fresh** (`read_file(path)` with NO `offset/limit`)
-   to see the actual top-of-file imports, then check each
-   `import { X }` against every usage site of `X` in the file.
-3. **Diff against HEAD**: `git diff path/to/file` — if you see a
-   deleted `import` line that you didn't intend to delete, that's
-   the corruption.
-
-**Recovery if it happens**:
-1. `git diff path/to/file` to confirm what got dropped.
-2. **Manually re-add the missing import** at the top of the file
-   (a one-line `patch` is safer than trying to chain more patches
-   on a partially-broken state).
-3. Re-run `bun --print 'import(...)'` to confirm fix.
-
-**Prevention recipe (extends adjacent-anchor pitfall)**:
-- **Never write an `old_string` that starts with a bare `import {`**
-  if the file has multiple import blocks. Anchor on a more specific
-  pattern (a unique comment, a function signature, the line just
-  before *and* just after the target).
-- **After every `patch` on a file**, run
-  `git diff path/to/file | head -30` to eyeball what changed at
-  the top, even if the patch was supposed to touch only line 50.
-- If a session has introduced a corrupt intermediate state and LSP
-  is flooding you with errors, **trust `bun --print 'import(...)'`
-  over LSP diagnostics** — the runtime is the source of truth.
-
-**Why this is dangerous**:
+**Why this is dangerous (adjacent-anchor comment-deletion variant)**:
 - The patch "succeeded" (no `replace_all` errors)
 - `bun typecheck` was clean (deleting a comment is invisible to TS)
 - `bun test` passed (no behavioural change)
@@ -217,12 +215,12 @@ post-patch `new_string`.
 
 **Prevention recipe**:
 1. Before any non-trivial patch (>5 line addition/removal), re-read
-   the **full file** with `read_file(path)` (no offset/limit) so the
-   LLM context has the entire file, not a windowed slice.
+   the **full file** (no offset/limit windowing) so your context has
+   the entire file, not a windowed slice.
 2. Anchor the `old_string` on a **unique** line that appears EXACTLY
    once in the file — usually a function signature, a unique
    identifier, or a comment that's truly one-of-a-kind.
-3. If `patch` reports "Found N matches for old_string", NEVER
+3. If the patch/edit tool reports "Found N matches for old_string", NEVER
    `replace_all=true` blindly. Either (a) add 3+ more lines of
    surrounding context, (b) split into two smaller patches with
    different anchors, or (c) `git checkout HEAD -- <file>` and

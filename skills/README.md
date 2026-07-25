@@ -65,7 +65,7 @@ In Claude Code:
 | [`regression-guard`](regression-guard/SKILL.md) | Records regression guards for bug fixes. | Every bug fix or regression-prone change. |
 | [`structural-doc-batch`](structural-doc-batch/SKILL.md) | Batch documentation organization and structural cleanup. | Large documentation cleanup or re-indexing work. |
 | [`tech-debt-register`](tech-debt-register/SKILL.md) | Tracks technical debt with priority, cost, and business impact. | Known debt, refactor tradeoffs, deferred cleanup. |
-| [`patch-corruption-recovery`](patch-corruption-recovery/SKILL.md) | Recovers from corrupted patch/edit states by restoring and re-patching cleanly. | Syntax corruption, mismatched braces, broken patch attempts. |
+| [`patch-corruption-recovery`](patch-corruption-recovery/SKILL.md) | Prevents replace-all/regex edit corruption and recovers from corrupted patch/edit states by restoring and re-patching cleanly. | Bulk replace-all on code, syntax corruption, mismatched braces, broken patch attempts. |
 | [`mac-apfs-case-insensitive-git-tracking`](mac-apfs-case-insensitive-git-tracking/SKILL.md) | Handles macOS APFS case-insensitive Git path/casing issues. | File casing drift between macOS dev host and Linux/container runtime. |
 
 ---
@@ -210,7 +210,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`ecs-health-check-debug`](devops/ecs-health-check-debug/SKILL.md) | Debug ECS Fargate CDK deployment failures due to health check curl not found in Docker image |
 | [`elysia-aws-lambda-deploy`](devops/elysia-aws-lambda-deploy/SKILL.md) | Deploy Elysia.js (Bun-first framework) to AWS Lambda Node.js runtime — bundler config, handler resolution, CDK runtime mismatches, crypto polyfill, API Gateway… |
 | [`nginx-sse-streaming-fix`](devops/nginx-sse-streaming-fix/SKILL.md) | Fix nginx reverse proxy buffering SSE responses so streaming works correctly |
-| [`patch-replace-all-pitfalls`](devops/patch-replace-all-pitfalls/SKILL.md) | Avoid syntax errors when using patch replace_all on source code — regex token replacement can corrupt parentheses and expressions. |
 | [`prisma-seed-reset-pattern`](devops/prisma-seed-reset-pattern/SKILL.md) | Prisma seed 一定要每次重設 role 關聯，否則 AdminPanel 自訂角色會失效 |
 | [`route53-nginx-https`](devops/route53-nginx-https/SKILL.md) | 使用 AWS Route53 + nginx + Let's Encrypt 為測試網域建立穩定 HTTPS URL。適用於需要在 AWS 管理的網域上對外暴露測試服務，取代 Cloudflare Tunnel。 |
 
