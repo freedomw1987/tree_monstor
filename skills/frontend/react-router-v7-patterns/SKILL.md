@@ -24,9 +24,10 @@ Class-level lessons from `crm-system` Day 14.7 (2026-06-07) — refactored
 5 top-level admin routes into a single `/settings/*` sub-route tree with
 7 tabs. Hit 4 distinct v7-specific gotchas. None of them are project-
 specific — they apply to any nested-route refactor on React Router 6.4+
-(data router) and v7.
+(data router) and v7. Patterns 5-6 fold in two sibling lessons from the
+same class: sibling-route shadowing and route-param access.
 
-## The 4 patterns
+## The patterns
 
 ### 1. URL is the source of truth for tab/segment UIs
 
@@ -210,6 +211,86 @@ transient UI state (e.g. a modal that's open) this is wrong — use
 a page that can be navigated to from multiple in-app links. Audit
 every `useSearchParams` consumer when adding a new cross-link to the
 page.
+
+### 5. Sibling route shadowing — `/x` direct route vs `/x/*` layout with the same path
+
+**Symptom**: two `<Route>` declarations share a path (a legacy direct
+route AND a new layout):
+
+```jsx
+// ❌ shadowing trap
+<Route path="/settings" element={<SettingsPage />} />
+<Route path="/settings" element={<SettingsLayout />}>
+  <Route path="users" element={<UsersTab />} />
+</Route>
+```
+
+`/settings` shows a blank `<Outlet />` (or the wrong page), `/settings/users`
+may work fine, `tsc --noEmit` passes, and there's often no console error.
+
+**Root cause**: v6/v7 picks the most-specific match, but two same-prefix
+declarations make the result **declaration-order-dependent and brittle** —
+swap the order and behavior flips. A layout route with no `<Route index>`
+renders a blank Outlet for the exact-match URL.
+
+**Fixes, in order of preference**:
+
+1. **Single nested layout** — everything under one `<Route path="/settings">`
+   with `<Route index>` (or a bare-path `<Navigate>` above the layout, as in
+   the redirect recipe below) as the default tab. No duplicate sibling.
+2. **Rename** to avoid the shared prefix entirely (`/admin/settings/...`).
+3. **Order-dependent siblings only as a last resort** — keep the bare route
+   BEFORE the layout, comment the invariant loudly, and browser-smoke-test
+   before committing.
+
+**Diagnosis steps**:
+
+- Blank `<Outlet>` for `/settings/users` → parent matched, child didn't.
+- Reverse the two declarations and re-test — behavior flip confirms the
+  order-dependent bug.
+- `useMatches()` (React DevTools) shows which routes matched in what order.
+- No `<Route index>` in the layout → blank Outlet on the exact-match URL.
+- A `<Route path="*">` 404 catch-all can MASK shadowing by redirecting to
+  the dashboard — an unexpected dashboard redirect is a shadowing signal.
+
+**Verification (required — TS is not a smoke test for routing)**: browser-visit
+the bare path, each sub-route, hard refresh (service workers cache old JS),
+and confirm in React DevTools that the layout is in the tree with the expected
+Outlet child. If a handoff defers the smoke test to a later step, the handoff
+doc MUST call out the routing invariant.
+
+### 6. Route params are hooks, not props (`useParams()`)
+
+**Symptom**: URL params (`:token`, `:email`, `:id`) are `undefined` in the
+component, so API calls silently send empty values (e.g. reset-password
+request body missing the token).
+
+**Root cause**: code written in the old style expects params as props
+(`function ResetPassword({ token })`). In v6/v7 route params are only
+available via the hook:
+
+```jsx
+import { useParams } from 'react-router-dom';
+function ResetPassword() {
+  const { token } = useParams();
+}
+// Route stays prop-free: <Route path="/reset/:token" element={<ResetPassword />} />
+```
+
+**URL-encoded params need decoding** — an `:email` segment arrives
+percent-encoded; apply `decodeURIComponent(email ?? '')` before use.
+
+**Diagnosis when the fix "doesn't take"**:
+
+1. Instrument fetch in the console to see what's actually sent:
+   `window._fetch = window.fetch; window.fetch = (...a) => { console.log('FETCH:', a[0], a[1]?.body); return window._fetch(...a); }`
+2. Confirm the deployed bundle is the new one (`dist/index.html` JS hash
+   changed; compiled JS contains `useParams`).
+3. Test in incognito / with "Disable cache" — stale JS is the usual reason
+   a correct fix appears broken.
+
+**Verification**: the fetch body contains the full params
+(`{token: "abc123", password: "xxx"}`, not `{password: "xxx"}`).
 
 ## Decision: when to use Navigate vs re-pointing the Link
 

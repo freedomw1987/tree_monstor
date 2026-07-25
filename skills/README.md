@@ -76,7 +76,6 @@ In Claude Code:
 |-------|---------|-------------|
 | [`chat-frontend-backend-debug`](chat-frontend-backend-debug/SKILL.md) | Debugs chat UI/API mismatch, SSE streaming, AI image display/generation paths, multimodal attachments, React state, and mobile layout issues. | Chat UI does not respond, stream, or render images correctly. |
 | [`react-browser-automation-gotchas`](react-browser-automation-gotchas/SKILL.md) | Debugs React synthetic-event/state issues during browser automation. | Browser clicks/fills do not trigger React state updates. |
-| [`react-router-sibling-route-conflict`](react-router-sibling-route-conflict/SKILL.md) | Diagnoses sibling route shadowing in React Router v6/v7. | `/settings` vs `/settings/*`-style route conflicts. |
 | [`react-router-tab-subroute-refactor`](react-router-tab-subroute-refactor/SKILL.md) | Refactors top-level pages into shared tabbed subroutes. | Consolidating page clusters into tab navigation. |
 | [`vite-spa-nginx-deployment`](vite-spa-nginx-deployment/SKILL.md) | Deploys Vite React SPA behind nginx with SPA routing and permissions. | Static Vite SPA deployment / nginx route fallback. |
 | [`vite-static-asset-proxy-debug`](vite-static-asset-proxy-debug/SKILL.md) | Debugs Vite dev server static asset proxy issues. | Assets work in production but return HTML or fail locally. |
@@ -229,7 +228,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`react-context-auth-user-switch`](frontend/react-context-auth-user-switch/SKILL.md) | Detect user login/logout within same tab using React Context + localStorage — fixes stale user data when switching accounts without full page reload |
 | [`react-html5-drag-drop-pitfalls`](frontend/react-html5-drag-drop-pitfalls/SKILL.md) | Build correct HTML5 drag-and-drop in React (Kanban, sortable lists, file drop zones). Covers the most common silent-failure mode — forgetting `e.dataTransfer.s… |
 | [`react-quiz-form-state-debug`](frontend/react-quiz-form-state-debug/SKILL.md) | Debug React quiz forms where submit button stays disabled for mixed question types (choice/text/assignment) |
-| [`react-router-v7-params-debug`](frontend/react-router-v7-params-debug/SKILL.md) | Debug route params not being passed in react-router-dom v7 components |
 | [`react-router-v7-patterns`](frontend/react-router-v7-patterns/SKILL.md) | React Router v7 patterns and pitfalls for nested-route SPA refactors. Class-level lessons from 2026-06-07 crm-system Day 14.7 (Settings tabs): URL as source of… |
 | [`related-entity-entry-points`](frontend/related-entity-entry-points/SKILL.md) | Build the full UI flow that lets users navigate from a parent entity (Company, Deal, Order, Project) to a child entity (Deal, Quotation, LineItem, Task) and cr… |
 | [`rwd-mobile-audit`](frontend/rwd-mobile-audit/SKILL.md) | Audit and fix a web app for mobile RWD (responsive web design) using Playwright at iPhone viewport (390x844). Use when user says 'RWD', '手機兼容', 'mobile compati… |

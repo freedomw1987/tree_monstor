@@ -404,8 +404,7 @@ await page.goto(`${FRONTEND}/bugs`)  # break
 
 - `frontend/related-entity-entry-points` — 任何 sub-list 嘅 parent-child UX
 - `frontend/rwd-mobile-audit` — search box 嘅 mobile layout verify
-- `frontend/react-router-v7-params-debug` — 拎走 route 嘅 back-link handling
-- `frontend/react-router-sibling-route-conflict` — 拎走 route 嘅 sibling route collision check
+- `frontend/react-router-v7-patterns` — 拎走 route 嘅 back-link handling + sibling route collision check
 - `debugging/prisma-sqlite-bun-setup` — server-side search upgrade 嘅 Prisma contains 寫法
 - `software-development/qa-tracker-us-closure` — 拎走 standalone page 嘅 US DEPRECATION 同步(US row → `❌(DEPRECATED) ⚫` + `test.skip`/`describe.skip` + PRD strikethrough)
 

@@ -386,7 +386,7 @@ export function QuotationBuilder({ existing, initialDealId, initialCompanyId, ..
 
 - `frontend/rwd-mobile-audit` — 任何 web app deliver 前嘅 mobile RWD check
 - `backend/crm-data-model` — Prisma schema 入面 parent-child FK 設計
-- `frontend/react-router-v7-params-debug` — `useParams` / `useSearchParams` 嘅 v7 quirk
+- `frontend/react-router-v7-patterns` — `useParams` / `useSearchParams` 嘅 v7 quirk
 - `frontend/kanban-worker`(若 future add) — Kanban drag-drop + side action 嘅 interaction
 
 ## 過去 session 教訓

@@ -200,7 +200,7 @@ ls -la docs/_meta/dev-task-state.md docs/retros/<date>-<task>-handoff.md
 6. **Routing / runtime invariants** (新 — 2026-06-07 lesson) — 當 step commit 包含
    order-dependent routing(sibling route conflict 嗰類)但 smoke test 留到 ship step,必
    須喺 handoff doc 開獨立 sub-section,寫低「聲稱嘅行為 + 點 verify」。TS pass ≠
-   runtime pass。詳見 `react-router-sibling-route-conflict` skill。
+   runtime pass。詳見 `skills/frontend/react-router-v7-patterns/SKILL.md`(sibling route shadowing pattern)。
 
 **Pitfall**: 唔好將 handoff doc 寫到 `docs/_meta/`,會被 gitignore + 失去 audit trail 嘅 purpose。
 **Pitfall**: 唔好 overwrite 已經有嘅 `docs/retros/YYYY-MM-DD-<task>.md` retro file — handoff 係
