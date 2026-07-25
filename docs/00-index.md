@@ -112,6 +112,7 @@ Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
 3. 不在 root docs 寫會 drift 的數字（角色數、skill 數、line count）。
 4. 歷史 incident docs 保留事實，不把 incident 當成現行 policy；現行 policy 應抽到 canonical docs。
 5. 文檔 / skills 導航改動後，執行 `python3 scripts/docs_consistency_check.py`，確保 index、catalog、status markers、related links 與本地連結沒有 drift。
+6. （可選）啟用 pre-commit 兜底：`git config core.hooksPath .githooks` — 之後每次 commit 自動跑上述 checker + catalog freshness check；GitHub push / PR 亦有 `.github/workflows/docs-check.yml` 跑同一套。
 
 ---
 
