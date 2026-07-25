@@ -42,7 +42,6 @@
 | 文檔 | 狀態 | 內容 |
 |------|------|------|
 | [`docs/00-index.md`](00-index.md) | Index | 本文檔地圖；所有 top-level `docs/*.md` 應在此列出 |
-| [`docs/archive/auto-dev-design.md`](archive/auto-dev-design.md) | Design record | auto-dev 設計與階段規劃；屬 archived design record，不是唯一現行規範 |
 | [`docs/cross-platform-usage.md`](cross-platform-usage.md) | Reference | Claude Code / Codex 跨平台使用指南 |
 | [`docs/devops.md`](devops.md) | Runbook | DevOps 規範、process 管理、Zombie 處理 |
 | [`docs/environment-isolation.md`](environment-isolation.md) | Canonical | Dev / Prod / Agent Config 環境隔離規範 |
