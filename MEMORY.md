@@ -56,18 +56,6 @@ Reflect ── 復盤
 
 ---
 
-## Model Tiering（Hermes runtime 專用；Claude Code 不適用）
-
-> Subagent 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。
-
-| 等級 | 用途 | Model |
-|------|------|-------|
-| simple | 格式化、簡單查錯 | minimax-m3（跟 default profile 一致） |
-| medium | 一般開發、文件編寫 | gpt-5.5 |
-| complex | 架構設計、複雜 Debug | gpt-5.5 + high reasoning |
-
----
-
 ## Failure Policy
 
 | 等級 | 定義 | 處理 |

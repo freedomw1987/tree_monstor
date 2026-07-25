@@ -1,40 +1,8 @@
 # AGENTS.md - Developer Profile
 
-> **Patched 2026-06-19 (auto-dev Phase 2C)**: Added §0 啟動時 Session Resume Handshake（auto-dev 痛點三修復）。
-
 > **Status:** Canonical. Source of truth for session startup, workspace rules, and long-task handling.
 
 _Developer Profile Session 啟動流程與工作區規範。_
-
----
-
-## 0. Session Resume Handshake (Hermes runtime 專用)
-
-> **Claude Code 中不適用** — Claude Code 有內建 session resume / context 摘要（`claude --continue` / `--resume`），唔使做手動 handshake。只有 David 明確話「resume 上次任務」而 Claude Code 內建機制冇 context 時，先去搵 workspace `docs/context-summary.md`。
-
-**新 session 第一件事**（`/new session` 之後 David 嘅 first message 之前）：
-
-1. 依 active workspace lookup resume summary：
-   - active workspace `docs/context-summary.md`
-   - active workspace `memory/context-summary.md`
-   - profile repo `docs/context-summary.md`（維護 Tree Monstor profile 時）
-   - Hermes install path `~/.hermes/profiles/developer/docs/context-summary.md`（只限明確維護 Hermes profile install 時）
-2. **如果有 summary → echo 畀 David**：
-   ```
-   📋 **Resume from previous session:**
-   
-   [summary 內容]
-   
-   ---
-   ```
-3. 如果冇 summary → echo：
-   ```
-   📋 No previous session summary found. Starting fresh.
-   ```
-
-**永遠唔可以 skip 呢步**。呢個 handshake 確保 David 唔使手動 paste context（解決 David 痛點三：「context summary 唔自動，要我手動 new session」）。Claude Code 中不可假設 Hermes path 存在；先使用 active git / project root 的 workspace-local path。
-
-完整 trigger / detection logic 見 `skills/context-summarizer/SKILL.md` v2。
 
 ---
 
@@ -42,41 +10,18 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ### 步驟 0：確認 Goal（第一件事）
 
-用一兩句 plain text 向 David 確認理解嘅任務目標同階段（Think/Plan/Build/...），唔使 ASCII box。呢個 goal 係北極星，整個 session 不能偏離。
+用一兩句 plain text 向 David 確認理解嘅任務目標同階段（Think/Plan/Build/...）。呢個 goal 係北極星，整個 session 不能偏離。
 
-**Hermes runtime 專用格式**（收到 `/goal <task>` 時）：
+**如果需求模糊**：先執行 Think/Plan 互動模式，問問題、給選項，再確認方向。
 
-```
-╔══════════════════════════════════════════╗
-║  🎯 GOAL                                 ║
-╠══════════════════════════════════════════╣
-║  任務: [parsed goal text]                ║
-║  階段: [Think/Plan/Build/...]             ║
-║  專注: 拒絕偏離，拒絕額外需求             ║
-╚══════════════════════════════════════════╝
-```
-
-**如果不是 `/goal` 格式**：先執行 Think/Plan 互動模式，問問題、給選項，再確認方向。
-
-### 步驟 1：讀取配置（Hermes runtime 專用）
-
-> Claude Code 中不適用 — `CLAUDE.md` bridge 已定義按需讀取表，唔使 session 開始就全載。
-
-```
-1. 讀取 SOUL.md — 了解 Developer 身份與原則
-2. 讀取 MEMORY.md — 加載長期記憶
-3. 讀取 docs/00-index.md — 了解文檔結構
-```
-
-### 步驟 2：建立工作區（長期任務）
+### 步驟 1：建立工作區（長期任務）
 - 創建 `memory/YYYY-MM-DD.md`
 - 創建 `docs/task-board.md`（如有需要）
-- 初始化 checkpoint（如任務需要中斷恢復）
 
-### 步驟 3：判斷任務類型
+### 步驟 2：判斷任務類型
 ```
 長期任務?
-  ├─ 是 → 執行 Orchestrator Subagent
+  ├─ 是 → 用 task list / 原生 subagent 機制協作
   └─ 否 → 直接執行
 ```
 
@@ -137,7 +82,7 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ### 觸發 Clarify 的時機
 
-用 `clarify` 工具問用戶的場景：
+問用戶的場景：
 - 需求不明確，需要確認方向
 - 有多個選項，用戶需要做決策
 - 優先級衝突，需要用戶取捨
@@ -157,22 +102,9 @@ _Developer Profile Session 啟動流程與工作區規範。_
 
 ## Orchestrator 觸發
 
-> **Claude Code 中**：用內建 task list 追蹤 goal，觸發 subagent 前確認 subagent 任務服務於原始目標即可，唔使 ASCII box echo。以下格式係 Hermes runtime 專用。
+用 task list 追蹤 goal；**觸發任何 subagent 前，確認 subagent 任務服務於原始目標**。如果偏離了，先回到原始 goal。
 
-### 每次觸發前必須 echo goal（Hermes）
-```
-╔══════════════════════════════════════════╗
-║  🎯 ORCHESTRATOR GOAL ECHO              ║
-╠══════════════════════════════════════════╣
-║  原始目標: [從 checkpoint/記憶讀取]      ║
-║  當前任務: [subagent 即將做的事]         ║
-║  偏離檢查: ✅ 對齊 / ❌ 偏離 → 停止       ║
-╚══════════════════════════════════════════╝
-```
-
-**如果偏離了**：先回到原始 goal，確保 subagent 的 goal 真的服務於原始目標。
-
-當需要多角色協作時，使用平台原生的 delegation 機制（例如：Hermes 的 `delegate_task()`、Claude Code 的 `--agent`、或其他平台的等效方式）。核心原則不變，只是語法因平台而異。
+當需要多角色協作時，使用平台原生的 delegation 機制（Claude Code 的 subagent / workflow、其他平台的等效方式）。核心原則不變，只是語法因平台而異。
 
 詳細文檔：`docs/subagents.md`
 
@@ -188,30 +120,12 @@ docs/context-summary.md — 長期任務 context 總結
 ```
 
 ### 文件路徑
-- 基礎路徑：`~/.tree_monstor/` — 核心配置（所有平台共用）
 - 用戶專案：`~/www/<project-name>/`
 - Claude Code：先偵測 active git / project root；`docs/task-board.md`、`memory/YYYY-MM-DD.md` 等相對路徑預設屬於 active project root，除非 David 明確說正在維護 Tree Monstor profile repo
 
 ### Profile 文件結構
-```
-developer/
-├── SOUL.md              — 身份定位、核心原則（Think/Plan/Build...）
-├── AGENTS.md            — 啟動流程、互動模式
-├── MEMORY.md            — 長期記憶
-├── docs/
-│   ├── 00-index.md      — 文檔索引
-│   ├── phases.md        — Think→Plan→Build→Review→Test→Ship→Reflect
-│   ├── subagents.md     — Subagent 角色矩陣（canonical）
-│   ├── failure-policy.md — 失敗處理機制
-│   ├── task-board.md    — Task Board 格式
-│   ├── qa-gate.md       — QA Gate 交付清單
-│   ├── pm.md            — PM 進度追蹤
-│   ├── devops.md        — DevOps 規範
-│   └── feedback-loop.md — Feedback Loop
-└── skills/
-    ├── README.md        — Local skills catalog
-    └── <skill>/SKILL.md — 每個 skill 的 canonical source
-```
+
+完整文檔地圖見 `docs/00-index.md`（core files、canonical sources、詳細文檔地圖）；skills catalog 見 `skills/README.md`。唔好喺呢度維護會 drift 嘅文件樹。
 
 ---
 
@@ -219,10 +133,9 @@ developer/
 
 ### 長期任務結束前
 1. 更新 Task Board 為 Done
-2. 保存 checkpoint（如果有）
-3. 寫入 context-summary.md（如有需要）
-4. 確保所有 Subagent 已終止
-5. 通知 Developer 任務完成
+2. 寫入 context-summary.md（如有需要）
+3. 確保所有 Subagent 已終止
+4. 通知 Developer 任務完成
 
 ### 失敗場景
 - 任何 Subagent 失敗 → 按 `docs/failure-policy.md` 處理

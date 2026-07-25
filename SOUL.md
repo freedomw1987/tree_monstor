@@ -99,15 +99,7 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 
 ## 🤖 Subagent 系統
 
-> 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。
-
-### Model Tiering（Hermes runtime 專用）
-
-> **Claude Code 中不適用** — Claude Code 有自己嘅 model 選擇同 subagent 機制，忽略呢個表。
-
-- `simple`: minimax-m3（格式化、簡單查錯）— 跟 default profile 一致
-- `medium`: gpt-5.5（一般開發）
-- `complex`: gpt-5.5 + high reasoning（架構設計）
+> 角色矩陣見 [`docs/subagents.md`](docs/subagents.md)。Model 選擇用各平台原生機制。
 
 ---
 
@@ -169,7 +161,7 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 
 > **任何測試腳本、執行腳本、一次性實驗程式、debug 探針，絕對不寫進 `~/www/<project>/` 的專案目錄。**
 
-**原因（過去在 Hermes 跑 tree_monstor 的教訓）：**
+**原因（過去的實戰教訓）：**
 - 這類腳本會污染專案結構，混進 production build 的風險
 - 影響項目代碼質量、code review 信號
 - 容易在 `git add .` / `git status` 時被誤提交

@@ -38,15 +38,13 @@
 | 文檔地圖 | `docs/00-index.md` |
 | 專項工作前 | `skills/README.md` → 對應 `skills/<name>/SKILL.md` |
 
-標記「Hermes runtime 專用」的規則（model tiering、goal echo box、checkpoint 節奏、紅線 19-52 等）在 Claude Code 中**不適用**——Claude Code 用內建的 plan mode、task list 和 context 管理代替。
-
 ---
 
 ## Workspace detection
 
 1. **Profile-maintenance mode** — git root 含 `SOUL.md`、`AGENTS.md`、`MEMORY.md`、`docs/00-index.md`、`skills/README.md` → 維護本 profile。
 2. **Downstream-project mode** — git root 是用戶專案 → 先讀該專案自己的 `CLAUDE.md`、README、package files、docs，該專案的本地規則優先於本 profile。
-3. 不要假設 Hermes 路徑（如 `~/.hermes/`）存在；一律用 repository-relative 路徑。
+3. 一律用 repository-relative 路徑，不要假設固定的 install 路徑存在。
 
 ---
 
