@@ -36,11 +36,10 @@ class Issue:
         return f"[{self.check}] {loc} {self.message}"
 
 
-CORE_FILES = ["README.md", "CLAUDE.md", "SOUL.md", "AGENTS.md", "MEMORY.md", "setup-macos.md"]
+CORE_FILES = ["README.md", "CLAUDE.md", "SOUL.md", "AGENTS.md", "MEMORY.md"]
 ADAPTER_FILES = [
     "adapters/claude-code/agent.md",
     "adapters/codex/system-prompt.md",
-    "adapters/hermes/README.md",
 ]
 CATALOG_FILES = ["skills/README.md"]
 
@@ -98,7 +97,6 @@ ALLOW_MISSING_PATH_PATTERNS = [
     re.compile(r"^docs/architecture/"),
     re.compile(r"^docs/retros/"),
     re.compile(r"^docs/archive/"),
-    re.compile(r"^adapters/hermes/gateway\.yaml$"),  # historical reference in Hermes adapter docs
 ]
 
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
@@ -233,7 +231,7 @@ def skills_links_in_catalog(root: Path, pattern: str = r"^skills/[^/]+/SKILL\.md
 
 def check_required_files(root: Path) -> list[Issue]:
     issues: list[Issue] = []
-    for path in CORE_FILES[:-1] + ["docs/00-index.md", "skills/README.md"]:
+    for path in CORE_FILES + ["docs/00-index.md", "skills/README.md"]:
         full = root / path
         if not full.exists():
             issues.append(Issue("required-files", path, None, "required file is missing"))

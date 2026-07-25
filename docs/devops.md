@@ -93,4 +93,3 @@ tail -100 /tmp/vite.log
 - [Documentation index](00-index.md)
 - [Environment isolation](environment-isolation.md)
 - [Failure policy](failure-policy.md)
-- [macOS setup runbook](../setup-macos.md)

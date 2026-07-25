@@ -171,33 +171,6 @@ Orchestrator ──── 任務協調（全局視角）
 
 ## 安裝指南
 
-### Hermes Agent (macOS / Linux)
-
-> 推薦用我們提供的啟動腳本(自動找 hermes CLI、檢查 .env、載入 SOUL.md):
-
-```bash
-# 1. 克隆 profile
-git clone git@github.com:freedomw1987/tree_monstor.git ~/.hermes/profiles/developer
-
-# 2. 編輯 .env 填入你的 tokens(**用 nano,不要 echo 進去**)
-cp ~/.hermes/profiles/developer/adapters/hermes/.env.template \
-   ~/.hermes/profiles/developer/.env
-nano ~/.hermes/profiles/developer/.env
-
-# 3. 啟動(一鍵)
-~/.hermes/profiles/developer/LAUNCH.sh
-# 或互動式:
-hermes --profile developer
-# 或跑 gateway:
-hermes --profile developer gateway run
-```
-
-> ⚠️ **README 早期版本的 `hermes-agent --profile developer gateway run` 指令是過期的** — Hermes 0.15.1 的主程式叫 `hermes`,且 `gateway run` 是 subcommand。請用 `hermes --profile developer gateway run`(中間加 `--profile` flag)。
-
-macOS / launchd 背景服務化、故障排除、跟 default profile 的並存設定,見:
-- [adapters/hermes/README.md](adapters/hermes/README.md) — adapter 專用指南
-- [setup-macos.md](setup-macos.md) — 完整 macOS 設定 runbook
-
 ### Claude Code
 
 Claude Code 的 `CLAUDE.md` auto-discovery 只在 current working directory 及其 parent chain 內有效。**直接 `cd tree_monstor && claude` 不會自動載入**（你的下游 project 才是 cwd）。
