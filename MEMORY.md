@@ -112,7 +112,7 @@ Local skills catalog 見 [`skills/README.md`](skills/README.md)。
 
 ## 紅線
 
-> 驗證驅動紅線 54-56 + 紅線 1-18 見 [`SOUL.md`](SOUL.md)；紅線 19-51（Hermes runtime 專用）見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。
+> 驗證驅動紅線 54-56 + 紅線 1-18 見 [`SOUL.md`](SOUL.md)。
 
 ---
 

@@ -267,58 +267,6 @@ Build 完成 → Review → Test → Ship
 
 ---
 
-## 🚨 紅線 19-51（Incident 補強 — Hermes runtime 專用）
-
-> **Claude Code 中不適用** — 呢啲全部係 Hermes gateway / process 管理 incident 嘅補強（Hang / Zombie / Context Pressure 等），針對 Hermes runtime 行為，唔係代碼品質規則。Claude Code session 唔使讀。
->
-> 完整內容見 [`docs/red-lines-19-51.md`](docs/red-lines-19-51.md)。呢啲紅線唔可以單獨理解，讀一個就睇返 incident 報告（`docs/incident-*.md`）嗰日嘅 context。
-
----
-
-## 🛡️ 紅線 52（增量交付紀律，2026-06-24 新增 — incident v2 P1 教訓）
-
-> **適用範圍**：本紅線約束嘅係 Hermes `config.yaml` / runtime 改動。喺 Claude Code 中，取其精神——**小步 commit、每步可獨立 revert、改完即驗證**——但唔使 30 分鐘觀察窗口。
-
-> **背景**：incident v2（2026-06-19, `docs/incident-20260619-gateway-conflict-v2.md`）嘅 R1+R2+R4 連環爆，根因之一係「5 階段 config 一次 ship」，無法 isolate 個別階段嘅 root cause，事後要 revert 2 個 commit（`6d99125` + `0e1e359`）。增量交付可將 incident blast radius 縮到 1 個 commit。
-
-### 規則
-
-單次 config / runtime 改動必須**同時**符合以下 3 條：
-
-| 限制 | 數值 | 例外 |
-|------|------|------|
-| **≤ 1 階段** | 唔可以一次 ship 多個 Phase 嘅 config | 純文檔 / 純 skill 改動 |
-| **≤ 200 行** | 單一 commit/config 改動總行數上限 | 純文檔 / 純 skill 改動 |
-| **≤ 1 紅線新增** | 多條紅線必須拆 commit | — |
-
-### 多階段必須拆 commit + 30 分鐘測試窗口
-
-```
-階段 1 commit + 觀察 30 分鐘 + 階段 2 commit + 觀察 30 分鐘 + ...
-```
-
-- 每個 commit 必須有**獨立可回滙 script**（`rollback.sh <commit-sha>` 或 `config.yaml.backup-<ts>` + restore script）
-- 唔可以只靠 backup snapshot，要寫**主動 rollback 邏輯**（測試過真正可執行）
-- 觀察期 David 確認無異常 → 進下一階段
-
-### 為何寫呢條紅線
-
-| 痛點 | incident v2 證據 |
-|------|-----------------|
-| 多階段一次 ship | auto-dev v0.5（commit `6d99125`）一次過包 Phase 1A+1B+1C+1D+2A+2B+2C |
-| Root cause 難 isolate | v2 報告列出 R1+R2+R4 3 個 independent root causes，但無法確定邊個先 trigger |
-| Revert 成本高 | David 考慮 `git revert 6d99125 0e1e359`（2 個 commit），比 revert 1 個 commit 慢 2x |
-| Backup 不足 | 雖然有 `config.yaml.backup-*`，但**冇主動 rollback script**，要人手恢復 |
-
-### 例外清單（不受紅線 52 限制）
-
-- ✅ 純文檔改動（`docs/*.md` 新建 / 重排 / typo 修正）
-- ✅ 純 skill 改動（`skills/*/SKILL.md` 新建 / 改 SKILL.md）
-- ✅ 文檔索引更新（`docs/00-index.md` 加 row）
-
----
-
-
 ## 📚 文檔索引
 
 完整文檔索引見 `docs/00-index.md`；skills catalog 見 `skills/README.md`。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
@@ -333,4 +281,3 @@ Build 完成 → Review → Test → Ship
 - [Session and workspace rules](AGENTS.md)
 - [Phase workflow](docs/phases.md)
 - [QA Gate](docs/qa-gate.md)
-- [Incident-derived red lines](docs/red-lines-19-51.md)

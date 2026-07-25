@@ -34,7 +34,6 @@
 | Regression hooks / QA regression mode | [`docs/testing-strategy.md`](testing-strategy.md) + [`docs/qa-gate.md`](qa-gate.md) + [`skills/regression-guard/SKILL.md`](../skills/regression-guard/SKILL.md) | Frontend/backend regression hooks、QA 啟用方式、production safety boundary |
 | Project documentation standard | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | 每個 project 的標準文件、Build 前 documentation baseline 與 commit 規範 |
 | Skills catalog | [`skills/README.md`](../skills/README.md) | Local skills catalog；每個 skill 的 source 是 `skills/<name>/SKILL.md` |
-| Incident-derived red lines | [`docs/red-lines-19-51.md`](red-lines-19-51.md) | Hang / memory / zombie / interruption / response 等 incident 後補強 |
 
 ---
 
@@ -49,13 +48,11 @@
 | [`docs/environment-isolation.md`](environment-isolation.md) | Canonical | Dev / Prod / Agent Config 環境隔離規範 |
 | [`docs/failure-policy.md`](failure-policy.md) | Canonical | 失敗處理機制（L1/L2/L3） |
 | [`docs/feedback-loop.md`](feedback-loop.md) | Canonical | Feedback Loop 流程、Review/Test fail 後如何迭代 |
-| [`docs/incident-20260619-gateway-conflict-v2.md`](incident-20260619-gateway-conflict-v2.md) | Incident | gateway conflict incident v2 報告；歷史背景與 root cause |
 | [`docs/phases.md`](phases.md) | Canonical | Think → Plan → Build → Review → Test → Ship → Reflect 詳細流程 |
 | [`docs/pm.md`](pm.md) | Canonical | PM 進度追蹤、用戶溝通原則 |
 | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | Standard | Project 標準文檔、commit 規範、文件 drift 要求 |
 | [`docs/qa-gate.md`](qa-gate.md) | Canonical | QA Gate 交付清單、文檔 gate、tracker gate、testing gate |
 | [`docs/qa-tracker.md`](qa-tracker.md) | Tracker | QA 持續追蹤；US → test task 對照、需求變更影響評估 |
-| [`docs/red-lines-19-51.md`](red-lines-19-51.md) | Canonical | Incident 補強紅線 19-51 |
 | [`docs/subagents.md`](subagents.md) | Canonical | Subagent 角色矩陣、Goal 關鍵字、調度規則、Model Tiering |
 | [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則 |
 | [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 12 層測試類型、健康指標、工具鏈 |
@@ -125,7 +122,6 @@ Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
 - Review 未 APPROVED，絕對不能進入 Test → 見 [`docs/feedback-loop.md`](feedback-loop.md)
 - 所有強制 Phase 必須完成才能進入下一階段 → 見 [`docs/phases.md`](phases.md)
 - **紅線 10-18**（文檔 gate、QA tracker、test tasks、regression guard、root cause、refactor invariant、三層測試、smoke test、CVE 0）→ 見 [`SOUL.md`](../SOUL.md) + [`docs/qa-gate.md`](qa-gate.md)
-- **紅線 19-51**（incident 後補強，Hermes runtime 專用）→ 見 [`docs/red-lines-19-51.md`](red-lines-19-51.md)
 
 ---
 
