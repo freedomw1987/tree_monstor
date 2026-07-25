@@ -145,7 +145,7 @@ Agent 要**主動** detect 自己 hallucinate 嘅 signal：
 
 ```python
 # 7. 新 session 第一件事
-summary_path = Path("~/.hermes/profiles/developer/docs/context-summary.md").expanduser()
+summary_path = Path("<profile-root>/docs/context-summary.md").expanduser()
 if summary_path.exists():
     content = summary_path.read_text()
     echo_to_david = f"📋 **Resume from previous session:**\n\n{content}\n\n---\n"

@@ -13,7 +13,7 @@
 **Fix**: Pass sub-folder MDs as positional arguments:
 
 ```bash
-bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/build.sh \
+bash <profile-root>/skills/doc-html-preview/scripts/build.sh \
   --project crm-system \
   docs/retros/2026-06-07-system-settings-plan.md \
   docs/architecture/0001-ai-assistant-architecture.md
@@ -69,7 +69,7 @@ done
 Or invoke the script with a Homebrew-installed bash:
 ```bash
 brew install bash
-/usr/local/bin/bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/verify_boss_html.sh crm-system
+/usr/local/bin/bash <profile-root>/skills/doc-html-preview/scripts/verify_boss_html.sh crm-system
 ```
 
 **Do NOT trust a non-zero exit on macOS** as a "verification failed" — it might just be the bash version. Always read the error message: `mapfile: command not found` = environment, not verification result.

@@ -50,7 +50,7 @@ Hermes 0.15.1 has built-in `compression.threshold: 0.30` (60K tokens) auto-trigg
 
 ```bash
 # Compress a specific session
-python3 ~/.hermes/profiles/developer/skills/long-task-resilience/scripts/compression_executor.py <session_id> [--force] [--dry-run]
+python3 <profile-root>/skills/interruption-recovery/scripts/compression_executor.py <session_id> [--force] [--dry-run]
 
 # Auto-process all high-pressure sessions
 python3 .../compression_executor.py auto
@@ -149,6 +149,6 @@ These match Hermes's `compression.threshold: 0.30` (60K trigger) so we run BEFOR
 
 - `interruption-recovery` — manual recovery after a crash
 - `dev-task-memory` — long-term state for multi-session tasks
-- `long-task-resilience` (parent skill) — pre-tool checkpoint + pressure monitor
+- `interruption-recovery` (parent skill) — pre-tool checkpoint + pressure monitor
 
-The compression subagent is the **mid-task** layer of `long-task-resilience`.
+The compression subagent is the **mid-task** layer of `interruption-recovery`.

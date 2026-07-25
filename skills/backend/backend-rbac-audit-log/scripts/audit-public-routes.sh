@@ -5,7 +5,7 @@
 # Pairs with backend-rbac-audit-log Step 16. Run from the routes/ dir:
 #
 #   cd apps/api/src/routes
-#   bash ~/.hermes/profiles/developer/skills/backend/backend-rbac-audit-log/scripts/audit-public-routes.sh
+#   bash <profile-root>/skills/backend/backend-rbac-audit-log/scripts/audit-public-routes.sh
 #
 # Exit code 0 = all files pass; 1 = at least one public endpoint.
 

@@ -2,7 +2,7 @@
 """
 process_fork_queue.py — Consume session fork requests and create fresh sessions
 
-Reads ~/.hermes/profiles/developer/session_fork_queue.jsonl (populated by
+Reads <profile-root>/session_fork_queue.jsonl (populated by
 context_pressure_monitor.py) and:
 
   1. Marks the old session as `archived: 1` in state.db (so gateway stops routing to it)
@@ -14,7 +14,7 @@ The gateway itself will create a fresh session when a new user message arrives
 on the thread — we don't need to do that explicitly.
 
 This is the "mid-task self-healing" exit point: the old session is no longer
-a zombie risk, and the handoff file at ~/.hermes/profiles/developer/handoffs/
+a zombie risk, and the handoff file at <profile-root>/handoffs/
 contains everything a fresh session needs to continue.
 """
 

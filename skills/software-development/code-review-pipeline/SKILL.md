@@ -470,7 +470,7 @@ helper,全部 `/tmp`-only,改完即用:
 - `regression-guard` — 5 P0 security fixes 唔係 bug regression,係
   preventive — 唔需要 RG-XXX entry
 - `interruption-recovery` — Stash WIP 嘅 orchestration
-- `long-task-resilience` — 整個 sprint 嘅 progress monitoring
+- `interruption-recovery` — 整個 sprint 嘅 progress monitoring
 
 ## 何時用
 

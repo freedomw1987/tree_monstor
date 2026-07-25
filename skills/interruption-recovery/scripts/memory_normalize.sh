@@ -12,8 +12,8 @@
 # Fix: Rewrite the file with § surrounded by exactly one space (\n§\n → §\n
 # on first entry, and last §\n\n → §\n at end of file).
 #
-# Run: bash ~/.hermes/profiles/developer/skills/interruption-recovery/scripts/memory_normalize.sh
-#      bash ~/.hermes/profiles/developer/skills/interruption-recovery/scripts/memory_normalize.sh --dry-run
+# Run: bash <profile-root>/skills/interruption-recovery/scripts/memory_normalize.sh
+#      bash <profile-root>/skills/interruption-recovery/scripts/memory_normalize.sh --dry-run
 #
 # This script preserves the content of all entries exactly. It only normalizes
 # whitespace around the § delimiter.

@@ -80,7 +80,7 @@ awk '/<\/head>/,/<script>/' docs/_html/PRD-boss.html | grep -q 'class="boss-plac
 **Bulk version** — there is a one-shot script at [`scripts/verify_boss_html.sh`](./scripts/verify_boss_html.sh):
 
 ```bash
-bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/verify_boss_html.sh crm-system
+bash <profile-root>/skills/doc-html-preview/scripts/verify_boss_html.sh crm-system
 # Exit 0: all good
 # Exit 1: lists which boss HTMLs are placeholders
 # Exit 2: build was never run
@@ -243,7 +243,7 @@ pandoc docs/USER-MANUAL.md -o docs/<project>-user-manual.html \
 python3 -c "
 import re
 html = open('docs/<project>-user-manual.html').read()
-css = open('~/.hermes/profiles/developer/skills/doc-html-preview/templates/github-like.css').read()
+css = open('<profile-root>/skills/doc-html-preview/templates/github-like.css').read()
 html = html.replace('</head>', f'<style>{css}</style>\n<style>body{{max-width:980px;margin:0 auto;padding:32px;font-family:-apple-system,\"PingFang TC\",\"Microsoft JhengHei\",sans-serif}}</style>\n</head>', 1)
 html = html.replace('<title>...</title>', '<title>... — 用戶手冊</title>')
 html = html.replace('<body>', '<body class=\"markdown-body\">')
@@ -271,7 +271,7 @@ The pandoc fallback is **strictly worse for navigation / search** but **strictly
 `build.sh --project <name>` **only globs `docs/*.md`** — it does NOT recurse into subdirectories like `docs/retros/`, `docs/architecture/`, or `docs/handoff/`. To render a sub-folder MD, pass it as a positional argument:
 
 ```bash
-bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/build.sh \
+bash <profile-root>/skills/doc-html-preview/scripts/build.sh \
   --project crm-system \
   docs/retros/2026-06-07-system-settings-plan.md \
   docs/architecture/0001-ai-assistant-architecture.md
@@ -299,7 +299,7 @@ The build script does NOT log which key it looked up, so if your boss HTML rende
 ### After writing a project doc
 
 ```bash
-bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/build.sh \
+bash <profile-root>/skills/doc-html-preview/scripts/build.sh \
   --project <project-name>
 ```
 

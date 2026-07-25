@@ -92,7 +92,7 @@ category: devops
 cd ~/www/crm-system
 
 # 立即 save 一個 fresh state
-python3 ~/.hermes/profiles/developer/skills/dev-task-memory/scripts/save_state.py \
+python3 <profile-root>/skills/dev-task-memory/scripts/save_state.py \
     --project crm-system \
     --goal "實作 Companies 編輯頁加聯繫人 sub-row" \
     --trigger "task-start"
@@ -282,8 +282,8 @@ python3 scripts/load_state.py --project crm-system --search-sessions
 - **Holographic** provider 雖然係 local-only 但需要 config, 默認未啟用 — 可以之後 setup
 - **State file 唔會 auto-update** — 必須人手 call save_state.py
   (將來可以做 background curator 自動 trigger)
-- **`memory` tool round-trip drift guard (2026-06-19 lesson)** — Hermes 嘅 `memory(action='add')` 會 refuse write 當 `~/.hermes/profiles/developer/memories/MEMORY.md` 有 manual edit / shell append / patch tool 嘅 content 唔可以 round-trip through `memory()` call。**Detection**: error message 提 "MEMORY.md.bak.<timestamp>" + "Resolve the drift first — either rewrite the file as a clean §-delimited list of entries, or move the extra content out"。**Resolution recipe**:
-  1. `cat ~/.hermes/profiles/developer/memories/MEMORY.md.bak.<timestamp>` 拎 backup
+- **`memory` tool round-trip drift guard (2026-06-19 lesson)** — Hermes 嘅 `memory(action='add')` 會 refuse write 當 `<profile-root>/memories/MEMORY.md` 有 manual edit / shell append / patch tool 嘅 content 唔可以 round-trip through `memory()` call。**Detection**: error message 提 "MEMORY.md.bak.<timestamp>" + "Resolve the drift first — either rewrite the file as a clean §-delimited list of entries, or move the extra content out"。**Resolution recipe**:
+  1. `cat <profile-root>/memories/MEMORY.md.bak.<timestamp>` 拎 backup
   2. Manual integrate missing entries into clean §-delimited list (one at a time via `memory(action='add', content='...')`)
   3. Remove or rewrite original MEMORY.md to clean state
   4. Retry `memory(action='add')`

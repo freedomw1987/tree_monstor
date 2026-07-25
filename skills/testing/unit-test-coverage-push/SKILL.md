@@ -43,7 +43,7 @@ Triggered by David: "另外,QA-TRACKER.md 中嘅 test 未做的,都要做一下�
 **Don't eyeball the table** — 50+ US rows, easy to misread. Use the bundled parser, but verify it matches YOUR tracker's column layout first (the parser was written for 2026-06-08 pm-system layout, see **Pitfall #17** below).
 
 ```bash
-python3 ~/.hermes/profiles/developer/skills/testing/unit-test-coverage-push/references/qa-tracker-parser.py docs/QA-TRACKER.md
+python3 <profile-root>/skills/testing/unit-test-coverage-push/references/qa-tracker-parser.py docs/QA-TRACKER.md
 ```
 
 If parser returns 0 P0 US or "No rows parsed" — DO NOT trust it. **Verify column layout** by reading the header row directly:

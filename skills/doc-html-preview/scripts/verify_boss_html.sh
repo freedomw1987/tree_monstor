@@ -41,7 +41,7 @@ HTML_DIR="$PROJECT_DIR/docs/_html"
 
 if [[ ! -d "$HTML_DIR" ]]; then
   echo "ERROR: $HTML_DIR does not exist — build was never run." >&2
-  echo "Run: bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/build.sh --project $PROJECT" >&2
+  echo "Run: bash <profile-root>/skills/doc-html-preview/scripts/build.sh --project $PROJECT" >&2
   exit 2
 fi
 

@@ -6,8 +6,8 @@ When a developer profile session has been forked (due to context pressure,
 interruption, or zombie detection), this script gathers all available
 context for the new session to continue:
 
-  1. Handoff markdown from ~/.hermes/profiles/developer/handoffs/<sid>.handoff.md
-  2. Progress checkpoint from ~/.hermes/profiles/developer/task_state/<sid>.progress.json
+  1. Handoff markdown from <profile-root>/handoffs/<sid>.handoff.md
+  2. Progress checkpoint from <profile-root>/task_state/<sid>.progress.json
   3. dev-task-state.md from the project workdir
   4. Git log (last 20 commits) in the workdir
   5. pre-tool-checkpoint journal (.hermes-checkpoints.log) in the workdir

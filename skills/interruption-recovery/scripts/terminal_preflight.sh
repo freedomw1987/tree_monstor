@@ -3,8 +3,8 @@
 # they hit Hermes's hard 300s timeout.
 #
 # Usage in agent code:
-#   bash ~/.hermes/profiles/developer/skills/interruption-recovery/scripts/terminal_preflight.sh <command>
-#   bash ~/.hermes/profiles/developer/skills/interruption-recovery/scripts/terminal_preflight.sh --wrap <command>
+#   bash <profile-root>/skills/interruption-recovery/scripts/terminal_preflight.sh <command>
+#   bash <profile-root>/skills/interruption-recovery/scripts/terminal_preflight.sh --wrap <command>
 #
 # What it does:
 #   1. Detect long-lived patterns (npm run dev, docker compose up, server start, etc.)

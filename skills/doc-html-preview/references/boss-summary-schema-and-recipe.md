@@ -89,7 +89,7 @@ if [ "$MISSING" -gt 0 ]; then
 fi
 ```
 
-Usage: `bash ~/.hermes/profiles/developer/skills/doc-html-preview/scripts/verify-boss-html.sh <project-name>`
+Usage: `bash <profile-root>/skills/doc-html-preview/scripts/verify-boss-html.sh <project-name>`
 
 ## Common pitfalls
 

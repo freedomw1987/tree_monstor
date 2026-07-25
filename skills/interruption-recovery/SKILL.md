@@ -57,7 +57,7 @@ interruption is a fresh start with 30 minutes of context re-explanation.
 
 ### `recovery.sh` (中斷前 / 中斷時 run)
 ```bash
-bash ~/.hermes/profiles/developer/skills/interruption-recovery/scripts/recovery.sh \
+bash <profile-root>/skills/interruption-recovery/scripts/recovery.sh \
     crm-system "day 9 frontend handoff 收工"
 ```
 **Output**:
@@ -456,7 +456,7 @@ Mitigation(已喺 `recovery.sh` 加 warning):
 - 對應 file: `dev-task-memory/references/recovery-template-limitation.md` 嘅 workaround recipe
 
 詳細分析同 future fix blueprint(Patch D)睇:
-`~/.hermes/profiles/developer/skills/dev-task-memory/references/recovery-template-limitation.md`
+`<profile-root>/skills/dev-task-memory/references/recovery-template-limitation.md`
 
 ## ⚠️ Day 15 Lesson (2026-06-07) — State-File-Generic 4-Step Reconstruction Recipe
 

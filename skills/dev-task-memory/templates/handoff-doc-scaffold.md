@@ -10,7 +10,7 @@
 ```bash
 cd ~/www/<project>
 git checkout <branch>     # branch already current
-# 1. Load state:  python3 ~/.hermes/profiles/developer/skills/dev-task-memory/scripts/load_state.py \
+# 1. Load state:  python3 <profile-root>/skills/dev-task-memory/scripts/load_state.py \
 #                    --project <name> --search-sessions
 # 2. Sanity:     git status --short  (expect N untracked files only)
 # 3. Env:        export <VAR>=<value>  # <reason: dev server won't boot without>
@@ -169,7 +169,7 @@ recipe §8).
 
 ```bash
 # 1. Reload state
-python3 ~/.hermes/profiles/developer/skills/dev-task-memory/scripts/load_state.py \
+python3 <profile-root>/skills/dev-task-memory/scripts/load_state.py \
   --project <name> --search-sessions
 
 # 2. Verify branch
