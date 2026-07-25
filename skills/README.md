@@ -304,12 +304,6 @@ Skills for interacting with social platforms and social-media workflows — post
 
 ---
 
-## Bundled / external manifest note
-
-`skills/.bundled_manifest` may list bundled or external entries available in other environments. It is **not** the canonical catalog for this profile’s immediate local skills. For local Tree Monstor skills, use this file plus `skills/<name>/SKILL.md`.
-
----
-
 ## Related docs
 
 - [Documentation index](../docs/00-index.md)

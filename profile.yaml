@@ -1,8 +1,0 @@
-# description_auto disabled 2026-07-14: the auto-generator truncated the text
-# mid-word ("...other agent wor"); hand-completed below. Re-enable only after
-# the generator's length handling is fixed.
-description: Full-stack web developer and DevOps engineer specializing in Bun/Elysia
-  backends, React/Vite frontends, and AWS CDK deployments (ECS Fargate, CloudFront,
-  S3). Deep debugging expertise across auth, APIs, and infrastructure, plus skills
-  for authoring and supervising other agent workflows.
-description_auto: false

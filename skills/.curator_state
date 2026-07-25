@@ -1,9 +1,0 @@
-{
-  "last_report_path": "/Users/davidchu/.hermes/profiles/developer/logs/curator/20260617-013947",
-  "last_run_at": "2026-06-17T01:39:47.218121+00:00",
-  "last_run_duration_seconds": 349.111013,
-  "last_run_summary": "auto: no changes; llm: API call failed after 3 retries: Connection error.",
-  "last_run_summary_shown_at": null,
-  "paused": false,
-  "run_count": 2
-}
