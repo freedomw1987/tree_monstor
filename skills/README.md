@@ -213,8 +213,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`docker-multiarch-offline-handoff`](devops/docker-multiarch-offline-handoff/SKILL.md) | Build multi-arch (linux/amd64 + linux/arm64) Docker images and hand them to a customer as tarball(s) without a registry. Use when the user needs x86+arm suppor… |
 | [`ecs-health-check-debug`](devops/ecs-health-check-debug/SKILL.md) | Debug ECS Fargate CDK deployment failures due to health check curl not found in Docker image |
 | [`elysia-aws-lambda-deploy`](devops/elysia-aws-lambda-deploy/SKILL.md) | Deploy Elysia.js (Bun-first framework) to AWS Lambda Node.js runtime — bundler config, handler resolution, CDK runtime mismatches, crypto polyfill, API Gateway… |
-| [`kanban-orchestrator`](devops/kanban-orchestrator/SKILL.md) | Decomposition playbook + anti-temptation rules for an orchestrator profile routing work through Kanban. The "don't do the work yourself" rule and the basic lif… |
-| [`kanban-worker`](devops/kanban-worker/SKILL.md) | Pitfalls, examples, and edge cases for Hermes Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from… |
 | [`nginx-sse-streaming-fix`](devops/nginx-sse-streaming-fix/SKILL.md) | Fix nginx reverse proxy buffering SSE responses so streaming works correctly |
 | [`node-static-proxy-cloudflare`](devops/node-static-proxy-cloudflare/SKILL.md) | Start a Node.js static+proxy server and Cloudflare tunnel in the correct sequence with proper process management |
 | [`patch-replace-all-pitfalls`](devops/patch-replace-all-pitfalls/SKILL.md) | Avoid syntax errors when using patch replace_all on source code — regex token replacement can corrupt parentheses and expressions. |
@@ -267,7 +265,6 @@ Skills for document creation, presentations, spreadsheets, and other productivit
 |-------|-------------|
 | [`airtable`](productivity/airtable/SKILL.md) | Airtable REST API via curl. Records CRUD, filters, upserts. |
 | [`maps`](productivity/maps/SKILL.md) | Geocode, POIs, routes, timezones via OpenStreetMap/OSRM. |
-| [`teams-meeting-pipeline`](productivity/teams-meeting-pipeline/SKILL.md) | Operate the Teams meeting summary pipeline via Hermes CLI — summarize meetings, inspect pipeline status, replay jobs, manage Microsoft Graph subscriptions. |
 
 ### `social-media/`
 
@@ -282,10 +279,7 @@ Skills for interacting with social platforms and social-media workflows — post
 | Skill | Description |
 |-------|-------------|
 | [`code-review-pipeline`](software-development/code-review-pipeline/SKILL.md) | Three-axis code review → TECH-DEBT.md catalog → P0 patch sprint → evidence retro → merge pipeline. Use when user asks for "code review", "security audit", "arc… |
-| [`debugging-hermes-tui-commands`](software-development/debugging-hermes-tui-commands/SKILL.md) | Debug Hermes TUI slash commands: Python, gateway, Ink UI. |
 | [`frontend-backend-integration`](software-development/frontend-backend-integration/SKILL.md) | Discipline for writing frontend code that wraps backend endpoints — verify wire shape against backend source (not plan/spec doc), handle prefill races, refacto… |
-| [`hermes-agent-skill-authoring`](software-development/hermes-agent-skill-authoring/SKILL.md) | Author in-repo SKILL.md: frontmatter, validator, structure. |
-| [`hermes-s6-container-supervision`](software-development/hermes-s6-container-supervision/SKILL.md) | Modify, debug, or extend the s6-overlay supervision tree inside the Hermes Agent Docker image — adding new services, debugging profile gateways, understanding… |
 | [`node-inspect-debugger`](software-development/node-inspect-debugger/SKILL.md) | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. |
 | [`pagination-with-preserved-aggregates`](software-development/pagination-with-preserved-aggregates/SKILL.md) | Add server-side pagination to an admin list page WITHOUT breaking summary stats (count/sum/avg) or full-dataset exports (Excel/CSV). The core invariant — stats… |
 | [`python-debugpy`](software-development/python-debugpy/SKILL.md) | Debug Python: pdb REPL + debugpy remote (DAP). |
