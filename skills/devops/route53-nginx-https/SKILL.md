@@ -1,8 +1,7 @@
 ---
 name: route53-nginx-https
 description: 使用 AWS Route53 + nginx + Let's Encrypt 為測試網域建立穩定 HTTPS URL。適用於需要在 AWS 管理的網域上對外暴露測試服務，取代 Cloudflare Tunnel。
-tags: ["devops", "aws", "route53", "nginx", "https"]
-related_skills: ["cloudflare-tunnel-vite-dev", "node-static-proxy-cloudflare"]
+tags: ["devops", "aws", "route53", "nginx", "https", "cloudflare-tunnel"]
 ---
 
 # Route53 + nginx + Let's Encrypt 穩定 HTTPS URL 架設
@@ -162,6 +161,44 @@ server {
 | `DNS problem: NXDOMAIN` | Route53 A 紀錄未生效或本地 DNS 未刷新 | 等 2-5 分鐘或換用 `dig` 確認；Route53 可能已設定但本地 resolver 未更新 |
 | `nginx: [emerg] cannot load certificate` on restart | 之前 certbot 申請失敗但 nginx config 已有 SSL 路徑 | 用 `certonly --webroot` 而非 `--nginx`，或先移除 SSL 行再用 `--nginx` |
 | certbot fails after failed `--nginx` attempt | nginx -t 失敗，certbot 會拒絕操作 | 先清除 `/etc/letsencrypt/live/<subdomain>/`，用 `certonly --webroot` 完成 |
+| nginx 命中 default site 而非新設定 | 安裝時預設 site 未移除 | `sudo rm -f /etc/nginx/sites-enabled/default` 後 reload |
+| `sudo certbot --dns-route53` 讀不到 AWS credentials | sudo 不繼承 user 的 `~/.aws/` | 複製 credentials 到 `/etc/letsencrypt/.aws/`，用 `AWS_SHARED_CREDENTIALS_FILE=... sudo certbot certonly --dns-route53 ...` 指定 |
+
+---
+
+## Alternatives: Cloudflare Tunnel（伺服器不可直連時的後備方案）
+
+本 skill（nginx + Let's Encrypt）是首選，但**前提是 port 80/443 可從外部直連**。伺服器在 NAT / 共享公網 IP 後面時（AWS NAT Gateway、EC2 shared IP 等），只能用 Cloudflare Tunnel。
+
+### 先判斷可達性（選型的第一步）
+
+```bash
+curl -s --connect-timeout 5 http://<公網IP>/
+# timeout            → NAT / port 被擋 → 只能用 Cloudflare Tunnel
+# connection refused → port 閒置可用   → 用本 skill（nginx + certbot）
+# 200                → 完全可達        → 用本 skill
+```
+
+注意：AWS EC2 的「公網 IP 有回應」不代表 port 可連入；`ifconfig.me` 看到的 IP 與實際可路由 IP 在 NAT 下不同。
+
+### Tunnel 兩種模式
+
+| 模式 | 認證 | URL | 穩定性 |
+|------|------|-----|--------|
+| Quick Tunnel（`cloudflared tunnel --url http://localhost:PORT`） | 免登入 | 隨機 `.trycloudflare.com` | 每次重啟變；如配 Route53 CNAME 須每次更新 |
+| Named Tunnel（`cloudflared login` → `tunnel create` → `tunnel route dns`） | 一次性 OAuth | 自己的子網域 | 永久穩定 |
+
+**Gotcha**：Quick Tunnel 加 `--hostname` 未登入時會被**靜默忽略** — 仍然拿到 trycloudflare.com URL，自訂網域永遠不生效。要自訂子網域就用 Named Tunnel，或 Quick Tunnel + Route53 CNAME（每次重啟更新）。
+
+### Tunnel 關鍵 gotchas（用 tunnel 時必讀）
+
+1. **啟動順序**：先 backend → 再前端 static/proxy server（curl 確認 200）→ 最後才啟 cloudflared。順序錯會 connection refused / EADDRINUSE / zombie process。
+2. **先清舊進程**：`pkill -9 -f cloudflared; sleep 1` — 舊 tunnel 殘留會造成「stale URL」（讀到舊 log 的死鏈接）、port 指錯。
+3. **輸出必須 redirect 到 log**：`sh -c 'cloudflared tunnel --url http://localhost:PORT > /tmp/cf.log 2>&1' &`，等約 10 秒後 `grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' /tmp/cf.log | head -1`。不包 `sh -c` 輸出會被丟棄，URL 永遠拿不到。
+4. **進程活著 ≠ URL 可達**：一律 `curl -s -o /dev/null -w "%{http_code}"` 驗證 200 後才交付 URL。
+5. **Vite dev server 過 tunnel 會 403**：HMR WebSocket 被擋 + Vite host check。解法二選一：(a) `npm run dev` 配 `server.allowedHosts: true`；(b) `npm run build` 後用 static+proxy server 服 `dist/`（單 port 兼代理 `/api` 到 backend，避 CORS）。
+6. **`vite --port X` 不讀 `vite.config.js`**：proxy / allowedHosts 全部失效，只有 `npm run dev` 會正確載入 config。
+7. **SSE 長串流**：tunnel 有 timeout 限制（本 skill 取代 tunnel 的主因）；長 SSE / AI streaming 服務優先用 nginx 方案。
 
 ---
 

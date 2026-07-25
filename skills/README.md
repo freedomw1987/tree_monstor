@@ -100,7 +100,6 @@ In Claude Code:
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
 | [`cdk-v2-deployment-patterns`](cdk-v2-deployment-patterns/SKILL.md) | AWS CDK v2 deployment patterns and common setup issues. | Setting up or debugging CDK v2 infrastructure. |
-| [`cloudflare-named-tunnel-route53`](cloudflare-named-tunnel-route53/SKILL.md) | Creates stable HTTPS test URLs with Cloudflare Named Tunnel + Route53. | Need HTTPS access to NAT/private/non-public test instances. |
 | [`docker-mac-arm64-elysia-vite`](docker-mac-arm64-elysia-vite/SKILL.md) | Docker pitfalls for Mac ARM64 + Elysia/Bun + Vite projects. | Native bindings, package-lock, libssl, healthcheck, nginx proxy issues. |
 
 ---
@@ -201,7 +200,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`cdk-ecs-rollback-cleanup`](devops/cdk-ecs-rollback-cleanup/SKILL.md) | CDK ECS Fargate stack rollback cleanup when BackendSg deletion fails with DependencyViolation |
 | [`cdk-ecs-stacked-environment-isolation`](devops/cdk-ecs-stacked-environment-isolation/SKILL.md) | CDK ECS Fargate 部署時保護開發環境的注意事項 — CDK rollback 會把現有服務的 desiredCount 重置為 0，導致服務中斷。 |
 | [`cdk-route53-apigateway-alias`](devops/cdk-route53-apigateway-alias/SKILL.md) | CDK v2 Route53 ARecord alias to API Gateway custom domain — workaround for missing IAliasRecordTarget bind() method |
-| [`cloudflare-tunnel-vite-dev`](devops/cloudflare-tunnel-vite-dev/SKILL.md) | Workaround for Vite dev server HMR WebSocket 403 errors when using Cloudflare Tunnel |
 | [`cross-role-subagent`](devops/cross-role-subagent/SKILL.md) | QA Feedback Loop — 持續循環直至 QA 通過，用戶只看到最終好結果。 |
 | [`dependency-cve-audit`](devops/dependency-cve-audit/SKILL.md) | Audit project dependencies for known CVEs — fulfills 紅線 18 (Critical/High CVE must be 0 to merge). Class-level skill that covers BOTH npm + bun projects, lockf… |
 | [`docker-build-cache-debug`](devops/docker-build-cache-debug/SKILL.md) | Docker build cache causes stale code to run in containers despite source changes |
@@ -212,7 +210,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`ecs-health-check-debug`](devops/ecs-health-check-debug/SKILL.md) | Debug ECS Fargate CDK deployment failures due to health check curl not found in Docker image |
 | [`elysia-aws-lambda-deploy`](devops/elysia-aws-lambda-deploy/SKILL.md) | Deploy Elysia.js (Bun-first framework) to AWS Lambda Node.js runtime — bundler config, handler resolution, CDK runtime mismatches, crypto polyfill, API Gateway… |
 | [`nginx-sse-streaming-fix`](devops/nginx-sse-streaming-fix/SKILL.md) | Fix nginx reverse proxy buffering SSE responses so streaming works correctly |
-| [`node-static-proxy-cloudflare`](devops/node-static-proxy-cloudflare/SKILL.md) | Start a Node.js static+proxy server and Cloudflare tunnel in the correct sequence with proper process management |
 | [`patch-replace-all-pitfalls`](devops/patch-replace-all-pitfalls/SKILL.md) | Avoid syntax errors when using patch replace_all on source code — regex token replacement can corrupt parentheses and expressions. |
 | [`prisma-seed-reset-pattern`](devops/prisma-seed-reset-pattern/SKILL.md) | Prisma seed 一定要每次重設 role 關聯，否則 AdminPanel 自訂角色會失效 |
 | [`route53-nginx-https`](devops/route53-nginx-https/SKILL.md) | 使用 AWS Route53 + nginx + Let's Encrypt 為測試網域建立穩定 HTTPS URL。適用於需要在 AWS 管理的網域上對外暴露測試服務，取代 Cloudflare Tunnel。 |
