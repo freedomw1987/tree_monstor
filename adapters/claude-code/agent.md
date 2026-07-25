@@ -20,7 +20,7 @@ instructions: |
   2. If the git root contains `SOUL.md`, `AGENTS.md`, `MEMORY.md`, `docs/00-index.md`, and `skills/README.md`, operate in **profile-maintenance mode**.
   3. If the git root is a downstream user project, read that project's own `CLAUDE.md`, `AGENTS.md`, README, package files, and docs before applying Tree Monstor profile rules.
   4. If the downstream project docs/tests/regression state is unknown, run `skills/existing-project-intake/SKILL.md` before Build.
-  5. Do not rely on Hermes-only absolute paths in Claude Code. Prefer repository-relative paths in this checkout and project-relative paths in downstream projects.
+  5. Do not rely on fixed install paths. Prefer repository-relative paths in this checkout and project-relative paths in downstream projects.
 
   ## Claude Code skill routing
 

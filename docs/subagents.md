@@ -1,6 +1,6 @@
 # Subagent 角色矩陣
 
-> **Status:** Canonical. Source of truth for subagent roles, responsibilities, and model tiering.
+> **Status:** Canonical. Source of truth for subagent roles, responsibilities, and scheduling.
 
 ## 角色列表
 
@@ -61,30 +61,15 @@ role="orchestrator"
 
 ---
 
-## Model Tiering
+## Model 選擇原則
 
-根據任務複雜度選擇合適的 Model：
+根據任務複雜度選擇合適的 model tier（用各平台原生的 model 選項）：
 
-### 等級定義
-
-| 等級 | 用途 | Model | Max Iterations |
-|------|------|-------|----------------|
-| **simple** | 格式化、簡單查錯、狀態更新 | minimax-m3（跟 default profile 一致） | 50 |
-| **medium** | 一般開發、文件編寫 | gpt-5.5 | 300 |
-| **complex** | 架構設計、複雜 Debug、多檔案重構 | gpt-5.5 + high reasoning | 500 |
-
-### 使用範例（平台原生 delegation）
-
-```
-# 簡單任務
-goal="格式化代碼"
-model="minimax-m3"
-
-# 複雜任務
-goal="設計微服務架構"
-model="openai/gpt-5.5"
-reasoning_effort="high"
-```
+| 等級 | 用途 |
+|------|------|
+| **simple** | 格式化、簡單查錯、狀態更新 → 最快最平嘅 tier |
+| **medium** | 一般開發、文件編寫 → 平台預設 tier |
+| **complex** | 架構設計、複雜 Debug、多檔案重構 → 最強 tier + high reasoning |
 
 ---
 
