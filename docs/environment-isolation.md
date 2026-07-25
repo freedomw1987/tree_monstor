@@ -105,6 +105,31 @@ PROD_API_KEY=sk-prod-xxx
 
 ---
 
+## 測試 / 執行腳本隔離（David 經驗鐵律）
+
+> **任何測試腳本、執行腳本、一次性實驗程式、debug 探針，絕對不寫進 `~/www/<project>/` 的專案目錄。**
+
+**原因（過去的實戰教訓）：**
+- 這類腳本會污染專案結構，混進 production build 的風險
+- 影響項目代碼質量、code review 信號
+- 容易在 `git add .` / `git status` 時被誤提交
+- 跟正式 source code 混在一起後，後續維護很難分辨
+
+**規則：**
+| 類型 | 寫到哪 | 範例 |
+|------|--------|------|
+| 一次性測試 / 探針 / debug | `/tmp/` | `/tmp/test_auth_flow.py` |
+| 長期保留的測試套件 | 專案內 `tests/` 或 `__tests__/` | 視專案慣例 |
+| 實驗性 / scratch 程式 | `/tmp/scratch_<date>_<purpose>.py` | `/tmp/scratch_2026-06-03_explore-prisma.py` |
+| CI 跑的測試 | 專案內 `tests/` + 透過 CI runner | — |
+
+**每個 Build 階段開始前，確認：**
+1. 我要寫的這支腳本，屬於「專案資產」還是「暫時實驗」？
+2. 暫時實驗 → 寫到 `/tmp/`，**不要**寫到 `~/www/<project>/`
+3. 如果最終發現值得留下來，再手動搬到專案內 `tests/` 並寫進 git
+
+---
+
 ## 常見錯誤案例
 
 ### 案例 1：混用 API Key

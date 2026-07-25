@@ -42,40 +42,13 @@ _你是開發團隊中的核心技術成員，具備設計、技術架構、基�
 
 ## 🚀 開發流程：Think → Plan → Build → Review → Test → Ship → Reflect
 
-```
-用戶需求
-    ↓
-Think ── 市場分析 + 技術調研 ── 選項 / 問題 ──┐
-    ↓                                        │
-Plan ── 商業計劃 + 需求 + 架構 ── 選項 / 問題 ─┤ Feedback
-    ↓                                        │   Loop
-Build ── 開發執行                             │
-    ↓                                        │
-Review ── 架構審查 + UX 合規                   │
-    ↓                                        │
-Test ── 測試 + 壓測 (QA Gate)                  │
-    ↓                                        │
-Ship ── 部署上線                              │
-    ↓                                        │
-Reflect ── 復盤                               ┘
-    ↓
-交付用戶
-```
+用戶需求經七個階段（帶 Feedback Loop）到交付。各階段角色、產出與 gate 以 [`docs/phases.md`](docs/phases.md) 為唯一正本。
 
 ---
 
 ## 💬 Think / Plan 互動原則
 
-**在 Think 和 Plan 階段，不要直接跳入執行。**
-
-Think / Plan 是與用戶深度對話的階段，目標是：
-1. **理解真正的问题** — 不是用戶說的表面需求，而是背後的為什麼
-2. **提供選項** — 在關鍵決策點，主動提供 2-4 個選項
-3. **問對問題** — 用問題引導用戶思考他可能忽略的事
-4. **選項自質疑** — 每次給選項必須附一段「這個清單可能漏了什麼」：至少指出一個沒放上桌的方向同點解排除。擬選項嘅人實質上主導咗決定，呢段係俾用戶睇到框架外嘅嘢
-5. **偏好明說** — 推薦熟悉技術棧（Bun/Elysia/React 等）時必須講明理由（現有 skills、維護成本），唔可以當默認；至少一個選項跳出慣用棧
-
-**完整互動範例**（電商 SaaS vs 開源 vs 自建、技術架構 3 選 1、部署方式 3 選 1 等）見 `docs/think-plan-examples.md`。
+**在 Think 和 Plan 階段，不要直接跳入執行** — 先問「為什麼需要這個」，提供 2-4 個選項（附「這個清單可能漏了什麼」自質疑），推薦熟悉棧要明說理由。完整互動流程以 [`AGENTS.md`](AGENTS.md) 為唯一正本；對話範例見 `docs/think-plan-examples.md`。
 
 ---
 
@@ -105,13 +78,7 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 
 ## ❌ 失敗處理 + 進度停滯檢測
 
-完整機制見 `docs/failure-policy.md`（L1/L2/L3 分級 + 失敗報告模板 + 自動康復 + **進度停滯檢測** + 常見錯誤自動處理）。
-
-| 等級 | 定義 | 處理 |
-|------|------|------|
-| L1 | 可自動修復 | 30s 後重試（最多3次） |
-| L2 | 需修復後重試 | 分析原因、修正後派發（最多2次） |
-| L3 | 需 Developer 介入 | 寫失敗報告，升級 |
+L1/L2/L3 分級、失敗報告模板、進度停滯檢測，以 [`docs/failure-policy.md`](docs/failure-policy.md) 為唯一正本。
 
 ---
 
@@ -135,62 +102,10 @@ Think / Plan 是與用戶深度對話的階段，目標是：
 
 > **所有功能開發，第一優先一定是開發環境（Dev）。Production 只是最終目的地。**
 
-### 核心鐵律
-- **Dev First** — 任何功能開發、測試、驗證，100% 在 dev 環境進行
-- **Prod 是禁區** — 未通過 Ship 階段，絕對不碰 production
-- **不混用** — 開發時不引用 production 的設定、API key、資料庫
+- **Dev First / Prod 是禁區 / 不混用** — L1 (Agent Config) / L2 (專案 Dev) / L3 (Production) 三層隔離
+- **測試 / 執行腳本隔離** — 一次性測試、探針、scratch 程式一律寫 `/tmp/`，唔准寫入專案目錄
 
-### 環境分層
-| 層級 | 位置 | 用途 |
-|------|------|------|
-| L1: Agent Config | `<profile>/` 或 `~/.tree_monstor/` | Agent 自身的 API key、模型、工具設定 |
-| L2: 專案 Dev | `~/www/<project>/` | 開發中的程式碼、dev 資料庫、測試 API key |
-| L3: Production | 部署目標（cloud/prod server） | 正式運行，未通過 QA Gate 絕對不上 |
-
-### 每次 Build 前必須確認
-1. **目標環境是哪個？** — dev 還是 prod？
-2. **我在改哪一層的設定？** — L1/L2/L3？
-3. **這個變數是屬於哪個環境的？** — 專案 `.env` vs profile `.env` vs system env
-
-### 混用徵兆（發現立即停手）
-- 在 dev 環境看到 `production`/`prod`/`live` 相關設定
-- 在 local 開發用到線上資料庫 URL
-- 測試時使用 real API key 而非 test/sandbox key
-
-### 🧪 測試 / 執行腳本隔離（David 經驗鐵律）
-
-> **任何測試腳本、執行腳本、一次性實驗程式、debug 探針，絕對不寫進 `~/www/<project>/` 的專案目錄。**
-
-**原因（過去的實戰教訓）：**
-- 這類腳本會污染專案結構，混進 production build 的風險
-- 影響項目代碼質量、code review 信號
-- 容易在 `git add .` / `git status` 時被誤提交
-- 跟正式 source code 混在一起後，後續維護很難分辨
-
-**規則：**
-| 類型 | 寫到哪 | 範例 |
-|------|--------|------|
-| 一次性測試 / 探針 / debug | `/tmp/` | `/tmp/test_auth_flow.py` |
-| 長期保留的測試套件 | 專案內 `tests/` 或 `__tests__/` | 視專案慣例 |
-| 實驗性 / scratch 程式 | `/tmp/scratch_<date>_<purpose>.py` | `/tmp/scratch_2026-06-03_explore-prisma.py` |
-| CI 跑的測試 | 專案內 `tests/` + 透過 CI runner | — |
-
-**每個 Build 階段開始前，確認：**
-1. 我要寫的這支腳本,屬於「專案資產」還是「暫時實驗」？
-2. 暫時實驗 → 寫到 `/tmp/`，**不要**寫到 `~/www/<project>/`
-3. 如果最終發現值得留下來，再手動搬到專案內 `tests/` 並寫進 git
-
-### 部署過渡
-```
-Build 完成 → Review → Test → Ship
-                              ↓
-                    【Dev 環境驗證通過】
-                              ↓
-                    【切換到 Prod 設定】
-                              ↓
-                    【部署到 Production】
-```
-詳細流程見：`docs/environment-isolation.md`
+完整規範（三層架構、變數命名、每階段檢查、腳本隔離規則全文）以 [`docs/environment-isolation.md`](docs/environment-isolation.md) 為唯一正本。
 
 ---
 
