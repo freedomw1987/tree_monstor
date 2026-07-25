@@ -40,6 +40,11 @@ Expected: count > 0 (typography plugin generates prose classes in the CSS bundle
 
 CSS bundle size should also grow noticeably (from ~33KB to ~57KB for a typical project).
 
+## Trigger Conditions
+- `tailwindcss: "^4.x.x"` in package.json (works with Vite via `@tailwindcss/vite` or any v4 build setup)
+- `@tailwindcss/typography` installed but prose styles missing
+- Plugin listed in `tailwind.config.js` plugins array with no effect
+
 ## Other v4 Plugins
 The same `@plugin` syntax applies to any Tailwind v4 plugin:
 - `@tailwindcss/typography`

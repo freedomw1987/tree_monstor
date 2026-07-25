@@ -81,7 +81,6 @@ In Claude Code:
 | [`react-browser-automation-gotchas`](react-browser-automation-gotchas/SKILL.md) | Debugs React synthetic-event/state issues during browser automation. | Browser clicks/fills do not trigger React state updates. |
 | [`react-router-sibling-route-conflict`](react-router-sibling-route-conflict/SKILL.md) | Diagnoses sibling route shadowing in React Router v6/v7. | `/settings` vs `/settings/*`-style route conflicts. |
 | [`react-router-tab-subroute-refactor`](react-router-tab-subroute-refactor/SKILL.md) | Refactors top-level pages into shared tabbed subroutes. | Consolidating page clusters into tab navigation. |
-| [`tailwindcss-typography-v4-vite-plugin`](tailwindcss-typography-v4-vite-plugin/SKILL.md) | Fixes Tailwind CSS v4 + Vite typography plugin issues. | `@tailwindcss/typography` styles are not applying. |
 | [`vite-spa-nginx-deployment`](vite-spa-nginx-deployment/SKILL.md) | Deploys Vite React SPA behind nginx with SPA routing and permissions. | Static Vite SPA deployment / nginx route fallback. |
 | [`vite-static-asset-proxy-debug`](vite-static-asset-proxy-debug/SKILL.md) | Debugs Vite dev server static asset proxy issues. | Assets work in production but return HTML or fail locally. |
 

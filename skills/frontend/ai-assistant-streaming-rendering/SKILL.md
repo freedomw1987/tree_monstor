@@ -402,8 +402,8 @@ browser was caching".
 
 - **You're using Tailwind v4 + `@tailwindcss/typography`**: the
   `prose` classes work out of the box. If you see `[&_p]:my-1.5`
-  style overrides not applying, see the `tailwindcss-typography-v4-vite-plugin`
-  skill.
+  style overrides not applying, see the
+  `skills/frontend/tailwindcss-v4-plugin-typography/SKILL.md` skill.
 - **Your chart data is hierarchical / drill-down**: use Recharts
   or Plotly instead of Chart.js. Chart.js v4 doesn't have built-in
   support for nested data.
