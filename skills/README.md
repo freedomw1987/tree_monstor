@@ -26,6 +26,7 @@ When adding, removing, or renaming a local skill:
 3. If a count is needed for release notes or verification, compute it from `skills/**/SKILL.md` at verification time.
 4. Keep descriptions short enough to scan; detailed instructions belong in each skill’s own `SKILL.md`.
 5. After catalog changes, run `python3 scripts/docs_consistency_check.py` from the repository root（it verifies both levels' coverage）.
+6. **Content freshness（advisory，唔係 gate）**：`docs_consistency_check.py` 只驗導航結構，唔驗 skill 內容係咪仍然成立。定期（建議每季，或引用 version-pinned skill 之前）跑 `python3 scripts/skills_freshness_audit.py` 排 review 優先次序 — 佢按最後 review 日期列出過期 skills，有 pin 住具體版本（如 Elysia / Prisma / CDK 版號）嘅排最前。Review 完一個 skill 而內容唔使改時，喺該 `SKILL.md` 頂部加/更新一行 `Last-verified: YYYY-MM-DD`（audit 會優先讀呢個標記）；內容有改就唔使，git commit 日期自動更新。發現內容已過時 → 更新或 archive 該 skill。呢個 audit 刻意設計為 advisory（預設 exit 0），**唔好**加入 pre-commit / CI。
 
 ---
 
