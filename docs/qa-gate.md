@@ -5,6 +5,7 @@
 > **核心原則**: 未通過 QA Gate 的結果，絕對不能交付給用戶。
 > **本文檔**: 係 SOUL.md § 紅線 10/11/16/17 嘅 detailed workflow。
 > SOUL.md 只列條件，本文檔講執行 protocol。
+> **適用分級**: 邊啲 gate 適用於邊種任務（T1/T2/T3），以 `docs/task-tiering.md` 為唯一正本；小型任務降級必須按其 template 申報。
 
 ---
 
@@ -317,6 +318,7 @@ Bug 反饋 — P1/P2 — [描述]
 ## Related docs
 
 - [Documentation index](00-index.md)
+- [Task tiering](task-tiering.md)
 - [Testing strategy](testing-strategy.md)
 - [QA tracker](qa-tracker.md)
 - [Project documentation standard](project-documentation-standard.md)

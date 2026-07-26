@@ -98,6 +98,8 @@ _Developer Profile Session 啟動流程與工作區規範。_
 - 需要多個 Subagent 協作
 - 任務時間預計超過 1 小時
 
+另一端嘅「小型任務」（可降級文檔 gate）唔係憑感覺判斷：客觀判準、分級決策同申報格式以 `docs/task-tiering.md` 為唯一正本。
+
 ---
 
 ## Orchestrator 觸發

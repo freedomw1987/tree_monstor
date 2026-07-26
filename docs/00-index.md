@@ -30,6 +30,7 @@
 | Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、model 選擇原則；不要在其他文件硬寫角色數量 |
 | Task Board format | [`docs/task-board.md`](task-board.md) | Canonical spelling uses hyphen: `docs/task-board.md` |
 | QA Gate | [`docs/qa-gate.md`](qa-gate.md) | Pre-Build documentation gate、doc-code sync、release / merge 交付門檻 |
+| Task tiering / 小型任務判準 | [`docs/task-tiering.md`](task-tiering.md) | T1/T2/T3 分級 checklist、申報格式；SOUL.md 條件紅線嘅「小型任務」以此為準 |
 | Testing strategy | [`docs/testing-strategy.md`](testing-strategy.md) | 測試層級、P0/P1 測試深度、健康指標 |
 | Regression hooks / QA regression mode | [`docs/testing-strategy.md`](testing-strategy.md) + [`docs/qa-gate.md`](qa-gate.md) + [`skills/regression-guard/SKILL.md`](../skills/regression-guard/SKILL.md) | Frontend/backend regression hooks、QA 啟用方式、production safety boundary |
 | Project documentation standard | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | 每個 project 的標準文件、Build 前 documentation baseline 與 commit 規範 |
@@ -53,6 +54,7 @@
 | [`docs/qa-tracker.md`](qa-tracker.md) | Tracker | QA 持續追蹤；US → test task 對照、需求變更影響評估 |
 | [`docs/subagents.md`](subagents.md) | Canonical | Subagent 角色矩陣、Goal 關鍵字、調度規則、model 選擇原則 |
 | [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則、PM 進度追蹤與用戶溝通原則 |
+| [`docs/task-tiering.md`](task-tiering.md) | Canonical | 任務分級（T1/T2/T3）、小型任務判準、中途升級規則、例外申報格式 |
 | [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 分層測試類型、健康指標、工具鏈 |
 | [`docs/think-plan-examples.md`](think-plan-examples.md) | Reference | Think / Plan 互動範例、架構選項與提問方式 |
 

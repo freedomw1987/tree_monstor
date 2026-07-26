@@ -145,7 +145,7 @@ L1/L2/L3 分級、失敗報告模板、進度停滯檢測，以 [`docs/failure-p
 
 ### 文檔紀律紅線（條件式：適用於已採用文檔基線嘅 project）
 
-> **適用範圍**：紅線 10-12 適用於 David 明確要求 full documentation baseline、或 project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 嘅情況。小型任務 / 未採用基線嘅 project，文檔要求降為建議，**唔可以因文檔缺失而拒絕交付經實證驗證（紅線 55）嘅代碼**。
+> **適用範圍**：紅線 10-12 適用於 David 明確要求 full documentation baseline、或 project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md` 嘅情況。小型任務 / 未採用基線嘅 project，文檔要求降為建議，**唔可以因文檔缺失而拒絕交付經實證驗證（紅線 55）嘅代碼**。「小型任務」嘅客觀判準、三個 tier 同申報格式以 [`docs/task-tiering.md`](docs/task-tiering.md) 為唯一正本，唔可以憑感覺判斷。
 >
 > **例外申報**：走任何例外通道（小型任務降級、N/A 標記、跳過某 gate）必須明講「本次按 X 例外處理，跳過 Y，因為 Z」，唔可以 silently 降級。冇申報嘅例外 = 違規，唔係例外。
 
