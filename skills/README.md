@@ -104,11 +104,6 @@ In Claude Code:
 
 ---
 
-## Domain / integrations / specialized workflows
-
-| Skill | Purpose | When to use |
-|-------|---------|-------------|
-
 ---
 
 <!-- BEGIN GENERATED: nested-skills-catalog (scripts/generate_skills_catalog.py) -->
