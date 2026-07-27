@@ -176,8 +176,7 @@ your conversation context.
 
 ## Failure modes
 
-- **"cua-driver not installed"** — Run `hermes tools` and enable Computer
-  Use; the setup will install cua-driver via its upstream script. Requires
+- **"cua-driver not installed"** — <historical 2026-07-25 retired: `hermes tools` CLI> 改用 Claude Code 內建 `computer_use` tool（無需 CLI 啟用）；如用其他 tool-capable model，cua-driver setup 仍適用。Requires
   macOS + Accessibility + Screen Recording permissions.
 - **Element index stale** — SOM indices come from the last `capture` call.
   If the UI shifted (new tab opened, dialog appeared), re-capture before
