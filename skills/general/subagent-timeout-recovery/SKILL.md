@@ -7,12 +7,10 @@ description: >
   Use when: 派咗 delegate_task 想接管後續 / subagent timeout / subagent 報 done
   但你想 verify 啱先回 user。
 version: 1.0.0
-author: Hermes Agent
 metadata:
   tags: [delegation, subagent, timeout, recovery]
   related_skills: [development-watchdog]
 ---
-
 # subagent-timeout-recovery
 
 Subagent 執行超時後的接管流程。

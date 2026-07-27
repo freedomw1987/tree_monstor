@@ -7,7 +7,6 @@ metadata:
   hermes:
     tags: [docs, markdown, html, pandoc, preview, developer-profile, boss-summary, decision]
 ---
-
 # Doc HTML Preview
 
 > **Two HTMLs per MD: engineering version (1:1) + boss version (decision-focused).**
