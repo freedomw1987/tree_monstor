@@ -63,10 +63,9 @@ When the main agent has full project context, write JSONs directly:
 
 ## Verification script
 
-After every `build.sh` run, verify all boss.html have content:
+After every `build.sh` run, verify all boss.html have content. The canonical script lives at `<profile-root>/skills/doc-html-preview/scripts/verify_boss_html.sh` — the body-region awk pattern below is what it implements:
 
 ```bash
-# Save as scripts/verify-boss-html.sh
 #!/usr/bin/env bash
 set -euo pipefail
 PROJECT="${1:?usage: $0 <project-name>}"
@@ -89,7 +88,7 @@ if [ "$MISSING" -gt 0 ]; then
 fi
 ```
 
-Usage: `bash <profile-root>/skills/doc-html-preview/scripts/verify-boss-html.sh <project-name>`
+Usage: `bash <profile-root>/skills/doc-html-preview/scripts/verify_boss_html.sh <project-name>`
 
 ## Common pitfalls
 
