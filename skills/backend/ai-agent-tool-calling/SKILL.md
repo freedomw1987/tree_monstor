@@ -625,7 +625,7 @@ Full Tailwind + React component spec, DOM verification recipe, and
 anti-patterns to grep for, in
 [`references/tool-pill-ux.md`](references/tool-pill-ux.md).
 
-## Component 6: Multi-channel (Web / WhatsApp / Slack / Email)
+## Multi-channel (Web / WhatsApp / Slack / Email) — Channel Adapters
 
 唔好將 channel logic 寫入 agent, 用 adapter pattern:
 
