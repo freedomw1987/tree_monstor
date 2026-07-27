@@ -256,9 +256,7 @@ Skills for interacting with social platforms and social-media workflows — post
 |-------|-------------|
 | [`code-review-pipeline`](software-development/code-review-pipeline/SKILL.md) | Three-axis code review → TECH-DEBT.md catalog → P0 patch sprint → evidence retro → merge pipeline. Use when user asks for "code review", "security audit", "arc… |
 | [`frontend-backend-integration`](software-development/frontend-backend-integration/SKILL.md) | Discipline for writing frontend code that wraps backend endpoints — verify wire shape against backend source (not plan/spec doc), handle prefill races, refacto… |
-| [`node-inspect-debugger`](software-development/node-inspect-debugger/SKILL.md) | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. |
 | [`pagination-with-preserved-aggregates`](software-development/pagination-with-preserved-aggregates/SKILL.md) | Add server-side pagination to an admin list page WITHOUT breaking summary stats (count/sum/avg) or full-dataset exports (Excel/CSV). The core invariant — stats… |
-| [`python-debugpy`](software-development/python-debugpy/SKILL.md) | Debug Python: pdb REPL + debugpy remote (DAP). |
 | [`qa-tracker-us-closure`](software-development/qa-tracker-us-closure/SKILL.md) | Per-US test closure cadence for closing out NONE/PARTIAL P0 user stories in a project's QA-TRACKER.md. Class-level, applies to any project that uses the US ↔ T… |
 | [`spike`](software-development/spike/SKILL.md) | Throwaway experiments to validate an idea before build. |
 
