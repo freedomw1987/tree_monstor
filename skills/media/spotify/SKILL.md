@@ -7,15 +7,11 @@ license: MIT
 platforms: [linux, macos, windows]
 prerequisites:
   tools: [spotify_playback, spotify_devices, spotify_queue, spotify_search, spotify_playlists, spotify_albums, spotify_library]
-metadata:
-  hermes:
-    tags: [spotify, music, playback, playlists, media]
-    related_skills: [gif-search]
 ---
 
 # Spotify
 
-Control the user's Spotify account via the Hermes Spotify toolset (7 tools). Setup guide: https://hermes-agent.nousresearch.com/docs/user-guide/features/spotify
+Control the user's Spotify account via the Hermes Spotify toolset <historical 2026-07-25 retired: Hermes Spotify toolset>(7 tools). <historical 2026-07-25 retired: Hermes setup URL → https://hermes-agent.nousresearch.com/docs/user-guide/features/spotify> 改用 spotify_playback 等 8 個 tools（在 prerequisites.tools）。
 
 ## When to use this skill
 
@@ -112,7 +108,7 @@ spotify_devices({"action": "transfer", "device_id": "<id>", "play": true})
 
 **`429 Too Many Requests`** = rate limit. Wait and retry once. If it keeps happening, you're looping — stop.
 
-**`401 Unauthorized` after a retry** — refresh token revoked. Tell the user to run `hermes auth spotify` again.
+**`401 Unauthorized` after a retry** — refresh token revoked. Tell the user to re-authenticate via <historical 2026-07-25 retired: `hermes auth spotify`> Claude Code's Spotify tool set OAuth refresh flow。
 
 ## URI and ID formats
 

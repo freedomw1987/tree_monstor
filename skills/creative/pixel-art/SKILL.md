@@ -5,12 +5,6 @@ version: 2.0.0
 author: dodo-reach
 license: MIT
 platforms: [linux, macos, windows]
-metadata:
-  hermes:
-    tags: [creative, pixel-art, arcade, snes, nes, gameboy, retro, image, video]
-    category: creative
-    credits:
-      - "Hardware palettes and animation loops ported from Synero/pixel-art-studio (MIT) — https://github.com/Synero/pixel-art-studio"
 ---
 
 # Pixel Art
@@ -136,7 +130,8 @@ pixel_art("in.png", "out.png", preset="snes", palette="PICO_8", block=6)
 
 ```python
 import sys
-sys.path.insert(0, "/home/teknium/.hermes/skills/creative/pixel-art/scripts")
+# <historical 2026-07-25 retired: /home/teknium/.hermes/... 路径> 改用 <profile-root>：
+sys.path.insert(0, "<profile-root>/skills/creative/pixel-art/scripts")
 from pixel_art import pixel_art
 from pixel_art_video import pixel_art_video
 
@@ -158,7 +153,8 @@ pixel_art_video(
 ### CLI
 
 ```bash
-cd /home/teknium/.hermes/skills/creative/pixel-art/scripts
+# <historical 2026-07-25 retired: /home/teknium/.hermes/... 路径> 改用 <profile-root>：
+cd <profile-root>/skills/creative/pixel-art/scripts
 
 python pixel_art.py in.jpg out.png --preset gameboy
 python pixel_art.py in.jpg out.png --preset snes --palette PICO_8 --block 6
