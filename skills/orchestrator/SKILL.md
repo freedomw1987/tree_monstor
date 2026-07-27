@@ -2,7 +2,6 @@
 name: orchestrator
 description: Task Orchestration Subagent — Coordinates all subagents, manages task board, handles parallel/sequential execution, tracks dependencies and failures. The conductor of the development orchestra.
 trigger: "協調任務 | 管理進度 | 派發工作 | 任務追蹤 | 任務組裝"
-version: 1
 category: development
 ---
 

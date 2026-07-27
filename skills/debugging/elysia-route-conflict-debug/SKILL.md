@@ -1,7 +1,6 @@
 ---
 name: elysia-route-conflict-debug
 description: Debug Elysia.js route conflicts — server fails to start with "different parameter name" error, or requests hit wrong handler.
-version: 1.0.0
 tags: [debugging, elysia, route, bun]
 metadata:
   hermes:

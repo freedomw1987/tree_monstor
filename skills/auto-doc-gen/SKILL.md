@@ -2,7 +2,6 @@
 name: auto-doc-gen
 description: 從代碼註解自動生成 API docs。從 JSDoc/TSDoc 註解、TSDoc、Python docstring 自動生成 API 文檔。保持 docs/ 目錄與實際代碼同步。
 trigger: "api docs / 自動文檔 / 生成文檔 / update docs"
-version: 1
 category: productivity
 ---
 

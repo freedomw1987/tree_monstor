@@ -11,7 +11,6 @@ trigger: |
   `/__qa`、`REGRESSION_MODE`、`Regression Hook`、`Regression Mode`、`qa:seed`、`qa:reset`、QA endpoint、test fixture endpoint 相關變更
   任何時候 audit `rbac.ts` / `logEvent` caller / RBAC seed coverage 嘅 workflow
   出現 "seed doesn't currently write RolePermission rows" 類 comment ＝ known-bug-without-RG-entry → 紅線 13 違規
-version: 2
 category: software-development
 ---
 

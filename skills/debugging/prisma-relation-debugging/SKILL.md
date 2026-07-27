@@ -1,5 +1,4 @@
 ---
-version: alpha
 name: prisma-relation-debugging
 description: "Debug Prisma schema vs code mismatches: explicit @relation fields need { connect: { id } } syntax, not shorthand. Also covers the UncheckedCreateInput vs CreateInput split (flat FK columns can't mix with nested connect — need explicit cast or `as never` traps) and `prisma generate` validation failures for named-relation fields when adding a 2nd+ relation to an existing model."
 trigger: "Any Prisma error involving: Unknown argument 'X' on a model create/update, Argument 'X' is missing, Invalid `X` invocation, `prisma generate` validation error 'relation field X on model Y is missing an opposite relation field on model Z', a field defined as a relation in schema but code uses it as a scalar (or vice versa), or `data: body as never` cast hiding a real Prisma relation-mapping error."

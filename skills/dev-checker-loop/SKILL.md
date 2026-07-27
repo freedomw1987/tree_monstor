@@ -9,7 +9,6 @@ description: |
   gaps, or escalation limits are hit.
 trigger: |
   "dev checker loop" / "dev-loop" / "STATE.md" / "checker agent" / "雙 agent 開發" / "自動檢查循環" / "開發檢查協作" / "regression 開關"
-version: 3
 category: software-development
 ---
 

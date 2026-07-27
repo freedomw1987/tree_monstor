@@ -2,7 +2,6 @@
 name: dev-task-memory
 description: Concept + recipes for persisting in-progress dev-task state (state file, git checkpoints, WIP detection, handoff docs). Hermes runtime automation retired; platform-neutral references remain valid.
 trigger: "context compression / /new / gateway restart / '繼續之前的任務' / 'where were we' / 'save state' / 'checkpoint task' / subagent 做到一半 stop 嘅 WIP / **multi-phase dev task (>30 min, e.g. security review → fix-batch sprint)**"
-version: 2
 category: devops
 ---
 

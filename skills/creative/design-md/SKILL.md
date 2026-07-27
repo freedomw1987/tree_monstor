@@ -1,7 +1,6 @@
 ---
 name: design-md
 description: Author/validate/export Google's DESIGN.md token spec files.
-version: 1.0.0
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -38,7 +37,6 @@ from scratch (prototype, deck, landing page, component lab), use
 
 ```md
 ---
-version: alpha
 name: Heritage
 description: Architectural minimalism meets journalistic gravitas.
 colors:

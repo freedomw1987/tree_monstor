@@ -2,7 +2,6 @@
 name: pagination-with-preserved-aggregates
 description: Add server-side pagination to an admin list page WITHOUT breaking summary stats (count/sum/avg) or full-dataset exports (Excel/CSV). The core invariant — stats cards and exports always read from a server aggregate over the FULL filtered set, while the table view is paged. Trigger when the user says "the list page is slow, add pagination", "the page loads thousands of rows", "stats are wrong after I added pagination", "Excel export must include everything even when I paginate", or "total count drops as I change pages". Class-level — applies to any admin/data-table page (orders, users, audit logs, transactions, work logs, time entries) on any ORM (Prisma/Drizzle/Sequelize) and any backend framework (Elysia/Express/Fastify/Hono/NestJS).
 trigger: "adding pagination to a list page / list page is slow with many rows / need Excel export that includes all data even when paginated / stats cards disagree with the table / total count changes as I click next page / 'slow list page' / 'add pagination'"
-version: 1
 category: software-development
 ---
 

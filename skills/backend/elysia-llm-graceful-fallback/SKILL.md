@@ -2,7 +2,6 @@
 name: elysia-llm-graceful-fallback
 description: Elysia.js route pattern for graceful LLM/API fallback — return result objects instead of throwing, letting route handlers decide HTTP status and format.
 tags: [elysia, typescript, error-handling, llm]
-version: 1.0.0
 ---
 
 # Graceful LLM Fallback in Elysia Routes

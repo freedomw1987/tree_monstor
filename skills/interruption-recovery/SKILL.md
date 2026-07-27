@@ -2,7 +2,6 @@
 name: interruption-recovery
 description: Concept + recipes for recovering long dev tasks after interruption (post-recovery verification, context reconstruction from git, smoke-before-merge). Hermes runtime automation retired; platform-neutral references remain valid.
 trigger: "interrupt / recovery / resume / 中斷 / 恢復 / 繼續 / 之前 / 上次 / 'where was I' / '開工吧' / '您開工吧'"
-version: 1
 category: devops
 ---
 

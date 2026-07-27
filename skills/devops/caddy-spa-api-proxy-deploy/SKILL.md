@@ -1,5 +1,4 @@
 ---
-version: alpha
 name: caddy-spa-api-proxy-deploy
 description: Deploy Vite SPA + Bun API backend behind Caddy reverse proxy in Docker with host networking
 ---

@@ -2,7 +2,6 @@
 name: ultrawork
 description: Enable Claude Code harness mode — use Workflow/parallel/pipeline for complex multi-agent tasks. Spawns concurrent subagents, handles fan-out/fan-in patterns, and orchestrates large-scale development work.
 trigger: "ultrawork | harness mode | workflow orchestration | parallel execution | fan-out | multi-agent coordination"
-version: 1
 category: autonomous-ai-agents
 prerequisites:
   - orchestrator (理解任務協調基本概念)

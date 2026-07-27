@@ -1,7 +1,6 @@
 ---
 name: python-debugpy
 description: "Debug Python: pdb REPL + debugpy remote (DAP)."
-version: 1.0.0
 license: MIT
 platforms: [linux, macos]
 metadata:
