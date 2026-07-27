@@ -108,7 +108,6 @@ In Claude Code:
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| [`yuanbao`](yuanbao/SKILL.md) | Yuanbao groups: @mention users, query info/members. | Yuanbao group/member operations. |
 
 ---
 
