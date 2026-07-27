@@ -11,12 +11,6 @@ Each skill’s canonical source is its own `SKILL.md`. This catalog is a navigat
 
 ---
 
-## Archived skills
-
-`archive/skills/` 收兩類：（a）單一專案專用嘅 SOP（如 UMAC AI、pm-system、llm-acp），（b）非開發類別（yuanbao、media、social-media、productivity、apple desktop 自動化、creative 內容創作等）。需要時去嗰度搵返。
-
----
-
 ## Maintenance rule
 
 When adding, removing, or renaming a local skill:
