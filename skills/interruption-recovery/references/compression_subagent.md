@@ -62,6 +62,7 @@ Already wired in `cron` job `e3bee8fc99f6` (every 5 min). Add the executor:
 
 ```bash
 # Add to the existing cron job, or create a new one
+# <historical 2026-07-25 retired: cron compression automation retired; Claude Code uses plan mode + session resume>
 */5 * * * * python3 .../compression_executor.py auto --json >> ~/.hermes/cron/output/long-task-resilience.log 2>&1
 ```
 

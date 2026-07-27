@@ -74,7 +74,7 @@ Read by load_state.py (new session / /new / after-compression / after-restart).
 
 - **Current session ID**: `<2026XXXX_HHMMSS_xxxxxx>`
 - **Parent session ID**: `<2026XXXX_HHMMSS_xxxxxx>` (if split from compression)
-- **Resume command**: `hermes --resume <session_id>` or `hermes -c "<project name>"`
+- **Resume command**: <historical 2026-07-25 retired> `hermes --resume <session_id>` or `hermes -c "<project name>"`；Claude Code 對應：`/resume <session_id>` 或 `/resume "<project name>"`
 - **First message timestamp**: `<YYYY-MM-DD HH:MM:SS>`
 - **Last save timestamp**: `<YYYY-MM-DD HH:MM:SS>` (auto-updated)
 

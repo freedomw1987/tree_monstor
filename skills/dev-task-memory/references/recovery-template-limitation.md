@@ -13,6 +13,7 @@ Why this file exists:
     1. `save_state.py` 嘅 `detect_decisions_from_session()` 係 stub —
        永遠 return `[]`,所以 Decisions section 唔會被 fill。
     2. `read_recent_session_turns()` 用 `hermes sessions list`
+       (<historical 2026-07-25 retired>)
        (metadata only),唔讀真正 message content。
     3. `template.replace()` 漏咗大部分 placeholder(只 hit `branch`,
        `commit`, `uncommitted changes` 嗰 3 個),所以 Decisions /

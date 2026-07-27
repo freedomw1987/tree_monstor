@@ -38,9 +38,12 @@ interruption is a fresh start with 30 minutes of context re-explanation.
 ┌─────────────────────────────────────────────────────────────────┐
 │  Layer 3: RESUME COMMAND (3 options for David to pick)         │
 ├─────────────────────────────────────────────────────────────────┤
-│  A. `hermes --resume <session_id>`  — exact context, same line  │
-│  B. `hermes --continue "<name>"`    — by session/project name   │
-│  C. `hermes --skills dev-task-memory -c "<name>"`              │
+│  A. <historical 2026-07-25> `hermes --resume <session_id>`  — exact context, same line │
+│     Claude Code 對應：`/resume` slash command                                        │
+│  B. <historical 2026-07-25> `hermes --continue "<name>"`    — by session/project name │
+│     Claude Code 對應：`/continue` 或 `/resume "<name>"`                                  │
+│  C. <historical 2026-07-25> `hermes --skills dev-task-memory -c "<name>"`              │
+│     Claude Code 對應：fresh session + skills loading via frontmatter              │
 │       — fresh session, auto-load state file as system context │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
@@ -67,13 +70,16 @@ bash <profile-root>/skills/interruption-recovery/scripts/recovery.sh \
 ✅ State saved. To RESUME, run one of these:
 
   # A. Resume this specific session (preserves session_id, exact context)
-  hermes --profile developer --resume 20260606_215804_0fb627e3
+  # <historical 2026-07-25 retired> hermes --profile developer --resume 20260606_215804_0fb627e3
+  # Claude Code: /resume
 
   # B. Resume by project name
-  hermes --profile developer --continue "crm-system"
+  # <historical 2026-07-25 retired> hermes --profile developer --continue "crm-system"
+  # Claude Code: /resume "crm-system"
 
   # C. Start a FRESH session + auto-inject state
-  hermes --profile developer --skills dev-task-memory -c "crm-system"
+  # <historical 2026-07-25 retired> hermes --profile developer --skills dev-task-memory -c "crm-system"
+  # Claude Code: 開新 session + skills frontmatter 自動 load state file
 ```
 
 ### `resume.sh` (David 醒返 / 想 resume)
@@ -120,7 +126,8 @@ Implement 3 frontend improvements in crm-system in ONE pass
 
 🚀 TO RESUME — pick one:
   # A. Resume most recent session EXACTLY:
-  hermes --profile developer --resume 20260606_215804_0fb627e3
+  # <historical 2026-07-25 retired> hermes --profile developer --resume 20260606_215804_0fb627e3
+  # Claude Code: /resume
 ```
 
 ## 3 個 Resume 模式比較
@@ -173,8 +180,8 @@ Implement 3 frontend improvements in crm-system in ONE pass
 | 特性 | 實作 |
 |------|------|
 | **Crash-safe** | state file 喺 `docs/_meta/` (gitignored) 每次 save 寫完整 markdown, 唔會 partial write 變 corrupted |
-| **Cross-machine** | 個 `~/.hermes/memories/dev-task-facts.jsonl` 落 disk, 任何 machine 見到 |
-| **Cross-session** | `hermes --resume` 跨 session, `--continue` 跨 name, fresh option 跨 project |
+| **Cross-machine** | 個 `~/.hermes/memories/dev-task-facts.jsonl` (<historical 2026-07-25 retired>) 落 disk, 任何 machine 見到 |
+| **Cross-session** | <historical 2026-07-25 retired> `hermes --resume` 跨 session, `--continue` 跨 name, fresh option 跨 project；Claude Code 對應：`/resume` slash command + session list |
 | **Audit trail** | `docs/_meta/interruption_log.md` 記低所有 interruption, 可 grep / review |
 | **冇 single point of failure** | state file、git history、external memory、sessions.json、state.db 5 個地方都有 snapshot |
 

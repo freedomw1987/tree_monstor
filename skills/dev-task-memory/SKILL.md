@@ -54,7 +54,7 @@ category: devops
 │  • Sync facts (decisions, insights, risks) 落 external store │
 │  • Cross-session: 「之前你話用 X 點解?」即時 recall         │
 │  • 當冇 external provider, fallback 落                      │
-│    ~/.hermes/memories/dev-task-facts.jsonl                  │
+│    ~/.hermes/memories/dev-task-facts.jsonl  <historical 2026-07-25: retired; Claude Code 冇 built-in fallback> │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -62,7 +62,8 @@ category: devops
 ├─────────────────────────────────────────────────────────────┤
 │  • 開新 session 自動 search "what was I working on"        │
 │  • 注入 top-3 relevant past sessions                        │
-│  • 用 hermes sessions list 找 candidate sessions           │
+│  • <historical 2026-07-25> 用 `hermes sessions list` 找 candidate sessions（退役）│
+│  • Claude Code 對應：plan mode + session resume             │
 │  • 唔需要 manual session ID 記憶                            │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -212,9 +213,9 @@ ls -la docs/_meta/dev-task-state.md docs/retros/<date>-<task>-handoff.md
 
 | Hermes feature | dev-task-memory 用法 |
 |----------------|---------------------|
-| `hermes --resume <id>` / `-c "<name>"` | state file 嘅 `Session Lineage` section 寫低 resume command |
-| `hermes checkpoints` (filesystem) | Layer 3 自動 enable, 唔需要額外 config |
-| `hermes memory status` | Layer 4 查 active provider |
+| <historical 2026-07-25> `hermes --resume <id>` / `-c "<name>"` | 退役；Claude Code 對應：`/resume` slash command + state file Session Lineage |
+| <historical 2026-07-25> `hermes checkpoints` (filesystem) | 退役；Claude Code 對應：git checkpoint commit |
+| <historical 2026-07-25> `hermes memory status` | 退役；Claude Code 對應：env-based provider selection |
 | `session_search` (FTS5) | Layer 5 `load_state.py --search-sessions` 用佢 |
 | `/rollback N` | Layer 3 file rollback 配 state file restore |
 
@@ -279,7 +280,7 @@ python3 scripts/load_state.py --project crm-system --search-sessions
 
 ## 🐛 已知限制
 
-- **`save_state.py` 嘅 "extract decisions from session"** 而家係 stub — TODO: integrate with hermes_state.py 讀真正 session DB
+- **`save_state.py` 嘅 "extract decisions from session"** 而家係 stub — TODO: integrate with hermes_state.py (<historical 2026-07-25 retired>) 讀真正 session DB
 - **External memory provider (mem0/honcho)** API call 仲未 implement — 而家 fallback 落 local jsonl
 - **Holographic** provider 雖然係 local-only 但需要 config, 默認未啟用 — 可以之後 setup
 - **State file 唔會 auto-update** — 必須人手 call save_state.py
@@ -403,7 +404,7 @@ explicitly says "do it all in one go".
 
 - Save: 2715 bytes 寫入 `~/www/crm-system/docs/_meta/dev-task-state.md`
 - Edit: 2 decisions + 1 insight injected
-- Sync: 4 facts → `~/.hermes/memories/dev-task-facts.jsonl`
+- Sync: 4 facts → `~/.hermes/memories/dev-task-facts.jsonl` (<historical 2026-07-25 retired>)
 - Read: 4 facts loaded back ✓
 - Search: "Prisma" → 1 hit ✓
 - Load: state file full render ✓
