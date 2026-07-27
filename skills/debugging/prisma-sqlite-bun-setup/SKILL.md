@@ -5,6 +5,8 @@ tags: ["prisma", "sqlite", "bun", "debugging", "backend"]
 related_skills: ["elysia-typescript-workarounds", "elysia-aws-lambda-deploy"]
 ---
 
+
+Last-verified: 2026-07-28
 # Prisma + SQLite 在 Bun 環境的完整攻略
 
 ## 常見情境

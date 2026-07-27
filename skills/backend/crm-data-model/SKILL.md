@@ -4,6 +4,8 @@ description: Design a modern CRM data model (HubSpot / Pipedrive inspired) — C
 tags: ["crm", "data-model", "prisma", "schema", "sales", "quotation", "deal", "pipeline", "hubspot", "pipedrive"]
 ---
 
+
+Last-verified: 2026-07-28
 # CRM Data Model (Modern, HubSpot/Pipedrive-style)
 
 ## 觸發時機

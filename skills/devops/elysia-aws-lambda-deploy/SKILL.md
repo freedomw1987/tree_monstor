@@ -10,6 +10,8 @@ tags:
   - cdk
 ---
 
+
+Last-verified: 2026-07-28
 # Elysia.js on AWS Lambda Deployment
 
 ## Context

@@ -54,9 +54,12 @@
 |---|---|
 | Bug fix / 舊 bug 復發 / `RG-*` 工作 | `skills/regression-guard/SKILL.md` |
 | 接手現有專案、docs/tests 狀態未知 | `skills/existing-project-intake/SKILL.md` |
+| Patch / 編輯 corrupt / replace-all 出事 | `skills/patch-corruption-recovery/SKILL.md` |
+| Review / QA / code-review feedback 要落 doc | `skills/docs-sync/SKILL.md` |
+| 長期 multi-phase 任務、subagent 協調 | `skills/orchestrator/SKILL.md` |
 | Claude Code Dynamic Workflow / 多 agent 編排 | `docs/claude-code-workflow.md` |
 
-其他 local skills 見 `skills/README.md`，僅在任務明確匹配時讀取。`regression-guard`、`existing-project-intake`、`dev-checker-loop` 已註冊為 Claude Code user skills（wrapper 在 `adapters/claude-code/skills/`，symlink 自 `~/.claude/skills/`）；其他 local markdown skills 不要假設已註冊。
+其他 local skills 見 `skills/README.md`，僅在任務明確匹配時讀取。`regression-guard`、`existing-project-intake`、`dev-checker-loop`、`patch-corruption-recovery`、`docs-sync`、`orchestrator` 已註冊為 Claude Code user skills（wrapper 在 `adapters/claude-code/skills/`，symlink 自 `~/.claude/skills/`）；其他 local markdown skills 不要假設已註冊。
 
 ---
 

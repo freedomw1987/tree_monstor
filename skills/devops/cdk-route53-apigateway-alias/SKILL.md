@@ -3,6 +3,8 @@ name: cdk-route53-apigateway-alias
 description: CDK v2 Route53 ARecord alias to API Gateway custom domain — workaround for missing IAliasRecordTarget bind() method
 ---
 
+
+Last-verified: 2026-07-28
 # CDK Route53 ARecord Alias to API Gateway Custom Domain
 
 ## Problem

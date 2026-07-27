@@ -5,6 +5,8 @@ tags: [pdf, bun, elysia, node, debugging]
 version: 1.0.0
 ---
 
+
+Last-verified: 2026-07-28
 # pdf-parse v2 API Fix for Bun
 
 ## Problem

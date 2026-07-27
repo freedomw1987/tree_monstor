@@ -5,6 +5,8 @@ category: devops
 tags: [aws, cdk, infrastructure, deployment]
 ---
 
+
+Last-verified: 2026-07-28
 # CDK v2 Deployment Patterns
 
 ## Common Issues & Solutions

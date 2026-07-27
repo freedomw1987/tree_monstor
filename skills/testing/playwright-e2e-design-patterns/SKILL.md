@@ -4,6 +4,8 @@ description: E2E test design patterns for Playwright + full-stack (Docker) apps 
 tags: ["playwright", "e2e", "testing", "rate-limit", "caller-identity", "docker", "tiptap", "prosemirror", "rich-text-editor", "seed-data", "fixture-resilience", "pre-existing-failure-triage", "rbac-bug-discovery", "tracker-divergence", "spec-alignment", "uncommitted-work-check", "stale-container-check"]
 ---
 
+
+Last-verified: 2026-07-28
 # Playwright E2E design patterns
 
 ## 點解要呢個 skill

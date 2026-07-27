@@ -4,6 +4,8 @@ description: Build a tool-calling AI agent (function calling + tool registry + c
 tags: ["ai-agent", "tool-calling", "function-calling", "openai", "anthropic", "rag", "memory", "langchain", "mastra", "langgraph", "chatbot", "whatsapp", "slack"]
 ---
 
+
+Last-verified: 2026-07-28
 # AI Agent with Tool Calling (Function Calling + Memory + RAG)
 
 ## 觸發時機
