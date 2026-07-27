@@ -235,4 +235,3 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 - [Documentation index](../docs/00-index.md)
 - [README](../README.md)
 - [Core identity](../SOUL.md)
-- [Cross-platform usage](../docs/cross-platform-usage.md)

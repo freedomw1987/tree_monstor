@@ -25,7 +25,7 @@
 | Identity / philosophy | [`SOUL.md`](../SOUL.md) | 只放身份、流程、紅線和引用；避免變成完整 inventory |
 | Session startup / workspace | [`AGENTS.md`](../AGENTS.md) | Goal 確認、Think/Plan 互動、工作區規範 |
 | Long-term memory | [`MEMORY.md`](../MEMORY.md) | 穩定記憶摘要；不維護完整 skills / roles 清單 |
-| Claude Code entry bridge | [`CLAUDE.md`](../CLAUDE.md) + [`adapters/claude-code/agent.md`](../adapters/claude-code/agent.md) | Claude Code startup / routing only；canonical behavior 仍在 SOUL / AGENTS / MEMORY / docs / skills |
+| Claude Code entry bridge | [`CLAUDE.md`](../CLAUDE.md) + [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Claude Code startup / routing + Dynamic Workflow / 多 agent 編排 features；canonical behavior 仍在 SOUL / AGENTS / MEMORY / docs / skills |
 | Phase workflow | [`docs/phases.md`](phases.md) | Think → Plan → Build → Review → Test → Ship → Reflect |
 | Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、model 選擇原則；不要在其他文件硬寫角色數量 |
 | Task Board format | [`docs/task-board.md`](task-board.md) | Canonical spelling uses hyphen: `docs/task-board.md` |
@@ -43,7 +43,7 @@
 | 文檔 | 狀態 | 內容 |
 |------|------|------|
 | [`docs/00-index.md`](00-index.md) | Index | 本文檔地圖；所有 top-level `docs/*.md` 應在此列出 |
-| [`docs/cross-platform-usage.md`](cross-platform-usage.md) | Reference | Claude Code / Codex 跨平台使用指南 |
+| [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Reference | Claude Code runtime features：Dynamic Workflow / 多 agent 編排 / ultracode mode |
 | [`docs/devops.md`](devops.md) | Runbook | DevOps 規範、process 管理、Zombie 處理 |
 | [`docs/environment-isolation.md`](environment-isolation.md) | Canonical | Dev / Prod / Agent Config 環境隔離規範 |
 | [`docs/failure-policy.md`](failure-policy.md) | Canonical | 失敗處理機制（L1/L2/L3） |
