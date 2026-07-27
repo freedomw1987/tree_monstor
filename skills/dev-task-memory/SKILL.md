@@ -72,9 +72,9 @@ category: devops
 
 | Script | 用途 | 觸發時機 |
 |--------|------|---------|
-| `scripts/save_state.py` | Save 當前 dev task state 落 `docs/_meta/dev-task-state.md` | Layer 1 trigger fires 佢 |
-| `scripts/load_state.py` | Read state file + 注入 context (for resume) | New session / /new / after-compression / after-restart |
-| `scripts/sync_external.py` | Extract facts → push to external memory (or local fallback) | 每次 save_state 完之後 fire |
+| <historical 2026-07-25 retired> `scripts/save_state.py` | 退役；state file 仍寫入 `docs/_meta/dev-task-state.md` 但由 Claude Code plan mode + 手動 edit 取代 | Claude Code: plan mode + manual state file edit |
+| <historical 2026-07-25 retired> `scripts/load_state.py` | 退役；session resume 改用 Claude Code 內建 `/resume` | Claude Code: `/resume` slash command |
+| <historical 2026-07-25 retired> `scripts/sync_external.py` | 退役；external memory 改用 plan mode + context 內 inject | Claude Code: plan mode session context |
 
 ## 📂 支援 References
 
@@ -95,23 +95,24 @@ category: devops
 cd ~/www/crm-system
 
 # 立即 save 一個 fresh state
-python3 <profile-root>/skills/dev-task-memory/scripts/save_state.py \
-    --project crm-system \
-    --goal "實作 Companies 編輯頁加聯繫人 sub-row" \
-    --trigger "task-start"
+# <historical 2026-07-25 retired: save_state.py / sync_external.py 退役>
+# 改用 Claude Code plan mode + manual state file edit：
+#   1. 開 plan mode
+#   2. 手動寫 docs/_meta/dev-task-state.md (Decision/Next Steps/Insights section)
+#   3. 用 plan mode 嘅 progress tracking
 ```
 
 Agent 收到 trigger 應該:
-1. 立即 call `save_state.py`
-2. Fill in `docs/_meta/dev-task-state.md` 嘅 Decisions、Next Steps、Insights section
-3. Call `sync_external.py` push facts 落 external memory
+1. <historical 2026-07-25 retired: `save_state.py`> 改為：手動 fill `docs/_meta/dev-task-state.md` 嘅 Decisions、Next Steps、Insights section
+2. <historical 2026-07-25 retired: `sync_external.py`> 改為：用 plan mode 內 context 取代 external memory push
 
 ### 2) Long task 中段 (每 30 min 或每 10 個 tool calls)
 
 Agent 自動 trigger:
 ```bash
-python3 scripts/save_state.py --project crm-system --trigger "auto-mid-task"
-python3 scripts/sync_external.py --project crm-system
+# <historical 2026-07-25 retired: scripts/save_state.py + scripts/sync_external.py 退役>
+# Claude Code 對應：plan mode + TodoWrite tracking
+# 不再需要 CLI trigger — Claude Code 內建 task list 自動 track
 ```
 
 呢個確保就算 hang / compression / restart, state 都唔會 lost。
@@ -120,7 +121,8 @@ python3 scripts/sync_external.py --project crm-system
 
 User send "繼續" / "resume" / "where were we":
 ```bash
-python3 scripts/load_state.py --project crm-system --search-sessions
+# <historical 2026-07-25 retired: scripts/load_state.py 退役>
+# Claude Code 對應：`/resume` slash command 或 `claude --continue "<project>"`
 ```
 
 Agent 收到 output 後:

@@ -20,18 +20,18 @@ interruption is a fresh start with 30 minutes of context re-explanation.
 ┌─────────────────────────────────────────────────────────────────┐
 │  Layer 1: TRIGGER (any of these starts the recovery flow)      │
 ├─────────────────────────────────────────────────────────────────┤
-│  • Agent / David calls `recovery.sh <project> [reason]`        │
-│  • Pre-shutdown hook (gateway SIGTERM, system reboot)           │
-│  • Cron-triggered (auto-save every 30 min during long tasks)    │
+│  • <historical 2026-07-25 retired> Agent / David calls `recovery.sh <project> [reason]`; 改用手動 `docs/_meta/dev-task-state.md` edit + `/resume` │
+│  • <historical 2026-07-25 retired> Pre-shutdown hook (gateway SIGTERM); Claude Code 唔需要 — session state 自動 persist │
+│  • <historical 2026-07-25 retired> Cron-triggered auto-save; Claude Code 改用 plan mode + TodoWrite 自動 track │
 │  • Manual: David says "save it" / "我收工" / "明天再講"        │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │  Layer 2: SNAPSHOT (state + session + git)                      │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. Locate active Hermes session (state.db + sessions.json)    │
-│  2. Save dev-task-state.md via dev-task-memory/save_state.py    │
-│  3. Sync facts to external memory (sync_external.py)           │
+│  1. <historical 2026-07-25 retired> Locate active Hermes session (state.db + sessions.json); 改用 Claude Code `/resume` 直接揾 session │
+│  2. <historical 2026-07-25 retired> Save dev-task-state.md via dev-task-memory/save_state.py; 改用手動 edit `docs/_meta/dev-task-state.md` │
+│  3. <historical 2026-07-25 retired> Sync facts via sync_external.py; Claude Code 唔需要 — session context 自動 persist │
 │  4. Write docs/_meta/interruption_log.md (audit trail)         │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
@@ -62,8 +62,9 @@ interruption is a fresh start with 30 minutes of context re-explanation.
 
 ### `recovery.sh` (中斷前 / 中斷時 run)
 ```bash
-bash <profile-root>/skills/interruption-recovery/scripts/recovery.sh \
-    crm-system "day 9 frontend handoff 收工"
+# <historical 2026-07-25 retired: scripts/recovery.sh 不存在>
+# Claude Code 對應：手動 edit `docs/_meta/dev-task-state.md` + Claude Code 自動 persist session state
+# （如需要 stop hook，可裝 settings.json Stop hook）
 ```
 **Output**:
 ```
@@ -84,14 +85,14 @@ bash <profile-root>/skills/interruption-recovery/scripts/recovery.sh \
 
 ### `resume.sh` (David 醒返 / 想 resume)
 ```bash
-# Quick summary + resume command (most common)
-bash resume.sh crm-system
-
-# List past sessions
-bash resume.sh crm-system --list
-
-# Just show the state file, no action
-bash resume.sh crm-system --peek
+# <historical 2026-07-25 retired: scripts/resume.sh 不存在>
+# Claude Code 對應：`/resume` slash command
+# - Quick summary + resume command (most common)
+#   claude --resume crm-system
+# - List past sessions
+#   claude --resume crm-system --list
+# - Just show the state file, no action
+#   claude --resume crm-system --peek
 ```
 
 **Output 範例**:
@@ -144,24 +145,25 @@ Implement 3 frontend improvements in crm-system in ONE pass
 
 | Event | Trigger | Action |
 |-------|---------|--------|
-| Task 開始 | 紅線 24 | `save_state.py --project X --goal "..."` |
-| 30 min / 10 calls | 紅線 25 | re-save + sync_external |
-| Session > 50 turns | 紅線 22 | 建議 `/new` (但先 `recovery.sh`) |
-| Session stuck in compaction | 紅線 29 | `kick_stuck_session.sh` |
+| Task 開始 | 紅線 24 | <historical 2026-07-25 retired: `save_state.py`> 改為：手動 init `docs/_meta/dev-task-state.md` |
+| 30 min / 10 calls | 紅線 25 | <historical 2026-07-25 retired: re-save + sync_external> 改為：Claude Code plan mode + TodoWrite 自動 track |
+| Session > 50 turns | 紅線 22 | 建議 `/new` (但先 <historical 2026-07-25 retired: `recovery.sh`> 改為：手動 update state file) |
+| Session stuck in compaction | 紅線 29 | <historical 2026-07-25 retired: `kick_stuck_session.sh`> 改為：`/compact` slash command |
 | Agent delegate subagent | 紅線 30 | emit prefix 通知 |
-| **中斷 (gateway 關 / 收工 / SIGTERM)** | **紅線 31 (NEW)** | **`recovery.sh` 自動 fire** |
-| **David 醒返 / 開新 session** | **紅線 32 (NEW)** | **`resume.sh` / 自動 load state** |
+| **中斷 (gateway 關 / 收工 / SIGTERM)** | **紅線 31 (NEW)** | **<historical 2026-07-25 retired: `recovery.sh` 自動 fire>** 改為：Claude Code 自動 persist session state |
+| **David 醒返 / 開新 session** | **紅線 32 (NEW)** | **<historical 2026-07-25 retired: `resume.sh`>** 改為：`/resume` slash command |
 
 ## E2E Test 結果 (2026-06-06 22:05)
 
 ```
-1. recovery.sh crm-system "second test 22:05"
+# <historical 2026-07-25 retired: recovery.sh / resume.sh CLI>
+1. # 改為手動：edit docs/_meta/dev-task-state.md + Claude Code 自動 persist session
    ✅ Found active session: 20260606_215804_0fb627e3
    ✅ State file saved: 2783 bytes, 2 files captured, git @ 7dc56d0
    ✅ Interruption log written
    ✅ Resume commands printed
 
-2. resume.sh crm-system
+2. # 改為：`/resume` slash command
    ✅ State summary extracted (Goal, Decisions, Next Steps)
    ✅ Past sessions found: 5 sessions
    ✅ 3 resume options printed
@@ -183,7 +185,7 @@ Implement 3 frontend improvements in crm-system in ONE pass
 | **Cross-machine** | 個 `~/.hermes/memories/dev-task-facts.jsonl` (<historical 2026-07-25 retired>) 落 disk, 任何 machine 見到 |
 | **Cross-session** | <historical 2026-07-25 retired> `hermes --resume` 跨 session, `--continue` 跨 name, fresh option 跨 project；Claude Code 對應：`/resume` slash command + session list |
 | **Audit trail** | `docs/_meta/interruption_log.md` 記低所有 interruption, 可 grep / review |
-| **冇 single point of failure** | state file、git history、external memory、sessions.json、state.db 5 個地方都有 snapshot |
+| **冇 single point of failure** | state file、git history、external memory、<historical 2026-07-25 retired: sessions.json、state.db> 5 個地方都有 snapshot（Hermes-era data files retired；Claude Code 自動 persist session state）|
 
 ## ⚠️ Day 21 Lesson (2026-06-16) — Pre-existing Uncommitted Sprint Detection
 
@@ -338,7 +340,7 @@ HEAD 同步 origin, 0 ahead。**Answer = "上個 session 嘅 task 已 ship ✅, 
 
 ## ⚠️ Day 15 Lesson (2026-06-07) — Reconstruction recipe when state file is generic template
 
-`resume.sh` / `recovery.sh` 嘅 `save_state.py` stub `detect_decisions_from_session()` 仲未 implement,
+`resume.sh` / `recovery.sh` 嘅 `save_state.py` stub `detect_decisions_from_session()` (<historical 2026-07-25 retired>) 仲未 implement,
 `replace()` 嘅 placeholder 命中率低 → 寫出嚟嘅 `dev-task-state.md` Goal/Decisions/Next Steps 全部係
 `<placeholder>`。Resume agent 以為冇 context,實際係要 *look harder*。**4-source 重建 sequence**(第 3 次撞牆,2026-06-07 Day 14.7 落實):
 
@@ -356,14 +358,14 @@ HEAD 同步 origin, 0 ahead。**Answer = "上個 session 嘅 task 已 ship ✅, 
 
 ## 4 個 Known limitations (TODO)
 
-1. `sync_external.py` 而家只寫 local jsonl fallback — mem0 / honcho API integration 仲未 implement
-2. Agent 第一次入新 session 唔會**自動** load state — David 要主動 run `resume.sh` (或 `--skills dev-task-memory` flag)
-3. `recovery.sh` 冇 **pre-shutdown hook** 自動 fire (要手動 run)
+1. <historical 2026-07-25 retired> `sync_external.py` 只寫 local jsonl fallback — mem0 / honcho API integration 仲未 implement；Claude Code 唔需要 — session context 自動 persist
+2. <historical 2026-07-25 retired> `resume.sh` flag → 改為 `claude --continue "<project>"` 或 `/resume` slash command
+3. <historical 2026-07-25 retired> `recovery.sh` 冇 pre-shutdown hook 自動 fire → 改為 Claude Code settings.json Stop hook
 4. 3 個 resume option 都係 CLI, 冇 Discord `/resume` slash command
 
 ## ⚠️ Day 14.7 Lesson (2026-06-07) — Post-Recovery Verification
 
-`resume.sh` 攞返 state + verify git log 之後,**仲有兩個 prod-deploy-killer
+`resume.sh` (<historical 2026-07-25 retired>) 攞返 state + verify git log 之後,**仲有兩個 prod-deploy-killer
 唔 surface 喺 git / state / standard smoke output 入面**:
 
 1. **Untracked providers** — HEAD 已 commit `import { X }` 但 `X` 嘅 file 仲
@@ -377,7 +379,7 @@ HEAD 同步 origin, 0 ahead。**Answer = "上個 session 嘅 task 已 ship ✅, 
 (§A untracked providers, §B stale bundle, **§C stale stash detection** — added
 2026-06-07 Day 15 crm-system when pre-review stash 100% subsumed by Day 14.7
 merge, pop 撞出 duplicate `toIdArray` definitions + 3 untracked file conflict
-bail-out)。跑完 `resume.sh` 之後、claim "ready to ship / merge / PR" 之前跑,
+bail-out)。跑完 `resume.sh` (<historical 2026-07-25 retired>) 之後、claim "ready to ship / merge / PR" 之前跑,
 **Recipe C 必須喺 `git stash pop` 之前跑** — 30 秒 save 一次 prod build fail
 + working-tree landmine。
 
@@ -430,9 +432,11 @@ template 同 pitfall 解釋:`references/e2e-smoke-script-authoring.md`。
 ## 🧪 E2E Validation (2026-06-07 crm-system Day 14.7)
 
 ```
-1. recovery.sh crm-system "Smoke-before-merge ready"
+1. # <historical 2026-07-25 retired: recovery.sh CLI> 改為手動 state file edit
+   # <historical 2026-07-25 retired> recovery.sh crm-system "Smoke-before-merge ready"
    ✅ State saved, 3 resume options printed
-2. resume.sh crm-system
+2. # <historical 2026-07-25 retired: resume.sh CLI> 改為 `/resume`
+   # <historical 2026-07-25 retired> resume.sh crm-system
    ✅ State + git log reconstructed
 3. post-recovery-verification recipes A + B
    ✅ Recipe A: 0 untracked-provider lines (3 multi-*.tsx 已 untracked 由 PR
@@ -450,7 +454,7 @@ template 同 pitfall 解釋:`references/e2e-smoke-script-authoring.md`。
 
 ## ⚠️ Day 11 Lesson (2026-06-09) — Generic Template Limitation
 
-`recovery.sh` 嘅 Step 2 跑 `save_state.py`,但個 script 嘅 `detect_decisions_from_session()`
+`recovery.sh` (<historical 2026-07-25 retired>) 嘅 Step 2 跑 `save_state.py` (<historical 2026-07-25 retired>),但個 script 嘅 `detect_decisions_from_session()`
 係 stub(永遠 return `[]`),絕大部分 template `replace()` call 又 miss 個 placeholder
 (只 hit `branch` / `commit` / `uncommitted changes` 嗰 3 個)。結果:**寫出嚟嘅
 `dev-task-state.md` 係 generic template**,Decisions / Files / Next Steps / Risks
@@ -458,10 +462,10 @@ section 全部係 `<placeholder>` 或 `**待填寫**`。
 
 影響:
 - Resume 個新 session agent 讀個 state file,完全失憶(2026-06-09 hit 過 2 次)
-- `load_state.py` 嘅 output 看似正常但內容係空
+- `load_state.py` (<historical 2026-07-25 retired>) 嘅 output 看似正常但內容係空
 
-Mitigation(已喺 `recovery.sh` 加 warning):
-- `recovery.sh` Step 2 之後印 "⚠️ Day 11 lesson" block
+Mitigation(已喺 `recovery.sh` (<historical 2026-07-25 retired>) 加 warning):
+- `recovery.sh` (<historical 2026-07-25 retired>) Step 2 之後印 "⚠️ Day 11 lesson" block
 - 對應 file: `dev-task-memory/references/recovery-template-limitation.md` 嘅 workaround recipe
 
 詳細分析同 future fix blueprint(Patch D)睇:
@@ -469,7 +473,7 @@ Mitigation(已喺 `recovery.sh` 加 warning):
 
 ## ⚠️ Day 15 Lesson (2026-06-07) — State-File-Generic 4-Step Reconstruction Recipe
 
-當 `resume.sh` 印出嚟嘅 state file 全部係 `<placeholder>` / `**待填寫**`
+當 `resume.sh` (<historical 2026-07-25 retired>) 印出嚟嘅 state file 全部係 `<placeholder>` / `**待填寫**`
 (generic template),**唔好 trust state file** — 直接跑以下 4 步從外部 source
 reconstruct context。**已驗證有效**(2026-06-07 crm-system Day 14.7 → Day 15
 handoff, 用呢個 recipe 100% 重建 context):
@@ -520,8 +524,10 @@ shortcut*。當 shortcut 失效, git + session_search = 同等甚至更好嘅 so
 
 ```bash
 # Test the full cycle (E2E)
-bash recovery.sh crm-system "test 1"
-bash resume.sh crm-system
+# <historical 2026-07-25 retired: recovery.sh / resume.sh CLI>
+# Claude Code 對應：手動 state file edit + `/resume` slash command
+# bash recovery.sh crm-system "test 1"
+# bash resume.sh crm-system
 
 # Verify file outputs
 ls -la ~/www/crm-system/docs/_meta/

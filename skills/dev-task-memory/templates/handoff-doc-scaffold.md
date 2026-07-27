@@ -10,8 +10,9 @@
 ```bash
 cd ~/www/<project>
 git checkout <branch>     # branch already current
-# 1. Load state:  python3 <profile-root>/skills/dev-task-memory/scripts/load_state.py \
-#                    --project <name> --search-sessions
+# 1. Load state:  # <historical 2026-07-25 retired: scripts/load_state.py 退役>
+#                  # Claude Code 對應：`/resume` slash command
+#                  # 或手動 read `docs/_meta/dev-task-state.md`
 # 2. Sanity:     git status --short  (expect N untracked files only)
 # 3. Env:        export <VAR>=<value>  # <reason: dev server won't boot without>
 # 4. Start dev:  bun run dev   (in apps/api + apps/web separately)
@@ -169,8 +170,9 @@ recipe §8).
 
 ```bash
 # 1. Reload state
-python3 <profile-root>/skills/dev-task-memory/scripts/load_state.py \
-  --project <name> --search-sessions
+# <historical 2026-07-25 retired: scripts/load_state.py 退役>
+# Claude Code 對應：`/resume` slash command
+# 或手動 read `docs/_meta/dev-task-state.md`
 
 # 2. Verify branch
 cd ~/www/<project> && git status --short && git log --oneline -5

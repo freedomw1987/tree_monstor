@@ -1,7 +1,7 @@
 # Reconstructing context when state file is generic template
 
 Companion to `interruption-recovery` skill's Day 11 lesson. When
-`resume.sh` outputs `<placeholder>` Goal / Decisions / Next Steps, the
+`resume.sh` (<historical 2026-07-25 retired>) outputs `<placeholder>` Goal / Decisions / Next Steps, the
 state file is useless — you have to rebuild from external sources of
 truth. This is the working 4-source sequence.
 
@@ -14,7 +14,7 @@ workaround — this file does.
 
 ## Why state file goes generic
 
-`save_state.py` ships with a stub `detect_decisions_from_session()`
+`save_state.py` (<historical 2026-07-25 retired>) ships with a stub `detect_decisions_from_session()`
 that returns `[]`. The `replace()` calls in the template mostly miss
 placeholders (only `branch` / `commit` / `uncommitted changes` reliably
 hit). Result: the file gets written with `<placeholder>` everywhere
@@ -70,7 +70,7 @@ session_search(session_id="<id>", around_message_id=<match_id>, window=10)
 cat docs/_meta/interruption_log.md
 ```
 
-Each row = one `recovery.sh` invocation with timestamp + reason
+Each row = one <historical 2026-07-25 retired: `recovery.sh` invocation> with timestamp + reason — 改為手動 state file edit timestamp
 ("Day 14.7 frontend handoff 收工"). Helps confirm "did we already
 ship X / were we mid-Y when interrupted" if state is ambiguous.
 
@@ -110,7 +110,7 @@ is to skip the placeholder and jump straight to actionable context.
 ## Worked example (2026-06-07 crm-system Day 14.7)
 
 Inputs:
-- `resume.sh crm-system` → all `<placeholder>` in Goal/Decisions/Next
+- `resume.sh crm-system` (<historical 2026-07-25 retired>) → all `<placeholder>` in Goal/Decisions/Next
 - `git log -3` → `019cab8 Merge feat/system-settings-tabs-2026-06-07: Day 14.7...`
 - `git status` → `nothing to commit, working tree clean`
 - `git log origin/main..HEAD` → empty (sync confirmed)
