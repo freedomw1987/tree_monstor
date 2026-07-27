@@ -163,7 +163,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`pixel-art-preview-workflow`](creative/pixel-art-preview-workflow/SKILL.md) | Generate pixel art characters using Python PIL and preview via Discord. Use when creating game-like visualizations, character sprites, or any pixel art that ne… |
 | [`pretext`](creative/pretext/SKILL.md) | Use when building creative browser demos with @chenglou/pretext — DOM-free text layout for ASCII art, typographic flow around obstacles, text-as-geometry games… |
 | [`sketch`](creative/sketch/SKILL.md) | Throwaway HTML mockups: 2-3 design variants to compare. |
-| [`touchdesigner-mcp`](creative/touchdesigner-mcp/SKILL.md) | Control a running TouchDesigner instance via twozero MCP — create operators, set parameters, wire connections, execute Python, build real-time visuals. 36 nati… |
 
 ### `debugging/`
 
@@ -242,15 +241,6 @@ Skills for working with media content — YouTube transcripts, GIF search, music
 | Skill | Description |
 |-------|-------------|
 | [`spotify`](media/spotify/SKILL.md) | Spotify: play, search, queue, manage playlists and devices. |
-
-### `productivity/`
-
-Skills for document creation, presentations, spreadsheets, and other productivity workflows.
-
-| Skill | Description |
-|-------|-------------|
-| [`airtable`](productivity/airtable/SKILL.md) | Airtable REST API via curl. Records CRUD, filters, upserts. |
-| [`maps`](productivity/maps/SKILL.md) | Geocode, POIs, routes, timezones via OpenStreetMap/OSRM. |
 
 ### `social-media/`
 
