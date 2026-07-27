@@ -5,10 +5,6 @@ version: 1.56.1
 author: 宝玉 (JimLiu)
 license: MIT
 platforms: [linux, macos, windows]
-metadata:
-  hermes:
-    tags: [comic, knowledge-comic, creative, image-generation]
-    homepage: https://github.com/JimLiu/baoyu-skills#baoyu-comic
 ---
 
 # Knowledge Comic Creator

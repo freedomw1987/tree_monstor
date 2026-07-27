@@ -3,9 +3,6 @@ name: aws-ses-email-setup-route53
 description: Set up AWS SES for transactional email — verify domain with DKIM, add Route53 DNS records, configure credentials for SDK use
 version: 1.0.0
 tags: [aws, ses, route53, email, devops]
-metadata:
-  hermes:
-    tags: [aws, ses, route53, email, devops]
 ---
 
 # AWS SES + Route53 Domain Setup

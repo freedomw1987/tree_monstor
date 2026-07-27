@@ -4,10 +4,6 @@ description: Common TypeScript issues when building Elysia.js (Bun) APIs with ty
 version: 1.0.0
 author: Hermes Agent
 license: MIT
-metadata:
-  hermes:
-    tags: [elysia, bun, typescript, backend, api]
-    related_skills: [systematic-debugging, backend-rbac-audit-log, bun-elysia-react-vite-stack]
 ---
 
 # Elysia.js TypeScript Workarounds

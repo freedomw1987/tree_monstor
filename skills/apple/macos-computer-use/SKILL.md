@@ -7,11 +7,6 @@ description: |
   `computer_use` tool is available.
 version: 1.0.0
 platforms: [macos]
-metadata:
-  hermes:
-    tags: [computer-use, macos, desktop, automation, gui]
-    category: desktop
-    related_skills: [browser]
 ---
 
 # macOS Computer Use (universal, any-model)

@@ -3,10 +3,6 @@ name: test-coverage-table
 description: Capabilities-table template for spec → implementation → test coverage enforcement. Use at the start of any implementation task to derive a coverage matrix that the spec reviewer can audit.
 version: 1.0.0
 platforms: [linux, macos, windows]
-metadata:
-  hermes:
-    tags: [testing, spec, coverage, subagent, quality]
-    related_skills: [subagent-driven-development, test-driven-development, writing-plans]
 ---
 
 # Test Coverage Table — 強制 Capabilities → Implementation → Test Matrix

@@ -4,10 +4,6 @@ description: Fix "401 Unauthorized" in Elysia.js when JWT tokens signed by auth 
 version: 1.0.0
 author: Hermes Agent
 tags: [debugging, elysia, jwt, bun, auth]
-metadata:
-  hermes:
-    tags: [debugging, elysia, jwt, auth, bun]
-    related_skills: [elysia-route-conflict-debug, elysia-typescript-workarounds, systematic-debugging]
 ---
 
 # Elysia.js JWT Plugin Singleton Bug

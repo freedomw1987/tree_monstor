@@ -3,9 +3,6 @@ name: feature-plan-alignment
 description: Plan-stage alignment workflow for non-trivial feature work where David wants to review direction BEFORE code is written. Produces a structured plan doc (MD + boss JSON) with resolved decisions (each marked `chosen_by`), a step-by-step implementation breakdown, risk surface, and ship-gate impact — then notifies David on Discord for go/no-go. Trigger when David says 「B吧」「慢慢」「plan 先」「畀我睇下 plan」「可以 plan 嗎」 OR when a feature is non-trivial (>5 files, 4+ commits, or has a real design choice between A/B/C/D options).
 version: 1.0.0
 platforms: [macos, linux]
-metadata:
-  hermes:
-    tags: [plan, alignment, david-review, pre-build, think, feature, workflow, decision]
 ---
 
 # Feature Plan Alignment

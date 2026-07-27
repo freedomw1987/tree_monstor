@@ -5,11 +5,6 @@ version: 1.57.0
 author: 宝玉 (JimLiu)
 license: MIT
 platforms: [linux, macos, windows]
-metadata:
-  hermes:
-    tags: [article-illustration, creative, image-generation]
-    category: creative
-    homepage: https://github.com/JimLiu/baoyu-skills#baoyu-article-illustrator
 ---
 
 # Article Illustrator

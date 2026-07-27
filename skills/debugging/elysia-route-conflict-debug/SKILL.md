@@ -4,10 +4,6 @@ description: Debug Elysia.js route conflicts — server fails to start with "dif
 version: 1.0.0
 author: Hermes Agent
 tags: [debugging, elysia, route, bun]
-metadata:
-  hermes:
-    tags: [debugging, elysia, route, bun]
-    related_skills: [elysia-typescript-workarounds, systematic-debugging]
 ---
 
 # Elysia Route Conflict Debug

@@ -5,12 +5,6 @@ version: 2.5.1
 author: Siqi Chen (@blader, https://github.com/blader/humanizer), ported by Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
-metadata:
-  hermes:
-    tags: [writing, editing, humanize, anti-ai-slop, voice, prose, text]
-    category: creative
-    homepage: https://github.com/blader/humanizer
-    related_skills: [songwriting-and-ai-music]
 ---
 
 # Humanizer: Remove AI Writing Patterns

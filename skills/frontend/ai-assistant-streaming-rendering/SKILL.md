@@ -4,10 +4,6 @@ description: When building a chat / AI assistant UI that streams tokens from an 
 version: 1.1.0
 author: Hermes Agent
 license: MIT
-metadata:
-  hermes:
-    tags: [ai, chat, streaming, markdown, chart, react, frontend, ux]
-    related_skills: [react-router-v7-patterns, react-context-auth-user-switch, chat-frontend-backend-debug, regression-guard]
 ---
 
 # AI Assistant Streaming + Rich Rendering
