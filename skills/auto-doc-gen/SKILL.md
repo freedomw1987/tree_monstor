@@ -5,6 +5,8 @@ trigger: "api docs / 自動文檔 / 生成文檔 / update docs"
 category: productivity
 ---
 
+
+Last-verified: 2026-07-28
 # Auto Doc Generator
 
 自動從代碼註解生成 API 文檔，確保文檔與代碼同步。

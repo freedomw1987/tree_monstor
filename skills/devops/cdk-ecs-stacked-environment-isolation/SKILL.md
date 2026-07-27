@@ -5,6 +5,8 @@ tags: ["cdk", "ecs", "fargate", "aws", "deployment", "environment-isolation"]
 related_skills: ["cdk-v2-deployment-patterns", "systematic-debugging"]
 ---
 
+
+Last-verified: 2026-07-28
 # CDK ECS 部署環境隔離注意事項
 
 ## 核心問題

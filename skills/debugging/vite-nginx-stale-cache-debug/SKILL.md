@@ -5,6 +5,8 @@ category: debugging
 tags: [vite, nginx, caching, react, deployment]
 ---
 
+
+Last-verified: 2026-07-28
 # Vite + Nginx Stale Cache Debug
 
 ## Symptoms

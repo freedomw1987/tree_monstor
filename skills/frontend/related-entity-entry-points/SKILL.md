@@ -4,6 +4,8 @@ description: Build the full UI flow that lets users navigate from a parent entit
 tags: [frontend, react, entity-relation, ux, crm, sales, admin, react-router]
 ---
 
+
+Last-verified: 2026-07-28
 # Related-Entity Entry Points
 
 > **The "睇唔到 = 冇做" 鐵律 for parent → child UI flows.**

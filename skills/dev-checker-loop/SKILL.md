@@ -12,6 +12,8 @@ trigger: |
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Dev Checker Loop — docs/STATE.md 驅動的開發/檢查協作
 
 > **Status:** Operational workflow. Use when a downstream-project development task needs a built-in quality gate: a dev agent implements, an independent checker agent verifies with real evidence, and both coordinate through the project's `docs/STATE.md` until everything passes or an escalation limit is hit.

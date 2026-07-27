@@ -3,6 +3,8 @@ name: caddy-spa-api-proxy-deploy
 description: Deploy Vite SPA + Bun API backend behind Caddy reverse proxy in Docker with host networking
 ---
 
+
+Last-verified: 2026-07-28
 # Caddy SPA + API Reverse Proxy Deployment
 
 Deploy a Vite SPA frontend and Bun/Elysia API backend behind Caddy reverse proxy in Docker.

@@ -11,6 +11,8 @@ trigger: |
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Structural Doc Batch — 8 份文檔 Batch Operation
 
 > **為什麼需要這個 skill** — SOUL.md 紅線 10 + 11 + 13 規定:

@@ -3,6 +3,8 @@ name: docker-port-forward-shadow-debug
 description: Diagnose when Docker containers shadow host services on well-known ports (80/443), causing reverse-proxy traffic to be intercepted by the wrong process.
 ---
 
+
+Last-verified: 2026-07-28
 # Docker Port Forward Shadow Debug
 
 ## Trigger Conditions

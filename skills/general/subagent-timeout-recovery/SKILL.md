@@ -10,6 +10,8 @@ metadata:
   tags: [delegation, subagent, timeout, recovery]
   related_skills: [development-watchdog]
 ---
+
+Last-verified: 2026-07-28
 # subagent-timeout-recovery
 
 Subagent 執行超時後的接管流程。

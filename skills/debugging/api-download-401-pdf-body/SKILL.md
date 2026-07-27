@@ -4,6 +4,8 @@ description: Debug why file downloads via fetch+blob return HTML/incorrect conte
 tags: [debugging, http, download, auth, fetch-blob]
 related_skills: [systematic-debugging]
 ---
+
+Last-verified: 2026-07-28
 # API Download Returns Wrong Content (401 but file in body)
 
 ## Symptom

@@ -4,6 +4,8 @@ description: AWS CDK 部署規則 — 只對 CDK 修改，嚴禁 CLI 手動建�
 trigger: 任何 CDK 部署、生產環境變更、或 AWS 資源操作之前
 ---
 
+
+Last-verified: 2026-07-28
 # CDK 部署規則
 
 ## 核心原則

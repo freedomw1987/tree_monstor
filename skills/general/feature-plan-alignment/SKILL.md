@@ -6,6 +6,8 @@ metadata:
   hermes:
     tags: [plan, alignment, david-review, pre-build, think, feature, workflow, decision]
 ---
+
+Last-verified: 2026-07-28
 # Feature Plan Alignment
 
 > **Goal**: When a feature is non-trivial, get David to **sign off on direction before code is written** — by producing a structured plan artifact (MD + boss JSON + Discord notification) that is short enough to read in 5 minutes and concrete enough to spot disagreements early.

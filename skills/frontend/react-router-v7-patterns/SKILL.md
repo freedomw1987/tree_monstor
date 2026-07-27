@@ -17,6 +17,8 @@ trigger: |
 category: frontend
 ---
 
+
+Last-verified: 2026-07-28
 # React Router v7 Patterns & Pitfalls
 
 Class-level lessons from `crm-system` Day 14.7 (2026-06-07) — refactored

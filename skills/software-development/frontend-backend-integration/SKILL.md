@@ -5,6 +5,8 @@ trigger: "writing a new API client wrapper / refactoring a page into a tabbed la
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Frontend-Backend Integration Discipline
 
 When writing frontend code that integrates with a backend API, the most common class of bug is **wire shape drift** — the client wrapper uses field names/types that the backend doesn't actually return/accept. The Plan/spec doc is a wish list, not a contract; the backend code is the contract.

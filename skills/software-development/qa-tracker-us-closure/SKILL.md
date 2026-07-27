@@ -3,6 +3,8 @@ name: qa-tracker-us-closure
 description: Per-US test closure cadence for closing out NONE/PARTIAL P0 user stories in a project's QA-TRACKER.md. Class-level, applies to any project that uses the US ↔ Test 對照 tracker pattern (PM-System, crm-system, llm-acp, future projects). Trigger when a project's QA tracker shows rows with NONE / PARTIAL / DRAFT for P0 user stories, or when the user says "close out P0 US test gap", "Sprint N P0 test push", "做嗰啲 NONE 嘅 US", "ship 嗰啲 P0 test by test", or "audit NONE US". Per-US rhythm is audit source, write derive-or-source test, run + fix, commit + tracker sync + push. Distinct from a multi-axis code review (see `code-review-pipeline`) and from full Sprint retrospective writing.
 ---
 
+
+Last-verified: 2026-07-28
 # QA Tracker — Per-US Test Closure Cadence
 
 Close out the P0 user stories that show as NONE / PARTIAL in `docs/QA-TRACKER.md`, one commit at a time, with a per-US test file and a tracker sync.

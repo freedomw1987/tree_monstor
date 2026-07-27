@@ -9,6 +9,8 @@ metadata:
     tags: [sketch, mockup, design, ui, prototype, html, variants, exploration, wireframe, comparison]
     related_skills: [spike, claude-design, popular-web-designs, excalidraw]
 ---
+
+Last-verified: 2026-07-28
 # Sketch
 
 Use this skill when the user wants to **see a design direction before committing** to one — exploring a UI/UX idea as disposable HTML mockups. The point is to generate 2-3 interactive variants so the user can compare visual directions side-by-side, not to produce shippable code.

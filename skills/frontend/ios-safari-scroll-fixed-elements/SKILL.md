@@ -3,6 +3,8 @@ name: ios-safari-scroll-fixed-elements
 description: Fix iOS Safari scrolling issues for elements using position:fixed inside overflow:hidden bodies. For React apps where a page (Login, Settings, etc.) uses a fixed-position root div that can't scroll on mobile Safari.
 ---
 
+
+Last-verified: 2026-07-28
 # iOS Safari Scrolling Fix for Fixed-Position Elements
 
 ## The Problem

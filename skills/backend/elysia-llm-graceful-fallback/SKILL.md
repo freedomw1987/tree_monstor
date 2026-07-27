@@ -4,6 +4,8 @@ description: Elysia.js route pattern for graceful LLM/API fallback — return re
 tags: [elysia, typescript, error-handling, llm]
 ---
 
+
+Last-verified: 2026-07-28
 # Graceful LLM Fallback in Elysia Routes
 
 ## 背景

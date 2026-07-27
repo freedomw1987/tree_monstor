@@ -4,6 +4,8 @@ description: When a file path is written with mixed case (e.g. `docs/API.md`) on
 category: devops
 ---
 
+
+Last-verified: 2026-07-28
 # Mac APFS Case-Insensitive Git Tracking
 
 ## The problem

@@ -8,6 +8,8 @@ metadata:
     tags: [debugging, python, pdb, debugpy, breakpoints, dap, post-mortem]
     related_skills: [systematic-debugging, node-inspect-debugger]
 ---
+
+Last-verified: 2026-07-28
 # Python Debugger (pdb + debugpy)
 
 ## Overview

@@ -4,6 +4,8 @@ description: CDK ECS Fargate stack rollback cleanup when BackendSg deletion fail
 tags: [aws, cdk, ecs, rollback, security-group]
 ---
 
+
+Last-verified: 2026-07-28
 # CDK ECS Fargate Rollback Cleanup
 
 ## Trigger Condition

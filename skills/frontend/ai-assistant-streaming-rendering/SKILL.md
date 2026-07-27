@@ -7,6 +7,8 @@ metadata:
     tags: [ai, chat, streaming, markdown, chart, react, frontend, ux]
     related_skills: [react-router-v7-patterns, react-context-auth-user-switch, chat-frontend-backend-debug, regression-guard]
 ---
+
+Last-verified: 2026-07-28
 # AI Assistant Streaming + Rich Rendering
 
 ## What this skill covers

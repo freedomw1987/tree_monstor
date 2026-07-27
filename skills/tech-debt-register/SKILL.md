@@ -5,6 +5,8 @@ trigger: "tech debt / 技術債 / 技術負債 / debt register"
 category: productivity
 ---
 
+
+Last-verified: 2026-07-28
 # Tech Debt Register
 
 系統化記錄、優先級排序、和規劃償還技術債。

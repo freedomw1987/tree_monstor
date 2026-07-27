@@ -3,6 +3,8 @@ name: docker-multi-stage-dist-overwrite
 description: Fix Docker multi-stage build where COPY . . overwrites fresh dist/ with stale host files due to missing .dockerignore
 ---
 
+
+Last-verified: 2026-07-28
 # Docker Multi-stage Build: dist/ Overwrite Bug
 
 ## Problem

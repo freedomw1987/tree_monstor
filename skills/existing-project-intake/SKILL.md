@@ -11,6 +11,8 @@ trigger: |
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Existing Project Intake — Source-first baseline before Build
 
 > **Status:** Operational workflow. Use before modifying an existing project whose docs, tests, QA tracker, or regression endpoints are incomplete, stale, or unknown.

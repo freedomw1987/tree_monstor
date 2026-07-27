@@ -8,6 +8,8 @@ prerequisites:
   - task-board (任務追蹤機制)
 ---
 
+
+Last-verified: 2026-07-28
 # Ultrawork — Harness Mode for Complex Tasks
 
 ## 角色定位

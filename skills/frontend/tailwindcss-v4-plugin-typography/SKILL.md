@@ -3,6 +3,8 @@ name: tailwindcss-v4-plugin-typography
 description: Fix Tailwind CSS v4 plugin registration for @tailwindcss/typography and prose classes
 ---
 
+
+Last-verified: 2026-07-28
 # Tailwind CSS v4 — Plugin Registration (typography etc.)
 
 ## Problem

@@ -8,6 +8,8 @@ metadata:
     tags: [design, design-system, tokens, ui, accessibility, wcag, tailwind, dtcg, google]
     related_skills: [popular-web-designs, claude-design, excalidraw, architecture-diagram]
 ---
+
+Last-verified: 2026-07-28
 # DESIGN.md Skill
 
 DESIGN.md is Google's open spec (Apache-2.0, `google-labs-code/design.md`) for

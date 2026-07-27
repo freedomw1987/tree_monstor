@@ -7,6 +7,8 @@ triggers:
   - "bun build output not found by sudo cp"
 ---
 
+
+Last-verified: 2026-07-28
 # Bun Frontend Build & Deploy with Sudo
 
 ## Problem

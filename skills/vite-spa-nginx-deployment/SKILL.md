@@ -5,6 +5,8 @@ metadata:
   hermes:
     tags: [devops, nginx, vite, react, deployment]
 ---
+
+Last-verified: 2026-07-28
 # Vite SPA + nginx Static Deployment
 
 ## Key Principles

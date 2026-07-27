@@ -4,6 +4,8 @@ description: Prisma seed 一定要每次重設 role 關聯，否則 AdminPanel �
 trigger: 當 Prisma seed 需要配合 AdminPanel 角色管理功能時
 ---
 
+
+Last-verified: 2026-07-28
 # Prisma Seed 重設模式（配合 AdminPanel 角色管理）
 
 ## 問題

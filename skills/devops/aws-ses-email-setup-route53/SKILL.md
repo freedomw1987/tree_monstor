@@ -6,6 +6,8 @@ metadata:
   hermes:
     tags: [aws, ses, route53, email, devops]
 ---
+
+Last-verified: 2026-07-28
 # AWS SES + Route53 Domain Setup
 
 ## Prerequisites

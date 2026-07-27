@@ -4,6 +4,8 @@ description: "Debug Prisma schema vs code mismatches: explicit @relation fields 
 trigger: "Any Prisma error involving: Unknown argument 'X' on a model create/update, Argument 'X' is missing, Invalid `X` invocation, `prisma generate` validation error 'relation field X on model Y is missing an opposite relation field on model Z', a field defined as a relation in schema but code uses it as a scalar (or vice versa), or `data: body as never` cast hiding a real Prisma relation-mapping error."
 ---
 
+
+Last-verified: 2026-07-28
 # Prisma Explicit Relation — Schema/Code Mismatch Debugging
 
 ## Trigger

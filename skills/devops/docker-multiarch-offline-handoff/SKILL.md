@@ -3,6 +3,8 @@ name: docker-multiarch-offline-handoff
 description: Build multi-arch (linux/amd64 + linux/arm64) Docker images and hand them to a customer as tarball(s) without a registry. Use when the user needs x86+arm support AND cannot use Docker Hub/ECR/localhost registry. Covers the `docker save` / `docker load` round-trip with per-arch tag handling and the known pitfalls of trying to create local-only manifest lists.
 ---
 
+
+Last-verified: 2026-07-28
 # Docker Multi-Arch Image Handoff (No Registry)
 
 Use this skill when you need to ship Docker images to a customer/server that may be **x86_64 (amd64) OR aarch64 (arm64)**, **without a Docker registry** (no Docker Hub, no ECR, no localhost:5000). The customer is expected to `docker load` tarballs on their own machine.

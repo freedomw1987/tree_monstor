@@ -5,6 +5,8 @@ trigger: "adding pagination to a list page / list page is slow with many rows / 
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Pagination With Preserved Aggregates
 
 The recurring failure mode: someone adds `findMany({skip, take})` to fix slow list pages, and then **summary stats, page count, and Excel exports silently break** — because the same `findMany` was the only place computing totals, and now it only sees the current page.

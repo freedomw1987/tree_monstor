@@ -7,6 +7,8 @@ metadata:
     tags: [debugging, elysia, jwt, auth, bun]
     related_skills: [elysia-route-conflict-debug, elysia-typescript-workarounds, systematic-debugging]
 ---
+
+Last-verified: 2026-07-28
 # Elysia.js JWT Plugin Singleton Bug
 
 ## Symptom

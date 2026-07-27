@@ -7,6 +7,8 @@ metadata:
     tags: [elysia, bun, typescript, backend, api]
     related_skills: [systematic-debugging, backend-rbac-audit-log, bun-elysia-react-vite-stack]
 ---
+
+Last-verified: 2026-07-28
 # Elysia.js TypeScript Workarounds
 
 Common TypeScript issues encountered when building Elysia.js (Bun) APIs with typed routes, and how to resolve them.

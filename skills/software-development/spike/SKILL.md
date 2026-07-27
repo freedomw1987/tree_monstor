@@ -9,6 +9,8 @@ metadata:
     tags: [spike, prototype, experiment, feasibility, throwaway, exploration, research, planning, mvp, proof-of-concept]
     related_skills: [sketch, writing-plans, subagent-driven-development, plan]
 ---
+
+Last-verified: 2026-07-28
 # Spike
 
 Use this skill when the user wants to **feel out an idea** before committing to a real build — validating feasibility, comparing approaches, or surfacing unknowns that no amount of research will answer. Spikes are disposable by design. Throw them away once they've paid their debt.

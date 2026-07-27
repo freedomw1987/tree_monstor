@@ -5,6 +5,8 @@ trigger: "wrap multiple pages into tabs / sub-route tab nav / consolidate admin 
 category: frontend
 ---
 
+
+Last-verified: 2026-07-28
 # React Router Sub-Route Tab Refactor
 
 Pattern for: N sibling pages (Users / Roles / AI / Tax / Audit …) at

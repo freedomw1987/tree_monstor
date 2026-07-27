@@ -3,6 +3,8 @@ name: chat-frontend-backend-debug
 description: Debug WhatsApp-style chat UI where AI doesn't respond — covers API format mismatch, missing dispatch, React state bugs, mobile layout
 ---
 
+
+Last-verified: 2026-07-28
 # Chat Frontend ↔ Backend Integration Debugging
 
 ## Problem

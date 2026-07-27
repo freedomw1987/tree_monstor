@@ -14,6 +14,8 @@ trigger: |
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Regression Guard — 防舊 Bug 翻發
 
 > **為什麼需要這個 skill** — David 嘅實際困擾(2026-06-06 kanban task):

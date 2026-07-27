@@ -7,6 +7,8 @@ metadata:
     tags: [debugging, elysia, route, bun]
     related_skills: [elysia-typescript-workarounds, systematic-debugging]
 ---
+
+Last-verified: 2026-07-28
 # Elysia Route Conflict Debug
 
 ## Symptom
