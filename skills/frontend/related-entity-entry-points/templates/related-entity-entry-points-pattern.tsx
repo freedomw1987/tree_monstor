@@ -7,7 +7,7 @@
 // Pattern 4 — Grandchild page 接收 multi-preset, auto-open builder
 // Pattern 5 — Sidebar ↔ FAB positioning
 //
-// 全套 skill 喺 ~/.hermes/profiles/developer/skills/frontend/related-entity-entry-points/
+// 全套 skill 喺 <profile-root>/skills/frontend/related-entity-entry-points/
 
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
