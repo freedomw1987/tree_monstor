@@ -60,7 +60,7 @@ interruption is a fresh start with 30 minutes of context re-explanation.
 
 ## 兩個 User-Facing Commands
 
-### `recovery.sh` (中斷前 / 中斷時 run)
+### Recovery flow — Hermes `recovery.sh` (retired 2026-07-25, 對應 Claude Code 中斷前 / 中斷時)
 ```bash
 # <historical 2026-07-25 retired: scripts/recovery.sh 不存在>
 # Claude Code 對應：手動 edit `docs/_meta/dev-task-state.md` + Claude Code 自動 persist session state
@@ -83,7 +83,7 @@ interruption is a fresh start with 30 minutes of context re-explanation.
   # Claude Code: 開新 session + skills frontmatter 自動 load state file
 ```
 
-### `resume.sh` (David 醒返 / 想 resume)
+### Resume flow — Hermes `resume.sh` (retired 2026-07-25, 對應 Claude Code `/resume` 或 `/resume "<project>"`)
 ```bash
 # <historical 2026-07-25 retired: scripts/resume.sh 不存在>
 # Claude Code 對應：`/resume` slash command
