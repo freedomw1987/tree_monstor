@@ -1,6 +1,7 @@
 ---
 name: tailwindcss-v4-plugin-typography
 description: Fix Tailwind CSS v4 plugin registration for @tailwindcss/typography and prose classes
+applicability: generic-pattern
 ---
 
 

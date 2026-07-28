@@ -3,6 +3,7 @@ name: design-md
 description: Author/validate/export Google's DESIGN.md token spec files.
 license: MIT
 platforms: [linux, macos, windows]
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

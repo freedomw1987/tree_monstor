@@ -2,6 +2,7 @@
 name: ai-agent-tool-calling
 description: Build a tool-calling AI agent (function calling + tool registry + conversation memory + RAG over app data) for any product — CRM, support, internal tools. Use when the user wants a chat assistant that can ACT on the database (not just answer questions), multi-step reasoning, or integration with Slack/WhatsApp/email channels. Works with OpenAI / Anthropic / OpenRouter / MiniMax compatible APIs.
 tags: ["ai-agent", "tool-calling", "function-calling", "openai", "anthropic", "rag", "memory", "langchain", "mastra", "langgraph", "chatbot", "whatsapp", "slack"]
+applicability: generic-pattern
 ---
 
 

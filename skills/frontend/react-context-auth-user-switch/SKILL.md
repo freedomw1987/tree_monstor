@@ -2,6 +2,7 @@
 name: react-context-auth-user-switch
 description: Detect user login/logout within same tab using React Context + localStorage — fixes stale user data when switching accounts without full page reload
 tags: ['react', 'context', 'localstorage', 'auth', 'hooks']
+applicability: generic-pattern
 ---
 
 

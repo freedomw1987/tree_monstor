@@ -2,6 +2,7 @@
 name: prisma-add-column-existing-db
 description: Add a new column to an existing Prisma model when the database is already in production and you cannot run prisma migrate reset
 category: backend
+applicability: generic-pattern
 ---
 
 

@@ -2,6 +2,7 @@
 name: bun-env-file-for-dev
 description: Bun dev server requires --env-file flag to load .env; AWS SDK needs region env vars
 tags: ["bun", "env", "dotenv", "aws-sdk"]
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

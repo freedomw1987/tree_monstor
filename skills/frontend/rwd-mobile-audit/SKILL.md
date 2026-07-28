@@ -2,6 +2,7 @@
 name: rwd-mobile-audit
 description: Audit and fix a web app for mobile RWD (responsive web design) using Playwright at iPhone viewport (390x844). Use when user says 'RWD', '手機兼容', 'mobile compatible', '手機睇', 'responsive', or when delivering a web app and you need to verify it works on small screens before declaring done.
 tags: ["rwd", "mobile", "responsive", "playwright", "qa", "frontend"]
+applicability: generic-pattern
 ---
 
 

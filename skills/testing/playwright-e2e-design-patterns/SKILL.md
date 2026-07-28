@@ -2,6 +2,7 @@
 name: playwright-e2e-design-patterns
 description: E2E test design patterns for Playwright + full-stack (Docker) apps — caller IP isolation vs backend rate limit (RG-008/RG-012 invariant), per-test setup hooks, Tiptap/ProseMirror rich-text-editor interaction patterns (ClipboardEvent + image/* File for paste, NOT innerHTML+dispatchEvent), graceful seed-data fallback (try-fixture → first-item → self-create), 4-option triage when a Playwright pre-existing failure reveals a real backend bug (default-to-fix over skip), 7-step diagnostic that starts with `git status` + `docker exec` source check, and "implementation vs tracker plan divergence" reconciliation. Trigger when designing E2E suites, debugging flaky 429s, testing Tiptap editors, writing fixtures, triaging pre-existing E2E failures, or when tracker plan says X but implementation does Y.
 tags: ["playwright", "e2e", "testing", "rate-limit", "caller-identity", "docker", "tiptap", "prosemirror", "rich-text-editor", "seed-data", "fixture-resilience", "pre-existing-failure-triage", "rbac-bug-discovery", "tracker-divergence", "spec-alignment", "uncommitted-work-check", "stale-container-check"]
+applicability: generic-pattern
 ---
 
 

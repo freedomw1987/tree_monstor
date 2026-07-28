@@ -1,6 +1,7 @@
 ---
 name: agent-stuck-recovery
 description: Recover when the main agent is stuck mid-task. Search or read_file loops expanding without progress, response is explanation-only, or user sends "stop" / single-letter cues. Ship a minimal real artifact (ADR, spec doc, config) within a HARD 4-5 tool call budget. Distinct from subagent timeouts and session interruptions, this covers the gap where the main agent is still LIVE but has lost forward motion.
+applicability: generic-pattern
 ---
 
 

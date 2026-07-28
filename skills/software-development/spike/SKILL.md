@@ -4,6 +4,7 @@ description: "Throwaway experiments to validate an idea before build."
 author: adapted from gsd-build/get-shit-done
 license: MIT
 platforms: [linux, macos, windows]
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

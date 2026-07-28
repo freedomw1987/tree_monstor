@@ -7,6 +7,7 @@ triggers:
   - "elysia static files uploads"
   - "attachment upload endpoint"
   - "multipart form data parser"
+applicability: generic-pattern
 ---
 
 

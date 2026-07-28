@@ -8,6 +8,7 @@ tags:
   - bun
   - api-gateway
   - cdk
+applicability: generic-pattern
 ---
 
 

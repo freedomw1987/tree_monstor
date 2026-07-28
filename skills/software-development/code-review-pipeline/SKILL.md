@@ -10,6 +10,7 @@ description: |
   (Step 14/15/16 mechanics), `regression-guard` (RG-XXX entry
   format), and `interruption-recovery` (stash WIP before patch).
 tags: ["code-review", "security", "architecture", "ship-gate", "pre-prod", "audit", "merge"]
+applicability: generic-pattern
 ---
 
 

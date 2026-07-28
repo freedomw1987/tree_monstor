@@ -3,6 +3,7 @@ name: frontend-backend-integration
 description: Discipline for writing frontend code that wraps backend endpoints — verify wire shape against backend source (not plan/spec doc), handle prefill races, refactor pages into tabbed layouts without double chrome, wire URL-driven Tabs.
 trigger: "writing a new API client wrapper / refactoring a page into a tabbed layout / pre-filling a form from a network call / collapsing sidebar nav / when a Plan doc and the actual backend disagree on field names / 'add a Settings tab' / 'move pages into a layout' / 'X and Y should look the same' / 'X 要同 Y 一致' (modal/form duplication → extract single component) / TypeScript TS7006 'Parameter implicitly has an any type' inside a component with `({...}: any)` props"
 category: software-development
+applicability: generic-pattern
 ---
 
 

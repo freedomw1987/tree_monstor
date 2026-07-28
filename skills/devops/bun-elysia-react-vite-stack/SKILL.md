@@ -2,6 +2,7 @@
 name: bun-elysia-react-vite-stack
 description: Bootstrap a local full-stack TypeScript app with Bun 1.2 + Elysia backend + Vite 8 + React 19 + Tailwind v4. SQLite (dev) + Postgres (prod recommended) via Prisma 5. Use when user wants a quick local dev app (CRM, MVP, internal tool, exam app) and stack is the same family.
 tags: ["bun", "elysia", "react", "vite", "tailwind", "prisma", "fullstack", "stack", "bootstrap", "sqlite"]
+applicability: generic-pattern
 ---
 
 

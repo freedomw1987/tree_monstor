@@ -2,6 +2,7 @@
 name: related-entity-entry-points
 description: Build the full UI flow that lets users navigate from a parent entity (Company, Deal, Order, Project) to a child entity (Deal, Quotation, LineItem, Task) and create it in place. Covers (1) detail-page "create child" buttons that always render, (2) useSearchParams-driven dialog auto-open + URL strip on close, (3) Kanban-card level actions for related counts, (4) the empty-state affordance rule, and (5) multi-preset child pages (entity linked to multiple parents). Trigger when user reports "I can see X but cannot create Y from it" or "I cannot find where to add Z" on any 1-to-many entity relationship. Class-level — covers CRM, ERP, e-commerce admin, project tools, anywhere parent-child entity UX exists.
 tags: [frontend, react, entity-relation, ux, crm, sales, admin, react-router]
+applicability: generic-pattern
 ---
 
 

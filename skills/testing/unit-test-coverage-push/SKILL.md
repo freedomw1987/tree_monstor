@@ -10,6 +10,7 @@ description: |
   commit series + tracker sync. Pairs with regression-guard, tech-debt-register, and
   code-review-pipeline.
 tags: ["unit-test", "qa-tracker", "test-coverage", "sprint", "p0", "derive-helper", "red-line-12", "red-line-16"]
+applicability: generic-pattern
 ---
 
 

@@ -4,6 +4,7 @@ description: Design one-off HTML artifacts (landing, deck, prototype).
 author: BadTechBandit
 license: MIT
 platforms: [linux, macos, windows]
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

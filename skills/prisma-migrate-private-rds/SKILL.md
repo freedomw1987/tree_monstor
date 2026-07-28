@@ -2,6 +2,7 @@
 name: prisma-migrate-private-rds
 description: Run Prisma migrations on private RDS via ECS one-off task when CodeBuild can't reach the database
 category: devops
+applicability: generic-pattern
 ---
 
 

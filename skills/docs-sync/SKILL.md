@@ -1,6 +1,7 @@
 ---
 name: docs-sync
 description: Synchronizes review feedback, QA findings, user corrections, and code-review suggestions into durable project docs before Build, merge, or ship.
+applicability: operational
 ---
 
 

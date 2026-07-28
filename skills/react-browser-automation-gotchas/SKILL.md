@@ -1,6 +1,7 @@
 ---
 name: react-browser-automation-gotchas
 description: Debug React UI state issues when Playwright/browser automation fails to trigger React synthetic events. Use when browser_click() doesn't update React state.
+applicability: generic-pattern
 ---
 
 

@@ -3,6 +3,7 @@ name: react-router-tab-subroute-refactor
 description: Consolidate multiple top-level pages into one URL-prefix with N child sub-routes + a shared tab-nav layout. React Router v6/v7 + shadcn Tabs (Radix) + Tailwind. Use when "wrap X, Y, Z into tabs", "settings has too many nav links", "sub-route tab navigation", or refactoring an admin page cluster.
 trigger: "wrap multiple pages into tabs / sub-route tab nav / consolidate admin pages / settings has too many nav links / 一個 URL 切換多個 sub-page"
 category: frontend
+applicability: generic-pattern
 ---
 
 

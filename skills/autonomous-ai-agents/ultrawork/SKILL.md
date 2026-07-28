@@ -6,6 +6,7 @@ category: autonomous-ai-agents
 prerequisites:
   - orchestrator (理解任務協調基本概念)
   - task-board (任務追蹤機制)
+applicability: generic-pattern
 ---
 
 

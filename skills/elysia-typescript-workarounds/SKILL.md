@@ -2,6 +2,7 @@
 name: elysia-typescript-workarounds
 description: Common TypeScript issues when building Elysia.js (Bun) APIs with typed routes — route parameter conflicts, derive context typing, t.Recursive, and inline handler patterns.
 license: MIT
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

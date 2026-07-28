@@ -1,6 +1,7 @@
 ---
 name: vite-spa-nginx-deployment
 description: Deploy a Vite React SPA behind nginx as a static file server — with SPA routing (HashRouter), permissions, and common pitfalls.
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

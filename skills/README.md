@@ -21,6 +21,7 @@ When adding, removing, or renaming a local skill:
 4. Keep descriptions short enough to scan; detailed instructions belong in each skill’s own `SKILL.md`.
 5. After catalog changes, run `python3 scripts/docs_consistency_check.py` from the repository root（it verifies both levels' coverage）.
 6. **Content freshness（advisory，唔係 gate）**：`docs_consistency_check.py` 只驗導航結構，唔驗 skill 內容係咪仍然成立。定期（建議每季，或引用 version-pinned skill 之前）跑 `python3 scripts/skills_freshness_audit.py` 排 review 優先次序 — 佢按最後 review 日期列出過期 skills，有 pin 住具體版本（如 Elysia / Prisma / CDK 版號）嘅排最前。Review 完一個 skill 而內容唔使改時，喺該 `SKILL.md` 頂部加/更新一行 `Last-verified: YYYY-MM-DD`（audit 會優先讀呢個標記）；內容有改就唔使，git commit 日期自動更新。發現內容已過時 → 更新或 archive 該 skill。呢個 audit 刻意設計為 advisory（預設 exit 0），**唔好**加入 pre-commit / CI。
+7. **Skill lifecycle — case-history vs reusable**：每個 `SKILL.md` 喺 frontmatter 加 `applicability: operational | generic-pattern`(`operational` = profile-level workflow / orchestration / methodology;`generic-pattern` = 可重用於任何用緊個 stack 嘅 project)。**新 case-history / post-mortem skill 預設入 `archive/skills/case-history/`**,加 `retired: YYYY-MM-DD archived:case-history` 同 `<historical ... retired>` note。**只有 reusable insight 先 promote 上 `skills/`**。Archive 內容仍可 `git log` / `grep` 搵返,zero loss,但唔再增加 routing surface。
 
 ---
 
@@ -119,10 +120,8 @@ Skills for spawning and orchestrating autonomous AI coding agents and multi-agen
 |-------|-------------|
 | [`ai-agent-tool-calling`](backend/ai-agent-tool-calling/SKILL.md) | Build a tool-calling AI agent (function calling + tool registry + conversation memory + RAG over app data) for any product — CRM, support, internal tools. Use… |
 | [`backend-rbac-audit-log`](backend/backend-rbac-audit-log/SKILL.md) | Add role-based access control (RBAC) + audit log to any backend API (Elysia, Express, Fastify, Hono, NestJS). Pattern: centralized permission map in shared pac… |
-| [`crm-data-model`](backend/crm-data-model/SKILL.md) | Design a modern CRM data model (HubSpot / Pipedrive inspired) — Company, Contact, Product, Quotation, Deal, Pipeline, ActivityLog, Tag, Conversation. Use when… |
 | [`elysia-file-upload-multer`](backend/elysia-file-upload-multer/SKILL.md) | Add file upload to Elysia.js (Bun) backend — hand-rolled multipart parser (RECOMMENDED for Elysia 1.2) OR Multer with static file serving. Use when the user sa… |
 | [`elysia-llm-graceful-fallback`](backend/elysia-llm-graceful-fallback/SKILL.md) | Elysia.js route pattern for graceful LLM/API fallback — return result objects instead of throwing, letting route handlers decide HTTP status and format. |
-| [`polymorphic-line-items`](backend/polymorphic-line-items/SKILL.md) | Design and implement polymorphic line items in a sales/quoting system — single parent (Quotation/Invoice) with mixed child item types (Product vs Service with… |
 
 ### `creative/`
 
@@ -136,52 +135,22 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`pretext`](creative/pretext/SKILL.md) | Use when building creative browser demos with @chenglou/pretext — DOM-free text layout for ASCII art, typographic flow around obstacles, text-as-geometry games… |
 | [`sketch`](creative/sketch/SKILL.md) | Throwaway HTML mockups: 2-3 design variants to compare. |
 
-### `debugging/`
-
-| Skill | Description |
-|-------|-------------|
-| [`api-download-401-pdf-body`](debugging/api-download-401-pdf-body/SKILL.md) | Debug why file downloads via fetch+blob return HTML/incorrect content instead of the actual file — specific pattern where auth middleware on a download endpoin… |
-| [`chatbot-file-attachment-debug`](debugging/chatbot-file-attachment-debug/SKILL.md) | Debug and fix WhatsApp-style AI chatbot where PDF attachments show as broken image icons instead of file icons. Multi-layer fix across frontend, backend schema… |
-| [`cloudfront-apigateway-s3-debug`](debugging/cloudfront-apigateway-s3-debug/SKILL.md) | Debug CloudFront returning S3 HTML instead of API Gateway responses for /api/* routes. CloudFront misroutes API calls to S3 static content. |
-| [`docker-port-forward-shadow-debug`](debugging/docker-port-forward-shadow-debug/SKILL.md) | Diagnose when Docker containers shadow host services on well-known ports (80/443), causing reverse-proxy traffic to be intercepted by the wrong process. |
-| [`elysia-jwt-plugin-singleton`](debugging/elysia-jwt-plugin-singleton/SKILL.md) | Fix "401 Unauthorized" in Elysia.js when JWT tokens signed by auth routes are rejected by protected routes — caused by multiple JWT plugin instances. |
-| [`elysia-lambda-response-body-debug`](debugging/elysia-lambda-response-body-debug/SKILL.md) | Debug and fix empty response body when deploying Elysia.js to AWS Lambda |
-| [`elysia-route-conflict-debug`](debugging/elysia-route-conflict-debug/SKILL.md) | Debug Elysia.js route conflicts — server fails to start with "different parameter name" error, or requests hit wrong handler. |
-| [`patch-route-field-silently-dropped`](debugging/patch-route-field-silently-dropped/SKILL.md) | Diagnose HTTP routes where a field appears to save but disappears after refresh, OR the request returns 502/500 because a Prisma relation key is silently strip… |
-| [`pdf-parse-v2-bun-fix`](debugging/pdf-parse-v2-bun-fix/SKILL.md) | Fix pdf-parse v2 "not a function" error in Bun — breaking API change from v1 |
-| [`prisma-json-field-api-serialization`](debugging/prisma-json-field-api-serialization/SKILL.md) | Fix runtime errors caused by Prisma field types that serialize as strings over REST (Json / Decimal / BigInt / Date / Bytes) instead of their JS-typed equivale… |
-| [`prisma-relation-debugging`](debugging/prisma-relation-debugging/SKILL.md) | Debug Prisma schema vs code mismatches: explicit @relation fields need { connect: { id } } syntax, not shorthand. Also covers the UncheckedCreateInput vs Creat… |
-| [`prisma-sqlite-bun-setup`](debugging/prisma-sqlite-bun-setup/SKILL.md) | Prisma schema 適配 SQLite 的正確方式 — enum 改 string、Json 改 String、Prisma 5 vs 7 差異、seed 注意事項、Bun 生態環境的常見坑。也涵蓋 Prisma 7 strict validation 嘅 generic pitfalls (適用於 SQLi… |
-| [`sse-chunk-boundary-debug`](debugging/sse-chunk-boundary-debug/SKILL.md) | Diagnose and fix SSE JSON parse errors caused by HTTP chunked transfer encoding splitting SSE lines mid-JSON |
-| [`visual-ui-bug-debugging`](debugging/visual-ui-bug-debugging/SKILL.md) | Debug visual UI bugs where user reports something doesn't work but API/terminal checks pass. Use browser + vision analysis instead of just terminal tools. |
-| [`vite-nginx-stale-cache-debug`](debugging/vite-nginx-stale-cache-debug/SKILL.md) | Debug why Vite React app changes are not reflected after rebuild - Nginx serving stale cached JS. Key signal is immutable cache headers and JS file content unc… |
-
 ### `devops/`
 
 | Skill | Description |
 |-------|-------------|
-| [`aws-codecommit-git-setup`](devops/aws-codecommit-git-setup/SKILL.md) | AWS CodeCommit SSH 設定與常見錯誤排除 |
-| [`aws-ses-email-setup-route53`](devops/aws-ses-email-setup-route53/SKILL.md) | Set up AWS SES for transactional email — verify domain with DKIM, add Route53 DNS records, configure credentials for SDK use |
 | [`bun-elysia-react-vite-stack`](devops/bun-elysia-react-vite-stack/SKILL.md) | Bootstrap a local full-stack TypeScript app with Bun 1.2 + Elysia backend + Vite 8 + React 19 + Tailwind v4. SQLite (dev) + Postgres (prod recommended) via Pri… |
-| [`bun-frontend-deploy-sudo-path`](devops/bun-frontend-deploy-sudo-path/SKILL.md) | Bun frontend build + sudo deploy path resolution issue |
 | [`caddy-spa-api-proxy-deploy`](devops/caddy-spa-api-proxy-deploy/SKILL.md) | Deploy Vite SPA + Bun API backend behind Caddy reverse proxy in Docker with host networking |
 | [`cdk-deployment-rules`](devops/cdk-deployment-rules/SKILL.md) | AWS CDK 部署規則 — 只對 CDK 修改，嚴禁 CLI 手動建立生產資源。所有資源必須由 CDK 管理。 |
 | [`cdk-ecs-fargate-deploy`](devops/cdk-ecs-fargate-deploy/SKILL.md) | CDK v2 ECS Fargate deployment pattern — single consolidated stack to avoid circular dependencies between Route53, ALB, ECS, and RDS |
-| [`cdk-ecs-rollback-cleanup`](devops/cdk-ecs-rollback-cleanup/SKILL.md) | CDK ECS Fargate stack rollback cleanup when BackendSg deletion fails with DependencyViolation |
-| [`cdk-ecs-stacked-environment-isolation`](devops/cdk-ecs-stacked-environment-isolation/SKILL.md) | CDK ECS Fargate 部署時保護開發環境的注意事項 — CDK rollback 會把現有服務的 desiredCount 重置為 0，導致服務中斷。 |
-| [`cdk-route53-apigateway-alias`](devops/cdk-route53-apigateway-alias/SKILL.md) | CDK v2 Route53 ARecord alias to API Gateway custom domain — workaround for missing IAliasRecordTarget bind() method |
 | [`cross-role-subagent`](devops/cross-role-subagent/SKILL.md) | QA Feedback Loop — 持續循環直至 QA 通過，用戶只看到最終好結果。 |
 | [`dependency-cve-audit`](devops/dependency-cve-audit/SKILL.md) | Audit project dependencies for known CVEs — fulfills 紅線 18 (Critical/High CVE must be 0 to merge). Class-level skill that covers BOTH npm + bun projects, lockf… |
 | [`docker-build-cache-debug`](devops/docker-build-cache-debug/SKILL.md) | Docker build cache causes stale code to run in containers despite source changes |
 | [`docker-caddy-elysia-deploy`](devops/docker-caddy-elysia-deploy/SKILL.md) | Docker + Caddy reverse proxy + Elysia.js (Bun) SPA 部署攻略 |
 | [`docker-multi-stage-dist-overwrite`](devops/docker-multi-stage-dist-overwrite/SKILL.md) | Fix Docker multi-stage build where COPY . . overwrites fresh dist/ with stale host files due to missing .dockerignore |
-| [`docker-multiarch-customer-image-release`](devops/docker-multiarch-customer-image-release/SKILL.md) | Build Docker images for shipping to customer servers (no source code, multi-arch amd64+arm64, tarball + load + install.sh workflow) |
-| [`docker-multiarch-offline-handoff`](devops/docker-multiarch-offline-handoff/SKILL.md) | Build multi-arch (linux/amd64 + linux/arm64) Docker images and hand them to a customer as tarball(s) without a registry. Use when the user needs x86+arm suppor… |
-| [`ecs-health-check-debug`](devops/ecs-health-check-debug/SKILL.md) | Debug ECS Fargate CDK deployment failures due to health check curl not found in Docker image |
 | [`elysia-aws-lambda-deploy`](devops/elysia-aws-lambda-deploy/SKILL.md) | Deploy Elysia.js (Bun-first framework) to AWS Lambda Node.js runtime — bundler config, handler resolution, CDK runtime mismatches, crypto polyfill, API Gateway… |
 | [`nginx-sse-streaming-fix`](devops/nginx-sse-streaming-fix/SKILL.md) | Fix nginx reverse proxy buffering SSE responses so streaming works correctly |
 | [`prisma-seed-reset-pattern`](devops/prisma-seed-reset-pattern/SKILL.md) | Prisma seed 一定要每次重設 role 關聯，否則 AdminPanel 自訂角色會失效 |
-| [`route53-nginx-https`](devops/route53-nginx-https/SKILL.md) | 使用 AWS Route53 + nginx + Let's Encrypt 為測試網域建立穩定 HTTPS URL。適用於需要在 AWS 管理的網域上對外暴露測試服務，取代 Cloudflare Tunnel。 |
 
 ### `frontend/`
 

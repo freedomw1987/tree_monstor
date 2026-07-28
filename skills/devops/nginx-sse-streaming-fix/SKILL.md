@@ -2,6 +2,7 @@
 name: nginx-sse-streaming-fix
 description: Fix nginx reverse proxy buffering SSE responses so streaming works correctly
 tags: ["devops", "nginx", "sse", "streaming"]
+applicability: generic-pattern
 ---
 
 

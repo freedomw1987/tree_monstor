@@ -3,6 +3,7 @@ name: cdk-v2-deployment-patterns
 description: CDK v2 deployment patterns and common issues encountered when setting up AWS infrastructure with CDK
 category: devops
 tags: [aws, cdk, infrastructure, deployment]
+applicability: generic-pattern
 ---
 
 

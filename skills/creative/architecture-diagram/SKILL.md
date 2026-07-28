@@ -5,6 +5,7 @@ author: Cocoon AI (hello@cocoon-ai.com)
 license: MIT
 dependencies: []
 platforms: [linux, macos, windows]
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

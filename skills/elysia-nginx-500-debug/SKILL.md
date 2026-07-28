@@ -2,6 +2,7 @@
 name: elysia-nginx-500-debug
 description: Debug and fix intermittent HTTP 500 errors from Elysia.js (Bun) backend when proxied through nginx
 tags: [bun, elysia, nginx, http-500, backend, reverse-proxy]
+applicability: generic-pattern
 ---
 
 

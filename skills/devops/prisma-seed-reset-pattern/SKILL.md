@@ -2,6 +2,7 @@
 name: prisma-seed-reset-pattern
 description: Prisma seed 一定要每次重設 role 關聯，否則 AdminPanel 自訂角色會失效
 trigger: 當 Prisma seed 需要配合 AdminPanel 角色管理功能時
+applicability: generic-pattern
 ---
 
 

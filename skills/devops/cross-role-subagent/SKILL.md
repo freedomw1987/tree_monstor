@@ -3,6 +3,7 @@ name: cross-role-subagent
 description: QA Feedback Loop — 持續循環直至 QA 通過，用戶只看到最終好結果。
 tags: ["qa", "subagent", "coordination", "collaboration", "feedback-loop"]
 related_skills: ["route53-nginx-https"]
+applicability: generic-pattern
 ---
 
 

@@ -5,6 +5,7 @@ triggers:
   - "relation X would create a cycle"
   - "circular relation"
   - "direct relation already exists"
+applicability: generic-pattern
 ---
 
 

@@ -12,6 +12,7 @@ tags:
 related_skills:
   - elysia-aws-lambda-deploy
   - docker-caddy-elysia-deploy
+applicability: generic-pattern
 ---
 
 

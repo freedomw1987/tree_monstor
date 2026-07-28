@@ -6,6 +6,7 @@ triggers:
   - elysia health route prefix
   - caddy caddyfile syntax error
   - docker sqlite volume persistence
+applicability: generic-pattern
 ---
 
 

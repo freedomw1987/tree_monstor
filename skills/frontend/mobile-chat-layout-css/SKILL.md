@@ -4,6 +4,7 @@ description: Fix WhatsApp-style mobile chat layout with fixed input bar — miss
 tags: [css, mobile, layout, react]
 author: developer
 created: 2026-04-21
+applicability: generic-pattern
 ---
 
 

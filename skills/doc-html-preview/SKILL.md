@@ -2,6 +2,7 @@
 name: doc-html-preview
 description: Sync `docs/*.md` to TWO standalone HTML previews in `docs/_html/` for user (David) confirmation — (1) engineering version for code review, (2) boss (decision) version with AI-generated summary cards, decisions, and risks in plain language. MD stays as source of truth. Trigger after any docs/*.md write or update in a project.
 platforms: [macos, linux]
+applicability: operational
 ---
 
 Last-verified: 2026-07-28

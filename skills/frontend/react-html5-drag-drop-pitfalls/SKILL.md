@@ -1,6 +1,7 @@
 ---
 name: react-html5-drag-drop-pitfalls
 description: Build correct HTML5 drag-and-drop in React (Kanban, sortable lists, file drop zones). Covers the most common silent-failure mode — forgetting `e.dataTransfer.setData` in `onDragStart` — and the matching `onDragOver` + `e.preventDefault` rules that make a column a valid drop target. Trigger when building kanban, Trello-style boards, sortable lists, file upload dropzones, or any UI that uses `draggable={true}` on an element and expects a drop handler to fire on another.
+applicability: generic-pattern
 ---
 
 

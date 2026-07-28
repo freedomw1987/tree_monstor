@@ -2,6 +2,7 @@
 name: docker-mac-arm64-elysia-vite
 description: Docker build pitfalls on Mac arm64 (M1/M2/M3/M4) for Elysia (Bun) + Vite 8 (rolldown) projects. Covers missing libssl in oven/bun, npm optional native binding skip, package-lock.json darwin freeze, healthcheck wget absence, and frontend nginx reverse proxy setup.
 tags: [docker, mac, arm64, elysia, bun, vite, rolldown, prisma, nginx]
+applicability: generic-pattern
 ---
 
 

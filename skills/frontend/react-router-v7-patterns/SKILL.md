@@ -15,6 +15,7 @@ trigger: |
   any "URL changed but UI didn't" bug report, backward-compat <Navigate />
   redirects in React Router v7.
 category: frontend
+applicability: generic-pattern
 ---
 
 

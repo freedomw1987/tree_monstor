@@ -9,6 +9,7 @@ description: >
 metadata:
   tags: [delegation, subagent, timeout, recovery]
   related_skills: [development-watchdog]
+applicability: generic-pattern
 ---
 
 Last-verified: 2026-07-28

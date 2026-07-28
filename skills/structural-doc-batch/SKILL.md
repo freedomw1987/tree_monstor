@@ -9,6 +9,7 @@ trigger: |
   「新接手 project」「8 份 doc 一次過」「doc batch」「ship 之前要 doc」
   或任何「我哋個 project 缺結構性文檔」嘅情境
 category: software-development
+applicability: operational
 ---
 
 

@@ -9,6 +9,7 @@ trigger: |
   "project intake", "baseline audit", "take over this project", "補 docs then continue",
   "regression endpoints missing", "QA hooks missing"
 category: software-development
+applicability: operational
 ---
 
 
