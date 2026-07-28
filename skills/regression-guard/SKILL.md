@@ -58,6 +58,100 @@ Step 8: 提交 + commit message 引用 entry ID
 
 ---
 
+## 🔄 Runtime workflow (cross-ref)
+
+本 skill 集中喺 **post-mortem 流程**(bug fix 之後留 RG-XXX + root cause + prevention)。
+**Runtime workflow** — `REGRESSION_MODE=1` 開關、結構化日誌、`docs/STATE.md` 對賬單、checker agent 審計、dev agent 修正 — 由 [`dev-checker-loop`](../dev-checker-loop/SKILL.md) 擁有。
+
+兩個 skill 嘅分工同銜接：
+
+| 階段 | Owner | 銜接點 |
+|------|-------|--------|
+| **開發中** (per feature) | `dev-checker-loop` | 每個 work item 必須帶 regression test (RT-XXX)，掛進開關、登記 Coverage 表 |
+| **Bug fix 之中** (retrofit) | 本 skill (regression-guard) | 修 bug 時必須補 RG-XXX entry(即使 bug 唔屬於 loop 內發現) |
+| **Refactor / 改需求** | 本 skill | `rg "RG-XXX"` 確認 invariant 仲 valid，跑對應 regression test |
+
+> **完整 runtime flow**(`REGRESSION_MODE=1` 點 set、log 行格式 `[REGRESSION] <RT-ID> | <feature> | <frontend|backend|e2e> | PASS|FAIL | ...`、Coverage 表樣板、checker 標準、escalation rules)見 `dev-checker-loop/SKILL.md § Regression harness contract` 同 `§ File contract: docs/STATE.md`。本檔唔重複。
+
+**dev-checker-loop 入面提及 RG-XXX 嘅地方**:
+- §「Checker standards」Step 1.6 — bug fix item 必走 [`regression-guard`](./SKILL.md) 標準(red→green test + RG entry + code comment)
+- §「File contract」Work Items 表的「涉及檔案 / commits」欄 + Checker Findings 嘅「證據」欄都會引用 RG-XXX
+
+---
+
+## 🎯 Regression test coverage targets
+
+Step 5 嘅「寫 regression test」唔係「隨手寫一個 case」就算。Coverage 必須按優先序涵蓋以下目標。**全部漏咗 = 回歸測試只有形式冇實質**。
+
+### 1. 核心與高風險功能（Core & Critical Features）
+
+- **關鍵業務流程**（Smoke / Sanity Test 延伸）：系統最不可或缺嘅核心功能。
+  - 例：電子商務 = 登入 → 搜尋商品 → 加入購物車 → 結帳付款；CRM = 登入 → 建立 Deal → 報價 → 成交。
+- **高頻率使用功能**：用戶每日都會頻繁操作嘅模組(list 頁、search、export)。
+- **高複雜度 / 高風險模組**：邏輯複雜、改動最頻繁、涉及核心演算法 / 資料庫異動嘅部分(pricing engine、RBAC、audit log、payment)。
+
+### 2. 本次變更相關功能（Impact Area）
+
+- **修復好的 Bug 驗證**：針對過去修過嘅缺陷重測，確保冇復發 — 直接對應 Step 5 嘅 regression test，亦對應 dev-checker-loop 嘅 RT-XXX。
+- **受影響區域測試**（Impact Analysis）：新功能 / 改介面嘅延伸影響。
+  - 例：改「會員資料頁」→ 必須測「訂單頁面上嘅會員姓名顯示」；改 `Company.roleId` → 必須測 `Deal` / `Contact` 顯示。
+
+### 3. 不同層級嘅測試腳本（Test Pyramid）
+
+回歸測試貫穿自動化測試金字塔各層，缺一不可：
+
+| 層級 | 目的 | 工具 / 模式 |
+|------|------|-------------|
+| **Unit Tests** | 驗證最小程式區塊（含邊界條件）| bun:test / Jest + derive helper pattern（見 Pitfall §「Pure function derive from inline route logic」）|
+| **Integration Tests** | 模組 / API / DB 之間互動同資料傳遞 | supertest / bun:test 配真 DB（test container / 本地 PG）|
+| **E2E / UI Tests** | 真實用戶操作流程 | Playwright / Cypress（守住完整 happy path）|
+
+**原則**:覆蓋率傾向金字塔（多 unit、少量 E2E）。但**核心流程嘅 E2E 必須有** — 守住用戶觀察路徑，typecheck / unit 都驗唔到嘅 UI / API 行為必須靠 E2E 撞先 catch 到。
+
+### 4. 前端專屬測試類別（Frontend-specific）
+
+Frontend regression test 除咗上面 1–3 嘅 target，仲要涵蓋以下 5 類。**任何一類完全冇 test = coverage gap finding（major）**。
+
+#### 4.1 視覺與 UI 畫面測試（Visual Testing）
+
+- **視覺比對測試**（Visual Regression Testing）：用 Percy / Playwright / Chromatic 截圖，比對 baseline 圖嘅像素差異。守住 CSS 跑版、文字溢出、按鈕位移、顏色意外變更。
+- **響應式設計**（RWD / Mobile Responsiveness）：Desktop / Tablet / Mobile 唔同螢幕解析度下，排版同 menu 縮放、摺疊是否正常。
+
+#### 4.2 使用者互動與流程測試（User Interaction & E2E）
+
+- **關鍵元件互動**：表單驗證（錯格式提示）、彈出視窗（Modal 開關）、下拉選單、分頁（Pagination）、無限滾動（Infinite Scroll）。
+- **端到端核心流程**：模擬真實用戶從前端操作到完成任務嘅完整路徑（點擊商品 → 選尺寸 → 加入購物車 → 結帳）。常用工具：Cypress / Playwright。
+- **路由與頁面跳轉**（Routing）：SPA 跳轉時 URL 正確更新、Back / Forward 行為、深層連結（Deep Link）能直接打開。
+
+#### 4.3 前端狀態管理與 API 整合（State & API Integration）
+
+- **狀態管理**（State Management）：Redux / Vuex / Zustand / Context API 嘅資料狀態，跨頁面 / 複雜互動後唔會遺失或殘留（例：登出後購物車清空）。
+- **API 異常與極端狀況**（Edge Cases & Error Handling）：
+  - **Loading State**：API 慢嘅時候顯示 Skeleton / Spinner。
+  - **Error Handling**：404 / 500 / 網絡斷線時 UI 優雅顯示提示（Error Boundary），唔好白畫面（White Screen of Death）。
+  - **Empty State**：資料列表為空時有適當提示。
+
+#### 4.4 跨瀏覽器與裝置相容性（Cross-Browser & Compatibility）
+
+- **主流瀏覽器渲染**：Chrome / Safari / Firefox / Edge — JS（ESNext 轉譯結果）同 CSS（Flexbox / Grid 支援）皆運作正常。
+- **觸控與輸入支援**：手機 / 平板嘅觸控滑動（Swipe）、手勢操作、鍵盤輸入焦點（Focus）。
+
+#### 4.5 前端非功能性測試（Performance & Accessibility）
+
+- **Web 性能指標**（Core Web Vitals）：新 code 唔導致 LCP（最大內容繪製）、CLS（累積佈局位移）、INP（互動到下一次繪製）嚴重退化。
+- **無障礙功能**（Accessibility / a11y）：鍵盤導覽（Tab 流暢度）、Screen Reader 朗讀標籤（aria-label）因元件重構而失效。
+
+### 5. Coverage gap 偵測
+
+開 dev-checker-loop 嘅同時（per `dev-checker-loop` Step 3 覆蓋審計），Coverage 表必須對齊呢度列嘅目標：
+
+- 任何 **核心 / 高頻 / 高風險** 功能喺 Coverage 表 MISSING → finding（blocker）。
+- 任何 **前端專屬**（視覺 / 互動 / 狀態 / 跨瀏覽器 / 性能 + a11y）類別完全冇 test → finding（major）。
+- 任何 **Impact Area** 缺 test → finding（major），要求 dev 補齊。
+- 存量缺口（loop 開始前就冇 test 嘅舊功能）逐輪補；最後一輪結束時 Coverage 表不得有無 finding 記錄嘅 MISSING。
+
+---
+
 ## 📁 文件結構
 
 每個 project 必須有 `docs/REGRESSION-GUARD.md`,格式:
@@ -384,6 +478,7 @@ jobs:
 | `docs/QA-TRACKER.md` | 持續測試追蹤 | RG 嘅 regression test 一定喺 QA-TRACKER 入面追蹤 |
 | `docs/TECH-DEBT.md` | 技術債 | RG entry 升級做 tech debt 嘅情境:「個 fix 唔完美,將來要重做」 |
 | `docs/feedback-loop.md` | 獎罰 | 沒寫 RG entry 嘅 bug fix 算 P1 過(已記錄喺 feedback-loop.md 嘅罰則) |
+| [`dev-checker-loop`](../dev-checker-loop/SKILL.md) | runtime harness — REGRESSION_MODE=1 開關、`docs/STATE.md` 對賬單、checker agent 審計 | Bug fix item 嘅 RT-XXX 同步登記去 STATE.md Coverage 表；修完後 DEV_DONE item 連同 RG-XXX 一齊被 checker 覆核（見 `dev-checker-loop` § Checker standards Step 1.6）|
 
 ---
 
