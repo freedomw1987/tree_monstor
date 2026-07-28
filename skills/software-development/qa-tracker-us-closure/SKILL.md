@@ -51,7 +51,7 @@ Audit output goes into the commit message body, NOT a separate file.
 | Helper is `const` inside route file (not exported) | Derive a mirror function in the test file, link to source line in comment |
 | Logic spread across route + multiple `if` branches | Derive a single function that takes the relevant query/user args |
 
-See `references/pm-system-sprint-10-example.md` for worked examples of all three patterns.
+See `references/sprint-10-example.md` for worked examples of all three patterns.
 
 ### 3. Write the tests (target 5-10 cases per US)
 
@@ -188,7 +188,7 @@ See `references/sprint-followup-registration-example.md` for a concrete worked e
   1. Mirror source's output (accept the `userId: undefined` row) and document "caller must guard null user" in the test comment.
   2. Add an explicit null guard at the top of the derive function (`if (!user) return {}`) and document "derive adds a defensive guard the route already had" — only do this if you're also patching the source.
 
-  See `references/pm-system-sprint-10-commits-4-5.md` for an instance of this pitfall (commit hit this exact case; test had to be rewritten after a 1-fail run).
+  See `references/sprint-10-commits-4-5.md` for an instance of this pitfall (commit hit this exact case; test had to be rewritten after a 1-fail run).
 - **E2E spec for frontend-heavy US without dev stack** — some US have no cheap unit boundary (drag-drop Kanban, multi-modal editor flows). The user may opt to ship a `.spec.ts` file with `TypeScript clean` + N/6 tests that run on real stack + 1 placeholder (`test.skip`) for the drag-drop interaction that needs keyboard-accessible rewrite. This is a valid PASS-E2E status — the spec exists, the file compiles, and the API invariant is locked down. The drag-drop rewrite is a follow-up sprint task.
 
 ## Multiple US in one commit (rare but legitimate)
@@ -203,10 +203,10 @@ When **2 US share the same source file + same derive pattern** and the user's pr
 4. For each US: audit → test → commit → tracker sync → push → revert check
 5. Sprint closure: update Sprint history entry, mark Sprint N as "Sprint N closure", next sprint in "in progress"
 
-## References (PM-System worked examples)
+## References (worked examples)
 
-- `references/pm-system-sprint-10-example.md` — worked example of 3 US closures from PM-System Sprint 10, with audit decisions, test categories, tracker sync spots, and pattern observations.
-- `references/pm-system-sprint-10-commits-4-5.md` — Sprint 10 commits #4 + #5 (US-2.4+US-2.3 bundled, US-4.5 E2E spec draft). Covers derive null-safety pitfall, multiple-US-per-commit rare exception, E2E spec draft pattern, TypeScript pre-flight for e2e/ specs.
+- `references/sprint-10-example.md` — worked example of 3 US closures from one Sprint 10, with audit decisions, test categories, tracker sync spots, and pattern observations.
+- `references/sprint-10-commits-4-5.md` — Sprint 10 commits #4 + #5 (US-2.4+US-2.3 bundled, US-4.5 E2E spec draft). Covers derive null-safety pitfall, multiple-US-per-commit rare exception, E2E spec draft pattern, TypeScript pre-flight for e2e/ specs.
 - `references/sprint-followup-registration-example.md` — Sprint 11 docs-only follow-up registration: 3 條 retro "What's NOT done" 段 → tracker 嘅 2 row patch + 1 new section + T15a/T15b sub-letter naming + NONE-HOLD 🟠 marker。
 
 ## Related skills

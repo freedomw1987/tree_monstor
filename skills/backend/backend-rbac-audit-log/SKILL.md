@@ -401,7 +401,7 @@ Full schema + migration SQL + cache implementation + INSERT recipe: [`references
 | CRM-system AuditLog + CRUD `logEvent()` examples | [`references/crm-audit-log-implementation.md`](references/crm-audit-log-implementation.md) |
 | CRM-system Day 14 public-routes audit run + `as: 'scoped'` trap | [`references/crm-day-14-audit-results.md`](references/crm-day-14-audit-results.md) |
 | CRM-system Day 6 role-name UPPERCASE + frontend mirror | [`references/crm-role-name-invariant-2026-06-06.md`](references/crm-role-name-invariant-2026-06-06.md) |
-| PM-system 2026-06-08 P0 token-claim privilege escalation | [`references/<project>-2026-06-08-td-011.md`](references/<project>-2026-06-08-td-011.md) |
+| Token-claim privilege escalation (2026-06-08, P0) | [`references/<project>-2026-06-08-td-011.md`](references/<project>-2026-06-08-td-011.md) |
 | Option 2 (DB-driven RBAC) schema + migration + cache | [`references/db-driven-rbac-upgrade-path.md`](references/db-driven-rbac-upgrade-path.md) |
 | Docker-local Postgres Prisma migration trick | [`references/docker-postgres-migration-trick.md`](references/docker-postgres-migration-trick.md) |
 | Elysia 1.2 + Bun runtime gotchas (d.ts, `export *`, `as never`) | [`references/elysia-bun-runtime-gotchas.md`](references/elysia-bun-runtime-gotchas.md) |

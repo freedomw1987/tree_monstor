@@ -249,7 +249,7 @@ Mitigation:
 3. `recovery.sh` 冇 pre-shutdown hook 自動 fire → 改為 Claude Code settings.json Stop hook
 4. 3 個 resume option 都係 CLI, 冇 Discord `/resume` slash command
 
-## References (worked examples from PM-System / crm-system)
+## References (worked examples)
 
 - `references/post-recovery-verification.md` — Recipe A (untracked providers), B (stale bundle), C (stale stash detection), D (pre-existing uncommitted sprint detection).
 - `references/reconstruct-context-from-git-and-sessions.md` — 4-source reconstruction recipe + worked example.

@@ -380,7 +380,7 @@ it gives the most shareable artifact in one command.
 | `scripts/verify_boss_html.sh` | One-shot bulk verification: scans all `*-boss.html` in a project, returns exit 0/1/2. **Run this after every `build.sh`.** |
 | `gitignore-snippet.md` | What to add to project `.gitignore` |
 
-## References (PM-System / crm-system case studies)
+## References (worked case studies)
 
 - `references/crm-system-2026-06-06-boss-placeholder-silent-failure.md` — Session log: 10/12 boss HTMLs silently rendered placeholders despite the build exiting 0. Documents the body-region grep recipe and the main-agent-vs-CEO trade-off for JSON generation.
 - `references/crm-system-2026-06-06-bundled-html-incident.md` — Session-specific log of the line-4898 SyntaxError + the audience-mismatch correction.
