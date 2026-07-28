@@ -8,6 +8,8 @@ triggers:
   - docker sqlite volume persistence
 ---
 
+
+Last-verified: 2026-07-28
 # Docker + Caddy + Elysia.js 部署攻略
 
 ## 概述

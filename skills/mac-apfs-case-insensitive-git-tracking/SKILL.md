@@ -1,10 +1,11 @@
 ---
 name: mac-apfs-case-insensitive-git-tracking
 description: When a file path is written with mixed case (e.g. `docs/API.md`) on macOS dev host but the project runs in a Linux Docker container, git tracks the file in lowercase. Use when `patch` / `write_file` reports success but `git ls-files` shows a different casing, or when the diff looks like it modified `API.md` but git tracks it as `api.md`.
-version: 1
 category: devops
 ---
 
+
+Last-verified: 2026-07-28
 # Mac APFS Case-Insensitive Git Tracking
 
 ## The problem

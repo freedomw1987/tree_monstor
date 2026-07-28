@@ -2,7 +2,7 @@
 
 > **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
 
-> **Cross-Platform Developer Profile** — 可用於 Claude Code、Codex
+> **Claude Code Developer Profile** — Tree Monstor 係 cross-platform profile，但 Codex adapter 已於 2026-07-28 蒸餾移除（David 長期只用 Claude Code）。Claude Code runtime 行為請睇 [`docs/claude-code-workflow.md`](docs/claude-code-workflow.md) 同 [`CLAUDE.md`](CLAUDE.md)。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
@@ -23,33 +23,26 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PLATFORM SHELL                           │
-│              Claude Code / Codex                            │
+│                    Claude Code                              │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 PLATFORM ADAPTER LAYER                      │
-│  adapters/                                                  │
-│  ├── claude-code/agent.md     — Claude Code agent 定義     │
-│  └── codex/system-prompt.md   — Codex 系統提示             │
+│                 PLATFORM ENTRY                              │
+│  CLAUDE.md                  — Claude Code auto-discovery     │
+│  docs/claude-code-workflow.md — Claude Code runtime features │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  CORE IDENTITY (跨平台共享)                 │
+│                  CORE IDENTITY                              │
 │                                                              │
 │  SOUL.md + AGENTS.md + MEMORY.md + docs/ + skills/          │
+│  adapters/claude-code/skills/  — Claude Code runtime wrappers│
 │                                                              │
-│  所有平台共用的核心：身份原則、工作流程、QA Gate、Skills     │
+│  身份原則、工作流程、QA Gate、Skills                         │
 └─────────────────────────────────────────────────────────────┘
 ```
-
-### 平台支援矩陣
-
-| 平台 | 機制 | 狀態 |
-|------|------|------|
-| **Claude Code** | root `CLAUDE.md` bridge + optional `--agent-file` adapter | ✅ 主要支援 |
-| **Codex** | `--system-prompt` 文件 | ✅ 已適配 |
 
 ---
 
@@ -158,16 +151,9 @@ claude --append-system-prompt-file ~/Sites/localhost/tree_monstor/CLAUDE.md
 claude --agent tree-monstor
 ```
 
-詳細文檔：[`CLAUDE.md`](CLAUDE.md) + [adapters/claude-code/agent.md](adapters/claude-code/agent.md)
+詳細文檔：[`CLAUDE.md`](CLAUDE.md) + [docs/claude-code-workflow.md](docs/claude-code-workflow.md)
 
-### Codex
-
-```bash
-# 使用 system-prompt 文件
-codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一個用戶登入系統"
-```
-
-詳細文檔：[adapters/codex/system-prompt.md](adapters/codex/system-prompt.md)
+> Codex adapter 已於 2026-07-28 蒸餾移除（David 長期只用 Claude Code）。如果你之前係 Codex 用家，呢個 profile 仍然可以人手應用 core identity — 讀 SOUL.md + AGENTS.md + docs/phases.md + docs/qa-gate.md，但冇官方 wrapper。
 
 ---
 
@@ -175,12 +161,12 @@ codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一�
 
 | 文件 | 用途 |
 |------|------|
-| `SOUL.md` | 身份定位、核心原則、做事方式（跨平台共享） |
-| `AGENTS.md` | Session 啟動流程、Think/Plan 互動模式（跨平台共享） |
-| `MEMORY.md` | 長期記憶、Subagent 配置、QA Gate（跨平台共享） |
-| `docs/` | 詳細文檔（跨平台共享） |
-| `skills/` | 可復用技能庫（跨平台共享） |
-| `adapters/` | 平台特定適配層（Claude Code/Codex） |
+| `SOUL.md` | 身份定位、核心原則、做事方式 |
+| `AGENTS.md` | Session 啟動流程、Think/Plan 互動模式 |
+| `MEMORY.md` | 長期記憶、Subagent 配置、QA Gate |
+| `docs/` | 詳細文檔 |
+| `skills/` | 可復用技能庫 |
+| `adapters/claude-code/skills/` | Claude Code runtime 已註冊嘅 skill wrappers |
 
 ---
 
@@ -204,7 +190,7 @@ codex --system-prompt "$(cat adapters/codex/system-prompt.md)" "幫我創建一�
 > 不需要。你只需要描述你的業務需求和願景，技術細節全部交給 Developer。
 
 **Q: 支持哪些平台？**
-> Claude Code、Codex — 使用同一套核心身份，平台適配層分開。
+> 主要 Claude Code。Codex adapter 已於 2026-07-28 移除（David 長期只用 Claude Code），但 core identity 仍可手動應用於其他平台。
 
 **Q: 如何更新到最新版本？**
 ```bash

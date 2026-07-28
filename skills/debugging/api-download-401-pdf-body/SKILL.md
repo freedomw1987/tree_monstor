@@ -1,12 +1,11 @@
 ---
 name: api-download-401-pdf-body
 description: Debug why file downloads via fetch+blob return HTML/incorrect content instead of the actual file — specific pattern where auth middleware on a download endpoint returns 401 with the file body still attached.
-version: 1.0.0
-author: Hermes Agent
 tags: [debugging, http, download, auth, fetch-blob]
 related_skills: [systematic-debugging]
 ---
 
+Last-verified: 2026-07-28
 # API Download Returns Wrong Content (401 but file in body)
 
 ## Symptom

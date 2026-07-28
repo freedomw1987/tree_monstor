@@ -11,10 +11,11 @@ trigger: |
   `/__qa`、`REGRESSION_MODE`、`Regression Hook`、`Regression Mode`、`qa:seed`、`qa:reset`、QA endpoint、test fixture endpoint 相關變更
   任何時候 audit `rbac.ts` / `logEvent` caller / RBAC seed coverage 嘅 workflow
   出現 "seed doesn't currently write RolePermission rows" 類 comment ＝ known-bug-without-RG-entry → 紅線 13 違規
-version: 2
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Regression Guard — 防舊 Bug 翻發
 
 > **為什麼需要這個 skill** — David 嘅實際困擾(2026-06-06 kanban task):
@@ -673,7 +674,7 @@ export async function userHasPermission(userId: string, permission: string): Pro
 
 **Lesson**:**derive pure function for unit test 係 RG guard 嘅救命稻草**。Inline logic 無法直接 test → 抄出嚟做 local helper → 守住 invariant → refactor 時用對齊 comment 提醒自己同步。**Sprint 補 test 嘅 default 模式**。
 
-## ⚠️ Pitfall — Pitfall — `Record<EnumType, ...>` map + backend emit 唔同步
+## ⚠️ Pitfall — `Record<EnumType, ...>` map + backend emit 唔同步
 
 **場景**(2026-06-06 crm-system audit log bug):
 
@@ -1439,8 +1440,6 @@ Step 6: Fix + regression test + RG entry
 - 紅線 12(P0 US 必有 test)+ 紅線 13(冇 RG entry 嘅 fix 唔可以 merge)兩條齊踩
 
 **Lesson**:**derive pure function for unit test 係 RG guard 嘅救命稻草**。Inline logic 無法直接 test → 抄出嚟做 local helper → 守住 invariant → refactor 時用對齊 comment 提醒自己同步。**Sprint 補 test 嘅 default 模式**。
-
-## ⚠️ Pitfall — 8 份 doc file 嘅 doc sync pattern (紅線 10/11/13/14)
 
 ## ⚠️ Pitfall — 8 份 doc file 嘅 doc sync pattern (紅線 10/11/13/14)
 

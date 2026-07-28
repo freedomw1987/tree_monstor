@@ -1,10 +1,10 @@
 ---
 name: feature-plan-alignment
 description: Plan-stage alignment workflow for non-trivial feature work where David wants to review direction BEFORE code is written. Produces a structured plan doc (MD + boss JSON) with resolved decisions (each marked `chosen_by`), a step-by-step implementation breakdown, risk surface, and ship-gate impact — then notifies David on Discord for go/no-go. Trigger when David says 「B吧」「慢慢」「plan 先」「畀我睇下 plan」「可以 plan 嗎」 OR when a feature is non-trivial (>5 files, 4+ commits, or has a real design choice between A/B/C/D options).
-version: 1.0.0
 platforms: [macos, linux]
 ---
 
+Last-verified: 2026-07-28
 # Feature Plan Alignment
 
 > **Goal**: When a feature is non-trivial, get David to **sign off on direction before code is written** — by producing a structured plan artifact (MD + boss JSON + Discord notification) that is short enough to read in 5 minutes and concrete enough to spot disagreements early.

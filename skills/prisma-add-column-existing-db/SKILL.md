@@ -4,6 +4,8 @@ description: Add a new column to an existing Prisma model when the database is a
 category: backend
 ---
 
+
+Last-verified: 2026-07-28
 # Add New Column to Existing Prisma Model (Production Database)
 
 ## Problem

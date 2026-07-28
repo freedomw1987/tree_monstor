@@ -3,6 +3,8 @@ name: react-quiz-form-state-debug
 description: Debug React quiz forms where submit button stays disabled for mixed question types (choice/text/assignment)
 ---
 
+
+Last-verified: 2026-07-28
 # React Quiz Form State Debugging
 
 ## Problem

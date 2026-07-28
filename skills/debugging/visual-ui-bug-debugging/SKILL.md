@@ -3,6 +3,8 @@ name: visual-ui-bug-debugging
 description: Debug visual UI bugs where user reports something doesn't work but API/terminal checks pass. Use browser + vision analysis instead of just terminal tools.
 ---
 
+
+Last-verified: 2026-07-28
 # Visual UI Bug Debugging — When User Reports Something You Can't Reproduce
 
 ## When to Use

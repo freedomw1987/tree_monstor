@@ -1,12 +1,11 @@
 ---
 name: design-md
 description: Author/validate/export Google's DESIGN.md token spec files.
-version: 1.0.0
-author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 ---
 
+Last-verified: 2026-07-28
 # DESIGN.md Skill
 
 DESIGN.md is Google's open spec (Apache-2.0, `google-labs-code/design.md`) for
@@ -36,7 +35,6 @@ from scratch (prototype, deck, landing page, component lab), use
 
 ```md
 ---
-version: alpha
 name: Heritage
 description: Architectural minimalism meets journalistic gravitas.
 colors:

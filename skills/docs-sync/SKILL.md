@@ -3,6 +3,8 @@ name: docs-sync
 description: Synchronizes review feedback, QA findings, user corrections, and code-review suggestions into durable project docs before Build, merge, or ship.
 ---
 
+
+Last-verified: 2026-07-28
 # Docs Sync — Review Feedback to Project Docs
 
 > **Status:** Operational workflow. Use this skill when feedback changes project knowledge that must survive beyond chat.

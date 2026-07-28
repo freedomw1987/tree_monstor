@@ -2,10 +2,11 @@
 name: tech-debt-register
 description: 記錄和追蹤技術債，幫忙估算修復時間。Template based，系統化追蹤優先級、修復成本、業務影響。
 trigger: "tech debt / 技術債 / 技術負債 / debt register"
-version: 1
 category: productivity
 ---
 
+
+Last-verified: 2026-07-28
 # Tech Debt Register
 
 系統化記錄、優先級排序、和規劃償還技術債。

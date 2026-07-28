@@ -3,6 +3,8 @@ name: aws-codecommit-git-setup
 description: AWS CodeCommit SSH 設定與常見錯誤排除
 ---
 
+
+Last-verified: 2026-07-28
 # AWS CodeCommit Git Setup
 
 ## 快速設定

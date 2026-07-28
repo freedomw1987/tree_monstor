@@ -4,6 +4,8 @@ description: Fix runtime errors caused by Prisma field types that serialize as s
 tags: ["prisma", "api", "serialization", "debug", "decimal", "bigint", "json", "e2e"]
 ---
 
+
+Last-verified: 2026-07-28
 # Prisma Field API Serialization — Json / Decimal / BigInt / Date / Bytes
 
 ## Problem (generalized)

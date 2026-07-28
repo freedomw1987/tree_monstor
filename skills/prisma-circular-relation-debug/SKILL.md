@@ -7,6 +7,8 @@ triggers:
   - "direct relation already exists"
 ---
 
+
+Last-verified: 2026-07-28
 # Prisma 循環關聯（Cycle）問題修復指南
 
 ## 徵兆

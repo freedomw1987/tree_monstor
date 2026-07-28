@@ -11,12 +11,6 @@ Each skill’s canonical source is its own `SKILL.md`. This catalog is a navigat
 
 ---
 
-## Archived skills
-
-單一專案專用嘅 SOP（如 UMAC AI、pm-system、llm-acp）已移到 top-level `archive/skills/`，唔再屬於 active catalog；需要時去嗰度搵返。
-
----
-
 ## Maintenance rule
 
 When adding, removing, or renaming a local skill:
@@ -32,7 +26,7 @@ When adding, removing, or renaming a local skill:
 
 ## Claude Code routing note
 
-These are local Tree Monstor markdown skills. They are not automatically Claude Code slash commands unless separately registered in the active Claude Code runtime. Currently registered: `regression-guard`, `existing-project-intake`, `dev-checker-loop` — via wrappers in `adapters/claude-code/skills/` symlinked from `~/.claude/skills/`; the canonical source remains each skill's `SKILL.md` here.
+These are local Tree Monstor markdown skills. They are not automatically Claude Code slash commands unless separately registered in the active Claude Code runtime. Currently registered: `regression-guard`, `existing-project-intake`, `dev-checker-loop`, `patch-corruption-recovery`, `docs-sync`, `orchestrator` — via wrappers in `adapters/claude-code/skills/` symlinked from `~/.claude/skills/`; the canonical source remains each skill's `SKILL.md` here.
 
 In Claude Code:
 
@@ -104,21 +98,11 @@ In Claude Code:
 
 ---
 
----
-
 <!-- BEGIN GENERATED: nested-skills-catalog (scripts/generate_skills_catalog.py) -->
 
 ## Nested skills by category（自動生成）
 
 > 本段由 `scripts/generate_skills_catalog.py` 生成，**不要手改**；新增 / 刪除嵌套技能後重跑該腳本。每個技能的 canonical source 仍是其 `SKILL.md`。
-
-### `apple/`
-
-Apple/macOS-specific skills — iMessage, Reminders, Notes, FindMy, and macOS automation. These skills only load on macOS systems.
-
-| Skill | Description |
-|-------|-------------|
-| [`macos-computer-use`](apple/macos-computer-use/SKILL.md) | Drive the macOS desktop in the background — screenshots, mouse, keyboard, scroll, drag — without stealing the user's cursor, keyboard focus, or Space. Works wi… |
 
 ### `autonomous-ai-agents/`
 
@@ -147,15 +131,8 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | Skill | Description |
 |-------|-------------|
 | [`architecture-diagram`](creative/architecture-diagram/SKILL.md) | Dark-themed SVG architecture/cloud/infra diagrams as HTML. |
-| [`baoyu-article-illustrator`](creative/baoyu-article-illustrator/SKILL.md) | Article illustrations: type × style × palette consistency. |
-| [`baoyu-comic`](creative/baoyu-comic/SKILL.md) | Knowledge comics (知识漫画): educational, biography, tutorial. |
-| [`baoyu-infographic`](creative/baoyu-infographic/SKILL.md) | Infographics: 21 layouts x 21 styles (信息图, 可视化). |
 | [`claude-design`](creative/claude-design/SKILL.md) | Design one-off HTML artifacts (landing, deck, prototype). |
-| [`comfyui`](creative/comfyui/SKILL.md) | Generate images, video, and audio with ComfyUI — install, launch, manage nodes/models, run workflows with parameter injection. Uses the official comfy-cli for… |
 | [`design-md`](creative/design-md/SKILL.md) | Author/validate/export Google's DESIGN.md token spec files. |
-| [`humanizer`](creative/humanizer/SKILL.md) | Humanize text: strip AI-isms and add real voice. |
-| [`pixel-art`](creative/pixel-art/SKILL.md) | Pixel art w/ era palettes (NES, Game Boy, PICO-8). |
-| [`pixel-art-preview-workflow`](creative/pixel-art-preview-workflow/SKILL.md) | Generate pixel art characters using Python PIL and preview via Discord. Use when creating game-like visualizations, character sprites, or any pixel art that ne… |
 | [`pretext`](creative/pretext/SKILL.md) | Use when building creative browser demos with @chenglou/pretext — DOM-free text layout for ASCII art, typographic flow around obstacles, text-as-geometry games… |
 | [`sketch`](creative/sketch/SKILL.md) | Throwaway HTML mockups: 2-3 design variants to compare. |
 
@@ -229,22 +206,6 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 | [`feature-plan-alignment`](general/feature-plan-alignment/SKILL.md) | Plan-stage alignment workflow for non-trivial feature work where David wants to review direction BEFORE code is written. Produces a structured plan doc (MD + b… |
 | [`subagent-timeout-recovery`](general/subagent-timeout-recovery/SKILL.md) | 1) Subagent 執行超時後嘅接管流程 (搶救 partial outputs 而唔係重新 delegation)。 2) Subagent 準時 return `completed` 之後 parent 必須做嘅 trust-but-verify 步驟 (subagent summary 係 self-rep… |
 
-### `media/`
-
-Skills for working with media content — YouTube transcripts, GIF search, music generation, and audio visualization.
-
-| Skill | Description |
-|-------|-------------|
-| [`spotify`](media/spotify/SKILL.md) | Spotify: play, search, queue, manage playlists and devices. |
-
-### `social-media/`
-
-Skills for interacting with social platforms and social-media workflows — posting, reading, monitoring, and account operations.
-
-| Skill | Description |
-|-------|-------------|
-| [`xurl`](social-media/xurl/SKILL.md) | X/Twitter via xurl CLI: post, search, DM, media, v2 API. |
-
 ### `software-development/`
 
 | Skill | Description |
@@ -272,4 +233,3 @@ Skills for interacting with social platforms and social-media workflows — post
 - [Documentation index](../docs/00-index.md)
 - [README](../README.md)
 - [Core identity](../SOUL.md)
-- [Cross-platform usage](../docs/cross-platform-usage.md)

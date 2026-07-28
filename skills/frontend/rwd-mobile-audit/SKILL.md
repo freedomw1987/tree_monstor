@@ -4,6 +4,8 @@ description: Audit and fix a web app for mobile RWD (responsive web design) usin
 tags: ["rwd", "mobile", "responsive", "playwright", "qa", "frontend"]
 ---
 
+
+Last-verified: 2026-07-28
 # RWD Mobile Audit Workflow
 
 完整嘅 RWD audit + 修復 workflow。用 Playwright 設 iPhone 14 viewport (390x844) 自動截圖 + overflow 偵測，再用 vision model 視覺檢查。

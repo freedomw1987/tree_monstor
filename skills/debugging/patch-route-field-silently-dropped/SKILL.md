@@ -8,6 +8,8 @@ description: >-
   Prisma relation use different names (e.g. `manDays` vs `manDayLines`).
 ---
 
+
+Last-verified: 2026-07-28
 # Patch Route Field Silently Dropped
 
 ## Trigger

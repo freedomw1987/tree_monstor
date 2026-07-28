@@ -14,6 +14,8 @@ related_skills:
   - docker-caddy-elysia-deploy
 ---
 
+
+Last-verified: 2026-07-28
 # CDK v2 ECS Fargate Deployment
 
 ## When to Use This

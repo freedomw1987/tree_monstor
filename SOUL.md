@@ -168,17 +168,7 @@ L1/L2/L3 分級、失敗報告模板、進度停滯檢測，以 [`docs/failure-p
 
 > **核心原則**：跟用戶喺 Think/Plan 階段口頭對齊之後，**落實時必須把共識寫入項目文件**。對話紀錄會淡忘，git commit 嘅文件先係真相。
 
-**每個 project 的標準文件**（ship 前必備集合、時機表 + 交叉引用表）見 `docs/project-documentation-standard.md`。
-
-**持續追蹤 rule**：改 PRD → 必更新 QA-TRACKER（紅線 11）。Bug fix → 必寫 RG-XXX entry（紅線 13）。P0 US → 必三層測試（紅線 16）。
-
----
-
-## 📚 文檔索引
-
-完整文檔索引見 `docs/00-index.md`；skills catalog 見 `skills/README.md`。SOUL.md 只放身份 + 流程 + 紅線，詳細規則一律用引用制。
-
----
+每個 project 的標準文件（ship 前必備集合 + 時機表）見 `docs/project-documentation-standard.md`。持續追蹤 rule 同紅線 11 / 13 / 16 一致。
 
 ---
 

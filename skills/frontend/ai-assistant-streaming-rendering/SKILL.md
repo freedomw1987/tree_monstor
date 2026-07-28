@@ -1,11 +1,10 @@
 ---
 name: ai-assistant-streaming-rendering
 description: When building a chat / AI assistant UI that streams tokens from an LLM, render the reply with full Markdown + chart.js + data-fence support, and treat the agent's "I invoked a tool" marker rows as metadata (not empty bubbles). Class-level skill — covers any "AI chat panel" UI in any framework (React, Vue, Svelte, vanilla). Also load when debugging "empty bubble after tool call" in any AI chat UI, or when David reports "the chart didn't render" / "the markdown looks raw" / "the agent's reply is missing".
-version: 1.1.0
-author: Hermes Agent
 license: MIT
 ---
 
+Last-verified: 2026-07-28
 # AI Assistant Streaming + Rich Rendering
 
 ## What this skill covers

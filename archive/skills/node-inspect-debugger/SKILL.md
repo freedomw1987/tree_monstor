@@ -1,8 +1,6 @@
 ---
 name: node-inspect-debugger
 description: "Debug Node.js via --inspect + Chrome DevTools Protocol CLI."
-version: 1.0.0
-author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
@@ -11,6 +9,7 @@ metadata:
     related_skills: [systematic-debugging, python-debugpy]
 ---
 
+Last-verified: 2026-07-28
 # Node.js Inspect Debugger
 
 ## Overview

@@ -11,6 +11,8 @@ triggers:
   - "唔畀 source 部署"
 ---
 
+
+Last-verified: 2026-07-28
 # Docker Multi-Arch Image Release for Customer Deploy
 
 ## 概述

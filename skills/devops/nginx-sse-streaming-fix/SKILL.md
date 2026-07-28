@@ -4,6 +4,8 @@ description: Fix nginx reverse proxy buffering SSE responses so streaming works 
 tags: ["devops", "nginx", "sse", "streaming"]
 ---
 
+
+Last-verified: 2026-07-28
 # nginx SSE Streaming Fix
 
 ## 問題症狀

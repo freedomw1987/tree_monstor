@@ -4,6 +4,8 @@ description: Bootstrap a local full-stack TypeScript app with Bun 1.2 + Elysia b
 tags: ["bun", "elysia", "react", "vite", "tailwind", "prisma", "fullstack", "stack", "bootstrap", "sqlite"]
 ---
 
+
+Last-verified: 2026-07-28
 # Bun + Elysia + Vite/React Full-Stack Bootstrap
 
 本地 dev 嘅最快 full-stack TS stack。Elysia 同 Bun runtime 配 Vite 嘅 HMR 體驗極順。SQLite 用 Prisma 5（**唔好用 Prisma 7** — 見 prisma-sqlite-bun-setup skill）。

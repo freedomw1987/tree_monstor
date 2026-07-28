@@ -4,6 +4,8 @@ description: Docker build pitfalls on Mac arm64 (M1/M2/M3/M4) for Elysia (Bun) +
 tags: [docker, mac, arm64, elysia, bun, vite, rolldown, prisma, nginx]
 ---
 
+
+Last-verified: 2026-07-28
 # Docker on Mac arm64: Elysia + Vite Pitfalls
 
 Hit these between 2026-06-04 building `~/www/llm-acp`. Likely to repeat on any new Docker-ization of Bun + Vite 8 SPA on Apple Silicon.

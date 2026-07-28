@@ -4,6 +4,8 @@ description: Debug and fix empty response body when deploying Elysia.js to AWS L
 tags: [aws, lambda, elysia, debugging]
 ---
 
+
+Last-verified: 2026-07-28
 # Debug Elysia.js Lambda Response Body Empty
 
 ## Symptoms

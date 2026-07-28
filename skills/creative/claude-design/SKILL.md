@@ -1,12 +1,12 @@
 ---
 name: claude-design
 description: Design one-off HTML artifacts (landing, deck, prototype).
-version: 1.0.0
 author: BadTechBandit
 license: MIT
 platforms: [linux, macos, windows]
 ---
 
+Last-verified: 2026-07-28
 # Claude Design for CLI/API Agents
 
 Use this skill when the user asks for design work that would normally fit Claude Design, but the agent is running in a CLI/API environment instead of the hosted Claude Design web UI.

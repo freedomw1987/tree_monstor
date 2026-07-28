@@ -4,6 +4,8 @@ category: debugging
 description: Diagnose and fix Vite dev server not proxying backend static asset paths (images, files) — common pattern where assets work in production but return HTML in local dev.
 ---
 
+
+Last-verified: 2026-07-28
 # Vite Dev Server Static Asset Proxy Debug
 
 ## When to Use

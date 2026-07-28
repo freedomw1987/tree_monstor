@@ -7,6 +7,8 @@ trigger: |
   需要截圖登入後的頁面，或需要自動化測試一個需要 session 的 web app
   （例如：截圖 dashboard、截圖已登入的會員頁面）
 ---
+
+Last-verified: 2026-07-28
 # Playwright Node API 在 Container/VM 環境使用
 
 ## Troubleshooting

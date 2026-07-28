@@ -12,6 +12,8 @@ description: |
 tags: ["code-review", "security", "architecture", "ship-gate", "pre-prod", "audit", "merge"]
 ---
 
+
+Last-verified: 2026-07-28
 # Code Review Pipeline (3-axis → catalog → patch → evidence → merge)
 
 This skill codifies the **full lifecycle** of a code review, from

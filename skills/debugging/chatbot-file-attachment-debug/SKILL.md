@@ -4,6 +4,8 @@ description: Debug and fix WhatsApp-style AI chatbot where PDF attachments show 
 tags: [elysia, prisma, react, file-upload, pdf]
 ---
 
+
+Last-verified: 2026-07-28
 # Chatbot File Attachment Bug — Debug & Fix Pattern
 
 ## Context

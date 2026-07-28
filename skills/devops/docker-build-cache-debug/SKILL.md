@@ -1,10 +1,11 @@
 ---
 name: docker-build-cache-debug
 description: Docker build cache causes stale code to run in containers despite source changes
-version: 2
 category: devops
 ---
 
+
+Last-verified: 2026-07-28
 # Docker Build Cache Debug
 
 ## 徵兆

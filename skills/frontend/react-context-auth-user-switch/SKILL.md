@@ -4,6 +4,8 @@ description: Detect user login/logout within same tab using React Context + loca
 tags: ['react', 'context', 'localstorage', 'auth', 'hooks']
 ---
 
+
+Last-verified: 2026-07-28
 # React Context — Detect User Login/Logout Within Same Tab
 
 ## Problem

@@ -12,6 +12,8 @@ description: |
 tags: ["unit-test", "qa-tracker", "test-coverage", "sprint", "p0", "derive-helper", "red-line-12", "red-line-16"]
 ---
 
+
+Last-verified: 2026-07-28
 # Unit Test Coverage Push — 系統性補完 P0 US Unit Test
 
 When `docs/QA-TRACKER.md` shows many P0 US at `NONE` / `PARTIAL` / `PASS-E2E-only`, this is the playbook to bring them all to `PASS-UNIT` (or correctly labeled `DEFERRED`) without producing fake output.

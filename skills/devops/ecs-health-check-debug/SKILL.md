@@ -3,6 +3,8 @@ name: ecs-health-check-debug
 description: Debug ECS Fargate CDK deployment failures due to health check curl not found in Docker image
 ---
 
+
+Last-verified: 2026-07-28
 # ECS Health Check Debug in CDK Deployments
 
 ## Problem

@@ -5,6 +5,8 @@ category: debugging
 tags: [cloudfront, aws, api-gateway, s3, routing]
 ---
 
+
+Last-verified: 2026-07-28
 # CloudFront + API Gateway + S3 Routing Debug
 
 ## Symptoms

@@ -2,10 +2,11 @@
 name: interruption-recovery
 description: Concept + recipes for recovering long dev tasks after interruption (post-recovery verification, context reconstruction from git, smoke-before-merge). Hermes runtime automation retired; platform-neutral references remain valid.
 trigger: "interrupt / recovery / resume / 中斷 / 恢復 / 繼續 / 之前 / 上次 / 'where was I' / '開工吧' / '您開工吧'"
-version: 1
 category: devops
 ---
 
+
+Last-verified: 2026-07-28
 # Interruption Recovery
 
 > **⚠️ Runtime 自動化已退役（2026-07-25）**：本 skill 嘅 `scripts/` 自動化係為 Hermes runtime 寫嘅，已隨 Hermes 退役刪除（git 歷史可尋）；文中提及嘅 script 命令屬歷史紀錄。Claude Code 用內建 task list / plan mode / session resume 代替自動化部分。本文件保留為 **concept + recipes**：`references/` 同 `templates/` 入面嘅配方（WIP 偵測、恢復後驗證、handoff 文檔、state file 格式等）係平台中立、仍然有效。

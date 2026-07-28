@@ -4,6 +4,8 @@ description: 使用 AWS Route53 + nginx + Let's Encrypt 為測試網域建立穩
 tags: ["devops", "aws", "route53", "nginx", "https", "cloudflare-tunnel"]
 ---
 
+
+Last-verified: 2026-07-28
 # Route53 + nginx + Let's Encrypt 穩定 HTTPS URL 架設
 
 ## 適用場景

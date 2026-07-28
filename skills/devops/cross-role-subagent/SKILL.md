@@ -5,6 +5,8 @@ tags: ["qa", "subagent", "coordination", "collaboration", "feedback-loop"]
 related_skills: ["route53-nginx-https"]
 ---
 
+
+Last-verified: 2026-07-28
 # Cross-Role Subagent 協調協議 + Feedback Loop
 
 ## 🔄 Feedback Loop 流程

@@ -2,9 +2,10 @@
 name: pdf-parse-v2-bun-fix
 description: Fix pdf-parse v2 "not a function" error in Bun — breaking API change from v1
 tags: [pdf, bun, elysia, node, debugging]
-version: 1.0.0
 ---
 
+
+Last-verified: 2026-07-28
 # pdf-parse v2 API Fix for Bun
 
 ## Problem

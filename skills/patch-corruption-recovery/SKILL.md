@@ -1,10 +1,11 @@
 ---
 name: patch-corruption-recovery
 description: Prevent and recover from corrupted patch/edit states — replace-all regex pitfalls (any editor's replace-all, including Claude Code Edit replace_all), fuzzy-match mis-anchoring, and the git-restore + re-patch recovery workflow when a file's syntax is already broken.
-version: 1.1.0
 tags: [debugging, patch, edit, replace-all, git, recovery, troubleshooting]
 ---
 
+
+Last-verified: 2026-07-28
 # Patch Corruption — Prevention & Recovery
 
 Covers two halves of the same problem, for ANY patch/edit tool (a patch tool's `replace_all`, Claude Code's Edit `replace_all`, `sed -i`, IDE find-and-replace):

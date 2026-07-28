@@ -14,10 +14,11 @@ trigger: |
   state driven by URL, useSearchParams + react-router v7 component reuse,
   any "URL changed but UI didn't" bug report, backward-compat <Navigate />
   redirects in React Router v7.
-version: 1
 category: frontend
 ---
 
+
+Last-verified: 2026-07-28
 # React Router v7 Patterns & Pitfalls
 
 Class-level lessons from `crm-system` Day 14.7 (2026-06-07) — refactored

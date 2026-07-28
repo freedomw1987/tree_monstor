@@ -3,6 +3,8 @@ name: list-search-box
 description: Add a search box to an existing React list page — client-side filter on the visible page (no server roundtrip). Covers the two-layer empty state (raw empty vs filter empty), header flex layout (button + search input), `useMemo` over `[data, query]`, and the 3-step "remove standalone page" checklist when a search box replaces a dedicated list page. Trigger when user says "加 search box" / "搜尋" / "filter list" / "拎走 menu + 加 search" / "list 加 search" / "list page 加 search" on a React/TypeScript frontend, or when a user says "menu 不用有" implying a standalone page should be retired in favor of sub-page search.
 ---
 
+
+Last-verified: 2026-07-28
 # List Search Box (React)
 
 > **The "係咪 list 有就加 search" pattern** — 任何 React list page 加 search box 嘅

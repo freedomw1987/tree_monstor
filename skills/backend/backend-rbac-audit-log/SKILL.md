@@ -4,6 +4,8 @@ description: "Add role-based access control (RBAC) + audit log to any backend AP
 tags: ["rbac", "audit", "permissions", "auth", "admin", "backend", "security", "elysia", "express"]
 ---
 
+
+Last-verified: 2026-07-28
 # RBAC + Audit Log Backend Pattern (Option 3 — centralized permission map)
 
 ## 觸發時機

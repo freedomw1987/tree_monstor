@@ -8,10 +8,11 @@ trigger: |
   "project lacks docs", "no complete docs", "docs missing", "docs incomplete",
   "project intake", "baseline audit", "take over this project", "補 docs then continue",
   "regression endpoints missing", "QA hooks missing"
-version: 1
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Existing Project Intake — Source-first baseline before Build
 
 > **Status:** Operational workflow. Use before modifying an existing project whose docs, tests, QA tracker, or regression endpoints are incomplete, stale, or unknown.

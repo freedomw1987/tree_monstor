@@ -4,6 +4,8 @@ description: "Design and implement polymorphic line items in a sales/quoting sys
 tags: ["polymorphism", "quotation", "invoice", "prisma", "schema-design", "crm", "sales", "elysia"]
 ---
 
+
+Last-verified: 2026-07-28
 # Polymorphic line items in a sales/quoting system
 
 ## 觸發時機

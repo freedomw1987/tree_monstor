@@ -4,6 +4,8 @@ description: Build a tool-calling AI agent (function calling + tool registry + c
 tags: ["ai-agent", "tool-calling", "function-calling", "openai", "anthropic", "rag", "memory", "langchain", "mastra", "langgraph", "chatbot", "whatsapp", "slack"]
 ---
 
+
+Last-verified: 2026-07-28
 # AI Agent with Tool Calling (Function Calling + Memory + RAG)
 
 ## 觸發時機
@@ -623,7 +625,7 @@ Full Tailwind + React component spec, DOM verification recipe, and
 anti-patterns to grep for, in
 [`references/tool-pill-ux.md`](references/tool-pill-ux.md).
 
-## Component 6: Multi-channel (Web / WhatsApp / Slack / Email)
+## Multi-channel (Web / WhatsApp / Slack / Email) — Channel Adapters
 
 唔好將 channel logic 寫入 agent, 用 adapter pattern:
 

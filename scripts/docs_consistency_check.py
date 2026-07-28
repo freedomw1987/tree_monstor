@@ -37,10 +37,9 @@ class Issue:
 
 
 CORE_FILES = ["README.md", "CLAUDE.md", "SOUL.md", "AGENTS.md", "MEMORY.md"]
-ADAPTER_FILES = [
-    "adapters/claude-code/agent.md",
-    "adapters/codex/system-prompt.md",
-]
+# Claude Code runtime registration wrappers — thin pointer files, not
+# canonical documentation, so they are exempt from doc-marker checks.
+ADAPTER_FILES: list[str] = []
 CATALOG_FILES = ["skills/README.md"]
 
 STALE_PATHS = {

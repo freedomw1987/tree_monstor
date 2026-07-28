@@ -193,5 +193,4 @@ cat ~/.tree_monstor/.env | grep -E "APP_|DB_|STRIPE_" || echo "CLEAN"
 
 - [Documentation index](00-index.md)
 - [DevOps runbook](devops.md)
-- [Cross-platform usage](cross-platform-usage.md)
 - [Failure policy](failure-policy.md)

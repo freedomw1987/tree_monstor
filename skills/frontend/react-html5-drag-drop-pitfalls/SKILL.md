@@ -3,6 +3,8 @@ name: react-html5-drag-drop-pitfalls
 description: Build correct HTML5 drag-and-drop in React (Kanban, sortable lists, file drop zones). Covers the most common silent-failure mode — forgetting `e.dataTransfer.setData` in `onDragStart` — and the matching `onDragOver` + `e.preventDefault` rules that make a column a valid drop target. Trigger when building kanban, Trello-style boards, sortable lists, file upload dropzones, or any UI that uses `draggable={true}` on an element and expects a drop handler to fire on another.
 ---
 
+
+Last-verified: 2026-07-28
 # React HTML5 Drag-and-Drop Pitfalls
 
 > **The browser's native HTML5 DnD API is the de-facto choice for kanban/sortable/file-drop in React (no extra dep), but it has 4 specific silent-failure modes that don't show up as errors in the console.** This skill covers the 4 anti-patterns and their fixes, plus the verified-working shape of a kanban card + column.

@@ -4,6 +4,8 @@ description: Debug and fix intermittent HTTP 500 errors from Elysia.js (Bun) bac
 tags: [bun, elysia, nginx, http-500, backend, reverse-proxy]
 ---
 
+
+Last-verified: 2026-07-28
 # Elysia.js + nginx Intermittent 500 Debug
 
 ## Symptoms

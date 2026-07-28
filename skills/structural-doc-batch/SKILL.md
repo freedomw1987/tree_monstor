@@ -8,10 +8,11 @@ trigger: |
   「我補一下文檔」「補 doc」「對齊 red line 10」「缺 PROJECT-OVERVIEW / PRD / QA tracker」
   「新接手 project」「8 份 doc 一次過」「doc batch」「ship 之前要 doc」
   或任何「我哋個 project 缺結構性文檔」嘅情境
-version: 1
 category: software-development
 ---
 
+
+Last-verified: 2026-07-28
 # Structural Doc Batch — 8 份文檔 Batch Operation
 
 > **為什麼需要這個 skill** — SOUL.md 紅線 10 + 11 + 13 規定:

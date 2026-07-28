@@ -3,6 +3,8 @@ name: sse-chunk-boundary-debug
 description: Diagnose and fix SSE JSON parse errors caused by HTTP chunked transfer encoding splitting SSE lines mid-JSON
 ---
 
+
+Last-verified: 2026-07-28
 # SSE Chunk Boundary JSON Parse Failure — Debug & Fix
 
 ## Problem

@@ -1,11 +1,10 @@
 ---
 name: elysia-jwt-plugin-singleton
 description: Fix "401 Unauthorized" in Elysia.js when JWT tokens signed by auth routes are rejected by protected routes — caused by multiple JWT plugin instances.
-version: 1.0.0
-author: Hermes Agent
 tags: [debugging, elysia, jwt, bun, auth]
 ---
 
+Last-verified: 2026-07-28
 # Elysia.js JWT Plugin Singleton Bug
 
 ## Symptom
