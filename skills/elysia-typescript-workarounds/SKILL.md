@@ -427,9 +427,9 @@ Or in `tsconfig.json`:
 
 **Verification that runtime is fine** (the real test):
 ```bash
-cd ~/www/<project>/apps/api
+cd ~/www/<your-project>/apps/api
 bun --env-file=../../.env src/index.ts
-# Expected: "🦊 CRM API running at 0.0.0.0:3001" + no crash
+# Expected: app startup banner + no crash
 curl -s http://localhost:3001/health
 # Expected: {"status":"ok",...}
 ```
@@ -528,7 +528,7 @@ when the image is `oven/bun` and the command is `bun dist/index.js`, bundle with
 
 ## 14. `use(authContext)` Sub-Module Derive — jwt Decorator Works via Elysia Module Inheritance
 
-*Origin: <project>, Day 4.*
+*Origin: a real Elysia 1.2 backend (production incident).*
 
 **Pattern**: Create a shared `authContext` Elysia plugin that derives `userId` from a Bearer JWT, then `.use()` it in individual route modules (not just the root app).
 
@@ -624,7 +624,7 @@ rg -L '// @ts-nocheck' apps/api/src/routes/*.ts
 
 ## 16. `authContext` Derive Context Does NOT Reach Route Handler Scope in Elysia 1.2 — Re-derive Inline
 
-*Origin: <project>.*
+*Origin: a real Elysia 1.2 backend (production incident).*
 
 **Symptom**: You `.use(authContext)` (an Elysia plugin that derives `userId` and `userRole` from the JWT) on a route module, then write a handler like:
 
@@ -693,7 +693,7 @@ If the data is sensitive, use `.guard()` or a `requirePermission()` plugin (whic
 
 ## 17. `getUserIdFromRequest` Must Be `export`ed from rbac.ts
 
-*Origin: <project>.*
+*Origin: a real Elysia 1.2 backend (production incident).*
 
 **Symptom**: Container start fails with `SyntaxError: Export named 'getUserIdFromRequest' not found in module '/app/apps/api/src/middleware/rbac.ts'.` The Dockerfile build succeeds, the migration applies, then the entrypoint crashes and the container restarts in a loop (5+ restarts in `docker ps`). `docker logs` shows the SyntaxError before any app startup banner.
 
@@ -724,8 +724,8 @@ rg -n 'getUserIdFromRequest' apps/api/src/middleware/rbac.ts
 **Verification after fix** (don't ship red builds):
 
 ```bash
-cd ~/www/<project>
-docker compose build api 2>&1 | tail -3   # should print "<project>-api Built"
+cd ~/www/<your-project>
+docker compose build api 2>&1 | tail -3   # should print "<your-project>-api Built"
 docker compose up -d --force-recreate --no-deps api
 sleep 12
 curl -s -i http://localhost/api/health    # should return 200 (not 502 Bad Gateway)
@@ -738,7 +738,7 @@ docker logs crm-api --tail 5              # should show "🦊 CRM API running"
 
 ## 18. Mixed `.use(authRoutes)` + `.group('/api', ...)` — Public Routes Mounted at Wrong Path
 
-*Origin: <project>, 2026-06-08.*
+*Origin: a real Elysia backend (production incident).*
 
 **Symptom**: `authRoutes` is mounted at the root via `.use(authRoutes)`, while every other route is mounted inside `.group('/api', ...)`. `POST /api/auth/login` returns **404** (`{"error":"NOT_FOUND"}`), but `POST /auth/login` works. nginx proxies `/api/*` to backend, so the frontend POST to `/api/auth/login` always 404s.
 
@@ -819,7 +819,7 @@ const app = new Elysia()
 ```
 JWT decode returns `user: null` for missing/invalid token; routes that need auth check `user` themselves. Most uniform but requires every auth-checking route to do its own check (no `requirePermission` plugin auto-fires).
 
-**Recommended for <project>** (matches its actual structure best): **Option A**. Move `authRoutes` into the `.group('/api', ...)` block. The frontend already uses `/api/auth/login`, nginx already proxies `/api/`, and the JWT derive will fire harmlessly (user=null for unauthed calls) — auth.ts handlers like `POST /auth/login` don't read `user` from context anyway.
+**Recommended for typical full-stack apps** (matches the standard backend + nginx + frontend split): **Option A**. Move `authRoutes` into the `.group('/api', ...)` block. The frontend already uses `/api/auth/login`, nginx already proxies `/api/`, and the JWT derive will fire harmlessly (user=null for unauthed calls) — auth handlers like `POST /auth/login` don't read `user` from context anyway.
 
 **Verification after fix**:
 ```bash
@@ -859,5 +859,5 @@ npx playwright test e2e/tests/critical-path.spec.ts --grep "login flow"
 
 | Topic | Reference |
 |---|---|
-| Lemontree V3 / <project> key file paths | [`<project>-v3-key-files.md`](references/<project>-v3-key-files.md) |
+| Real backend Elysia 1.2 layout (key file paths) | the original write-up captured this as `<your-project>-v3-key-files.md` in `references/` — rename or symlink to your project's name when localizing the recipe |
 | AWS ECS / CloudWatch recovery runbook for the Bun bundle-target crash | [`ecs-production-recovery.md`](references/ecs-production-recovery.md) |
