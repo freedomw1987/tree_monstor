@@ -70,18 +70,19 @@ Step 8: 提交 + commit message 引用 entry ID
 | **開發中** (per feature) | `dev-checker-loop` | 每個 work item 必須帶 regression test (RT-XXX)，掛進開關、登記 Coverage 表 |
 | **Bug fix 之中** (retrofit) | 本 skill (regression-guard) | 修 bug 時必須補 RG-XXX entry(即使 bug 唔屬於 loop 內發現) |
 | **Refactor / 改需求** | 本 skill | `rg "RG-XXX"` 確認 invariant 仲 valid，跑對應 regression test |
+| **Production 安全** | 本 skill (§ Step 5.5) | `REGRESSION_MODE` 唔可以 bypass production safety — production not mounted / 404 / hard fail；測試要配合真實 production behavior。詳見 Step 5.5「QA Regression Mode」+ 「Pitfall: `/__qa/*` endpoint 變成 accidental backdoor」 |
 
 > **完整 runtime flow**(`REGRESSION_MODE=1` 點 set、log 行格式 `[REGRESSION] <RT-ID> | <feature> | <frontend|backend|e2e> | PASS|FAIL | ...`、Coverage 表樣板、checker 標準、escalation rules)見 `dev-checker-loop/SKILL.md § Regression harness contract` 同 `§ File contract: docs/STATE.md`。本檔唔重複。
 
 **dev-checker-loop 入面提及 RG-XXX 嘅地方**:
-- §「Checker standards」Step 1.6 — bug fix item 必走 [`regression-guard`](./SKILL.md) 標準(red→green test + RG entry + code comment)
+- §「Checker standards」嘅「Bug fix 專項」sub-step（即 dev-checker-loop 嘅 Step 1 內部）— bug fix item 必走 [`regression-guard`](./SKILL.md) 標準(red→green test + RG entry + code comment)
 - §「File contract」Work Items 表的「涉及檔案 / commits」欄 + Checker Findings 嘅「證據」欄都會引用 RG-XXX
 
 ---
 
 ## 🎯 Regression test coverage targets
 
-Step 5 嘅「寫 regression test」唔係「隨手寫一個 case」就算。Coverage 必須按優先序涵蓋以下目標。**全部漏咗 = 回歸測試只有形式冇實質**。
+Step 5 嘅「寫 regression test」要按以下 target 涵蓋。呢個對應 Step 5 內文講嘅「**預防性測試 > 反應性測試**」 — 等個 bug 出咗先寫 test 永遠慢人一步。**Coverage 漏咗 = 回歸測試只有形式冇實質**。
 
 ### 1. 核心與高風險功能（Core & Critical Features）
 
@@ -149,6 +150,10 @@ Frontend regression test 除咗上面 1–3 嘅 target，仲要涵蓋以下 5 �
 - 任何 **前端專屬**（視覺 / 互動 / 狀態 / 跨瀏覽器 / 性能 + a11y）類別完全冇 test → finding（major）。
 - 任何 **Impact Area** 缺 test → finding（major），要求 dev 補齊。
 - 存量缺口（loop 開始前就冇 test 嘅舊功能）逐輪補；最後一輪結束時 Coverage 表不得有無 finding 記錄嘅 MISSING。
+
+> **N/A 嘅兩個 scope，唔好混淆**：
+> - **Step 5.5 N/A** = 個別 RG entry 嘅 QA hook 唔需要（例如純 unit test 已經夠）；寫入 entry 嘅「QA Regression Mode」section 註明即可。
+> - **本 section 嘅 coverage gap** = project-level（多 RG entry 累積判斷某類別完全冇 test）。系統性 N/A（例如 legacy system 冇 Lighthouse infra 跑 Performance test、冇 Percy/Chromatic 跑 Visual Regression）必須寫入 `docs/TEST-COVERAGE.md` 註明理由，唔可以 silent skip。Checker 見到冇理由嘅系統性 N/A = finding（major）。
 
 ---
 
@@ -314,7 +319,30 @@ describe('Image upload edge cases', () => {
 });
 ```
 
+**Frontend regression test example**(守住 UI 行為本身，唔止 backend unit)：
+
+```typescript
+// e2e/upload-dialog.spec.ts (Playwright)
+import { test, expect } from '@playwright/test'
+
+test('upload dialog > 5MB 顯示錯誤 + 唔送 request', async ({ page }) => {
+  await page.goto('/upload')
+  const hugeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'huge.jpg', { type: 'image/jpeg' })
+  await page.locator('[data-testid="upload-input"]').setInputFiles(hugeFile)
+  // 守住「client-side size check」嘅 UI 行為
+  await expect(page.getByRole('alert')).toContainText('FILE_TOO_LARGE')
+  await expect(page.locator('[data-testid="upload-submit"]')).toBeDisabled()
+  // 守住「冇送 request」(network idle 確認冇打到 backend)
+  const requests: string[] = []
+  page.on('request', (req) => requests.push(req.url()))
+  await page.locator('[data-testid="upload-retry"]').click()
+  expect(requests.filter((u) => u.includes('/api/upload'))).toHaveLength(0)
+})
+```
+
 **原則**:**預防性測試 > 反應性測試**。等個 bug 出咗先寫 test 永遠慢人一步。
+
+> **完整 frontend coverage 類別**(Visual Regression / Interaction / State / Cross-Browser / Perf + A11y)見 §「🎯 Regression test coverage targets → 4. 前端專屬測試類別」。Step 5 呢度嘅 example 只示範「互動 + 守住行為」一類；其他 4 類要按項目性質 + `docs/TEST-COVERAGE.md` 嘅 coverage 計劃補齊。
 
 
 ### Step 5.5: 補 / 驗證 QA Regression Mode
@@ -322,8 +350,8 @@ describe('Image upload edge cases', () => {
 Regression test 寫完後，必須讓 QA 知道點樣重跑同驗證：
 
 1. **Hook decision** — 先判斷是否真的需要新 hook；現有 deterministic fixture / unit setup / integration setup 足夠時，不要為了方便而加 `/__qa/*`
-2. **Frontend hook** — `data-testid` / `aria-label` / QA panel / visual freeze control；無需要則寫 N/A 理由
-3. **Backend hook** — `/__qa/seed` / `/__qa/reset` / fake mailbox / test clock / queue drain / `RG-XXX` fixture；無需要則寫 N/A 理由
+2. **Frontend QA hook** — `data-testid` / `aria-label` / QA panel / visual freeze control；無需要則寫 N/A 理由。**注意：「Frontend QA hook」同 § 4「前端專屬測試類別」(Visual Regression / Playwright E2E / Lighthouse Perf / A11y) 唔同 — hook 係 test runner 嘅 aid 嚟幫 QA 重跑；functional test 係守住 UI 行為本身嘅 regression test。兩者都應該有，但 role 唔同。**
+3. **Backend QA hook** — `/__qa/seed` / `/__qa/reset` / fake mailbox / test clock / queue drain / `RG-XXX` fixture；無需要則寫 N/A 理由
 4. **Endpoint contract** — 如新增 / 修改 `/__qa/*`，必須同步 `docs/API.md`、`docs/TEST-COVERAGE.md`、`docs/QA-TRACKER.md`；bug fix / `RG-XXX` 亦同步 `docs/REGRESSION-GUARD.md`
 5. **QA enablement** — 寫明 test command、seed command、expected output
 6. **Safety boundary** — 只限 dev/test/staging；production 不 mount `/__qa/*`，不接受 regression mode 作為 bypass
