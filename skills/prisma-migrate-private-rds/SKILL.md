@@ -305,7 +305,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 - **CI lint**: 任何 PR 改 `prisma/schema.prisma` 都必須**同時**改 `prisma/migrations/<新 timestamp>/migration.sql`, 否則 build fail。可以用 `scripts/migration-lint.sh` 加 pre-commit hook。
 
 **Cross-reference**:
-- `archive/skills/case-history/docker-multiarch-customer-image-release` (archived) 嘅 "客戶機 first boot 嘅 schema migration 陷阱" section 講 3 個 migration-related pitfall 嘅完整 diagnosis flow(1) db push 冇 emit, 2) duplicate column, 3) seed script 撞時序)。
+- `docker-multiarch-customer-image-release` 嘅 "客戶機 first boot 嘅 schema migration 陷阱" section 講 3 個 migration-related pitfall 嘅完整 diagnosis flow(1) db push 冇 emit, 2) duplicate column, 3) seed script 撞時序)。
 - 上面 "Migration file in `main` 但 container 從未 rebuild 過" 講 dev-side stale 嘅 detection, 呢度講 customer-side fresh DB 嘅 drift 問題。兩個互補: 一個係 "改咗 source 但冇 rebuild", 一個係 "source 改咗但 migration 漏 emit"。
 
 ## References

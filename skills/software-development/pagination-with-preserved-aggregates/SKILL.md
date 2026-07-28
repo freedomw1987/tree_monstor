@@ -253,6 +253,6 @@ Write this to `/tmp/<feature>_pagination_smoke.py` and run it after the backend 
 ## Related Skills
 
 - `frontend-backend-integration` — verify wire shape against backend source before writing the API client wrapper (includes the typed client request/response shape discipline)
-- `archive/skills/case-history/prisma-relation-debugging` (archived) — Prisma relation field issues (e.g. `manDayLines` vs `manDays` name drift)
+- `prisma-relation-debugging` — Prisma relation field issues (e.g. `manDayLines` vs `manDays` name drift)
 - `regression-guard` — record this as RG-XXX if a wrong-pagination bug regresses
 - `docker-mac-arm64-elysia-vite` — full-stack dev loop on Mac arm64 (rebuild + smoke test pattern)

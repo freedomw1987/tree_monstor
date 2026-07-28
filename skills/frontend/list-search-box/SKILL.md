@@ -185,7 +185,7 @@ useEffect(() => {
 **PG vs SQLite 嘅差異**:
 - `mode: 'insensitive'` 只 PG 支援
 - SQLite 用 `LIKE '%query%'` (case-insensitive by default for ASCII)
-- 詳細 pitfall 見 `archive/skills/case-history/prisma-sqlite-bun-setup` (archived)
+- 詳細 pitfall 見 `prisma-sqlite-bun-setup`
 
 **Hold 住唔做嘅 trigger**:
 - 用戶投訴「搜尋好慢」/「結果唔啱」/「想搜 description」
@@ -307,7 +307,7 @@ const filteredX = useMemo(() => {...}, [x, searchX])
 - `frontend/related-entity-entry-points` — 任何 sub-list 嘅 parent-child UX
 - `frontend/rwd-mobile-audit` — search box 嘅 mobile layout verify
 - `frontend/react-router-v7-patterns` — 拎走 route 嘅 back-link handling + sibling route collision check
-- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — server-side search upgrade 嘅 Prisma contains 寫法
+- `prisma-sqlite-bun-setup` — server-side search upgrade 嘅 Prisma contains 寫法
 - `software-development/qa-tracker-us-closure` — 拎走 standalone page 嘅 US DEPRECATION 同步(US row → `❌(DEPRECATED) ⚫` + `test.skip`/`describe.skip` + PRD strikethrough)
 
 ## Project case history

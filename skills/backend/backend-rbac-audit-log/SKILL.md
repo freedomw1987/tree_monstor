@@ -1,6 +1,6 @@
 ---
 name: backend-rbac-audit-log
-description: "Add role-based access control (RBAC) + audit log to any backend API (Elysia, Express, Fastify, Hono, NestJS). Pattern: centralized permission map in shared package + middleware `requirePermission()` plugin + `AuditLog` table with action enum + auto-capturing `logEvent()` helper that grabs user/IP/UA without throwing. Use when user says 'user management', 'roles and permissions', 'audit log', 'who did what when', 'activity history', 'compliance log', or wants admin functionality (CRUD users, reset passwords, view who-changed-what). Pairs naturally with `archive/skills/case-history/crm-data-model` (archived) for CRM/sales tools."
+description: "Add role-based access control (RBAC) + audit log to any backend API (Elysia, Express, Fastify, Hono, NestJS). Pattern: centralized permission map in shared package + middleware `requirePermission()` plugin + `AuditLog` table with action enum + auto-capturing `logEvent()` helper that grabs user/IP/UA without throwing. Use when user says 'user management', 'roles and permissions', 'audit log', 'who did what when', 'activity history', 'compliance log', or wants admin functionality (CRUD users, reset passwords, view who-changed-what). Pairs naturally with `crm-data-model` for CRM/sales tools."
 tags: ["rbac", "audit", "permissions", "auth", "admin", "backend", "security", "elysia", "express"]
 applicability: generic-pattern
 ---
@@ -384,10 +384,10 @@ Full schema + migration SQL + cache implementation + INSERT recipe: [`references
 - `templates/require-permission-rbac.ts` — the working Elysia plugin template
 - `templates/require-secret.ts` — boot-time secret validator
 - `scripts/audit-public-routes.sh` — 60-second recipe to find unauthenticated endpoints
-- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — SQLite 用 string 取代 enum 嘅 workaround
-- `archive/skills/case-history/elysia-jwt-plugin-singleton` (archived) — multi-instance JWT 嘅 "Bad JWT issued by different instance" 嘅案例
-- `archive/skills/case-history/crm-data-model` (archived) — CRM 數據模型 (use with this skill for CRM-style products)
-- `archive/skills/case-history/visual-ui-bug-debugging` (archived) — backend invariant silent-fail UI debug 方法
+- `prisma-sqlite-bun-setup` — SQLite 用 string 取代 enum 嘅 workaround
+- `elysia-jwt-plugin-singleton` — multi-instance JWT 嘅 "Bad JWT issued by different instance" 嘅案例
+- `crm-data-model` — CRM 數據模型 (use with this skill for CRM-style products)
+- `visual-ui-bug-debugging` — backend invariant silent-fail UI debug 方法
 
 ---
 
