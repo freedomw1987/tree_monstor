@@ -1,0 +1,14 @@
+$ python3 scripts/docs_consistency_check.py
+docs consistency check passed
+exit code: 0
+
+$ python3 scripts/generate_skills_catalog.py --check
+nested skills catalog is up to date
+exit code: 0
+
+$ git diff --cached --check
+exit code: 0
+
+$ extracted pitfall fidelity check
+validated 15 extracted sections (whitespace-normalized; duplicate omitted)
+exit code: 0
