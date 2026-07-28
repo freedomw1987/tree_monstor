@@ -95,7 +95,7 @@ Step 5: Manual testing fallback
 
 ---
 
-## Pattern: Dialog Freezes — Counter Label vs Checkbox 視覺 Desync (2026-06-06 crm-system real)
+## Pattern: Dialog Freezes — Counter Label vs Checkbox 視覺 Desync (2026-06-06 <project> real)
 
 **Symptom:** Click 4 個 `<input type="checkbox">` (browser_click 全部 success),但個 dialog 入面嘅 counter label 仲係 "0 個已選"。Snapshot 個 checkbox `checked=true`,vision 見到剔,console 完全冇 error。Submit 個 button click 之後 mutation hook 都唔 trigger(no spinner, no error banner, no toast, no network)。
 
@@ -151,7 +151,7 @@ docker exec crm-api sh -c '...fetch(`.../${id}`, { method: "DELETE" })...'
 ## Skill Source
 
 Created: 2026-04-24  
-Updated: 2026-06-06 — added "Dialog Freezes — Counter Label vs Checkbox 視覺 Desync" pattern from crm-system smoke test
+Updated: 2026-06-06 — added "Dialog Freezes — Counter Label vs Checkbox 視覺 Desync" pattern from <project> smoke test
 Context: WhatsApp-style React chatbot debugging — clicking sidebar conversation items didn't update chat area when tested via `browser_*` tools. Root cause was React synthetic event handling in Playwright, not actual code bug.
 Created: 2026-04-24  
 Context: WhatsApp-style React chatbot debugging — clicking sidebar conversation items didn't update chat area when tested via `browser_*` tools. Root cause was React synthetic event handling in Playwright, not actual code bug.

@@ -7,7 +7,7 @@ description: Tree Monstor dev-agent / checker-agent collaboration loop coordinat
 
 This is a thin adapter. The canonical skill is:
 
-**`/Users/apple/www/tree_monstor/skills/dev-checker-loop/SKILL.md`**
+**`<repo-root>SKILL.md`**
 
 1. Read the canonical SKILL.md above in full before acting.
 2. Follow it exactly — STATE.md format, regression switch + logs requirements, checker evidence rules, and escalation limits.

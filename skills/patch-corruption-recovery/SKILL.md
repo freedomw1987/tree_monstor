@@ -127,7 +127,7 @@ Corrupted file → git restore to last clean → re-patch correctly
 | **Re-read the full file (no offset/limit windowing) before patching a region that has nearby lookalike blocks** | Avoids the patch/edit tool anchoring on the wrong copy of a repeated anchor (see "Adjacent-anchor pitfall" below) |
 | **Pause on "Found 2 matches for old_string" errors** | It means the file has near-duplicate anchor regions (e.g. two consecutive `import { ... }` blocks). Add MORE surrounding context, don't blindly `replace_all` |
 
-## Adjacent-anchor pitfall (2026-06-08, crm-system ChartBlock.tsx)
+## Adjacent-anchor pitfall (2026-06-08, <project> ChartBlock.tsx)
 
 **Symptom**: `patch replace` silently deletes a comment block 5 lines
 above the intended anchor, while the actual edit lands correctly.
@@ -145,7 +145,7 @@ also fuzzy-matching on the lines AFTER it, which were the `import` block.
 Fuzzy match picked a different region that happened to have the same
 trailing pattern, and the comment in that OTHER region got deleted.
 
-**Import-silently-dropped pitfall (2026-06-09, pm-system agent/runtime.ts)**
+**Import-silently-dropped pitfall (2026-06-09, <project> agent/runtime.ts)**
 
 **Symptom**: After a patch that *should* have only modified a
 middle block of `agent/runtime.ts`, the `import { Elysia } from 'elysia'`
@@ -272,7 +272,7 @@ grep -cE '^(export |function |const \w+ =)' path/to/file
 # Should match. Mismatch = structural change you didn't intend.
 ```
 
-**The "double-match" sub-pattern** (2026-06-08, crm-system ChartBlock.tsx,
+**The "double-match" sub-pattern** (2026-06-08, <project> ChartBlock.tsx,
 later in same session): the first `replace_all=true` patch with an
 identical-match anchor **silently re-inserted** the comment I had just
 deleted (because by then there were TWO copies of the comment — the

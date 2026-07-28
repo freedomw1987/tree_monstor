@@ -36,7 +36,7 @@ Last-verified: 2026-07-28
 )}
 ```
 
-**後果**:用戶喺一間新公司完全見唔到 Deals section,冇 "+ 新增 Deal" 掣,零 affordance。David 撞過呢個 case 喺 `crm-system company-detail.tsx`(Day 9)。
+**後果**:用戶喺一間新公司完全見唔到 Deals section,冇 "+ 新增 Deal" 掣,零 affordance。David 撞過呢個 case 喺 `<project> company-detail.tsx`(Day 9)。
 
 ```tsx
 // ✅ FIX: section always render, 加 create 掣, empty state 用 hint 引導
@@ -297,7 +297,7 @@ Reason: detail page 傳落嚟個 `?companyId=X` 一定係 user 真正想處理�
 
 ### 🚨 7. Multi-preset 嘅 child page(同 page 收多個 ?parentId=)
 
-**情境**: crm-system 嘅 `/quotations` 同時有兩個 entry point — Deal card 嘅「+ 報價」(`?dealId=Y`)同 Company detail 嘅「+ 新增 Quotation」(`?companyId=X`)。同一 page 兩種 preset。
+**情境**: <project> 嘅 `/quotations` 同時有兩個 entry point — Deal card 嘅「+ 報價」(`?dealId=Y`)同 Company detail 嘅「+ 新增 Quotation」(`?companyId=X`)。同一 page 兩種 preset。
 
 **Anti-pattern**: 分開兩個 handler / 兩個 useEffect:
 
@@ -362,13 +362,13 @@ export function QuotationBuilder({ existing, initialDealId, initialCompanyId, ..
 ## Code Templates
 
 完整 pattern code 喺:
-- `templates/related-entity-entry-points-pattern.tsx` — 由 `crm-system` extract 嘅 4 pattern 全集
+- `templates/related-entity-entry-points-pattern.tsx` — 由 `<project>` extract 嘅 4 pattern 全集
 
 ## 配套 references
 
-- `references/crm-system-2026-06-06-companies-deals-quotations-flow.md` — 真實 session 入面點解 David 撞呢個問題、點樣修、同 verify 步驟
-- `references/crm-system-2026-06-09-nav-to-fab.md` — Day 10 sidebar reorder + AI → FAB refactor
-- `references/crm-system-2026-06-09-companies-to-quotation-shortcut.md` — Day 10 Companies → 新增 Quotation + multi-preset pattern discovery
+- `references/<project>-2026-06-06-companies-deals-quotations-flow.md` — 真實 session 入面點解 David 撞呢個問題、點樣修、同 verify 步驟
+- `references/<project>-2026-06-09-nav-to-fab.md` — Day 10 sidebar reorder + AI → FAB refactor
+- `references/<project>-2026-06-09-companies-to-quotation-shortcut.md` — Day 10 Companies → 新增 Quotation + multi-preset pattern discovery
 
 ## Audit Checklist (做完必跑)
 
@@ -394,10 +394,10 @@ export function QuotationBuilder({ existing, initialDealId, initialCompanyId, ..
 
 ## 過去 session 教訓
 
-- **2026-06-06 crm-system Day 10**: David feedback「喺 Companies 開唔到 Deals,喺 Deals 開唔到 Quotation」,debug 發現 detail page 用 `{deals.length > 0 && ...}` 完全 hide section,Deals Kanban card 上面個「📄 N quotation(s)」純文字冇 click affordance。Backend schema 一早已有齊 `Company → Deal → Quotation` 1-to-many chain。Fix 後 commit `696e0f4`。
-- **2026-06-09 crm-system Day 10**: David feedback「Nav menu 順序變一下」+「AI Assistant 改為在右下角有一個 Fab Button」。反映出 entity-UX 嘅 5th 維度:**sidebar ↔ FAB 嘅 refactor 唔只係 aesthetic,係 product-positioning 決定**。Nav 順序由 storage-time 邏輯改做 sales-funnel 邏輯(誰先誰後 = user 嘅 mental model),AI 由 nav 抽做 FAB(why: 1 個 click 太多 steps,AI 應該 always-1-tap 喺每個 page 觸及)。詳見 `references/crm-system-2026-06-09-nav-to-fab.md`。
-- **2026-06-09 crm-system Day 10**: David feedback「另外,Companies 中的Quotation 也要有一個新增Quotation的button」,發現 Quotation 同時有 `companyId` + `dealId` 兩個 FK,**同一 page** 要 support 兩個 entry point → **multi-preset child page pattern**。詳見 `references/crm-system-2026-06-09-companies-to-quotation-shortcut.md`。Fix 後 commit `bfe0634`。
-- **2026-06-06 crm-system Day 11 reverse**(重要 — **推翻 P2/P3/P4 navigate pattern**,改用 P6 embedded modal):David 修正「Companies 點『新增 Deals / Quotation』唔好 navigate,直接彈 modal;Deals Card 點『+ 報價』都唔好 navigate,直接 inline QuotationBuilder」。**Lesson**:Pattern 2/3/4 嘅 `useSearchParams` + `setSearchParams` 方案**唔係 default**,只適合 user 想「去 child list page explore」嘅 case;**「user 留喺 parent 想 quick add」嘅 case 必須用 P6 embedded modal**(open useState + Dialog + preset prop)。**P6 嘅 trade-off**:Modal 內 component instance 仲喺 memory(state 可能 stale),要 ensure onCancel reset preset state;但**UX win 完全 cover** — David 嘅 mental model 係「我做完呢個 quick add 就走,唔想再 navigate 走 context」。詳見 sibling pattern 6。
+- **2026-06-06 <project> Day 10**: David feedback「喺 Companies 開唔到 Deals,喺 Deals 開唔到 Quotation」,debug 發現 detail page 用 `{deals.length > 0 && ...}` 完全 hide section,Deals Kanban card 上面個「📄 N quotation(s)」純文字冇 click affordance。Backend schema 一早已有齊 `Company → Deal → Quotation` 1-to-many chain。Fix 後 commit `696e0f4`。
+- **2026-06-09 <project> Day 10**: David feedback「Nav menu 順序變一下」+「AI Assistant 改為在右下角有一個 Fab Button」。反映出 entity-UX 嘅 5th 維度:**sidebar ↔ FAB 嘅 refactor 唔只係 aesthetic,係 product-positioning 決定**。Nav 順序由 storage-time 邏輯改做 sales-funnel 邏輯(誰先誰後 = user 嘅 mental model),AI 由 nav 抽做 FAB(why: 1 個 click 太多 steps,AI 應該 always-1-tap 喺每個 page 觸及)。詳見 `references/<project>-2026-06-09-nav-to-fab.md`。
+- **2026-06-09 <project> Day 10**: David feedback「另外,Companies 中的Quotation 也要有一個新增Quotation的button」,發現 Quotation 同時有 `companyId` + `dealId` 兩個 FK,**同一 page** 要 support 兩個 entry point → **multi-preset child page pattern**。詳見 `references/<project>-2026-06-09-companies-to-quotation-shortcut.md`。Fix 後 commit `bfe0634`。
+- **2026-06-06 <project> Day 11 reverse**(重要 — **推翻 P2/P3/P4 navigate pattern**,改用 P6 embedded modal):David 修正「Companies 點『新增 Deals / Quotation』唔好 navigate,直接彈 modal;Deals Card 點『+ 報價』都唔好 navigate,直接 inline QuotationBuilder」。**Lesson**:Pattern 2/3/4 嘅 `useSearchParams` + `setSearchParams` 方案**唔係 default**,只適合 user 想「去 child list page explore」嘅 case;**「user 留喺 parent 想 quick add」嘅 case 必須用 P6 embedded modal**(open useState + Dialog + preset prop)。**P6 嘅 trade-off**:Modal 內 component instance 仲喺 memory(state 可能 stale),要 ensure onCancel reset preset state;但**UX win 完全 cover** — David 嘅 mental model 係「我做完呢個 quick add 就走,唔想再 navigate 走 context」。詳見 sibling pattern 6。
 
 ---
 
@@ -452,7 +452,7 @@ const navItems = [
 ### 5c. FAB design spec (Material Design compliant)
 
 ```tsx
-// /components/layout/ai-fab.tsx — 從 crm-system Day 10 抽出
+// /components/layout/ai-fab.tsx — 從 <project> Day 10 抽出
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
@@ -548,7 +548,7 @@ function AiFab() {
 | **P2/P3/P4 navigate** | 撳 button → 跳去 child list page → 自動開 dialog | 「我反正都要去 child page 一次」 | Sales 週報要檢視所有 deals 嘅 quotations |
 | **P6 embedded modal** | 撳 button → parent page 開 dialog overlay → 填 → 關 | 「我 focus 喺呢間公司,加多個 deal」 | 銷售跟進緊客戶 detail 時 quick add |
 
-**P6 implementation template**(crm-system 2026-06-06 reference):
+**P6 implementation template**(<project> 2026-06-06 reference):
 
 ```tsx
 // /pages/company-detail.tsx
@@ -618,7 +618,7 @@ export function CompanyDetailPage() {
 }
 ```
 
-**DealCard 上面嘅 embedded button**(`/deals` Kanban 入面,對應 crm-system 2026-06-06 deal 內嵌 quotation):
+**DealCard 上面嘅 embedded button**(`/deals` Kanban 入面,對應 <project> 2026-06-06 deal 內嵌 quotation):
 
 ```tsx
 // /components/deal-card.tsx
@@ -708,7 +708,7 @@ User click 個 button 之後...
   - `templates/related-entity-entry-points-pattern.tsx` — 4 個 entry-point patterns
   - `templates/fab-component.tsx` — 完整 FAB 模板(可改 path / icon / size)
 - **References**:
-  - `references/crm-system-2026-06-06-companies-deals-quotations-flow.md` — Day 10 parent-child flow fix
-  - `references/crm-system-2026-06-09-nav-to-fab.md` — Day 10 sidebar ↔ FAB refactor + sales-funnel nav order
-  - `references/crm-system-2026-06-09-companies-to-quotation-shortcut.md` — Day 10 multi-preset child page pattern
-  - `references/crm-system-2026-06-11-embedded-modal-replaces-navigate.md` — Day 11 P6 pattern addition + reversal of P2/P3/P4 as default
+  - `references/<project>-2026-06-06-companies-deals-quotations-flow.md` — Day 10 parent-child flow fix
+  - `references/<project>-2026-06-09-nav-to-fab.md` — Day 10 sidebar ↔ FAB refactor + sales-funnel nav order
+  - `references/<project>-2026-06-09-companies-to-quotation-shortcut.md` — Day 10 multi-preset child page pattern
+  - `references/<project>-2026-06-11-embedded-modal-replaces-navigate.md` — Day 11 P6 pattern addition + reversal of P2/P3/P4 as default

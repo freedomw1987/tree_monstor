@@ -1,6 +1,6 @@
 ---
 name: qa-tracker-us-closure
-description: Per-US test closure cadence for closing out NONE/PARTIAL P0 user stories in a project's QA-TRACKER.md. Class-level, applies to any project that uses the US ↔ Test 對照 tracker pattern (PM-System, crm-system, llm-acp, future projects). Trigger when a project's QA tracker shows rows with NONE / PARTIAL / DRAFT for P0 user stories, or when the user says "close out P0 US test gap", "Sprint N P0 test push", "做嗰啲 NONE 嘅 US", "ship 嗰啲 P0 test by test", or "audit NONE US". Per-US rhythm is audit source, write derive-or-source test, run + fix, commit + tracker sync + push. Distinct from a multi-axis code review (see `code-review-pipeline`) and from full Sprint retrospective writing.
+description: Per-US test closure cadence for closing out NONE/PARTIAL P0 user stories in a project's QA-TRACKER.md. Class-level, applies to any project that uses the US ↔ Test 對照 tracker pattern (PM-System, <project>, llm-acp, future projects). Trigger when a project's QA tracker shows rows with NONE / PARTIAL / DRAFT for P0 user stories, or when the user says "close out P0 US test gap", "Sprint N P0 test push", "做嗰啲 NONE 嘅 US", "ship 嗰啲 P0 test by test", or "audit NONE US". Per-US rhythm is audit source, write derive-or-source test, run + fix, commit + tracker sync + push. Distinct from a multi-axis code review (see `code-review-pipeline`) and from full Sprint retrospective writing.
 applicability: generic-pattern
 ---
 
@@ -241,8 +241,8 @@ When **2 US share the same source file + same derive pattern** and the user's pr
 
 ## Reference
 
-- `references/pm-system-sprint-10-example.md` — worked example of 3 US closures from PM-System Sprint 10 (2026-06-10), with audit decisions, test categories, tracker sync spots, and pattern observations
-- `references/pm-system-sprint-10-commits-4-5.md` — Sprint 10 commits #4 + #5 (US-2.4+US-2.3 bundled, US-4.5 E2E spec draft). Covers derive null-safety pitfall, multiple-US-per-commit rare exception, E2E spec draft pattern, TypeScript pre-flight for e2e/ specs.
+- `references/<project>-sprint-10-example.md` — worked example of 3 US closures from PM-System Sprint 10 (2026-06-10), with audit decisions, test categories, tracker sync spots, and pattern observations
+- `references/<project>-sprint-10-commits-4-5.md` — Sprint 10 commits #4 + #5 (US-2.4+US-2.3 bundled, US-4.5 E2E spec draft). Covers derive null-safety pitfall, multiple-US-per-commit rare exception, E2E spec draft pattern, TypeScript pre-flight for e2e/ specs.
 - `references/sprint-followup-registration-example.md` — Sprint 11 (2026-06-09) docs-only follow-up registration: 3 條 retro "What's NOT done" 段 → tracker 嘅 2 row patch + 1 new section + T15a/T15b sub-letter naming + NONE-HOLD 🟠 marker。**When to use: 用戶 message 開頭係 `補:` / `+:` 格式 list 住嘅 task,純 docs-only,冇 coding intent**。
 
 ## Related skills

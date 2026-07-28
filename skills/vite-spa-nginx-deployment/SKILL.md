@@ -85,7 +85,7 @@ sudo rsync -av --delete /path/to/project/frontend/dist/ /var/www/your.domain.com
 | Vite HMR requests 404 | Production nginx proxying to Vite dev server — switch to static `dist/` |
 | `rewrite or internal redirection cycle` error in error.log, page never loads | `try_files $uri $uri/ /index.html` inside `location /` rewrites `/` to `/index.html` which matches `location /` again — see "SPA Fallback Rewrite Cycle" below |
 
-## SPA Fallback Rewrite Cycle (2026-06-05 crm-system Day 3 真實撞牆)
+## SPA Fallback Rewrite Cycle (2026-06-05 <project> Day 3 真實撞牆)
 
 **症狀**:
 ```nginx
@@ -127,7 +127,7 @@ server {
 
 **為何 `try_files $uri $uri/ /index.html` 平時都 work 但有時撞**: 當 `index index.html` directive 喺 server 級別設定咗,nginx 對 `/` request 自動 resolve 個 `index.html` 而唔再 `try_files` rewrite,所以 localhost 平時 OK。但當 `index` 設定唔 match 或 `root` 唔 work(permission), 個 loop 就 surface 出嚟。`@spa` named location 係更穩陣嘅 pattern。
 
-**配 `/api` reverse proxy 嘅典型 crm-system 風格**:
+**配 `/api` reverse proxy 嘅典型 <project> 風格**:
 ```nginx
 upstream api {
     server api:3001;  # docker service name

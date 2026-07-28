@@ -19,7 +19,7 @@ Last-verified: 2026-07-28
 ## 架構
 ```
 Internet → Caddy (443/80) → docker network
-                              ├── chatbot-proxy (Caddy edge, 80/443)
+                              ├── <project> (Caddy edge, 80/443)
                               ├── chatbot-backend (Bun :3001)
                               └── chatbot-frontend (Caddy SPA :80)
 ```
@@ -27,31 +27,31 @@ Internet → Caddy (443/80) → docker network
 ## 常見錯誤與修復
 
 ### 7. 在現有 Caddy Docker 容器加入新子網域 vhost
-**場景**：現有的 Caddy 容器（chatbot-proxy）已經管理著 SSL 和多個網域，需要快速加入新的子網域（如 pos.david-developer.com）指向 host 上的服務
+**場景**：現有的 Caddy 容器（<project>）已經管理著 SSL 和多個網域，需要快速加入新的子網域（如 <your-domain>）指向 host 上的服務
 
 **Caddyfile 位置**：Caddyfile 通過 volume mount 進容器，所以改本地文件就能生效（不需要重 build）：
 ```
-~/projects/whatsapp-chatbot/Caddyfile.proxy → /etc/caddy/Caddyfile (容器內)
+<projects-dir>/<project>Caddyfile.proxy → /etc/caddy/Caddyfile (容器內)
 ```
 
 **熱重載**：不需要重啟容器，直接：
 ```bash
-docker exec chatbot-proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+docker exec <project> caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 ```
 
 **Caddyfile 格式**（每個 vhost 一個 site block）：
 ```
-pos.david-developer.com {
+<your-domain> {
   handle_path /api/* {
     reverse_proxy 127.0.0.1:3000
   }
   handle /* {
-    root * /home/ubuntu/projects/lemontree_aws/frontend/dist
+    root * /home/ubuntu/projects/<project>_aws/frontend/dist
     file_server
   }
 }
 
-chatbot.david-developer.com {
+<your-domain> {
   ...
 }
 ```
@@ -61,32 +61,32 @@ chatbot.david-developer.com {
 ### 8. Docker `host.docker.internal` 在 Linux EC2 環境不可用
 **問題**：`host.docker.internal` 在 Debian/Ubuntu 的某些 Docker 安裝版本無法解析，在 AWS EC2 Linux 實例上也無法使用。
 
-**背景**：在 AWS EC2 (Debian) 上測試時，嘗試過 `host.docker.internal`、`172.17.0.1`（默認 bridge gateway）、`172.18.0.1` 都無法從 Caddy 容器訪問 host 服務。
+**背景**：在 AWS EC2 (Debian) 上測試時，嘗試過 `host.docker.internal`、`<server-ip>`（默認 bridge gateway）、`<server-ip>` 都無法從 Caddy 容器訪問 host 服務。
 
 **解法** — 三步確認 host IP：
-1. 在 host 上執行 `ip addr` 找到 actual private IP（如 `172.31.19.145`）
+1. 在 host 上執行 `ip addr` 找到 actual private IP（如 `<server-ip>`）
 2. 確認目標服務確實在 host 上監聽 `0.0.0.0`（不是 `127.0.0.1`）
 3. 用這個實際 IP 作為 Caddy `reverse_proxy` 目標
 
 ```bash
 # 在 host (EC2) 上找到實際 IP
 ip addr show eth0 | grep inet
-# → inet 172.31.19.145/20
+# → inet <server-ip>/20
 
 # 在 Caddy 容器內測試（不走容器網路）
-curl -s -X POST https://pos.david-developer.com/api/auth/login \
+curl -s -X POST https://<your-domain>/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@lemontree.hk","password":"Test123!@#"}'
+  -d '{"email":"admin@<project>.hk","password":"Test123!@#"}'
 ```
 
 **Caddyfile 配置（使用 host 真實 IP）**：
 ```
-pos.david-developer.com {
+<your-domain> {
   handle_path /api/* {
-    reverse_proxy 172.31.19.145:3000
+    reverse_proxy <server-ip>:3000
   }
   handle /* {
-    reverse_proxy 172.31.19.145:3002
+    reverse_proxy <server-ip>:3002
   }
 }
 ```
@@ -97,20 +97,20 @@ pos.david-developer.com {
 **解法**：在 host 上啟動一個靜態文件伺服器（如 Python http.server），Caddy 再反向代理過去：
 ```bash
 # host 上
-cd ~/projects/lemontree_aws/frontend/dist
+cd ~/projects/<project>_aws/frontend/dist
 python3 -m http.server 3002
 
 # Caddyfile
 handle /* {
-  reverse_proxy 172.31.19.145:3002
+  reverse_proxy <server-ip>:3002
 }
 ```
 
 ### 10. Caddy `handle_path` 會剝離前綴
 **行為**：`handle_path /api/*` 會把 `/api` 前綴從 URL 中移除後再轉發給 backend。
 
-例如：`POST https://pos.david-developer.com/api/auth/login`
-→ 轉發給 backend 時變成 `POST 172.31.19.145:3000/auth/login`
+例如：`POST https://<your-domain>/api/auth/login`
+→ 轉發給 backend 時變成 `POST <server-ip>:3000/auth/login`
 
 **對後端路由的影響**：
 - 如果 backend 路由是 `/auth/login` → ✅ 能匹配
@@ -123,7 +123,7 @@ handle /* {
 
 **驗證**：
 ```bash
-docker inspect chatbot-proxy --format '{{.HostConfig.NetworkMode}}'
+docker inspect <project> --format '{{.HostConfig.NetworkMode}}'
 ```
 
 ### 1. Caddyfile.spa — `try {path}` 語法無效
@@ -140,7 +140,7 @@ handle { try_files {path} /index.html; file_server }
 {
   email admin@example.com
 }
-chatbot.david-developer.com {
+<your-domain> {
   ...site config...
 }
 ```

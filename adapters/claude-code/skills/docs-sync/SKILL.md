@@ -7,7 +7,7 @@ description: Tree Monstor docs-sync workflow — Synchronizes review feedback, Q
 
 This is a thin adapter. The canonical skill is:
 
-**`/Users/apple/www/tree_monstor/skills/docs-sync/SKILL.md`**
+**`<repo-root>SKILL.md`**
 
 1. Read the canonical SKILL.md above in full before acting.
 2. Follow it exactly — feedback that only lives in chat is not resolved.

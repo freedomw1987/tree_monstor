@@ -257,7 +257,7 @@ git status -s
 ### Step 5: 一個 commit + 顯式列 untracked changes
 
 ```bash
-git -c user.email="dev@pm-system.local" -c user.name="Tree Monstor" commit -m "docs: add 8 份結構性文檔 (PROJECT-OVERVIEW/PRD/QA-TRACKER/REGRESSION-GUARD/TECH-DEBT/TEST-COVERAGE/3x ADR/retro)
+git -c user.email="dev@<project>.local" -c user.name="Tree Monstor" commit -m "docs: add 8 份結構性文檔 (PROJECT-OVERVIEW/PRD/QA-TRACKER/REGRESSION-GUARD/TECH-DEBT/TEST-COVERAGE/3x ADR/retro)
 
 - docs/PROJECT-OVERVIEW.md: 定位、scope、stack、拓樸
 - docs/PRD.md: 5 personas + 12 epics + 50+ US
@@ -296,11 +296,11 @@ git -c user.email="dev@pm-system.local" -c user.name="Tree Monstor" commit -m "d
 
 ---
 
-## ⚠️ Pitfalls(2026-06-08 pm-system doc batch 親驗)
+## ⚠️ Pitfalls(2026-06-08 <project> doc batch 親驗)
 
 ### Pitfall 1: Working tree untracked changes 撞 commit 永久資料損失
 
-**場景**:pm-system doc batch 嗰陣,`git status -s` 見到
+**場景**:<project> doc batch 嗰陣,`git status -s` 見到
 `D docs/SOW_PM_System_報價建議書.docx`(David 之前 manual rm 嘅 file)。
 盲目 `git add .` 會 commit 個 delete = 永久 lost 一份 doc。
 
@@ -315,7 +315,7 @@ git -c user.email="dev@pm-system.local" -c user.name="Tree Monstor" commit -m "d
 
 ### Pitfall 2: API.md 重寫 578 lines 撞 drift
 
-**場景**:pm-system 嘅 `docs/API.md` 已有 578 lines 完整 endpoint 列表。
+**場景**:<project> 嘅 `docs/API.md` 已有 578 lines 完整 endpoint 列表。
 如果用 doc batch derive 重新生成,容易同 backend source 撞 shape drift。
 
 **Prevention**:
@@ -344,7 +344,7 @@ git -c user.email="dev@pm-system.local" -c user.name="Tree Monstor" commit -m "d
 - Retro section:✅ Good / ⚠️ Caution / ❌ Blockers 發現 / Action items / Lessons
 - Action items 入下個 sprint
 
-### Pitfall 8: 對外文件 (USER-MANUAL / ONBOARDING) 用咗 David 嘅廣東話口語 (2026-06-09 pm-system)
+### Pitfall 8: 對外文件 (USER-MANUAL / ONBOARDING) 用咗 David 嘅廣東話口語 (2026-06-09 <project>)
 
 **場景**:agent 慣性將 David 嘅 conversation Cantonese 口語 (`嘅/嗰/啲/咗/唔/冇/嚟/睇下/跟住/幾多/點解`) 寫入正式 doc。USER-MANUAL.md 第一次出嗰陣用咗「我哋」、「點樣」、「項目入面要解決嘅問題」等等 — 對客戶/新同事讀起嚟唔正式。
 
@@ -393,7 +393,7 @@ RG-002(LLM hang),但 TECH-DEBT.md 冇將呢啲已知 fragile area 列入 TD entr
 > Doc batch 之後,如果 `TEST-COVERAGE.md` 顯示 < 30% coverage,**唔好 ship**。
 > 跟住做 **Test Batch**:補 unit test + 設 Playwright E2E + 守住 RBAC。
 
-### Test Batch 6 步流程(2026-06-08 pm-system 親驗)
+### Test Batch 6 步流程(2026-06-08 <project> 親驗)
 
 ```
 Doc Batch 完成
@@ -425,7 +425,7 @@ Step 5: 過程發現嘅 bug → 即時 write TECH-DEBT entry (TD-XXX)
 Step 6: 更新 TEST-COVERAGE / QA-TRACKER / TECH-DEBT / e2e/README + commit
 ```
 
-### Phase 3: Fix Batch(2026-06-08 pm-system Sprint 1 第三輪親驗)
+### Phase 3: Fix Batch(2026-06-08 <project> Sprint 1 第三輪親驗)
 
 ```
 Test Batch 完成
@@ -504,7 +504,7 @@ Step 8: 1 個 commit + commit message 引用 RG ID
 
 **Lesson**:**final emit 唔係「我做咗咩」,係「ship-readiness + 下面 3 條點行」**。David 用呢個 format 5 分鐘內做 next-step decision,唔再要問「咁而家點」。
 
-完整 reproduce:`references/structural-doc-batch-pm-system-2026-06-08-walkthrough-test-batch.md` + `references/pm-system-2026-06-08-sprint-1-td-011-fix-and-regression-test.md`(喺 `regression-guard` skill 入面)
+完整 reproduce:`references/structural-doc-batch-<project>-2026-06-08-walkthrough-test-batch.md` + `references/<project>-2026-06-08-sprint-1-td-011-fix-and-regression-test.md`(喺 `regression-guard` skill 入面)
 
 ### 3 份 Unit Test 嘅 derive pattern(重要!)
 
@@ -611,7 +611,7 @@ test.describe('RBAC negative E2E', () => {
 
 ## 🎬 實戰情境
 
-### 情境:pm-system doc batch(2026-06-08 親驗)
+### 情境:<project> doc batch(2026-06-08 親驗)
 
 David:「您可以幫分析一下pm-system項目,我補一下文檔?」
 
@@ -638,5 +638,5 @@ David:「您可以幫分析一下pm-system項目,我補一下文檔?」
 
 - `references/structural-doc-batch-source-derive-template.md` —
   8 份 doc 嘅 starter template(可 copy 後 modify),每份列 sections + example
-- `references/structural-doc-batch-pm-system-2026-06-08-walkthrough.md` —
-  完整 walkthrough 透過 pm-system 9-doc batch,step-by-step 對齊 source
+- `references/structural-doc-batch-<project>-2026-06-08-walkthrough.md` —
+  完整 walkthrough 透過 <project> 9-doc batch,step-by-step 對齊 source

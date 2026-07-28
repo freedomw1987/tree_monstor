@@ -19,7 +19,7 @@ Last-verified: 2026-07-28
 
 When `docs/QA-TRACKER.md` shows many P0 US at `NONE` / `PARTIAL` / `PASS-E2E-only`, this is the playbook to bring them all to `PASS-UNIT` (or correctly labeled `DEFERRED`) without producing fake output.
 
-Triggered by David: "另外,QA-TRACKER.md 中嘅 test 未做的,都要做一下吧,盡快把所有問題都找出來" (2026-06-08, pm-system) — pushed 22 P0 US from NONE/PARTIAL to PASS-UNIT, +288 unit tests, 0 source code changes, 0 regressions.
+Triggered by David: "另外,QA-TRACKER.md 中嘅 test 未做的,都要做一下吧,盡快把所有問題都找出來" (2026-06-08, <project>) — pushed 22 P0 US from NONE/PARTIAL to PASS-UNIT, +288 unit tests, 0 source code changes, 0 regressions.
 
 ---
 
@@ -43,7 +43,7 @@ Triggered by David: "另外,QA-TRACKER.md 中嘅 test 未做的,都要做一下�
 
 ### Step 1 — Recon: parse QA-TRACKER + count P0 US
 
-**Don't eyeball the table** — 50+ US rows, easy to misread. Use the bundled parser, but verify it matches YOUR tracker's column layout first (the parser was written for 2026-06-08 pm-system layout, see **Pitfall #17** below).
+**Don't eyeball the table** — 50+ US rows, easy to misread. Use the bundled parser, but verify it matches YOUR tracker's column layout first (the parser was written for 2026-06-08 <project> layout, see **Pitfall #17** below).
 
 ```bash
 python3 <profile-root>/skills/testing/unit-test-coverage-push/references/qa-tracker-parser.py docs/QA-TRACKER.md
@@ -57,13 +57,13 @@ awk -F'|' 'NR<=20 && /^\|/ {print NR": "NF" cols — "$0}' docs/QA-TRACKER.md
 
 The MD table has a **leading empty cell** (because the row starts with `| | US-1.1 | ...` — the first `|` is followed by an empty cell before the US ID). So a 9-column table → cells[0] is empty, cells[1] is US ID, cells[2] is title, etc. **Count your columns; don't guess.**
 
-**Fallback path when `execute_code` is slow/blocked** (2026-06-09 pm-system lesson): if the bundled parser or inline Python isn't working AND `execute_code` is hanging, fall back to plain `awk` via `terminal()`. This session's actually-working pattern:
+**Fallback path when `execute_code` is slow/blocked** (2026-06-09 <project> lesson): if the bundled parser or inline Python isn't working AND `execute_code` is hanging, fall back to plain `awk` via `terminal()`. This session's actually-working pattern:
 
 ```bash
 awk -F'|' 'NR>=15 && /US-/ {
   gsub(/^ +| +$/,"",$2);  # US ID
   gsub(/^ +| +$/,"",$3);  # Title
-  gsub(/^ +| +$/,"",$7);  # Test Status (pm-system convention)
+  gsub(/^ +| +$/,"",$7);  # Test Status (<project> convention)
   print $2"|"$3"|"$7
 }' docs/QA-TRACKER.md > /tmp/qa.txt
 
@@ -116,7 +116,7 @@ For EACH P0 US in `need_unit`, classify into one of three tiers:
 | **Integration** (Path X) | Route has **stateful streaming** (SSE, WebSocket, OpenAI tool-calling, multipart upload) but logic IS inspectable: function boundary + structured wire format | ~2-3 hr/US, **minimal source change** (export helpers, add `app.handle()` interface) | Tests real fetch wire format + WS lifecycle + SSE event boundary parsing — the bugs pure unit tests miss |
 | **DEFERRED** (correct call) | Route is **>500 LOC** AND **in-memory side effects only accessible via internal closure** (e.g. module-level WS `Map` not exported, or business logic entangled with prisma writes) | Cannot do well | Mark in tracker, do NOT fake |
 
-**Path X (Integration test) — when to pick this tier** (from 2026-06-08 pm-system Sprint 3):
+**Path X (Integration test) — when to pick this tier** (from 2026-06-08 <project> Sprint 3):
 
 > 「streamLLMResponse」、「WebSocket onMessage」、「file upload multipart」呢啲**功能有清晰嘅 wire boundary**(入面收到 `Request` / `WebSocket`,出面 emit `Response` / `ws.send` 嘅 structured frames),就唔應該 DEFERRED,應該做 in-process integration test。
 
@@ -229,7 +229,7 @@ The technique that made the 22 P0 US push possible. Steps:
 - File upload stream parsing
 - Database transactions (need real DB)
 
-**Example derive** (from `pm-system/requirements.ts`):
+**Example derive** (from `<project>/requirements.ts`):
 
 ```ts
 // 從 requirements.ts line 121-146 derive 嘅 canEditRequirement
@@ -263,7 +263,7 @@ When derive tier 唔得但 wire boundary 清晰,用 in-process integration test�
 - Module-level state(WS `Map` / in-memory cache)冇 accessor,refactor 出 accessor 等於改 source design
 - 同時 > 2 個 side-effect 互相 race(real DB transactions + WebSocket broadcast 互相 ping)
 
-### 5-Step 流程(Path X,2026-06-08 pm-system Sprint 3 驗證)
+### 5-Step 流程(Path X,2026-06-08 <project> Sprint 3 驗證)
 
 **Step 1: Export minimal helpers from source**(2-3 line patches,冇 logic 改動)
 
@@ -447,9 +447,9 @@ For any route with status enum + transitions (Tasks/Requirements/Bugs/Orders/Tic
 14. **DON'T rely on `mock.module` ESM hoist for in-flight imports** — `mock.module` 對 **已被 loaded 嘅 module** 唔生效。**Fix**:**直接 import exported helper**(唔 import 個 module 嘅 internal state)。如果一定要 mock 個 import,將 import 寫喺 `mock.module` 之後(Bun 嘅 bun:test runtime 識 reorder imports)。**Sprint 3 fallback**:`streamLLMResponse` / `handleAgentWS` 都係 `export` 出嚟,直接 call,完全 bypass module-level state。
 15. **DON'T `await app.listen(0)` in test env** — Bun 嘅 random port 喺 test runner 入面有 race condition,test 之間會撞 port。**Fix**:**直接 call `app.handle(new Request('http://test/...'))`,Elysia 內部 dispatch,bypass listen。Sprint 3 全程冇 listen,純 in-process。**
 
-16. **DON'T trust a parser that returns 0 P0 US** — the bundled `qa-tracker-parser.py` (and the inline snippet above) assume a 7-column table with "P0" in column 2 and Test Status in column 5. **`pm-system`'s actual tracker is 9 columns with empty first cell, no "P0" column, Test Status in column 6.** 2026-06-09 lesson: parser returned 0, agent (me) tried 3 `execute_code` fixes guessing column indices (5, 6, 7 — all wrong or fragile), all timed out or `KeyError: 0` (because `terminal()` returns dict, not list), then fell back to plain `awk` via `terminal()`. **Fix**: (a) ALWAYS verify parser output with a sanity number first — if 0, the parser is wrong, not the tracker; (b) read the MD header row directly to count columns before indexing; (c) when `execute_code` is blocked/timing out, **`terminal()` + `awk -F'|'` is the working fallback** — `terminal()` returns a dict with `output` key, NOT a list. (d) 9-column MD table trick: first cell is empty (`| | US-1.1 | ...`), so cells[1] = US ID, cells[2] = title, cells[6] = Test Status (verified in pm-system 2026-06-09).
+16. **DON'T trust a parser that returns 0 P0 US** — the bundled `qa-tracker-parser.py` (and the inline snippet above) assume a 7-column table with "P0" in column 2 and Test Status in column 5. **`<project>`'s actual tracker is 9 columns with empty first cell, no "P0" column, Test Status in column 6.** 2026-06-09 lesson: parser returned 0, agent (me) tried 3 `execute_code` fixes guessing column indices (5, 6, 7 — all wrong or fragile), all timed out or `KeyError: 0` (because `terminal()` returns dict, not list), then fell back to plain `awk` via `terminal()`. **Fix**: (a) ALWAYS verify parser output with a sanity number first — if 0, the parser is wrong, not the tracker; (b) read the MD header row directly to count columns before indexing; (c) when `execute_code` is blocked/timing out, **`terminal()` + `awk -F'|'` is the working fallback** — `terminal()` returns a dict with `output` key, NOT a list. (d) 9-column MD table trick: first cell is empty (`| | US-1.1 | ...`), so cells[1] = US ID, cells[2] = title, cells[6] = Test Status (verified in <project> 2026-06-09).
 
-17. **DON'T use `terminal()` result as a list** — `terminal(command)` returns `{"output": "...", "exit_code": N}`, not a list. `result[0]` → `KeyError: 0`. **Fix**: use `result.get("output", "")` or unpack `output, exit_code = terminal(cmd)`-style. (Discovered 2026-06-09 pm-system QA-TRACKER count task — wasted 2 attempts on `KeyError` before catching it.)
+17. **DON'T use `terminal()` result as a list** — `terminal(command)` returns `{"output": "...", "exit_code": N}`, not a list. `result[0]` → `KeyError: 0`. **Fix**: use `result.get("output", "")` or unpack `output, exit_code = terminal(cmd)`-style. (Discovered 2026-06-09 <project> QA-TRACKER count task — wasted 2 attempts on `KeyError` before catching it.)
 
 ---
 
@@ -608,16 +608,16 @@ User 揀 A 嘅典型 signal(2026-06-09 Sprint 4):
 
 ## Reference (real session evidence)
 
-- `pm-system` 2026-06-08 Sprint 2 — 22 P0 US pushed NONE/PARTIAL → PASS-UNIT via **Derive tier**, +288 tests, 0 source changes. Full retro: `docs/retros/2026-06-08-sprint-2-p0-unit-test-push.md`
+- `<project>` 2026-06-08 Sprint 2 — 22 P0 US pushed NONE/PARTIAL → PASS-UNIT via **Derive tier**, +288 tests, 0 source changes. Full retro: `docs/retros/2026-06-08-sprint-2-p0-unit-test-push.md`
 - 9 test files added in Sprint 2: `auth.test.ts`, `projects.test.ts`, `requirements.test.ts`, `bugs.test.ts`, `roles.test.ts`, `agents-create.test.ts`, `agents-claim.test.ts`, `tasks-extended.test.ts`, `wikis.test.ts`, `llm-config.test.ts`
 - 3 US flagged DEFERRED in Sprint 2 retro: US-8.1, 8.2, 9.3 — all involve `chat.ts` (1787 LOC) or `agent/runtime.ts` (645 LOC)
 - Sprint 2 early blocker raise: at phase 6 (LLM/WS) I stopped and asked David to pivot to US-8.7 + US-9.1 + retro instead of faking US-8.1/8.2/9.3 — saved 1-2 hours of fake output
-- `pm-system` 2026-06-08 Sprint 3 — **3 US closed via Path X (Integration tier)**: US-8.1 + US-8.2 + US-9.3, +39 integration tests, 5 source files (1-line `export` keyword additions only), 0 regressions. Full retro: `docs/retros/2026-06-08-sprint-3-act14-15-closure.md`
+- `<project>` 2026-06-08 Sprint 3 — **3 US closed via Path X (Integration tier)**: US-8.1 + US-8.2 + US-9.3, +39 integration tests, 5 source files (1-line `export` keyword additions only), 0 regressions. Full retro: `docs/retros/2026-06-08-sprint-3-act14-15-closure.md`
   - 3 test files: `chat-integration.test.ts` (22 cases), `runtime-ws-integration.test.ts` (17 cases), `e2e/tests/llm-ws-e2e.spec.ts` (4 cases)
   - Sprint 3 metrics: backend 372 → 411 tests pass, E2E 13 → 17 tests pass
   - **Sprint 3 P0 coverage 79% → 90%** (23/29 → 26/29)
   - **Path X 新 TD entry**: TD-014 — WS 真連線測試環境(E2E 入面用 Playwright 開真 ws,backend 接唔到)
 - **Why Sprint 3 picked Path X over pure E2E**: David 揀咗 option D(Playwright mock backend OpenAI + real WS),但 agent raised blocker — Playwright 唔可以 mock 另一個 process 嘅 `fetch`,只能 mock browser side。建議修正版 Path X:backend in-process integration test(22 cases)+ WS lifecycle test(17 cases)+ wire-up E2E(4 cases)嘅 3-tier combo。David 揀咗「做您嘅推薦」,呢個就係 **Path X rule**:user 揀字面做唔到嘅 option 嘅時候,raise blocker + 提修正版 ≠ 偷工減料,係 raise technical impossibility。
-- `pm-system` 2026-06-09 Sprint 4 — **2 security fixes + derive closures**: TD-008 login rate limit (5/min IP-based) + RG-007 整個移除 `rolePermissionCache`(user 揀 option A)。2 RG entries + 9 unit tests。**Lesson**:1-2ms / request overhead for 內部 system 係 acceptable,「永久 cache 係 anti-pattern」(see "Rate Limit + Cache Security Fix Pattern" above)。
-- `pm-system` 2026-06-09 Sprint 5 — **4 P0 US closures (US-6.1, 7.4, 9.4, 9.5) → 紅線 12 100%**: +98 unit tests, 4 份新 test file, **0 source code 改動**(純 derive 適用 serialize + state machine + aggregation + permission 4 個唔同 type)。Catch 1 個 `membership.userId === user.id` 漏 invariant(Sprint 5 first commit 即 fail)→ 修正 + 加 source-of-truth grep test 守 derive pattern consistency。Full retro: `docs/retros/2026-06-09-sprint-5-p0-us-100pct-closure.md`
-- `pm-system` 2026-06-09 QA-TRACKER count task — **parser column-index trap + `execute_code` fallback to `awk`**: tried to count PASS/NONE/Other on 81-US tracker, bundled parser silently returned 0 (assumes 7-col layout, actual is 9-col + no P0 column). Spent 3 attempts on `execute_code` guessing column indices (5→6→7, all wrong) + 1 `KeyError: 0` on `terminal()[0]` (it's a dict). Final working path: `awk -F'|'` with `gsub(/^ +| +$/,"",$2/$3/$7)` + `terminal().get("output")` access. **Lesson embedded in Pitfall #16 + #17 + Step 1 fallback path.**
+- `<project>` 2026-06-09 Sprint 4 — **2 security fixes + derive closures**: TD-008 login rate limit (5/min IP-based) + RG-007 整個移除 `rolePermissionCache`(user 揀 option A)。2 RG entries + 9 unit tests。**Lesson**:1-2ms / request overhead for 內部 system 係 acceptable,「永久 cache 係 anti-pattern」(see "Rate Limit + Cache Security Fix Pattern" above)。
+- `<project>` 2026-06-09 Sprint 5 — **4 P0 US closures (US-6.1, 7.4, 9.4, 9.5) → 紅線 12 100%**: +98 unit tests, 4 份新 test file, **0 source code 改動**(純 derive 適用 serialize + state machine + aggregation + permission 4 個唔同 type)。Catch 1 個 `membership.userId === user.id` 漏 invariant(Sprint 5 first commit 即 fail)→ 修正 + 加 source-of-truth grep test 守 derive pattern consistency。Full retro: `docs/retros/2026-06-09-sprint-5-p0-us-100pct-closure.md`
+- `<project>` 2026-06-09 QA-TRACKER count task — **parser column-index trap + `execute_code` fallback to `awk`**: tried to count PASS/NONE/Other on 81-US tracker, bundled parser silently returned 0 (assumes 7-col layout, actual is 9-col + no P0 column). Spent 3 attempts on `execute_code` guessing column indices (5→6→7, all wrong) + 1 `KeyError: 0` on `terminal()[0]` (it's a dict). Final working path: `awk -F'|'` with `gsub(/^ +| +$/,"",$2/$3/$7)` + `terminal().get("output")` access. **Lesson embedded in Pitfall #16 + #17 + Step 1 fallback path.**

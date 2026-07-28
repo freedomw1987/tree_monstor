@@ -101,7 +101,7 @@ const filteredX = useMemo(() => {
 - **`aria-label="搜尋 X"`**: 唔靠 placeholder 嘅唯一 a11y 信號(placeholder 唔係 accessible name)
 - **Permission-gated button**: 用 `hasAnyPermission(user, ['x.create'])` 包住,user 冇 create 權限就 button 唔 render,search input 移去右邊
 - **RWD verify**: 開 Chrome DevTools mobile view 睇, search input 唔可以同 button 碰撞
-- **Header variant**: 唔係所有 list page header 都係 single row。兩欄 layout (list sidebar + content pane) 同 upload/action bar 旁嘅變體寫法見 [`references/pm-system-step4b-component-variants.md`](references/pm-system-step4b-component-variants.md)
+- **Header variant**: 唔係所有 list page header 都係 single row。兩欄 layout (list sidebar + content pane) 同 upload/action bar 旁嘅變體寫法見 [`references/<project>-step4b-component-variants.md`](references/<project>-step4b-component-variants.md)
 
 ### Step 5: 2 層 empty state — raw empty vs filter empty
 
@@ -159,7 +159,7 @@ const filteredX = useMemo(() => {
 - **用戶 wording 要 parse 多次**: 一句「menu 不用有」嘅 scope 可能包括 nav item + route + page file + back-link + E2E test
 - **每收到一條 feedback 即 push back 一次**, 帶 2-3 個 options + 自己推薦, 唔好悶頭做
 - **落手前用 5-15 分鐘 grep + audit** confirm 上面 3-step scope checklist, 比做錯 scope 再改省時間
-- 真實 session 對話同 push back 記錄見 [`references/pm-system-session-lessons.md`](references/pm-system-session-lessons.md)
+- 真實 session 對話同 push back 記錄見 [`references/<project>-session-lessons.md`](references/<project>-session-lessons.md)
 
 ### Step 7: Server-side 升級 path(預備, 唔做)
 
@@ -233,7 +233,7 @@ const filteredX = useMemo(() => {...}, [x, searchX])
 
 **Rule (E2E)**: 引用該 route 嘅 E2E test 要 `test.skip` / `describe.skip` + deprecation comment, 同步更新 QA-TRACKER / PRD 標 DEPRECATED。**唔好默默 delete test** — 留 audit trail。
 
-**pm-system `/bugs` 實例**: [`references/pm-system-bugs-page-removal-pitfalls.md`](references/pm-system-bugs-page-removal-pitfalls.md)
+**<project> `/bugs` 實例**: [`references/<project>-bugs-page-removal-pitfalls.md`](references/<project>-bugs-page-removal-pitfalls.md)
 
 ### 🚨 5. Search box 同 create button 撞 layout (RWD mobile)
 
@@ -312,21 +312,21 @@ const filteredX = useMemo(() => {...}, [x, searchX])
 
 ## Project case history
 
-Detailed pm-system narratives live in `references/` so this skill stays a reusable pattern.
+Detailed <project> narratives live in `references/` so this skill stays a reusable pattern.
 
 | Topic | Reference |
 |---|---|
-| 拎走「全部缺陷」menu + 5 個 list 加 search (2026-06-09) | [`pm-system-2026-06-09-bugs-menu-remove-and-search-add.md`](references/pm-system-2026-06-09-bugs-menu-remove-and-search-add.md) |
-| Sprint 11: Wiki/Attachments variant + E2E deprecation (commit `8c99f32`) | [`pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md`](references/pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md) |
-| Sprint 14: `/projects` search + RWD header + autocomplete + dashboard | [`pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md`](references/pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md) |
-| Sprint 14+15: 4 個新 pitfall + `?scope=my` pattern | [`pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md`](references/pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md) |
-| Step 4b 兩個 component variant (WikiTab / AttachmentsTab) | [`pm-system-step4b-component-variants.md`](references/pm-system-step4b-component-variants.md) |
-| 拎走 `/bugs` page 撞過嘅 back-link / E2E pitfall | [`pm-system-bugs-page-removal-pitfalls.md`](references/pm-system-bugs-page-removal-pitfalls.md) |
-| 過去 session 教訓 (commit hash + David feedback 對話 + retro doc) | [`pm-system-session-lessons.md`](references/pm-system-session-lessons.md) |
+| 拎走「全部缺陷」menu + 5 個 list 加 search (2026-06-09) | [`<project>-2026-06-09-bugs-menu-remove-and-search-add.md`](references/<project>-2026-06-09-bugs-menu-remove-and-search-add.md) |
+| Sprint 11: Wiki/Attachments variant + E2E deprecation (commit `8c99f32`) | [`<project>-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md`](references/<project>-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md) |
+| Sprint 14: `/projects` search + RWD header + autocomplete + dashboard | [`<project>-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md`](references/<project>-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md) |
+| Sprint 14+15: 4 個新 pitfall + `?scope=my` pattern | [`<project>-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md`](references/<project>-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md) |
+| Step 4b 兩個 component variant (WikiTab / AttachmentsTab) | [`<project>-step4b-component-variants.md`](references/<project>-step4b-component-variants.md) |
+| 拎走 `/bugs` page 撞過嘅 back-link / E2E pitfall | [`<project>-bugs-page-removal-pitfalls.md`](references/<project>-bugs-page-removal-pitfalls.md) |
+| 過去 session 教訓 (commit hash + David feedback 對話 + retro doc) | [`<project>-session-lessons.md`](references/<project>-session-lessons.md) |
 
 ### 配套 references 詳細 note
 
-- `references/pm-system-2026-06-09-bugs-menu-remove-and-search-add.md` — 真實 session 入面點解 David 拎走「全部缺陷」+ 點加 search box 喺 5 個 list
-- `references/pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md` — Sprint 11 跟進 (commit `8c99f32`):Wiki/Attachments 兩個 component variant + `describe.skip` 6 個 E2E deprecation pattern + QA-TRACKER/PRD DEPRECATED row format
-- `references/pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md` — Sprint 14 4 個 David UX feedback closure: `/projects` search box + RWD header + WorkLogs/Reports project dropdown 改 `<ProjectAutocomplete>` reusable + Dashboard 重新設計 (Activity Feed + Recent Projects Quick Switch)
-- `references/pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md` — Sprint 14+15 增量: 4 個新 pitfall (ProjectAutocomplete reusable spec / `limit: -1` dropdown-only use / `getByText` strict mode / backend query param 同步 frontend api.ts) + Sprint 15 `?scope=my` 通用 pattern (嚴格只 filter 自己 member, 包括 admin)
+- `references/<project>-2026-06-09-bugs-menu-remove-and-search-add.md` — 真實 session 入面點解 David 拎走「全部缺陷」+ 點加 search box 喺 5 個 list
+- `references/<project>-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md` — Sprint 11 跟進 (commit `8c99f32`):Wiki/Attachments 兩個 component variant + `describe.skip` 6 個 E2E deprecation pattern + QA-TRACKER/PRD DEPRECATED row format
+- `references/<project>-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md` — Sprint 14 4 個 David UX feedback closure: `/projects` search box + RWD header + WorkLogs/Reports project dropdown 改 `<ProjectAutocomplete>` reusable + Dashboard 重新設計 (Activity Feed + Recent Projects Quick Switch)
+- `references/<project>-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md` — Sprint 14+15 增量: 4 個新 pitfall (ProjectAutocomplete reusable spec / `limit: -1` dropdown-only use / `getByText` strict mode / backend query param 同步 frontend api.ts) + Sprint 15 `?scope=my` 通用 pattern (嚴格只 filter 自己 member, 包括 admin)

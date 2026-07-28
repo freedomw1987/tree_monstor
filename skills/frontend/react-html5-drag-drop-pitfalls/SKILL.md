@@ -24,7 +24,7 @@ Last-verified: 2026-07-28
 
 **Symptom**: Drag looks fine, the column highlights on `onDragOver`, the drop handler fires, but the drop handler reads `e.dataTransfer.getData('text/deal-id')` and gets an empty string. The `if (dealId) onDrop(dealId)` early-return skips the actual move. The card **visually moved** (optimistic update) but server never received the request → `onSettled` reverts it.
 
-**Why it's silent**: There's no console error, no React warning, no visible UI signal that the drop was rejected. The user sees a flickering "moved and snapped back" behavior and concludes "the drag-drop is broken" — which is exactly David's report on crm-system Day 9.
+**Why it's silent**: There's no console error, no React warning, no visible UI signal that the drop was rejected. The user sees a flickering "moved and snapped back" behavior and concludes "the drag-drop is broken" — which is exactly David's report on <project> Day 9.
 
 **Fix** — set the data on drag start, read it on drop:
 
@@ -180,7 +180,7 @@ Or, use the card's `dragging` state (already set in `onDragStart` and cleared in
 
 **Rule of thumb**: If David says "I want to use this on iPad when I'm at a customer meeting" and the UI is a kanban, **do not use raw HTML5 DnD**. Use `@dnd-kit` or ship a "tap to assign stage" modal as a fallback.
 
-## Verified working Kanban pattern (crm-system, 2026-06-09)
+## Verified working Kanban pattern (<project>, 2026-06-09)
 
 ```tsx
 // DealCard.tsx
@@ -294,4 +294,4 @@ If step 3 succeeds and step 4 shows persistence, the **server-side** is working.
 
 - `frontend/related-entity-entry-points` — Kanban-card "＋ 報價" sub-button pattern (Pattern 3, same domain)
 - `frontend/rwd-mobile-audit` — if drag-drop needs to work on iPad/mobile, this is the trigger for `@dnd-kit`
-- `devops/bun-elysia-react-vite-stack` — full-stack context, crm-system kanban endpoint patterns
+- `devops/bun-elysia-react-vite-stack` — full-stack context, <project> kanban endpoint patterns

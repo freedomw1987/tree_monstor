@@ -292,7 +292,7 @@ ls docs/TECH-DEBT.md docs/retros/YYYY-MM-DD-*.md  # 確認 files present (防 re
 
 **唔 push 自動**(destructive operation by convention)。
 
-## Phase 5.5 — Smoke-before-Merge (5-10 minutes) (added 2026-06-07, crm-system Day 14.7)
+## Phase 5.5 — Smoke-before-Merge (5-10 minutes) (added 2026-06-07, <project> Day 14.7)
 
 **Trunk-based principle:** 在 staging/dev environment 完整 smoke
 過晒先 merge,壞咗唔污染 main history,亦唔需要 revert merge commit。
@@ -321,7 +321,7 @@ Smoke failed = `git merge --abort`(如果 merge 已開始) 或者
 - Pre-merge verify `git merge-tree $(git merge-base main HEAD)
   main HEAD` 確保 0 conflict
 
-### Smoke 14 步 standard template (crm-system proven)
+### Smoke 14 步 standard template (<project> proven)
 
 ```bash
 # Pre-flight
@@ -433,7 +433,7 @@ Step 1 + `elysia-typescript-workarounds`。
 ## 模板(直接抄)
 
 完整嘅 TECH-DEBT.md 25-entry 例子見 `tech-debt-register` skill 嘅
-「5-field 細 entry」section,或者 David crm-system 嘅
+「5-field 細 entry」section,或者 David <project> 嘅
 `docs/TECH-DEBT.md`(2026-06-07)做 reference 完整版。
 
 **PR description template** (Phase 5 之前填咗 push):

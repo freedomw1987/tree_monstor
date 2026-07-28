@@ -7,7 +7,7 @@ description: Tree Monstor patch/edit corruption prevention and recovery — Trig
 
 This is a thin adapter. The canonical skill is:
 
-**`/Users/apple/www/tree_monstor/skills/patch-corruption-recovery/SKILL.md`**
+**`<repo-root>SKILL.md`**
 
 1. Read the canonical SKILL.md above in full before acting.
 2. Follow it exactly — never trust another broken edit to fix a broken one.

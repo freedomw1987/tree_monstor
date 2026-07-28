@@ -2,7 +2,7 @@
 name: react-router-v7-patterns
 description: |
   React Router v7 patterns and pitfalls for nested-route SPA refactors.
-  Class-level lessons from 2026-06-07 crm-system Day 14.7 (Settings tabs):
+  Class-level lessons from 2026-06-07 <project> Day 14.7 (Settings tabs):
   URL as source of truth, <Navigate> query string drop, Layout chrome
   double-render, controlled Tabs vs URL sync, useSearchParams + component
   reuse race. Use when refactoring top-level routes into nested sub-routes,
@@ -22,7 +22,7 @@ applicability: generic-pattern
 Last-verified: 2026-07-28
 # React Router v7 Patterns & Pitfalls
 
-Class-level lessons from `crm-system` Day 14.7 (2026-06-07) — refactored
+Class-level lessons from `<project>` Day 14.7 (2026-06-07) — refactored
 5 top-level admin routes into a single `/settings/*` sub-route tree with
 7 tabs. Hit 4 distinct v7-specific gotchas. None of them are project-
 specific — they apply to any nested-route refactor on React Router 6.4+
@@ -96,7 +96,7 @@ in-app nav; deep links from bookmarks/email still work via direct URL.
 
 **Symptom**: Click a Link with a query string, the route has a backward-
 compat `<Navigate replace to="/new-path" />`, and the destination loses
-the query string. (Caught live in `crm-system` 2026-06-07, commit
+the query string. (Caught live in `<project>` 2026-06-07, commit
 `5018578`.)
 
 ```tsx
@@ -341,7 +341,7 @@ When collapsing 5 top-level routes into 1 sub-route tree:
 Each one is a `<Link>` that will hit a `<Navigate>` — verify none of
 them carry query strings (or fix them per pattern 2).
 
-## Worked example: crm-system Day 14.7 (2026-06-07)
+## Worked example: <project> Day 14.7 (2026-06-07)
 
 Refactored 5 admin pages (Users / Roles / AI / Man-day / Audit) from
 top-level routes into `/settings/<tab>` sub-routes under a 7-tab

@@ -211,7 +211,7 @@ export class UMacAiEcsAllInOneStack extends Stack {
 ## Deploy Commands
 
 ```bash
-cd ~/projects/umac_ai/infra
+cd <projects-dir>/<project>
 
 # Synthesize (verify no CDK errors)
 npx cdk synth UMacAiEcsAllInOneStack
@@ -232,13 +232,13 @@ aws ecr get-login-password --region ap-southeast-1 | \
   docker login --username AWS --password-stdin <ecr-repo-uri>
 
 # 2. Build backend
-cd ~/projects/umac_ai/backend
+cd <projects-dir>/<project>
 docker build -t umac-ai-backend .
 docker tag umac-ai-backend:latest <ecr-backend-uri>:latest
 docker push <ecr-backend-uri>:latest
 
 # 3. Build frontend
-cd ~/projects/umac_ai/frontend
+cd <projects-dir>/<project>
 docker build -t umac-ai-frontend .
 docker tag umac-ai-frontend:latest <ecr-frontend-uri>:latest
 docker push <ecr-frontend-uri>:latest

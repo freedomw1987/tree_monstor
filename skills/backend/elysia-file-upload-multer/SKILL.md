@@ -165,7 +165,7 @@ async function uploadFiles(activityId: string, files: FileList) {
 }
 ```
 
-### 4. Storage location + Docker volume (crm-system pattern)
+### 4. Storage location + Docker volume (<project> pattern)
 
 Local disk + named volume is the simplest for demo / SMB:
 
@@ -263,7 +263,7 @@ Need to add file upload functionality to an Elysia.js (Bun) backend — teacher 
 
 ### 1. Install multer
 ```bash
-cd ~/projects/umac_ai/backend
+cd <projects-dir>/<project>
 npm install multer
 mkdir -p uploads
 ```

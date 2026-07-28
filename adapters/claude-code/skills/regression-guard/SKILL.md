@@ -7,7 +7,7 @@ description: Tree Monstor regression-guard workflow — use for EVERY bug fix or
 
 This is a thin adapter. The canonical skill is:
 
-**`/Users/apple/www/tree_monstor/skills/regression-guard/SKILL.md`**
+**`<repo-root>SKILL.md`**
 
 1. Read the canonical SKILL.md above in full before acting.
 2. Follow it exactly — RG-XXX entry format, root cause + prevention sections, QA regression mode fields, and production safety boundaries.

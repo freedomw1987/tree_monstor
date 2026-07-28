@@ -96,7 +96,7 @@ with zipfile.ZipFile('dist/lambda.zip', 'w') as z:
 
 ```bash
 # 1. Build with esbuild
-cd ~/projects/lemontree_v3
+cd <projects-dir>/<project>
 npx esbuild src/lambda-handler.ts \
   --platform=node \
   --target=node18 \

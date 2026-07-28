@@ -48,7 +48,7 @@ Check logs for `[SES] Email sent: <MessageId>` — if you see `[SES] Error:` fol
 
 **Cross-reference**：成個 stack 嘅 bootstrap 見 `bun-elysia-react-vite-stack` skill。
 
-## 補充：`bunx prisma db seed` 唔 load `.env` (2026-06-05 crm-system)
+## 補充：`bunx prisma db seed` 唔 load `.env` (2026-06-05 <project>)
 
 `prisma db seed` 透過 `package.json` `"prisma": { "seed": "..." }` 啟動子進程。**個子進程唔繼承 `bun --env-file`**，所以 Prisma 拎唔到 `DATABASE_URL`，`prisma.user.create()` 會 silent fail 入 `error: Environment variable not found: DATABASE_URL.`
 
@@ -70,7 +70,7 @@ Check logs for `[SES] Email sent: <MessageId>` — if you see `[SES] Error:` fol
 
 **Day 1 用方案 1**（`import 'dotenv/config'` 加 top-level await + `dotenv` package）— 對 `prisma db seed` 同 entry 一致。
 
-## ⚠️ `--env-file` 喺 boot-time hard-fail 嘅 testing 陷阱 (2026-06-07 crm-system Day 14)
+## ⚠️ `--env-file` 喺 boot-time hard-fail 嘅 testing 陷阱 (2026-06-07 <project> Day 14)
 
 `bun --env-file=.env` 嘅 env values **會做 floor** — 即使 shell `export JWT_SECRET=*** weak_value` 都唔會 override 個 file 入面嘅 value。
 

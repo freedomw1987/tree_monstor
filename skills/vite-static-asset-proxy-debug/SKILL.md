@@ -66,7 +66,7 @@ The same problem pattern applies to any backend-served static path: `/uploads/`,
 ## Vite Build: `.env.production` Overrides `.env` Even in Dev
 
 ### Symptoms
-- Dev website (e.g. `https://course.david-developer.com`) loads but all API calls go to production (e.g. `api.board-ai.site`)
+- Dev website (e.g. `https://<your-domain>`) loads but all API calls go to production (e.g. `api.board-ai.site`)
 - `curl https://your-dev-site.com/assets/index-XXXXX.js | grep -c api.production-site.com` returns > 0
 - Dev `.env` file has correct `VITE_API_BASE_URL` but built JS contains wrong domain
 

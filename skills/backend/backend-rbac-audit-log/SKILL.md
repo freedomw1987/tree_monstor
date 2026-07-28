@@ -27,7 +27,7 @@ Last-verified: 2026-07-28
 | **⭐ Option 3: 集中 permission map** (本 skill 推薦) | 3 個 hard-coded role + `PERMISSIONS` 集中喺 `packages/shared/permissions.ts`,用 `requirePermission('quotation:delete')` middleware 嘅 plugin 喺 route | 想易 read、易 audit、易將來升級 | **低** |
 | **Option 2: 完整 database-driven RBAC** | `permissions` + `role_permissions` tables + admin UI 管理 | enterprise / multi-tenant SaaS / compliance 嚴 | **高** (schema、API、UI、cache invalidation) |
 
-> Project-specific 選 Option 3 嘅 crm-system Day 5 (2026-06-05) 重現細節:見 [`references/crm-permission-enum-map.md`](references/crm-permission-enum-map.md)。
+> Project-specific 選 Option 3 嘅 <project> Day 5 (2026-06-05) 重現細節:見 [`references/crm-permission-enum-map.md`](references/crm-permission-enum-map.md)。
 
 ## 完整架構 (4 個 piece)
 
@@ -108,7 +108,7 @@ import { can } from '<your-shared-package>';
 {can(user.role, 'user:create') && <Button>新增用戶</Button>}
 ```
 
-> 完整 crm-system 30+ permission 嘅 verbatim example 見 [`references/crm-permission-enum-map.md`](references/crm-permission-enum-map.md)。
+> 完整 <project> 30+ permission 嘅 verbatim example 見 [`references/crm-permission-enum-map.md`](references/crm-permission-enum-map.md)。
 
 ## Step 2: AuditLog table (general shape)
 
@@ -244,7 +244,7 @@ The pattern: every write handler ends with a `logEvent()` call after the mutatio
 
 Same shape for `PATCH` and `DELETE`. For status-change vs general update (e.g. quotation status), branch on the changed field and log as **different actions** so the audit page can colour-code properly.
 
-完整 crm-system CRUD 嘅 3-line pattern + `as never` cast 細節:見 [`references/crm-audit-log-implementation.md`](references/crm-audit-log-implementation.md)。
+完整 <project> CRUD 嘅 3-line pattern + `as never` cast 細節:見 [`references/crm-audit-log-implementation.md`](references/crm-audit-log-implementation.md)。
 
 ## Step 6: Instrument login / change-password
 
@@ -319,7 +319,7 @@ export const auditRoutes = new Elysia({ prefix: '/audit' })
 
 ### 4. **Backend invariants must mirror in the frontend form**
 
-If the backend rejects lowercase role names (or any format invariant), the form's `onChange` must transform input **and** the submit handler must show errors via a toast (not inline `<p>` — too easy to hide behind dialog chrome). The crm-system Day 14 incident where `POST /roles` returned 400 and the dialog froze silently: see [`references/crm-role-name-invariant-2026-06-06.md`](references/crm-role-name-invariant-2026-06-06.md).
+If the backend rejects lowercase role names (or any format invariant), the form's `onChange` must transform input **and** the submit handler must show errors via a toast (not inline `<p>` — too easy to hide behind dialog chrome). The <project> Day 14 incident where `POST /roles` returned 400 and the dialog froze silently: see [`references/crm-role-name-invariant-2026-06-06.md`](references/crm-role-name-invariant-2026-06-06.md).
 
 ### 5. **Cross-layer permission sync (DB-driven RBAC)**
 
@@ -327,7 +327,7 @@ Once you upgrade from Option 3 to Option 2 (DB-driven), `PERMISSIONS` + `ROLE_PE
 
 ### 6. **Auth role must come from DB, never trust client claim**
 
-If your derive hook / auth middleware reads role from a token string (`<userId>:<role>`), the client can claim admin. Always look up `dbUser.role` and reject if `dbUser` doesn't exist. Full reproduction: [`references/pm-system-2026-06-08-td-011.md`](references/pm-system-2026-06-08-td-011.md).
+If your derive hook / auth middleware reads role from a token string (`<userId>:<role>`), the client can claim admin. Always look up `dbUser.role` and reject if `dbUser` doesn't exist. Full reproduction: [`references/<project>-2026-06-08-td-011.md`](references/<project>-2026-06-08-td-011.md).
 
 ### 7. **`requirePermission` per-verb scope (Elysia 1.2)**
 
@@ -371,11 +371,11 @@ Full schema + migration SQL + cache implementation + INSERT recipe: [`references
 
 - `references/elysia-plugin-boundary-derive.md` — full reproduction recipe and trace logs for Elysia 1.2 plugin-boundary derive context loss
 - `references/p0-public-routes-audit-recipe.md` — full audit + fix-batch workflow for finding and gating public endpoints (the `as: 'scoped'` trap)
-- `references/crm-permission-enum-map.md` — crm-system 30+ permission enum + 3 roles (verbatim)
-- `references/crm-audit-log-implementation.md` — crm-system AuditLog model + CRUD `logEvent()` examples (verbatim)
+- `references/crm-permission-enum-map.md` — <project> 30+ permission enum + 3 roles (verbatim)
+- `references/crm-audit-log-implementation.md` — <project> AuditLog model + CRUD `logEvent()` examples (verbatim)
 - `references/crm-day-14-audit-results.md` — Day 14 (2026-06-07) audit run + `as: 'scoped'` lesson
 - `references/crm-role-name-invariant-2026-06-06.md` — Day 6 role-name UPPERCASE invariant + frontend mirror pitfall
-- `references/pm-system-2026-06-08-td-011.md` — pm-system token-claim privilege escalation P0
+- `references/<project>-2026-06-08-td-011.md` — <project> token-claim privilege escalation P0
 - `references/db-driven-rbac-upgrade-path.md` — Option 2 (DB-driven RBAC) schema, migration, cache
 - `references/docker-postgres-migration-trick.md` — `docker exec` + manual `_prisma_migrations` insert recipe
 - `references/elysia-bun-runtime-gotchas.md` — Elysia 1.2 + Bun: d.ts noise, `export *`, `as never`, `request` parameter
@@ -401,7 +401,7 @@ Full schema + migration SQL + cache implementation + INSERT recipe: [`references
 | CRM-system AuditLog + CRUD `logEvent()` examples | [`references/crm-audit-log-implementation.md`](references/crm-audit-log-implementation.md) |
 | CRM-system Day 14 public-routes audit run + `as: 'scoped'` trap | [`references/crm-day-14-audit-results.md`](references/crm-day-14-audit-results.md) |
 | CRM-system Day 6 role-name UPPERCASE + frontend mirror | [`references/crm-role-name-invariant-2026-06-06.md`](references/crm-role-name-invariant-2026-06-06.md) |
-| PM-system 2026-06-08 P0 token-claim privilege escalation | [`references/pm-system-2026-06-08-td-011.md`](references/pm-system-2026-06-08-td-011.md) |
+| PM-system 2026-06-08 P0 token-claim privilege escalation | [`references/<project>-2026-06-08-td-011.md`](references/<project>-2026-06-08-td-011.md) |
 | Option 2 (DB-driven RBAC) schema + migration + cache | [`references/db-driven-rbac-upgrade-path.md`](references/db-driven-rbac-upgrade-path.md) |
 | Docker-local Postgres Prisma migration trick | [`references/docker-postgres-migration-trick.md`](references/docker-postgres-migration-trick.md) |
 | Elysia 1.2 + Bun runtime gotchas (d.ts, `export *`, `as never`) | [`references/elysia-bun-runtime-gotchas.md`](references/elysia-bun-runtime-gotchas.md) |

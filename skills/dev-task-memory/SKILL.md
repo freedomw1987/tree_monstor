@@ -84,7 +84,7 @@ Last-verified: 2026-07-28
 |------|---------|
 | `references/subagent-wip-pickup-recipe.md` | Resume 一個 subagent 做到一半停咗嘅 task — working tree 有 uncommitted WIP, 跟住 6-step recipe: snapshot → commit history → read untracked → audit side effects → finish → verify-before-declaring-done。涵蓋 duplicate gitignore entries、batch-fix 嘅 anti-pattern、revert detection 等。 |
 | `references/recovery-template-limitation.md` | **Day 11 lesson (2026-06-09)**: `recovery.sh` + `save_state.py` 嘅 generic template 永遠唔 fill 真正 state(Decisions / Files / Next Steps / Risks section 全部係 placeholder)。Resume 之前一定要手動 overwrite `dev-task-state.md`,fill 真正 state。Workaround recipe + root cause analysis + future fix blueprint 全部喺入面。 |
-| `references/working-tree-wip-detection.md` | **Day 11 lesson (2026-06-09)**: Agent 同 David 共用 worktree 嘅時候,David 嘅 WIP(modified + untracked) 唔可以入 agent 嘅 commit。Selective `git add <files>` recipe + 3 條新紅線(34-36)+ Day 11 Phase 1 嘅 case study(crm-system 5M + 3?? WIP detection)。 |
+| `references/working-tree-wip-detection.md` | **Day 11 lesson (2026-06-09)**: Agent 同 David 共用 worktree 嘅時候,David 嘅 WIP(modified + untracked) 唔可以入 agent 嘅 commit。Selective `git add <files>` recipe + 3 條新紅線(34-36)+ Day 11 Phase 1 嘅 case study(<project> 5M + 3?? WIP detection)。 |
 | `references/plan-execution-deviation-protocol.md` | **Day 14.7 lesson (2026-06-07)**: Plan JSON 內部矛盾嘅處理 — 揀 primary intent 唔揀 literal text、3 處冗餘紀錄(code comment + commit + report)、anti-pattern(用戶不問照 ship、靜靜 rewrite plan)。Step 6 `/settings` 案例做 worked example。 |
 | `templates/handoff-doc-scaffold.md` | **Day 14 lesson (2026-06-07)**: Human-readable handoff doc 嘅 scaffold,用於 `/new` / 收工 / 「之後呢」trigger 嗰陣,Agent 寫一份 David + fresh session agent 兩邊都讀得順嘅 commit-able doc(同 state file 互補)。Section structure 見 §5 嘅 recipe。 |
 
@@ -94,7 +94,7 @@ Last-verified: 2026-07-28
 
 ```bash
 # 進入 project directory
-cd ~/www/crm-system
+cd ~/www/<project>
 
 # 立即 save 一個 fresh state
 # <historical 2026-07-25 retired: save_state.py / sync_external.py 退役>
@@ -174,7 +174,7 @@ rm ~/www/<project>/docs/_meta/dev-task-state.md
 | Lifetime | 任務期間 | 任務結束後 audit trail(永遠保留) |
 | Use case | `load_state.py` resume | `/new` 後手動 read |
 
-**Recipe**(2026-06-07 crm-system handoff 試過 work):
+**Recipe**(2026-06-07 <project> handoff 試過 work):
 
 ```bash
 # 1. 收集 state(15 lines)
@@ -261,19 +261,19 @@ dev-task-state.md
 
 ```bash
 # 1. Save state
-python3 scripts/save_state.py --project crm-system --goal "Test" --trigger "manual"
+python3 scripts/save_state.py --project <project> --goal "Test" --trigger "manual"
 
 # 2. Sync to external
-python3 scripts/sync_external.py --project crm-system
+python3 scripts/sync_external.py --project <project>
 
 # 3. Read back
-python3 scripts/sync_external.py --read --project crm-system
+python3 scripts/sync_external.py --read --project <project>
 
 # 4. Search
 python3 scripts/sync_external.py --search "Prisma"
 
 # 5. Load (resume)
-python3 scripts/load_state.py --project crm-system --search-sessions
+python3 scripts/load_state.py --project <project> --search-sessions
 ```
 
 ## 📚 配合其他 skills
@@ -312,7 +312,7 @@ or 紅線 19 (tool-call noise from earlier hang). **3 paths to offer**, ordered 
 factor was **proven hang history that session** (今朝 6 點 3 小時 hang, 47-78 API calls stuck).
 When user has been burned by hang already, they prefer many small clean cycles over inline sprint.
 
-**Plan Z execution recipe** (tested on crm-system 2026-06-07 Step 5):
+**Plan Z execution recipe** (tested on <project> 2026-06-07 Step 5):
 
 1. **Scope the next single step only** — read handoff doc, pick the smallest step with concrete
    file paths (e.g. "Step 5: routes + API client", not "Step 5-8: all frontend").
@@ -327,7 +327,7 @@ When user has been burned by hang already, they prefer many small clean cycles o
 7. **Tool-call budget enforcement**: if a step needs >20 calls, split it across 2 cycles BEFORE
    starting, not mid-cycle.
 
-**Pitfall — routing conflict undetected** (saw in 2026-06-07 crm-system Step 5): When adding
+**Pitfall — routing conflict undetected** (saw in 2026-06-07 <project> Step 5): When adding
 sub-routes that share a prefix with a legacy top-level route (e.g. `/settings/*` + `/settings`),
 **react-router v6 picks most-specific match** but the build-time types don't catch this — you
 need browser smoke. Plan Z defers that to Step 12, so document the routing invariant in the
@@ -346,7 +346,7 @@ better when the work is *progressing fine* and you just need a clean checkpoint.
 dependencies that won't survive a /new (e.g. holding an SSH tunnel), or tasks where the user
 explicitly says "do it all in one go".
 
-## 🔴 反例 — 2026-06-07 crm-system code review + P0 fix sprint 漏 call save_state.py
+## 🔴 反例 — 2026-06-07 <project> code review + P0 fix sprint 漏 call save_state.py
 
 **情境**:David 嗌我做「CRM code review (A+B+C) → 開 P0 security fix sprint」,我整咗 12-todo list + 7 commits + evidence report,**全程冇 call `save_state.py`**。最終冇 data loss(全部 commit 落 git),但中間有 2 個高風險 moment:
 
@@ -365,7 +365,7 @@ explicitly says "do it all in one go".
 
 ---
 
-## 🔴 反例 2 — 2026-06-07 crm-system Day 14.7 Plan → Build 過渡 wire-shape drift (Step 5 → Step 7)
+## 🔴 反例 2 — 2026-06-07 <project> Day 14.7 Plan → Build 過渡 wire-shape drift (Step 5 → Step 7)
 
 **情境**:Day 14.7 System Settings refactor + Tax Rate feature 嘅 multi-phase plan(Steps 5-12,有 Plan doc + 3 個 options 嘅 ADR)。Step 5(commit `eb1581f`)寫 frontend `settingsApi.getTax/putTax` wrapper 嘅時候,**直接跟 Plan JSON doc 嘅 wording 用 `defaultTaxRate` 做 wire field name**。但 plan doc 同 backend actual route handler(`apps/api/src/routes/settings.ts`)唔同步 — backend 用 `rate` 做 field name(GET response + PUT body 兩邊都係)。PUT runtime 一定 400 Zod validation error,**用戶零實機 catch 唔到**。
 
@@ -406,7 +406,7 @@ explicitly says "do it all in one go".
 
 ## 📝 E2E test result (2026-06-06)
 
-- Save: 2715 bytes 寫入 `~/www/crm-system/docs/_meta/dev-task-state.md`
+- Save: 2715 bytes 寫入 `~/www/<project>/docs/_meta/dev-task-state.md`
 - Edit: 2 decisions + 1 insight injected
 - Sync: 4 facts → `~/.hermes/memories/dev-task-facts.jsonl` (<historical 2026-07-25 retired>)
 - Read: 4 facts loaded back ✓

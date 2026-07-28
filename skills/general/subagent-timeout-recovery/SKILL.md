@@ -27,11 +27,11 @@ Subagent 執行超時後的接管流程。
 
 ```bash
 # 列出 subagent 建的目錄結構
-find ~/projects/wynn_seat/src -type f
+find <projects-dir>/<project> -type f
 
 # 檢查關鍵文件是否已存在
-cat ~/projects/wynn_seat/src/api/index.ts
-cat ~/projects/wynn_seat/src/frontend/package.json
+cat <projects-dir>/<project>
+cat <projects-dir>/<project>
 ```
 
 ### Step 2 — 驗證配置文件
@@ -46,11 +46,11 @@ Subagent 常會建好以下文件，需人工確認內容正確：
 
 ```bash
 # 後端
-cd ~/projects/wynn_seat && bun run src/api/index.ts &
+cd <projects-dir>/<project> && bun run src/api/index.ts &
 sleep 2 && curl http://localhost:3001/health
 
 # 前端
-cd ~/projects/wynn_seat/src/frontend && bun run dev &
+cd <projects-dir>/<project> && bun run dev &
 sleep 5 && curl -s -o /dev/null -w "%{http_code}" http://localhost:5174
 ```
 
@@ -72,7 +72,7 @@ sleep 5 && curl -s -o /dev/null -w "%{http_code}" http://localhost:5174
 - **直接接管**，檢查 → 修補 → 啟動 → 測試
 - 複雜任務（full-stack app generation）不適合丟給 subagent，超過 10 分鐘幾乎一定 timeout
 
-## Subagent 撞 typecheck loop 嘅早期 stop 信號 (2026-06-06 crm-system Day 10 實測)
+## Subagent 撞 typecheck loop 嘅早期 stop 信號 (2026-06-06 <project> Day 10 實測)
 
 **觀察**: 派 subagent 寫 2 個新 component + 改 2 個 consumer file + 跑 verify (typecheck + HMR), 撞咗 600s timeout。事後 `session_search` 翻睇: **subagent 用咗 63 個 API calls, 全部文件改動喺前 ~30 calls 完成, 之後 ~33 calls 喺 typecheck 階段重複 fix 同一個 type error** (例如 import 漏咗某個 type → fix → 下一個 type error 出現 → 另一個 type error fix → 連環)。
 
@@ -108,7 +108,7 @@ terminal command="cd ~/www/<project>/apps/web && bun run typecheck 2>&1 | tail -
 - 「用 `terminal(timeout=120)` 跑 `bun run typecheck`, 唔好 background」
 - 「API calls 超過 50 主動 stop」
 
-## 「Subagent 報告 completed ≠ 真係 done」 — trust-but-verify (2026-06-06 crm-system)
+## 「Subagent 報告 completed ≠ 真係 done」 — trust-but-verify (2026-06-06 <project>)
 
 **情境**: Subagent 喺 timeout 以內 47 calls 內 return `status: completed` + self-summary 講「所有 phase 完成、typecheck pass」。**唔好盲信** — subagent 嘅 summary 係 self-report, 唔係 verified fact。Subagent 寫嘅 file 可能:
 - import path 錯咗 (subagent 睇 file 嘅 cache version, host 已經有 patch 改咗)
@@ -121,7 +121,7 @@ terminal command="cd ~/www/<project>/apps/web && bun run typecheck 2>&1 | tail -
 2. **`search_files` 隨機抽 1-2 個 file grep 關鍵字** — 例如 "Dialog", "onSaved", "useState" — 確認改動真係落咗 host filesystem (subagent workdir 唔同 host 都可能)。
 3. **Database-touching changes 必做 smoke**: `docker exec <db> psql` 一句 SELECT 試, 或者 `docker cp` 一個 node script 入 api container 試 prisma 操作。schema drift 唔會喺 typecheck stage 浮現, 一定要落 DB 試。
 
-**實測 case (crm-system 2026-06-06)**: Subagent 報告 5 phases 完成 + typecheck pass。我自己 grep 後發現:
+**實測 case (<project> 2026-06-06)**: Subagent 報告 5 phases 完成 + typecheck pass。我自己 grep 後發現:
 - `servicesApi.create` payload 仍然用 `manDays` 鍵 (502 bug 表面)
 - `_prisma_migrations` 紀錄同 filesystem sync 確認過 ✅
 - Prisma 落 `services.status` 仍然 TEXT, 唔係 enum
@@ -131,7 +131,7 @@ terminal command="cd ~/www/<project>/apps/web && bun run typecheck 2>&1 | tail -
 **Subagent prompt 必加嘅一行** (預防):
 > "你嘅 summary 我會自己 verify typecheck + grep + smoke test 嘅. 你唔好為咗過 typecheck 而 cast `as any`, 因為我會 grep 嘅."
 
-## 「Uncommitted work 我冇做過」 — pre-`git push` audit gate (2026-06-06 crm-system)
+## 「Uncommitted work 我冇做過」 — pre-`git push` audit gate (2026-06-06 <project>)
 
 **情境**: David 叫我 `git push`,我行 `git status` 見到 20 個 modified files + 一堆 untracked. 我之前 90 分鐘嘅 session 只動咗 11 個 docs(寫/改/HTML build),其他 14 個 files(API routes、frontend pages、tailwind config、Prisma schema)係**之前 session 留低嘅 uncommitted work**。
 
@@ -161,7 +161,7 @@ export async function getUserIdFromRequest(request, jwt) { ... }
 
 **Anti-pattern**:agent session 之間嘅 uncommitted work 係**implicit handoff**(冇 PR,冇 description)。你接手 push 之前係 first person to actually read 嗰啲 diff。Subagent 嘅 partial output 你會 verify,但**你之前自己 session 嘅 partial output 都應該用同一把尺**。
 
-**crm-system 嗰次實際**:`git diff apps/api/src/lib/context.ts` 顯示「auth fix」comment 講 `derive` 喺 Elysia 1.2 + POST + sibling GET 撞 validator cache 會 silently drop `userId`,個 fix 提議用 onRequest + 設 header。我審計後發現:
+**<project> 嗰次實際**:`git diff apps/api/src/lib/context.ts` 顯示「auth fix」comment 講 `derive` 喺 Elysia 1.2 + POST + sibling GET 撞 validator cache 會 silently drop `userId`,個 fix 提議用 onRequest + 設 header。我審計後發現:
 - `authContext` 而家 empty
 - `getUserIdFromRequest` 寫咗但 0 route file 引用
 - `quotation.ts` 引用咗 helper,但因為我頭先 `git checkout -- context.ts` 還原咗,quotation.ts 嘅 import 失效 → typecheck fail

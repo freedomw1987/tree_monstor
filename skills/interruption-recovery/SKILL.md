@@ -77,11 +77,11 @@ interruption is a fresh start with 30 minutes of context re-explanation.
   # Claude Code: /resume
 
   # B. Resume by project name
-  # <historical 2026-07-25 retired> hermes --profile developer --continue "crm-system"
-  # Claude Code: /resume "crm-system"
+  # <historical 2026-07-25 retired> hermes --profile developer --continue "<project>"
+  # Claude Code: /resume "<project>"
 
   # C. Start a FRESH session + auto-inject state
-  # <historical 2026-07-25 retired> hermes --profile developer --skills dev-task-memory -c "crm-system"
+  # <historical 2026-07-25 retired> hermes --profile developer --skills dev-task-memory -c "<project>"
   # Claude Code: 開新 session + skills frontmatter 自動 load state file
 ```
 
@@ -90,28 +90,28 @@ interruption is a fresh start with 30 minutes of context re-explanation.
 # <historical 2026-07-25 retired: scripts/resume.sh 不存在>
 # Claude Code 對應：`/resume` slash command
 # - Quick summary + resume command (most common)
-#   claude --resume crm-system
+#   claude --resume <project>
 # - List past sessions
-#   claude --resume crm-system --list
+#   claude --resume <project> --list
 # - Just show the state file, no action
-#   claude --resume crm-system --peek
+#   claude --resume <project> --peek
 ```
 
 **Output 範例**:
 ```
 ═══════════════════════════════════════════════════════════════
-🔍 RESUME — Project: crm-system
+🔍 RESUME — Project: <project>
 ═══════════════════════════════════════════════════════════════
 
 📂 Step 1: Loading dev-task-state.md...
-  ✅ Found: /Users/davidchu/www/crm-system/docs/_meta/dev-task-state.md
+  ✅ Found: <user-home><project>/docs/_meta/dev-task-state.md
      Last modified: Jun 6 22:06:11 2026
 
 ═══════════════════════════════════════════════════════════════
 📋 STATE SUMMARY
 ═══════════════════════════════════════════════════════════════
 ─── ## 🎯 Goal ───
-Implement 3 frontend improvements in crm-system in ONE pass
+Implement 3 frontend improvements in <project> in ONE pass
 
 ─── ## 📋 Decisions ───
 1. **Use Hono over Express for BFF layer**
@@ -124,7 +124,7 @@ Implement 3 frontend improvements in crm-system in ONE pass
 2. [ ] Man-day role dropdown 配現有 QuotationBuilder
 3. [ ] Activity timeline 配 Company + Deal
 
-🔎 Step 2: Past sessions for crm-system...
+🔎 Step 2: Past sessions for <project>...
   ✅ Found 5 session(s)
 
 🚀 TO RESUME — pick one:
@@ -353,7 +353,7 @@ HEAD 同步 origin, 0 ahead。**Answer = "上個 session 嘅 task 已 ship ✅, 
 
 **輸出**:📍 Resuming <project> 段 + Goal (1 句) + Current state (HEAD + branch + working tree) + Decisions (max 5) + Open question (如果有) + Next 3-5 steps (concrete, file path) + Risks。
 
-**5 tool calls** 完成 reconstruction vs 30+ 問 David 重述。詳細 recipe + worked example (2026-06-07 crm-system Day 14.7):
+**5 tool calls** 完成 reconstruction vs 30+ 問 David 重述。詳細 recipe + worked example (2026-06-07 <project> Day 14.7):
 `references/reconstruct-context-from-git-and-sessions.md`
 
 **何時 recipe 失敗**:1 個禮拜後、多 task 並行、last message 模糊 → 問 1 條 clarifying question,3-4 options 錨住最 likely 嘅 next action。**唔好重新問上一個 session 已經問過嘅 Q** — 答案已經喺度。
@@ -379,7 +379,7 @@ HEAD 同步 origin, 0 ahead。**Answer = "上個 session 嘅 task 已 ship ✅, 
 
 兩個嘅 detection recipe + fix command:**`references/post-recovery-verification.md`**
 (§A untracked providers, §B stale bundle, **§C stale stash detection** — added
-2026-06-07 Day 15 crm-system when pre-review stash 100% subsumed by Day 14.7
+2026-06-07 Day 15 <project> when pre-review stash 100% subsumed by Day 14.7
 merge, pop 撞出 duplicate `toIdArray` definitions + 3 untracked file conflict
 bail-out)。跑完 `resume.sh` (<historical 2026-07-25 retired>) 之後、claim "ready to ship / merge / PR" 之前跑,
 **Recipe C 必須喺 `git stash pop` 之前跑** — 30 秒 save 一次 prod build fail
@@ -389,7 +389,7 @@ bail-out)。跑完 `resume.sh` (<historical 2026-07-25 retired>) 之後、claim 
 
 Recipe A + B 解決咗 "verify 唔 surface 嘅 problem" 之後,PR ready 嘅
 **standard answer 由 "I smoke 過 dev" 升級做 trunk-based 4-phase flow**。
-2026-06-07 crm-system Day 14.7 第一次 full 跑完:
+2026-06-07 <project> Day 14.7 第一次 full 跑完:
 
 ```
 Phase 1: Pre-merge  ── dev host
@@ -431,14 +431,14 @@ template 同 pitfall 解釋:`references/e2e-smoke-script-authoring.md`。
 - `templates/push-after-commit.sh` — 1-click push to origin
 - `templates/smoke-before-merge.sh` — 14-step E2E smoke(redact-safe)
 
-## 🧪 E2E Validation (2026-06-07 crm-system Day 14.7)
+## 🧪 E2E Validation (2026-06-07 <project> Day 14.7)
 
 ```
 1. # <historical 2026-07-25 retired: recovery.sh CLI> 改為手動 state file edit
-   # <historical 2026-07-25 retired> recovery.sh crm-system "Smoke-before-merge ready"
+   # <historical 2026-07-25 retired> recovery.sh <project> "Smoke-before-merge ready"
    ✅ State saved, 3 resume options printed
 2. # <historical 2026-07-25 retired: resume.sh CLI> 改為 `/resume`
-   # <historical 2026-07-25 retired> resume.sh crm-system
+   # <historical 2026-07-25 retired> resume.sh <project>
    ✅ State + git log reconstructed
 3. post-recovery-verification recipes A + B
    ✅ Recipe A: 0 untracked-provider lines (3 multi-*.tsx 已 untracked 由 PR
@@ -477,7 +477,7 @@ Mitigation(已喺 `recovery.sh` (<historical 2026-07-25 retired>) 加 warning):
 
 當 `resume.sh` (<historical 2026-07-25 retired>) 印出嚟嘅 state file 全部係 `<placeholder>` / `**待填寫**`
 (generic template),**唔好 trust state file** — 直接跑以下 4 步從外部 source
-reconstruct context。**已驗證有效**(2026-06-07 crm-system Day 14.7 → Day 15
+reconstruct context。**已驗證有效**(2026-06-07 <project> Day 14.7 → Day 15
 handoff, 用呢個 recipe 100% 重建 context):
 
 ```bash
@@ -491,7 +491,7 @@ git log --oneline main..origin/main   # behind commits (remote 有新)
 # 2. Session search 撞返最近 session 嘅 bookend context
 #    (呢個係最強 signal — bookend_start / bookend_end / messages 圍住 match)
 session_search query="<project> <scope keywords>" limit=5
-#    例如: query="crm-system Day 14 day 15 tech debt red line 16"
+#    例如: query="<project> Day 14 day 15 tech debt red line 16"
 
 # 3. 從 session 嘅 bookend_end 段搵:
 #    - 「David 揀咗 X」 / Q&A 答案
@@ -528,10 +528,10 @@ shortcut*。當 shortcut 失效, git + session_search = 同等甚至更好嘅 so
 # Test the full cycle (E2E)
 # <historical 2026-07-25 retired: recovery.sh / resume.sh CLI>
 # Claude Code 對應：手動 state file edit + `/resume` slash command
-# bash recovery.sh crm-system "test 1"
-# bash resume.sh crm-system
+# bash recovery.sh <project> "test 1"
+# bash resume.sh <project>
 
 # Verify file outputs
-ls -la ~/www/crm-system/docs/_meta/
-cat ~/www/crm-system/docs/_meta/interruption_log.md
+ls -la ~/www/<project>/docs/_meta/
+cat ~/www/<project>/docs/_meta/interruption_log.md
 ```

@@ -75,7 +75,7 @@ The requested image's platform (linux/amd64) does not match the detected host pl
 
 Backend's `src/index.ts` and `prisma/seed.ts` originally used `import.meta.dir + "../.."` to read `~/www/llm-acp/questions.json`. Worked locally but the build context `backend/` doesn't have that path. Fix: copy `questions.json` into `backend/` and use `".."` only.
 
-## Pitfall 7: Elysia 1.2 + `bun build` is broken in two ways (added 2026-06-05, `crm-system`)
+## Pitfall 7: Elysia 1.2 + `bun build` is broken in two ways (added 2026-06-05, `<project>`)
 
 When the user runs an Elysia API in a Docker image, the natural instinct is to `bun build` a single-file bundle for fast startup. **Don't.** On Elysia 1.2.x two distinct failures happen:
 
@@ -112,7 +112,7 @@ CMD ["bun", "run", "apps/api/src/index.ts"]
 
 Tradeoff: image is ~200MB larger and cold start a bit slower, but it's the only stable path on Elysia 1.2.x. Revisit when Elysia 1.3+ ships a fixed bundler story.
 
-## Pitfall 8: `USER bun` + entrypoint script permission (added 2026-06-05, `crm-system`)
+## Pitfall 8: `USER bun` + entrypoint script permission (added 2026-06-05, `<project>`)
 
 `oven/bun:1.2` ships a `bun` user (uid 999). If you `USER bun` after `COPY --chmod=755 entrypoint.sh`, the entrypoint fails with:
 ```
@@ -149,7 +149,7 @@ server {
 
 Use Docker Compose service name (`backend`) not `localhost` in `proxy_pass` — they share a network.
 
-### SPA fallback rewrite cycle (added 2026-06-05, `crm-system`)
+### SPA fallback rewrite cycle (added 2026-06-05, `<project>`)
 
 The common `try_files $uri $uri/ /index.html` pattern in `location /` will throw a 500 on the root request with this error in the nginx container log:
 
@@ -173,7 +173,7 @@ location @spa {
 
 `@spa` is a named location, never matched by URI, so no cycle.
 
-## Pitfall 9: Smoke-test API from inside the container, not the host (added 2026-06-07, `crm-system`)
+## Pitfall 9: Smoke-test API from inside the container, not the host (added 2026-06-07, `<project>`)
 
 When you need to verify a backend route end-to-end (status codes,
 audit log entries, validation errors), running the test from the
@@ -187,7 +187,7 @@ host Mac can fail for reasons unrelated to the actual code:
   tokens** in terminal output, so `TOKEN=$(curl ...)` pipelines
   frequently produce empty tokens (the secret was wiped from
   the shell variable)
-- Docker network IPs (e.g. `172.20.0.3`) require an extra
+- Docker network IPs (e.g. `<server-ip>`) require an extra
   approval step in the shell for security scan
 
 **Fix** — `docker cp` the test script into the container and run it
@@ -225,10 +225,10 @@ Tradeoffs:
 - ⚠️ crm-api image doesn't have `python3` — TypeScript only
 
 This pattern is **the** recommended way to verify any backend
-change in `crm-system` (and any similar `oven/bun:1.2`-based API
+change in `<project>` (and any similar `oven/bun:1.2`-based API
 container) when you can't reach it from the host.
 
-## Pitfall 10: bash 3.2.57 (macOS default) subshell PATH bug (added 2026-06-07, crm-system Day 14.7)
+## Pitfall 10: bash 3.2.57 (macOS default) subshell PATH bug (added 2026-06-07, <project> Day 14.7)
 
 When writing **smoke / verification shell scripts** on macOS, the
 default `bash` is `3.2.57(1)-release` (the last GPLv2 version
@@ -294,12 +294,12 @@ Migrate to `bash 5.x` via homebrew (`brew install bash` and
 **Also relevant to:** `interruption-recovery` smoke probes,
 `code-review-pipeline` Phase 5 merge verification, any `delegate_task`
 shell-based verifier. The 3 `/tmp` smoke scripts shipped on
-2026-06-07 crm-system Day 14.7 (`/tmp/commit-untracked-files.sh`,
+2026-06-07 <project> Day 14.7 (`/tmp/commit-untracked-files.sh`,
 `/tmp/push-after-commit.sh`, `/tmp/smoke-before-merge.sh`) all
 follow this pattern — see `code-review-pipeline/templates/` for
 copy-pasteable templates.
 
-## Pitfall 12: Verify every Alpine package in `apk add` with `apk search` before writing the Dockerfile (added 2026-06-16, pm-system Sprint 21)
+## Pitfall 12: Verify every Alpine package in `apk add` with `apk search` before writing the Dockerfile (added 2026-06-16, <project> Sprint 21)
 
 If you write `RUN apk add --no-cache foo bar baz` based on a blog post, a Stack Overflow answer, or even a previous project's Dockerfile, **one of those packages may not exist in the current Alpine repo** for the base image version you're using. The build will fail at the `RUN apk add` layer with:
 
@@ -311,7 +311,7 @@ ERROR: unable to select packages:
     required by: world[xls2csv]
 ```
 
-This exact failure happened on 2026-06-16 in pm-system Sprint 21 — Dockerfile specified `apk add poppler-utils antiword xls2csv catdoc` based on a plan-stage design doc. `antiword` exists, but `catdoc` and `xls2csv` are **not** in the Alpine v3.22 official repo. The first `docker build` failed at layer 2, 30 seconds of build time wasted, and required a hotfix commit on top of the merged Sprint 21 work.
+This exact failure happened on 2026-06-16 in <project> Sprint 21 — Dockerfile specified `apk add poppler-utils antiword xls2csv catdoc` based on a plan-stage design doc. `antiword` exists, but `catdoc` and `xls2csv` are **not** in the Alpine v3.22 official repo. The first `docker build` failed at layer 2, 30 seconds of build time wasted, and required a hotfix commit on top of the merged Sprint 21 work.
 
 **Rule — verify before writing** (5 seconds, no build needed):
 
@@ -322,7 +322,7 @@ docker run --rm oven/bun:1-alpine sh -c "apk search 2>&1 | grep -E '^(<pkg1>-|<p
 
 If a package isn't in the output, it's not in the repo. Find a real alternative (`apk search <keyword>` returns the full candidate list).
 
-**Real alternatives for the pm-system Sprint 21 case** (verified against `dl-cdn.alpinelinux.org` v3.22 via `apk search`):
+**Real alternatives for the <project> Sprint 21 case** (verified against `dl-cdn.alpinelinux.org` v3.22 via `apk search`):
 
 | Wanted | Available alternative | Notes |
 |--------|----------------------|-------|
@@ -354,7 +354,7 @@ RUN apk add --no-cache poppler-utils antiword wv gnumeric
 
 **Connection to `regression-guard`**: this is exactly the kind of "old assumption comes back" trap. The "Plan: use SheetJS xlsx" assumption also came from upstream docs; the Alpine `apk add` line was written the same way. Both were unchecked before commit. Document the fix path in retro, not just the fix itself.
 
-## Pitfall 11: "docker compose up --build fails" is often a TS error, not a Docker error (added 2026-06-10, pm-system)
+## Pitfall 11: "docker compose up --build fails" is often a TS error, not a Docker error (added 2026-06-10, <project>)
 
 When a user says "docker compose up -d --build has issues" with no
 error log, **the failure is almost always inside the multi-stage
@@ -372,7 +372,7 @@ on `docker compose up -d --build 2>&1 | tail -120`, then
 `process(action='wait')` to capture the tsc output.
 
 **Two recurring TS error classes** in Bun + Vite + React + tsc-strict
-projects (seen 2026-06-10 in pm-system):
+projects (seen 2026-06-10 in <project>):
 
 1. **Call-site argument count mismatch** — handler signature
    `(e: FormEvent) => async {}` invoked as `onSubmit={(e) => {
@@ -413,7 +413,7 @@ projects (seen 2026-06-10 in pm-system):
    inside a `<select>` will hit `Parameter 'm' implicitly has
    an 'any' type [7006]`.
 
-**Audit checklist** when this happens (5 sites to check in pm-system
+**Audit checklist** when this happens (5 sites to check in <project>
 class code):
 - The producer (`const assigneeOptions = ...`)
 - Every call site of the producer as a prop
@@ -440,4 +440,4 @@ Working repo: `~/www/llm-acp` (CodeCommit `arn:aws:codecommit:ap-east-1:64619753
 - `frontend/nginx.conf`: /api reverse proxy to backend
 - `docker-compose.yml`: backend + frontend + named volume for SQLite
 
-For a full local-deployment stack (Vite SPA + Bun/Elysia API + Postgres + nginx) with copy-paste docker-compose.yml + Dockerfiles + nginx.conf + entrypoint + verification commands, see `templates/full-local-stack.md` (proven in `~/www/crm-system`, 2026-06-05).
+For a full local-deployment stack (Vite SPA + Bun/Elysia API + Postgres + nginx) with copy-paste docker-compose.yml + Dockerfiles + nginx.conf + entrypoint + verification commands, see `templates/full-local-stack.md` (proven in `~/www/<project>`, 2026-06-05).

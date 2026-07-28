@@ -103,7 +103,7 @@ maintained as a known backlog.
 2. **Finding fixed** → append a `✅ Fixed in <commit>` (or
    `✅ PARTIAL — <what's done> / <what's deferred> / <linked follow-up>`)
    row to the existing entry. **Do not move to an archive section.**
-   The crm-system (2026-06-08) convention is to keep the original
+   The <project> (2026-06-08) convention is to keep the original
    P?-N entry in place and stack status updates on it, so a
    future reader can see the full history (where, why, fix, est)
    in one block. An archive section splits this across the doc
@@ -113,7 +113,7 @@ maintained as a known backlog.
 4. **Finding deferred** → add a `⏸ Deferred: <reason>` tag. Don't
    delete — keep the historical record.
 
-### Status row format (preferred by crm-system 2026-06-08)
+### Status row format (preferred by <project> 2026-06-08)
 
 ```markdown
 - **Status (YYYY-MM-DD):** ✅ Fixed in commit <sha> — <one-line summary>
@@ -141,7 +141,7 @@ that prefer that convention.
 
 **Rule of thumb**:超過 10 個 finding 就用 5-field,因為 table 太擠睇唔到 detail。
 
-### Env-only fix entry 範本 (2026-06-08 pm-system TD-012)
+### Env-only fix entry 範本 (2026-06-08 <project> TD-012)
 
 ```markdown
 ### 🟡 TD-012: Host 跑 `bun test` 撞 `tasks.test.ts` fail(環境問題,非 code)
@@ -170,7 +170,7 @@ that prefer that convention.
 - **QA Tracker**(`docs/QA-TRACKER.md` 配 `qa-tracker` 規範)— US → test 對照,per-feature status
 - 三者互補,red-line 10/11/13 spec
 
-## P0/P1 closure workflow (2026-06-09 pm-system Sprint 5)
+## P0/P1 closure workflow (2026-06-09 <project> Sprint 5)
 
 當用戶問「清 N 個 P0/P1 tech debt」時嘅 recommended workflow,
 combine 咗 user 嘅 options-first preference 同 plan-then-execute 紀律。
@@ -184,7 +184,7 @@ combine 咗 user 嘅 options-first preference 同 plan-then-execute 紀律。
 - **預期** — 量化 outcome(image size、test count、coverage %)
 - **取捨問題** — 預設合理選項 + 1-2 個 alternatives + clarify 問 user
 
-**典型 3-options template**(David preference, 2026-06-09 pm-system):
+**典型 3-options template**(David preference, 2026-06-09 <project>):
 ```
 A) 【推薦】<safe practical win, 預設>
    - <outcome>
@@ -267,7 +267,7 @@ cd e2e && npx playwright test       # E2E (要 docker stack up)
 5. **P0/P1 debt 餘下狀態**(收尾 checklist)
 
 David preference: **短、有用、不解釋 why**。每段 1-3 行。
-**忌**:14K char inline report(紅線 49 v2, 2026-06-06 crm-system retro)
+**忌**:14K char inline report(紅線 49 v2, 2026-06-06 <project> retro)
 **宜**:1 個 final response < 3500 chars, hit 所有 verify point
 
 ## Legacy simple-table template(保留向後兼容)

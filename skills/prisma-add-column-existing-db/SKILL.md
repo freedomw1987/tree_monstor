@@ -55,8 +55,8 @@ bun migrate-add-column.ts
 ### Step 4: Build and Deploy
 ```bash
 bun build src/index.ts --outdir=dist --target=bun
-docker cp dist/index.js pm-system-backend-1:/app/dist/index.js
-docker restart pm-system-backend-1
+docker cp dist/index.js <project>-backend-1:/app/dist/index.js
+docker restart <project>-backend-1
 ```
 
 ## Key Insight

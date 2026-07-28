@@ -16,7 +16,7 @@ top-level URLs (`/users`, `/roles`, …) → consolidate into one prefix
 
 Why: deep linking, browser back/forward, and "open in new tab" all
 work because the **URL is the source of truth** (not component state).
-Step-down in Day 11 / Day 14 crm-system: `/users`, `/roles`, `/audit`,
+Step-down in Day 11 / Day 14 <project>: `/users`, `/roles`, `/audit`,
 `/ai-config`, `/man-day-roles` → 7 sub-tabs under `/settings/*`.
 
 ## When to use
@@ -125,7 +125,7 @@ don't 404.
 
 **If the original top-level page had its own header + tab strip,
 removing it is Step 4 — NOT a later step.** The original page
-(`/settings` = `SettingsPage` in crm-system) had:
+(`/settings` = `SettingsPage` in <project>) had:
 
 ```tsx
 <div>
@@ -212,7 +212,7 @@ the chrome for it: you're fighting the router. Just redirect.
   + regex is enough.** `useMatch` returns null for the parent
   path (matches only leaves), so the regex approach is simpler.
 
-## Worked example (2026-06-07, crm-system Step 6)
+## Worked example (2026-06-07, <project> Step 6)
 
 5 top-level pages (`/users`, `/roles`, `/ai-config`, `/man-day-roles`,
 `/audit`) + 1 new (`/settings/tax`) + 1 existing (`/settings` Pipeline)

@@ -15,7 +15,7 @@ Deploy a Vite SPA frontend and Bun/Elysia API backend behind Caddy reverse proxy
 - Caddy runs in Docker container with `network_mode: host`
 - Frontend: Vite preview server on host port (e.g., 3002)
 - Backend: Bun server on host port (e.g., 3000)
-- Domain: e.g., `pos.david-developer.com`
+- Domain: e.g., `<your-domain>`
 - Goal: `https://domain/` → frontend, `https://domain/api/*` → backend API
 
 ## Setup Steps
@@ -41,15 +41,15 @@ export default defineConfig({
 ### 2. Caddyfile
 
 ```caddy
-pos.david-developer.com {
+<your-domain> {
     # SPA frontend — Vite preview handles SPA fallback natively
     handle /api/* {
         handle_path /api/*  # Strip /api prefix before proxying
-        reverse_proxy 172.31.19.145:3000  # Use host IP, not host.docker.internal
+        reverse_proxy <server-ip>:3000  # Use host IP, not host.docker.internal
     }
 
     # All other routes → Vite preview (SPA fallback)
-    reverse_proxy 172.31.19.145:3002
+    reverse_proxy <server-ip>:3002
 }
 ```
 
@@ -73,31 +73,31 @@ Use that IP in Caddyfile instead of `host.docker.internal`.
 
 ```bash
 # Backend (Bun)
-cd ~/projects/lemontree_aws/backend && bun src/index.ts &
+cd ~/projects/<project>_aws/backend && bun src/index.ts &
 
 # Frontend (Vite preview — supports SPA fallback natively)
-cd ~/projects/lemontree_aws/frontend && bun run preview --port 3002 --host &
+cd ~/projects/<project>_aws/frontend && bun run preview --port 3002 --host &
 ```
 
 ### 5. Reload Caddy
 
 ```bash
-sudo docker exec chatbot-proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo docker exec <project> caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 ```
 
 ### 6. Verify
 
 ```bash
 # Frontend
-curl -s -o /dev/null -w "%{http_code}" https://pos.david-developer.com/
+curl -s -o /dev/null -w "%{http_code}" https://<your-domain>/
 # → 200
 
 # Dashboard route (SPA)
-curl -s -o /dev/null -w "%{http_code}" https://pos.david-developer.com/dashboard
+curl -s -o /dev/null -w "%{http_code}" https://<your-domain>/dashboard
 # → 200
 
 # API
-curl -s -X POST https://pos.david-developer.com/api/auth/login \
+curl -s -X POST https://<your-domain>/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"pass"}'
 # → {"success":true,"token":"..."}

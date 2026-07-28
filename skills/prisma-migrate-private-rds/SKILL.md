@@ -58,7 +58,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 - Exit code 1 = migration error (check logs)
 - `assignPublicIp=DISABLED` required for private subnet tasks
 
-## ⚠️ Schema drift 同 enum → table migration 嘅 production recipe (2026-06-06 crm-system Day 9)
+## ⚠️ Schema drift 同 enum → table migration 嘅 production recipe (2026-06-06 <project> Day 9)
 
 **情境**: 你做了一個 structural schema 改動 (e.g. `enum Foo` → `model Foo { id, code, name }` + FK columns in other tables),但 `prisma migrate dev` 唔識 produce 呢個 migration (因為 enum→model 唔係 Prisma express 得到的)。或者你之前手動喺 dev DB 跑咗 SQL 改 schema,**但 filesystem migration history 仲係舊嘅**。
 
@@ -85,7 +85,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 
 **教訓**: `prisma migrate dev` 唔識 produce 任何 structural change (e.g. enum→table, table→enum, column type switch, FK cycle breaking)。**手動 SQL + 手動 migration record 係唯一可靠 path**。詳細 SQL 範本 (Region enum → table backfill): 見 `bun-elysia-react-vite-stack` skill 嘅 "⚠️ Prisma `enum` field — schema/DB drift" pitfall section。
 
-**同類變體: TEXT column → enum (crm-system Day 9)** (2026-06-06)
+**同類變體: TEXT column → enum (<project> Day 9)** (2026-06-06)
 
 **情境**: Schema 將某 column 由 `String @default("ACTIVE")` 改成 typed enum `Foo @default(ACTIVE)` 但出 migration 前已經跑緊 dev DB,DB column 仍然係 plain TEXT。Prisma client emit `INSERT INTO ... VALUES ('ACTIVE'::"Foo")` 但 PG type 不存在, throw `42704 type "public.Foo" does not exist`。
 
@@ -125,7 +125,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 
 ---
 
-## ⚠️ Migration file in `main` 但 container 從未 rebuild 過 → prod 永遠見唔到(2026-06-08 crm-system)
+## ⚠️ Migration file in `main` 但 container 從未 rebuild 過 → prod 永遠見唔到(2026-06-08 <project>)
 
 **情境**: 你 commit 咗一個新 migration file 落 `main`,Dockerfile baked 咗 `prisma/migrations/` 入 image。`git log` 顯示新 file 喺度,**但** running container 入面 `ls /app/packages/db/prisma/migrations/` 唔見個新 file → entrypoint 跑 `prisma migrate deploy` 只睇到 11 個 file(舊嘅),「No pending migrations to apply」,**冇任何錯誤訊息**。Prod DB 永久 drift。
 
@@ -170,7 +170,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
    # e. Verify — 應該見 "All migrations have been successfully applied"
    ```
 
-4. **Critical 配套(2026-06-08 crm-system 親驗)**:**亦都要 force image rebuild** 將來 deploy 用,否則下次 `docker compose up -d` 個新 image 唔存在於 registry / named tag:
+4. **Critical 配套(2026-06-08 <project> 親驗)**:**亦都要 force image rebuild** 將來 deploy 用,否則下次 `docker compose up -d` 個新 image 唔存在於 registry / named tag:
    ```bash
    docker compose build --no-cache api
    docker compose up -d api
@@ -189,7 +189,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 
 ---
 
-## ⚠️ PascalCase model name 撞 snake_case on-disk table name (2026-06-08 crm-system RG-007)
+## ⚠️ PascalCase model name 撞 snake_case on-disk table name (2026-06-08 <project> RG-007)
 
 **情境**: Prisma model 叫 `ConversationMessage`(PascalCase),但 init migration 寫嘅 SQL 用 `CREATE TABLE "conversation_messages"`(snake_case 加 explicit double-quotes)。**PG 嘅 double-quoted identifier 係 case-sensitive literal**,所以 DB 入面真係有 `conversation_messages` 唔係 `ConversationMessage`。Prisma client 喺 query 時 emit 嘅 `"conversation_messages"` 喺 PG 識認,**但**你手寫 raw SQL 喺 migration file 入面如果用 `"ConversationMessage"`,**PG 會 throw `42P01 relation "ConversationMessage" does not exist`**,即使 `prisma migrate dev` 喺 dev 跑冇問題(dev 嘅 PG 通常係 case-folding,lower-case 都 OK;**prod PG 開 `lower_case_insensitive = off` 之後會撞**)。
 
@@ -197,7 +197,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 - `prisma migrate deploy` 報 `P3018: migration failed to apply`
 - DB error code 42P01, message `relation "X" does not exist`
 - Dev 環境可能冇事(prod-only)
-- David 嘅 init migration(2026-06-05 入面)用咗 snake_case `"conversation_messages"`,所以呢個 pattern 喺 crm-system 全 codebase 都用緊 snake_case with explicit quotes
+- David 嘅 init migration(2026-06-05 入面)用咗 snake_case `"conversation_messages"`,所以呢個 pattern 喺 <project> 全 codebase 都用緊 snake_case with explicit quotes
 
 **Recipe (avoiding the drift 喺新 migration 入面)**:
 
@@ -247,7 +247,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 
 ---
 
-## ⚠️ 客戶機 first boot 撞 P3009 — 項目用 `prisma db push` 改 schema 冇 emit migration (2026-06-09 pm-system v1.0.0)
+## ⚠️ 客戶機 first boot 撞 P3009 — 項目用 `prisma db push` 改 schema 冇 emit migration (2026-06-09 <project> v1.0.0)
 
 **情境**: 項目 init migration 之後, developer 用 `prisma db push` 改 schema (加咗 N 個 model + 改咗 M 個 column),**冇 fold back 落 migration**。客戶機 fresh DB 跑 `prisma migrate deploy` 撞:
 - `column "X" of relation "Y" already exists` (P3009, 因為 `db push` 已經改咗 dev DB 但 filesystem migration 唔知)
@@ -256,7 +256,7 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 
 **呢個 case 同上面 3 個唔同嘅係**: 上面 3 個都係"做咗 migration 但 deploy 唔到";呢個係"**根本冇做 migration**"。**Dev 環境照常 work**(因為 db push 已經 sync 咗),**只有 customer 嘅 fresh DB 撞**。
 
-**Recipe — 一句過 audit 補 migration(2026-06-09 pm-system 親驗,emit 212 行 SQL 一次過)**:
+**Recipe — 一句過 audit 補 migration(2026-06-09 <project> 親驗,emit 212 行 SQL 一次過)**:
 
 1. **用 `prisma migrate diff` 一句過 emit 全部差異**(唔好手寫 SQL — 太易漏 audit):
    ```bash
@@ -310,11 +310,11 @@ sleep 30 && aws ecs describe-tasks --cluster umac-ai-cluster --tasks <task-arn> 
 
 ## References
 - `references/rg-007-day17-migration-stale.md` — full reproduction
-  transcript of the crm-system Day 17 "image never rebuilt" failure
+  transcript of the <project> Day 17 "image never rebuilt" failure
   + 6-step recovery recipe (canonical example of this whole skill's
   class of bug)
-- `references/pm-system-v1.0.0-db-push-drift.md` — full reproduction
-  transcript of the pm-system v1.0.0 "db push never emit migration"
+- `references/<project>-v1.0.0-db-push-drift.md` — full reproduction
+  transcript of the <project> v1.0.0 "db push never emit migration"
   customer-deploy failure + audit-recovery recipe
 - `scripts/migration-lint.sh` — pre-commit lint for PascalCase
   identifier drift in new migrations (US-OPS-1)

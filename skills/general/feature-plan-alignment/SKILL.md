@@ -185,7 +185,7 @@ Three common gotchas in this pipeline — all from `doc-html-preview` skill:
 2. **Boss JSON key is filename-derived**, not semantic. `2026-06-07-feature-plan.md` needs `2026-06-07-feature-plan.json`, NOT `feature-plan.json`.
 3. **`verify_boss_html.sh` uses `mapfile` (bash 4+)** — fails silently on macOS default bash 3.2. Use the inline grep above.
 
-See `doc-html-preview/references/crm-system-2026-06-07-build-sh-gotchas.md` for full details.
+See `doc-html-preview/references/<project>-2026-06-07-build-sh-gotchas.md` for full details.
 
 ## Discord notification — what to send
 
@@ -275,7 +275,7 @@ The Discord message is what David will respond to. Keep it scannable, lead with 
 
 ---
 
-## Common pitfalls (verified 2026-06-07 crm-system)
+## Common pitfalls (verified 2026-06-07 <project>)
 
 | Pitfall | Symptom | Fix |
 |---------|---------|-----|
@@ -297,12 +297,12 @@ The Discord message is what David will respond to. Keep it scannable, lead with 
 | Project with plans/ sub-folder | `docs/plans/<date>-<feature>-plan.md` | If project already has one |
 | Plan about a specific ADR topic | `docs/architecture/<NNNN>-<topic>.md` and tag as plan in the doc | Use the ADR numbering scheme |
 
-Default for `~/www/crm-system`-style projects: `docs/retros/<date>-<feature>-plan.md`.
+Default for `~/www/<project>`-style projects: `docs/retros/<date>-<feature>-plan.md`.
 
 ## Related skills
 
 - **`doc-html-preview`** — owns the MD→HTML render and the boss JSON schema. Load alongside this skill.
-- **`doc-html-preview/references/crm-system-2026-06-07-build-sh-gotchas.md`** — the 3 build-script gotchas (sub-folder glob, JSON key matching, macOS bash 3.2). Read before building the plan HTML.
+- **`doc-html-preview/references/<project>-2026-06-07-build-sh-gotchas.md`** — the 3 build-script gotchas (sub-folder glob, JSON key matching, macOS bash 3.2). Read before building the plan HTML.
 - **`regression-guard`** — when a plan involves a bug fix, RG-XXX entry is required.
 - **`dev-task-memory`** — for very long-running plan+implementation sessions, persist state to `docs/_meta/dev-task-state.md` so a fresh session can resume.
 - **`interruption-recovery/references/post-recovery-verification.md` Recipe C** — when a plan's "Stash 狀態" section says David's working changes are stashed, run the stale-stash detection *before* trusting that section. The plan was written from a snapshot; the snapshot may be 100% superseded by a merge that landed after the plan was authored.
@@ -310,5 +310,5 @@ Default for `~/www/crm-system`-style projects: `docs/retros/<date>-<feature>-pla
 ## Files in this skill
 
 - `SKILL.md` — this file (workflow + 12-section template + JSON schema + Discord message template)
-- `references/crm-system-2026-06-07-system-settings-plan.md` — example of a real plan doc (the one this skill was extracted from)
-- `references/crm-system-2026-06-07-plan-boss-json.md` — example of a real boss JSON with `chosen_by` fields and project-specific `risks_boss_speak`
+- `references/<project>-2026-06-07-system-settings-plan.md` — example of a real plan doc (the one this skill was extracted from)
+- `references/<project>-2026-06-07-plan-boss-json.md` — example of a real boss JSON with `chosen_by` fields and project-specific `risks_boss_speak`

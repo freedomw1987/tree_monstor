@@ -45,7 +45,7 @@ location /api/ {
 
 ### Always test with curl first
 ```bash
-curl -s --no-buffer -X POST https://chatbot.david-developer.com/api/chat \
+curl -s --no-buffer -X POST https://<your-domain>/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"Draw a red circle","attachments":[]}' \
   --no-buffer 2>&1 | head -5

@@ -125,7 +125,7 @@ vision_analyze(
 3. **flex-wrap 加 grid-cols** 容易爆 — 要 `min-width: 0` 或者 `truncate` 喺 text node 上面。
 4. **safe-area** (iPhone notch) — mobile-first app 最好加 `pb-safe` 或者 `env(safe-area-inset-bottom)`。
 5. **Dont use `px-6`** 喺 mobile — `px-4` 就夠，慳 16px 兩邊。
-6. **`fullPage: true` 對無限 scroll / 大量 list render 嘅 page 會爆 100k px tall screenshot** (撞過 2026-06-10 pm-system Dashboard: 196 個項目 card render 晒 → screenshot 91834px tall，PIL 都開唔到，verify 流程完全冇 feedback)。**Root cause**:`fullPage: true` 會 capture 整個 `scrollHeight`，**唔係 viewport**。**Fix**:
+6. **`fullPage: true` 對無限 scroll / 大量 list render 嘅 page 會爆 100k px tall screenshot** (撞過 2026-06-10 <project> Dashboard: 196 個項目 card render 晒 → screenshot 91834px tall，PIL 都開唔到，verify 流程完全冇 feedback)。**Root cause**:`fullPage: true` 會 capture 整個 `scrollHeight`，**唔係 viewport**。**Fix**:
    - **方案 A (推薦,源頭修)**:Page 本身要 `pagination` / `slice(0, N)` — 即係根本唔應該有「無限 render」嘅 page。參考 `pagination-with-preserved-aggregates` skill 嘅「`limit: -1` 唔好用喺 dashboard」 pitfall
    - **方案 B (quick audit)**:Audit script 改用 `page.screenshot({ path, fullPage: false, clip: { x: 0, y: 0, width: 390, height: 844 * 4 } })` — clip 限死範圍(e.g. 4 個 viewport height)，避免無限長
    - **方案 C (預 check)**:用 `await page.evaluate('document.body.scrollHeight')` 預先 check，**>10000px 就 abort + flag** + 提示需要先 fix page:

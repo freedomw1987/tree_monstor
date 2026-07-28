@@ -323,5 +323,5 @@ const fix = await agent('Fix this bug', {
 
 - Claude Code `--agent` flag documentation
 - Workflow tool API: `agent()`, `parallel()`, `pipeline()`, `phase()`, `log()`, `budget`
-- Tree Monstor Orchestrator Skill: `/Users/davidchu/www/tree_monstor/skills/orchestrator/SKILL.md`
-- Tree Monstor Subagent Matrix: `/Users/davidchu/www/tree_monstor/MEMORY.md`
+- Tree Monstor Orchestrator Skill: `<repo-root>SKILL.md`
+- Tree Monstor Subagent Matrix: `<repo-root>MEMORY.md`

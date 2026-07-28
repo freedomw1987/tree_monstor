@@ -223,8 +223,8 @@ export function isToolMarker(message: ChatMessage): boolean {
 
 `apps/web/src/components/MarkdownContent.tsx` and
 `apps/web/src/components/ChartBlock.tsx`. See the full source
-in `references/chat-renderer-source.md` (crm-system copy from
-2026-06-08, MIT-licensed and crm-system-internal).
+in `references/chat-renderer-source.md` (<project> copy from
+2026-06-08, MIT-licensed and <project>-internal).
 
 The split-on-fences pattern (pre-process the source string) is
 chosen over `react-markdown`'s `components` map because we want
@@ -345,7 +345,7 @@ docker inspect --format '{{.Image}}' crm-api > /tmp/api-sha-before.txt
 **2. David rebuilds + restarts the containers**:
 
 ```bash
-cd ~/www/crm-system
+cd ~/www/<project>
 docker compose up -d --build web api
 docker compose ps    # confirm new SHA + healthy
 ```
@@ -373,7 +373,7 @@ docker inspect --format '{{.Image}}' crm-web
 ```
 
 **6. Write the retro doc** following the project's existing
-template. For crm-system, this is
+template. For <project>, this is
 `docs/retros/YYYY-MM-DD-<feature>.md` with sections: TL;DR table,
 root cause recap, what changed, design rationale, lessons, out of
 scope, verification artefacts, files touched. Pin the retro
@@ -387,7 +387,7 @@ browser was caching".
 ## Support files
 
 - `references/chat-renderer-source.md` — full source of
-  `MarkdownContent.tsx` and `ChartBlock.tsx` (crm-system 2026-06-08).
+  `MarkdownContent.tsx` and `ChartBlock.tsx` (<project> 2026-06-08).
   Copy and adapt to your project's component library.
 - `references/is-tool-marker-react.md` — `isToolMarker` predicate
   with the 7 unit tests that pin the contract.

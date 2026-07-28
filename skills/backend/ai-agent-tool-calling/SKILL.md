@@ -760,7 +760,7 @@ es.onmessage = (e) => {
 
 ## 配套 references
 
-- `references/lightweight-no-zod-pattern.md` — 唔用 Zod / 唔用 RAG 嘅極簡 Day 1 模式(適合 crm-system 規模)
+- `references/lightweight-no-zod-pattern.md` — 唔用 Zod / 唔用 RAG 嘅極簡 Day 1 模式(適合 <project> 規模)
 - `references/audit-existing-before-build.md` — 入 task 之前先 audit 現有 infrastructure 嘅 checklist + 點 discover 已存在嘅 AI agent
 - `references/audit-existing-ai-infrastructure.md` — **5-step audit protocol** (filesystem + schema + route listing + container API probe + DB query) — 用嚟 avoid 誤判「backend 冇」嘅 recon error (2026-06-07 lesson)
 - `references/mock-llm-server.md` — 冇真 LLM key 點 verify AI agent 對接 — OpenAI-compatible mock server pattern
@@ -773,11 +773,11 @@ es.onmessage = (e) => {
 - `templates/tool-registry-template.ts` — 8 個 CRM tools (search / draft / log) 嘅 starter code
 - `templates/mock-openai-server.cjs` — Express OpenAI-compatible mock server,模擬 tool call 用嚟本地 verify AI agent
 
-## ⚠️ Pitfalls (crm-system 2026-06-08 lessons)
+## ⚠️ Pitfalls (<project> 2026-06-08 lessons)
 
 ### Pitfall 1: `tsc pass` ≠ `feature work` — 必須 browser/E2E smoke 確認
 
-**場景**(crm-system 2026-06-08,統一 `ManDayEditor` refactor):
+**場景**(<project> 2026-06-08,統一 `ManDayEditor` refactor):
 
 我抽 `ManDayEditor` 共享 component 嚟取代 `service-detail.tsx` 同 `QuickCreateServiceDialog` 兩處獨立嘅 form,加晒 import + 改晒 `toWireRows` 邏輯。`tsc --noEmit` 過 ✅,Docker build 過 ✅,**push 去 origin/main** ✅。
 
@@ -804,7 +804,7 @@ es.onmessage = (e) => {
 
 ### Pitfall 2: Audit existing infrastructure before build (Lesson 2026-06-07)
 
-**場景**(crm-system 2026-06-07,David 提交 T1-T3 嘅 3 個 AI task):
+**場景**(<project> 2026-06-07,David 提交 T1-T3 嘅 3 個 AI task):
 
 我入 task 第一件事就 plan 寫 5 個 component 嘅 scope + 報 8-9 小時 effort。**但 user 用「A」要求 audit 之後發現**:backend `packages/ai/`(894 lines config + encryption + tools)+ `Conversation` / `ConversationMessage` / `AiConfig` schema + `chat.ts` / `ai-config.ts` route + `ai-chat.tsx` / `ai-config.tsx` page 已經**全部 ship 咗**。我嘅 recon 結論「frontend 寫咗但 backend 完全冇」**完全錯** — 只 grep 咗 5 個 file,冇做 filesystem + DB + container 嘅 systemic audit。
 
@@ -873,7 +873,7 @@ es.onmessage = (e) => {
 
 **問題**:Admin UI 改 LLM API key 嘅 spec,要求 key 必須存落 DB(唔可以 env-only),**但紅線 1 禁止 plaintext secret 落 DB**。
 
-**Production pattern**(crm-system 2026-06-08):
+**Production pattern**(<project> 2026-06-08):
 
 1. **Schema**:
    ```prisma
@@ -904,7 +904,7 @@ es.onmessage = (e) => {
 
 **問題**:David spec 講「full CRUD」Q2=C — 但 AI 直接做 destructive ops (delete deal, change stage) 風險高。
 
-**Production pattern**(crm-system 2026-06-08):
+**Production pattern**(<project> 2026-06-08):
 - **Read + Create safe** — `search_companies`, `draft_quotation` (DRAFT status,user 喺 UI promote), `log_activity` 全部 AI 直接做 OK
 - **Update sensitive** — `update_deal_stage`, `update_quotation_status` → **AI 只 propose,唔直接寫**。Frontend 顯示「AI 建議將 deal stage 由 `OPEN` → `WON`,確認執行?」+ user click Confirm
 - **Delete** — **AI 永遠唔可以 delete**。如果要 delete,AI 引導 user 去 UI 做
@@ -926,7 +926,7 @@ interface Tool {
 
 ### Pitfall 6: Chat route 唔可以 check env var,改用 DB `AiConfig` pre-check + typed error translation (RG-002 + RG-003)
 
-**問題**(crm-system 2026-06-09 audit):寫 `chat.ts` 嗰陣作者「defensive」咁加咗一段 `if (!process.env.OPENAI_API_KEY) return 503`,以為「冇 LLM key 就唔好 call LLM」。**呢個違反咗 schema design 嘅 explicit invariant** — `AiConfig` schema 寫咗「singleton row, no env-var fallback, by design (David's T2 spec: 'no LLM env defaults')」。
+**問題**(<project> 2026-06-09 audit):寫 `chat.ts` 嗰陣作者「defensive」咁加咗一段 `if (!process.env.OPENAI_API_KEY) return 503`,以為「冇 LLM key 就唔好 call LLM」。**呢個違反咗 schema design 嘅 explicit invariant** — `AiConfig` schema 寫咗「singleton row, no env-var fallback, by design (David's T2 spec: 'no LLM env defaults')」。
 
 後果:
 - Even with `OPENAI_API_KEY` set, `runAgent()` 用 DB config,**env var 係 dead code**
@@ -990,7 +990,7 @@ try {
 
 ### Pitfall 7: RBAC permission enum ↔ role setup drift (RG-004)
 
-**問題**(crm-system 2026-06-09 audit):加新 permission `ai-config:read` / `ai-config:update` 入 `packages/shared/src/permissions.ts` PERMISSIONS map,backend route 用 `userHasPermission(userId, 'ai-config:read')` 保護。**但 seed.ts / role setup 冇 grant 呢 2 個 permission 落 ADMIN role** — 即係 **admin 自己 GET /api/ai/config 都 403**。
+**問題**(<project> 2026-06-09 audit):加新 permission `ai-config:read` / `ai-config:update` 入 `packages/shared/src/permissions.ts` PERMISSIONS map,backend route 用 `userHasPermission(userId, 'ai-config:read')` 保護。**但 seed.ts / role setup 冇 grant 呢 2 個 permission 落 ADMIN role** — 即係 **admin 自己 GET /api/ai/config 都 403**。
 
 後果:
 - 35 個 permission 入面冇 `ai-config:*` → backend 返 403 `Forbidden: missing permission 'ai-config:read'`
@@ -1032,7 +1032,7 @@ cat packages/shared/src/permissions.ts | grep -oP "'\K[^:]+(?=:)" | sort -u
 
 ### Pitfall 8: AI agent "no streaming" + tool-as-bubble (RG-005, 2026-06-09)
 
-**問題**(crm-system Day 10 ship 嘅 2 個 UX bug):
+**問題**(<project> Day 10 ship 嘅 2 個 UX bug):
 
 1. **No streaming.** `client.chat.completions.create()` 冇 `stream: true`
    → 整個 LLM call 完成先返一次 response。Frontend 顯示「AI 諗緊...」
@@ -1093,7 +1093,7 @@ curl -N ... | grep '^data:' | head -20
 
 ### Pitfall 9: `docker compose up -d` 撞 foreground warning 時,要用 `background=true` flag 唔係 default
 
-**問題**(crm-system Day 10.1):要 force-recreate container 以 pick up
+**問題**(<project> Day 10.1):要 force-recreate container 以 pick up
 新 build 嘅 image:
 
 ```bash
@@ -1126,7 +1126,7 @@ docker exec crm-api grep -c "new-code-marker" /app/path/to/file
 
 ### Pitfall 10: TypeScript LSP stale ≠ runtime 真的有錯
 
-**問題**(crm-system Day 10.1):改 `chat.ts` 落 source disk 後,
+**問題**(<project> Day 10.1):改 `chat.ts` 落 source disk 後,
 TypeScript language server 即刻報 `Module '@crm/ai' has no exported
 member 'runAgent'` + `prisma.aiConfig` 唔識。
 
@@ -1150,7 +1150,7 @@ member 'runAgent'` + `prisma.aiConfig` 唔識。
 
 ### Pitfall 11: David 親手 commit fix 嘅時候 — 唔好重做
 
-**問題**(crm-system Day 10.1):我哋 `c0d11b1` commit 入面改咗 `chat.ts`
+**問題**(<project> Day 10.1):我哋 `c0d11b1` commit 入面改咗 `chat.ts`
 + 加咗 2 個 permission 落 RBAC。但 David 同一個時間**親手做咗
 呢 3 個 fix** 喺 `d79930e`。
 
@@ -1174,7 +1174,7 @@ git diff d79930e HEAD -- <file> # 睇我哋 HEAD 同 David 個 commit 嘅 diff
 **Lesson**:Push 之前 5 秒 `git diff origin/main --stat` 可以避免
 30 分鐘嘅 rebase cleanup。
 
-### Pitfall 12: Tool arguments that LLM can pass as either ID or natural language name — always build a name↔id resolver (added 2026-06-16, pm-system US-21.6)
+### Pitfall 12: Tool arguments that LLM can pass as either ID or natural language name — always build a name↔id resolver (added 2026-06-16, <project> US-21.6)
 
 **Problem**: AI assistant user types "我想問範例項目的進度" in chat. The LLM, faithfully transcribing the user's intent, calls `get_project_stats({ projectId: "範例項目" })` — passing the **project name** as the projectId argument. Backend `assertProjectAccess(projectId: string)` does `prisma.project.findUnique({ where: { id: "範例項目" } })`, gets `null`, returns `{ ok: false, status: 404, message: "找不到名為『範例項目』的項目" }`. User sees the error, concludes the system is broken.
 
@@ -1192,7 +1192,7 @@ This is **NOT a backend bug. It is a schema-vs-natural-language interface gap.**
 - `tagId`, `categoryId`, `statusId` (taxonomies)
 - `customerId`, `vendorId`, `accountId` (CRM entities)
 
-**Pattern — `resolveEntityIdentifier` helper** (proven in pm-system 2026-06-16):
+**Pattern — `resolveEntityIdentifier` helper** (proven in <project> 2026-06-16):
 
 ```typescript
 // backend/src/utils/project-resolver.ts (template)
@@ -1324,4 +1324,4 @@ description: "取得項目的統計數據,用於生成圖表。Sprint 21 US-21.6
 > The backend MUST resolve via `resolveEntityIdentifier` and return
 > friendly error messages with accessible alternatives.
 
-**Reference implementation** — pm-system `backend/src/utils/project-resolver.ts` + `project-resolver.test.ts` (20 cases), commit `9315a20` on `feat/chat-resolve-project-by-name` branch. Wrapped 8 tool handlers in `resolveAndAssertProject()` helper. Net diff: +450 / -54 lines, 0 regressions. Tool descriptions updated for `get_project_stats` and `search_wiki` to explicitly state the dual format.
+**Reference implementation** — <project> `backend/src/utils/project-resolver.ts` + `project-resolver.test.ts` (20 cases), commit `9315a20` on `feat/chat-resolve-project-by-name` branch. Wrapped 8 tool handlers in `resolveAndAssertProject()` helper. Net diff: +450 / -54 lines, 0 regressions. Tool descriptions updated for `get_project_stats` and `search_wiki` to explicitly state the dual format.

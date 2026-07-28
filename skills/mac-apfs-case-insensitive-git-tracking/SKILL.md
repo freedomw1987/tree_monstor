@@ -131,7 +131,7 @@ feature commit. Most projects don't bother; they just live with
   way) and the container sees `api.md` even though your spec said
   `API.md`.
 
-## crm-system 2026-06-07 case
+## <project> 2026-06-07 case
 
 I wrote 3 file edits to `docs/API.md` (uppercase, per the spec) via
 `patch`. The diff was on the right file (verified by reading the

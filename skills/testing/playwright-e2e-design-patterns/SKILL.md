@@ -124,7 +124,7 @@ grep -E "post\(.*auth/login" e2e/tests/
 
 ### workers=1 for shared-seeded apps
 
-如果 backend 嘅 seed data 係 shared(eg. pm-system 嘅 admin user, projects, tasks):
+如果 backend 嘅 seed data 係 shared(eg. <project> 嘅 admin user, projects, tasks):
 - **唔可以 parallel tests** — race condition 撞 seed data
 - `playwright.config.ts`:`workers: 1, fullyParallel: false`
 - 跑得慢但 deterministic
@@ -438,7 +438,7 @@ For `page.evaluate`, pass a function literal and serialize values through its ar
 | [Stack health diagnostic](references/stack-health-diagnostic.md) | Docker stack-health troubleshooting cases. |
 | [Tiptap paste patterns](references/tiptap-paste-patterns.md) | Rich-text paste incident details and templates. |
 | [Workers and parallel design](references/workers-parallel-design.md) | Worker-count and shared-seed trade-offs. |
-| [pm-system Sprint 13 triage](references/pm-system-sprint-13-triage.md) | Sprint 13 chronology and project-specific triage findings. |
-| [pm-system tracker divergence](references/pm-system-tracker-divergence.md) | US-5.6 tracker and implementation divergence case. |
+| [<project> Sprint 13 triage](references/<project>-sprint-13-triage.md) | Sprint 13 chronology and project-specific triage findings. |
+| [<project> tracker divergence](references/<project>-tracker-divergence.md) | US-5.6 tracker and implementation divergence case. |
 | [Auth mount-path incident](references/auth-me-mount-path-incident.md) | `/api/auth/me` versus `/auth/me` incident and auth-state workaround. |
-| [pm-system Sprint 14 Node audit](references/pm-system-sprint-14-node-audit.md) | Dated audit script, environment findings, and spec inventory. |
+| [<project> Sprint 14 Node audit](references/<project>-sprint-14-node-audit.md) | Dated audit script, environment findings, and spec inventory. |

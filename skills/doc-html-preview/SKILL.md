@@ -35,7 +35,7 @@ This skill produces **both HTMLs side-by-side**, generated from the same MD. The
 | Boss HTML | `~/www/<project>/docs/_html/<doc-name>-boss.html` |
 | Boss summary JSON (input) | `~/www/<project>/docs/_meta/<doc-name>.json` |
 | Git status | **HTML and meta JSON are NOT committed.** `docs/_html/` AND `docs/_meta/` MUST be in `.gitignore` |
-| Git status — KNOWN EXCEPTION | crm-system commits `docs/index.html.bundled.html` (David's request — for stable URL sharing via Discord). Naming **must** use `.bundled.html` suffix to avoid colliding with Vite/React's `index.html`. See [bundled-html-recipe.md §8](./references/bundled-html-recipe.md). When applying this exception, **also** gitignore `docs/_html/` and `docs/_meta/` (those are the per-doc outputs; the bundled exception is independent). |
+| Git status — KNOWN EXCEPTION | <project> commits `docs/index.html.bundled.html` (David's request — for stable URL sharing via Discord). Naming **must** use `.bundled.html` suffix to avoid colliding with Vite/React's `index.html`. See [bundled-html-recipe.md §8](./references/bundled-html-recipe.md). When applying this exception, **also** gitignore `docs/_html/` and `docs/_meta/` (those are the per-doc outputs; the bundled exception is independent). |
 | MD override mechanism | If MD has `## 👀 老闆版摘要` section, that whole section is used as the boss body content (overriding JSON) |
 | CSS | GitHub-like light/dark theme (engineering) + custom decision UI (boss). Both inline, no external assets |
 | Tools | `pandoc` (already installed) + `python3` (already installed) |
@@ -55,7 +55,7 @@ This skill produces **both HTMLs side-by-side**, generated from the same MD. The
 
 ### 🛑 Boss HTML verification (mandatory) — 2026-06-06 lesson
 
-**The trap**: crm-system Day 9. I ran `build.sh --project crm-system` and shipped 12 boss HTMLs. Exit code 0. File count correct (12 boss + 12 engineering). File sizes looked healthy (~20-24 KB each). David opened one and immediately said: "boss.html 都好好，但有兩三個都沒有資料了". 10 of the 12 were rendering the literal placeholder `<div class="boss-placeholder">👀 老闆版摘要待生成</div>` — but my naive `grep` had reported them as fine.
+**The trap**: <project> Day 9. I ran `build.sh --project <project>` and shipped 12 boss HTMLs. Exit code 0. File count correct (12 boss + 12 engineering). File sizes looked healthy (~20-24 KB each). David opened one and immediately said: "boss.html 都好好，但有兩三個都沒有資料了". 10 of the 12 were rendering the literal placeholder `<div class="boss-placeholder">👀 老闆版摘要待生成</div>` — but my naive `grep` had reported them as fine.
 
 **Why naive verification fails:**
 
@@ -78,7 +78,7 @@ awk '/<\/head>/,/<script>/' docs/_html/PRD-boss.html | grep -q 'class="boss-plac
 **Bulk version** — there is a one-shot script at [`scripts/verify_boss_html.sh`](./scripts/verify_boss_html.sh):
 
 ```bash
-bash <profile-root>/skills/doc-html-preview/scripts/verify_boss_html.sh crm-system
+bash <profile-root>/skills/doc-html-preview/scripts/verify_boss_html.sh <project>
 # Exit 0: all good
 # Exit 1: lists which boss HTMLs are placeholders
 # Exit 2: build was never run
@@ -92,7 +92,7 @@ The original step ordering (build first, JSON later) was wrong. **Always generat
 |-------------|---------------|
 | 1. Write MD<br>2. Build<br>3. Generate JSON<br>4. Re-build | 1. Write MD<br>2. **Generate JSON**<br>3. Build (one shot)<br>4. Verify with `verify_boss_html.sh` |
 
-If you have a project where some docs already have a JSON and some don't (the crm-system case), generate the missing ones FIRST, then rebuild, then verify. Do not rely on re-build to fix it.
+If you have a project where some docs already have a JSON and some don't (the <project> case), generate the missing ones FIRST, then rebuild, then verify. Do not rely on re-build to fix it.
 
 ### 🧭 Which variant to use — per-doc vs bundled (2026-06-06 lesson)
 
@@ -132,7 +132,7 @@ In that case, the doc set you produce must be:
 
 **DO NOT** build the bundled HTML on top of the engineering reference set and call it done. If the engineering docs already exist and the user is now asking for boss-facing docs, you are being asked for a **second, separate set** — write `PRD.md` and `DESIGN.md` as new files alongside (NOT replacing) the engineering ones. The bundled HTML should then list BOTH groups.
 
-**Failure mode to avoid (crm-system 2026-06-06):** I delivered 11 engineering reference docs (architecture / database / api / etc.) before David said "stop, 我是想給老闆看的 PRD 和Design". David had to correct the audience mid-task. The fix is to ask "for whom?" up front when the doc request is ambiguous — `skill_view(name="doc-html-preview")` will surface this gate, but only if you load it before starting.
+**Failure mode to avoid (<project> 2026-06-06):** I delivered 11 engineering reference docs (architecture / database / api / etc.) before David said "stop, 我是想給老闆看的 PRD 和Design". David had to correct the audience mid-task. The fix is to ask "for whom?" up front when the doc request is ambiguous — `skill_view(name="doc-html-preview")` will surface this gate, but only if you load it before starting.
 
 ### Audience-mismatch red flag (learned 2026-06-06)
 
@@ -148,7 +148,7 @@ If David says **"stop"**, **"我想要 X version"**, **"for the boss"**, **"engi
 ### When David says "check your settings" / vague new-requirement phrases (2026-06-06 lesson)
 
 If David says anything like **"你 check 一 check 你嘅設定"** / **"HTML doc 是有了新要求"** / **"for the boss"** / **"客戶版本"** / **"睇起嚟唔 professional"** *without specifying the requirement*, do NOT ask him to enumerate — that pushes the cognitive load back. **Run the 9-point boss-audit checklist yourself** and fix what you find. The checklist lives in
-[`references/bundled-html-boss-audit-checklist.md`](./references/bundled-html-boss-audit-checklist.md) — default landing = boss doc, `<title>` in 繁中, skip link, print button, footer hint, print CSS, aria-label, tabindex. Verified crm-system 2026-06-06.
+[`references/bundled-html-boss-audit-checklist.md`](./references/bundled-html-boss-audit-checklist.md) — default landing = boss doc, `<title>` in 繁中, skip link, print button, footer hint, print CSS, aria-label, tabindex. Verified <project> 2026-06-06.
 
 The build script verifies **structure**. Your job is to verify the artifact serves its **audience**. The boss cares about first impression + navigation + printability, not schema correctness.
 
@@ -156,7 +156,7 @@ The build script verifies **structure**. Your job is to verify the artifact serv
 
 Load this skill and run the **bundled** variant (`scripts/build_bundled_html.cjs`) — it gives the most shareable artifact in one command. The bundled variant's output goes in `docs/` (default name: `<project>-docs.html`); see [`references/bundled-html-recipe.md`](./references/bundled-html-recipe.md) for the gotchas. **Always read that reference file before running** — every pitfall there (`.cjs` extension, `</script>` escape, regex footgun, leading H1 strip) bit at least one session.
 
-## When David asks for a Word file (`.docx`) — use pandoc, not bundled HTML (2026-06-09 pm-system)
+## When David asks for a Word file (`.docx`) — use pandoc, not bundled HTML (2026-06-09 <project>)
 
 If the request is **"畀我一份 word file" / "給我 docx" / "for printing" / "for the boss to forward"**, do **NOT** hand the boss the bundled HTML — many corporate recipients still default to Word and won't open `.html`. Generate a `.docx` from the same MD source:
 
@@ -186,13 +186,13 @@ pandoc USER-MANUAL.md -o <Project>-用户使用手册.docx \
 - 動詞:「會/有/做/整/用」→「将会/具有/执行/创建/使用」
 - Verification: `grep -nE "嘅|嗰|啲|咗|咩|唔|冇|嚟|㗎|啦|喇" docs/USER-MANUAL.md` 必須 0 行先算書面語化完成。
 
-## Playwright screenshot recipe (2026-06-09 pm-system, see `references/playwright-screenshot-recipe.md`)
+## Playwright screenshot recipe (2026-06-09 <project>, see `references/playwright-screenshot-recipe.md`)
 
 When the doc includes 20+ page screenshots (USER-MANUAL, ONBOARDING, etc.), use Playwright headless Chromium to capture them. Key patterns:
 
-- **Reuse existing project playwright**: `cd e2e && node ../script.js` — pm-system / crm-system both ship `e2e/node_modules/playwright` already (no need to add to frontend deps).
+- **Reuse existing project playwright**: `cd e2e && node ../script.js` — <project> / <project> both ship `e2e/node_modules/playwright` already (no need to add to frontend deps).
 - **First run downloads chromium binary** (~120 MB) into `~/.cache/ms-playwright/chromium-NNNN/`. The `npx playwright install chromium` step in fresh projects takes ~30s; subsequent runs are instant.
-- **Verify routes before screenshotting**: `grep -rE "Route path=\"" frontend/src/App.tsx` and `grep -E "<name>Page" frontend/src/pages/*.tsx` — pm-system has `AgentMonitorPage.tsx` source but no `Route` registered → `/agent-monitor` 404. Always navigate to the **actually-routed** page.
+- **Verify routes before screenshotting**: `grep -rE "Route path=\"" frontend/src/App.tsx` and `grep -E "<name>Page" frontend/src/pages/*.tsx` — <project> has `AgentMonitorPage.tsx` source but no `Route` registered → `/agent-monitor` 404. Always navigate to the **actually-routed** page.
 - **Click the right sub-tab**: `ProjectDetailPage` uses local useState tabs, not URL params. Pass a fragment `#tasks` then `await page.locator('button').filter({ hasText: /^任務\s*\(/ }).click()`.
 - **5 KB screenshots = blank page** (404, redirect to login, or modal that didn't open). After the script finishes, `ls -la screenshots/ | awk '$5<10000'` lists them — re-shoot manually.
 - **Hardcode IDs as constants** at top of script (`PROJECT_ID = 'bfba6607-...'`), reference them in routes, and re-derive from API after each fresh seed (the `req.get(...)` 包裹的 list endpoint may have changed since last run).
@@ -203,8 +203,8 @@ See `references/playwright-screenshot-recipe.md` for the full 20-page script + s
 
 The bundled script (`build_bundled_html.cjs`) has a `node --check` self-test that extracts the inlined `<script>...</script>` block and runs Node syntax check on it. **This catches a lot, but it is NOT a substitute for a visually inspectable source.**
 
-Symptom I hit on pm-system 2026-06-08 while building `USER-MANUAL.md`:
-- `node build_bundled_html.cjs pm-system` → exit 1, error points at `line 188` of the inlined JS
+Symptom I hit on <project> 2026-06-08 while building `USER-MANUAL.md`:
+- `node build_bundled_html.cjs <project>` → exit 1, error points at `line 188` of the inlined JS
 - The error was "Unexpected token `}`" but the source line 188 had `6 {` and `6 }` — visually balanced per-line
 - **Real cause**: `renderSearchResults` was missing ONE closing `}` for the inner `for (var j=0; ...)` loop. The function's final `}` was closing the inner for-loop, leaving the outer for-in block open. The brace count per-line was coincidentally balanced; only the SEMANTIC structure was wrong.
 - Spent ~20 minutes trying to patch the inline regex `[^)\\s]+` (which Node 22's regex literal parser DOES reject for unescaped `)`) before realising the actual bug was the missing `}`.
@@ -264,20 +264,20 @@ open('docs/<project>-user-manual.html', 'w').write(html)
 
 The pandoc fallback is **strictly worse for navigation / search** but **strictly more robust for any MD content**. Default to bundled for ≥ 5 docs, default to pandoc for 1-2 docs.
 
-### 📂 Sub-folder MDs (2026-06-07 crm-system lesson)
+### 📂 Sub-folder MDs (2026-06-07 <project> lesson)
 
 `build.sh --project <name>` **only globs `docs/*.md`** — it does NOT recurse into subdirectories like `docs/retros/`, `docs/architecture/`, or `docs/handoff/`. To render a sub-folder MD, pass it as a positional argument:
 
 ```bash
 bash <profile-root>/skills/doc-html-preview/scripts/build.sh \
-  --project crm-system \
+  --project <project> \
   docs/retros/2026-06-07-system-settings-plan.md \
   docs/architecture/0001-ai-assistant-architecture.md
 ```
 
 Each path produces `<basename>.html` + `<basename>-boss.html` in `docs/_html/` (just the basename — sub-folder prefix is dropped). This is fine for one-off retro / plan / ADR documents; if you have many sub-folder MDs to publish regularly, consider either (a) flattening into `docs/` with a numbering scheme, or (b) writing a wrapper script that calls `build.sh` per-path.
 
-### 🔑 Boss JSON key is filename-derived, not semantic (2026-06-07 crm-system)
+### 🔑 Boss JSON key is filename-derived, not semantic (2026-06-07 <project>)
 
 `build_html.py` looks up the boss summary JSON by **exact basename match**: `<md-basename>.json` in `docs/_meta/`. If you write your MD as `2026-06-07-system-settings-plan.md`, the script looks for `docs/_meta/2026-06-07-system-settings-plan.json` — NOT a more semantically named file like `plan-system-settings.json`.
 
@@ -314,7 +314,7 @@ The `docs/_meta/<doc>.json` is generated by an LLM reading the MD. **Generate it
 | Scenario | Recommended | Why |
 |----------|-------------|-----|
 | ≤ 5 docs, fresh project, no prior context | **CEO subagent** (or any LLM in isolation) | The MD is the only context needed; CEO can derive the full summary from MD alone. |
-| 6+ docs in an existing project with rich history (e.g. crm-system Day 9) | **Main agent directly** | Subagents lack the conversation history (Prisma enum drift, bun build pitfall, redact JWT block, etc.) that informs the "risks_boss_speak" and "mitigation" cards. A CEO subagent will hallucinate generic risks; the main agent can write concrete, project-specific ones (e.g. "Prisma enum drift 導致 production 42704 error — Day 9 撞過, 已 patch skill + 加 CREATE TYPE 校驗"). |
+| 6+ docs in an existing project with rich history (e.g. <project> Day 9) | **Main agent directly** | Subagents lack the conversation history (Prisma enum drift, bun build pitfall, redact JWT block, etc.) that informs the "risks_boss_speak" and "mitigation" cards. A CEO subagent will hallucinate generic risks; the main agent can write concrete, project-specific ones (e.g. "Prisma enum drift 導致 production 42704 error — Day 9 撞過, 已 patch skill + 加 CREATE TYPE 校驗"). |
 | Mixed: some docs have prior context, some don't | **Main agent for known docs, subagent for fresh docs** | The known docs' risks reference real incidents; the fresh docs need only MD-internal context. |
 
 **Schema** (use exactly this — build_html.py reads these keys literally):
@@ -350,7 +350,7 @@ The `docs/_meta/<doc>.json` is generated by an LLM reading the MD. **Generate it
 }
 ```
 
-**Reference sample** — the crm-system `docs/_meta/PRD.json` is the gold standard:
+**Reference sample** — the <project> `docs/_meta/PRD.json` is the gold standard:
 - 3 cards covering timeline / cost / mitigation (each ≤ 1 sentence)
 - 3 decisions: at least 1 marked `"blocking": true` (David must pick before the project can ship)
 - 2-4 `risks_boss_speak` items in plain Cantonese-繁中, ideally referencing real incidents from the project, not generic platitudes
@@ -380,17 +380,17 @@ open("docs/_meta/PRD.json", "w").write(json.dumps(summary, ensure_ascii=False, i
 
 Then run `build.sh` once, then `verify_boss_html.sh`. Done.
 
-### ⚠️ Pitfall: Bundled `build_bundled_html.cjs` has 2 real Node 22 bugs (2026-06-09 pm-system)
+### ⚠️ Pitfall: Bundled `build_bundled_html.cjs` has 2 real Node 22 bugs (2026-06-09 <project>)
 
 **Bug A — Node 22 V8 regex parser rejects unescaped `)` inside character class.** The original template inlined `/!\[\[^\]\]*\]\([^)\s]+.../g` for the markdown image regex, and `/\[\[^\]]+\]\([^)\s]+\)/g` for the link regex. Node 22's `node --check` (called by the build script's self-test) refuses the literal form with **"Unmatched ')'"** even though `new RegExp(string, 'g')` with the same string is accepted. Result: `node build_bundled_html.cjs <project>` exits 1 with no useful error.
 
 **Fix**: rewrite the two regexes using the `new RegExp('...', 'g')` constructor form (the string literal is run through JS string escaping once instead of twice). The script does this in `renderInline(...)`. If you add new regex-based markdown features (e.g. footnotes, definition lists), use the constructor form too.
 
-**Bug B — `renderSearchResults` j-loop missing `}` close brace.** The original one-liner `for(var j=...){...html+='<li>...</li>'}html+='</ul>...'` closes the j-loop once but is followed immediately by `html+='</ul>...'` which closes the for-in block. So the j-loop body ended with `</li>'}` and the for-in block never closed properly — but on some Node versions the parser tolerated it (crm-system 2026-06-06 likely hid this). Node 22 surfaces "Unexpected token '}'" on the inlined JS. The script now writes `renderSearchResults` across multiple lines for clarity and the brace structure is explicit.
+**Bug B — `renderSearchResults` j-loop missing `}` close brace.** The original one-liner `for(var j=...){...html+='<li>...</li>'}html+='</ul>...'` closes the j-loop once but is followed immediately by `html+='</ul>...'` which closes the for-in block. So the j-loop body ended with `</li>'}` and the for-in block never closed properly — but on some Node versions the parser tolerated it (<project> 2026-06-06 likely hid this). Node 22 surfaces "Unexpected token '}'" on the inlined JS. The script now writes `renderSearchResults` across multiple lines for clarity and the brace structure is explicit.
 
 **Detection**: if `build_bundled_html.cjs` exits 1 with `node:internal/modules/cjs/loader:1620:18` or `wrapSafe` in the stack trace, suspect either bug. Run `node --check` on `/tmp/inlined-app-test.js` after extracting the inlined `<script>` block to localize. **Already done by the script's self-test** — so the failure is the self-test, not the build itself.
 
-### ⚠️ Pitfall: Boss HTML can silently render as placeholder when JSON is missing (2026-06-06 crm-system)
+### ⚠️ Pitfall: Boss HTML can silently render as placeholder when JSON is missing (2026-06-06 <project>)
 
 **Symptom**: `build.sh --project <name>` completes without error, all `*-boss.html` files exist with similar size (~20–24 KB), but opening them in a browser shows a "👀 老闆版摘要待生成" placeholder card. The build script does **NOT** fail when JSONs are missing — it silently falls back to an empty template.
 
@@ -409,7 +409,7 @@ done
 
 **Root cause**: Boss version requires either `docs/_meta/<doc>.json` **or** a `## 👀 老闆版摘要` section inside the MD to render real content. The build script generates HTML from MD + (optional) JSON; if neither exists, it falls back to the placeholder template without warning.
 
-**Fix**: Generate `docs/_meta/<doc>.json` for each doc (schema + example in `references/crm-system-2026-06-06-boss-json-placeholder-incident.md`). See also `## 👀 老闆版摘要` MD override below.
+**Fix**: Generate `docs/_meta/<doc>.json` for each doc (schema + example in `references/<project>-2026-06-06-boss-json-placeholder-incident.md`). See also `## 👀 老闆版摘要` MD override below.
 
 **Main agent vs CEO subagent for JSON generation**: When the agent already has full project context (mid-development, single-developer project, MD count is small), the main agent writing the JSONs directly is more reliable than spawning a CEO subagent — subagents tend to hallucinate risks that don't match the project's actual failure modes. Use the main agent for: ≤15 docs, when the agent has read most/all MDs recently, when consistency across docs matters. Spawn CEO subagents only for: 15+ docs, when the agent has zero context, or when each doc needs deep cross-doc analysis.
 
@@ -443,7 +443,7 @@ This is for when David wants full control over what he sees, and doesn't want AI
 
 ### 🚨 Verify the artifact is on `origin` before reporting done (2026-06-06 lesson)
 
-Hit twice on crm-system — David `git revert`ed the entire HTML viewer (`8c39210`) and the agent's memory/conversation history had no record of the revert. The agent kept reporting "done, pushed" while the file was actually gone from the remote.
+Hit twice on <project> — David `git revert`ed the entire HTML viewer (`8c39210`) and the agent's memory/conversation history had no record of the revert. The agent kept reporting "done, pushed" while the file was actually gone from the remote.
 
 **Mandatory end-of-task check (3 seconds, saves hours):**
 
@@ -459,7 +459,7 @@ cd ~/www/<project> && \
 
 All three must check out:
 - No commits left unpushed (or push them).
-- The HTML file is in `git ls-files` (for the crm-system exception case) or `docs/_html/<doc>.html` is generated locally (for the per-doc case).
+- The HTML file is in `git ls-files` (for the <project> exception case) or `docs/_html/<doc>.html` is generated locally (for the per-doc case).
 - No uncommitted drift in `docs/*.md` source files.
 
 If the build script regenerated HTML but `git status` shows uncommitted `_html/` changes, that means `.gitignore` is missing the entry — fix `.gitignore` (per the table above) before declaring done.
@@ -543,10 +543,10 @@ it gives the most shareable artifact in one command.
 | `scripts/build_bundled_html.cjs` | **Bundled variant** — one self-contained HTML file with sidebar + search + theme toggle. **Multi-line indented JS (2026-06-08 fix)** + `node --check` self-test. See `SKILL.md` "🛑 Bundled HTML: `node --check` self-test FAILS to catch all bugs" for the brace-count + regex-character-class pitfalls. CHANGELOG at top of script. |
 | `references/bundled-html-recipe.md` | Recipe + gotchas for the bundled variant (`.cjs` extension, `</script>` escape, `node --check` self-test, regex-extraction footgun) |
 | `references/bundled-html-boss-audit-checklist.md` | **9-point boss-audit** (default landing, `<title>` lang, skip link, print button, footer hint, print CSS, aria-label, tabindex). Run this **before handing the artifact to the boss** — build script only verifies structure, not audience appropriateness. Triggered by vague phrases like "check your settings" / "for the boss" / "有咩新要求" without David enumerating them. |
-| `references/crm-system-2026-06-06-bundled-html-incident.md` | Session-specific log of the line-4898 SyntaxError + the audience-mismatch correction (David asked for "PRD 和 Design 給老闆看", got engineering docs first). Read before running this skill on a new project. |
-| `references/pm-system-2026-06-08-bundled-brace-bug.md` | **NEW 2026-06-08** — session log of the line-188 missing-`}` bug that `node --check` self-test failed to make easy to diagnose. Includes the 3-bug investigation timeline + the multi-line rewrite fix. Read before trusting the bundled script on a new project. |
+| `references/<project>-2026-06-06-bundled-html-incident.md` | Session-specific log of the line-4898 SyntaxError + the audience-mismatch correction (David asked for "PRD 和 Design 給老闆看", got engineering docs first). Read before running this skill on a new project. |
+| `references/<project>-2026-06-08-bundled-brace-bug.md` | **NEW 2026-06-08** — session log of the line-188 missing-`}` bug that `node --check` self-test failed to make easy to diagnose. Includes the 3-bug investigation timeline + the multi-line rewrite fix. Read before trusting the bundled script on a new project. |
 | `references/boss-summary-schema-and-recipe.md` | Boss JSON schema (frozen by template), copy-pasteable example, main-agent generation pattern, and common pitfalls. Read before writing your first `docs/_meta/<doc>.json`. |
-| `references/crm-system-2026-06-06-boss-placeholder-silent-failure.md` | Session log: 10/12 boss HTMLs silently rendered placeholders despite the build exiting 0. Documents the body-region grep recipe and the main-agent-vs-CEO trade-off for JSON generation. **Read this if you ever ship a project with `docs/_html/*-boss.html` files.** |
+| `references/<project>-2026-06-06-boss-placeholder-silent-failure.md` | Session log: 10/12 boss HTMLs silently rendered placeholders despite the build exiting 0. Documents the body-region grep recipe and the main-agent-vs-CEO trade-off for JSON generation. **Read this if you ever ship a project with `docs/_html/*-boss.html` files.** |
 | `scripts/verify_boss_html.sh` | One-shot bulk verification: scans all `*-boss.html` in a project, returns exit 0 (all good) / 1 (lists placeholders) / 2 (build never ran). Uses the body-region awk pattern from the lesson. **Run this after every `build.sh`.** |
 | `gitignore-snippet.md` | What to add to project `.gitignore` |
 
