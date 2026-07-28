@@ -753,9 +753,9 @@ es.onmessage = (e) => {
 ## 配套 skills
 
 - `devops/bun-elysia-react-vite-stack` — Elysia backend + SSE setup
-- `crm-data-model` — 11 個 CRM models, Conversation/Message 已就位
+- `archive/skills/case-history/crm-data-model` (archived) — 11 個 CRM models, Conversation/Message 已就位
 - `elysia-llm-graceful-fallback` — LLM call 失敗嘅 fallback pattern
-- `prisma-sqlite-bun-setup` — Prisma 5 (支援 pgvector 唔好, 落 Postgres 啱)
+- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — Prisma 5 (支援 pgvector 唔好, 落 Postgres 啱)
 - `prisma-migrate-private-rds` — Production RDS 嘅 migration SOP
 
 ## 配套 references

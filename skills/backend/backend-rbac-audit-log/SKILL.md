@@ -1,6 +1,6 @@
 ---
 name: backend-rbac-audit-log
-description: "Add role-based access control (RBAC) + audit log to any backend API (Elysia, Express, Fastify, Hono, NestJS). Pattern: centralized permission map in shared package + middleware `requirePermission()` plugin + `AuditLog` table with action enum + auto-capturing `logEvent()` helper that grabs user/IP/UA without throwing. Use when user says 'user management', 'roles and permissions', 'audit log', 'who did what when', 'activity history', 'compliance log', or wants admin functionality (CRUD users, reset passwords, view who-changed-what). Pairs naturally with `crm-data-model` for CRM/sales tools."
+description: "Add role-based access control (RBAC) + audit log to any backend API (Elysia, Express, Fastify, Hono, NestJS). Pattern: centralized permission map in shared package + middleware `requirePermission()` plugin + `AuditLog` table with action enum + auto-capturing `logEvent()` helper that grabs user/IP/UA without throwing. Use when user says 'user management', 'roles and permissions', 'audit log', 'who did what when', 'activity history', 'compliance log', or wants admin functionality (CRUD users, reset passwords, view who-changed-what). Pairs naturally with `archive/skills/case-history/crm-data-model` (archived) for CRM/sales tools."
 tags: ["rbac", "audit", "permissions", "auth", "admin", "backend", "security", "elysia", "express"]
 applicability: generic-pattern
 ---
@@ -715,7 +715,7 @@ curl -s -X GET http://localhost:3001/ai/config \
 - `references/elysia-plugin-boundary-derive.md` — full reproduction recipe and trace logs for Step 9
 - `templates/role-rbac-migration.sql` — ready-to-run migration for Step 2
 - `templates/require-permission-rbac.ts` — the working Elysia plugin template (Step 9 + Step 3)
-- `prisma-sqlite-bun-setup` — SQLite 用 string 取代 enum 嘅 workaround
+- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — SQLite 用 string 取代 enum 嘅 workaround
 - `ai-agent-tool-calling` — AI agent 嘅 `audit` permissions (e.g. chat 唔可以 read audit)
 
 ---
@@ -905,7 +905,7 @@ export const requirePermission = (perm: string) =>
     });
 ```
 
-Elysia 1.2 d.ts makes it look like it should work (the type signature is there), but at runtime the derive context is dropped when crossing plugin boundaries. This is **different** from the singleton-mismatch problem in `elysia-jwt-plugin-singleton` (that one is about multiple JWT instances; this is about plugin-boundary derive propagation).
+Elysia 1.2 d.ts makes it look like it should work (the type signature is there), but at runtime the derive context is dropped when crossing plugin boundaries. This is **different** from the singleton-mismatch problem in `archive/skills/case-history/elysia-jwt-plugin-singleton` (archived) (that one is about multiple JWT instances; this is about plugin-boundary derive propagation).
 
 **The fix**: extract `userId` from the raw `Request` headers and re-verify the JWT inside the middleware itself. Don't rely on the upstream derive.
 
@@ -965,7 +965,7 @@ jwtPlugin({ name: "rbac-verify", secret }).verify is not a function
 - `/api/products` (or any unprotected route) works fine
 - API logs show no error — the middleware silently returns null userId
 - Bun logs `[rbac] no auth header` → fixes auth header but still 401 → confirms derive context loss
-- This is NOT the same as `elysia-jwt-plugin-singleton` (that one fails with `Bad JWT issued by different instance`)
+- This is NOT the same as `archive/skills/case-history/elysia-jwt-plugin-singleton` (archived) (that one fails with `Bad JWT issued by different instance`)
 
 ## Step 10: Bun runtime gotcha — `export *` + same-file const reference
 
@@ -1273,7 +1273,7 @@ quotation            verbs= 4  requirePerm= 0  authContext= 2
 - `templates/role-rbac-migration.sql` — ready-to-run migration for Step 2
 - `templates/require-permission-rbac.ts` — the working Elysia plugin template (Step 9 + Step 3)
 - `templates/require-secret.ts` — Step 15 boot-time secret validator
-- `prisma-sqlite-bun-setup` — SQLite 用 string 取代 enum 嘅 workaround
+- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — SQLite 用 string 取代 enum 嘅 workaround
 - `ai-agent-tool-calling` — AI agent 嘅 `audit` permissions (e.g. chat 唔可以 read audit)
 
 ## Step 13: Role name invariant — UPPERCASE + displayName 分離 (2026-06-06 真實撞牆, smoke test 揭發)
@@ -1304,7 +1304,7 @@ if (data.name !== data.name.toUpperCase()) {
 1. Click「新增自訂角色」→ dialog 開,counter「0 個已選」
 2. 填 `name="Smoke Test Role"`,勾 4 個 permission
 3. Click「建立」→ **dialog 凍住**:冇 spinner,冇 error banner,冇 toast,console 乾淨
-4. 背後:`POST /roles` 返 400(lowercase reject),`useMutation.onError` **冇 render error state**(debug 細節見 `visual-ui-bug-debugging` skill 嘅「Backend Invariant Silent-Fail」section)
+4. 背後:`POST /roles` 返 400(lowercase reject),`useMutation.onError` **冇 render error state**(debug 細節見 `archive/skills/case-history/visual-ui-bug-debugging` (archived) skill 嘅「Backend Invariant Silent-Fail」section)
 5. **Bypass UI direct API probe 確認 backend 正常**:
    ```bash
    docker exec crm-api sh -c 'cat > /tmp/probe.mjs << "EOF"

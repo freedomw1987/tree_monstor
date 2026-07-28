@@ -69,7 +69,6 @@ In Claude Code:
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| [`chat-frontend-backend-debug`](chat-frontend-backend-debug/SKILL.md) | Debugs chat UI/API mismatch, SSE streaming, AI image display/generation paths, multimodal attachments, React state, and mobile layout issues. | Chat UI does not respond, stream, or render images correctly. |
 | [`react-browser-automation-gotchas`](react-browser-automation-gotchas/SKILL.md) | Debugs React synthetic-event/state issues during browser automation. | Browser clicks/fills do not trigger React state updates. |
 | [`react-router-tab-subroute-refactor`](react-router-tab-subroute-refactor/SKILL.md) | Refactors top-level pages into shared tabbed subroutes. | Consolidating page clusters into tab navigation. |
 | [`vite-spa-nginx-deployment`](vite-spa-nginx-deployment/SKILL.md) | Deploys Vite React SPA behind nginx with SPA routing and permissions. | Static Vite SPA deployment / nginx route fallback. |

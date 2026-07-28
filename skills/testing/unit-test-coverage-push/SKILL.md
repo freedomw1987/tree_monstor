@@ -600,9 +600,9 @@ User 揀 A 嘅典型 signal(2026-06-09 Sprint 4):
 - `regression-guard` — for bug-specific tests (RG-XXX), narrower scope
 - `code-review-pipeline` — Step 14 P0 patch sprint parallels this skill's flow
 - `tech-debt-register` — for logging DEFERRED US as TD-XXX
-- `prisma-sqlite-bun-setup` — for the `pretest: bunx prisma generate` recipe (and Prisma 5/7 gotchas)
+- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — for the `pretest: bunx prisma generate` recipe (and Prisma 5/7 gotchas)
 - `bun-env-file-for-dev` — for `.env` loading issues during test
-- `prisma-relation-debugging` — if helper extraction surfaces a Prisma type issue
+- `archive/skills/case-history/prisma-relation-debugging` (archived) — if helper extraction surfaces a Prisma type issue
 - `agent-stuck-recovery` — for the "emit progress between phases" pattern
 - `qa-tracker` (in SOUL.md cross-ref) — the tracker that drives this whole skill
 

@@ -87,7 +87,7 @@ bun add elysia @prisma/client
 bun add -d prisma@5 tsx @types/node dotenv
 ```
 
-> ⚠️ **Prisma 一定要 pin `prisma@5`**：`bun add prisma` 會拉到 7.x,撞 schema 唔再支援 `url = env(...)`。詳見 `prisma-sqlite-bun-setup` skill。
+> ⚠️ **Prisma 一定要 pin `prisma@5`**：`bun add prisma` 會拉到 7.x,撞 schema 唔再支援 `url = env(...)`。詳見 `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) skill。
 
 ### 2. Prisma + DB setup
 
@@ -1357,7 +1357,7 @@ const { data } = useQuery({
 // data.manDays 一定有
 ```
 
-**Related (Day 11 wire-format-side fix)**: 對應 wire format 嗰邊 (request body) 嘅命名同樣要 match backend schema, 唔好 match frontend type alias — 見上面 `polymorphic-line-items` skill 嘅 502 pitfall section 同 Day 11 reference file。**Wire key = backend schema, response normalize = boundary wrapper**。兩個方向嘅 drift 各自 fix 各自嘅 layer。
+**Related (Day 11 wire-format-side fix)**: 對應 wire format 嗰邊 (request body) 嘅命名同樣要 match backend schema, 唔好 match frontend type alias — 見上面 `archive/skills/case-history/polymorphic-line-items` (archived) skill 嘅 502 pitfall section 同 Day 11 reference file。**Wire key = backend schema, response normalize = boundary wrapper**。兩個方向嘅 drift 各自 fix 各自嘅 layer。
 
 ## ⚠️ Elysia `bun build` 撞 runtime code generation (2026-06-05 真實撞牆)
 
@@ -1699,11 +1699,11 @@ git log -1 --format='%b' | head -10
 - [ ] 至少 1 個 E2E write+read flow (POST + GET)
 - [ ] Browser 載入 4 個 page 冇 console error
 - [ ] RWD mobile audit (見 `rwd-mobile-audit` skill)
-- [ ] **Git 推送完記得用 `git clone` 或 `git ls-remote` 驗證**（唔好信 `aws codecommit get-commit` — IAM 冇 read 權限會 false alarm，見 `aws-codecommit-git-setup` 嘅「驗證 push 成功嘅方法」section）
+- [ ] **Git 推送完記得用 `git clone` 或 `git ls-remote` 驗證**（唔好信 `aws codecommit get-commit` — IAM 冇 read 權限會 false alarm，見 `archive/skills/case-history/aws-codecommit-git-setup` (archived) 嘅「驗證 push 成功嘅方法」section）
 
 ## 相關 skills
 
-- `prisma-sqlite-bun-setup` — Prisma 5 嘅 SQLite 設定 + Prisma 7 撞牆實錄
+- `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — Prisma 5 嘅 SQLite 設定 + Prisma 7 撞牆實錄
 - `bun-env-file-for-dev` — `--env-file=.env` 嘅必要性
 - `rwd-mobile-audit` — 交付前必做嘅 mobile audit
 - `caddy-spa-api-proxy-deploy` — 如果要 deploy production

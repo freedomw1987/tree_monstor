@@ -1,8 +1,19 @@
 ---
 name: chat-frontend-backend-debug
 description: Debug WhatsApp-style chat UI where AI doesn't respond — covers API format mismatch, missing dispatch, React state bugs, mobile layout
-applicability: generic-pattern
+retired: 2026-07-28 archived:case-history
 ---
+
+> **Archived 2026-07-28.** Single-project debugging log for the `chatbot.david-developer.com`
+> app (`InputBar.jsx` / `ChatArea` / `server.js` on ports 3001-3002), written up as Bugs A-U.
+> Siblings `sse-chunk-boundary-debug` and `chatbot-file-attachment-debug` are archived alongside it.
+>
+> Reusable lessons were extracted to
+> [`skills/devops/nginx-sse-streaming-fix`](../../../../skills/devops/nginx-sse-streaming-fix/SKILL.md)
+> before archiving: SSE chunk-boundary buffering, "curl through the proxy before blaming nginx",
+> and "never store base64 in the DB — store a path, convert at API-call time".
+>
+> Kept for `git log` / `grep` retrieval only. Do not load as active guidance.
 
 
 Last-verified: 2026-07-28
