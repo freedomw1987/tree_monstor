@@ -188,8 +188,11 @@ Creative content generation — ASCII art, hand-drawn style diagrams, and visual
 
 | Skill | Description |
 |-------|-------------|
+| [`contract-testing`](testing/contract-testing/SKILL.md) | Consumer-driven contract testing — 用 Pact 驗證 microservice / API boundary 雙邊對 contract 嘅共識, 避免 breaking change 喺 production 先發現。 工具:Pact(JS / Python / Go / JVM… |
+| [`mutation-testing`](testing/mutation-testing/SKILL.md) | 用 mutation testing 驗證 unit test 嘅 quality — 不只「覆蓋率」,還「有效」。 工具:Stryker (TypeScript / JS) / mutmut (Python) / PIT (Java)。 觸發情境:P0 US 嘅 unit test 已 100% coverage… |
 | [`playwright-e2e-design-patterns`](testing/playwright-e2e-design-patterns/SKILL.md) | E2E test design patterns for Playwright + full-stack (Docker) apps — caller IP isolation vs backend rate limit (RG-008/RG-012 invariant), per-test setup hooks,… |
 | [`playwright-node-api-container`](testing/playwright-node-api-container/SKILL.md) | 使用 Node.js Playwright API 在 container/VM 環境中截圖和自動化測試。 適用於需要登入後才能截圖的頁面（CLI screenshot 無法做到）。 |
+| [`test-fixture-factory`](testing/test-fixture-factory/SKILL.md) | Test data factory pattern — 用統一 builder / factory 產生 test fixture, 避免每個 test file 重複 inline object、避免 fragile shared fixture、 支援 per-test override + 自動 cleanup… |
 | [`unit-test-coverage-push`](testing/unit-test-coverage-push/SKILL.md) | Systematically add unit test coverage to a project's P0 US with NONE/PARTIAL/PASS-E2E-only test status. Trigger when user says "test 未做的都要做", "補 unit test", "P… |
 
 <!-- END GENERATED: nested-skills-catalog -->

@@ -56,6 +56,8 @@
 | [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則、PM 進度追蹤與用戶溝通原則 |
 | [`docs/task-tiering.md`](task-tiering.md) | Canonical | 任務分級（T1/T2/T3）、小型任務判準、中途升級規則、例外申報格式 |
 | [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 分層測試類型、健康指標、工具鏈 |
+| [`docs/testing-strategy-tiered.md`](testing-strategy-tiered.md) | Canonical | 按 project 成熟度分 T1/T2/T3,13 層壓縮成階段必做 / 應做 / 選做 |
+| [`docs/flaky-test-handling.md`](flaky-test-handling.md) | Canonical | Flaky test 偵測 / Quarantine / 修 / 預防 SOP |
 | [`docs/think-plan-examples.md`](think-plan-examples.md) | Reference | Think / Plan 互動範例、架構選項與提問方式 |
 
 ---
