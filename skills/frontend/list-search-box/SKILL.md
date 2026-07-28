@@ -101,77 +101,7 @@ const filteredX = useMemo(() => {
 - **`aria-label="搜尋 X"`**: 唔靠 placeholder 嘅唯一 a11y 信號(placeholder 唔係 accessible name)
 - **Permission-gated button**: 用 `hasAnyPermission(user, ['x.create'])` 包住,user 冇 create 權限就 button 唔 render,search input 移去右邊
 - **RWD verify**: 開 Chrome DevTools mobile view 睇, search input 唔可以同 button 碰撞
-
-### Step 4b: 兩個 component variant (PM-System 2026-06-09 撞過)
-
-**唔係所有 list page 嘅 header 都係 single row**。兩個常見變體:
-
-#### Variant A: 兩欄 layout — search 喺 list sidebar header (WikiTab pattern)
-
-`WikiTab` 嘅 layout 係 `flex gap-6`(左 list sidebar + 右 content pane)。Search 應該喺 list header **下面**, 唔喺 right content header — 因為搜尋結果影響 list 唔影響 content,layout 直覺:
-
-```tsx
-{/* Left list sidebar */}
-<div className="w-72 flex flex-col">
-  {/* List header — title + 新增 button */}
-  <div className="flex items-center justify-between mb-3">
-    <h3 className="font-semibold text-gray-900">頁面列表</h3>
-    <button onClick={openCreate} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg">
-      <Plus size={18} />
-    </button>
-  </div>
-  {/* Search box — own row, 唔同 title 並排 */}
-  <div className="relative mb-3">
-    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-    <input
-      type="text"
-      value={searchX}
-      onChange={(e) => setSearchX(e.target.value)}
-      placeholder="搜尋頁面..."
-      aria-label="搜尋 Wiki 頁面"
-      className="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-    />
-  </div>
-  {/* List body — uses filteredX */}
-</div>
-```
-
-**Why 唔同行 `justify-between`**: list header 嘅 title + create button 已經 `justify-between`, 加 search 入去會變 3 個 item,squeeze 唔落。Search 自己一行, 視覺 hierarchy 清楚。
-
-#### Variant B: Upload bar 旁 — search 喺右側, RWD 兩行 (AttachmentsTab pattern)
-
-`AttachmentsTab` 嘅 top section 係 upload button + helper text。Search 應該喺 upload bar 旁邊, **desktop 並排, mobile 兩行**:
-
-```tsx
-<div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-  {canUpload && (
-    <div className="flex items-center gap-4">
-      <label htmlFor="upload" className="btn-primary flex items-center gap-2 cursor-pointer">
-        <Upload size={18} />{uploading ? '上傳中...' : '上傳附件'}
-      </label>
-      <span className="text-sm text-gray-500">支援圖片、文檔、壓縮包等格式</span>
-    </div>
-  )}
-  <div className="relative w-full sm:w-72 sm:ml-auto">
-    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-    <input
-      type="text"
-      value={searchX}
-      onChange={(e) => setSearchX(e.target.value)}
-      placeholder="搜尋附件..."
-      aria-label="搜尋附件"
-      className="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-    />
-  </div>
-</div>
-```
-
-**Key differences from default (single column) page**:
-- **`sm:ml-auto`** 推 search 喺 desktop 右邊, 即使 canUpload 係 false 都 keep right-aligned
-- **`py-1.5` 唔係 `py-2`**: 附件 list 高度密啲, search 縮細一格 match
-- **`Search size={14}` 唔係 `{16}`**: 同 attachment card 嘅 icon size (16) 對齊, visual harmony
-
-**搜尋 `filename` 唔係 `mimeType`**: 用戶揾 file 通常記得「嗰份 spec PDF」(filename), mimeType 過濾無意思(e.g.「揀 image」係 filter button 唔係 search)。
+- **Header variant**: 唔係所有 list page header 都係 single row。兩欄 layout (list sidebar + content pane) 同 upload/action bar 旁嘅變體寫法見 [`references/pm-system-step4b-component-variants.md`](references/pm-system-step4b-component-variants.md)
 
 ### Step 5: 2 層 empty state — raw empty vs filter empty
 
@@ -225,15 +155,11 @@ const filteredX = useMemo(() => {
   - **唔好默默 delete test** — 留低審計 trail, 下次 sprint 補 QA-TRACKER `DEPRECATED` 標記
 - **TypeScript import cleanup**: `import XPage from './pages/XPage'` 拎走
 
-**我喺呢個 session 嘅 2 輪 push back** (2026-06-09 pm-system):
-- 輪 1: David 揀 (1) 軟刪除 + (2) search box + (3) 先做 delete+list search。我 push back 問「(1) bugs delete 影響 4 個 frontend entry + 5 個 backend endpoint, 範圍好大, 只改 BugsPage?」+「(2) 搜尋係 client-side 定 server-side?」
-- 輪 2: David 答「(1)A + (2)C 加埋 project 內 sub-list」, 但**跟住修訂**(獨立 cue):「menu 不用有」 → 拎走成個 standalone page
-
-**Lesson**:
-- **David 嘅 wording 要 parse 多次**:「menu 不用有」聽落簡單, 但其實 scope 包括 standalone page delete + back-link update
-- **每收到一條 feedback 即 push back 一次**, 唔好悶頭做
-- **每個 push back 帶 2-3 個 options + 自己推薦**, David 答得快(0-1 個 turn)
-- **3 個 step 嘅 scope checklist 用 5-15 分鐘 grep + audit 確認**, 比悶頭做大幅省時間
+**Class-level lesson**:
+- **用戶 wording 要 parse 多次**: 一句「menu 不用有」嘅 scope 可能包括 nav item + route + page file + back-link + E2E test
+- **每收到一條 feedback 即 push back 一次**, 帶 2-3 個 options + 自己推薦, 唔好悶頭做
+- **落手前用 5-15 分鐘 grep + audit** confirm 上面 3-step scope checklist, 比做錯 scope 再改省時間
+- 真實 session 對話同 push back 記錄見 [`references/pm-system-session-lessons.md`](references/pm-system-session-lessons.md)
 
 ### Step 7: Server-side 升級 path(預備, 唔做)
 
@@ -301,34 +227,13 @@ const filteredX = useMemo(() => {...}, [x, searchX])
 **Symptom**: 用戶打錯 keyword 之後, 個 empty state 寫「暫無 X」, 用戶誤以為個 list 真係空, 唔係自己打錯字。
 **Fix**: 一律 2 層, 一致 pattern, 唔好省 empty state。
 
-### 🚨 3. 拎走 standalone page 漏 back-link(BugDetailPage back-link 仲指 `/bugs`)
+### 🚨 3-4. 拎走 standalone page 之後漏 back-link / 漏 skip E2E test
 
-```tsx
-// ❌ 拎走 /bugs route 但 BugDetailPage back-link 仲指 /bugs
-<Link to="/bugs">返回缺陷列表</Link>
+**Rule (back-link)**: 拎走 route 之後 detail page 嘅 back-link 仲指舊 path, 用戶撳「返回」會落到 blank page (react-router fallback 返 `/`)。一律 `grep -rn "/x\b" frontend/src/pages/XDetailPage.tsx` audit, 改去仍然存在嘅 destination。
 
-// ✅ 改去 /my-bugs (或者 user-contextual destination)
-<Link to="/my-bugs">返回缺陷列表</Link>
-```
+**Rule (E2E)**: 引用該 route 嘅 E2E test 要 `test.skip` / `describe.skip` + deprecation comment, 同步更新 QA-TRACKER / PRD 標 DEPRECATED。**唔好默默 delete test** — 留 audit trail。
 
-**Symptom**: 用戶喺「我的缺陷」click row 入 detail, 「返回」掣 click 落到 blank dashboard (因為 `/bugs` 唔再存在, react-router fallback 返 `/`)。
-**Fix**: 拎走 route 之後 5 分鐘 grep audit:
-```bash
-grep -rn "/x\b" frontend/src/pages/XDetailPage.tsx
-```
-
-### 🚨 4. E2E test 拎走 feature 之後唔 skip(red line 12 違規)
-
-```bash
-# ❌ 拎走 /bugs route, 但 E2E test 仲 reference
-await page.goto(`${FRONTEND}/bugs`)  # break
-```
-
-**Symptom**: CI run 之後 test fail, 但**冇人理**因為 feature 已 retire。
-**Fix**:
-- 用 `test.skip` + deprecation comment 標住
-- 同時更新 `docs/QA-TRACKER.md`(紅線 11) + `docs/PRD.md` 標 US DEPRECATED
-- **唔好默默 delete test** — 留 audit trail, 等 David 確認 feature 真係 retire
+**pm-system `/bugs` 實例**: [`references/pm-system-bugs-page-removal-pitfalls.md`](references/pm-system-bugs-page-removal-pitfalls.md)
 
 ### 🚨 5. Search box 同 create button 撞 layout (RWD mobile)
 
@@ -379,12 +284,6 @@ await page.goto(`${FRONTEND}/bugs`)  # break
 - `templates/list-search-box-with-empty-states.tsx` — search box + 2 層 empty state + useMemo filter 嘅 full code
 - `templates/remove-standalone-page-checklist.md` — 拎走 standalone page 嘅 3-step + cross-reference audit checklist
 
-## 配套 references
-
-- `references/pm-system-2026-06-09-bugs-menu-remove-and-search-add.md` — 真實 session 入面點解 David 拎走「全部缺陷」+ 點加 search box 喺 5 個 list
-- `references/pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md` — Sprint 11 跟進 (commit `8c99f32`):Wiki/Attachments 兩個 component variant + `describe.skip` 6 個 E2E deprecation pattern + QA-TRACKER/PRD DEPRECATED row format
-- `references/pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md` — Sprint 14 4 個 David UX feedback closure: `/projects` search box + RWD header + WorkLogs/Reports project dropdown 改 `<ProjectAutocomplete>` reusable + Dashboard 重新設計 (Activity Feed + Recent Projects Quick Switch)
-- `references/pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md` — Sprint 14+15 增量: 4 個新 pitfall (ProjectAutocomplete reusable spec / `limit: -1` dropdown-only use / `getByText` strict mode / backend query param 同步 frontend api.ts) + Sprint 15 `?scope=my` 通用 pattern (嚴格只 filter 自己 member, 包括 admin)
 
 ## Audit Checklist (做完必跑)
 
@@ -411,13 +310,23 @@ await page.goto(`${FRONTEND}/bugs`)  # break
 - `archive/skills/case-history/prisma-sqlite-bun-setup` (archived) — server-side search upgrade 嘅 Prisma contains 寫法
 - `software-development/qa-tracker-us-closure` — 拎走 standalone page 嘅 US DEPRECATION 同步(US row → `❌(DEPRECATED) ⚫` + `test.skip`/`describe.skip` + PRD strikethrough)
 
-## 過去 session 教訓
+## Project case history
 
-- **2026-06-09 pm-system**: David feedback「(1) 拎走 '全部缺陷' menu (2) 項目內頁需求/任務/缺陷 + 需求內頁任務/缺陷 加 search box」。Frontend-only, 6 files 改, 271 lines 拎走, 173 加返。Commit `048650e`。Retro doc `docs/retros/2026-06-09-remove-bugs-menu-add-list-search.md`。**Lesson**:**David 嘅 wording 要 parse 多次** — 拎走 menu 唔淨止拎走 nav item, scope 包括 standalone page delete + back-link update + E2E test 跟進。
-- **2026-06-09 pm-system (同 session push back)**: 我做 2 輪 push back, 每次帶 2-3 個 options + 自己推薦。David 0-1 個 turn 答。**Lesson**: **每收到一條 feedback 即 push back 一次 + 帶選項**, David 答得快, 悶頭做嘅後果係做錯 scope 後再改。
-- **2026-06-09 pm-system (C 延伸 — Wiki + Attachments 變體)**: David follow-up feedback 「(1) skip 失效 E2E test (2) 加埋 Wiki/Attachments 嘅 search」。Frontend-only, 6 files 改 (+200 / −38)。Commit `8c99f32`。Retro doc `docs/retros/2026-06-09-sprint-11-wiki-attachments-search-deprecate-bugs-page.md`。**Lesson**:
-  - **唔係所有 list 都係 single column**。`WikiTab` (兩欄 layout: left list sidebar + right content pane) 同 `AttachmentsTab` (upload bar + grid) 嘅 search box layout 同 default 唔同 — 詳見 Step 4b Variant A / B
-  - **過咗 default pattern, audit checklist 要 extend** (item #11, #12 加咗)
-  - **`describe.skip` 整個 describe 跳過 > 逐個 `test.skip` 6 個**: 6 個 test skip 唔應該逐個 mark, group 一個 describe skip, Playwright 報告清楚 + audit trail 完整
-  - **File header changelog 比 inline comment 更顯眼**: 將「2026-06-09 變更」放 file 頂部嘅 block comment, reader 一開 file 就知歷史 context
-  - **E2E test entry 已廢 entry grep**: 拎走 route/feature 一定要 `grep -n` 拎出所有 reference 然後逐個 fix, 唔好假設「其他 file 冇 reference」
+Detailed pm-system narratives live in `references/` so this skill stays a reusable pattern.
+
+| Topic | Reference |
+|---|---|
+| 拎走「全部缺陷」menu + 5 個 list 加 search (2026-06-09) | [`pm-system-2026-06-09-bugs-menu-remove-and-search-add.md`](references/pm-system-2026-06-09-bugs-menu-remove-and-search-add.md) |
+| Sprint 11: Wiki/Attachments variant + E2E deprecation (commit `8c99f32`) | [`pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md`](references/pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md) |
+| Sprint 14: `/projects` search + RWD header + autocomplete + dashboard | [`pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md`](references/pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md) |
+| Sprint 14+15: 4 個新 pitfall + `?scope=my` pattern | [`pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md`](references/pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md) |
+| Step 4b 兩個 component variant (WikiTab / AttachmentsTab) | [`pm-system-step4b-component-variants.md`](references/pm-system-step4b-component-variants.md) |
+| 拎走 `/bugs` page 撞過嘅 back-link / E2E pitfall | [`pm-system-bugs-page-removal-pitfalls.md`](references/pm-system-bugs-page-removal-pitfalls.md) |
+| 過去 session 教訓 (commit hash + David feedback 對話 + retro doc) | [`pm-system-session-lessons.md`](references/pm-system-session-lessons.md) |
+
+### 配套 references 詳細 note
+
+- `references/pm-system-2026-06-09-bugs-menu-remove-and-search-add.md` — 真實 session 入面點解 David 拎走「全部缺陷」+ 點加 search box 喺 5 個 list
+- `references/pm-system-2026-06-09-sprint-11-wiki-attachments-and-deprecate.md` — Sprint 11 跟進 (commit `8c99f32`):Wiki/Attachments 兩個 component variant + `describe.skip` 6 個 E2E deprecation pattern + QA-TRACKER/PRD DEPRECATED row format
+- `references/pm-system-2026-06-10-sprint-14-projects-search-rwd-autocomplete-dashboard.md` — Sprint 14 4 個 David UX feedback closure: `/projects` search box + RWD header + WorkLogs/Reports project dropdown 改 `<ProjectAutocomplete>` reusable + Dashboard 重新設計 (Activity Feed + Recent Projects Quick Switch)
+- `references/pm-system-2026-06-10-sprint-14-sprint-15-projects-search-and-dashboard-scope.md` — Sprint 14+15 增量: 4 個新 pitfall (ProjectAutocomplete reusable spec / `limit: -1` dropdown-only use / `getByText` strict mode / backend query param 同步 frontend api.ts) + Sprint 15 `?scope=my` 通用 pattern (嚴格只 filter 自己 member, 包括 admin)

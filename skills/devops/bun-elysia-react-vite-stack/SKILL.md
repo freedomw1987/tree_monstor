@@ -18,7 +18,7 @@ Last-verified: 2026-07-28
 - 唔需要 deploy production (local dev 為主) — deploy 睇 `cdk-ecs-fargate-deploy`
 - 想要日後 production 行 Postgres 但 dev 階段快速用 SQLite (見下「SQLite vs Postgres」section)
 
-## 部署目標 — 問用戶先 (2026-06-05 crm-system 真實訊號)
+## 部署目標 — 問用戶先
 
 Plan 階段**必須問**用戶要 deploy 喺邊，唔好 default 推 CDK/IaC:
 
@@ -264,7 +264,7 @@ createRoot(document.getElementById("root")!).render(
 )
 - Vite proxy `/api/*` → :3000 backend
 
-## ⚠️ Elysia 1.2.0 d.ts broken (2026-06-05 真實撞牆)
+## ⚠️ Elysia 1.2.0 d.ts broken
 
 **症狀**: 用 `new Elysia().use(jwt({...}))` 然後喺另一個 route file 用 `jwtApp.decorator.jwt.verify()` 嗰陣, Elysia d.ts 自己報錯 (`MacroContext['return']` 唔存在, etc.), 即使 `skipLibCheck: true` 都解決唔到, 仲會污染 typechain 令整個 file 出 error. **Bun runtime 唔 care d.ts, server boot 過, 但係跨 route file call decorator 嘅 runtime 可能 fail**(e.g. `/chat/*` 返 401 因為 decorator chain 喺 plugin boundary 斷咗).
 
@@ -346,7 +346,7 @@ print(urllib.request.urlopen(req).read()[:200])
 
 如果 401 → 即係 `getUserIdFromRequest` return null, check `process.env.JWT_SECRET` 喺 container 內有 set, 然後試 `console.error('[rbac] ...')` 入 `getUserIdFromRequest` 每個 branch 睇邊個 trigger。
 
-## ⚠️ React Query `useQuery` generic return type 撞 `never` (2026-06-05 crm-system Day 7 真實撞牆)
+## ⚠️ React Query `useQuery` generic return type 撞 `never`
 
 **症狀**: Backend 返 `{ items: T[]; total: number }` 或者 bare `T[]` 兩種 shape (見下面「Backend response shape 不一致」section),寫 frontend:
 
@@ -374,7 +374,7 @@ const items: Product[] = Array.isArray(data)
 
 **預防 rule**: 寫新 list page **always explicit cast** 兩次, 千祈唔好靠 TS 推 type。Takes 5 秒, 避免 build 失敗。Hermes 喺 crm-system Day 7 撞咗兩次(products.tsx + services.tsx)都係呢個 pattern,都係 `as` 兩次 fix 返。
 
-## ⚠️ Vite production minified React throw unmount 整個 tree (2026-06-05 crm-system Day 7 真實撞牆)
+## ⚠️ Vite production minified React throw unmount 整個 tree
 
 **症狀**: Vite dev mode 個 page render 正常, `bun run build` 成功, Docker container 個新 image `Up N seconds (healthy)`, 但用 browser 去個 page 個 `#root` element 內 `innerHTML.length === 0`, body 完全空白。React 19 預設 unmount 整個 tree 喺 render error,**冇 fallback UI**。
 
@@ -462,7 +462,7 @@ document.getElementById('root').children.length
 # Expected: 1+ (如果係 0 = React unmount = runtime render error)
 ```
 
-## ⚠️ Docker Compose `up -d --build` cache layers 不重 build source code (2026-06-05 crm-system Day 7 真實撞牆)
+## ⚠️ Docker Compose `up -d --build` cache layers 不重 build source code
 
 **症狀**: 改咗 `apps/web/src/pages/roles.tsx` 然後 `docker compose up -d --build`, 個 build log 全部 `#N CACHED`, 個 image 根本冇重新 build, 個新 source code **冇 deploy 出嚟**。Container 個 `Up 5 minutes (healthy)` 仲係舊 image。**User 訪問個 page 見唔到新功能,以為你冇做**。Hermes 喺 crm-system Day 7 撞過一次 — `--no-cache` 之後個 bundle hash 由 `index-BR-TeQsV.js` 變 `index-ChsB1GOw.js` 證明真係新咗。
 
@@ -509,7 +509,7 @@ rm apps/web/src/.force-rebuild
 
 **Elysia backend 都有同樣問題**, 一樣用 `--no-cache` fix。
 
-## ⚠️ Bun `export *` 唔可靠 re-export named consts 跨 module (2026-06-05 crm-system Day 7 真實撞牆)
+## ⚠️ Bun `export *` 唔可靠 re-export named consts 跨 module
 
 **症狀**: `packages/shared/src/permissions.ts` 寫 `export const PERMISSIONS = { 'user:read': '...', ... }`, `packages/shared/src/index.ts` 寫 `export * from './permissions'`, 然後 `apps/api/src/routes/roles.ts` 用 `import { ALL_PERMISSIONS } from '@crm/shared'`, 入面 reference `PERMISSIONS` 拎 keys。**Boot 時 crash**:
 ```
@@ -547,7 +547,7 @@ export { PERMISSIONS, USER_ROLES, type Permission, type UserRole } from './permi
 
 **Related**: 撞呢個 trap 通常代表你個 monorepo 想用 single source of truth (`packages/shared`) 收埋 enums + 派生 const, 然後 consumer import。設計 OK, 只係 Bun runtime 限制。Workaround 唔影響 source-of-truth pattern。
 
-## ⚠️ Prisma client model names 唔 export (2026-06-05)
+## ⚠️ Prisma client model names 唔 export
 
 **症狀**: `import { PipelineStage } from '@prisma/client'` → runtime `SyntaxError: export 'PipelineStage' not found`, 因為 Prisma client **只 export enums, 唔 export model names**. Model 名喺 `@prisma/client` 內部用嚟 typeof, 唔係 named export.
 
@@ -558,7 +558,7 @@ export { UserRole, QuotationStatus, DealStatus, /* etc */ } from '@prisma/client
 // ✅ 改用: prisma.pipelineStage.findMany() 或者 type Prisma.PipelineStage
 ```
 
-## ⚠️ Tailwind v3 vs v4 — shadcn-style setup 仍要 v3 (2026-06-05)
+## ⚠️ Tailwind v3 vs v4 — shadcn-style setup 仍要 v3
 
 **症狀**: 跟 `bun create vite@latest` 出嘅 `react-ts` template 預設 Tailwind v4 (`@tailwindcss/vite` + `@theme` CSS directive). 但 shadcn/ui 嘅 class-variance-authority pattern 用 `tailwind.config.js` 嘅 `theme.extend.colors.primary.DEFAULT` 引用, v4 嘅 `@theme` 唔 work, 顏色 fallback 去 `border-border` 然後冇顏色。
 
@@ -568,7 +568,7 @@ bun add -d tailwindcss@3 postcss autoprefixer
 ```
 加 `postcss.config.js`, `tailwind.config.js` (有 `content` + `theme.extend`), `index.css` 用 `@tailwind base/components/utilities`. 唔好用 v4 嘅 `@import "tailwindcss"` syntax.
 
-## ⚠️ shadcn-style token 唔可以漏 — `popover` / `card-foreground` / `destructive-foreground` 撞 (2026-06-06 crm-system 真實撞牆)
+## ⚠️ shadcn-style token 唔可以漏 — `popover` / `card-foreground` / `destructive-foreground` 撞
 
 **症狀**: 用咗 shadcn-style component (e.g. `<Dialog>`, combobox dropdown, popover, command palette) 之後, 個 panel / dropdown / dialog 個 background **完全透明**, 後面嘅 table content 透出嚟 (e.g. 個 quotation builder 嘅 autocomplete 透底見到後面 `備註` textarea + `Subtotal` 行)。**冇 console error**, DevTools 個 `<div class="bg-popover">` 存在, 但 computed style 冇 background-color。
 
@@ -682,7 +682,7 @@ fi
 - **Path A (改 config)**: 一處改搞掂哂, 之後 token 對齊 shadcn 標準
 - **Path B (改 component)**: 只 fix 一個, **但** codebase 其他位用同一個 `bg-popover` 仍然會 silently transparent。**只 fix 1 個 = David 將來會撞第 2、第 3 次同一個 bug**。
 
-## ⚠️ LSP diagnostics stale after rapid patches — `docker compose build` 是 source of truth (2026-06-06 crm-system 真實撞牆)
+## ⚠️ LSP diagnostics stale after rapid patches — `docker compose build` 是 source of truth
 
 **症狀**: 改咗一個 file 嘅 prop signature (e.g. 將 `CreateCompanyDialog` 改名 `CompanyFormDialog` + 加 `mode` + 加 `defaultName` + 加 `regions` props),LSP 立刻報舊 error 出現喺 caller file (`company-autocomplete.tsx` 嗰個 import)。**但**我每改完一個 patch 之後,下個 patch LSP 仍報之前嘅 error (line number 都唔對)。我 chase 咗 LSP 報嘅 3 個所謂 issue 改多次 code,搞到 file 越改越混亂,最後先發現 **LSP 根本係 stale,所有 issue 已經被我 patch fix 咗**。真正嘅 source of truth 係 `docker compose build web` 嘅 exit code。
 
@@ -740,7 +740,7 @@ patch file
 
 **Related**: 同「Docker Compose `up -d --build` cache layers 不重 build source code」唔同 — 呢個 pitfall 係 LSP 報錯假陽性,嗰個 pitfall 係 cache 命中冇 re-build。**兩者都係話 docker build 必須 explicit 跑而唔好信 implicit 嘅 watch / LSP 通知**。
 
-## ⚠️ `bun.lock` 不被 npm / snyk 認 — 紅線 18 CVE 掃描盲點 (2026-06-07 crm-system code review 真實撞牆)
+## ⚠️ `bun.lock` 不被 npm / snyk 認 — 紅線 18 CVE 掃描盲點
 
 **症狀**: 跑 `npm audit` 喺一個 bun-managed monorepo (`bun.lock` 而唔係 `package-lock.json`) 撞:
 
@@ -812,7 +812,7 @@ grep "exact" bunfig.toml
 # Expected: exact = true
 ```
 
-## ⚠️ RBAC coverage matrix 1-liner audit — 1 個 grep 揭 14 route 嘅 access control gap (2026-06-07 crm-system 真實撞牆)
+## ⚠️ RBAC coverage matrix 1-liner audit — 1 個 grep 揭 14 route 嘅 access control gap
 
 **症狀**: Code review 時想 check 全部 14 個 route file 嘅 RBAC coverage, 人工逐 file 開 → 太慢, 易 miss。需要 1 個 1-liner reveal 邊個 route 公開, 邊個有 auth, 邊個有 permission check。
 
@@ -884,7 +884,7 @@ test('permission coverage', () => {
 });
 ```
 
-## ⚠️ `tsc --noEmit` 報 30+ silent type errors 但 runtime OK — typecheck 唔可以靠 build 兜底 (2026-06-07 crm-system 真實撞牆)
+## ⚠️ `tsc --noEmit` 報 30+ silent type errors 但 runtime OK — typecheck 唔可以靠 build 兜底
 
 **症狀 (同 LSP stale pitfall 唔同 — LSP 假報 vs tsc 真報都被忽略)**: `apps/api/src/routes/*.ts` 開咗 `// @ts-nocheck` 喺 rbac.ts + quotation.ts, 但其餘 6+ 個 route file 冇 `@ts-nocheck` 但係 runtime work。**點解 typecheck 撞但 build pass?**
 
@@ -974,7 +974,7 @@ rg -c "as never" apps/api/src/ | awk -F: '{sum+=$2} END {print sum}'
 
 **Related pitfall (LSP stale)**: 上面「LSP diagnostics stale after rapid patches」section 講 LSP 假報錯。**呢個 pitfall 講 tsc 真報但被忽略**。兩個都會誤導 developer 以為 type safety OK — **唯一 source of truth 係 CI 跑嘅 `tsc --noEmit` exit code 0**。
 
-## ⚠️ Self-register-as-admin trap — `POST /auth/register` 公開 + role 喺 body (2026-06-07 crm-system 真實撞牆)
+## ⚠️ Self-register-as-admin trap — `POST /auth/register` 公開 + role 喺 body
 
 **症狀**: RBAC 系統有 `ADMIN / SALES / VIEWER` 三個 role 喺 DB, 有 `requirePermission('user:create')` middleware. 但 register endpoint 寫:
 
@@ -1070,7 +1070,7 @@ rg "get\(['\"]?/.*(status|health|config)" apps/api/src/
 - Admin invite flow → admin 自己 PATCH /users/:id 升級
 - 任何 GET /status /config endpoint → 一律 permission-gated, status 都要
 
-## ⚠️ Subagent 600s/63-call timeout 撞 long refactor 任務 (2026-06-06 crm-system Day 11 真實撞牆)
+## ⚠️ Subagent 600s/63-call timeout 撞 long refactor 任務
 
 **症狀**: 派 subagent 跑 5-phase 嘅 multi-file refactor(themes token fix + 502 修 + 抽 2 個共用 component + 補 fields + Deal 編輯 + 最終 typecheck), 每個 phase 都要讀 source + patch + 自己驗 typecheck。Subagent 跑 600s timeout 撞 63 個 API call, 卡喺某個 phase(typecheck 連跑多次)唔 return。`api_calls: 63, duration_seconds: 600.17, exit_reason: timeout`。
 
@@ -1112,7 +1112,7 @@ terminal(command="cd ~/www/crm-system/apps/web && bun run typecheck")
 
 **Generic rule**: Subagent 用法應該係 `1 task = 1 clear deliverable` (改 1 file, 跑 1 個 verify script, etc.), 而唔係 `1 task = 1 refactor project`。Long refactor 應該由 parent 拆 phase 派多個 subagent, 每次小範圍。
 
-## ⚠️ Hermes redact `***` 整死 shell-based JWT tests (2026-06-05)
+## ⚠️ Hermes redact `***` 整死 shell-based JWT tests
 
 **症狀**: 寫 `TOKEN=*** ... /login | sed -n 's/.*"token": "\([^"]*\)".*/\1/p')` 然後 curl 後續 endpoint. **Hermes redact 機制會將個 token 喺 terminal output 變成 `***`**, 之後 sed 唔 match. 即係用 bash 做 multi-step authenticated curl 唔可靠。
 
@@ -1163,7 +1163,7 @@ curl -fsS http://localhost/api/users -H @/tmp/crm_hdr.txt
 
 **最簡單 fallback** (推薦 if 唔需要 automation): 用 `delegate_task` 起 subagent 喺 fresh context 跑 Python urllib 一次性 login + smoke。Subagent 可能冇 same Hermes sandbox restrictions。
 
-## ⚠️ Docker container DB migration when host can't reach postgres port (2026-06-05 crm-system Day 5)
+## ⚠️ Docker container DB migration when host can't reach postgres port
 
 **症狀**: `docker-compose.yml` postgres service 唔 expose host port (只 internal `5432/tcp`),host 跑 `bunx prisma migrate dev` 撞 `P1001 Can't reach database server at localhost:5432`。本地 dev 為咗 security + avoid port conflicts 唔 expose 5432 好常見(尤其多 project 同時開發)。
 
@@ -1196,7 +1196,7 @@ docker logs crm-api --tail 20
 
 詳細 SQL 範本 + 真實 audit_logs migration + 23 個 action enum: 見 `references/2026-06-05-crm-system-rbac-audit.md` 嘅「Docker local dev 嘅 migration 撞牆 + 解決」section。
 
-## ⚠️ Prisma migration folder rename 嘅 silent trap (2026-06-05 crm-system Day 6 真實撞牆)
+## ⚠️ Prisma migration folder rename 嘅 silent trap
 
 **症狀**: 經常用 git pull 或者改完 schema 之後想 rename migration folder (例如 `20260605000000_add_audit_log` → `20260605020000_add_audit_log` 修正 sort order),改咗 filesystem 之後 `prisma migrate deploy` 喺 container entrypoint 跑就會 crash:
 
@@ -1237,7 +1237,7 @@ ls packages/db/prisma/migrations/ | sort
 
 **相關 helper**: `scripts/backup.sh` 跑之前會 list 而家有咩 backup files (file 內部用 `find`),亦都 help 確認 db 狀態, 但唔會 modify migration history — 改 history 永遠係人手 step。
 
-## ⚠️ nginx SPA `root` directive 唔可以漏 (2026-06-05 crm-system Day 6 真實撞牆)
+## ⚠️ nginx SPA `root` directive 唔可以漏
 
 **症狀**: 已經 set 咗 `location /` + `try_files $uri /index.html` 嘅 SPA fallback config,但第一次去 `/quotations` (或者任何 SPA sub-route) 返 404。`/api/health` 又 work 因為 `location /api/` 自己 handle。Vite 嘅 `dist/index.html` 都已經喺度,assets 都 serve 到。
 
@@ -1279,7 +1279,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost/assets/index.js  # 期
 
 詳細 Day 6 nginx fix context: 見 `references/2026-06-05-crm-system-docker-deploy.md` 嘅「nginx SPA pitfall」section。
 
-## ⚠️ API wrapper boundary normalize for Prisma relation field-name drift (2026-06-06 crm-system Day 12)
+## ⚠️ API wrapper boundary normalize for Prisma relation field-name drift
 
 **問題 (class-level)**: Backend Prisma return 嘅 relation field 用 Prisma model 嘅 camelCase 名 (e.g. `manDayLines` for `Service.manDayLines ServiceManDay[]`), 但 frontend `Service` TypeScript type 寫住 `manDays` (URL slug / business 簡稱). `request<T>` generic 純 typecast — **冇 runtime bridge**, 個 return object 嘅 field 仍然叫 `manDayLines` (Prisma 個名), `s.manDays` 永遠 undefined 即係:
 - Component 訪問 `s.manDays.length` / `.map()` throw `Cannot read properties of undefined`
@@ -1359,7 +1359,7 @@ const { data } = useQuery({
 
 **Related (Day 11 wire-format-side fix)**: 對應 wire format 嗰邊 (request body) 嘅命名同樣要 match backend schema, 唔好 match frontend type alias — 見上面 `archive/skills/case-history/polymorphic-line-items` (archived) skill 嘅 502 pitfall section 同 Day 11 reference file。**Wire key = backend schema, response normalize = boundary wrapper**。兩個方向嘅 drift 各自 fix 各自嘅 layer。
 
-## ⚠️ Elysia `bun build` 撞 runtime code generation (2026-06-05 真實撞牆)
+## ⚠️ Elysia `bun build` 撞 runtime code generation
 
 **症狀**: `bun build src/index.ts --target=bun --outfile=dist/index.js [--minify]` 喺 Elysia 1.2 build **成功**, 但 image run 時 crash:
 ```
@@ -1399,7 +1399,7 @@ CMD ["/usr/local/bin/entrypoint"]
 
 **Full details + ready-to-copy Dockerfile patterns**: 見 `docker-mac-arm64-elysia-vite` skill 嘅 **Pitfall 7 (Elysia 1.2 + bun build broken)** + **Pitfall 8 (USER bun + entrypoint permission)** section, 同埋 `templates/full-local-stack.md` 入面有完整 docker-compose.yml + Dockerfiles (proven 喺 `~/www/crm-system` Day 3 production stack, 2026-06-05)。
 
-## ⚠️ Backend response shape 不一致 — frontend 要 normalize (2026-06-05)
+## ⚠️ Backend response shape 不一致 — frontend 要 normalize
 
 **症狀**: Backend Elysia routes 有啲返 `{ items: [...], total, limit, offset }` (e.g. `/companies`), 有啲返 array 直接 (e.g. `/products`, `/quotations`, `/deals`). 兩個 route 寫法唔同 (一個包 wrapper, 一個直返 array), frontend 唔好假設單一 shape。
 
@@ -1709,7 +1709,7 @@ git log -1 --format='%b' | head -10
 - `caddy-spa-api-proxy-deploy` — 如果要 deploy production
 - `backend-rbac-audit-log` — 加 user management + RBAC + audit log 嘅 class-level pattern
 
-## ⚠️ Backup / Restore 對 local Postgres Docker stack (2026-06-05 crm-system Day 6)
+## ⚠️ Backup / Restore 對 local Postgres Docker stack
 
 **情境**: 用戶要 admin functionality 包含 backup / restore,但又唔想搞 cloud storage / S3 (本地部署就本地 backup)。3 個 scripts + 1 個 docker profile 已經 ready to copy。
 
@@ -1788,7 +1788,7 @@ backups/
 
 詳細 Day 6 build log 見 `references/2026-06-05-crm-system-audit-backup.md`。
 
-## ⚠️ Elysia 1.2 `.derive()` 喺 POST handler 內 silently 返 `undefined` (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Elysia 1.2 `.derive()` 喺 POST handler 內 silently 返 `undefined`
 
 **症狀 (比 Day 7 個 `onBeforeHandle` bug 更隱蔽)**: 用 `authContext = new Elysia().derive(({ request, jwt, set }) => { ... return { userId, userRole } })` 然後每個 route `.use(authContext)` + handler `({ userId, set }) => { if (!userId) return 401 }`. **GET routes 全部 work,但 POST routes 個 `userId` 永遠 `undefined`**。如果個 endpoint `if (!userId) return 401` → 全部 POST 返 401。如果個 endpoint 唔 check `userId` (e.g. `/companies` POST 直接 `prisma.company.create()`) → 默默 work 但 audit log 入面 `actorId` 永遠 null。
 
@@ -1862,7 +1862,7 @@ for url, method, body in [
 
 **Migration impact**: 已經有嘅 routes 用咗 `derive` based `userId`,需要全部改 inline verify。**Crm-system Day 9 改咗 `quotation.ts` 一個檔案嘅 POST handler 就 confirm 全部其他 POST routes 都 hit 同一個 bug**(因為 `authContext` 喺 same Elysia chain 都被污染)。如果個 codebase 大,可能要搵個 subagent 平行 scan 全部 `({ userId` destructure 嘅 POST handler 改用 `getUserIdFromRequest`。
 
-## ⚠️ Elysia `t.Optional(t.String())` 唔接受 `null` literal (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Elysia `t.Optional(t.String())` 唔接受 `null` literal
 
 **症狀**: Frontend 用 React 個 strict-typed form 送 `productId: null` 落 `POST /api/quotations`(因為 form state 個 field 係 `string | null` 而非 `string | undefined`),backend Elysia 個 body schema:
 ```typescript
@@ -1901,7 +1901,7 @@ return {
 
 **Generic rule**: 任何 frontend 個 state field type 係 `T | null` 而 backend validator 寫 `t.Optional(t.T())` → 撞呢個。**改做 `t.Optional(t.Union([t.T(), t.Null()]))` 兩邊接受**,或者 **frontend JSON.stringify 之前 strip null** (`Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== null))`)。
 
-## ⚠️ Prisma schema `enum` 撞 DB `text` column → 42704 "type does not exist" (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Prisma `enum` field — schema/DB drift → 42704 "type does not exist"
 
 **症狀**: Prisma schema 寫 `itemType ItemType @default(PRODUCT)`(enum field),但 DB 入面 `itemType` column 係 `text`(可能 Day N 手動 migration 改過 schema 但 DDL 寫咗 text 唔寫 enum)。Prisma `client create` 撞:
 ```
@@ -1946,7 +1946,7 @@ docker exec crm-postgres psql -U crm -d crm_system -c \
 
 **Pre-emptive rule**: schema 寫 `enum Foo { A B C }` 然後用 `prisma migrate dev` 自動 apply migration,DB 一定有個 enum type。**如果 migration SQL 寫 `TEXT` 但 schema 寫 `enum`,即係 drift**。改 schema 之後必須 `prisma migrate dev` 跑一次睇 output 有冇 "CREATE TYPE"。
 
-## ⚠️ Prisma client 改 schema 後必須重新 generate (host + image) (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Prisma client 改 schema 後必須重新 generate (host + image)
 
 **症狀**: 改咗 `schema.prisma`(e.g. `enum ItemType` → `String`),`bunx prisma generate` host 跑咗,TypeScript compile pass,`docker compose build api` pass,**但 container run 依然撞 42704 "type ItemType does not exist"**。
 
@@ -1990,7 +1990,7 @@ grep -l "ItemType" /Users/davidchu/www/crm-system/node_modules/.prisma/client/*.
 # 如果有 hit,即係 host 個 client 仲見到 enum (re-generate 未 propagate)
 ```
 
-## ⚠️ Container stuck `Status: created` 連 entrypoint log 都冇 (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Container stuck `Status: created` 連 entrypoint log 都冇
 
 **症狀**: `docker compose up -d --force-recreate api` 個 output 顯示 `Container crm-api Recreated`,但 10 秒後 `docker ps -a` 顯示 `STATUS: created`(唔係 `Up` / `Exited`)。`docker logs crm-api` 返空 string,`docker inspect` 顯示 `Pid: 0, ExitCode: 0`。
 
@@ -2033,7 +2033,7 @@ docker compose up -d api
 3. `DATABASE_URL` env 喺 compose 唔 pass 入 container (e.g. typo 喺 `${POSTGRES_USER:***` 個 variable name)
 4. `dumb-init` binary 唔存在(舊 image 用咗 `oven/bun:1.2` 冇 dumb-init,改用 `tini`)
 
-## ⚠️ Prisma Decimal 返 string → frontend `Intl.NumberFormat` 撞 NaN (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Prisma Decimal 返 string → frontend `Intl.NumberFormat` 撞 NaN
 
 **症狀**: Backend 返 `deal.value = "75000"`(Prisma Decimal serialize 做 string),frontend 寫 `formatCurrency(deal.value, 'HKD')` 個 function signature `formatCurrency(amount: number)` 期望 number。`Intl.NumberFormat.format("75000")` 喺 V8 引擎 行為不一致:
 - 喺 `zh-HK` locale:**返 `"HK$NaN"`**(因為 Intl 試 parse "75000" 做 number 但歧義)
@@ -2077,7 +2077,7 @@ print(type(deal['value']).__name__, repr(deal['value']))
 
 **Related Day 8 lesson**: 個 Trillion-HK$ bug 喺 `deals.tsx` 個 `useMemo` 入面 `reduce` 用 `+` operator,如果 `d.value` 係 string,`"75000" + "50000"` 變 string concat = "7500050000"。**Always `Number(d.value)` 加落 reduce**。
 
-## ⚠️ Container `docker compose up` hang 喺 foreground 唔 return (2026-06-06 crm-system Day 9 真實撞牆)
+## ⚠️ Container `docker compose up` hang 喺 foreground 唔 return
 
 **症狀**: 撞牆要 restart api 個時候,`docker compose up -d --force-recreate api` 喺 `terminal()` 工具入面 hang 90 秒 timeout。Output 顯示 `Container crm-api Recreated` 但 foreground command 唔 return。
 
@@ -2129,17 +2129,24 @@ docker logs crm-api --tail 5
 - `templates/restore.sh` — host-side restore with safety (DROP + recreate + replay, --no-confirm for CI)
 - `templates/backup-container.sh` — in-container version for the `backup` docker profile (runs under crond)
 
-### References
-- `references/2026-06-04-llm-acp-real-build.md` — 真實 LLM-ACP 項目嘅完整 build log (Prisma 7 撞牆、Vite 8 quirk、Hermes execute_code 陷阱、Playwright 路徑、Prisma seed path 等 8 個真實撞牆位)
-- `references/2026-06-05-crm-system-scaffold.md` — crm-system Day 1-2 scaffold (用戶決策、SPA doc 撈唔到嘅撞牆、new umbrella skills 嘅 pointer)
-- `references/2026-06-05-crm-system-docker-deploy.md` — crm-system Day 3 Docker pivot (用戶「本地部署唔用 CDK」偏好、6 個 Dockerfile 撞牆全部已 patch 入 `docker-mac-arm64-elysia-vite` skill)
-- `references/2026-06-05-crm-system-quotation-builder.md` — crm-system Day 4 quotation builder (reusable QuotationBuilder component、line item CRUD、status-aware actions、print mode、authContext derive pattern、Hermes 撞 `***` redaction 嘅 smoke test 教訓)
-- `references/2026-06-05-crm-system-rbac-audit.md` — crm-system Day 5 user mgmt + RBAC + audit log (集中 permission map Option 3 pattern、Docker container DB migration 嘅 `docker exec psql` trick、last-admin/self-protection invariants、AuditLog schema 完整 SQL)
-- `references/2026-06-05-crm-system-audit-backup.md` — crm-system Day 6 audit instrumentation (4 個 CRM CRUD routes 補完) + backup/restore tooling (3 個 scripts + docker profile, host 與 container 兩個 script 嘅關鍵分別)
-- `references/2026-06-06-crm-system-region-table-bugfix.md` — crm-system Day 9 (Region enum→table, Elysia derive POST bug, t.Optional null literal, Prisma enum vs text column, Decimal string coerce)
-- `references/2026-06-06-crm-system-quotation-builder-enhancements.md` — crm-system Day 10 (autocomplete `bg-popover` transparent bug + quick-create modal 升級做 full form + backend `manDayLines → manDays` normalization + subagent typecheck loop 嘅早期 stop 指標)
-- `references/2026-06-06-crm-system-day11-five-issue-bundle.md` — crm-system Day 11 (5-issue bundle: `bg-popover` systemic fix + Product/Service quick-create full-form + 502 Elysia strict validator case study + Deal 編輯兩-call stage pattern + drag/click conflict guard + subagent 600s timeout 接管 SOP)
-- `references/2026-06-06-crm-system-day12-fieldname-normalise-docs-hygiene.md` — crm-system Day 12 (`manDayLines` wire vs `manDays` frontend type 真正 root cause + API boundary normalize 統一 pattern + `Service.isActive` legacy drift cleanup + service detail 502 wire format + README/PROGRESS docs hygiene 維護規則 + Tailwind token 完整 audit)
-- `references/2026-06-06-crm-system-cross-page-flow-entry-points.md` — crm-system Day 10+ URL query-string prefill pattern (Company→Deal→Quotation), 5-step recipe, 3 invariants, 4-layer delivery checklist, audit script. **Read this before wiring any new model relation into the UI** — David has caught this "backend ≠ UI" gap twice (Day 7 + Day 10+).
-- `references/2026-06-06-crm-system-lsp-vs-build-trust.md` — crm-system Day 11+ LSP diagnostics stale vs `docker compose build web` ground truth. Concrete walkthrough of why LSP noise is a false signal in this stack and the correct patch-then-build-immediately workflow.
-- `references/2026-06-07-crm-system-comprehensive-code-review.md` — crm-system Day 14 comprehensive 3-pass code review (Security A + Architecture B + Ship Gate C). 53 files reviewed, 0 modified. CRIT-1/2/3 RBAC gaps + HIGH typecheck silent + bun.lock CVE blind spot + 紅線 10/12/16/18 fail. P0/P1/P2 sprint-ready fix list + 3-pass methodology + re-review baseline.
+## Project case history
+
+Project-specific build logs and dated incident write-ups live under `references/`. This skill stays a reusable bootstrap pattern; the Day-N narratives preserve the per-session detail for `git log` / `grep` retrieval.
+
+| Topic | Reference |
+|---|---|
+| LLM-ACP project full build log (Prisma 7, Vite 8, Hermes) | [`references/2026-06-04-llm-acp-real-build.md`](references/2026-06-04-llm-acp-real-build.md) |
+| crm-system Day 1-2 scaffold | [`references/2026-06-05-crm-system-scaffold.md`](references/2026-06-05-crm-system-scaffold.md) |
+| crm-system Day 3 Docker pivot | [`references/2026-06-05-crm-system-docker-deploy.md`](references/2026-06-05-crm-system-docker-deploy.md) |
+| crm-system Day 4 quotation builder | [`references/2026-06-05-crm-system-quotation-builder.md`](references/2026-06-05-crm-system-quotation-builder.md) |
+| crm-system Day 5 RBAC + audit log | [`references/2026-06-05-crm-system-rbac-audit.md`](references/2026-06-05-crm-system-rbac-audit.md) |
+| crm-system Day 6 audit instrumentation + backup | [`references/2026-06-05-crm-system-audit-backup.md`](references/2026-06-05-crm-system-audit-backup.md) |
+| crm-system Day 9 enum/derive/null/Decimal bugfix | [`references/2026-06-06-crm-system-region-table-bugfix.md`](references/2026-06-06-crm-system-region-table-bugfix.md) |
+| crm-system Day 10 quotation builder enhancements | [`references/2026-06-06-crm-system-quotation-builder-enhancements.md`](references/2026-06-06-crm-system-quotation-builder-enhancements.md) |
+| crm-system Day 11 5-issue bundle | [`references/2026-06-06-crm-system-day11-five-issue-bundle.md`](references/2026-06-06-crm-system-day11-five-issue-bundle.md) |
+| crm-system Day 12 field-name normalise + docs hygiene | [`references/2026-06-06-crm-system-day12-fieldname-normalise-docs-hygiene.md`](references/2026-06-06-crm-system-day12-fieldname-normalise-docs-hygiene.md) |
+| crm-system Day 13 shared editor + activity | [`references/2026-06-06-crm-system-day13-shared-editor-and-activity.md`](references/2026-06-06-crm-system-day13-shared-editor-and-activity.md) |
+| crm-system cross-page flow entry points | [`references/2026-06-06-crm-system-cross-page-flow-entry-points.md`](references/2026-06-06-crm-system-cross-page-flow-entry-points.md) |
+| crm-system LSP vs `docker compose build` trust | [`references/2026-06-06-crm-system-lsp-vs-build-trust.md`](references/2026-06-06-crm-system-lsp-vs-build-trust.md) |
+| crm-system Day 14 3-pass comprehensive code review | [`references/2026-06-07-crm-system-comprehensive-code-review.md`](references/2026-06-07-crm-system-comprehensive-code-review.md) |
+| Prisma host test env pitfall | [`references/prisma-host-test-env.md`](references/prisma-host-test-env.md) |

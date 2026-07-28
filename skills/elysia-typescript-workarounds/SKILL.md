@@ -158,6 +158,36 @@ const app = new Elysia()
 
 **Common mistake**: Calling `jwt(payload)` like a function — this fails because `jwt` is an object instance, not a callable function.
 
+## 6. Schema Validation — Use `schema` Object or Import `t`, Not Both
+
+**Error**: `ReferenceError: t is not defined` or `t is not a constructor`
+
+**Cause**: In Elysia v1.x, the route handler's second argument uses `.schema` for validation, not inline `t.Object()` destructuring. The `t` type must be imported from `elysia`, not used inline in the route definition.
+
+**Solution**: Choose one approach — prefer `schema` object for clarity:
+
+```typescript
+import { Elysia } from 'elysia' // ✅ t NOT imported unless needed elsewhere
+
+export const authRoutes = new Elysia()
+  .post('/auth/login', async ({ body, jwt }) => {
+    const { username, password } = body as { username: string; password: string }
+    // ... handler logic
+  }, {
+    // ✅ Use schema object for body validation
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          username: { type: 'string' },
+          password: { type: 'string' }
+        },
+        required: ['username', 'password']
+      }
+    }
+  })
+```
+
 ## 7. `.derive()` with Broken Auth Middleware Causes Intermittent 500 Errors
 
 **Symptom**: Some requests return `500` with `{"success":false,"message":"伺服器錯誤"}`, then subsequent requests succeed. Error log shows nothing in Bun's output.
@@ -244,37 +274,7 @@ server.listen(3001)
 
 **When to use this**: If you need a simple status API behind nginx and reliability > framework features, use plain `http`. If you need Elysia's features (typed routes, schemas, plugins), ensure your nginx config uses `proxy_http_version 1.0` AND `proxy_set_header Connection "close"` — though even this may not be 100% reliable under high polling load.
 
-## 6. Schema Validation — Use `schema` Object or Import `t`, Not Both
-
-**Error**: `ReferenceError: t is not defined` or `t is not a constructor`
-
-**Cause**: In Elysia v1.x, the route handler's second argument uses `.schema` for validation, not inline `t.Object()` destructuring. The `t` type must be imported from `elysia`, not used inline in the route definition.
-
-**Solution**: Choose one approach — prefer `schema` object for clarity:
-
-```typescript
-import { Elysia } from 'elysia' // ✅ t NOT imported unless needed elsewhere
-
-export const authRoutes = new Elysia()
-  .post('/auth/login', async ({ body, jwt }) => {
-    const { username, password } = body as { username: string; password: string }
-    // ... handler logic
-  }, {
-    // ✅ Use schema object for body validation
-    schema: {
-      body: {
-        type: 'object',
-        properties: {
-          username: { type: 'string' },
-          password: { type: 'string' }
-        },
-        required: ['username', 'password']
-      }
-    }
-  })
-```
-
-## 10. Wildcard Path Parameters (`/:key(*)`) Fail Validation — Use Query String
+## 9. Wildcard Path Parameters (`/:key(*)`) Fail Validation — Use Query String
 
 **Symptom**: Route `GET /api/files/:key(*)` with `params: t.Object({ key: t.String({ pattern: ".*" }) })` returns HTTP 422 with validation error:
 
@@ -322,7 +322,7 @@ href={`/api/files?key=${encodeURIComponent(att.url)}`}
 
 **When file key contains slashes** (e.g., S3 object key `attachments/file.pdf`), the path approach breaks because `/` is a path separator — query string cleanly handles any character. This pattern also arises when serving files from S3 private buckets where the backend generates a signed download URL.
 
-## 11. `Optional(t.String())` Does NOT Accept `null` — Only `undefined`
+## 10. `Optional(t.String())` Does NOT Accept `null` — Only `undefined`
 
 **Symptom**: HTTP 422 Unprocessable Entity when sending `{"videoUrl": null}` from frontend, even though `videoUrl: t.Optional(t.String())` is defined in the route schema.
 
@@ -375,7 +375,8 @@ body: t.Object({
 ```
 
 **Key insight**: In Elysia's typed schema, `Optional(t.String())` ≠ "nullable". It means "omit the key entirely". `null` in JSON is a value, not absence — so it fails validation.
-## 12. Elysia 1.2.0 d.ts Incompatible with TypeScript 5.9 — Hundreds of `MacroContext['return']` / `MacroContext['resolve']` / `MacroContext['response']` Errors
+
+## 11. Elysia 1.2.0 d.ts Incompatible with TypeScript 5.9 — Hundreds of `MacroContext['return']` / `MacroContext['resolve']` / `MacroContext['response']` Errors
 
 **Symptom**: Running `tsc --noEmit` against any file that imports `elysia` (especially when `moduleResolution: "bundler"` is set) produces **hundreds of errors** inside `node_modules/elysia/dist/index.d.ts` and `node_modules/elysia/dist/types.d.ts`:
 
@@ -437,7 +438,7 @@ If the server boots and the health check returns 200, the d.ts errors are noise 
 
 **Long-term fix**: Watch https://github.com/elysiajs/elysia for a 1.2.x patch release that fixes the MacroContext d.ts exports. Pin to that version when available. Or wait for Elysia 1.3.x which (per their Discord) is rewriting the type system with the same patterns as TanStack Router.
 
-## 13. Prisma Re-exports — Don't Re-export Model Types, Only Enums
+## 12. Prisma Re-exports — Don't Re-export Model Types, Only Enums
 
 **Error**: `SyntaxError: export 'PipelineStage' not found in '@prisma/client'` at server startup, OR `error TS2305: Module '@prisma/client' has no exported member 'PipelineStage'`
 
@@ -479,7 +480,7 @@ bun --env-file=.env src/index.ts
 
 **Key insight**: Prisma's `@prisma/client` barrel is intentionally minimal — only what runtime code needs. Model types are part of Prisma's internal namespace and shouldn't be re-exported downstream. This is a common gotcha when building monorepos with a `packages/db` shared module.
 
-## 14. Bun Production Bundle Target — Elysia Server Crashes with `Bun.serve() needs either routes or fetch`
+## 13. Bun Production Bundle Target — Elysia Server Crashes with `Bun.serve() needs either routes or fetch`
 
 **Symptom**: ECS/Fargate or Docker production container repeatedly exits with code `1`. CloudWatch logs show the app prints its startup message, then crashes:
 
@@ -519,152 +520,15 @@ PORT=3999 timeout 5s bun dist/index.js
 # Expected: startup log, process stays alive until timeout (exit 124), no TypeError
 ```
 
-**Production recovery pattern**:
-1. Check ECS service: `aws ecs describe-services --cluster <cluster> --services <service>` — look for `running=0` and repeated task starts/drains.
-2. Check stopped tasks: `aws ecs list-tasks --desired-status STOPPED` then `aws ecs describe-tasks` — exit code `1` points to app crash.
-3. Read recent CloudWatch log streams for the task ID.
-4. Fix Dockerfile build target to `--target=bun`, rebuild/push image, then `aws ecs update-service --force-new-deployment`.
-5. Verify `running == desired`, `/health` returns OK, then test auth endpoint.
+**Production recovery**: if a live ECS/Fargate service is already crash-looping on this, follow the
+runbook in [`references/ecs-production-recovery.md`](references/ecs-production-recovery.md). The rule:
+when the image is `oven/bun` and the command is `bun dist/index.js`, bundle with `--target=bun`.
 
 **Do not "fix" by switching to Node target unless the runtime is actually Node.js and the app code is compatible with Node. If the image uses `oven/bun` and `CMD ["bun", ...]`, use `--target=bun`.**
 
-## 16. `write_file` (full replace) drops the leading `// @ts-nocheck` comment — Elysia 1.2 d.ts errors come back
+## 14. `use(authContext)` Sub-Module Derive — jwt Decorator Works via Elysia Module Inheritance
 
-**Symptom**: A route file has `// @ts-nocheck` at the top to silence the known Elysia 1.2 d.ts noise (per #12 above). You do a `write_file` (full file replace) to refactor the route — and the next `bun run` / container rebuild suddenly shows hundreds of `Property 'userId' does not exist` / `Property 'company' does not exist` errors. The runtime is fine but LSP / CI gates red.
-
-**Root cause**: When you call `write_file` with a complete file body but forget to put `// @ts-nocheck` at the top, the previous bypass is gone. Common when copying a route from an existing file (the existing file had `// @ts-nocheck` but the template you copy-paste didn't).
-
-**Fix**: After every `write_file` that touches a route file, **re-add `// @ts-nocheck` at the very first line** if the original had one. Easiest is to include it in the write template itself:
-
-```typescript
-// At the very top of the file, before any import:
-// @ts-nocheck — see rbac.ts for the Elysia 1.2 + TS 5.x d.ts trade-off
-import { Elysia, t } from 'elysia';
-// ... rest of file
-```
-
-**Detection (don't ship red builds)**:
-```bash
-# After a write_file, grep for the marker — should return at least 1 line per route
-rg -L '// @ts-nocheck' apps/api/src/routes/*.ts
-# Any path printed = a route that lost the bypass; needs to be re-added
-```
-
-**Same trap for `patch` tool**: A `patch` edit that only replaces a middle section of the file is fine (the leading comment is preserved). The trap is specifically with `write_file` and `read_file` followed by `write_file` where you copy the body but miss the top line.
-
-**Long-term fix**: Convert routes to `.js` (drop TS from the api bundle) so the typecheck problem disappears entirely. `bun build --target=bun apps/api/src/index.ts --outfile=dist/index.js` and `CMD ["bun", "dist/index.js"]` in the Dockerfile. This eliminates the d.ts noise at the cost of losing per-file TS tooling. See #14 for the Bun bundle target pattern.
-
-## 17. `authContext` Derive Context Does NOT Reach Route Handler Scope in Elysia 1.2 — Re-derive Inline (crm-system Day N)
-
-**Symptom**: You `.use(authContext)` (an Elysia plugin that derives `userId` and `userRole` from the JWT) on a route module, then write a handler like:
-
-```typescript
-.post('/', async ({ body, set, userId, userRole, request }) => {
-  if (userRole !== 'ADMIN') { set.status = 403; return { error: 'Admin only' }; }
-  // ... admin-only logic
-})
-```
-
-The handler always falls into the `!== 'ADMIN'` branch even when the JWT payload is `{"role": "ADMIN"}`. `userId` and `userRole` are both `undefined`.
-
-**Diagnosis**: Add a temporary debug log inside the handler:
-
-```typescript
-.post('/', async (ctx) => {
-  console.log('[DEBUG] ctx keys =', Object.keys(ctx));
-  const userRole = (ctx as { userRole?: string | null }).userRole;
-  console.log('[DEBUG] userRole =', userRole);
-  // ...
-})
-```
-
-You'll see the ctx keys are Elysia's built-ins: `["request", "store", "qi", "path", "url", "redirect", "status", "set", "server", "jwt", "headers", "cookie", "query", "route", "body"]` — **no `userId`, no `userRole`**.
-
-**Root cause**: Elysia 1.2's `.derive()` callback only injects its return values into `onBeforeHandle` / `onAfterHandle` hook scope, NOT into the route handler scope. The skill's earlier #15 entry suggested it works — it doesn't, at least in 1.2.x with this plugin shape. (The skill's claim was based on a different Elysia version or different plugin structure.)
-
-**Solution**: Don't rely on derive to reach the handler. Verify the JWT inline inside the handler using the same `getUserIdFromRequest(request)` helper that `middleware/rbac.ts` already uses for `requirePermission`:
-
-```typescript
-// In your route file:
-import { getUserIdFromRequest } from '../middleware/rbac';
-
-.post('/', async ({ body, set, request }) => {
-  const userId = await getUserIdFromRequest(request);
-  if (!userId) { set.status = 401; return { error: 'Unauthorized' }; }
-  // ... use userId directly
-})
-
-// For role checks, also look up the user inline:
-.post('/admin', async ({ body, set, request }) => {
-  const userId = await getUserIdFromRequest(request);
-  if (!userId) { set.status = 401; return { error: 'Unauthorized' }; }
-  const adminUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  if (adminUser?.role !== 'ADMIN') { set.status = 403; return { error: 'Admin only' }; }
-  // ... admin-only logic
-})
-```
-
-**For read endpoints** that don't need the user (e.g. listing a public-ish catalogue), just skip the auth check entirely:
-
-```typescript
-.get('/man-day-roles', async () => {
-  return prisma.manDayRole.findMany({ orderBy: { sortOrder: 'asc' } });
-})
-```
-
-If the data is sensitive, use `.guard()` or a `requirePermission()` plugin (which uses `getUserIdFromRequest` internally via `onBeforeHandle` — that scope DOES work).
-
-**When to use this fix**: Every time you see `userId` or `userRole` as `undefined` in a handler despite using `authContext`. Don't add `@ts-nocheck` cast and hope — re-derive inline.
-
-**Related**: See #18 for the export trap that hides this symptom (export-not-found error masks the real issue).
-
-## 18. `getUserIdFromRequest` Must Be `export`ed from rbac.ts (crm-system Day N)
-
-**Symptom**: Container start fails with `SyntaxError: Export named 'getUserIdFromRequest' not found in module '/app/apps/api/src/middleware/rbac.ts'.` The Dockerfile build succeeds, the migration applies, then the entrypoint crashes and the container restarts in a loop (5+ restarts in `docker ps`). `docker logs` shows the SyntaxError before any app startup banner.
-
-**Root cause**: `rbac.ts` defines `async function getUserIdFromRequest(request)` as a private helper used by the `requirePermission` and `requireAnyPermission` plugins. When you add a new route file that needs to re-derive the userId inline (per #17), you `import { getUserIdFromRequest } from '../middleware/rbac'` — but the function is not exported, so Bun's module loader crashes on the import statement.
-
-**Fix**: Add `export` to the function declaration in `rbac.ts`:
-
-```typescript
-// ❌ Bad — file-private, only used inside rbac.ts
-async function getUserIdFromRequest(request: Request): Promise<string | null> {
-  // ...
-}
-
-// ✅ Good — available to import from other route files
-export async function getUserIdFromRequest(request: Request): Promise<string | null> {
-  // ...
-}
-```
-
-**Detection before shipping**:
-
-```bash
-# After modifying rbac.ts, grep the function name and the export keyword
-rg -n 'getUserIdFromRequest' apps/api/src/middleware/rbac.ts
-# First line should say "export async function", not just "async function"
-```
-
-**Verification after fix** (don't ship red builds):
-
-```bash
-cd ~/www/<project>
-docker compose build api 2>&1 | tail -3   # should print "crm-system-api Built"
-docker compose up -d --force-recreate --no-deps api
-sleep 12
-curl -s -i http://localhost/api/health    # should return 200 (not 502 Bad Gateway)
-docker logs crm-api --tail 5              # should show "🦊 CRM API running"
-```
-
-**If you see 502 Bad Gateway from nginx right after a restart** — the upstream is still booting, or the new image crashed. Check `docker logs` for the SyntaxError first; the `restart: unless-stopped` policy in compose means a crashed container will keep restarting every ~5s, and nginx will 502 each time it tries to reach the API.
-
-**Same trap for other helpers in `rbac.ts`**: `userHasPermission` is already exported. `clearRoleCache` is already exported. If you add a new shared helper, remember to `export` it from day one.
-
-## 15. `use(authContext)` Sub-Module Derive — jwt Decorator Works via Elysia Module Inheritance (crm-system Day 4)
+*Origin: crm-system, Day 4.*
 
 **Pattern**: Create a shared `authContext` Elysia plugin that derives `userId` from a Bearer JWT, then `.use()` it in individual route modules (not just the root app).
 
@@ -719,7 +583,7 @@ export const quotationRoutes = new Elysia({ prefix: '/quotations' })
 - Type-safe: `userId` shows up in handler context, TypeScript catches missing checks
 - Composable: routes can opt-in via `.use(authContext)` (skip it for public endpoints like `/auth/login`)
 
-**Common pitfall — Elysia 1.2.0 d.ts noise**: TypeScript will complain that `userId` is not in the context type for the handler. This is the same MacroContext d.ts bug as #12 above. The runtime works correctly. If `tsc --noEmit` is strict, use a type cast at the start of the handler:
+**Common pitfall — Elysia 1.2.0 d.ts noise**: TypeScript will complain that `userId` is not in the context type for the handler. This is the same MacroContext d.ts bug as #11 above. The runtime works correctly. If `tsc --noEmit` is strict, use a type cast at the start of the handler:
 ```typescript
 async ({ body, userId, set }) => {
   const { userId: uid } = { userId } as { userId: string | null };
@@ -732,14 +596,149 @@ async ({ body, userId, set }) => {
 
 **Don't** put auth logic in a non-derive helper function — you'll lose the `userId` in context flow and have to pass it manually.
 
-## Key Files (Lemontree V3)
+## 15. `write_file` (full replace) drops the leading `// @ts-nocheck` comment — Elysia 1.2 d.ts errors come back
 
-- `~/projects/lemontree_v3/src/middleware/auth.ts` — derive middleware adding `websiteId` to context
-- `~/projects/lemontree_v3/src/routes/core/menu.ts` — complete example of all patterns
-- `~/projects/lemontree_v3/src/routes/core/permission.ts` — `t.Recursive` workaround example
-- `~/www/crm-system/apps/api/src/lib/context.ts` — `authContext` derive (crm-system Day 4 reference)
+**Symptom**: A route file has `// @ts-nocheck` at the top to silence the known Elysia 1.2 d.ts noise (per #11 above). You do a `write_file` (full file replace) to refactor the route — and the next `bun run` / container rebuild suddenly shows hundreds of `Property 'userId' does not exist` / `Property 'company' does not exist` errors. The runtime is fine but LSP / CI gates red.
 
-## 19. Mixed `.use(authRoutes)` + `.group('/api', ...)` — Public Routes Mounted at Wrong Path (pm-system 2026-06-08)
+**Root cause**: When you call `write_file` with a complete file body but forget to put `// @ts-nocheck` at the top, the previous bypass is gone. Common when copying a route from an existing file (the existing file had `// @ts-nocheck` but the template you copy-paste didn't).
+
+**Fix**: After every `write_file` that touches a route file, **re-add `// @ts-nocheck` at the very first line** if the original had one. Easiest is to include it in the write template itself:
+
+```typescript
+// At the very top of the file, before any import:
+// @ts-nocheck — see rbac.ts for the Elysia 1.2 + TS 5.x d.ts trade-off
+import { Elysia, t } from 'elysia';
+// ... rest of file
+```
+
+**Detection (don't ship red builds)**:
+```bash
+# After a write_file, grep for the marker — should return at least 1 line per route
+rg -L '// @ts-nocheck' apps/api/src/routes/*.ts
+# Any path printed = a route that lost the bypass; needs to be re-added
+```
+
+**Same trap for `patch` tool**: A `patch` edit that only replaces a middle section of the file is fine (the leading comment is preserved). The trap is specifically with `write_file` and `read_file` followed by `write_file` where you copy the body but miss the top line.
+
+**Long-term fix**: Convert routes to `.js` (drop TS from the api bundle) so the typecheck problem disappears entirely. `bun build --target=bun apps/api/src/index.ts --outfile=dist/index.js` and `CMD ["bun", "dist/index.js"]` in the Dockerfile. This eliminates the d.ts noise at the cost of losing per-file TS tooling. See #13 for the Bun bundle target pattern.
+
+## 16. `authContext` Derive Context Does NOT Reach Route Handler Scope in Elysia 1.2 — Re-derive Inline
+
+*Origin: crm-system.*
+
+**Symptom**: You `.use(authContext)` (an Elysia plugin that derives `userId` and `userRole` from the JWT) on a route module, then write a handler like:
+
+```typescript
+.post('/', async ({ body, set, userId, userRole, request }) => {
+  if (userRole !== 'ADMIN') { set.status = 403; return { error: 'Admin only' }; }
+  // ... admin-only logic
+})
+```
+
+The handler always falls into the `!== 'ADMIN'` branch even when the JWT payload is `{"role": "ADMIN"}`. `userId` and `userRole` are both `undefined`.
+
+**Diagnosis**: Add a temporary debug log inside the handler:
+
+```typescript
+.post('/', async (ctx) => {
+  console.log('[DEBUG] ctx keys =', Object.keys(ctx));
+  const userRole = (ctx as { userRole?: string | null }).userRole;
+  console.log('[DEBUG] userRole =', userRole);
+  // ...
+})
+```
+
+You'll see the ctx keys are Elysia's built-ins: `["request", "store", "qi", "path", "url", "redirect", "status", "set", "server", "jwt", "headers", "cookie", "query", "route", "body"]` — **no `userId`, no `userRole`**.
+
+**Root cause**: Elysia 1.2's `.derive()` callback only injects its return values into `onBeforeHandle` / `onAfterHandle` hook scope, NOT into the route handler scope. The skill's earlier #14 entry suggested it works — it doesn't, at least in 1.2.x with this plugin shape. (The skill's claim was based on a different Elysia version or different plugin structure.)
+
+**Solution**: Don't rely on derive to reach the handler. Verify the JWT inline inside the handler using the same `getUserIdFromRequest(request)` helper that `middleware/rbac.ts` already uses for `requirePermission`:
+
+```typescript
+// In your route file:
+import { getUserIdFromRequest } from '../middleware/rbac';
+
+.post('/', async ({ body, set, request }) => {
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) { set.status = 401; return { error: 'Unauthorized' }; }
+  // ... use userId directly
+})
+
+// For role checks, also look up the user inline:
+.post('/admin', async ({ body, set, request }) => {
+  const userId = await getUserIdFromRequest(request);
+  if (!userId) { set.status = 401; return { error: 'Unauthorized' }; }
+  const adminUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (adminUser?.role !== 'ADMIN') { set.status = 403; return { error: 'Admin only' }; }
+  // ... admin-only logic
+})
+```
+
+**For read endpoints** that don't need the user (e.g. listing a public-ish catalogue), just skip the auth check entirely:
+
+```typescript
+.get('/man-day-roles', async () => {
+  return prisma.manDayRole.findMany({ orderBy: { sortOrder: 'asc' } });
+})
+```
+
+If the data is sensitive, use `.guard()` or a `requirePermission()` plugin (which uses `getUserIdFromRequest` internally via `onBeforeHandle` — that scope DOES work).
+
+**When to use this fix**: Every time you see `userId` or `userRole` as `undefined` in a handler despite using `authContext`. Don't add `@ts-nocheck` cast and hope — re-derive inline.
+
+**Related**: See #17 for the export trap that hides this symptom (export-not-found error masks the real issue).
+
+## 17. `getUserIdFromRequest` Must Be `export`ed from rbac.ts
+
+*Origin: crm-system.*
+
+**Symptom**: Container start fails with `SyntaxError: Export named 'getUserIdFromRequest' not found in module '/app/apps/api/src/middleware/rbac.ts'.` The Dockerfile build succeeds, the migration applies, then the entrypoint crashes and the container restarts in a loop (5+ restarts in `docker ps`). `docker logs` shows the SyntaxError before any app startup banner.
+
+**Root cause**: `rbac.ts` defines `async function getUserIdFromRequest(request)` as a private helper used by the `requirePermission` and `requireAnyPermission` plugins. When you add a new route file that needs to re-derive the userId inline (per #16), you `import { getUserIdFromRequest } from '../middleware/rbac'` — but the function is not exported, so Bun's module loader crashes on the import statement.
+
+**Fix**: Add `export` to the function declaration in `rbac.ts`:
+
+```typescript
+// ❌ Bad — file-private, only used inside rbac.ts
+async function getUserIdFromRequest(request: Request): Promise<string | null> {
+  // ...
+}
+
+// ✅ Good — available to import from other route files
+export async function getUserIdFromRequest(request: Request): Promise<string | null> {
+  // ...
+}
+```
+
+**Detection before shipping**:
+
+```bash
+# After modifying rbac.ts, grep the function name and the export keyword
+rg -n 'getUserIdFromRequest' apps/api/src/middleware/rbac.ts
+# First line should say "export async function", not just "async function"
+```
+
+**Verification after fix** (don't ship red builds):
+
+```bash
+cd ~/www/<project>
+docker compose build api 2>&1 | tail -3   # should print "crm-system-api Built"
+docker compose up -d --force-recreate --no-deps api
+sleep 12
+curl -s -i http://localhost/api/health    # should return 200 (not 502 Bad Gateway)
+docker logs crm-api --tail 5              # should show "🦊 CRM API running"
+```
+
+**If you see 502 Bad Gateway from nginx right after a restart** — the upstream is still booting, or the new image crashed. Check `docker logs` for the SyntaxError first; the `restart: unless-stopped` policy in compose means a crashed container will keep restarting every ~5s, and nginx will 502 each time it tries to reach the API.
+
+**Same trap for other helpers in `rbac.ts`**: `userHasPermission` is already exported. `clearRoleCache` is already exported. If you add a new shared helper, remember to `export` it from day one.
+
+## 18. Mixed `.use(authRoutes)` + `.group('/api', ...)` — Public Routes Mounted at Wrong Path
+
+*Origin: pm-system, 2026-06-08.*
 
 **Symptom**: `authRoutes` is mounted at the root via `.use(authRoutes)`, while every other route is mounted inside `.group('/api', ...)`. `POST /api/auth/login` returns **404** (`{"error":"NOT_FOUND"}`), but `POST /auth/login` works. nginx proxies `/api/*` to backend, so the frontend POST to `/api/auth/login` always 404s.
 
@@ -855,3 +854,10 @@ npx playwright test e2e/tests/critical-path.spec.ts --grep "login flow"
 - Any route group mounted at root when **frontend + nginx expect a prefix**
 
 **Lesson**:**Pick one mounting strategy and use it for ALL routes**. The most common mistake is splitting "public" from "protected" at the mount level, but in practice both should live under the same prefix (nginx config dictates the public URL shape, not the source code organization).
+
+## Project case history
+
+| Topic | Reference |
+|---|---|
+| Lemontree V3 / crm-system key file paths | [`lemontree-v3-key-files.md`](references/lemontree-v3-key-files.md) |
+| AWS ECS / CloudWatch recovery runbook for the Bun bundle-target crash | [`ecs-production-recovery.md`](references/ecs-production-recovery.md) |

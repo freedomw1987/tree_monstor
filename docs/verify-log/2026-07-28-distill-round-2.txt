@@ -1,0 +1,31 @@
+$ python3 scripts/docs_consistency_check.py
+docs consistency check passed
+exit code: 0
+
+$ python3 scripts/generate_skills_catalog.py --check
+nested skills catalog is up to date
+exit code: 0
+
+$ git diff --check
+exit code: 0
+
+$ per-skill section-level fidelity audit
+distilled 5 mixed skills, all original blocks present in either SKILL.md or references/:
+  skills/frontend/list-search-box/SKILL.md              423 -> 332   ok
+  skills/elysia-typescript-workarounds/SKILL.md          857 -> 863   ok (renumbered)
+  skills/testing/playwright-e2e-design-patterns/SKILL.md 712 -> 444   ok
+  skills/backend/backend-rbac-audit-log/SKILL.md         1408 -> 409  ok (restored-narrative.md holds 79 compressed-out blocks)
+  skills/devops/bun-elysia-react-vite-stack/SKILL.md     2145 -> 2152 ok (date-suffixes stripped, Prisma cross-ref anchor renamed)
+
+$ cross-reference resolution check
+  8 inbound anchors from other skills verified by grep:
+  - "LSP diagnostics stale after rapid patches"        present
+  - "shadcn-style token 唔可以漏"                      present
+  - "Prisma enum field — schema/DB drift"             present (renamed from "Prisma schema enum 撞 DB text column")
+  - "Postgres docker migration trick"                  present
+  - "Subagent 600s/63-call timeout"                    present
+  - "TS5.9 / MacroContext d.ts noise"                  present
+  - "shadcn-style setup 仍要 v3"                       present
+  - "Backend response shape 不一致"                    present
+  port-衝突 section: no inbound refs, no anchor required.
+exit code: 0

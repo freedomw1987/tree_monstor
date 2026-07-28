@@ -261,70 +261,9 @@ docker compose logs backend | grep "TOO_MANY"
 
 ---
 
-## Pattern 8: Playwright 撞 pre-existing failure 嘅 triage(2026-06-10 pm-system Sprint 13)
+## Pattern 6: Testing Tiptap / ProseMirror rich text editors
 
-### 問題
-
-Sprint closure 跑 full E2E suite,撞 N 個 pre-existing failure(eg 4/55 fail)。**唔係所有 failure 都可以用 helper patch 解決** — 部分係**真實 backend bug**。盲目用「`describe.skip` + DEPRECATED comment」掩蓋 security bug = 紅線 13 違規(冇 RG entry 嘅 fix 唔可以 merge)+ 紅線 14 違規(冇 root cause + prevention)。
-
-### Diagnostic 步驟(7 個 step,3 個 tool call 以內)
-
-1. **Step 0:`git status -s` 睇有冇上一個 session 漏 commit 嘅 fix**(disk 有 source code 但 HEAD 冇)— 直接 commit + 唔好從頭再寫
-2. **Step 0.5:`docker exec <backend> cat /app/src/routes/<file>.ts | grep <fn>` 確認 running container 嘅 source 同 disk 一致** — disk 有 fix 但 container running stale = rebuild + restart,唔係 bug
-3. **Step 1:`npx playwright test <failing-test-name>`** 跑單一 test,睇 root error
-4. **Step 2:睇 backend log 嘅實際 response**(唔靠 mental model)— `docker compose logs backend | tail -30`
-5. **Step 3:睇 stack trace 嘅 source code**(必 `grep` 真實 file,例如 `grep -n "developer" backend/src/routes/tasks.ts`)— skip helper 通常係 sprint 7-9 引入嘅 P0 spec 加 `describe.skip`,而新 spec 直接寫 assertion 會揭真實 bug
-6. **Step 4:直接 hit API reproduce**(用 curl + 已知 user role)— 確認係「test 期望錯」定「backend 真係錯」
-7. **Step 5:判定每個 failure 嘅 root cause class**:
-   - **A. Test-helper bug** — seed data 名變咗(Sprint 8+ docker entrypoint 改咗),或者 IP rate-limit 撞 → patch helper(Pattern 7 fallback 適用)
-   - **B. Test expectation bug** — spec 期望 `expect(status).toBe(403)` 但 backend 返 200,**可能係 test 寫錯**或者**可能係 backend 真係 security bug**。要 reproduce 確認
-   - **C. 真實 backend bug** — `curl PUT /api/tasks/:id -H "Authorization: Bearer dev-token" -d '{"title":"hijack"}'` 返 200,backend 真係漏 RBAC gate
-
-**完整 7-step playbook + 撞過嘅 reproduce 例子** 喺 `references/pre-existing-failure-triage.md`。
-
-### Triage 4-option table 寫法(必修,成段 ship 嘅 critical part)
-
-**唔可以**直接撞 option。寫一段 4-option triage table 俾 user 揀,跟 `feature-plan-alignment` 嘅 4-option pattern:
-
-| # | Option | Scope | 預估 | 風險 |
-|---|--------|-------|------|------|
-| 1 | 只修 helper(test bug) | Spec-only | 20 分鐘 | 紅線 13 守,但 D 漏住 production 漏洞 |
-| 2 | **修 helper + 修 backend + 加 unit test 守住 invariant** | Spec + Backend | 45 分鐘 | **全綠,紅線 13/14 都守** |
-| 3 | 修 helper + 修 backend 但唔加 unit test | Spec + Backend (小) | 30 分鐘 | Backend 修咗但冇 invariant test,將來可能返轉 |
-| 4 | 全部 `describe.skip` + DEPRECATED label(同 Sprint 11 `/bugs` 拎走個做法) | Docs-only | 10 分鐘 | Test 表面乾淨但 security bug 留喺 production |
-
-**我推薦 Option 2** — 因為 D 係真實 security bug,紅線 13 + 14 規定 bug fix 必須有 root cause + prevention + regression test entry。**skip-without-fix 唔合規**。
-
-### 判斷「test bug vs backend bug」嘅 3 條 heuristic
-
-| 線索 | 偏向 test bug | 偏向 backend bug |
-|------|---------------|-----------------|
-| Test 期望嘅 status code | 期望 `4xx` 但 backend 返 `2xx` | 期望 `4xx` 但 backend 返 `2xx`(backend 真係漏 gate) |
-| Curl reproduce | Curl 一樣返錯 status(backend 真錯) | Curl 返 200(spec 期望錯) |
-| 改 backend 後 test 過唔過 | N/A | 改 backend return 403 → test 過咗 = backend 真係 bug |
-| Production audit log | N/A | 有 user 用 developer role 改 title = backend bug 已被 exploit |
-| Code comment 寫住 `// TODO` / `// FIXME` | N/A | Backend 有 `// TODO: enforce RBAC` = known bug,未有 RG entry(紅線 13 違規) |
-
-**`// TODO` / `// FIXME` 嘅 code comment 係 highest signal** — 個 project 知道有 bug 但冇 RG-XXX entry = 紅線 13 違規 = 必須修 + 加 entry + 加 test。
-
-### 「fix 名義 = 移除 / deprecate」唔等於 cleanup 嘅 pitfall
-
-撞過(Sprint 13 plan):舊 test 用 `describe.skip` + DEPRECATED comment 掩蓋 RBAC bug,**新 spec 寫斷言 `expect(403)` 反而揭發 backend 真係漏 gate**。**新 spec 唔可以默守舊 spec 嘅 skip pattern** — 必須 reproduce + 4-option triage + Option 2 default。
-
-### 配套 checklist(任何「Playwright failure → 4-option triage」session 必跑)
-
-- [ ] 跑 full E2E,grep 出 pre-existing failure list
-- [ ] 對每個 failure 跑 `npx playwright test <name>` 拎 root error
-- [ ] 對每個 failure curl reproduce 確認係 test bug 定 backend bug
-- [ ] 寫 4-option triage table(結構跟 `feature-plan-alignment` § "Output structure")
-- [ ] 預設 recommendation = Option 2(紅線 13/14 合規)
-- [ ] User 揀咗之後先動 code,唔好 default 落 Option 4(skip-without-fix)
-
----
-
-## Pattern 6: Testing Tiptap / ProseMirror rich text editors(2026-06-10 pm-system)
-
-**Scope**: 任何用 Tiptap 嘅 React rich text editor(`<RichTextEditor value={x} onChange={setX} />` 帶 `.ProseMirror` contenteditable)— 通用於 pm-system / 將來其他 Tiptap-based apps。
+**Scope**: 任何用 Tiptap 嘅 React rich text editor(`<RichTextEditor value={x} onChange={setX} />` 帶 `.ProseMirror` contenteditable)。
 
 ### Pitfall 1: 唔可以用 `el.innerHTML = html; dispatchEvent('input')` mock image paste
 
@@ -404,7 +343,7 @@ expect(detailBody.bug.description).toMatch(/<img[^>]+data:image\/png/)
 
 ---
 
-## Pattern 7: Graceful seed-data fallback in test fixtures(2026-06-10 pm-system)
+## Pattern 7: Graceful seed-data fallback in test fixtures
 
 ### 問題
 
@@ -448,7 +387,7 @@ async function getSampleProjectId(req: Page['request'], token: string): Promise<
 
 **3 個 case 都 handle**:
 1. ✅ Seed 有「範例」項目(legacy)
-2. ✅ Seed 冇「範例」但有其他 project(Sprint 8+ docker entrypoint 改咗)
+2. ✅ Seed 冇「範例」但有其他 project
 3. ✅ 完全空 array(fresh docker volume)— 自己建 fixture
 
 **Pre-existing precedent**:`rbac-negative.spec.ts:173` 用咗 `?? projects[0]` pattern:
@@ -474,239 +413,32 @@ try {
 
 ---
 
-## Pattern 9: Implementation 與 tracker 計劃出現分歧時嘅 spec 重對齊(2026-06-10 pm-system US-5.6)
+## Pattern 8: Auth state reuse and mount-path verification
 
-### 問題
+Reuse authenticated state when a test is not explicitly validating the login UI. Obtain the token through the shared login helper, inject the minimum user state the frontend requires, then navigate to the target route. Before asserting on an auth endpoint, verify the mount path the running app actually exposes; do not infer `/api/auth/*` or `/auth/*` from framework convention.
 
-E2E 寫嘅時候撞咗「tracker 講過會有 X,但 implementation 唔係 X」嘅情況。撞過(pm-system 2026-06-10 US-5.6 Project detail bug tab):
-- **Tracker 講**:Bugs list 嘅 status / severity 篩選係 **server-side**(plan 寫住 `?status=OPEN&severity=BUG`)
-- **Implementation 係**:`<ProjectDetailPage>` 嘅 bug tab 用 `useState + useMemo` 喺 client-side filter,backend 冇 `?status=...` query support
-- **3 個錯誤應對**(都要避免):
-  1. **❌ 盲從 tracker** — 寫 spec 用 `?status=OPEN&severity=BUG` query,backend 唔認得 → test 永遠 fail
-  2. **❌ 反轉 implementation** — 為咗對齊 tracker plan 就改 backend 加 server-side filter
-  3. **❌ Skip test** — `describe.skip` 標 DIVERGED,等下個 sprint 再處理
+For SPA readiness, prefer `waitUntil: 'domcontentloaded'` plus an explicit user-visible locator over `networkidle`, which can hang while polling or WebSockets remain active.
 
-### ✅ 正確做法:Update spec to match reality + inline comment 解釋
+## Pattern 9: Removed-feature specs
 
-```typescript
-// ✅ OK: Test 對齊 actual implementation(用 client-side filter),
-// 同時 inline 註解講點解同 tracker plan 唔同
-test('US-5.6: project bug tab filters by status client-side', async ({ page }) => {
-  // Note (2026-06-10): tracker planned server-side filter via
-  // `?status=OPEN&severity=BUG`, but `<ProjectDetailPage>` actually
-  // uses client-side `useMemo` filter (see ProjectDetailPage.tsx#L210-218).
-  // Server-side filter is a future improvement (T-XX). E2E verifies
-  // the current client-side behavior; the spec is the contract.
-  await page.goto(`/projects/${projId}/bugs?status=OPEN`)
-  // Click OPEN status filter button
-  await page.getByRole('button', { name: 'Open', exact: true }).click()
-  // Assert: only OPEN bugs visible
-  const rows = page.getByTestId('bug-row')
-  await expect(rows).toHaveCount(2)
-  for (const row of await rows.all()) {
-    await expect(row).toContainText('OPEN')
-  }
-})
-```
+When a product feature has been removed, E2E specs that still reference it must be explicitly skipped with a removal reason or deleted alongside the feature. Do not leave them active as unexplained failures, and do not use a skip to conceal a still-supported feature's defect.
 
-**點解**:
-1. **Test 係 spec,唔係 plan** — 個 US 嘅 expected behavior 由 spec 表達,唔由 plan 規定
-2. **Implementation = ground truth** — Plan 係 intention;implementation 係 deployed reality
-3. **Divergence 必須文件化** — Inline comment 寫住 (a) 邊日發現,(b) tracker 點講,(c) implementation 點做,(d) 將來點 reconcile
-4. **唔好 hardcode 期待 server-side behavior** — 將來如果 backend 真係加 `?status=`,spec 要 update
+## Pattern 10: Reuse the project Playwright installation for audits
 
-### 配套 checklist(任何「tracker plan 講 X 但 implementation 做 Y」撞到時)
+When a project already has Playwright and browsers installed in its E2E workspace, run one-off audit scripts with that installation instead of introducing a second runtime. Execute Playwright commands from the workspace that owns the dependency, keep throwaway scripts outside the spec discovery path, and delete them after verification.
 
-- [ ] `git grep <X-feature>` 確認 implementation 真係做 Y
-- [ ] 寫 1-line inline comment 解釋 divergence(日子、tracker ref、implementation 嘅 source 位置)
-- [ ] Spec assert implementation 而唔係 plan
-- [ ] (Optional) 開新 T-XX follow-up 入 `docs/QA-TRACKER.md`「Plan 對齊 sprint」標 PARTIAL,等下個 sprint 處理
-- [ ] (Optional) Patch plan doc 標 divergence(例:`docs/PRD.md` US-5.6 改個 status 標 ⏸️ deferred)
+For `page.evaluate`, pass a function literal and serialize values through its argument. Before taking a full-page screenshot, inspect document height so pathological layouts cannot create enormous captures.
 
-**Anti-patterns**(要避免):
+## Project case history
 
-| Anti-pattern | 點解 NG |
+| Reference | Contents |
 |---|---|
-| Skip test with TODO | Spec 失 cover,user 唔知呢個 behavior 係 work 定 broken |
-| 為咗 spec pass 反轉 implementation | Implementation 為 product/user 設計,test 唔應該 override product decision |
-| 改 tracker 扮冇分歧 | 文件失真,將來再睇會誤導 |
-| 寫 spec 同時 assert 兩種 behavior | Race condition + 將來一邊 implement 改咗,spec 兩邊都會 fail |
-
-### 點解唔用 Step 5 「A/B/C failure class」處理
-
-Step 5 處理**失敗**嘅 case(tracker 同 implementation 對齊但 test 仲 fail)。Pattern 9 處理**冇失敗**嘅 case(tracker 同 implementation 唔對齊但 implementation 正常)— 兩者唔同。**呢個 pattern 屬於「寫 spec 嘅時候」唔係「triage failure 嘅時候」**。
-
----
-
-## 參考文件
-
-- `references/caller-ip-isolation.md` — Per-test IP 完整 implementation 細節 + 點解 stable hash 而非用 Date.now
-- `references/workers-parallel-design.md` — 邊度用 workers=1 vs parallel, shared seed 嘅 trade-off
-- `references/stack-health-diagnostic.md` — Docker stack 起唔到 4 個 root cause(Vite build silent fail / Prisma 7 strict validation / volume mount 漏 migration / external dep miss)+ Stack health 100% checklist
-- `references/tiptap-paste-patterns.md` — Tiptap / ProseMirror rich text editor E2E testing: 3 個 pitfall + 1 個 workaround template
-- `references/pre-existing-failure-triage.md` — Sprint closure 撞 pre-existing failure 嘅 **7-step diagnostic**(Step 0: git status, Step 0.5: docker exec source check, Step 1-5)+ 4-option triage pattern(2026-06-10 pm-system)+ pm-system Sprint 13 嘅 4 個 failure 嘅 root cause 預分析
-- `templates/_helpers.ts` — 已經 verified 嘅 `loginAs` helper(pm-system production use, 2026-06-09)
-
-## Pattern 10: E2E spec auth state setup — 唔好打 `/api/auth/me` 拎 user(2026-06-10 pm-system Sprint 14)
-
-### 問題
-
-寫 E2E spec 時需要攞真實 user object(id / name / role)去 inject 入 localStorage 過 frontend `AuthContext`。天真做法係用 `loginAs` 攞 token + 然後 call backend `/api/auth/me` 拎 user,然後 `loginViaStorage(page, token, user)`。
-
-**Pitfall**:Backend 嘅 auth route **唔一定 mount 喺 `/api/auth/*`**。撞過 2026-06-10:pm-system 嘅 `auth.ts` route mount 喺 `/auth/*` (root level),而其他 route(user / project / bug) 喺 `/api/*` group。Spec 寫 `/api/auth/me` 返 404,login 后個 step crash。
-
-### 解決方法:唔好 hit backend 拎 user,用 static fixture
-
-```typescript
-// ✅ OK: Static user fixture + token from helper
-async function loginViaStorage(page: Page, token: string) {
-  await page.goto(`${FRONTEND}/login`)
-  await page.evaluate(
-    ({ accessToken, refreshToken }) => {
-      localStorage.setItem('accessToken', accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
-      localStorage.setItem(
-        'user',
-        // 唔需要 backend confirm — frontend AuthContext 對 localStorage 嘅 user shape 唔做 server-side 驗證
-        // server-side auth 喺每個 API call 嘅 Authorization header
-        JSON.stringify({ id: 'admin', name: '系統管理員', email: 'admin@test.com', role: 'admin' }),
-      )
-    },
-    { accessToken: token, refreshToken: 'e2e-sprint14-refresh-token' },
-  )
-}
-```
-
-**Why 啱**:
-1. **Frontend `AuthContext` 唔會** verify 個 user object 同 server 一致 — 只係讀 localStorage 嘅 user field 做 permission check
-2. **Server-side auth 喺每個 API call 嘅 `Authorization: Bearer <token>` header** — 唔靠 user object
-3. **Spec 唔需要 user.id 對 server 真實 id**,只需要 frontend 嘅 permission check 過(e.g. `hasAnyPermission(user, ['projects.create'])` 靠 `user.role === 'admin'` 通過)
-4. **Avoid 撞 backend mount-path 嘅 pitfall** — 唔需要知道 `/api/auth/*` vs `/auth/*` 邊個啱
-
-### 撞過嘅 3 個 backend mount-path 變體
-
-| 框架/慣例 | 預設 mount | Spec 寫 |
-|---|---|---|
-| Elysia root level (`/auth/*`) | pm-system 2026-06 | `/auth/login` + `/auth/me` 喺 root,**唔喺** `/api/` |
-| Elysia grouped (`/api/auth/*`) | 一些 refactor 過嘅 app | `/api/auth/login` + `/api/auth/me` |
-| Express typical | 看 routing tree | 通常 `/api/auth/*` |
-
-**Rule**:**直接 grep `backend/src/index.ts` 嘅 `.use(authRoutes)` / `.group('/api', ...)` 確認 mount path**,唔好靠 mental model。
-
-### 配套:Auth state setup 嘅 4 步(NOT 5 步)
-
-```typescript
-// ❌ NG:5 步(login API → /api/auth/me → inject → goto → reload)— 第 2 步可能 404
-// ✅ OK:4 步(login API → inject static user → goto — 唔需要 reload 因為 await page.goto = full navigation)
-async function e2eAuth(page: Page, req: Page['request'], role: Role, testTitle: string) {
-  const token = await loginAs(req, role, testTitle)
-  await page.goto(`${FRONTEND}/login`)  // 攞到 origin
-  await page.evaluate(({ accessToken }) => {
-    localStorage.setItem('accessToken', accessToken)
-    localStorage.setItem('refreshToken', 'e2e-fixture-refresh')
-    localStorage.setItem('user', JSON.stringify({ id: role, name: 'E2E', email: `${role}@test.com`, role }))
-  }, { accessToken: token })
-  // 唔需要 reload — page.goto(targetUrl) 已經 full navigation
-}
-```
-
-### 配套 pitfall:`page.goto(URL)` vs `page.goto(URL, { waitUntil: 'networkidle' })`
-
-- `waitUntil: 'networkidle'` 喺 SPA 嘅 SPA 路由下有時 hang 喺永遠唔 idle(因為 fetch 自動 revalidate / WebSocket)
-- **Prefer** `waitUntil: 'domcontentloaded'` + 顯式 `page.waitForSelector('h1:has-text("儀表板")')` 等 UI ready
-
-## Pattern 11: Node Playwright audit script for SPA auth (2026-06-10 pm-system)
-
-### 問題
-
-`rwd-mobile-audit` skill 推薦用 Python Playwright 跑 SPA screenshot audit。但 **Python 環境 vs Node 環境** 撞過:
-
-| Environment | 撞過嘅 issue |
-|---|---|
-| Python (`/usr/local/bin/python3`) | `pip install playwright` 撞 PEP 668;`playwright install` 又 install 錯 chromium 版本(頭撞 `chromium-1155`,實際 system 已經有 `chromium-1223`)|
-| Node (`e2e/node_modules`) | 已有 `chromium-1223` install,直接 `import { chromium } from 'playwright'` work |
-
-**Recommendation**:**用 Node 而非 Python** (如果 project 已經有 `e2e/` 嘅 Playwright install)。直接 reuse 個 e2e setup。
-
-### 完整 Node script(Sprint 14 嘅 rwd-audit-s14.mjs 簡化版)
-
-```javascript
-// /tmp/rwd_audit.mjs
-import { chromium } from 'playwright'  // 用 project 嘅 e2e/node_modules
-import { promises as fs } from 'fs'
-
-const OUT = '/tmp/rwd_audit_s14'
-await fs.mkdir(OUT, { recursive: true })
-
-const PAGES = [
-  ['dashboard', 'http://localhost:8080/'],
-  ['projects', 'http://localhost:8080/projects'],
-]
-
-const browser = await chromium.launch()
-const ctx = await browser.new_context({
-  viewport: { width: 390, height: 844 },
-  isMobile: true, hasTouch: true,
-})
-const page = await ctx.new_page()
-
-// Step 1: 喺 /login 攞 token
-await page.goto('http://localhost:8080/login', { waitUntil: 'networkidle' })
-const loginResult = await page.evaluate(async () => {  // ← 函數 literal, 唔用 template literal!
-  const res = await fetch('http://localhost:4001/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': '127.0.0.1' },
-    body: JSON.stringify({ email: 'admin@test.com', password: 'admin123' })
-  })
-  if (!res.ok) return { error: 'login failed', status: res.status }
-  return await res.json()  // ← 必須 return, 否則 evaluate 返 undefined
-})
-if (loginResult.error) { console.error(loginResult); process.exit(1) }
-
-// Step 2: Inject localStorage
-await page.evaluate((t) => {
-  localStorage.setItem('accessToken', t)
-  localStorage.setItem('refreshToken', 'rwd-audit-refresh')
-  localStorage.setItem('user', JSON.stringify({ id: 'admin', name: '系統管理員', email: 'admin@test.com', role: 'admin' }))
-}, loginResult.accessToken)
-
-// Step 3: Audit each page
-const results = []
-for (const [name, url] of PAGES) {
-  await page.goto(url, { waitUntil: 'networkidle' })
-  await page.waitFor_timeout(500)
-  const scrollH = await page.evaluate('document.body.scrollHeight')
-  if (scrollH > 8000) {  // ← Pre-check 避免爆 100k px
-    console.log(`  ${name}: WARN scrollH=${scrollH}px > 8000px, skip screenshot`)
-    continue
-  }
-  await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
-  const bodyW = await page.evaluate('document.body.scrollWidth')
-  results.push({ name, url, scrollH, bodyW, overflow: bodyW > 390 })
-}
-await browser.close()
-await fs.writeFile(`${OUT}/summary.json`, JSON.stringify(results, null, 2))
-```
-
-**3 個 critical syntax**:
-1. **`await page.evaluate(async () => {...})`** — 函數 literal, 唔好用 `` `async () => {}` `` template literal (會 return undefined)
-2. **Step 2 evaluate 帶 argument**:`evaluate((t) => {...}, loginResult.accessToken)` — 第二個 arg 係 serialize 入 page context
-3. **Pre-check scrollHeight** — 避免 fullPage screenshot 爆
-
-### 從 project root 跑 vs 從 `e2e/` 跑
-
-**Pitfall**:從 `pm-system/` cwd 跑 `npx playwright test` 撞 root `package.json` 冇 playwright 嘅問題 → npm 自動 install 或者搵到舊 version → conflict。**Rule**:**從 `e2e/` cwd 跑所有 Playwright command**:
-```bash
-cd /Users/davidchu/Sites/localhost/pm-system/e2e
-node rwd-audit-s14.mjs  # 用 e2e 嘅 playwright install
-npx playwright test tests/sprint14-projects-search-and-dashboard.spec.ts
-```
-
-### Delete 跑 audit 嘅 throwaway script 跑完即刪
-
-Audit script 唔應該 commit 入 `e2e/`(test-results/ 同 playwright-report/ 已經 gitignore,但 custom audit 唔係 spec,屬於 temporary verification):
-```bash
-rm /Users/davidchu/Sites/localhost/pm-system/e2e/rwd-audit-s14.mjs
-```
-
-如果想 keep,擺去 `e2e/scripts/`(sub-dir)或者 `/tmp/`(global temp)— 唔好擺去 `e2e/tests/`(會被 Playwright 當 spec 跑)。
+| [Caller IP isolation](references/caller-ip-isolation.md) | Detailed per-test caller identity implementation. |
+| [Pre-existing failure triage](references/pre-existing-failure-triage.md) | Full diagnostic and failure-classification playbook. |
+| [Stack health diagnostic](references/stack-health-diagnostic.md) | Docker stack-health troubleshooting cases. |
+| [Tiptap paste patterns](references/tiptap-paste-patterns.md) | Rich-text paste incident details and templates. |
+| [Workers and parallel design](references/workers-parallel-design.md) | Worker-count and shared-seed trade-offs. |
+| [pm-system Sprint 13 triage](references/pm-system-sprint-13-triage.md) | Sprint 13 chronology and project-specific triage findings. |
+| [pm-system tracker divergence](references/pm-system-tracker-divergence.md) | US-5.6 tracker and implementation divergence case. |
+| [Auth mount-path incident](references/auth-me-mount-path-incident.md) | `/api/auth/me` versus `/auth/me` incident and auth-state workaround. |
+| [pm-system Sprint 14 Node audit](references/pm-system-sprint-14-node-audit.md) | Dated audit script, environment findings, and spec inventory. |
