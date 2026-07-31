@@ -443,8 +443,8 @@ const product = { id: '...', price: 50, stock: 10, ... };
 
 ## Related docs
 
-- [Testing strategy](../testing-strategy.md)
-- [Testing strategy tiered](../testing-strategy-tiered.md)
-- [Flaky test handling](../flaky-test-handling.md)
-- [Regression guard skill](../regression-guard/SKILL.md)
-- [Unit test coverage push skill](./unit-test-coverage-push/SKILL.md)
+- [Testing strategy](../../../docs/testing-strategy.md)
+- [Testing strategy tiered](../../../docs/testing-strategy-tiered.md)
+- [Flaky test handling](../../../docs/flaky-test-handling.md)
+- [Regression guard skill](../../regression-guard/SKILL.md)
+- [Unit test coverage push skill](../unit-test-coverage-push/SKILL.md)

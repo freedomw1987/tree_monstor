@@ -406,7 +406,7 @@ it('GET /api/users/:id matches schema', async () => {
 
 ## Related docs
 
-- [Testing strategy](../testing-strategy.md)
-- [Testing strategy tiered](../testing-strategy-tiered.md)
-- [Regression guard skill](../regression-guard/SKILL.md)
-- [API documentation standard](../project-documentation-standard.md)
+- [Testing strategy](../../../docs/testing-strategy.md)
+- [Testing strategy tiered](../../../docs/testing-strategy-tiered.md)
+- [Regression guard skill](../../regression-guard/SKILL.md)
+- [API documentation standard](../../../docs/project-documentation-standard.md)

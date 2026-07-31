@@ -1,6 +1,6 @@
 # Restored narrative — content moved out of SKILL.md by the distill, preserved here for git-log retrievability.
 
-*See [SKILL.md](../../SKILL.md) for the active pattern. This file collects the project-specific blocks that were compressed during the 2026-07-28 distill so the detail survives.*
+*See [SKILL.md](../SKILL.md) for the active pattern. This file collects the project-specific blocks that were compressed during the 2026-07-28 distill so the detail survives.*
 
 ```
 ┌─────────────────────────────────────────────────────┐

@@ -322,8 +322,8 @@ jobs:
 
 ## Related docs
 
-- [Testing strategy](../testing-strategy.md)
-- [Testing strategy tiered](../testing-strategy-tiered.md)
-- [Regression guard skill](../regression-guard/SKILL.md)
-- [Unit test coverage push skill](./unit-test-coverage-push/SKILL.md)
-- [QA tracker](../qa-tracker.md)
+- [Testing strategy](../../../docs/testing-strategy.md)
+- [Testing strategy tiered](../../../docs/testing-strategy-tiered.md)
+- [Regression guard skill](../../regression-guard/SKILL.md)
+- [Unit test coverage push skill](../unit-test-coverage-push/SKILL.md)
+- [QA tracker](../../../docs/qa-tracker.md)
