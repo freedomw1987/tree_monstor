@@ -1,0 +1,84 @@
+# Spec-Driven Development verification
+
+Date: 2026-07-29
+
+## Profile consistency
+
+Command:
+```text
+python3 scripts/docs_consistency_check.py
+```
+Output:
+```text
+docs consistency check passed
+```
+Exit code: 0
+
+## Skills catalog
+
+Command:
+```text
+python3 scripts/generate_skills_catalog.py --check
+```
+Output:
+```text
+nested skills catalog is up to date
+```
+Exit code: 0
+
+## Diff whitespace
+
+Command:
+```text
+git diff --check
+```
+Output: no output
+Exit code: 0
+
+## SDD fixture — deliberate red check
+
+A synthetic REQ-001 initially contained AC-001 in tests.md but omitted AC-002.
+
+Command:
+```text
+cd /tmp/sdd-gate-20260729 && (comm -23 <(grep -o 'AC-[0-9][0-9][0-9]' docs/specs/REQ-001/spec.md | sort -u) <(grep -o 'AC-[0-9][0-9][0-9]' docs/specs/REQ-001/tests.md | sort -u) | grep .) && exit 1 || true
+```
+Output:
+```text
+Exit code 1
+AC-002
+```
+Observed result: the missing AC was detected before the fixture was corrected.
+
+## SDD fixture — corrected green checks
+
+After adding AC-002 → RT-002, STATE coverage, and a PASS log, the traceability checks ran:
+
+Command:
+```text
+cd /tmp/sdd-gate-20260729 && missing_ac=$(comm -23 <(grep -o 'AC-[0-9][0-9][0-9]' docs/specs/REQ-001/spec.md | sort -u) <(grep -o 'AC-[0-9][0-9][0-9]' docs/specs/REQ-001/tests.md | sort -u)) && placeholders=$(grep -En 'RT-TBD|OPEN QUESTION.*OPEN' docs/specs/REQ-001/spec.md docs/specs/REQ-001/tests.md || true) && missing_state=$(comm -23 <(grep -o 'RT-[0-9][0-9][0-9]' docs/specs/REQ-001/tests.md | sort -u) <(grep -o 'RT-[0-9][0-9][0-9]' docs/STATE.md | sort -u)) && missing_pass=$(comm -23 <(grep -o 'RT-[0-9][0-9][0-9]' docs/specs/REQ-001/tests.md | sort -u) <(grep '^\[REGRESSION\].*| PASS |' regression.log | grep -o 'RT-[0-9][0-9][0-9]' | sort -u)) && test -z "$missing_ac$placeholders$missing_state$missing_pass" && printf 'PASS: all AC mapped\nPASS: no blocking placeholders\nPASS: all RT present in STATE\nPASS: all RT have PASS logs\n'
+```
+Output:
+```text
+PASS: all AC mapped
+PASS: no blocking placeholders
+PASS: all RT present in STATE
+PASS: all RT have PASS logs
+```
+Exit code: 0
+
+## Runtime adapter registration
+
+Command:
+```text
+readlink ~/.claude/skills/spec-driven-development
+```
+Output:
+```text
+/Users/davidchu/www/tree_monstor/adapters/claude-code/skills/spec-driven-development
+```
+Exit code: 0
+
+## Scope note
+
+No application lint/typecheck/test/build was run: this change modifies only profile markdown skill/routing documents and a Claude Code adapter wrapper; the profile-specific consistency and catalog gates above are the applicable executable checks. No hooks, commands, shared settings, or commits were created.

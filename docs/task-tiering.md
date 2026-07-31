@@ -11,8 +11,8 @@
 | Tier | 名稱 | 進入條件 | 適用 gate |
 |------|------|----------|-----------|
 | **T1** | 小型任務 | 下方判準 1-6 **全部**滿足，並已按本文檔格式申報 | 驗證驅動紅線 54-56 + 基礎紅線（永不降級）；文檔紅線 10-12 及 doc-sync gate 降為建議 |
-| **T2** | 標準任務 | 預設 tier：唔係 T1，且 project 未採用文檔基線 | T1 所有 gate + 工程紀律紅線 13-18 嘅實質要求（root cause、測試、CVE=0）；涉及嘅 doc artifact 按 `skills/regression-guard/` 等 skill 建立，唔可以因為未有文檔基線而跳過 bug-fix 紀律 |
-| **T3** | 完整基線任務 | project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md`，**或** David 明確要求 full documentation baseline | 全部紅線 + `docs/qa-gate.md` 全部 gate |
+| **T2** | 標準任務 | 預設 tier：唔係 T1，且 project 未採用文檔基線 | T1 所有 gate + 工程紀律紅線 13-18 嘅實質要求（root cause、測試、CVE=0）；涉及嘅 doc artifact 按 `skills/regression-guard/` 等 skill 建立，唔可以因為未有文檔基線而跳過 bug-fix 紀律；新 feature / user-story 另走 spec gate |
+| **T3** | 完整基線任務 | project 已存在 `docs/PRD.md` + `docs/QA-TRACKER.md`，**或** David 明確要求 full documentation baseline | 全部紅線 + `docs/qa-gate.md` 全部 gate；新 feature / user-story 另走 spec gate |
 
 **永不降級（任何 tier）**：
 
@@ -68,6 +68,16 @@ T1 / T2 做到一半發現超出判準（例如原本改 UI 文案，做落發�
 ```
 
 T2 喺缺 project doc artifact 時，同樣要申報「缺 <文檔>，等效資訊記錄喺 <位置>」。冇申報而降級 = 違規（見 SOUL.md 例外申報規則）。
+
+---
+
+## Spec gate 適用範圍
+
+Tier 只決定工作規模與文檔基線；新 feature / user-story 的前置驗收契約由 [`spec-driven-development`](../skills/spec-driven-development/SKILL.md) 定義：
+
+- T2 / T3 新 feature、scope 增量或 acceptance contract 改動：Build 前必須通過 foreground BA spec gate。
+- T1、bug fix、read-only、QA-only、trivial ops 的 routing 與例外申報：以該 skill 的 trigger boundary 為準；T1 判定仍只以本檔判準 1-6 為準。
+- 中途發現新 feature scope：套用本檔「中途升級規則」，停手、重新分級並補 spec gate。
 
 ---
 

@@ -27,7 +27,7 @@ When adding, removing, or renaming a local skill:
 
 ## Claude Code routing note
 
-These are local Tree Monstor markdown skills. They are not automatically Claude Code slash commands unless separately registered in the active Claude Code runtime. Currently registered: `regression-guard`, `existing-project-intake`, `dev-checker-loop`, `patch-corruption-recovery`, `docs-sync`, `orchestrator` — via wrappers in `adapters/claude-code/skills/` symlinked from `~/.claude/skills/`; the canonical source remains each skill's `SKILL.md` here.
+These are local Tree Monstor markdown skills. They are not automatically Claude Code slash commands unless separately registered in the active Claude Code runtime. Currently registered: `regression-guard`, `existing-project-intake`, `spec-driven-development`, `dev-checker-loop`, `patch-corruption-recovery`, `docs-sync`, `orchestrator` — via wrappers in `adapters/claude-code/skills/` symlinked from `~/.claude/skills/`; the canonical source remains each skill's `SKILL.md` here.
 
 In Claude Code:
 
@@ -43,6 +43,7 @@ In Claude Code:
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
 | [`orchestrator`](orchestrator/SKILL.md) | Coordinates subagents, task board, dependencies, progress, and failures. | Long multi-phase tasks, parallel subagent work, dependency tracking. |
+| [`spec-driven-development`](spec-driven-development/SKILL.md) | Foreground BA gate that turns each non-trivial feature request into atomic ACs and AC→RT traceability before Build. | T2/T3 new feature or user-story requests. |
 | [`dev-checker-loop`](dev-checker-loop/SKILL.md) | Dev-agent / checker-agent collaboration loop coordinated through a downstream project's `<project>/docs/STATE.md`, with evidence-based verification and escalation limits. | Multi-item development needing a built-in quality gate; "dev-loop" / checker-agent requests. |
 | [`dev-task-memory`](dev-task-memory/SKILL.md) | Concept + recipes：dev-task state file、WIP 偵測、handoff 文檔（runtime 自動化已退役）。 | 長任務需要 state 持久化概念 / 配方時參考；自動化用 Claude Code 內建機制。 |
 | [`interruption-recovery`](interruption-recovery/SKILL.md) | Concept + recipes：恢復後驗證、由 git 重建 context、smoke-before-merge（runtime 自動化已退役）。 | 中斷後恢復需要驗證配方時參考；resume 用 Claude Code 內建機制。 |

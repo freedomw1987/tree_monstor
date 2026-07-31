@@ -10,7 +10,7 @@
 | **CEO** | `ceo 市場分析` / `ceo 商業計劃` | 市場機會、成本模型、營收策略、GTM | 用戶需求 | `docs/ceo-market-analysis.md` / `docs/ceo-business-plan.md` |
 | **Researcher** | `前期調研` / `技術調研` | 技術可行性、競品分析、技術選型驗證 | 用戶需求 | 調研報告 |
 | **Tech Lead** | `tech lead` / `技術負責人` | 綜合 BA/Design/SA，産出執行 plan | PRD + Design + Architecture | 執行計劃 |
-| **BA** | `BA 商業分析` | 需求挖掘、用戶故事、PRD | 用戶原始需求 | `docs/PRD.md` |
+| **BA** | `BA 商業分析` / `需求規格` / `spec gate` | 需求挖掘、用戶故事、PRD、per-request acceptance contract | 用戶原始需求 + source / project docs | `docs/PRD.md` + `docs/specs/REQ-<NNN>/spec.md` + `tests.md` |
 | **Designer** | `UI/UX 設計` | Wireframe、Design System | PRD | `docs/DESIGN.md` |
 | **SA** | `SA 架構設計` | 系統架構、API 契約、技術選型 | PRD | `docs/architecture/0001-*.md` / ADR |
 | **Frontend** | `前端開發` | UI 實現、API 串接、響應式 | Architecture + Design | 前端代碼 |

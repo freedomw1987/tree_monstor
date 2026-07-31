@@ -69,6 +69,19 @@ Intake report 必須識別：
 
 ---
 
+## 0C. Spec Gate（T2/T3 新功能開工前）
+
+T2 / T3 新 feature、user-story、scope 增量或 acceptance contract 改動，先執行 [`spec-driven-development`](../skills/spec-driven-development/SKILL.md)：
+
+1. Fresh foreground BA subagent 產出 `docs/specs/REQ-<NNN>/spec.md` 和 `tests.md`。
+2. `spec.md` 的 Given/When/Then AC 必須 atomic、source-verified，blocking `OPEN QUESTION` = 0。
+3. `tests.md` 每個 AC 至少映射一個 real `RT-XXX`；STATE / harness 未存在時可暫用 `RT-TBD-*`，但 loop 第一批 work item 必須轉 real ID。
+4. Gate ready 後，`dev-checker-loop` 導入 AC / RT；全部 AC 有 executable test、PASS log 和 required use-case evidence 前不可結束。
+
+**未通過 = 停留在 Plan，不可 Build。** T1、bug fix、read-only、QA-only、trivial ops 的例外 routing 以該 skill 和 `docs/task-tiering.md` 為準，並必須申報。
+
+---
+
 ## 1. Doc-Code Sync Check（任何改動後必跑）
 
 **任何 code 或文檔改動** → 必須 sync 對應文檔：
@@ -80,6 +93,7 @@ Intake report 必須識別：
 | **架構 / data model / infrastructure 改動** | 新 `ADR` + 受影響 docs（如 `API.md` / `TECH-DEBT.md`）|
 | **UI / component / layout / token 改動** | `DESIGN.md` + `TEST-COVERAGE.md` |
 | **User Story 改動** | `PRD.md`（更新 US）+ `QA-TRACKER.md`（PARTIAL / 新 row）|
+| **T2/T3 新 feature / user-story 請求** | `docs/specs/REQ-<NNN>/spec.md` + `tests.md`（已有 PRD baseline 時另同步 `PRD.md` + `QA-TRACKER.md`）|
 | **David 在 Build 中提出新需求 / 修正** | 暫停 Build → 更新 `PRD.md` + `QA-TRACKER.md` + 受影響 docs → 再繼續 |
 | **Bug fix** | `REGRESSION-GUARD.md`（新 RG-XXX）+ `TEST-COVERAGE.md`（regression test）+ 相關 US row 備註 |
 | **Review / QA / code-review feedback** | Apply and update affected docs, or record deferral / rejection rationale in `TECH-DEBT.md`, `QA-TRACKER.md`, `REGRESSION-GUARD.md`, ADR, or the affected canonical doc |
