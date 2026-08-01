@@ -310,3 +310,9 @@ Developer 主體
 - 處理升級報告
 - 做重大決策（架構變更、用戶決策）
 - 最終交付確認
+
+---
+
+## Related references
+
+- [`references/subagent-recovery-patterns.md`](references/subagent-recovery-patterns.md) — trust-but-verify on `completed`, early-stop signals for typecheck loops, stuck-main-agent detection + recovery procedure, pre-`git push` audit. Compact patterns folded from the now-archived `agent-stuck-recovery` + `subagent-timeout-recovery` skills.
