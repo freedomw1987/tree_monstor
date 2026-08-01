@@ -197,7 +197,7 @@ npm run qa:health
 - E2E 必須喺 staging / preview environment 跑(唔好喺 production)
 - 用 Page Object Model 設計 test code(減少維護成本)
 
-**Setup**(沿用 `skills/testing/playwright-node-api-container/`):
+**Setup**:
 ```typescript
 // e2e/auth.spec.ts
 import { test, expect } from '@playwright/test';

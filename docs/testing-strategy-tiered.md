@@ -110,7 +110,7 @@ T2 全部 +:
 
 ### QA Gate 對應
 
-跟 `docs/qa-gate.md` §4 嘅全套 11 步 + `skills/testing/mutation-testing/` 嘅 quarterly mutation score 報告附入 `docs/qa-tracker.md` 嘅 changelog。
+跟 `docs/qa-gate.md` §4 嘅全套 11 步 + quarterly mutation score 報告附入 `docs/qa-tracker.md` 嘅 changelog。
 
 ---
 
