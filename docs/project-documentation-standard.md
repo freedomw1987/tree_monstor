@@ -152,38 +152,8 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 **目的**:讓任何新人(包含 3 個月後的自己)在 5 分鐘內掌握這個 project 嘅全貌。
 
-**必填區塊**:
-```markdown
-# <Project Name> — Project Overview
-
-## 一句話
-[這個 project 做什麼,用一句非技術語言解釋]
-
-## 目標用戶
-- 主要: [誰會用]
-- 次要: [誰會間接受影響]
-
-## 核心價值主張
-- 用戶用呢個 project 解決咩問題?
-- 跟現有方案比,我們的差異點是?
-
-## 成功標準
-- KPI 1: [具體可量度,例:DAU > 1000]
-- KPI 2: ...
-
-## 範圍 (Scope)
-- ✅ In scope: [做咩]
-- ❌ Out of scope: [不做咩,防止 scope creep]
-
-## 主要 Risk
-- Risk 1: [風險] → Mitigation: [應對]
-- Risk 2: ...
-
-## 變更歷史
-| 日期 | 變更 | 原因 |
-|------|------|------|
-| 2026-06-06 | 初版 | 從 kanban task t_c658eba4 開始 |
-```
+**Template**: 見 [`./project-doc-templates/project-overview-template.md`](./project-doc-templates/project-overview-template.md)
+*Sections: 一句話 / 目標用戶 / 核心價值主張 / 成功標準 / 範圍 / 主要 Risk / 變更歷史*
 
 **更新時機**:
 - 每次 scope 變更
@@ -206,75 +176,11 @@ docs/
     └── ...             ← 每 US 一個檔
 ```
 
-**PRD.md（master）必填區塊**:
-```markdown
-# <Project Name> — PRD
+**PRD.md（master）Template**: 見 [`./project-doc-templates/prd-master-template.md`](./project-doc-templates/prd-master-template.md)
+*Sections: Scope / User Story Index / NFR / 假設與風險 / 變更紀錄*
 
-> **Status:** Living document. US index references US/ subfiles.
-
-## Scope（與 PROJECT-OVERVIEW 一致，scope 變更兩邊同步）
-
-## User Story Index
-
-| US | 標題 | 優先級 | 狀態 | Spec |
-|----|------|--------|------|------|
-| US-001 | 登入 | P0 | DONE | [docs/US/US-001-login.md](US/US-001-login.md) |
-| US-002 | 註冊 | P0 | IN_PROGRESS | [docs/US/US-002-registration.md](US/US-002-registration.md) |
-| US-003 | 忘記密碼 | P1 | DRAFT | [docs/US/US-003-password-reset.md](US/US-003-password-reset.md) |
-
-狀態: `DRAFT` / `IN_PROGRESS` / `DONE` / `DEPRECATED`
-
-## Non-Functional Requirements
-- 效能: response time < 200ms (p95)
-- 安全: 敏感資料加密儲存,API rate limit 100 req/min
-- 兼容性: 支援 Chrome/Firefox/Safari 最新兩個 major version
-- 可用性: 99.9% uptime,允許每月 43 分鐘 downtime
-
-## 假設與風險
-- 假設: 用戶有 Gmail
-- 風險: ...
-
-## 變更紀錄
-| 日期 | US ID | 變更 | 原因 |
-|------|-------|------|------|
-```
-
-**US-XXX-<slug>.md（per-US 檔）必填區塊**:
-```markdown
-# US-001 — 登入
-
-**狀態**: DONE
-**優先級**: P0
-**對應文件**: [PRD.md § User Story Index](../PRD.md)
-**對應 QA tracker row**: US-001
-**對應 regression test**: RT-001（路徑: `tests/auth/login.spec.ts`）
-**最後更新**: 2026-08-02 by dev-agent
-
-## 描述
-**As** 已註冊用戶 **I want** 用 email + 密碼登入 **so that** 存取個人化功能
-
-## 驗收標準
-- [ ] Given 已註冊 email + 正確密碼, when 提交登入表單, then 200 + 跳轉 dashboard
-- [ ] Given 錯誤密碼, when 提交, then 401 + 顯示「帳號或密碼錯誤」
-- [ ] Given 連續 5 次失敗, when 第 6 次, then 429 + 鎖 15 分鐘
-
-## 邊界情況（edge cases）
-- 空字串 → 前端擋（HTML required），後端擋（400 INVALID_EMAIL）
-- 密碼 < 8 字元 → 前端擋
-- Email 不存在 vs 密碼錯誤 → 同一錯誤訊息（不洩漏哪個錯）
-
-## Out of scope
-- SSO（GitHub / Google）— 屬 US-005
-- 記住我（Remember Me）— 屬 US-006
-
-## 依賴
-- US-002 註冊（必須先有帳號）
-
-## 變更紀錄
-| 日期 | 變更 | 原因 |
-|------|------|------|
-| 2026-08-02 | 初版 | 從 plan stage 共識落實 |
-```
+**Per-US Template**: 見 [`./project-doc-templates/us-template.md`](./project-doc-templates/us-template.md)
+*Sections: 描述 / 驗收標準 / 邊界情況 / Out of scope / 依賴 / 變更紀錄*
 
 **User Story 編號規則**:`US-` + 3 位數（`US-001`, `US-002` ...）；如需拆細 sub-task，可用 `US-001.1` / `US-001.2`。**所有 test case 都引用 US 編號**。Per-US 檔命名：`US-XXX-<kebab-slug>.md`（例：`US-001-login.md`）。
 
@@ -303,189 +209,15 @@ docs/
     └── ...
 ```
 
-**DESIGN.md（master）必填區塊**:
-```markdown
-# Design Spec — <Project Name>
+**DESIGN.md（master）Template**: 見 [`./project-doc-templates/design-master-template.md`](./project-doc-templates/design-master-template.md)
+*Sections: Overview / Design Tokens (Colors/Typography/Spacing/Elevation/Shapes) / Component Index / Page Index / Do's and Don'ts / Changelog*
 
-> **Status:** Living document. Tokens here are single source of truth; per-component specs live in components/, per-page specs in pages/.
+**components/<Name>.md（per-component contract）Template**: 見 [`./project-doc-templates/component-contract-template.md`](./project-doc-templates/component-contract-template.md)
+*Sections: Purpose / Props / Events / States / Accessibility / Token usage / Do's and Don'ts / Changelog*
+*No-code rule*: contract 只列 props / events / a11y / states，**不寫 source 語言 example**。
 
-## Overview
-- 設計理念、品牌定位
-- 目標用戶畫像
-- 設計參考（inspiration links）
-
-## Design Tokens
-
-### Colors
-| Token | HEX | 用途 |
-|-------|-----|------|
-| --color-primary | #FF6B35 | CTA, 強調 |
-| --color-bg | #FFFFFF | 背景 |
-| ... | ... | ... |
-
-### Typography
-| Token | Font | Size / Line-height | Weight | 用途 |
-|-------|------|-------------------|--------|------|
-| --text-h1 | Inter | 32/40 | 700 | 頁面標題 |
-| --text-body | Inter | 16/24 | 400 | 內文 |
-| ... | ... | ... | ... | ... |
-
-### Spacing
-- 4px grid system; --space-1: 4px, --space-2: 8px, --space-3: 16px, --space-4: 24px, --space-5: 32px
-
-### Elevation
-| Token | 用途 |
-|-------|------|
-| --elevation-1 | Card |
-| --elevation-2 | Modal |
-| ... | ... |
-
-### Shapes
-- Border radius: 4px (small), 8px (medium), 16px (large)
-
-## Component Index
-
-| Component | 規格 | 對應 US |
-|-----------|------|---------|
-| Button | [components/Button.md](components/Button.md) | US-001, US-007 |
-| Input | [components/Input.md](components/Input.md) | US-001, US-002 |
-| ... | ... | ... |
-
-## Page Index
-
-| Page | 規格 | 對應 US |
-|------|------|---------|
-| Login | [pages/Login.md](pages/Login.md) | US-001 |
-| Dashboard | [pages/Dashboard.md](pages/Dashboard.md) | US-007 |
-| ... | ... | ... |
-
-## Do's and Don'ts
-- ✅ Do: 文字按鈕至少 44x44px
-- ❌ Don't: 顏色用純黑/純白(用 neutral 9 / neutral 1)
-
-## Changelog
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
-
-**components/<Name>.md（per-component contract）必填區塊**:
-
-> **No-code rule**：contract 只列 props / events / a11y / states，**不寫 source 語言 example**。Agent 對照 contract 寫實作 code，contract 跟 code 不會 drift。
-
-```markdown
-# Component: Button
-
-**對應 US**: US-001, US-007
-**對應實作**: `src/components/Button.tsx`（僅 reference，不放 code snippet）
-
-## Purpose
-Primary action affordance for forms、dialogs、navigation CTAs.
-
-## Props
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| variant | `primary` \| `secondary` \| `ghost` | no | `primary` | Visual variant |
-| size | `sm` \| `md` \| `lg` | no | `md` | Size token |
-| label | string | yes | — | Button text |
-| onClick | `() => void` | yes | — | Click handler |
-| disabled | boolean | no | `false` | Disabled state |
-| loading | boolean | no | `false` | Loading spinner replaces label |
-| iconLeft | string \| null | no | `null` | Icon name (per icon registry) |
-| type | `button` \| `submit` \| `reset` | no | `button` | HTML button type |
-
-## Events
-- `click` → calls `onClick`
-- Keyboard: `Enter` / `Space` triggers click
-
-## States
-default / hover / active / disabled / loading
-
-## Accessibility
-- Min hit-area: 44×44px
-- `role="button"`
-- `aria-disabled` when `disabled` 或 `loading`
-- Visible focus ring per `--focus-ring` token
-- Loading state: `aria-busy="true"`, label remains for screen readers
-
-## Token usage
-- background → `--color-primary`（或 `secondary`/`ghost` 對應變體）
-- text → `--color-on-primary`
-- padding → `--space-2` `--space-3`
-- radius → `--shape-small` (4px)
-- elevation → `--elevation-1` (default), `--elevation-2` (hover)
-
-## Do's and Don'ts
-- ✅ Do: 文字按鈕至少 44x44px
-- ❌ Don't: 嵌套 button（a11y 違規）
-
-## Changelog
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
-
-**pages/<page>.md（per-page spec）必填區塊**:
-
-```markdown
-# Page: Login
-
-**對應 US**: US-001
-**URL**: `/login`
-**對應實作**: `src/pages/Login.tsx`
-
-## Purpose
-用戶輸入 email + 密碼登入。
-
-## Wireframe
-```
-┌────────────────────────────────┐
-│          [Brand Logo]          │
-│                                │
-│   ┌────────────────────────┐   │
-│   │  Email                 │   │
-│   │  [_______________]     │   │
-│   │                        │   │
-│   │  Password              │   │
-│   │  [_______________]     │   │
-│   │                        │   │
-│   │  [    Sign In (md)    ] │   │
-│   │                        │   │
-│   │  Forgot password?      │   │
-│   │  Don't have account?   │   │
-│   └────────────────────────┘   │
-│                                │
-└────────────────────────────────┘
-```
-
-## Components used
-- Input (email, password)
-- Button (primary, md)
-- Link (forgot password, sign up)
-
-## Interaction spec
-1. 用戶輸入 → 觸發 `onChange` → 表單 state 更新
-2. submit 按鈕：所有欄位 valid 前 disabled
-3. submit 後：顯示 loading state（spinner replaces label）
-4. 成功 → 跳轉 `/dashboard`
-5. 失敗 → 表單下方顯示 error（紅字），按鈕恢復 default state
-6. 連續 5 次失敗 → 429 鎖 15 分鐘（form disabled）
-
-## States
-- `idle`: 預設
-- `submitting`: loading 旋轉
-- `error`: 顯示錯誤訊息
-- `locked`: 429 後 form disabled，顯示剩餘時間
-
-## Accessibility
-- Page title: "Login"
-- Form labels 明確（不只是 placeholder）
-- 鍵盤 navigation: Tab 順序 email → password → submit
-- 錯誤訊息: `role="alert"`, `aria-live="polite"`
-- Focus 自動到第一個 error field
-
-## Changelog
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
+**pages/<page>.md（per-page spec）Template**: 見 [`./project-doc-templates/page-template.md`](./project-doc-templates/page-template.md)
+*Sections: Purpose / Wireframe (ASCII) / Components used / Interaction spec / States / Accessibility / Changelog*
 
 **更新時機**:
 - 加新 component → 加 `components/<Name>.md` + 更新 DESIGN.md index
@@ -501,41 +233,8 @@ default / hover / active / disabled / loading
 
 **位置**:`docs/architecture/NNNN-<short-title>.md`(NNNN 是 4 位數,單調遞增)
 
-**模板**(沿用 Michael Nygard ADR 格式):
-```markdown
-# ADR-0001 — <簡短標題>
-
-## Status
-- Proposed / Accepted / Deprecated / Superseded by ADR-XXXX
-
-## Context
-[面對咩問題?有咩 constraints?有咩 forces?]
-
-## Decision
-[揀咗咩方案?具體講做咩。]
-
-## Consequences
-### Positive
-- 好處 1
-- 好處 2
-### Negative
-- 壞處 1
-- 壞處 2
-### Neutral
-- 中性影響
-
-## Alternatives Considered
-### 方案 A — [名]
-- 優: ...
-- 缺: ...
-- 不選原因: ...
-
-### 方案 B — [名]
-- ...
-
-## References
-- [相關連結]
-```
+**Template**: 見 [`./project-doc-templates/adr-template.md`](./project-doc-templates/adr-template.md)（Michael Nygard 格式）
+*Sections: Status / Context / Decision / Consequences (Positive/Negative/Neutral) / Alternatives Considered / References*
 
 **範例 ADR**:
 - `0001-use-postgres-for-primary-db.md`
@@ -565,153 +264,11 @@ docs/
     └── ...
 ```
 
-**API.md（master）必填區塊**:
-```markdown
-# API Reference — <Project Name>
+**API.md（master）Template**: 見 [`./project-doc-templates/api-master-template.md`](./project-doc-templates/api-master-template.md)
+*Sections: Conventions (Request/Response/Error code/Auth) / Endpoint Index / QA / Regression Endpoints / Changelog*
 
-> **Status:** Living document. Conventions here are cross-cutting; per-resource contracts live in endpoints/.
-
-> Base URL: `https://api.example.com/v1`
-> Auth: Bearer JWT in `Authorization` header
-> Content-Type: `application/json`
-
-## Conventions
-
-### Request format
-- All request bodies are JSON
-- Timestamps: ISO 8601 UTC (`2026-08-02T12:34:56Z`)
-- IDs: UUID v4 unless otherwise noted
-- Pagination: cursor-based, see [endpoints/users.md § List users](endpoints/users.md)
-
-### Response format
-- Success: `2xx` with JSON body
-- Error: `4xx`/`5xx` with `{ error: { code, message, details? } }` body
-
-### Error code convention
-| Status | Meaning |
-|--------|---------|
-| 400 | INVALID_* (client-side validation) |
-| 401 | UNAUTHENTICATED |
-| 403 | UNAUTHORIZED / FORBIDDEN |
-| 404 | NOT_FOUND |
-| 409 | CONFLICT_* |
-| 429 | RATE_LIMIT |
-| 5xx | INTERNAL — server-side, never leaks stack |
-
-### Auth
-- Bearer JWT in `Authorization` header
-- Token TTL: access 1h, refresh 30d
-- Refresh endpoint: [endpoints/auth.md § POST /auth/refresh](endpoints/auth.md)
-
-## Endpoint Index
-
-| Resource | 規格 | Endpoints |
-|----------|------|-----------|
-| auth | [endpoints/auth.md](endpoints/auth.md) | POST /auth/login, POST /auth/refresh, POST /auth/logout |
-| users | [endpoints/users.md](endpoints/users.md) | GET /users/{id}, PATCH /users/{id}, GET /users |
-| orders | [endpoints/orders.md](endpoints/orders.md) | POST /orders, GET /orders/{id}, ... |
-| ... | ... | ... |
-
-## QA / Regression Endpoints
-
-> Scope: dev/test/staging only. Production must not mount `/__qa/*` or must hard reject before side effects.
-
-| Method | Path | Purpose | Auth / Guard | Data Scope | Audit | Production Behavior | Related US/RG |
-|--------|------|---------|--------------|------------|-------|---------------------|---------------|
-| POST | /__qa/seed | Seed deterministic fixture | QA secret + staging auth | test tenant only | yes | 404 / 403 | US-001 / RG-001 |
-| ... | ... | ... | ... | ... | ... | ... | ... |
-
-## Changelog
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
-
-**endpoints/<resource>.md（per-resource）必填區塊**:
-
-```markdown
-# Endpoints: auth
-
-**對應 US**: US-001, US-005, US-006
-**對應實作**: `src/routes/auth.ts`（僅 reference）
-
-## POST /auth/login
-
-**描述**: 用戶登入,回傳 access token + refresh token
-
-**對應 US**: US-001
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "string (8+ chars)"
-}
-```
-
-**Response 200**:
-```json
-{
-  "access_token": "eyJ...",
-  "refresh_token": "...",
-  "expires_in": 3600
-}
-```
-
-**錯誤碼**:
-| Status | Code | 說明 |
-|--------|------|------|
-| 400 | INVALID_EMAIL | Email 格式錯 |
-| 401 | INVALID_CREDENTIALS | 帳號/密碼錯（不洩漏哪個錯） |
-| 429 | RATE_LIMIT | 1 分鐘內超過 5 次 |
-
-**對應 Test**: `tests/integration/auth/login.spec.ts`（RT-001）
-**對應 regression hook**: RG-001 / `__qa/regression/RG-001`
-
-## POST /auth/refresh
-
-**描述**: 用 refresh token 換新 access token
-
-**對應 US**: US-001
-
-**Request Body**:
-```json
-{
-  "refresh_token": "..."
-}
-```
-
-**Response 200**:
-```json
-{
-  "access_token": "eyJ...",
-  "expires_in": 3600
-}
-```
-
-**錯誤碼**:
-| Status | Code | 說明 |
-|--------|------|------|
-| 401 | INVALID_REFRESH_TOKEN | refresh token 過期或無效 |
-
-## POST /auth/logout
-
-**描述**: 撤銷 refresh token（access token 自然過期）
-
-**對應 US**: US-001
-
-**Request Body**: empty
-
-**Response 204**: no content
-
-**錯誤碼**:
-| Status | Code | 說明 |
-|--------|------|------|
-| 401 | UNAUTHENTICATED | 缺少 / 無效 access token |
-
-## Changelog
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
+**endpoints/<resource>.md（per-resource）Template**: 見 [`./project-doc-templates/endpoint-resource-template.md`](./project-doc-templates/endpoint-resource-template.md)
+*每 endpoint 一段: 描述 / Request Body (JSON) / Response (JSON) / 錯誤碼 / 對應 Test / 對應 regression hook*
 
 **No-code rule**:JSON schema（request/response/error body）保留 — 它們是 interface 規格，跟 code 解耦。**不寫** TS/JS/Python 等 source 語言 fetch / axios / 客戶端範例。
 
@@ -742,91 +299,11 @@ docs/
     └── ...
 ```
 
-**TEST-COVERAGE.md（master）必填區塊**:
-```markdown
-# Test Coverage — <Project Name>
+**TEST-COVERAGE.md（master）Template**: 見 [`./project-doc-templates/test-coverage-master-template.md`](./project-doc-templates/test-coverage-master-template.md)
+*Sections: User Story → Coverage 對照 / 測試金字塔分佈 / Regression Mode / Hooks (RT/RG master index) / 已知未覆蓋區域 / Changelog*
 
-> 最後更新: YYYY-MM-DD
-> 總體覆蓋率: X% (statement / branch / function / line)
-
-## User Story → Coverage 對照（summary）
-
-| US | 標題 | 規格 | Unit | Integration | E2E | 整體狀態 |
-|----|------|------|------|-------------|-----|---------|
-| US-001 | 登入 | [coverage/US-001.md](coverage/US-001.md) | ✅ 3 | ✅ 1 | ✅ 1 | PASS |
-| US-002 | 註冊 | [coverage/US-002.md](coverage/US-002.md) | ✅ 5 | ✅ 2 | ❌ 0 | PARTIAL |
-| US-003 | 忘記密碼 | [coverage/US-003.md](coverage/US-003.md) | ✅ 2 | ✅ 1 | ✅ 1 | PASS |
-| ... | ... | ... | ... | ... | ... | ... |
-
-狀態: `PASS` / `PARTIAL` / `NONE` / `FLAKY`
-
-## 測試金字塔分佈
-- Unit tests: N
-- Integration tests: M
-- E2E tests: K
-- Manual smoke tests: L
-
-## Regression Mode / Hooks（RT/RG master index）
-
-| ID | Type | US | Spec | Test command | Status |
-|----|------|----|------|--------------|--------|
-| RT-001 | Feature | US-001 | coverage/US-001.md | `test:regression:rt -- RT-001` | READY |
-| RG-001 | Bug regression | US-001 | docs/REGRESSION-GUARD.md | `test:regression:rg -- RG-001` | READY |
-| ... | ... | ... | ... | ... | ... |
-
-## 已知未覆蓋區域
-- [ ] US-005 edge case: empty list（spec: docs/US/US-005.md）
-- [ ] US-012 性能測試未做
-- [ ] US-020 a11y 測試
-
-## 變更歷史
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
-
-**coverage/US-XXX.md（per-US coverage）必填區塊**:
-
-```markdown
-# Coverage: US-001 — 登入
-
-**對應 US**: [docs/US/US-001-login.md](../US/US-001-login.md)
-**對應 RT**: RT-001
-**最後更新**: YYYY-MM-DD by dev-agent
-
-## Test inventory
-
-### Unit tests
-| Test file | 覆蓋範圍 | 狀態 |
-|-----------|----------|------|
-| `tests/unit/auth/password-validator.test.ts` | 密碼強度校驗 | ✅ |
-| `tests/unit/auth/login-form-validation.test.ts` | 表單欄位驗證 | ✅ |
-| `tests/unit/auth/rate-limiter-token-bucket.test.ts` | 5次/15min rate limit 邏輯 | ✅ |
-
-### Integration tests
-| Test file | 覆蓋範圍 | 狀態 |
-|-----------|----------|------|
-| `tests/integration/auth/login.spec.ts` | POST /auth/login + DB + JWT 簽發 | ✅ |
-
-### E2E tests
-| Test file | 覆蓋範圍 | 狀態 |
-|-----------|----------|------|
-| `tests/e2e/auth/login-happy-path.spec.ts` | UI 登入 happy path | ✅ |
-| `tests/e2e/auth/login-rate-limit.spec.ts` | 連續失敗觸發 429 | ✅ |
-
-## RT-001 (regression test)
-- **位置**: `tests/regression/auth/RT-001-login.spec.ts`
-- **掛入開關**: `REGRESSION_MODE=1 bun test:regression`
-- **斷言**: 用戶可觀察行為（200 + redirect、401 + error message、429 + 鎖定）— 不斷言實作細節
-- **最後 PASS 日期**: YYYY-MM-DD
-
-## 已知 gap
-- 2FA 流程未覆蓋（US-005 範圍）
-- 第三方 SSO 失敗 fallback 未覆蓋
-
-## Changelog
-| 日期 | 變更 | 原因 |
-|------|------|------|
-```
+**coverage/US-XXX.md（per-US coverage）Template**: 見 [`./project-doc-templates/coverage-us-template.md`](./project-doc-templates/coverage-us-template.md)
+*Sections: Test inventory (Unit/Integration/E2E) / RT-XXX 詳情 / 已知 gap / Changelog*
 
 **更新時機**:
 - 每個 sprint 結束
@@ -855,43 +332,8 @@ docs/
 
 **位置**:`docs/retros/YYYY-MM-DD-<short-name>.md`
 
-**必填區塊**:
-```markdown
-# Retrospective — <Feature> — YYYY-MM-DD
-
-## 概述
-- 做了什麼
-- 涉及哪些 user stories
-- 花了多少時間(預估 vs 實際)
-
-## 做得好的
-1. ...
-2. ...
-
-## 需要改進的
-1. ...
-2. ...
-
-## 關鍵教訓 (Lessons Learned)
-1. ...
-2. ...
-
-## 決策回訪（每次 retro 必做一個）
-- 抽查對象: [隨機抽一個過去的 ADR / 技術選擇 / Think-Plan 決策]
-- 當初的理由: [當時為什麼這樣選]
-- 以現在所知: [會不會選不同？為什麼]
-- 結論: [維持 / 需要新 ADR 修正 / 記入 TECH-DEBT]
-
-## 下次改進 Action Items
-- [ ] AI: ...
-- [ ] Owner: ...
-- [ ] Due: YYYY-MM-DD
-
-## 對文件的更新
-- [ ] TECH-DEBT.md 新增項目
-- [ ] 設計 token 需要更新
-- [ ] ADR 需要新增
-```
+**Template**: 見 [`./project-doc-templates/retrospective-template.md`](./project-doc-templates/retrospective-template.md)
+*Sections: 概述 / 做得好的 / 需要改進的 / 關鍵教訓 / 決策回訪 / 下次改進 Action Items / 對文件的更新*
 
 **更新時機**:
 - 每個 feature 完成後
@@ -906,35 +348,8 @@ docs/
 
 **目的**:紅線 55（實證驗證）的**執行入口**。把「這個專案的最小驗證命令是什麼」寫死在一個固定位置，agent 交付前照跑，不用每次重新推斷、不會跑錯或漏跑。
 
-**必填區塊**:
-```markdown
-# Verify — <Project Name>
-
-> 最後核對: YYYY-MM-DD（命令與 package.json / tooling 一致）
-
-## Verification commands
-
-| Gate | Command | N/A + reason |
-|------|---------|--------------|
-| Lint | `bun run lint` | |
-| Typecheck | `bun run typecheck` | |
-| Test | `bun test` | |
-| Build | `bun run build` | |
-| Smoke (deploy 後) | `curl -fsS https://<host>/health` | |
-
-## Regression suite
-
-- Full regression: `bun run test:regression`（或 N/A + reason）
-
-## 規則
-
-- 每個 gate 必須有 command 或明確 N/A + reason，**不可留空**。
-- 代碼改動交付前，跑最小相關 gates 並回報真實輸出（紅線 55）。
-- **驗證輸出必須落地成 artifact**：每次交付前的驗證寫入
-  `docs/verify-log/YYYY-MM-DD-<task>.txt`（執行的命令 + 真實輸出摘要 + exit code；
-  跑唔到嘅 gate 在 log 寫 N/A + reason）。「聲稱驗證過」必須可覆核。
-- `package.json` scripts / test runner / build tooling 變更時，本檔必須同 commit 更新。
-```
+**Template**: 見 [`./project-doc-templates/verify-template.md`](./project-doc-templates/verify-template.md)
+*Sections: Verification commands table / Regression suite / 規則 / Verify-log artifact 規則*
 
 **Verify-log artifact 規則**：
 
