@@ -234,26 +234,36 @@ Agent 走 Think/Plan 互動：
 
 ---
 
-## 不會自動發生的事
+## 不會自動發生的事（三層 auto model）
 
-| Agent 唔會...                               | 自動程度  | 你需要...                                                             |
-| ----------------------------------------- | ----- | ------------------------------------------------------------------ |
-| **Dispatch subagent** 做 multi-subagent 協調 | ❌ 唔自動 | Skill 載入自動，但 dispatch 須主動 call `Agent` tool 開始派工                   |
-| **寫 Plan docs**                           | ❌ 唔自動 | `plan-author` 載入自動，但 US / ADR / docs 寫入須主動                         |
-| **跑 dev+checker inner loop**              | ❌ 唔自動 | `orchestrator` § Inner loop 載入自動，但 STATE.md 協調 + spawn checker 須主動 |
-| **補 RG entry**                            | ❌ 唔自動 | `regression-guard` 載入自動，但 reproduce + fix + RG-XXX 須主動             |
-| **寫 retrospective**                       | ❌ 唔自動 | `orchestrator` § Reflect 或 inline retro 須主動                        |
-|                                           |       |                                                                    |
+> **三層 automatic**：
+> 1. ✅ **Auto-load** — 你講嘅訊息命中某 skill 嘅 `trigger:` keyword → Claude Code 自動 inject SKILL.md 入 context
+> 2. ✅ **Auto-route** — 讀 orchestrator SKILL.md 嘅 trigger table → 知「咩時候派咩 role」（**呢個 layer 自動** — 唔使 Agent 自己決定）
+> 3. ❌ **Auto-execute** — 實際 `Agent tool call` / `Write` / `Bash` / git commit 仍須 Agent 主動執行
+>
+> 即係「**睇到 + 路由自動，做唔自動**」。
+
+| Agent 唔會...                               | Auto-load | Auto-route | Auto-execute | 你需要...                                                                                       |
+| ----------------------------------------- | --------- | ---------- | ------------ | -------------------------------------------------------------------------------------------- |
+| **Dispatch subagent** 做 multi-subagent 協調 | ✅         | ✅          | ❌            | Orchestrator trigger table 自動建議派邊個 role；但 `Agent tool call` 仍須主動                      |
+| **寫 Plan docs**                           | ✅         | ✅          | ❌            | `plan-author` 載入自動；4 個 Plan-phase agents（BA / Designer / SA / Documentation Engineer）按標準寫入；US / ADR / docs 寫入仍須主動 |
+| **跑 dev+checker inner loop**              | ✅         | ✅          | ❌            | `orchestrator` § Inner loop 載入自動；STATE.md 協調 + spawn checker 仍須主動                          |
+| **補 RG entry**                            | ✅         | ✅          | ❌            | `regression-guard` 載入自動；reproduce + fix + RG-XXX 仍須主動                                  |
+| **寫 retrospective**                       | ✅         | ✅          | ❌            | `orchestrator` § Reflect 載入自動；retro 寫入仍須主動                                          |
+
+**Auto-route 解釋**：orchestrator 嘅 trigger table（22 個 phase-signal → role 映射）+ 22 個 `.claude/agents/<role>.md` 定義 + 統一嘅「Agent standards by phase」section — 三者一齊令 Agent **唔使再自己決定派邊個**。Agent 讀 table 即知「Build phase + 前端 keyword → 派 `frontend` agent」，**路由決策成本接近零**。但 `Agent tool call` 本身仍須 Agent 主動 call。
 
 ### ✅ 自動嘅事（你唔使 trigger）
 
-| 自動發生                                               | 機制                                                          |
-| -------------------------------------------------- | ----------------------------------------------------------- |
-| Skill SKILL.md 載入 context                          | `trigger:` keywords 命中你嘅訊息（例：「派 subagent」→ orchestrator 載入） |
-| Skill description 顯示                               | Claude Code 用 skill frontmatter `description:` 決定係咪相關       |
-| Adapter wrappers 啟用 (`/dev-loop`, `/orchestrator`) | 透過 `adapters/claude-code/skills/` symlink                   |
+| 自動發生                                               | 機制                                                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Skill SKILL.md 載入 context                          | `trigger:` keywords 命中你嘅訊息（例：「派 subagent」→ orchestrator 載入）                       |
+| Skill description 顯示                               | Claude Code 用 skill frontmatter `description:` 決定係咪相關                                   |
+| Adapter wrappers 啟用 (`/dev-loop`, `/orchestrator`) | 透過 `adapters/claude-code/skills/` symlink                                              |
+| **Subagent 路由**                                    | orchestrator trigger table + 22 個 `.claude/agents/<role>.md` → Agent 知派邊個                  |
+| **Agent standards 一致性**                              | `skills/orchestrator/SKILL.md` § Agent standards by phase 統一所有 agent 嘅產出標準              |
 
-詳見 [`AGENTS.md`](AGENTS.md) § Agent 開發預設路徑 + [`CLAUDE.md`](CLAUDE.md) § Skill routing。
+詳見 [`AGENTS.md`](AGENTS.md) § Agent 開發預設路徑 + [`CLAUDE.md`](CLAUDE.md) § Skill routing + [`skills/orchestrator/SKILL.md`](skills/orchestrator/SKILL.md) § Agent standards by phase。
 
 ---
 
