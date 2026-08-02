@@ -57,6 +57,7 @@ In Claude Code:
 | [`doc-html-preview`](doc-html-preview/SKILL.md) | Syncs `docs/*.md` into standalone HTML previews for engineering and decision review. | After docs updates that need David/user confirmation. |
 | [`docs-sync`](docs-sync/SKILL.md) | Synchronizes review feedback, QA findings, and code-review suggestions into durable project docs. | After Review/Test/QA/user feedback changes requirements, design, API, architecture, tests, regression behavior, or tech debt. |
 | [`existing-project-intake`](existing-project-intake/SKILL.md) | Intake workflow for existing projects before continuing development. | Existing/inherited projects with incomplete docs, unknown current state, or missing QA/regression hooks. |
+| [`plan-author`](plan-author/SKILL.md) | Converts Think / Plan conversation into modular plan docs (PRD master + per-US + DESIGN + components/pages + ADRs + QA-TRACKER baseline + VERIFY). | New project / new major feature / greenfield — Plan phase start with no source code yet. |
 | [`regression-guard`](regression-guard/SKILL.md) | Records regression guards for bug fixes. | Every bug fix or regression-prone change. |
 | [`structural-doc-batch`](structural-doc-batch/SKILL.md) | Batch documentation organization and structural cleanup. | Large documentation cleanup or re-indexing work. |
 | [`tech-debt-register`](tech-debt-register/SKILL.md) | Tracks technical debt with priority, cost, and business impact. | Known debt, refactor tradeoffs, deferred cleanup. |

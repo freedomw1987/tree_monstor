@@ -28,6 +28,7 @@
 | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | Project 標準文檔、Build 前 documentation baseline；templates 在 `docs/project-doc-templates/` |
 | [`docs/project-doc-templates/`](project-doc-templates/) | 14 個 per-doc templates（US、component contract、endpoint resource 等） |
 | [`docs/think-plan-examples.md`](think-plan-examples.md) | Think / Plan 互動範例、架構選項與提問方式 |
+| `skills/plan-author/SKILL.md` | 把 Think/Plan 對話共識轉成 modular plan docs（PRD + per-US + DESIGN + components/pages + ADRs + QA-TRACKER baseline + VERIFY） | Plan phase 入口 — David 表達新需求 / 新項目 / 新大 feature 時 |
 
 ## Build（開發 / 品質）
 
