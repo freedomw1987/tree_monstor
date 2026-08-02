@@ -109,6 +109,29 @@ parallel([
 
 ---
 
+## Plan doc standards（Plan-phase dispatch 必跟）
+
+> 任何 Plan-phase agent dispatch（BA / Designer / SA / Documentation Engineer）所產出嘅 doc **必須**符合以下標準。呢啲標準由 `skills/plan-author/SKILL.md` 嘅 Workflow Step 4 定義，**orchestrator dispatch 唔可以放寬**。
+
+| 標準 | 規則 | Reference |
+|---|---|---|
+| **Modular 結構** | Master (PRD / DESIGN / API / TEST-COVERAGE) + per-US / per-component / per-endpoint / per-coverage 子檔 | `docs/project-documentation-standard.md` § 文件 2/3/5/6 |
+| **Templates** | 14 個 per-doc templates 必須直接用（唔好從頭寫） | `docs/project-doc-templates/` |
+| **No-code rule** | Structural docs 唔含 source 語言 snippet；JSON schema / tables / ASCII wireframe OK | `docs/project-documentation-standard.md` § No-code-in-docs Rule |
+| **US 編號** | `US-001`, `US-002`...;sub-task `US-001.1` | `docs/project-documentation-standard.md` § 文件 2 |
+| **US status** | `DRAFT` / `IN_PROGRESS` / `DONE` / `DEPRECATED` 必填 | `us-template.md` |
+| **AC format** | 每個 US AC 必係 Given / When / Then | `us-template.md` |
+| **Component contract** | Props table + events list + a11y + states + token usage — **no source code example** | `component-contract-template.md` |
+| **Endpoint contract** | Request / Response (JSON) + error code + test / RG 引用 | `endpoint-resource-template.md` |
+| **ADR format** | Michael Nygard: Status / Context / Decision / Consequences / Alternatives | `adr-template.md` |
+| **Cross-link** | Master index 表必須 link 到每個 per-X 檔 | `project-documentation-standard.md` |
+
+**違反任何一條 = orchestrator dispatch 失敗**，要重做。
+
+完整 workflow 細節見 `skills/plan-author/SKILL.md` Step 0-6。
+
+---
+
 # Outer loop — Multi-subagent orchestration
 
 ## 角色定位

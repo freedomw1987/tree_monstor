@@ -25,4 +25,12 @@ model: sonnet
 - 直接寫 code（只 sync docs）
 - 跳過 Pre-Build Gate（Plan → Build 必須通過）
 
-See: `docs/qa-gate.md` §0A
+**Standards** (per `skills/orchestrator/SKILL.md` § Plan doc standards):
+- Pre-Build Gate: `python3 scripts/docs_consistency_check.py --project-docs` 必 pass
+- 8 份必備 docs 必存在並 commit (PROJECT-OVERVIEW / PRD / DESIGN / ADR / API / TEST-COVERAGE / TECH-DEBT / QA-TRACKER)
+- PRD ↔ QA-TRACKER 必同步（紅線 11）
+- 每 US 對應 `docs/coverage/<US-id>.md`（plan 階段可只 stub）
+- Modular 結構: master + per-X 子檔，不 monolithic
+- No-code rule 套用所有 structural docs
+
+See: `docs/qa-gate.md` §0A + `skills/orchestrator/SKILL.md` § Plan doc standards

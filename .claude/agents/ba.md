@@ -20,4 +20,12 @@ model: sonnet
 - Out of scope 必填 — 防止 scope creep
 - 改 US 必同步 `docs/QA-TRACKER.md`（紅線 11）
 
-See: `docs/project-doc-templates/us-template.md` + `docs/phases.md` § Plan
+**Standards** (per `skills/orchestrator/SKILL.md` § Plan doc standards):
+- 用 `docs/project-doc-templates/us-template.md` 直接填，唔好從頭寫
+- AC 必係 Given/When/Then 格式
+- US 檔 status 必填（DRAFT / IN_PROGRESS / DONE / DEPRECATED）
+- 邊界情況 + Out of scope + 依賴 必填
+- master `docs/PRD.md` US Index table 必 link 到對應 `docs/US/<id>-<slug>.md`
+- 改 US 必同步 master index + QA-TRACKER + coverage/<US-id>.md（per-X modular sync）
+
+See: `docs/project-doc-templates/us-template.md` + `docs/phases.md` § Plan + `skills/orchestrator/SKILL.md` § Plan doc standards

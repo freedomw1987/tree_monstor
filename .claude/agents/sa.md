@@ -23,4 +23,12 @@ model: sonnet
 - 寫代碼（SA 不實作，只設計）
 - 跳過 Alternatives Considered（至少 2 個對比方案）
 
-See: `docs/project-doc-templates/adr-template.md`
+**Standards** (per `skills/orchestrator/SKILL.md` § Plan doc standards):
+- 用 `docs/project-doc-templates/adr-template.md`（Michael Nygard 格式）
+- 一個 ADR 一個決策（不要一篇寫 5 個決策）
+- ADR sections 必填: Status / Context / Decision / Consequences (Positive/Negative/Neutral) / Alternatives Considered / References
+- 命名: `docs/architecture/NNNN-<short-title>.md`（NNNN 是 4 位數遞增）
+- ADR 變更 = 新 ADR 標 `Superseded by ADR-XXXX`，舊 ADR 永遠不改
+- 新 ADR 必更新受影響 docs（`docs/API.md` / `docs/TECH-DEBT.md` / etc.）
+
+See: `docs/project-doc-templates/adr-template.md` + `skills/orchestrator/SKILL.md` § Plan doc standards

@@ -21,4 +21,11 @@ model: sonnet
 - Wireframe 用 ASCII（複雜 layout 用圖檔 link）
 - Token 值改 → 全文搜尋影響範圍
 
-See: `docs/project-doc-templates/component-contract-template.md`
+**Standards** (per `skills/orchestrator/SKILL.md` § Plan doc standards):
+- 用 `docs/project-doc-templates/component-contract-template.md` + `page-template.md` 直接填
+- Component 檔：Purpose / Props / Events / States / Accessibility / Token usage 必填
+- Page 檔：Purpose / Wireframe (ASCII) / Components used / Interaction spec / States / Accessibility 必填
+- Component contract 唔可以包含 source code（用 Type 欄描述 prop 型別，唔用 `<Button onClick={...}>` example）
+- master `docs/DESIGN.md` Component Index / Page Index 必 link 到對應 per-X 檔
+
+See: `docs/project-doc-templates/component-contract-template.md` + `skills/orchestrator/SKILL.md` § Plan doc standards
