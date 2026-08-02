@@ -122,16 +122,27 @@ git log --oneline --all | grep -iE "fix|bug|debug"
 - 重要決策索引(ADR list)
 - 相關文件索引
 
-#### Doc 2: PRD.md
-- Personas(3-6 個,每個 goal / pain points / 任務)
-- Epic 結構(每個 Epic 對應模組)
-- US 格式:`US-X.Y` ID + Priority + Status
-- NFR(Performance / Security / Reliability / Usability)
+#### Doc 2: PRD.md + per-US files（modular）
+
+**PRD.md (master)**:
+- Personas (3-6 個,每個 goal / pain points / 任務)
+- Scope (與 PROJECT-OVERVIEW 一致)
+- US Index table (指向 US/ 子檔)
+- NFR (Performance / Security / Reliability / Usability)
 - 假設 + 限制
 - 變更歷史
 
+**US/<US-id>-<slug>.md (per-US, 每 US 一個檔)**:
+- 描述 (As / I want / so that)
+- 驗收標準 (checkbox list)
+- 邊界情況
+- Out of scope
+- 依賴
+- 變更紀錄
+
 > **Status legend**:`DRAFT` / `IN-PROGRESS` / `DONE` / `DEPRECATED`
 > **唔可以 skip Status**,否則 QA-TRACKER 對唔到。
+> **No-code rule**: US 檔只描述 contract / interface,**不寫 source 語言 code snippet**。
 
 #### Doc 3: ADR(每個 ADR 1 份 file)
 
@@ -148,41 +159,70 @@ Format:
 
 > **數量**: 至少 1 份 ADR,理想 3-5 份(framework 選型 / ORM 選型 / key design pattern / schema 設計)
 
-#### Doc 4: API.md
+#### Doc 4: DESIGN.md + per-component / per-page files（modular, 如有 UI）
 
-> **Anti-pattern:重寫 578 lines 嘅 API.md 風險 high**(drift)
-> **正確做法**:patch + status header 註明對齊中。
+**DESIGN.md (master)**:
+- Overview (設計理念、品牌定位、目標用戶畫像)
+- Design Tokens (Colors / Typography / Spacing / Elevation / Shapes)
+- Component Index (指向 components/<Name>.md)
+- Page Index (指向 pages/<page>.md)
+- Do's and Don'ts
+- Changelog
 
-```bash
-# 1. 先 verify endpoint 對齊 backend source
-diff <(grep -oE "(GET|POST|PUT|DELETE|PATCH) /[a-z/:{}-]+" backend/src/routes/*.ts | sort -u) \
-     <(grep -oE "(GET|POST|PUT|DELETE|PATCH) `/[a-z/:{}-]+" docs/API.md | sort -u)
-# 2. Patch header
-```
+**components/<Name>.md (per-component, 每 component 一個檔)**:
+- Purpose
+- Props table (no source code)
+- Events list
+- States enum
+- Accessibility requirements
+- Token usage
+- Do's and Don'ts
 
-Patch template:
-```markdown
-# API 文檔
+**pages/<page>.md (per-page, 每 page 一個檔)**:
+- Purpose
+- Wireframe (ASCII)
+- Components used
+- Interaction spec
+- States
+- Accessibility
 
-> **Status**: 🟡 對齊中(YYYY-MM-DD) — endpoint 列表對齊 `backend/src/routes/*.ts`,response shape 可能有 drift,以 backend source 為準。
+> **No-code rule**: component / page 檔**不寫 source 語言 snippet**。
+> Props 用 type / Required / Default / Description 表格描述；不用 `<Button onClick={...}>` 之類 example。
+> 無 UI 嘅 project 標 N/A + reason；可唔建立 components/ / pages/ 子目錄。
 
-## 基礎信息
-- **Base URL**: `http://localhost:4000/api`
-- **認證方式**: Bearer Token(JWT)
-- **Content-Type**: `application/json`
-- **Auth Header**: `Authorization: Bearer <accessToken>`
-```
+#### Doc 5: API.md + per-resource files（modular）
 
-#### Doc 5: TEST-COVERAGE.md
+**API.md (master)**:
+- Conventions (Request format / Response format / Error codes / Auth)
+- Endpoint Index (指向 endpoints/<resource>.md)
+- QA / Regression Endpoints (跟 production safety rules)
+- Changelog
 
-- 當前覆蓋率 table(Backend unit / integration / Frontend unit / Component / E2E)
-- Backend test inventory(已有 + 缺嘅 routes 列表)
-- Frontend test inventory(已有 + 缺嘅 area 列表)
-- E2E 數量 + 候選工具(Playwright / Cypress)
+**endpoints/<resource>.md (per-resource, 每 resource 一個檔)**:
+- 對應 US
+- 每個 endpoint：description / request body (JSON) / response (JSON) / 錯誤碼 / 對應 test / 對應 regression hook
+- Changelog
+
+> **No-code rule**: JSON schema (request/response/error body) 保留 — 屬 interface 規格。
+> **不寫** `fetch('/api/...')` 等 client-side source code example。
+> Patch 既有 monolithic API.md 嘅做法保留(對齊 backend source);但新建嘅 project 應該用 modular。
+
+#### Doc 6: TEST-COVERAGE.md + per-US coverage files（modular）
+
+**TEST-COVERAGE.md (master)**:
+- 當前覆蓋率 summary table
+- 測試金字塔分佈
+- Regression Mode / Hooks (RT/RG master index)
 - 健康指標(目標 vs 當前)
 - 行動項目(Sprint 1 P0 / Sprint 2 P1 / Backlog)
 
-#### Doc 6: TECH-DEBT.md
+**coverage/<US-id>.md (per-US, 每 US 一個檔)**:
+- 對應 US + RT
+- Unit / Integration / E2E test inventory
+- RT-XXX 詳情(位置、開關、斷言、最後 PASS 日期)
+- 已知 gap
+
+#### Doc 7: TECH-DEBT.md
 
 跟 `tech-debt-register` skill 嘅 **5-field format**:
 - Where:`<file>:<line>` 或 cross-file
@@ -194,7 +234,7 @@ Patch template:
 > **重要**:entry 數量多就分 `P0 / P1 / P2` section。
 > 改 commit 嘅同時 update TECH-DEBT,delete fixed entry 標 `✅ Fixed in <commit>`。
 
-#### Doc 7: QA-TRACKER.md
+#### Doc 8: QA-TRACKER.md
 
 | US | Priority | Backend Test | Frontend Test | E2E Test | Test Status | Owner |
 |----|----------|--------------|---------------|----------|-------------|-------|
@@ -206,7 +246,7 @@ Patch template:
 
 > **🔴 Ship blocker**:紅線 12 規定 P0 US 必須 PARTIAL/PASS。Coverage 0% = 必須在 sprint 1 補。
 
-#### Doc 8: REGRESSION-GUARD.md(如有 bug fix history)
+#### Doc 9: REGRESSION-GUARD.md(如有 bug fix history)
 
 跟 `regression-guard` skill 嘅 **RG-XXX entry** format:
 - 發現日期 / 發現者 / 影響版本 / 修復版本 / Commit
@@ -215,7 +255,7 @@ Patch template:
 > **如果 git log 入面有 `fix:` / `bug:` / `debug:` commit** → 必須 derive 對應 RG entry。
 > 唔可以淨寫「冇 known bug」,因為 git history 已經有。
 
-#### Doc 9: retros/YYYY-MM-DD-*.md(本 batch 自己嘅 retro)
+#### Doc 10: retros/YYYY-MM-DD-*.md(本 batch 自己嘅 retro)
 
 - 觸發(點解做呢個 batch)
 - 做咗咩(9 份 doc 一覽)
