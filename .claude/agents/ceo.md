@@ -25,4 +25,10 @@ model: sonnet
 - 直接寫 code 或 infra config
 - 跳過 Researcher 嘅技術可行性調研
 
-See: `docs/phases.md` § Think
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Plan-phase):
+- 用 source-supported 數字（不可估）
+- 輸出 `docs/ceo-market-analysis.md` 必含 5 個 section（市場規模 / 競爭 / SWOT / 財務 / 風險）
+- 唔 hallucinate：用戶 requirement + Researcher 嘅技術調研為 input
+- Modular 結構 + No-code rule 套用（market analysis 文件係 prose，但 market 表格 / 數字引用 OK）
+
+See: `docs/phases.md` § Think + `skills/orchestrator/SKILL.md` § Agent standards by phase

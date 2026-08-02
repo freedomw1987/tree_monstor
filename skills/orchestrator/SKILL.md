@@ -109,9 +109,11 @@ parallel([
 
 ---
 
-## Plan doc standards（Plan-phase dispatch 必跟）
+## Agent standards by phase
 
-> 任何 Plan-phase agent dispatch（BA / Designer / SA / Documentation Engineer）所產出嘅 doc **必須**符合以下標準。呢啲標準由 `skills/plan-author/SKILL.md` 嘅 Workflow Step 4 定義，**orchestrator dispatch 唔可以放寬**。
+> 任何 orchestrator dispatch（任何 phase）所產出嘅 doc / code / commit **必須**符合以下對應 phase 嘅標準。呢啲係 cross-agent 統一規範，**orchestrator dispatch 唔可以放寬**。
+
+### Plan-phase（BA / Designer / SA / Documentation Engineer dispatch）
 
 | 標準 | 規則 | Reference |
 |---|---|---|
@@ -126,9 +128,53 @@ parallel([
 | **ADR format** | Michael Nygard: Status / Context / Decision / Consequences / Alternatives | `adr-template.md` |
 | **Cross-link** | Master index 表必須 link 到每個 per-X 檔 | `project-documentation-standard.md` |
 
-**違反任何一條 = orchestrator dispatch 失敗**，要重做。
+### Build-phase（Frontend / Backend / DevOps / Security Engineer dispatch）
 
-完整 workflow 細節見 `skills/plan-author/SKILL.md` Step 0-6。
+| 標準 | 規則 | Reference |
+|---|---|---|
+| **Component 對齊 contract** | 實作嚴格跟 `docs/components/<Name>.md` props/events/a11y；不自行加 prop | `component-contract-template.md` |
+| **Endpoint 對齊 contract** | 實作嚴格跟 `docs/endpoints/<resource>.md` request/response/error code | `endpoint-resource-template.md` |
+| **RT-XXX 必掛** | 功能型 item 必帶 RT-XXX regression test + 掛進專案 regression 開關 | `skills/regression-guard/SKILL.md` + `skills/orchestrator/SKILL.md` § Regression harness |
+| **Coverage 同步** | 改 code 同 commit 更新 `docs/coverage/<US-id>.md` test inventory | `coverage-us-template.md` |
+| **US changelog** | Append changelog 行（含 commit SHA + 簡述）到 `docs/US/<id>-<slug>.md` | `us-template.md` |
+| **No-code (component 實作)** | src/*.tsx 等 source code 可以（呢度係實作，非 doc）；但 doc 唔可以含 source example | `project-documentation-standard.md` § No-code rule |
+| **紅線 13** | Bug fix 必有 RG-XXX entry（不可 bypass） | `SOUL.md` 紅線 13 |
+| **紅線 53** | `/__qa/*` 不可 bypass auth / permission / rate limit / audit | `SOUL.md` 紅線 53 |
+
+### Test-phase（SA Reviewer / UX Reviewer / QA / Performance Engineer dispatch）
+
+| 標準 | 規則 | Reference |
+|---|---|---|
+| **Review evidence 必附** | 每個 finding 必附 file:line + 真實命令輸出（不只口頭說「有問題」） | `skills/orchestrator/SKILL.md` § Checker standards |
+| **CRITICAL = 必 fix + re-review** | 不可以「minor by default」淡化 critical | 同上 |
+| **Regression suite 必開開關** | 不可以 exit 0 就當 pass；逐條讀 `[REGRESSION]` log line | 同上 § Regression harness |
+| **Coverage gap 必寫** | 缺測試嘅功能列 MISSING + 寫 finding | 同上 § Step 3 |
+| **A11y baseline** | Lighthouse ≥ 85（T2+），keyboard nav 全站覆蓋 | `docs/testing-strategy.md` § A11y |
+
+### Ship-phase（Release Manager / Dependency Manager / Observability Monitor dispatch）
+
+| 標準 | 規則 | Reference |
+|---|---|---|
+| **Smoke test 必跑** | Deploy 前 5 分鐘 health check + critical endpoint（紅線 17） | `docs/qa-gate.md` § Pre-Ship Verification Flow |
+| **失敗即 rollback** | 不可以 silent retry / wait | 同上 |
+| **紅線 53** | Production 不可 mount `/__qa/*`、不可 expose QA panel | `SOUL.md` 紅線 53 |
+| **紅線 18** | Critical/High CVE 必 0 才可 merge | `SOUL.md` 紅線 18 |
+| **藍綠 / Canary release** | 不可以單機 deploy | `docs/qa-gate.md` § Ship |
+| **Verify.md 同步** | 改 toolchain / deploy script 同 commit 更新 `docs/VERIFY.md` | `project-documentation-standard.md` |
+
+### Reflect-phase（Retrospective / Sprint Manager / Tech Debt Tracker / Context Manager dispatch）
+
+| 標準 | 規則 | Reference |
+|---|---|---|
+| **決策回訪** | 每次 retro 必隨機抽過去 ADR 審視 | `skills/orchestrator/SKILL.md` § Retrospective |
+| **5-field format** | TECH-DEBT.md 用 Where/Why/Fix/Est/Linked | `tech-debt-register/SKILL.md` + `tech-debt-template.md` |
+| **重大 debt 有 ticket ID** | P0/P1 必須 link ticket | `tech-debt-register/SKILL.md` |
+| **retro 不只留喺 doc** | 結論「會」時開新 ADR 或記 TECH-DEBT | `skills/orchestrator/SKILL.md` § Retrospective |
+| **Context summary 保留 USER verbatim** | 不可以刪 USER 訊息；只 summarize tool result | `skills/orchestrator/SKILL.md` § Context Manager |
+
+**違反任何 phase 嘅任何一條 = orchestrator dispatch 失敗**，要重做。
+
+完整 workflow 細節見 `skills/plan-author/SKILL.md` Step 0-6（Plan-phase 細節），其他 phase 對應各 subagent 嘅 `See:` reference。
 
 ---
 

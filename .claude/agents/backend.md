@@ -28,4 +28,11 @@ model: sonnet
 3. 跑 integration test
 4. DEV_DONE 後 spawn fresh checker
 
-See: `skills/orchestrator/SKILL.md` § Inner loop
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Build-phase):
+- 對齊 `docs/endpoints/<resource>.md` contract（request/response/error code）— 不自行改
+- API contract breaking change 必先開新 ADR
+- RT-XXX integration test 必須跑真 DB（testcontainers / SQLite-in-memory）
+- 改 code 同 commit 更新 `docs/coverage/<US-id>.md` + 同步 `docs/endpoints/<resource>.md`
+- Append changelog 到 `docs/US/<US-id>.md`
+
+See: `skills/orchestrator/SKILL.md` § Inner loop + § Agent standards by phase — Build-phase

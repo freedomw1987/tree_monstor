@@ -27,4 +27,11 @@ model: sonnet
 3. 寫 code + RT-XXX + update coverage
 4. DEV_DONE 後 spawn fresh checker
 
-See: `skills/orchestrator/SKILL.md` § Inner loop
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Build-phase):
+- 對齊 `docs/components/<Name>.md` contract（props/events/a11y/states）— 不自行加 prop
+- RT-XXX 必掛進專案 regression 開關（`REGRESSION_MODE=1` 等）
+- 改 code 同 commit 更新 `docs/coverage/<US-id>.md` test inventory + RT detail
+- Append changelog 行（含 commit SHA + 簡述）到 `docs/US/<US-id>.md`
+- Regression test 斷言用戶可觀察行為（不斷言實作細節）
+
+See: `skills/orchestrator/SKILL.md` § Inner loop + § Agent standards by phase — Build-phase

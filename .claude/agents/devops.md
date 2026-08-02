@@ -22,3 +22,10 @@ model: sonnet
 - 改 toolchain → 同 commit 更新 `docs/VERIFY.md`
 
 See: `docs/devops.md` + `docs/environment-isolation.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Build + Ship):
+- Build-phase: 紅線 53 — production 不可 mount `/__qa/*`、不可 expose QA panel
+- Ship-phase: 改 toolchain / deploy script 同 commit 更新 `docs/VERIFY.md`
+- Ship-phase: 藍綠 / Canary release 必備（不可單機 deploy）
+- Ship-phase: 失敗即 rollback（不 silent retry / wait）
+- Coverage sync: 改 `docs/coverage/<US-id>.md` test inventory 如有加 CI 步驟

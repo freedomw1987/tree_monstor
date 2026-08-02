@@ -31,3 +31,10 @@ model: sonnet
 4. Sprint 結束 → retrospective trigger
 
 See: `docs/task-board.md` + `docs/feedback-loop.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
+- 2-week sprint 為基準
+- 每個 sprint 有明確目標 + 交付物 + Sprint Retro
+- 不 silent 改 sprint scope（David 確認先）
+- 進度彙報 trigger 時機：每 phase 開始/完成、David 問、重大問題需 David 決策
+- Sprint 結束 → retrospective trigger（用 `retrospective` agent）

@@ -31,3 +31,10 @@ model: sonnet
 3. 寫 review report 回 STATE.md（CK-XXX findings）
 
 See: `docs/qa-gate.md` + `skills/orchestrator/SKILL.md` § Checker standards
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
+- 每個 finding 必附 file:line + 真實命令輸出（不只口頭說「有問題」）
+- CRITICAL = 必 fix + re-review（不可淡化為 minor）
+- Review 對照 ADR + DESIGN.md 嘅 contract（不自己加新 contract）
+- 紅線 16：P0 US 必有三層測試（Unit + Integration + E2E）— review 時 verify
+- 寫 CK-XXX findings 回 STATE.md（fresh context 保持獨立性）

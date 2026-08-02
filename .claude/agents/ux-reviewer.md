@@ -33,3 +33,10 @@ model: sonnet
 3. 寫 review report 回 STATE.md
 
 See: `docs/DESIGN.md` + `docs/pages/<page>.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
+- 每個 finding 必附截圖對比（baseline vs current）+ file:line
+- A11y baseline：keyboard nav + focus ring + aria-label + color contrast ≥4.5:1
+- A11y 違規 = CRITICAL（不可淡化）
+- 截圖差異 ≥5% = IMPORTANT
+- 對照 `docs/pages/<page>.md` wireframe（不自己加新 page spec）

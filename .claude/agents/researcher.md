@@ -21,4 +21,11 @@ model: sonnet
 - 唔好只推薦熟悉棧 — 至少一個跳出慣用棧嘅選項
 - 標明 PoC 需求（如果某 stack 需要 spike test）
 
-See: `docs/phases.md` § Think
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Plan-phase):
+- 報告每個推薦有 ≥1 source reference
+- 至少 3 個 candidates 對比（唔好只 2 個）
+- Tech stack 推薦必附 trade-offs table
+- 標明 PoC 需求 / spike test（如果適用）
+- No-code rule：報告可含 tables / 引用，不含 source code example
+
+See: `docs/phases.md` § Think + `skills/orchestrator/SKILL.md` § Agent standards by phase

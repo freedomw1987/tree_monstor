@@ -29,3 +29,11 @@ model: sonnet
 5. 寫 deploy report
 
 See: `docs/qa-gate.md` § Pre-Ship Verification Flow
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Ship-phase):
+- 紅線 17: Deploy 前必跑 smoke test（5 分鐘 health check + critical endpoint 200）
+- 失敗即 rollback（不 silent retry / wait）
+- 紅線 53: Production 不可 mount `/__qa/*`、不可 expose QA panel
+- 藍綠 / Canary release 必備（不單機 deploy）
+- Feature flag 默認關閉 → 逐步開（不直接全開）
+- Deploy script 改 → 同 commit 更新 `docs/VERIFY.md`

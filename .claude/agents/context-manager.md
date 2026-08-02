@@ -31,3 +31,10 @@ model: haiku
 4. 通知 Developer「context 已 summarise」
 
 See: `docs/AGENTS.md` § 工作區規範
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
+- 每 30 分鐘 trigger 一次（cron / 自動觸發）
+- 保留 USER 訊息 verbatim（不可以刪 USER content）
+- 壓縮 tool result 到必要 detail（唔好全 dump）
+- 寫 `docs/context-summary.md` 含：已完成 / 當前 state / 待辦 decisions / Next step
+- 通知 Developer「context 已 summarise」

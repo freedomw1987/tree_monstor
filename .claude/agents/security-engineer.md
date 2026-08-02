@@ -28,3 +28,10 @@ model: sonnet
 4. CVE check 必為 0
 
 See: `skills/devops/dependency-cve-audit/SKILL.md` + `skills/regression-guard/SKILL.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Build + Ship):
+- Build-phase: 不寫明文密鑰 / Secrets（紅線）
+- Build-phase: RG-XXX entry 同步到 `docs/REGRESSION-GUARD.md`（紅線 13）
+- Build-phase: Production code 不可 disable auth / permission / rate limit / audit
+- Ship-phase: Critical/High CVE 必 0 才可 merge（紅線 18）— 用 `npm audit --audit-level=high`
+- Ship-phase: `/__qa/*` 不可係 bypass backdoor（紅線 53）

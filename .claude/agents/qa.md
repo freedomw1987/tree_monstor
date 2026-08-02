@@ -28,3 +28,12 @@ model: sonnet
 4. 寫 test report
 
 See: `docs/testing-strategy.md` + `docs/qa-gate.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
+- 不可以為咗 pass 而 disable / skip / delete test
+- 不可以為咗 coverage 而寫 placeholder test
+- 紅線 12: P0 US test status 必 PARTIAL / PASS 才完成
+- 紅線 16: P0 US 必有三層測試（Unit + Integration + E2E）
+- Regression suite 必開開關 + 逐條讀 `[REGRESSION]` log line（不只 exit code）
+- Coverage gap（實際有功能但 coverage 表 MISSING）= major finding
+- RT-XXX 斷言用戶可觀察行為（不斷言實作細節）

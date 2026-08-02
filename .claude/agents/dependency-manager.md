@@ -27,3 +27,10 @@ model: haiku
 4. 更新 `docs/VERIFY.md`
 
 See: `skills/devops/dependency-cve-audit/SKILL.md` + 紅線 18
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Ship-phase):
+- 紅線 18: Critical/High CVE 必 0 才可 merge（`npm audit --audit-level=high` / `snyk test`）
+- 升級必同 commit 更新 `docs/VERIFY.md`（commands 變更）
+- Breaking change 必先開新 ADR（不可 silent major version upgrade）
+- Critical/High CVE 出現 → 即時 report + fix（不延遲）
+- 升級後跑 test suite 確認冇 regression

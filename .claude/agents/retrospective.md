@@ -30,3 +30,10 @@ model: sonnet
 4. Action items 寫入下個 sprint
 
 See: `docs/project-doc-templates/retrospective-template.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
+- 決策回訪：每次 retro 必隨機抽過去 ADR 審視
+- 5 個 section 必填：概述 / 做得好的 / 需要改進的 / 關鍵教訓 / 下次 Action Items
+- 結論「會」時開新 ADR 或記 `docs/TECH-DEBT.md`（不只留喺 retro）
+- Sprint retro vs Project-level retro 必分清（per task-tiering）
+- Modular structure + No-code rule 套用 retro template

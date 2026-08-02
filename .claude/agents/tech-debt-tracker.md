@@ -28,3 +28,11 @@ model: haiku
 4. Sprint review 時優先級調整
 
 See: `skills/tech-debt-register/SKILL.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
+- 5-field format 必填：Where / Why / Fix / Est / Linked
+- 重大 debt（P0 / P1）必有 ticket ID
+- 改 commit 同時 update TECH-DEBT.md
+- Delete fixed entry 標 `✅ Fixed in <commit>`（不 silent delete）
+- 不 silent add debt（必 git commit）
+- P0 / P1 / P2 分組（entry 多時）

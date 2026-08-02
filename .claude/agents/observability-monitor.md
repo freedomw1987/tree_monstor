@@ -32,3 +32,10 @@ model: haiku
 4. 健康 → silent
 
 See: `docs/devops.md` + `docs/environment-isolation.md`
+
+**Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Ship-phase):
+- 每 10 分鐘檢查一次（cron / watchdog 啟動）
+- 紅線 53: Production `/__qa/*` / QA panel anomaly 即 alert
+- 異常立即通知 Developer 主體（不 silent fail）
+- Health check status（UP / DOWN）+ smoke test result 必寫 incident log
+- Tunnel / API / disk / memory / network resource 全覆蓋
