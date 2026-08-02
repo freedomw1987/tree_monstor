@@ -36,18 +36,24 @@ Use this workflow after:
 
 ## Feedback classification matrix
 
-| Feedback type | Required docs |
+> **Modular era (2026-08-02)**：每個 feedback 影響嘅範圍若對應 per-US / per-component /
+> per-endpoint / per-coverage 檔，**必須同步更新對應 per-X 檔 + 該檔 changelog**，唔止 master。
+> Master 嘅 index table 只列 reference，本身唔承載細節 — 細節喺 per-X 檔。
+
+| Feedback type | Required docs (master + per-X) |
 |---|---|
-| Scope / business goal / success criteria | `docs/PROJECT-OVERVIEW.md` + `docs/PRD.md` + `docs/QA-TRACKER.md` |
-| User story / acceptance criteria | `docs/PRD.md` + `docs/QA-TRACKER.md` |
-| UI / UX / component / copy / layout | `docs/DESIGN.md` + `docs/TEST-COVERAGE.md` |
-| API contract / endpoint / error code / wire shape | `docs/API.md` + `docs/TEST-COVERAGE.md` |
-| Architecture / data model / infrastructure | new or updated ADR under `docs/architecture/` + affected docs |
-| Test gap / QA finding | `docs/QA-TRACKER.md` + `docs/TEST-COVERAGE.md` |
-| Bug / regression risk | `docs/REGRESSION-GUARD.md` + `docs/TEST-COVERAGE.md` + related `docs/QA-TRACKER.md` row |
+| Scope / business goal / success criteria | `docs/PROJECT-OVERVIEW.md` + `docs/PRD.md` master (Scope / NFR sections) + 受影響 `docs/US/<id>-<slug>.md` (邊界 / Out of scope) + `docs/QA-TRACKER.md` |
+| User story / acceptance criteria | `docs/PRD.md` master (US Index table) + 對應 `docs/US/<id>-<slug>.md` (AC / 邊界 / Out of scope) + `docs/QA-TRACKER.md` row |
+| UI / UX / component / copy / layout | `docs/DESIGN.md` master (Tokens if changed) + 對應 `docs/components/<Name>.md` 或 `docs/pages/<page>.md` (props / states / wireframe) + `docs/TEST-COVERAGE.md` master + 對應 `docs/coverage/<US-id>.md` |
+| API contract / endpoint / error code / wire shape | `docs/API.md` master (Conventions / Endpoint Index if changed) + 對應 `docs/endpoints/<resource>.md` (request / response / error code) + `docs/TEST-COVERAGE.md` master + 對應 `docs/coverage/<US-id>.md` |
+| Architecture / data model / infrastructure | new or updated ADR under `docs/architecture/` + 受影響 master 跟 per-X 檔 |
+| Test gap / QA finding | `docs/QA-TRACKER.md` + `docs/TEST-COVERAGE.md` master + 對應 `docs/coverage/<US-id>.md` (test inventory / RT-XXX) |
+| Bug / regression risk | `docs/REGRESSION-GUARD.md` RG-XXX entry + `docs/coverage/<US-id>.md` (RT-XXX 詳情) + `docs/QA-TRACKER.md` row + 對應 `docs/US/<id>-<slug>.md` (changelog) |
 | Refactor / cleanup / known trade-off | `docs/TECH-DEBT.md` |
-| Dependency / external package assumption | `docs/TECH-DEBT.md` and ADR / retro if architectural or incident-derived |
-| Rejected suggestion | affected doc changelog / notes or `docs/TECH-DEBT.md` with rationale |
+| Dependency / external package assumption | `docs/TECH-DEBT.md` + ADR / retro if architectural or incident-derived |
+| Rejected suggestion | 對應 per-X 檔 changelog / notes 或 `docs/TECH-DEBT.md` with rationale |
+
+**Common mistake**：只更新 master (PRD / DESIGN / API) 嘅 index table，忘記同步 per-X 檔嘅細節。**per-X 檔才是 source of truth**，master 係 index；缺 per-X 同步 = drift。
 
 ---
 
