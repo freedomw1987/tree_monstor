@@ -44,6 +44,10 @@ Last-verified: 2026-07-28
 - 純研究 / 純閱讀任務 — 沒有代碼改動就沒有東西可 check。
 - 該專案連最小驗證命令都跑不起來（無法安裝依賴等）— 先修好環境，否則 checker 無法實證。
 
+## Default path（2026-08-02 起）
+
+對於多 item 的 feature 開發或重構，本 skill 是 Tree Monstor 的**預設路徑**（不是可選）— 詳見 `AGENTS.md` § Agent 開發預設路徑：dev-checker-loop。Loop 只外加兩件事：(a) 開發單位記錄為 STATE.md work items；(b) 每輪獨立 checker 實證覆核。原有流程（鐵律、Think/Plan、plan mode、skill routing）在 loop 內**全部照常適用**——loop 從不豁免任何原步驟。
+
 ---
 
 ## Agent roles
@@ -139,12 +143,19 @@ Loop 啟動時，如果專案還沒有以下三件東西，**建立它們就是�
 
 ## Work Items
 
-| ID | 描述 | 涉及檔案 / commits | 狀態 | 打回次數 | 最後更新 |
-|----|------|-------------------|------|---------|---------|
-| WI-001 | ... | `src/a.ts`, `src/b.ts` / abc1234 | VERIFIED | 1 | ... |
-| WI-002 | ... | `src/api/x.ts` / def5678..HEAD | CHECK_FAILED | 2 | ... |
+| ID | 描述 | Spec | 涉及檔案 / commits | 狀態 | 打回次數 | 最後更新 |
+|----|------|------|-------------------|------|---------|---------|
+| WI-001 | 實作 US-001 登入 | `docs/US/US-001-login.md` | `src/auth.ts` / abc1234 | VERIFIED | 1 | ... |
+| WI-002 | 補 US-002 註冊 | `docs/US/US-002-registration.md` | `src/api/x.ts` / def5678..HEAD | CHECK_FAILED | 2 | ... |
 
 狀態: TODO / IN_PROGRESS / DEV_DONE / CHECKING / CHECK_FAILED / VERIFIED / ESCALATED
+
+**Spec column 規則**（modular docs era）：
+
+- 每個 WI 必須填 `Spec` column，reference 對應 per-US / per-component / per-endpoint / per-coverage 檔路徑
+- 格式：`docs/US/<US-id>-<slug>.md` / `docs/components/<Name>.md` / `docs/endpoints/<resource>.md` / `docs/coverage/<US-id>.md`
+- Spec 是 dev 跟 checker 對齊的單一真相；**不要 reference monolithic 檔（如「PRD.md § line 1234」）** — 那是 anti-pattern，會在 per-X 檔拆分後失效
+- Spec 缺失 = 視同「涉及檔案 / commits」缺失，CHECK_FAILED（needs-info）
 
 ## Checker Findings (open)
 
@@ -313,6 +324,8 @@ Escalation section 必須包含：卡住的 item、finding 全文、dev 已嘗�
 10. **只看 regression runner 的 exit code = 白裝了日誌。** Runner 可能吞掉失敗、skip 掉測試而 exit 0；checker 必須逐條對賬日誌行和 Coverage 表。
 11. **Regression test 斷言實作細節而非用戶可觀察行為** — 重構時大片誤報，dev 為了過檢查開始刪測試，整個 harness 失去公信力。寫測試時就要斷言行為。
 12. **Coverage 表只登記不維護** — 功能改名 / 刪除後表沒更新，checker 對賬全是噪音。dev 改動功能時同步維護表。
+13. **Work Item Spec 欄 reference monolithic 檔（舊 anti-pattern）** —「US-001 in PRD.md § line 1234」會在 modular 拆分後失效，checker 找不到對應行。**Spec 必須 reference per-US / per-component / per-endpoint / per-coverage 檔路徑**。Spec 缺失或指向 monolithic 檔 = needs-info finding。
+14. **Per-US spec changelog 沒同步更新** — dev 改 code 完成 WI-XXX，但 `docs/US/<US-id>-<slug>.md` 的 changelog / 狀態欄位沒更新，checker 看 spec 還停留在舊狀態。dev 完成 DEV_DONE 時必須：(a) 更新 Spec 的狀態欄；(b) append changelog 行（含 commit SHA + 簡述）。Checker 看到 Spec 狀態與 STATE.md DEV_DONE 不一致 = minor finding 要求同步。
 
 ---
 
