@@ -24,7 +24,11 @@ Reflect ←──────┴─────────┴──────
                                                 Loop
 ```
 
-> **⚠ Agent 唔會自動 invoke orchestrator**：以上流程圖只描述「做咩」，唔會自動派 subagent。Agent 必須根據當前 phase 主動 invoke 對應 skill（見 Phase 總覽表嘅 Skill trigger 欄）。例：Build phase 開多 work item 時，必須 invoke `skills/orchestrator/SKILL.md` 嘅 inner loop（dev+checker），否則只係 developer 單寫無 quality gate。
+> **⚠ Skill routing 兩層**：
+> 1. ✅ **Skill 載入係自動** — 你講嘅訊息命中某 skill 嘅 `trigger:` keyword 時，Claude Code 自動 inject 該 skill 嘅 SKILL.md 內容入 context。例如你講「派 subagent 修 bug」會自動帶入 `skills/orchestrator/SKILL.md` + `skills/regression-guard/SKILL.md`。
+> 2. ❌ **Workflow 執行唔自動** — Skill 載入後，Agent 仍要主動 dispatch subagent（call `Agent` tool）、寫 docs、跑 regression loop 等等。
+>
+> 即係「**睇到**自動，**做**唔自動**」。以上流程圖只描述「做咩」，Agent 必須根據當前 phase 主動執行對應 skill 嘅 workflow（見 Phase 總覽表嘅 Skill trigger 欄）。例：Build phase 開多 work item 時，skill 已 auto-load 入 context，但 Agent 必須主動 call Agent tool spawn dev + checker，否則只係 developer 單寫無 quality gate。
 
 ---
 
@@ -206,7 +210,7 @@ Outer loop（multi-subagent / multi-phase coordination）由 `skills/orchestrato
 - Phase 0 BA / Phase 0.5 UI/UX / Phase 1 SA 等 subagent 由 orchestrator 派發
 - 跨 task dependency tracking
 
-> **不會自動 invoke** — agent 必須主動讀 `skills/orchestrator/SKILL.md` 並 dispatch subagent。如果只係 1-2 行 typo / config 改動，唔需要 orchestrator（直做 + 自驗即可）。判斷細節見 `AGENTS.md` § Agent 開發預設路徑。
+> **Skill 載入係自動，workflow 執行唔自動**：Build phase 開工時，Claude Code 會根據 `orchestrator` skill 嘅 `trigger:` keywords（例如「派 subagent 修」、「multi-phase」、「dev-loop」）自動 inject SKILL.md 內容入 context。但 dispatch subagent、跑 inner loop 須 Agent 主動 call `Agent` tool。如果只係 1-2 行 typo / config 改動，唔需要 orchestrator（直做 + 自驗即可）。判斷細節見 `AGENTS.md` § Agent 開發預設路徑。
 
 ### 長期任務支援
 **Context Manager** — 每 30 分鐘或每完成一個 task，自動總結當前進度：
