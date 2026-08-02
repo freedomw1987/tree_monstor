@@ -1,0 +1,54 @@
+=== Skills compression: archive hard-delete (2026-08-02) ===
+
+=== Final state ===
+skills/ SKILL.md: 10
+archive/ exists: no
+
+=== The 10 keepers ===
+skills/dev-checker-loop/SKILL.md
+skills/devops/dependency-cve-audit/SKILL.md
+skills/doc-html-preview/SKILL.md
+skills/docs-sync/SKILL.md
+skills/existing-project-intake/SKILL.md
+skills/orchestrator/SKILL.md
+skills/patch-corruption-recovery/SKILL.md
+skills/regression-guard/SKILL.md
+skills/structural-doc-batch/SKILL.md
+skills/tech-debt-register/SKILL.md
+
+=== docs_consistency_check.py ===
+docs consistency check passed
+exit: 0
+
+=== skills_freshness_audit.py ===
+skills freshness audit: 10 skills audited; 0 stale (> 180 days), 0 of them version-pinned
+
+=== case_history_audit.py (advisory) ===
+case-history marker audit -- 2 of 10 active skills scored >= 1
+
+score  lines  applicability   path
+-----  -----  --------------- --------------------------------------------------
+    3    564  generic-pattern skills/devops/dependency-cve-audit/SKILL.md
+                              markers: app-component-file, symptom-narrative
+    3    316  operational     skills/patch-corruption-recovery/SKILL.md
+                              markers: app-component-file, symptom-narrative
+
+Advisory only. High score = likely one-project write-up; confirm by reading before archiving.
+
+=== Final commit history (since compression start) ===
+3f2a357 chore: hard-delete archive/skills/ — git history is the only recovery path
+db2e743 chore(verify): record skills compression final state
+19bd9fc feat(orchestrator): fold subagent recovery patterns into references/
+3d8776c chore: update skills/README.md to 10 keepers + fix 2 stale testing refs
+efa0b18 chore: remove now-empty category dirs (autonomous-ai-agents, creative)
+a4b1b8c chore(archive): misc operational (4)
+b7180b3 chore(archive): software-dev workflow (5)
+8025636 chore(archive): creative & design (5)
+556d0a5 chore(archive): testing patterns (6)
+2f98598 chore(archive): backend patterns (2 remaining)
+471e696 chore(archive): frontend react cluster (14)
+5c9b40b chore(archive): docker & reverse-proxy (7)
+25a9dea chore(archive): cdk & aws deploy (3)
+e5e2029 chore(archive): elysia & bun (7)
+716d719 chore(archive): prisma gotchas (4)
+3a0be36 chore(archive): retire hermes-era, ultrawork, and timeout-recovery skills
