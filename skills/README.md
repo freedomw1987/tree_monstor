@@ -31,6 +31,8 @@ When adding, removing, or renaming a local skill:
 
 These are local Tree Monstor markdown skills. They are not automatically Claude Code slash commands unless separately registered in the active Claude Code runtime. Currently registered: `regression-guard`, `existing-project-intake`, `dev-checker-loop`, `patch-corruption-recovery`, `docs-sync`, `orchestrator` — via wrappers in `adapters/claude-code/skills/` symlinked from `~/.claude/skills/`; the canonical source remains each skill's `SKILL.md` here.
 
+**2026-08-02 merge**: `dev-checker-loop` skill merged into `orchestrator`. The `/dev-loop` adapter remains (redirects to orchestrator canonical) so the slash command still works.
+
 In Claude Code:
 
 1. Use this catalog to choose the matching local skill.
@@ -46,8 +48,7 @@ In Claude Code:
 
 | Skill | Purpose | When to use |
 |-------|---------|-------------|
-| [`orchestrator`](orchestrator/SKILL.md) | Coordinates subagents, task board, dependencies, progress, and failures. | Long multi-phase tasks, parallel subagent work, dependency tracking. |
-| [`dev-checker-loop`](dev-checker-loop/SKILL.md) | Dev-agent / checker-agent collaboration loop coordinated through a downstream project's `<project>/docs/STATE.md`, with evidence-based verification and escalation limits. | Multi-item development needing a built-in quality gate; "dev-loop" / checker-agent requests. |
+| [`orchestrator`](orchestrator/SKILL.md) | Multi-subagent coordination (outer: task board, dependencies, multi-role dispatch) with per-work-item dev+checker verification loop (inner: STATE.md, regression test, fresh checker). | Multi-phase tasks; multi-item feature dev with built-in quality gate; "dev-loop" / "checker agent" / 雙 agent 開發 requests. |
 
 ### Documentation / QA / project hygiene
 
