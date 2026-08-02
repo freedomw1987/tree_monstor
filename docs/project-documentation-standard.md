@@ -29,6 +29,35 @@
 
 ---
 
+## 🚫 No-code-in-docs Rule（紅線延伸）
+
+> **核心原則**：source 語言 snippet（TS/JS/Python/Go/Rust 等）禁止出現在結構性文檔中。文檔只描述**規格、contract、interface**，不描述**實作細節**。
+
+**Why**：真實 code 一改，文檔 example 必然 drift。Agent 對照文檔寫 code，會撞「doc 寫 `<Button onClick={fn}>` 但實作是 `<Button onPress>` 嘅 prop 叫 onPress 唔叫 onClick」這種衝突。Component contract 不會 drift，因為 contract 本來就是給實作對齊用的。
+
+| 形式 | 允許？ | Why |
+|------|--------|-----|
+| TS / JS / Python / Go / Rust 等 source 語言 snippet | ⛔ | 必然 drift，製造 false signal |
+| JSON / YAML schema（request / response / config） | ✅ | Interface 規格，跟 code 解耦 |
+| ASCII wireframe / mock layout | ✅ | 純視覺描述 |
+| Mermaid diagram（declarative） | ✅ | 圖形化 spec，非 code |
+| Token table / props table / markdown table | ✅ | 結構化規格 |
+| SQL DDL、Docker compose、shell、`.env.example` | ✅ | Infra config，非 application logic example |
+
+**取代 DESIGN.md「用法: [code]」的格式**：
+
+| 舊（會 drift） | 新（contract 不會 drift） |
+|----------------|--------------------------|
+| `用法: <Button onClick={...}>OK</Button>` | **Props table**：variant / size / label / onClick / disabled / loading + **Events** + **States** + **A11y** + **Token usage** |
+
+API.md JSON 範例**保留**（屬 interface 規格）—— 不要寫 `fetch('/api/login', { ... })` 之類的 client code。
+
+**例外處理**：若某 component 真要 pseudo-code 講流程（例如 async state machine），寫入對應 retro 並 cite 例，作為 doc-rule 例外單獨記錄。
+
+**驗證**：`scripts/docs_consistency_check.py` 將擴充檢查「structural docs 含 source 語言 fenced code block」就 warn（advisory，預設不阻擋）。
+
+---
+
 ## 🧭 Documentation-First Rule（Build 前強制）
 
 > **核心原則**：Think / Plan 的共識必須先變成 project docs，才可以進入 Build。對話紀錄會消失，git 裡的文檔才是可交接、可驗收、可 QA 的真相。
@@ -165,64 +194,128 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ## 📄 文件 2 — PRD.md (Product Requirements Document)
 
-**目的**:把口頭討論的 user stories 變成可驗收的規格。
+**目的**:把口頭討論的 user stories 變成可驗收的規格。Master 檔只放跨切內容 + US index，**每個 US 一個獨立檔**（per-US modular），方便 agent 為單一 feature 工作時只讀該 US。
 
-**必填區塊**:
+**結構**:
+```
+docs/
+├── PRD.md              ← master：scope、NFR、US index（指向 US/ 子檔）
+└── US/
+    ├── US-001-login.md
+    ├── US-002-registration.md
+    └── ...             ← 每 US 一個檔
+```
+
+**PRD.md（master）必填區塊**:
 ```markdown
 # <Project Name> — PRD
 
-## User Stories
+> **Status:** Living document. US index references US/ subfiles.
 
-### US-001 — [一句話標題]
-**As** [誰] **I want** [做咩] **so that** [為什麼]
+## Scope（與 PROJECT-OVERVIEW 一致，scope 變更兩邊同步）
 
-**優先級**: P0 / P1 / P2 / P3
-**驗收標準**:
-- [ ] Given [前置條件], when [動作], then [預期結果]
-- [ ] ...
-**Out of scope**: [呢個 story 唔做咩]
-**依賴**: [依賴邊啲 US 或外部系統]
+## User Story Index
 
-### US-002 ...
+| US | 標題 | 優先級 | 狀態 | Spec |
+|----|------|--------|------|------|
+| US-001 | 登入 | P0 | DONE | [docs/US/US-001-login.md](US/US-001-login.md) |
+| US-002 | 註冊 | P0 | IN_PROGRESS | [docs/US/US-002-registration.md](US/US-002-registration.md) |
+| US-003 | 忘記密碼 | P1 | DRAFT | [docs/US/US-003-password-reset.md](US/US-003-password-reset.md) |
+
+狀態: `DRAFT` / `IN_PROGRESS` / `DONE` / `DEPRECATED`
 
 ## Non-Functional Requirements
-- 效能: [response time < 200ms (p95)]
-- 安全: [敏感資料加密儲存,API rate limit 100 req/min]
-- 兼容性: [支援 Chrome/Firefox/Safari 最新兩個 major version]
-- 可用性: [99.9% uptime,允許每月 43 分鐘 downtime]
+- 效能: response time < 200ms (p95)
+- 安全: 敏感資料加密儲存,API rate limit 100 req/min
+- 兼容性: 支援 Chrome/Firefox/Safari 最新兩個 major version
+- 可用性: 99.9% uptime,允許每月 43 分鐘 downtime
 
 ## 假設與風險
-- 假設: [假設咗咩,例:用戶有 Gmail]
-- 風險: [風險列表]
+- 假設: 用戶有 Gmail
+- 風險: ...
 
 ## 變更紀錄
 | 日期 | US ID | 變更 | 原因 |
 |------|-------|------|------|
 ```
 
-**User Story 編號規則**:`US-` + 3 位數（`US-001`, `US-002` ...）；如需拆細 sub-task，可用 `US-001.1` / `US-001.2`。**所有 test case 都引用 US 編號**。
+**US-XXX-<slug>.md（per-US 檔）必填區塊**:
+```markdown
+# US-001 — 登入
+
+**狀態**: DONE
+**優先級**: P0
+**對應文件**: [PRD.md § User Story Index](../PRD.md)
+**對應 QA tracker row**: US-001
+**對應 regression test**: RT-001（路徑: `tests/auth/login.spec.ts`）
+**最後更新**: 2026-08-02 by dev-agent
+
+## 描述
+**As** 已註冊用戶 **I want** 用 email + 密碼登入 **so that** 存取個人化功能
+
+## 驗收標準
+- [ ] Given 已註冊 email + 正確密碼, when 提交登入表單, then 200 + 跳轉 dashboard
+- [ ] Given 錯誤密碼, when 提交, then 401 + 顯示「帳號或密碼錯誤」
+- [ ] Given 連續 5 次失敗, when 第 6 次, then 429 + 鎖 15 分鐘
+
+## 邊界情況（edge cases）
+- 空字串 → 前端擋（HTML required），後端擋（400 INVALID_EMAIL）
+- 密碼 < 8 字元 → 前端擋
+- Email 不存在 vs 密碼錯誤 → 同一錯誤訊息（不洩漏哪個錯）
+
+## Out of scope
+- SSO（GitHub / Google）— 屬 US-005
+- 記住我（Remember Me）— 屬 US-006
+
+## 依賴
+- US-002 註冊（必須先有帳號）
+
+## 變更紀錄
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| 2026-08-02 | 初版 | 從 plan stage 共識落實 |
+```
+
+**User Story 編號規則**:`US-` + 3 位數（`US-001`, `US-002` ...）；如需拆細 sub-task，可用 `US-001.1` / `US-001.2`。**所有 test case 都引用 US 編號**。Per-US 檔命名：`US-XXX-<kebab-slug>.md`（例：`US-001-login.md`）。
 
 **更新時機**:
-- 每次新功能加入 → 新增 US
-- 每次需求變更 → 修改 US + 標記 change log
-- 刪除 US → 標記 "DEPRECATED" 而非真的刪除(保留歷史)
+- 每次新功能加入 → 新增 US 檔 + 更新 master index
+- 每次需求變更 → 改 US 檔 + master 同步 + 標記 change log
+- 刪除 US → US 檔改名加 `.DEPRECATED.md` 後綴（保留歷史），master index 標 DEPRECATED
+- **dev-checker-loop Work Item 直接 reference per-US 檔**，不引用 master PRD.md 第 N 行
 
 ---
 
 ## 📄 文件 3 — DESIGN.md (Design Spec)
 
-**目的**:UI/UX 的「單一真相來源」,所有 frontend 開發都依此實作。
+**目的**:UI/UX 的「單一真相來源」,所有 frontend 開發都依此實作。Master 檔只放跨切 tokens + component/page index,**每個 component / 每個 page 一個獨立檔**，方便 agent 為單一 component/page 工作時只讀該檔。
 
-**必填區塊**(沿用 `docs/phases.md` §Plan 嘅標準):
+**結構**:
+```
+docs/
+├── DESIGN.md                  ← master: tokens + component/page index
+├── components/
+│   ├── Button.md              ← per-component contract（props / events / a11y / states）
+│   ├── Input.md
+│   └── ...
+└── pages/
+    ├── Login.md               ← per-page: wireframe + interaction spec
+    └── ...
+```
+
+**DESIGN.md（master）必填區塊**:
 ```markdown
 # Design Spec — <Project Name>
+
+> **Status:** Living document. Tokens here are single source of truth; per-component specs live in components/, per-page specs in pages/.
 
 ## Overview
 - 設計理念、品牌定位
 - 目標用戶畫像
-- 設計參考(inspiration links)
+- 設計參考（inspiration links）
 
 ## Design Tokens
+
 ### Colors
 | Token | HEX | 用途 |
 |-------|-----|------|
@@ -238,43 +331,33 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 | ... | ... | ... | ... | ... |
 
 ### Spacing
-- 4px grid system
-- --space-1: 4px
-- --space-2: 8px
-- --space-3: 16px
-- --space-4: 24px
-- --space-5: 32px
+- 4px grid system; --space-1: 4px, --space-2: 8px, --space-3: 16px, --space-4: 24px, --space-5: 32px
 
 ### Elevation
-| Token | CSS | 用途 |
-|-------|-----|------|
-| --elevation-1 | box-shadow: 0 1px 3px rgba(0,0,0,0.12) | Card |
-| --elevation-2 | box-shadow: 0 4px 6px rgba(0,0,0,0.16) | Modal |
-| ... | ... | ... |
+| Token | 用途 |
+|-------|------|
+| --elevation-1 | Card |
+| --elevation-2 | Modal |
+| ... | ... |
 
 ### Shapes
 - Border radius: 4px (small), 8px (medium), 16px (large)
 
-## Components
-### Button
-- Variants: primary / secondary / ghost
-- Sizes: sm / md / lg
-- States: default / hover / active / disabled / loading
-- 用法: [example code]
+## Component Index
 
-### Input
-- ...
+| Component | 規格 | 對應 US |
+|-----------|------|---------|
+| Button | [components/Button.md](components/Button.md) | US-001, US-007 |
+| Input | [components/Input.md](components/Input.md) | US-001, US-002 |
+| ... | ... | ... |
 
-### Card
-- ...
+## Page Index
 
-## Page Layouts
-### Home
-- [ASCII wireframe 或 圖片連結]
-- 互動規格
-
-### Login
-- ...
+| Page | 規格 | 對應 US |
+|------|------|---------|
+| Login | [pages/Login.md](pages/Login.md) | US-001 |
+| Dashboard | [pages/Dashboard.md](pages/Dashboard.md) | US-007 |
+| ... | ... | ... |
 
 ## Do's and Don'ts
 - ✅ Do: 文字按鈕至少 44x44px
@@ -282,11 +365,132 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ## Changelog
 | 日期 | 變更 | 原因 |
+|------|------|------|
+```
+
+**components/<Name>.md（per-component contract）必填區塊**:
+
+> **No-code rule**：contract 只列 props / events / a11y / states，**不寫 source 語言 example**。Agent 對照 contract 寫實作 code，contract 跟 code 不會 drift。
+
+```markdown
+# Component: Button
+
+**對應 US**: US-001, US-007
+**對應實作**: `src/components/Button.tsx`（僅 reference，不放 code snippet）
+
+## Purpose
+Primary action affordance for forms、dialogs、navigation CTAs.
+
+## Props
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| variant | `primary` \| `secondary` \| `ghost` | no | `primary` | Visual variant |
+| size | `sm` \| `md` \| `lg` | no | `md` | Size token |
+| label | string | yes | — | Button text |
+| onClick | `() => void` | yes | — | Click handler |
+| disabled | boolean | no | `false` | Disabled state |
+| loading | boolean | no | `false` | Loading spinner replaces label |
+| iconLeft | string \| null | no | `null` | Icon name (per icon registry) |
+| type | `button` \| `submit` \| `reset` | no | `button` | HTML button type |
+
+## Events
+- `click` → calls `onClick`
+- Keyboard: `Enter` / `Space` triggers click
+
+## States
+default / hover / active / disabled / loading
+
+## Accessibility
+- Min hit-area: 44×44px
+- `role="button"`
+- `aria-disabled` when `disabled` 或 `loading`
+- Visible focus ring per `--focus-ring` token
+- Loading state: `aria-busy="true"`, label remains for screen readers
+
+## Token usage
+- background → `--color-primary`（或 `secondary`/`ghost` 對應變體）
+- text → `--color-on-primary`
+- padding → `--space-2` `--space-3`
+- radius → `--shape-small` (4px)
+- elevation → `--elevation-1` (default), `--elevation-2` (hover)
+
+## Do's and Don'ts
+- ✅ Do: 文字按鈕至少 44x44px
+- ❌ Don't: 嵌套 button（a11y 違規）
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+```
+
+**pages/<page>.md（per-page spec）必填區塊**:
+
+```markdown
+# Page: Login
+
+**對應 US**: US-001
+**URL**: `/login`
+**對應實作**: `src/pages/Login.tsx`
+
+## Purpose
+用戶輸入 email + 密碼登入。
+
+## Wireframe
+```
+┌────────────────────────────────┐
+│          [Brand Logo]          │
+│                                │
+│   ┌────────────────────────┐   │
+│   │  Email                 │   │
+│   │  [_______________]     │   │
+│   │                        │   │
+│   │  Password              │   │
+│   │  [_______________]     │   │
+│   │                        │   │
+│   │  [    Sign In (md)    ] │   │
+│   │                        │   │
+│   │  Forgot password?      │   │
+│   │  Don't have account?   │   │
+│   └────────────────────────┘   │
+│                                │
+└────────────────────────────────┘
+```
+
+## Components used
+- Input (email, password)
+- Button (primary, md)
+- Link (forgot password, sign up)
+
+## Interaction spec
+1. 用戶輸入 → 觸發 `onChange` → 表單 state 更新
+2. submit 按鈕：所有欄位 valid 前 disabled
+3. submit 後：顯示 loading state（spinner replaces label）
+4. 成功 → 跳轉 `/dashboard`
+5. 失敗 → 表單下方顯示 error（紅字），按鈕恢復 default state
+6. 連續 5 次失敗 → 429 鎖 15 分鐘（form disabled）
+
+## States
+- `idle`: 預設
+- `submitting`: loading 旋轉
+- `error`: 顯示錯誤訊息
+- `locked`: 429 後 form disabled，顯示剩餘時間
+
+## Accessibility
+- Page title: "Login"
+- Form labels 明確（不只是 placeholder）
+- 鍵盤 navigation: Tab 順序 email → password → submit
+- 錯誤訊息: `role="alert"`, `aria-live="polite"`
+- Focus 自動到第一個 error field
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
 ```
 
 **更新時機**:
-- 加新 component → 加 component 段落
-- 改 token 值 → 全文件搜尋影響範圍
+- 加新 component → 加 `components/<Name>.md` + 更新 DESIGN.md index
+- 加新 page → 加 `pages/<page>.md` + 更新 DESIGN.md index
+- 改 token 值 → DESIGN.md + 全文搜尋影響範圍（影響所有 component/page specs）
 - 設計大改 → 升 version (`v1.0` → `v2.0`),保留舊版
 
 ---
@@ -348,19 +552,93 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ## 📄 文件 5 — API.md (API Reference)
 
-**目的**:每個 endpoint 的 contract(輸入、輸出、錯誤碼、範例)。
+**目的**:每個 endpoint 的 contract（輸入、輸出、錯誤碼、範例）。Master 檔只放跨切 conventions + endpoint index，**每個 resource 一個獨立檔**，方便 agent 為單一 resource 工作時只讀該檔。
 
-**必填區塊**:
+**結構**:
+```
+docs/
+├── API.md                ← master: conventions + endpoint index
+└── endpoints/
+    ├── auth.md           ← per-resource: 該 resource 全部 endpoints
+    ├── users.md
+    ├── orders.md
+    └── ...
+```
+
+**API.md（master）必填區塊**:
 ```markdown
 # API Reference — <Project Name>
 
+> **Status:** Living document. Conventions here are cross-cutting; per-resource contracts live in endpoints/.
+
 > Base URL: `https://api.example.com/v1`
 > Auth: Bearer JWT in `Authorization` header
+> Content-Type: `application/json`
 
-## Endpoints
+## Conventions
 
-### POST /auth/login
-**描述**: 用戶登入,回傳 access token
+### Request format
+- All request bodies are JSON
+- Timestamps: ISO 8601 UTC (`2026-08-02T12:34:56Z`)
+- IDs: UUID v4 unless otherwise noted
+- Pagination: cursor-based, see [endpoints/users.md § List users](endpoints/users.md)
+
+### Response format
+- Success: `2xx` with JSON body
+- Error: `4xx`/`5xx` with `{ error: { code, message, details? } }` body
+
+### Error code convention
+| Status | Meaning |
+|--------|---------|
+| 400 | INVALID_* (client-side validation) |
+| 401 | UNAUTHENTICATED |
+| 403 | UNAUTHORIZED / FORBIDDEN |
+| 404 | NOT_FOUND |
+| 409 | CONFLICT_* |
+| 429 | RATE_LIMIT |
+| 5xx | INTERNAL — server-side, never leaks stack |
+
+### Auth
+- Bearer JWT in `Authorization` header
+- Token TTL: access 1h, refresh 30d
+- Refresh endpoint: [endpoints/auth.md § POST /auth/refresh](endpoints/auth.md)
+
+## Endpoint Index
+
+| Resource | 規格 | Endpoints |
+|----------|------|-----------|
+| auth | [endpoints/auth.md](endpoints/auth.md) | POST /auth/login, POST /auth/refresh, POST /auth/logout |
+| users | [endpoints/users.md](endpoints/users.md) | GET /users/{id}, PATCH /users/{id}, GET /users |
+| orders | [endpoints/orders.md](endpoints/orders.md) | POST /orders, GET /orders/{id}, ... |
+| ... | ... | ... |
+
+## QA / Regression Endpoints
+
+> Scope: dev/test/staging only. Production must not mount `/__qa/*` or must hard reject before side effects.
+
+| Method | Path | Purpose | Auth / Guard | Data Scope | Audit | Production Behavior | Related US/RG |
+|--------|------|---------|--------------|------------|-------|---------------------|---------------|
+| POST | /__qa/seed | Seed deterministic fixture | QA secret + staging auth | test tenant only | yes | 404 / 403 | US-001 / RG-001 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+```
+
+**endpoints/<resource>.md（per-resource）必填區塊**:
+
+```markdown
+# Endpoints: auth
+
+**對應 US**: US-001, US-005, US-006
+**對應實作**: `src/routes/auth.ts`（僅 reference）
+
+## POST /auth/login
+
+**描述**: 用戶登入,回傳 access token + refresh token
+
+**對應 US**: US-001
 
 **Request Body**:
 ```json
@@ -383,72 +661,104 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 | Status | Code | 說明 |
 |--------|------|------|
 | 400 | INVALID_EMAIL | Email 格式錯 |
-| 401 | INVALID_CREDENTIALS | 帳號/密碼錯 |
+| 401 | INVALID_CREDENTIALS | 帳號/密碼錯（不洩漏哪個錯） |
 | 429 | RATE_LIMIT | 1 分鐘內超過 5 次 |
 
+**對應 Test**: `tests/integration/auth/login.spec.ts`（RT-001）
+**對應 regression hook**: RG-001 / `__qa/regression/RG-001`
+
+## POST /auth/refresh
+
+**描述**: 用 refresh token 換新 access token
+
 **對應 US**: US-001
-**對應 Test**: [link to test file]
-**變更歷史**: v1.0 (2026-06-06) 初版
 
-### GET /users/{id}
-...
-
-## QA / Regression Endpoints
-
-> Scope: dev/test/staging only. Production must not mount `/__qa/*` or must hard reject before side effects.
-
-| Method | Path | Purpose | Auth / Guard | Data Scope | Audit | Production Behavior | Related US/RG |
-|--------|------|---------|--------------|------------|-------|---------------------|---------------|
-| POST | /__qa/seed | Seed deterministic fixture | QA secret + staging auth | test tenant only | yes | 404 / 403 | US-001 / RG-001 |
-
-### POST /__qa/seed
-**描述**: Idempotently seed regression fixture for a `US-XXX` or `RG-XXX` scenario.
-
-**Allowed caller**: QA / CI / test automation only.
-**Allowed environments**: dev/test/staging only.
-**Production behavior**: Not mounted or returns 404 / 403 before side effects.
-**Auth / access control**: QA secret / staging SSO / IP allowlist / authenticated test role.
-**Tenant / data scope**: test tenant / test DB / test schema only.
-**Side effects**: No real email / SMS / payment; sandbox / fake services only.
-**Audit event**: Record actor, endpoint, tenant, US/RG, fixture version.
-**Idempotency**: Safe to rerun.
-**對應 US/RG**: US-001 / RG-001
-**對應 Test**: `test:regression:rg -- RG-001` or equivalent.
-**Safety verification**: production 404 / 403; `REGRESSION_MODE=true` production hard fail / reject.
+**Request Body**:
+```json
+{
+  "refresh_token": "..."
+}
 ```
 
+**Response 200**:
+```json
+{
+  "access_token": "eyJ...",
+  "expires_in": 3600
+}
+```
+
+**錯誤碼**:
+| Status | Code | 說明 |
+|--------|------|------|
+| 401 | INVALID_REFRESH_TOKEN | refresh token 過期或無效 |
+
+## POST /auth/logout
+
+**描述**: 撤銷 refresh token（access token 自然過期）
+
+**對應 US**: US-001
+
+**Request Body**: empty
+
+**Response 204**: no content
+
+**錯誤碼**:
+| Status | Code | 說明 |
+|--------|------|------|
+| 401 | UNAUTHENTICATED | 缺少 / 無效 access token |
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+```
+
+**No-code rule**:JSON schema（request/response/error body）保留 — 它們是 interface 規格，跟 code 解耦。**不寫** TS/JS/Python 等 source 語言 fetch / axios / 客戶端範例。
+
 **生成方式**:
-- 手工維護(小 project)
-- 半自動:`auto-doc-gen` skill 從 JSDoc/TSDoc 生成,人手修飾
-- 完全自動:OpenAPI/Swagger codegen
+- 手工維護（小 project）
+- 半自動：每個 resource 從 JSDoc/TSDoc 生成初版，agent 修飾
+- 完全自動：OpenAPI/Swagger codegen
 
 **更新時機**:
 - Build 前 → 先寫 API contract draft；無 API 則明確標 N/A
-- 新 endpoint → 加段落 + commit
+- 新 endpoint → 加進對應 resource 檔 + 更新 API.md index
 - Request / response / error code 改動 → 同步更新 endpoint contract + TEST-COVERAGE
-- Breaking change → 升 major version,保留舊版文件
+- Breaking change → 升 major version，保留舊版文件
 
 ---
 
 ## 📄 文件 6 — TEST-COVERAGE.md
 
-**目的**:把測試從「有跑過」變成「系統性覆蓋」。
+**目的**:把測試從「有跑過」變成「系統性覆蓋」。Master 檔只放跨切 summary + RT/RG index，**每個 US 一個獨立 coverage 檔**，方便 agent 為單一 US 工作時只讀該檔。
 
-**必填區塊**:
+**結構**:
+```
+docs/
+├── TEST-COVERAGE.md            ← master: summary table + RT/RG index
+└── coverage/
+    ├── US-001.md               ← per-US: 該 US 嘅 Unit/Integration/E2E/RT 細節
+    ├── US-002.md
+    └── ...
+```
+
+**TEST-COVERAGE.md（master）必填區塊**:
 ```markdown
 # Test Coverage — <Project Name>
 
 > 最後更新: YYYY-MM-DD
 > 總體覆蓋率: X% (statement / branch / function / line)
 
-## User Story → Test Case 對照
+## User Story → Coverage 對照（summary）
 
-| US | 描述 | Unit | Integration | E2E | 狀態 | 備註 |
-|----|------|------|-------------|-----|------|------|
-| US-001 | 登入 | ✅ 3 | ✅ 1 | ✅ 1 | PASS | |
-| US-002 | 註冊 | ✅ 5 | ✅ 2 | ❌ 0 | PARTIAL | E2E 待補 |
-| US-003 | 忘記密碼 | ✅ 2 | ✅ 1 | ✅ 1 | PASS | |
+| US | 標題 | 規格 | Unit | Integration | E2E | 整體狀態 |
+|----|------|------|------|-------------|-----|---------|
+| US-001 | 登入 | [coverage/US-001.md](coverage/US-001.md) | ✅ 3 | ✅ 1 | ✅ 1 | PASS |
+| US-002 | 註冊 | [coverage/US-002.md](coverage/US-002.md) | ✅ 5 | ✅ 2 | ❌ 0 | PARTIAL |
+| US-003 | 忘記密碼 | [coverage/US-003.md](coverage/US-003.md) | ✅ 2 | ✅ 1 | ✅ 1 | PASS |
 | ... | ... | ... | ... | ... | ... | ... |
+
+狀態: `PASS` / `PARTIAL` / `NONE` / `FLAKY`
 
 ## 測試金字塔分佈
 - Unit tests: N
@@ -456,33 +766,79 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 - E2E tests: K
 - Manual smoke tests: L
 
-## Regression Mode / Hooks
+## Regression Mode / Hooks（RT/RG master index）
 
-| ID | Type | US/RG | Frontend hook | Backend hook | QA enablement | Test command | Env | Production safety | Status |
-|----|------|-------|---------------|--------------|---------------|--------------|-----|-------------------|--------|
-| RG-001 | Bug regression | RG-001 / US-001 | `data-testid=login-form` | `/__qa/regression/RG-001` | `qa:seed -- RG-001` | `test:regression:rg -- RG-001` | dev/test/staging | `/__qa/*` not mounted in production | READY |
-| US-002 | P0 flow | US-002 | fake mailbox panel | `/__qa/mailbox` | `qa:seed -- US-002` | `test:regression:e2e` | staging | sandbox mailbox only | PARTIAL |
+| ID | Type | US | Spec | Test command | Status |
+|----|------|----|------|--------------|--------|
+| RT-001 | Feature | US-001 | coverage/US-001.md | `test:regression:rt -- RT-001` | READY |
+| RG-001 | Bug regression | US-001 | docs/REGRESSION-GUARD.md | `test:regression:rg -- RG-001` | READY |
+| ... | ... | ... | ... | ... | ... |
 
 ## 已知未覆蓋區域
-- [ ] US-005 edge case: empty list
+- [ ] US-005 edge case: empty list（spec: docs/US/US-005.md）
 - [ ] US-012 性能測試未做
 - [ ] US-020 a11y 測試
 
 ## 變更歷史
 | 日期 | 變更 | 原因 |
 |------|------|------|
-| 2026-06-06 | 初版 | 從 kanban task t_c658eba4 開始 |
+```
+
+**coverage/US-XXX.md（per-US coverage）必填區塊**:
+
+```markdown
+# Coverage: US-001 — 登入
+
+**對應 US**: [docs/US/US-001-login.md](../US/US-001-login.md)
+**對應 RT**: RT-001
+**最後更新**: YYYY-MM-DD by dev-agent
+
+## Test inventory
+
+### Unit tests
+| Test file | 覆蓋範圍 | 狀態 |
+|-----------|----------|------|
+| `tests/unit/auth/password-validator.test.ts` | 密碼強度校驗 | ✅ |
+| `tests/unit/auth/login-form-validation.test.ts` | 表單欄位驗證 | ✅ |
+| `tests/unit/auth/rate-limiter-token-bucket.test.ts` | 5次/15min rate limit 邏輯 | ✅ |
+
+### Integration tests
+| Test file | 覆蓋範圍 | 狀態 |
+|-----------|----------|------|
+| `tests/integration/auth/login.spec.ts` | POST /auth/login + DB + JWT 簽發 | ✅ |
+
+### E2E tests
+| Test file | 覆蓋範圍 | 狀態 |
+|-----------|----------|------|
+| `tests/e2e/auth/login-happy-path.spec.ts` | UI 登入 happy path | ✅ |
+| `tests/e2e/auth/login-rate-limit.spec.ts` | 連續失敗觸發 429 | ✅ |
+
+## RT-001 (regression test)
+- **位置**: `tests/regression/auth/RT-001-login.spec.ts`
+- **掛入開關**: `REGRESSION_MODE=1 bun test:regression`
+- **斷言**: 用戶可觀察行為（200 + redirect、401 + error message、429 + 鎖定）— 不斷言實作細節
+- **最後 PASS 日期**: YYYY-MM-DD
+
+## 已知 gap
+- 2FA 流程未覆蓋（US-005 範圍）
+- 第三方 SSO 失敗 fallback 未覆蓋
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
 ```
 
 **更新時機**:
 - 每個 sprint 結束
 - 重大功能上線前
-- 新增 / 修改 regression hook、`/__qa/*` endpoint、QA panel、test fixture、fake mailbox、test clock 時
+- 新增 / 修改 regression hook、`/__qa/*` endpoint、QA panel、test fixture、fake mailbox、test clock 時 → 同步更新對應 coverage/US-XXX.md + master summary
 - 詳見 `docs/qa-tracker.md`
 
 **Regression rule**:`docs/REGRESSION-GUARD.md` 不是無 bug project 的必備文件；但 project 一旦有 bug fix / `RG-XXX` entry，就必須存在，且 `TEST-COVERAGE.md` 必須在 Regression Mode / Hooks matrix 收錄對應 QA 啟用方式。
 
-**`/__qa/*` hook rule**:Backend hook 以 `/__qa/` 開頭時，必須在 `docs/API.md` 的 QA / Regression Endpoints section 有對應 endpoint contract。該 row 的 `Production safety` 不可留空，且必須明確寫 production not mounted / 404 / 403 / hard reject、test tenant / test DB / test schema scope、auth / secret / allowlist。`READY` row 必須同時有 test command、QA enablement、environment 與 production safety。
+**`/__qa/*` hook rule**:Backend hook 以 `/__qa/` 開頭時，必須在 `endpoints/<resource>.md` 的 QA / Regression section 有對應 endpoint contract。該 row 的 `Production safety` 不可留空，且必須明確寫 production not mounted / 404 / 403 / hard reject、test tenant / test DB / test schema scope、auth / secret / allowlist。`READY` row 必須同時有 test command、QA enablement、environment 與 production safety。
+
+**dev-checker-loop 整合**:Work Item 直接 reference `coverage/US-XXX.md` + `tests/regression/<file>.spec.ts`。Checker 驗 US-XXX 時只讀這兩個檔 + 對應 RT，跑一次 regression suite 即得到 RT-XXX PASS/FAIL。
 
 ---
 
