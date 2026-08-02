@@ -24,19 +24,25 @@ Reflect ←──────┴─────────┴──────
                                                 Loop
 ```
 
+> **⚠ Agent 唔會自動 invoke orchestrator**：以上流程圖只描述「做咩」，唔會自動派 subagent。Agent 必須根據當前 phase 主動 invoke 對應 skill（見 Phase 總覽表嘅 Skill trigger 欄）。例：Build phase 開多 work item 時，必須 invoke `skills/orchestrator/SKILL.md` 嘅 inner loop（dev+checker），否則只係 developer 單寫無 quality gate。
+
+---
+
 ---
 
 ## Phase 總覽
 
-| Phase   | 名稱                           | 輸出                                                                                              | 負責 Subagent                                                   | 強制  |
-| ------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | --- |
-| Think   | 市場分析 + 技術調研                  | `ceo-market-analysis.md` + 調研報告                                                                 | CEO + Researcher                                              | ✅   |
-| Plan    | 商業計劃 + 需求 + 架構 + 文檔 baseline | `ceo-business-plan.md` + `docs/PRD.md` + `docs/DESIGN.md` + ADR + `docs/QA-TRACKER.md` baseline | CEO + BA + Designer + SA + Tech Lead + Documentation Engineer | ✅   |
-| Build   | 開發執行                         | 代碼                                                                                              | Frontend + Backend + DevOps + Security Engineer               | —   |
-| Review  | 架構審查 + UX 合規                 | Review 報告                                                                                       | SA Reviewer + UX Reviewer                                     | ✅   |
-| Test    | 測試 + 壓測                      | 測試報告 + 壓測報告                                                                                     | QA + Performance Engineer                                     | ✅   |
-| Ship    | 部署上線                         | 部署確認                                                                                            | Release Manager                                               | —   |
-| Reflect | 復盤                           | 復盤報告                                                                                            | Retrospective + Sprint Manager                                | —   |
+| Phase   | 名稱                           | 輸出                                                                                              | 負責 Subagent                                                   | Skill trigger                                              | 強制  |
+| ------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- | --- |
+| Think   | 市場分析 + 技術調研                  | `ceo-market-analysis.md` + 調研報告                                                                 | CEO + Researcher                                              | (Think/Plan interactive mode per `AGENTS.md`)            | ✅   |
+| Plan    | 商業計劃 + 需求 + 架構 + 文檔 baseline | `ceo-business-plan.md` + `docs/PRD.md` + `docs/DESIGN.md` + ADR + `docs/QA-TRACKER.md` baseline | CEO + BA + Designer + SA + Tech Lead + Documentation Engineer | `skills/structural-doc-batch/`（modular docs 生成）          | ✅   |
+| Build   | 開發執行                         | 代碼                                                                                              | Frontend + Backend + DevOps + Security Engineer               | **`skills/orchestrator/SKILL.md` § Inner loop — Dev + checker verification**（多 work item 嘅 feature dev 預設路徑） | —   |
+| Review  | 架構審查 + UX 合規                 | Review 報告                                                                                       | SA Reviewer + UX Reviewer                                     | `skills/orchestrator/SKILL.md`（outer loop dispatch）    | ✅   |
+| Test    | 測試 + 壓測                      | 測試報告 + 壓測報告                                                                                     | QA + Performance Engineer                                     | `skills/orchestrator/SKILL.md` § Checker standards     | ✅   |
+| Ship    | 部署上線                         | 部署確認                                                                                            | Release Manager                                               | `docs/qa-gate.md` § Pre-Ship Verification Flow           | —   |
+| Reflect | 復盤                           | 復盤報告                                                                                            | Retrospective + Sprint Manager                                | `docs/feedback-loop.md` + `docs/failure-policy.md`        | —   |
+
+> **關於 orchestrator**：本表「Skill trigger」欄指明各 phase 用嘅具體 skill。Build / Review / Test 嘅多 subagent / multi-work-item 協調**不會自動發生** — agent 必須主動 invoke orchestrator skill（多 work item 時）。trivial 1-2 行改動唔需要 orchestrator（直接做 + 自驗即可）。判斷細節見 `AGENTS.md` § Agent 開發預設路徑。
 
 ---
 
@@ -188,7 +194,19 @@ Plan 結束、Build 開始前，Documentation Engineer + Tech Lead 必須確認 
 - 修復 SQL Injection、XSS、Secrets 暴露等問題
 
 ### 協調者
-由 Orchestrator Subagent 協調。
+
+**`skills/orchestrator/SKILL.md` § Inner loop**（default path for multi-item feature dev）：
+- Dev agent = 主對話
+- Checker agent = spawn fresh subagent（用 `Agent` tool，每輪新 spawn 保持獨立性）
+- 透過 `<project>/docs/STATE.md` 協調 work items + dev+checker iteration
+- 每個 code work item 標 DEV_DONE 前必須有 `RT-XXX` regression test + 對應 `docs/coverage/<US-id>.md` row
+
+Outer loop（multi-subagent / multi-phase coordination）由 `skills/orchestrator/SKILL.md` § Outer loop 擁有：
+- Task Board 在 `docs/task-board.md`
+- Phase 0 BA / Phase 0.5 UI/UX / Phase 1 SA 等 subagent 由 orchestrator 派發
+- 跨 task dependency tracking
+
+> **不會自動 invoke** — agent 必須主動讀 `skills/orchestrator/SKILL.md` 並 dispatch subagent。如果只係 1-2 行 typo / config 改動，唔需要 orchestrator（直做 + 自驗即可）。判斷細節見 `AGENTS.md` § Agent 開發預設路徑。
 
 ### 長期任務支援
 **Context Manager** — 每 30 分鐘或每完成一個 task，自動總結當前進度：
