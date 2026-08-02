@@ -259,7 +259,25 @@ Agent 走 Think/Plan 互動：
 
 ## 安裝指南
 
-### Claude Code
+### Claude Code（推薦用 `install.sh`）
+
+```bash
+# 1. 安裝 agents + skills 到 ~/.claude/
+./install.sh
+
+# 2. （可選）裝 global CLAUDE.md bridge — 所有 project 自動 load profile
+./install.sh --global-bridge
+
+# 3. 卸載
+./install.sh --uninstall
+```
+
+`install.sh` 自動：
+- Symlink `.claude/agents/*.md`（22 個 subagent role）→ `~/.claude/agents/`
+- Symlink `skills/*/` → `~/.claude/skills/`
+- Optional：symlink `CLAUDE.md` → `~/.claude/CLAUDE.md`（global bridge）
+
+**手動安裝**（不跑 install.sh）：
 
 Claude Code 的 `CLAUDE.md` auto-discovery 只在 current working directory 及其 parent chain 內有效。**直接 `cd tree_monstor && claude` 不會自動載入**（你的下游 project 才是 cwd）。
 
@@ -277,18 +295,21 @@ Claude Code 的 `CLAUDE.md` auto-discovery 只在 current working directory 及�
 
 之後 `claude` 開任何 session 都會自動載入 Tree Monstor 紅線、QA Gate、文件索引。
 
-**2. 註冊 skills**
+**2. 註冊 agents + skills**
 
-profile 裡的 `skills/*/SKILL.md` 不是 Claude Code 標準位置，需要 symlink：
+profile 裡的 `.claude/agents/*.md` 同 `skills/*/SKILL.md` 不是 Claude Code 標準位置，需要 symlink 或跑 `./install.sh`：
 
 ```bash
-mkdir -p ~/.claude/skills
+mkdir -p ~/.claude/agents ~/.claude/skills
+for agent in ~/Sites/localhost/tree_monstor/.claude/agents/*.md; do
+  ln -s "$agent" ~/.claude/agents/
+done
 for skill in ~/Sites/localhost/tree_monstor/skills/*/; do
   ln -s "$skill" ~/.claude/skills/
 done
 ```
 
-之後 `/regression-guard`、`/existing-project-intake` 等 skill 直接 invoke。
+之後 `/regression-guard`、`/existing-project-intake` 等 skill 同 `orchestrator`、`ceo`、`ba`、`frontend` 等 agent 直接 invoke。
 
 **3. Per-project 載入（只在某個 project 用）**
 
@@ -304,12 +325,10 @@ done
 claude --append-system-prompt-file ~/Sites/localhost/tree_monstor/CLAUDE.md
 ```
 
-**5. 整個 session 跑成 Tree Monstor agent**
-
-把 profile 包成自訂 subagent 放 `~/.claude/agents/tree-monstor.md`，然後：
+**5. 整個 session 跑成 Tree Monstor orchestrator**
 
 ```bash
-claude --agent tree-monstor
+claude --agent orchestrator
 ```
 
 詳細文檔：[`CLAUDE.md`](CLAUDE.md) + [docs/claude-code-workflow.md](docs/claude-code-workflow.md)
