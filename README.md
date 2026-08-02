@@ -97,6 +97,151 @@ Orchestrator 協調 CEO / Researcher / BA / Designer / SA / Frontend / Backend /
 
 ---
 
+## 如何使用這個 Agent
+
+Agent 不會自動做任何事 — 每個 phase 都靠你**主動 invoke 對應 skill**。以下係常見場景：
+
+### 場景 1：「我想做一個新嘢」（綠field）
+
+```
+你：「我想做一個 todo app，要有 due date、tag、filter」
+        ↓
+Agent 載入 SOUL.md + AGENTS.md（身份 + 流程）
+        ↓
+Trigger: plan-author skill
+        ↓
+Think/Plan 互動：
+  「MVP 範圍？local storage 定 sync server？」
+  「Auth 需要嗎？」
+  「Tech stack 選項：Next.js + Postgres / SvelteKit + SQLite / ...」
+        ↓
+Output（modular plan docs）：
+  docs/PRD.md                 ← US index
+  docs/US/US-001-add-todo.md
+  docs/US/US-002-filter.md
+  docs/US/US-003-due-date.md
+  docs/DESIGN.md              ← tokens + component index
+  docs/components/Button.md    ← contract（no-code rule）
+  docs/components/TodoItem.md
+  docs/architecture/0001-stack-choice.md
+  docs/QA-TRACKER.md          ← US ↔ test
+  docs/VERIFY.md
+        ↓
+Pre-Build Gate: docs_consistency_check.py --project-docs
+        ↓
+你：「OK 開工」
+        ↓
+Trigger: orchestrator skill（inner loop 自動啟用）
+        ↓
+dev + checker per US work item
+```
+
+### 場景 2：「接手 existing project」（已有 source code）
+
+```
+你：「呢個係 ~/www/legacy-app，幫我補 docs + QA」
+        ↓
+Trigger: existing-project-intake skill
+        ↓
+Source-first analysis（唔 hallucinate，係 read source）：
+  - 讀 source code、routes、schemas、tests、git history
+  - 輸出 docs baseline（8+1 份 docs）
+  - monolithic docs 自動拆 per-US / per-component / per-endpoint
+        ↓
+Output：同場景 1 嘅 plan docs，但係 derive 自 source 而非對話
+        ↓
+你：「可以開始改 X feature」
+        ↓
+Trigger: orchestrator skill
+```
+
+### 場景 3：「Bug：X」（紅線 54-56 觸發）
+
+```
+你：「用戶投訴 login 之後 redirect 去 /projects 但實際係 /」
+        ↓
+Trigger: regression-guard skill
+        ↓
+Step 1：先重現（紅線 54）
+  寫 failing test 證明 bug
+        ↓
+Step 2：寫 fix
+        ↓
+Step 3：RG entry
+  docs/REGRESSION-GUARD.md 加 RG-XXX
+  source code 加 RG-XXX comment marker
+        ↓
+Output：bug fixed + regression test 永遠守住
+```
+
+### 場景 4：「加 feature / 改 scope」（Build 中）
+
+```
+你：「US-005 嘅 filter 加埋 multi-tag AND/OR」
+        ↓
+Agent 讀 docs/US/US-005-filter.md（modular）
+        ↓
+Trigger: orchestrator skill § Inner loop
+        ↓
+dev agent：
+  - 改 src/components/Filter.tsx
+  - 補 RT-005 regression test
+  - 寫 docs/coverage/US-005.md 更新
+  - append docs/US/US-005.md changelog 行
+        ↓
+fresh checker agent（independent subagent）：
+  - 讀整份 docs/STATE.md
+  - 開 regression 開關實跑全套 regression suite
+  - 審計 coverage 表
+  - 寫 CK-XXX findings 回 STATE.md
+        ↓
+loop until VERIFIED 或 escalation
+```
+
+### 場景 5：「Review / QA feedback 要落 doc」
+
+```
+你：「Reviewer 話 US-012 嘅 AC 唔夠，應加 empty list case」
+        ↓
+Trigger: docs-sync skill
+        ↓
+同步：
+  docs/US/US-012.md ← append AC checkbox
+  docs/coverage/US-012.md ← 加 test inventory row
+  docs/QA-TRACKER.md ← Status 改 PARTIAL
+        ↓
+Spec 改完 → dev 跟改 → checker 覆核
+```
+
+### 場景 6：「純研究 / 純閱讀」
+
+```
+你：「比較 Elysia vs Hono 嘅 middleware pattern」
+        ↓
+Agent 走 Think/Plan 互動：
+  「2 個 framework 都係 Bun-native；Elysia 強在 type safety，Hono 強在跨 runtime」
+  「應用場景？serverless edge 揀 Hono，pure Bun server 揀 Elysia」
+  「漏咗咩？Express / Fastify legacy 相容... 」
+        ↓
+無 doc 產出（research 不需要 commit artifact）
+```
+
+---
+
+## 不會自動發生的事
+
+| Agent 唔會... | 你需要... |
+|---------------|-----------|
+| 自動 invoke orchestrator 做 multi-subagent 協調 | 主動讀 `skills/orchestrator/SKILL.md` 並 dispatch subagent |
+| 自動寫 Plan docs | Trigger `skills/plan-author/SKILL.md`（Plan phase 開始） |
+| 自動跑 dev+checker inner loop | Trigger `skills/orchestrator/SKILL.md` § Inner loop（Build phase 開始） |
+| 自動補 RG entry | Trigger `skills/regression-guard/SKILL.md`（bug fix 開始） |
+| 自動寫 retrospective | Trigger `skills/orchestrator/SKILL.md` § Reflect 或 inline `docs/retros/YYYY-MM-DD-<name>.md` |
+
+詳見 [`AGENTS.md`](AGENTS.md) § Agent 開發預設路徑。
+
+---
+
 ## 安裝指南
 
 ### Claude Code
