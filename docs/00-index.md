@@ -29,6 +29,25 @@
 | [`docs/project-doc-templates/`](project-doc-templates/) | 14 個 per-doc templates（US、component contract、endpoint resource 等） |
 | [`docs/think-plan-examples.md`](think-plan-examples.md) | Think / Plan 互動範例、架構選項與提問方式 |
 | `skills/plan-author/SKILL.md` | 把 Think/Plan 對話共識轉成 modular plan docs（PRD + per-US + DESIGN + components/pages + ADRs + QA-TRACKER baseline + VERIFY） | Plan phase 入口 — David 表達新需求 / 新項目 / 新大 feature 時 |
+| `.claude/agents/` | 22 個 Claude Code custom agent definitions（CEO / BA / Designer / SA / Frontend / Backend / QA / ...） | Orchestrator trigger table 自動 dispatch 對應 role |
+| `install.sh` | 一次性 install agents + skills 到 `~/.claude/` | Profile 安裝入口 |
+
+## Build（開發 / 品質）
+
+| 文件 | 用途 |
+|------|------|
+| [`docs/subagents.md`](subagents.md) | Subagent 角色矩陣（具體角色數見 canonical source；orchestrator skill 是實際 entry） |
+| [`docs/devops.md`](devops.md) | DevOps 規範、process 管理、Zombie 處理 |
+| [`docs/environment-isolation.md`](environment-isolation.md) | Dev / Prod / Agent Config 三層環境隔離 |
+| [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Claude Code runtime features：Dynamic Workflow / ultracode / 多 agent 編排 |
+| `skills/orchestrator/SKILL.md` | Multi-subagent + per-work-item dev+checker loop（內外層一體，2026-08-02 合併 dev-checker-loop；附 Subagent trigger table） |
+| `skills/regression-guard/SKILL.md` | bug fix SOP、RG-XXX entry format、QA enablement |
+| `skills/docs-sync/SKILL.md` | Review / QA feedback → durable docs（per-modular-doc sync rules） |
+| `skills/existing-project-intake/SKILL.md` | 接手現有 project 的 source-first baseline 流程 |
+| `skills/patch-corruption-recovery/SKILL.md` | replace-all / fuzzy-match edit 崩潰嘅救援 |
+| `skills/structural-doc-batch/SKILL.md` | 一次過補齊 8 份結構性文檔（modular docs） |
+| `.claude/agents/orchestrator.md` | Orchestrator agent definition（供 `claude --agent orchestrator` 直接 invoke） |
+| `.claude/agents/{ceo,ba,designer,sa,frontend,backend,qa,...}.md` | 22 個 role agent definitions（Orchestrator 自動 dispatch） |
 
 ## Build（開發 / 品質）
 
