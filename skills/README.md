@@ -2,7 +2,7 @@
 
 > **Status:** Catalog. Local skills index; each skill's source of truth is its own `SKILL.md`.
 
-**10 core skills** kept under `skills/`. Historical / stack-specific / niche patterns archived under `archive/skills/` (recoverable from git history if needed).
+**10 core skills** kept under `skills/`. No archive directory — retired / stack-specific / niche patterns live in git history only (`git log --all -- '*<skill-name>*'` or `git log -S '<name>'`).
 
 This catalog lists **local Tree Monstor skills** at two levels:
 
@@ -71,9 +71,7 @@ In Claude Code:
 
 ## Archived skills
 
-Historical / stack-specific / niche patterns moved to `archive/skills/`. Recoverable from git history. See commit log starting from `3a0be36 chore(archive): retire hermes-era, ultrawork, and timeout-recovery skills` (2026-08-01).
-
-Common reasons for archiving:
+No archive directory. Retired patterns live in git history only — recoverable via `git log --all -- '*<skill-name>*'` or `git log -S '<name>'`. See the 2026-08 compression commits for what was retired and why:
 
 - **Stack-specific** (Prisma, Elysia/Bun, CDK, Docker, React/Vite, Tailwind, iOS, Nginx): reusable only within a specific stack; better as project-level cheatsheet than profile-level routing
 - **Niche / one-shot** (e.g. `mac-apfs-case-insensitive-git-tracking`, single-deploy gotchas): not core to multi-project workflow
