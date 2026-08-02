@@ -103,6 +103,59 @@ Required baseline before Build, or explicit `N/A + reason` where applicable:
 
 Minimum task-scoped baseline is acceptable when David wants a targeted change. Example: API-only change can defer full design docs with N/A reason, but must baseline API behavior, affected requirements, tests, QA tracker, and tech debt if relevant.
 
+### Phase 2.5 — Modular split (when existing docs are monolithic)
+
+> Per `docs/project-documentation-standard.md` (2026-08-02): structural docs should be modular
+> (master + per-US / per-component / per-endpoint / per-coverage subdirs). 既有 monolithic 嘅
+> PRD / DESIGN / API / TEST-COVERAGE 必須拆分。
+
+**When to split**:
+
+- Existing `PRD.md` contains inline `### US-XXX — ...` sections → split to `US/<US-id>-<slug>.md` each
+- Existing `DESIGN.md` contains inline `## Components` with per-component blocks → split to `components/<Name>.md`; if `## Pages` present → split to `pages/<page>.md`
+- Existing `API.md` contains inline per-endpoint blocks → group by resource → split to `endpoints/<resource>.md`
+- Existing `TEST-COVERAGE.md` contains inline per-US test inventory → split to `coverage/<US-id>.md`
+
+**Auto-split algorithm** (apply per file, only when boundaries are clear):
+
+```
+PRD.md:
+  regex: /^### (US-\d+(?:\.\d+)?)\s*[—–-]\s*(.+)$/  → capture group 1 = US-id, 2 = title
+  for each match:
+    write docs/US/<US-id>-<slug>.md  (slug = kebab-case of title)
+    master PRD.md keeps only Scope / NFR / 假設 / US Index table / 變更歷史
+
+DESIGN.md:
+  regex: /^### ([A-Z][A-Za-z0-9 ]+?)\s*$/  (under ## Components)
+    → match Name (filter out non-component headers like "States", "Variants")
+  for each component block:
+    write docs/components/<Name>.md
+    master DESIGN.md keeps Tokens + Component Index table
+
+API.md:
+  regex: /^### ((?:GET|POST|PUT|DELETE|PATCH)) (\/[^ ]+)/  → method + path
+  group by resource prefix (first non-versioned path segment)
+  for each resource:
+    write docs/endpoints/<resource>.md  (all matching endpoint blocks)
+    master API.md keeps Conventions + Endpoint Index + QA section
+
+TEST-COVERAGE.md:
+  match US rows from the "User Story → Test Case 對照" table
+  for each US:
+    write docs/coverage/<US-id>.md  (test inventory + RT placeholder)
+    master TEST-COVERAGE.md keeps summary table + RT/RG index
+```
+
+**Manual fallback** (when boundaries unclear): leave monolithic as-is for that section, mark in intake report with explicit "Split deferred — ambiguous boundaries", and add a `docs/TECH-DEBT.md` entry to track. Do NOT silently leave monolithic in place.
+
+**Post-split**:
+
+- Update master file's index table to reference new per-X paths
+- Run `python3 scripts/docs_consistency_check.py --project-docs` to confirm baseline passes
+- Commit split as separate commit (so it's revertible) with message:
+  `chore(docs): split monolithic <DOC> into modular per-X files`
+- If any source code snippets existed in original docs, the per-X replacements apply the no-code rule (props table / events / a11y instead of `<Button onClick={...}>`; JSON schemas instead of fetch examples). Mark this in the split commit message.
+
 ---
 
 ## Phase 3 — Regression and QA endpoint readiness audit
@@ -185,17 +238,24 @@ Use the project’s default base ref if it is not `origin/main`.
 - Current git state:
 
 ### 2. Documentation Baseline Status
-| Required doc | Exists | Source-derived/current? | Action |
-|---|---:|---:|---|
-| PROJECT-OVERVIEW.md | Yes/No | Yes/No/Unknown | Create/update/keep |
-| PRD.md | Yes/No | Yes/No/Unknown | Create/update/keep |
-| DESIGN.md | Yes/No/N/A | Yes/No/Unknown | Create/update/N/A |
-| ADR | Yes/No | Yes/No/Unknown | Create/update |
-| API.md | Yes/No/N/A | Yes/No/Unknown | Create/update/N/A |
-| QA-TRACKER.md | Yes/No | Yes/No/Unknown | Create/update |
-| TEST-COVERAGE.md | Yes/No | Yes/No/Unknown | Create/update |
-| TECH-DEBT.md | Yes/No | Yes/No/Unknown | Create/update |
-| REGRESSION-GUARD.md | Yes/No/N/A | Yes/No/Unknown | Create/update/N/A |
+| Required doc | Exists | Source-derived/current? | Modular? | Action |
+|---|---:|---:|---:|---|
+| PROJECT-OVERVIEW.md | Yes/No | Yes/No/Unknown | N/A | Create/update/keep |
+| PRD.md | Yes/No | Yes/No/Unknown | Yes/No | Create/split/update/keep |
+| US/<id>-<slug>.md | Yes/No/N/A | Yes/No/Unknown | — | Create/N/A/keep |
+| DESIGN.md | Yes/No/N/A | Yes/No/Unknown | Yes/No/N/A | Create/split/update/N/A |
+| components/<Name>.md | Yes/No/N/A | Yes/No/Unknown | — | Create/N/A/keep |
+| pages/<page>.md | Yes/No/N/A | Yes/No/Unknown | — | Create/N/A/keep |
+| ADR | Yes/No | Yes/No/Unknown | N/A | Create/update |
+| API.md | Yes/No/N/A | Yes/No/Unknown | Yes/No/N/A | Create/split/update/N/A |
+| endpoints/<resource>.md | Yes/No/N/A | Yes/No/Unknown | — | Create/N/A/keep |
+| QA-TRACKER.md | Yes/No | Yes/No/Unknown | N/A | Create/update |
+| TEST-COVERAGE.md | Yes/No | Yes/No/Unknown | Yes/No | Create/split/update/keep |
+| coverage/<US-id>.md | Yes/No/N/A | Yes/No/Unknown | — | Create/N/A/keep |
+| TECH-DEBT.md | Yes/No | Yes/No/Unknown | N/A | Create/update |
+| REGRESSION-GUARD.md | Yes/No/N/A | Yes/No/Unknown | N/A | Create/update/N/A |
+
+> **Modular column**: `Yes` = 已經係 master + per-X subdir；`No` = monolithic，需 Phase 2.5 拆分；`N/A` = 該類型 doc 不適用（無 UI project 等）。
 
 ### 3. Test and QA Inventory
 - Unit tests:
