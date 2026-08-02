@@ -99,7 +99,13 @@ Orchestrator 協調 CEO / Researcher / BA / Designer / SA / Frontend / Backend /
 
 ## 如何使用這個 Agent
 
-Agent 不會自動做任何事 — 每個 phase 都靠你**主動 invoke 對應 skill**。以下係常見場景：
+> **Skill routing 兩層**：
+> 1. ✅ **Skill 載入係自動** — 你講嘅訊息命中某 skill 嘅 `trigger:` keyword 時，Claude Code 自動 inject 該 skill 嘅 SKILL.md 內容入 context。例如你講「派 subagent 修 bug」會自動帶入 `skills/orchestrator/SKILL.md` + `skills/regression-guard/SKILL.md`。
+> 2. ❌ **Workflow 執行唔自動** — Skill 載入後，Agent 仍要主動 dispatch subagent（call `Agent` tool）、寫 docs、跑 regression loop 等等。
+>
+> 即係「**睇到**自動，**做**唔自動**」。每個場景你需要嘅 trigger sequence 喺下面。
+
+### 常見場景
 
 ### 場景 1：「我想做一個新嘢」（綠field）
 
@@ -230,15 +236,24 @@ Agent 走 Think/Plan 互動：
 
 ## 不會自動發生的事
 
-| Agent 唔會... | 你需要... |
-|---------------|-----------|
-| 自動 invoke orchestrator 做 multi-subagent 協調 | 主動讀 `skills/orchestrator/SKILL.md` 並 dispatch subagent |
-| 自動寫 Plan docs | Trigger `skills/plan-author/SKILL.md`（Plan phase 開始） |
-| 自動跑 dev+checker inner loop | Trigger `skills/orchestrator/SKILL.md` § Inner loop（Build phase 開始） |
-| 自動補 RG entry | Trigger `skills/regression-guard/SKILL.md`（bug fix 開始） |
-| 自動寫 retrospective | Trigger `skills/orchestrator/SKILL.md` § Reflect 或 inline `docs/retros/YYYY-MM-DD-<name>.md` |
+| Agent 唔會...                               | 自動程度  | 你需要...                                                             |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ |
+| **Dispatch subagent** 做 multi-subagent 協調 | ❌ 唔自動 | Skill 載入自動，但 dispatch 須主動 call `Agent` tool 開始派工                   |
+| **寫 Plan docs**                           | ❌ 唔自動 | `plan-author` 載入自動，但 US / ADR / docs 寫入須主動                         |
+| **跑 dev+checker inner loop**              | ❌ 唔自動 | `orchestrator` § Inner loop 載入自動，但 STATE.md 協調 + spawn checker 須主動 |
+| **補 RG entry**                            | ❌ 唔自動 | `regression-guard` 載入自動，但 reproduce + fix + RG-XXX 須主動             |
+| **寫 retrospective**                       | ❌ 唔自動 | `orchestrator` § Reflect 或 inline retro 須主動                        |
+|                                           |       |                                                                    |
 
-詳見 [`AGENTS.md`](AGENTS.md) § Agent 開發預設路徑。
+### ✅ 自動嘅事（你唔使 trigger）
+
+| 自動發生                                               | 機制                                                          |
+| -------------------------------------------------- | ----------------------------------------------------------- |
+| Skill SKILL.md 載入 context                          | `trigger:` keywords 命中你嘅訊息（例：「派 subagent」→ orchestrator 載入） |
+| Skill description 顯示                               | Claude Code 用 skill frontmatter `description:` 決定係咪相關       |
+| Adapter wrappers 啟用 (`/dev-loop`, `/orchestrator`) | 透過 `adapters/claude-code/skills/` symlink                   |
+
+詳見 [`AGENTS.md`](AGENTS.md) § Agent 開發預設路徑 + [`CLAUDE.md`](CLAUDE.md) § Skill routing。
 
 ---
 
