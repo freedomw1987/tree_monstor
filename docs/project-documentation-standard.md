@@ -282,7 +282,7 @@ docs/
 - 每次新功能加入 → 新增 US 檔 + 更新 master index
 - 每次需求變更 → 改 US 檔 + master 同步 + 標記 change log
 - 刪除 US → US 檔改名加 `.DEPRECATED.md` 後綴（保留歷史），master index 標 DEPRECATED
-- **dev-checker-loop Work Item 直接 reference per-US 檔**，不引用 master PRD.md 第 N 行
+- **orchestrator inner loop（dev+checker）Work Item 直接 reference per-US 檔**，不引用 master PRD.md 第 N 行
 
 ---
 
@@ -838,7 +838,7 @@ docs/
 
 **`/__qa/*` hook rule**:Backend hook 以 `/__qa/` 開頭時，必須在 `endpoints/<resource>.md` 的 QA / Regression section 有對應 endpoint contract。該 row 的 `Production safety` 不可留空，且必須明確寫 production not mounted / 404 / 403 / hard reject、test tenant / test DB / test schema scope、auth / secret / allowlist。`READY` row 必須同時有 test command、QA enablement、environment 與 production safety。
 
-**dev-checker-loop 整合**:Work Item 直接 reference `coverage/US-XXX.md` + `tests/regression/<file>.spec.ts`。Checker 驗 US-XXX 時只讀這兩個檔 + 對應 RT，跑一次 regression suite 即得到 RT-XXX PASS/FAIL。
+**orchestrator inner loop 整合**:Work Item 直接 reference `coverage/US-XXX.md` + `tests/regression/<file>.spec.ts`。Checker 驗 US-XXX 時只讀這兩個檔 + 對應 RT，跑一次 regression suite 即得到 RT-XXX PASS/FAIL。
 
 ---
 

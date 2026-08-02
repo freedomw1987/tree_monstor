@@ -62,21 +62,21 @@ Step 8: 提交 + commit message 引用 entry ID
 ## 🔄 Runtime workflow (cross-ref)
 
 本 skill 集中喺 **post-mortem 流程**(bug fix 之後留 RG-XXX + root cause + prevention)。
-**Runtime workflow** — `REGRESSION_MODE=1` 開關、結構化日誌、`docs/STATE.md` 對賬單、checker agent 審計、dev agent 修正 — 由 [`dev-checker-loop`](../dev-checker-loop/SKILL.md) 擁有。
+**Runtime workflow** — `REGRESSION_MODE=1` 開關、結構化日誌、`docs/STATE.md` 對賬單、checker agent 審計、dev agent 修正 — 由 [`orchestrator`](../orchestrator/SKILL.md) § Inner loop — Dev + checker verification 擁有（2026-08-02 起，dev-checker-loop 已合併到 orchestrator）。
 
 兩個 skill 嘅分工同銜接：
 
 | 階段 | Owner | 銜接點 |
 |------|-------|--------|
-| **開發中** (per feature) | `dev-checker-loop` | 每個 work item 必須帶 regression test (RT-XXX)，掛進開關、登記 Coverage 表 |
+| **開發中** (per feature) | `orchestrator` § Inner loop | 每個 work item 必須帶 regression test (RT-XXX)，掛進開關、登記 Coverage 表 |
 | **Bug fix 之中** (retrofit) | 本 skill (regression-guard) | 修 bug 時必須補 RG-XXX entry(即使 bug 唔屬於 loop 內發現) |
 | **Refactor / 改需求** | 本 skill | `rg "RG-XXX"` 確認 invariant 仲 valid，跑對應 regression test |
 | **Production 安全** | 本 skill (§ Step 5.5) | `REGRESSION_MODE` 唔可以 bypass production safety — production not mounted / 404 / hard fail；測試要配合真實 production behavior。詳見 Step 5.5「QA Regression Mode」+ 「Pitfall: `/__qa/*` endpoint 變成 accidental backdoor」 |
 
-> **完整 runtime flow**(`REGRESSION_MODE=1` 點 set、log 行格式 `[REGRESSION] <RT-ID> | <feature> | <frontend|backend|e2e> | PASS|FAIL | ...`、Coverage 表樣板、checker 標準、escalation rules)見 `dev-checker-loop/SKILL.md § Regression harness contract` 同 `§ File contract: docs/STATE.md`。本檔唔重複。
+> **完整 runtime flow**(`REGRESSION_MODE=1` 點 set、log 行格式 `[REGRESSION] <RT-ID> | <feature> | <frontend|backend|e2e> | PASS|FAIL | ...`、Coverage 表樣板、checker 標準、escalation rules)見 `orchestrator/SKILL.md § Inner loop — Dev + checker verification > Regression harness contract` 同 `§ File contract: docs/STATE.md`。本檔唔重複。
 
-**dev-checker-loop 入面提及 RG-XXX 嘅地方**:
-- §「Checker standards」嘅「Bug fix 專項」sub-step（即 dev-checker-loop 嘅 Step 1 內部）— bug fix item 必走 [`regression-guard`](./SKILL.md) 標準(red→green test + RG entry + code comment)
+**orchestrator 入面提及 RG-XXX 嘅地方**:
+- §「Checker standards」嘅「Bug fix 專項」sub-step（即 inner loop 嘅 Step 1.6）— bug fix item 必走 [`regression-guard`](./SKILL.md) 標準(red→green test + RG entry + code comment)
 - §「File contract」Work Items 表的「涉及檔案 / commits」欄 + Checker Findings 嘅「證據」欄都會引用 RG-XXX
 
 ---
@@ -94,7 +94,7 @@ Step 5 嘅「寫 regression test」要按以下 target 涵蓋。呢個對應 Ste
 
 ### 2. 本次變更相關功能（Impact Area）
 
-- **修復好的 Bug 驗證**：針對過去修過嘅缺陷重測，確保冇復發 — 直接對應 Step 5 嘅 regression test，亦對應 dev-checker-loop 嘅 RT-XXX。
+- **修復好的 Bug 驗證**：針對過去修過嘅缺陷重測，確保冇復發 — 直接對應 Step 5 嘅 regression test，亦對應 orchestrator inner loop 嘅 RT-XXX。
 - **受影響區域測試**（Impact Analysis）：新功能 / 改介面嘅延伸影響。
   - 例：改「會員資料頁」→ 必須測「訂單頁面上嘅會員姓名顯示」；改 `Company.roleId` → 必須測 `Deal` / `Contact` 顯示。
 
@@ -145,7 +145,7 @@ Frontend regression test 除咗上面 1–3 嘅 target，仲要涵蓋以下 5 �
 
 ### 5. Coverage gap 偵測
 
-開 dev-checker-loop 嘅同時（per `dev-checker-loop` Step 3 覆蓋審計），Coverage 表必須對齊呢度列嘅目標：
+開 orchestrator inner loop 嘅同時（per `orchestrator` § Checker standards Step 3 覆蓋審計），Coverage 表必須對齊呢度列嘅目標：
 
 - 任何 **核心 / 高頻 / 高風險** 功能喺 Coverage 表 MISSING → finding（blocker）。
 - 任何 **前端專屬**（視覺 / 互動 / 狀態 / 跨瀏覽器 / 性能 + a11y）類別完全冇 test → finding（major）。
@@ -507,7 +507,7 @@ jobs:
 | `docs/QA-TRACKER.md` | 持續測試追蹤 | RG 嘅 regression test 一定喺 QA-TRACKER 入面追蹤 |
 | `docs/TECH-DEBT.md` | 技術債 | RG entry 升級做 tech debt 嘅情境:「個 fix 唔完美,將來要重做」 |
 | `docs/feedback-loop.md` | 獎罰 | 沒寫 RG entry 嘅 bug fix 算 P1 過(已記錄喺 feedback-loop.md 嘅罰則) |
-| [`dev-checker-loop`](../dev-checker-loop/SKILL.md) | runtime harness — REGRESSION_MODE=1 開關、`docs/STATE.md` 對賬單、checker agent 審計 | Bug fix item 嘅 RT-XXX 同步登記去 STATE.md Coverage 表；修完後 DEV_DONE item 連同 RG-XXX 一齊被 checker 覆核（見 `dev-checker-loop` § Checker standards Step 1.6）|
+| [`orchestrator`](../orchestrator/SKILL.md) § Inner loop | runtime harness — REGRESSION_MODE=1 開關、`docs/STATE.md` 對賬單、checker agent 審計 | Bug fix item 嘅 RT-XXX 同步登記去 STATE.md Coverage 表；修完後 DEV_DONE item 連同 RG-XXX 一齊被 checker 覆核（見 `orchestrator` § Checker standards Step 1.6 Bug fix 專項）|
 
 ---
 

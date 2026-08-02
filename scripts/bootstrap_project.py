@@ -455,7 +455,7 @@ auth / test tenant / audit / idempotency 欄位必填）。
         "docs/TEST-COVERAGE.md": f"""# Test Coverage — {name}
 
 > **Status:** Living document. Master summary here; per-US detail in `docs/coverage/`.
-> **dev-checker-loop 整合**：Work Item 直接 reference `coverage/<US-id>.md`。
+> **orchestrator inner loop 整合**：Work Item 直接 reference `coverage/<US-id>.md`。
 
 > 最後更新: {today}
 > 總體覆蓋率: TBD

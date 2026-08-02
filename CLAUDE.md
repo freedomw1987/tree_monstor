@@ -59,7 +59,7 @@
 | 長期 multi-phase 任務、subagent 協調 | `skills/orchestrator/SKILL.md` |
 | Claude Code Dynamic Workflow / 多 agent 編排 | `docs/claude-code-workflow.md` |
 
-其他 local skills 見 `skills/README.md`，僅在任務明確匹配時讀取。`regression-guard`、`existing-project-intake`、`dev-checker-loop`、`patch-corruption-recovery`、`docs-sync`、`orchestrator` 已註冊為 Claude Code user skills（wrapper 在 `adapters/claude-code/skills/`，symlink 自 `~/.claude/skills/`）；其他 local markdown skills 不要假設已註冊。
+其他 local skills 見 `skills/README.md`，僅在任務明確匹配時讀取。`regression-guard`、`existing-project-intake`、`patch-corruption-recovery`、`docs-sync`、`orchestrator` 已註冊為 Claude Code user skills（wrapper 在 `adapters/claude-code/skills/`，symlink 自 `~/.claude/skills/`）。`dev-checker-loop` adapter 仍存在（保留 `/dev-loop` slash command），但 redirect 到 orchestrator canonical（2026-08-02 合併）。其他 local markdown skills 不要假設已註冊。
 
 ---
 
