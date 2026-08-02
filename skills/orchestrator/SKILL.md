@@ -54,6 +54,61 @@ Last-verified: 2026-08-02
 
 ---
 
+## Subagent trigger table
+
+> 讀到本 skill 後，Agent **必須按下面 table 自動 dispatch 對應 role**（用 `Agent` tool + `role=<name>`；`.claude/agents/<name>.md` 已預先定義）。唔需要 Agent 自己判斷派邊個 — table 就係 source of truth。
+
+| Phase / 訊號關鍵詞 | 自動派 role | 派完產出 / 後續動作 |
+|---|---|---|
+| Phase 0 Think + 「市場規模 / 競爭 / SWOT / 定價」 | **CEO** | `docs/ceo-market-analysis.md` |
+| Phase 0 Think + 「技術可行性 / 比較 X vs Y / 競品技術棧」 | **Researcher** | 調研報告 |
+| Phase 1 Plan + 「用戶故事 / US / 需求 / AC」 | **BA** | `docs/US/<id>-<slug>.md` + 更新 PRD index |
+| Phase 1 Plan + 「UI / wireframe / component / token」 | **Designer** | `docs/components/<Name>.md` + 更新 DESIGN index |
+| Phase 1 Plan + 「架構 / 框架選型 / schema」 | **SA** | `docs/architecture/NNNN-<title>.md` |
+| Phase 1 Plan + 「Pre-Build Gate / doc baseline」 | **Documentation Engineer** | `docs/qa-gate.md` §0A 跑過 |
+| Phase 2 Build + 「前端 / React / Elysia-Bun / Tailwind」 | **Frontend** | 改 `src/components/` + 補 RT-XXX |
+| Phase 2 Build + 「API / DB / Prisma / migration」 | **Backend** | 改 `src/api/` + 補 RT-XXX |
+| Phase 2 Build + 「CI/CD / Docker / deploy」 | **DevOps** | 改 infra + regression switch |
+| Phase 2 Build + 「auth / XSS / SQL injection / secret scan」 | **Security Engineer** | SAST/DAST 掃 + fix |
+| Phase 3 Review + 「架構 / 安全性 / code quality」 | **SA Reviewer** | review report |
+| Phase 3 Review + 「UI 合規 / 截圖比對 / RWD」 | **UX Reviewer** | review report + screenshots |
+| Phase 4 Test + 「自動化測試 / E2E / User Simulation」 | **QA** | 測試報告 + regression suite pass |
+| Phase 4 Test + 「load / k6 / benchmark / 瓶頸」 | **Performance Engineer** | 壓測報告 |
+| Phase 5 Ship + 「部署 / rollback / monitoring」 | **Release Manager** | 部署確認 + smoke test |
+| Phase 5 Ship + 「package.json 升級 / CVE」 | **Dependency Manager** | upgrade + CVE check |
+| Phase 5 Ship + 「process 僵死 / tunnel 斷 / API 異常」 | **Observability Monitor** | alert + 通知 |
+| Phase 6 Reflect + 「retro / 復盤 / lessons」 | **Retrospective** | `docs/retros/YYYY-MM-DD-<name>.md` |
+| Phase 6 Reflect + 「sprint planning / 進度追蹤」 | **Sprint Manager** | sprint board + retro |
+| Phase 6 Reflect + 「tech debt / 5-field format」 | **Tech Debt Tracker** | 更新 `docs/TECH-DEBT.md` |
+| 任何 phase + 「context 過長 / summarise」 | **Context Manager** | 寫 `docs/context-summary.md` |
+| Build 中 + 「bug fix / 舊 bug 復發 / RG-XXX」 | 觸發 `skills/regression-guard/`（不走 Agent tool dispatch） | red→green test + fix + RG entry |
+| Plan 中 + 「新項目 / greenfield」 | 觸發 `skills/plan-author/` | modular plan docs |
+| 接手 project | 觸發 `skills/existing-project-intake/` | source-first baseline |
+| Review / QA feedback | 觸發 `skills/docs-sync/` | per-modular doc update |
+
+### 使用方法
+
+```python
+# 在 orchestrator 流程中：
+Agent(
+    role="ba",          # ← 讀 .claude/agents/ba.md 嘅 description
+    goal="為 US-005 filter 寫 acceptance criteria",
+    context="PRD § US-005 已存在，spec 在 docs/US/US-005-filter.md"
+)
+
+# 多 subagent 並行派工：
+parallel([
+    Agent(role="frontend", goal="實作 Filter component", ...),
+    Agent(role="backend", goal="補 filter API endpoint", ...),
+])
+```
+
+### 22 個 role 嘅 .claude/agents/<role>.md 定義
+
+每個 role 嘅 full description / tools / model 見 `.claude/agents/<role>.md`（canonical source）。Agent tool dispatch 時只用具 role name + brief goal；role 嘅完整 system prompt 由該 .md 提供。
+
+---
+
 # Outer loop — Multi-subagent orchestration
 
 ## 角色定位
