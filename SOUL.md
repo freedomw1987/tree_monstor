@@ -66,7 +66,7 @@ Think → Plan → Build → Review → Test → Ship → Reflect（帶 Feedback
 - **紅線 18**:Critical/High CVE 必須 0 才可 merge
 - **紅線 53 / Regression Mode Safety**:QA regression hooks 只可在 dev/test/staging 啟用，production 不可 mount `/__qa/*`、不可 bypass auth/permission/audit
 
-## 📋 落實後必產文件
+## 落實後必產文件
 
 跟用戶喺 Think/Plan 階段口頭對齊之後，**落實時必須把共識寫入項目文件**（對話紀錄會淡忘，git commit 嘅文件先係真相）。
 

@@ -12,7 +12,7 @@
 
 ---
 
-## 🗂️ 強制文件清單（每個 project 必須有）
+## ️ 強制文件清單（每個 project 必須有）
 
 | # | 文件 | 路徑 | 負責階段 | 何時 commit |
 |---|------|------|---------|------------|
@@ -30,7 +30,7 @@
 
 ---
 
-## 🚫 No-code-in-docs Rule（紅線延伸）
+## No-code-in-docs Rule（紅線延伸）
 
 > **核心原則**：source 語言 snippet（TS/JS/Python/Go/Rust 等）禁止出現在結構性文檔中。文檔只描述**規格、contract、interface**，不描述**實作細節**。
 
@@ -59,7 +59,7 @@ API.md JSON 範例**保留**（屬 interface 規格）—— 不要寫 `fetch('/
 
 ---
 
-## 🧭 Documentation-First Rule（Build 前強制）
+## Documentation-First Rule（Build 前強制）
 
 > **核心原則**：Think / Plan 的共識必須先變成 project docs，才可以進入 Build。對話紀錄會消失，git 裡的文檔才是可交接、可驗收、可 QA 的真相。
 
@@ -149,7 +149,7 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 - Code 改動必須與受影響文檔同 commit / 同 PR；否則視為 doc-code drift。
 
 
-## 📄 文件 1 — PROJECT-OVERVIEW.md
+## 文件 1 — PROJECT-OVERVIEW.md
 
 **目的**:讓任何新人(包含 3 個月後的自己)在 5 分鐘內掌握這個 project 嘅全貌。
 
@@ -163,7 +163,7 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
-## 📄 文件 2 — PRD.md (Product Requirements Document)
+## 文件 2 — PRD.md (Product Requirements Document)
 
 **目的**:把口頭討論的 user stories 變成可驗收的規格。Master 檔只放跨切內容 + US index，**每個 US 一個獨立檔**（per-US modular），方便 agent 為單一 feature 工作時只讀該 US。
 
@@ -193,7 +193,7 @@ docs/
 
 ---
 
-## 📄 文件 3 — DESIGN.md (Design Spec)
+## 文件 3 — DESIGN.md (Design Spec)
 
 **目的**:UI/UX 的「單一真相來源」,所有 frontend 開發都依此實作。Master 檔只放跨切 tokens + component/page index,**每個 component / 每個 page 一個獨立檔**，方便 agent 為單一 component/page 工作時只讀該檔。
 
@@ -228,7 +228,7 @@ docs/
 
 ---
 
-## 📄 文件 4 — Architecture Decision Records (ADR)
+## 文件 4 — Architecture Decision Records (ADR)
 
 **目的**:把架構決策**為什麼這樣選**記下來,避免 6 個月後「點解當初用 PostgreSQL 而唔用 MongoDB?」
 
@@ -250,7 +250,7 @@ docs/
 
 ---
 
-## 📄 文件 5 — API.md (API Reference)
+## 文件 5 — API.md (API Reference)
 
 **目的**:每個 endpoint 的 contract（輸入、輸出、錯誤碼、範例）。Master 檔只放跨切 conventions + endpoint index，**每個 resource 一個獨立檔**，方便 agent 為單一 resource 工作時只讀該檔。
 
@@ -286,7 +286,7 @@ docs/
 
 ---
 
-## 📄 文件 6 — TEST-COVERAGE.md
+## 文件 6 — TEST-COVERAGE.md
 
 **目的**:把測試從「有跑過」變成「系統性覆蓋」。Master 檔只放跨切 summary + RT/RG index，**每個 US 一個獨立 coverage 檔**，方便 agent 為單一 US 工作時只讀該檔。
 
@@ -320,7 +320,7 @@ docs/
 
 ---
 
-## 📄 文件 7 — TECH-DEBT.md
+## 文件 7 — TECH-DEBT.md
 
 **沿用 `skills/tech-debt-register/SKILL.md` 既模板**(已存在),**新要求**:
 - 必須 commit 入 git(放 `docs/TECH-DEBT.md`)
@@ -329,7 +329,7 @@ docs/
 
 ---
 
-## 📄 文件 8 — Retrospective
+## 文件 8 — Retrospective
 
 **位置**:`docs/retros/YYYY-MM-DD-<short-name>.md`
 
@@ -345,7 +345,7 @@ docs/
 
 ---
 
-## 📄 文件 9 — VERIFY.md (Verify Commands)
+## 文件 9 — VERIFY.md (Verify Commands)
 
 **目的**:紅線 55（實證驗證）的**執行入口**。把「這個專案的最小驗證命令是什麼」寫死在一個固定位置，agent 交付前照跑，不用每次重新推斷、不會跑錯或漏跑。
 
@@ -367,7 +367,7 @@ docs/
 
 ---
 
-## 🔗 文件之間的交叉引用
+## 文件之間的交叉引用
 
 ```
 PROJECT-OVERVIEW.md
@@ -395,7 +395,7 @@ retros/*.md (事後改進)
 
 ---
 
-## 📚 跟其他文件的關係
+## 跟其他文件的關係
 
 - `docs/phases.md` §Plan 的 project artifacts 以本文件的 `docs/PRD.md` / `docs/DESIGN.md` / `docs/architecture/0001-*.md` 為準,本文件加強:
   - 強制 commit(不只是寫了就好)

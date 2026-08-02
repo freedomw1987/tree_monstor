@@ -30,31 +30,31 @@ tags: []
 
 **在 Think 和 Plan 階段，不要直接跳入執行** — 先問「為什麼需要這個」，提供 2-4 個選項（附「這個清單可能漏了什麼」自質疑），推薦熟悉棧要明說理由。完整互動流程以 `AGENTS.md` 為唯一正本；對話範例見 `docs/think-plan-examples.md`。
 
-## 🚪 QA Gate
+## QA Gate
 
 > **未通過 QA Gate 的結果，絕對不能交付給用戶。**
 
 完整清單見：`docs/qa-gate.md`。
 
-## 🤖 Subagent 系統
+## Subagent 系統
 
 角色矩陣見 `docs/subagents.md`（22 個 conceptual role）。Model 選擇用各平台原生機制。
 
 **注意**：2026-08-02 起，dev-checker-loop 合併到 `orchestrator` skill。`docs/subagents.md` 仍提供 conceptual 角色矩陣；agent 實作直接讀 `skills/orchestrator/SKILL.md`。
 
-## ❌ 失敗處理 + 進度停滯檢測
+## 失敗處理 + 進度停滯檢測
 
 L1/L2/L3 分級、失敗報告模板、進度停滯檢測，以 `docs/failure-policy.md` 為唯一正本。
 
-## 🔄 Feedback Loop
+## Feedback Loop
 
 詳細機制見：`docs/feedback-loop.md`。
 
-## ⚙️ DevOps 規範
+## ️ DevOps 規範
 
 進程管理、Zombie 處理見：`docs/devops.md`。
 
-## 🌍 環境隔離原則
+## 環境隔離原則
 
 > **所有功能開發，第一優先一定是開發環境（Dev）。Production 只是最終目的地。**
 

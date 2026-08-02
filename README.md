@@ -1,4 +1,4 @@
-# 🌳 Tree Monstor — AI Software Development Team
+# Tree Monstor — AI Software Development Team
 > **When to read:** On-demand: project overview (user-facing)
 
 > **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
@@ -9,7 +9,7 @@
 
 ---
 
-## 🛡️ 代碼品質鐵律（最高優先級，跨平台適用）
+## ️ 代碼品質鐵律（最高優先級，跨平台適用）
 
 品質判準是「實際執行、觀察行為」，不是「文檔存在」：**先重現、實證驗證、先讀後寫**，優先於所有流程規則。
 

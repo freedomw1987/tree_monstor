@@ -9,7 +9,7 @@
 
 ---
 
-## 🎯 三個測試 tier
+## 三個測試 tier
 
 對應 `docs/task-tiering.md` 嘅任務分級,但係 **project 層級** 而非單次任務:
 
@@ -115,7 +115,7 @@ T2 全部 +:
 
 ---
 
-## 🔄 Tier 升級 / 降級規則
+## Tier 升級 / 降級規則
 
 ### 升級時機(自然演進)
 
@@ -144,7 +144,7 @@ T2 全部 +:
 
 ---
 
-## 📊 Tier 自評 checklist
+## Tier 自評 checklist
 
 每個 project 在 `docs/PROJECT-OVERVIEW.md` 嘅「成功標準」section 旁邊加一個 **測試 tier 自我宣告**:
 
@@ -158,7 +158,7 @@ T2 全部 +:
 
 ---
 
-## 🛠 工具對照(per tier)
+## 工具對照(per tier)
 
 | Tier | Unit | Integration | E2E | Perf | Security | A11y | Visual |
 |------|------|-------------|-----|------|----------|------|--------|
