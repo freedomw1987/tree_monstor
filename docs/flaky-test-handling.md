@@ -1,4 +1,5 @@
 # Flaky Test Handling — 偵測 / Quarantine / 修 / 預防 SOP
+> **When to read:** Ship
 
 > **Status:** Canonical. Source of truth for flaky test治理:lifecycle、quarantine 機制、根因分類、預防 checklist、CI 觀測指標。
 

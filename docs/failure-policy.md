@@ -1,4 +1,5 @@
 # 失敗處理機制
+> **When to read:** Reflect
 
 > **Status:** Canonical. Source of truth for L1/L2/L3 failure handling.
 

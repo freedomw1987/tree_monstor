@@ -5,6 +5,7 @@ tags: [claude-code, runtime]
 ---
 
 # Claude Code Workflow Runtime
+> **When to read:** Build, Ship
 
 > **Status:** Reference. Claude Code-specific runtime feature guide. Canonical content lives in root and `docs/`; this doc covers features that only exist in the Claude Code runtime.
 

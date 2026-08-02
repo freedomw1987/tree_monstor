@@ -1,4 +1,5 @@
 # 項目文檔規格（Project Documentation Standard）
+> **When to read:** Plan
 
 > **Status:** Standard. Source of truth for project documentation requirements and commit expectations.
 

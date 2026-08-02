@@ -1,4 +1,5 @@
 # Phase 流程詳細規範
+> **When to read:** Plan
 
 > **Status:** Canonical. Source of truth for Think → Plan → Build → Review → Test → Ship → Reflect.
 
@@ -27,15 +28,15 @@ Reflect ←──────┴─────────┴──────
 
 ## Phase 總覽
 
-| Phase | 名稱 | 輸出 | 負責 Subagent | 強制 |
-|-------|------|------|--------------|------|
-| Think | 市場分析 + 技術調研 | `ceo-market-analysis.md` + 調研報告 | CEO + Researcher | ✅ |
-| Plan | 商業計劃 + 需求 + 架構 + 文檔 baseline | `ceo-business-plan.md` + `docs/PRD.md` + `docs/DESIGN.md` + ADR + `docs/QA-TRACKER.md` baseline | CEO + BA + Designer + SA + Tech Lead + Documentation Engineer | ✅ |
-| Build | 開發執行 | 代碼 | Frontend + Backend + DevOps + Security Engineer | — |
-| Review | 架構審查 + UX 合規 | Review 報告 | SA Reviewer + UX Reviewer | ✅ |
-| Test | 測試 + 壓測 | 測試報告 + 壓測報告 | QA + Performance Engineer | ✅ |
-| Ship | 部署上線 | 部署確認 | Release Manager | — |
-| Reflect | 復盤 | 復盤報告 | Retrospective + Sprint Manager | — |
+| Phase   | 名稱                           | 輸出                                                                                              | 負責 Subagent                                                   | 強制  |
+| ------- | ---------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | --- |
+| Think   | 市場分析 + 技術調研                  | `ceo-market-analysis.md` + 調研報告                                                                 | CEO + Researcher                                              | ✅   |
+| Plan    | 商業計劃 + 需求 + 架構 + 文檔 baseline | `ceo-business-plan.md` + `docs/PRD.md` + `docs/DESIGN.md` + ADR + `docs/QA-TRACKER.md` baseline | CEO + BA + Designer + SA + Tech Lead + Documentation Engineer | ✅   |
+| Build   | 開發執行                         | 代碼                                                                                              | Frontend + Backend + DevOps + Security Engineer               | —   |
+| Review  | 架構審查 + UX 合規                 | Review 報告                                                                                       | SA Reviewer + UX Reviewer                                     | ✅   |
+| Test    | 測試 + 壓測                      | 測試報告 + 壓測報告                                                                                     | QA + Performance Engineer                                     | ✅   |
+| Ship    | 部署上線                         | 部署確認                                                                                            | Release Manager                                               | —   |
+| Reflect | 復盤                           | 復盤報告                                                                                            | Retrospective + Sprint Manager                                | —   |
 
 ---
 

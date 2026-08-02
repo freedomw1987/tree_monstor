@@ -1,4 +1,5 @@
 # Subagent 角色矩陣
+> **When to read:** Plan, Build
 
 > **Status:** Canonical. Source of truth for subagent roles, responsibilities, and scheduling.
 

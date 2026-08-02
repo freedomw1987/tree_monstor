@@ -1,4 +1,5 @@
 # DevOps 規範
+> **When to read:** On-demand: process / zombie
 
 > **Status:** Runbook. DevOps process management, zombie handling, and operational safeguards.
 

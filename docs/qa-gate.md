@@ -1,4 +1,5 @@
 # QA Gate — 完整交付流程
+> **When to read:** Ship
 
 > **Status:** Canonical. Source of truth for QA Gate release and merge requirements.
 

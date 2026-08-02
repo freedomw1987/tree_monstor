@@ -1,4 +1,5 @@
 # Feedback Loop
+> **When to read:** Reflect
 
 > **Status:** Canonical. Source of truth for review/test failure loops and iteration rules.
 

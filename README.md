@@ -1,4 +1,5 @@
 # 🌳 Tree Monstor — AI Software Development Team
+> **When to read:** On-demand: project overview (user-facing)
 
 > **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
 

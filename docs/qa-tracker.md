@@ -1,4 +1,5 @@
 # QA Tracker（持續測試追蹤）
+> **When to read:** Ship
 
 > **Status:** Tracker. Working format for US → test task traceability and requirement-change impact.
 

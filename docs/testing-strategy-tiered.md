@@ -1,4 +1,5 @@
 # Testing Strategy Tiered — 按階段套用測試層級
+> **When to read:** Ship
 
 > **Status:** Canonical. Companion to `docs/testing-strategy.md` (13 層完整版) — 本文件按 project 成熟度把 13 層壓縮成 3 個 tier,對應 `docs/task-tiering.md` 嘅 T1/T2/T3 進入條件。
 

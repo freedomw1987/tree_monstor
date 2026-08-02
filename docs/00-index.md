@@ -1,4 +1,5 @@
 # 文檔索引 — Developer Profile
+> **When to read:** Always
 
 > **Status:** Index. Documentation map for active Tree Monstor profile docs.
 

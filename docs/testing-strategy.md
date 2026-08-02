@@ -1,4 +1,5 @@
 # Testing Strategy — 全面且詳盡的測試策略
+> **When to read:** Ship
 
 > **Status:** Canonical. Source of truth for testing layers, quality metrics, and tooling strategy.
 

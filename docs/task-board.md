@@ -1,4 +1,5 @@
 # Task Board 格式
+> **When to read:** Reflect
 
 > **Status:** Canonical. Source of truth for Task Board format, statuses, and update rules.
 

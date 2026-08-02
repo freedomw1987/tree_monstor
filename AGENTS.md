@@ -1,4 +1,5 @@
 # AGENTS.md - Developer Profile
+> **When to read:** Always
 
 > **Status:** Canonical. Source of truth for session startup, workspace rules, and long-task handling.
 
