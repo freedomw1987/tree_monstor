@@ -82,28 +82,30 @@ _Developer Profile Session 啟動流程與工作區規範。_
    - 現有 project 的 docs / tests / regression hooks 不完整或未驗證時，先執行 `skills/existing-project-intake/SKILL.md`；完成 source-first docs baseline、QA/test inventory、regression gaps 記錄後才可 Build，除非 David 明確只要 read-only intake。既有 monolithic docs 需套用 monolithic → modular 拆分 step。
    - Review / QA / code-review feedback 改變需求、驗收標準、設計、API、架構、測試、regression 行為或 tech debt 時，必須執行 `skills/docs-sync/SKILL.md`，把項目 apply / defer / reject 的結論寫入受影響 project docs（含 per-US / per-component / per-endpoint / per-coverage 檔）；只留在 chat 的 feedback 不算 resolved
 
-### Agent 開發預設路徑：dev-checker-loop
+### Agent 開發預設路徑：orchestrator（含 dev+checker 內層 loop）
 
 > **Status:** Default path for multi-item feature work, not optional.
+> 2026-08-02 起，dev-checker-loop 已合併到 `orchestrator` skill — outer loop (multi-subagent) + inner loop (dev+checker) 一體。
 
-對於符合以下條件的任務，**`dev-checker-loop` 是預設路徑**：
+對於符合以下條件的任務，**`orchestrator` 是預設路徑**（內層自動啟用 dev+checker loop）：
 
 - 多 work item 的 feature 開發或重構
+- 多 phase 專案（Plan → BA → SA → Frontend/Backend → QA → Ship）
 - 失敗成本高（regression 風險、production 相關、安全敏感）
-- David 明確要求 quality gate / "dev-loop" / "checker agent"
+- David 明確要求 quality gate / "dev-loop" / "checker agent" / 雙 agent 開發
 
-**為什麼是預設**：loop 外加的只是「(a) 開發單位記錄為 STATE.md work items；(b) 每輪獨立 checker 實證覆核」。原有流程（鐵律、Think/Plan、plan mode、skill routing）照常。Loop 不豁免任何步驟，但帶來「每個功能都有可開關、有日誌的 regression test」的常態化保護。
+**為什麼是預設**：orchestrator 把外層（task board、multi-subagent dispatch）和內層（dev+checker verification）包在一起。對單純 feature dev，內層 loop 自動啟用；對多 phase 專案，外層 task board + 跨 task dependency 是主要價值。原有流程（鐵律、Think/Plan、plan mode、skill routing）照常適用。Loop 不豁免任何步驟，但帶來「每個功能都有可開關、有日誌的 regression test」的常態化保護。
 
-**不適用**（直做 + 自驗，不開 loop）：
+**不適用**（直做 + 自驗，不開 orchestrator）：
 
 - 1-2 行 typo / 配置改動
 - 純研究 / 純閱讀任務
 - 單 US 改動，無歧義，失敗成本低
 - 環境壞了（先修環境）
 
-**Modular docs 整合**：loop 的 Work Item 直接 reference per-US 檔（`docs/US/<US-id>-<slug>.md`）作 Spec，不引用 PRD.md 第 N 行。Checker 驗 WI-XXX 時：讀 per-US Spec → 讀 code diff → 讀 `docs/coverage/<US-id>.md` → 跑 RT-XXX。Token 效率 NET POSITIVE（讀小檔 vs 讀大檔）。
+**Modular docs 整合**：orchestrator / dev-checker-loop 的 Work Item 直接 reference per-US 檔（`docs/US/<US-id>-<slug>.md`）作 Spec，不引用 PRD.md 第 N 行。Checker 驗 WI-XXX 時：讀 per-US Spec → 讀 code diff → 讀 `docs/coverage/<US-id>.md` → 跑 RT-XXX。Token 效率 NET POSITIVE（讀小檔 vs 讀大檔）。
 
-**操作版**：`~/.claude/skills/dev-loop/`（可用 `/dev-loop` 啟動）。Canonical 標準在 `skills/dev-checker-loop/SKILL.md`，不一致以 canonical 為準。When to use / When not to use 細節見該檔。
+**操作版**：`~/.claude/skills/dev-loop/`（內層 loop quick-start 用 `/dev-loop`）和 `~/.claude/skills/orchestrator/`（外層 multi-subagent 用 `/orchestrator`）。兩個 adapter 都導向 canonical `skills/orchestrator/SKILL.md`，行為一致。When to use / When not to use 細節見該檔。
 
 ### 觸發 Clarify 的時機
 
