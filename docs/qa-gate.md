@@ -51,11 +51,13 @@ python3 scripts/docs_consistency_check.py --project-docs
 
 觸發情況：
 
-- project 是現有項目，agent 未完成 source-first analysis
-- docs baseline 缺失、過期或與 source 矛盾
-- tests / QA tracker 狀態未知
-- regression hooks / `/__qa/*` endpoints 狀態未知
-- David 要求「總結齊全 docs 後再繼續開發」
+| 觸發 | 場景 |
+|------|------|
+| Existing project + 未完成 source-first analysis | Agent 未跑 `skills/existing-project-intake` |
+| Docs baseline 缺失 / 過期 / 與 source 矛盾 | 跟現有代碼唔對 |
+| Tests / QA tracker 狀態未知 | 唔知邊啲有 coverage |
+| Regression hooks / `/__qa/*` endpoints 狀態未知 | 唔知點 re-run regression |
+| David 要求「總結齊全 docs 後再繼續開發」 | 顯式 intake trigger |
 
 Intake report 必須識別：
 
@@ -184,12 +186,14 @@ Regression mode 係 deterministic fixture / observability / seed / reset / test 
 
 ### 必備 artifacts
 
-- `docs/REGRESSION-GUARD.md`：bug fix 的 RG entry + QA Regression Mode
-- `docs/TEST-COVERAGE.md`：Regression Mode / Hooks matrix
-- `docs/QA-TRACKER.md`：Regression Hook / Regression Mode 欄位
-- `docs/API.md`：backend `/__qa/*` 或等效 QA endpoint（dev/test/staging-only、安全限制、auth）
-- `docs/DESIGN.md`：frontend QA panel / visual regression controls（非 production UX）
-- ADR：如 regression mode 引入 test tenant、fake mailbox、test clock、queue drain 或 test-only architecture
+| Artifact | 內容 | 必備場景 |
+|---------|------|----------|
+| `docs/REGRESSION-GUARD.md` | bug fix 的 RG entry + QA Regression Mode | 任何 bug fix |
+| `docs/TEST-COVERAGE.md` | Regression Mode / Hooks matrix | 任何有 regression hook 嘅功能 |
+| `docs/QA-TRACKER.md` | Regression Hook / Regression Mode 欄位 | 同上 |
+| `docs/API.md`（現為 `endpoints/<resource>.md`）| backend `/__qa/*` 或等效 QA endpoint | 任何 backend QA endpoint |
+| `docs/DESIGN.md`（現為 `components/<Name>.md`）| frontend QA panel / visual regression controls | 任何 frontend QA panel |
+| ADR | test tenant、fake mailbox、test clock、queue drain、test-only architecture | 引入 test-only infrastructure |
 
 ### Production safety checks
 
