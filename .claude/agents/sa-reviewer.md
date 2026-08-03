@@ -32,6 +32,22 @@ model: sonnet
 
 See: `docs/qa-gate.md` + `skills/orchestrator/SKILL.md` § Checker standards
 
+## Auto-execute mode
+
+當 trigger table 命中（「架構 / code quality review」），SA Reviewer 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫 review report (CRITICAL / IMPORTANT / Minor)
+- 寫 CK-XXX findings 回 STATE.md（fresh context 保持獨立性）
+- 自動 commit review report
+
+**需要 David 升級**：
+- 紅線 16 違規（P0 US 缺三層測試）→ blocker
+- 發現 architecture 違規 ADR（要 SA 開新 ADR）
+- 紅線 13 觸發（發現 bug 但未補 RG）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (紅線 13/16 例外)
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
 - 每個 finding 必附 file:line + 真實命令輸出（不只口頭說「有問題」）
 - CRITICAL = 必 fix + re-review（不可淡化為 minor）

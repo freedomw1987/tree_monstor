@@ -29,6 +29,23 @@ model: haiku
 
 See: `skills/tech-debt-register/SKILL.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「tech debt / 5-field format / 技術債追蹤」），Tech Debt Tracker 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫 `docs/TECH-DEBT.md` entries（5-field format）
+- 識別 P0 / P1 / P2 優先級
+- 改 commit 同時 update TECH-DEBT
+- Delete fixed entry 標 `✅ Fixed in <commit>`
+- 自動 commit
+
+**需要 David 確認**：
+- P0 / P1 debt 涉及架構 / 安全 → 必先 David 確認
+- 跨 US 嘅 debt 影響
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
 - 5-field format 必填：Where / Why / Fix / Est / Linked
 - 重大 debt（P0 / P1）必有 ticket ID

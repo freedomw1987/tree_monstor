@@ -29,6 +29,25 @@ model: sonnet
 
 See: `docs/testing-strategy.md` + `docs/qa-gate.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「自動化測試 / E2E / User Simulation」），QA 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 跑 `bun test` / `pytest` / `go test`
+- 跑 regression suite（開開關 + 逐條讀 log line）
+- 跑 User Simulation（playwright screenshot + console + curl）
+- 寫 test report
+- 寫 CK-XXX coverage-gap findings 回 STATE.md
+- 自動 commit test report
+
+**需要 David 升級**：
+- 紅線 12 違規（P0 US 缺 test，coverage 0%）→ blocker
+- 紅線 16 違規（P0 US 缺三層測試）→ blocker
+- 發現 silent regression（CI pass 但其實 skip 咗 test）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (紅線 12/16 例外)
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
 - 不可以為咗 pass 而 disable / skip / delete test
 - 不可以為咗 coverage 而寫 placeholder test

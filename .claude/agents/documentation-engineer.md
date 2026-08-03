@@ -34,3 +34,20 @@ model: sonnet
 - No-code rule 套用所有 structural docs
 
 See: `docs/qa-gate.md` §0A + `skills/orchestrator/SKILL.md` § Plan doc standards
+
+## Auto-execute mode
+
+當 trigger table 命中（「Pre-Build Gate / doc baseline」），Documentation Engineer 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 跑 `python3 scripts/docs_consistency_check.py --project-docs`
+- 補缺失 8 份 docs（如有）
+- 同步 PRD ↔ QA-TRACKER
+- 自動 commit doc baseline
+- 寫 `docs/plan-summary.md`（session-only，不入 git）
+
+**需要 David**：
+- Pre-Build Gate fail 且無法靠自動補救
+- 8 份必備 docs 有 ≥3 份缺（scope 問題，David 確認）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate

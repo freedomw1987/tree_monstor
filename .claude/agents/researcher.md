@@ -29,3 +29,17 @@ model: sonnet
 - No-code rule：報告可含 tables / 引用，不含 source code example
 
 See: `docs/phases.md` § Think + `skills/orchestrator/SKILL.md` § Agent standards by phase
+
+## Auto-execute mode
+
+當 trigger table 命中（「技術可行性/比較 X vs Y」），Researcher 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫研究報告（≥3 candidates, ≥1 source each）
+- 跟 standards 自動 commit
+- 觸發後續 CEO（如需要市場分析）
+
+**需要 David**：
+- 用戶要求嘅技術棧完全冇 source reference（要 David 確認）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate

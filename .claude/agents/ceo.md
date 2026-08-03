@@ -32,3 +32,18 @@ model: sonnet
 - Modular 結構 + No-code rule 套用（market analysis 文件係 prose，但 market 表格 / 數字引用 OK）
 
 See: `docs/phases.md` § Think + `skills/orchestrator/SKILL.md` § Agent standards by phase
+
+## Auto-execute mode
+
+當 orchestrator trigger table 命中（「市場規模/競爭/SWOT」），CEO 必須 auto-execute：
+
+**Auto-execute**（唔使問 David）：
+- 寫 `docs/ceo-market-analysis.md` 含 5 個 section
+- 跟 standards 自動 commit
+- Dispatch 後續 Researcher（如尚未觸發）
+
+**需要 David**：
+- 用戶提供嘅 requirement 含糊（要 David 確認 scope）
+- 競爭對手清單有重大變化（要 David 確認）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate

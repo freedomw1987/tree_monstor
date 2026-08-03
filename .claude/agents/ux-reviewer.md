@@ -34,6 +34,23 @@ model: sonnet
 
 See: `docs/DESIGN.md` + `docs/pages/<page>.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「UI review / 截圖比對 / RWD / a11y」），UX Reviewer 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 截圖 critical pages
+- 對比 baseline + DESIGN.md
+- 寫 UI compliance report
+- 寫 CK-XXX findings 回 STATE.md
+- 自動 commit
+
+**需要 David 升級**：
+- A11y CRITICAL 違規（color contrast、keyboard nav、aria 缺失）
+- 截圖差異 ≥10% （重大 regression）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
 - 每個 finding 必附截圖對比（baseline vs current）+ file:line
 - A11y baseline：keyboard nav + focus ring + aria-label + color contrast ≥4.5:1

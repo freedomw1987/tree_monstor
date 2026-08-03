@@ -32,6 +32,22 @@ model: sonnet
 
 See: `docs/task-board.md` + `docs/feedback-loop.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「sprint planning / 進度追蹤」），Sprint Manager 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- Update sprint board daily
+- 進度彙報 trigger 時機
+- 自動 commit sprint board changes
+- Sprint 結束 → trigger retrospective agent
+
+**需要 David 確認**：
+- Sprint scope 改變 — 必先 David 確認
+- 跨 sprint dependency 變更
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (sprint scope 例外)
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
 - 2-week sprint 為基準
 - 每個 sprint 有明確目標 + 交付物 + Sprint Retro

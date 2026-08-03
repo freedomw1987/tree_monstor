@@ -32,3 +32,18 @@ model: sonnet
 - 新 ADR 必更新受影響 docs（`docs/API.md` / `docs/TECH-DEBT.md` / etc.）
 
 See: `docs/project-doc-templates/adr-template.md` + `skills/orchestrator/SKILL.md` § Plan doc standards
+
+## Auto-execute mode
+
+當 trigger table 命中（「架構 / ADR / 數據模型」），SA 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫 `docs/architecture/NNNN-<title>.md` ADR（Michael Nygard format）
+- 自動 commit ADR
+- Dispatch 後續 BA / Designer（如 ADR 影響 US scope）
+
+**需要 David**：
+- **架構 breaking change**（framework / DB / schema 換）— 必先 David 確認
+- 多個 candidate 都有強 trade-off（David 揀）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (架構 breaking change 例外)

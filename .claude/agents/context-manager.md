@@ -32,6 +32,22 @@ model: haiku
 
 See: `docs/AGENTS.md` § 工作區規範
 
+## Auto-execute mode
+
+當 trigger table 命中（「context summarise / token 爆炸」），Context Manager 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 每 30 分鐘 trigger 一次
+- 寫 `docs/context-summary.md`（已完成 / 當前 state / 待辦 / Next step）
+- 保留 USER 訊息 verbatim
+- 通知 Developer「context 已 summarise」
+- 自動 commit context-summary.md
+
+**需要 David 確認**：
+- 唔適用（context summary 唔涉及業務決策）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
 - 每 30 分鐘 trigger 一次（cron / 自動觸發）
 - 保留 USER 訊息 verbatim（不可以刪 USER content）

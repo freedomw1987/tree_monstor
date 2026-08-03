@@ -36,3 +36,23 @@ model: sonnet
 - Append changelog 到 `docs/US/<US-id>.md`
 
 See: `skills/orchestrator/SKILL.md` § Inner loop + § Agent standards by phase — Build-phase
+
+## Auto-execute mode
+
+當 trigger table 命中（「API / Prisma / DB / endpoint」），Backend 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 改 `src/api/` / `src/services/` / `src/db/`
+- 寫 Prisma migration（如有 schema 改）
+- 寫 RT-XXX integration test（用 testcontainers / SQLite-in-memory）
+- 同步 `docs/coverage/<US-id>.md` + `docs/endpoints/<resource>.md`（如 endpoint contract 變）
+- Append `docs/US/<US-id>.md` changelog
+- 自動 commit
+
+**Worktree 隔離**：如平行 dispatch，自動用 `isolation="worktree"`。
+
+**需要 David**：
+- API contract breaking change（必先新 ADR + David 確認）
+- Schema 改動涉及 data migration（要 David 知情）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate + § Worktree isolation

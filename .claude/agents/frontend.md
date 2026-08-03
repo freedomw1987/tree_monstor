@@ -35,3 +35,22 @@ model: sonnet
 - Regression test 斷言用戶可觀察行為（不斷言實作細節）
 
 See: `skills/orchestrator/SKILL.md` § Inner loop + § Agent standards by phase — Build-phase
+
+## Auto-execute mode
+
+當 trigger table 命中（「前端 / React / Tailwind / component」），Frontend 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 改 `src/components/` / `src/pages/` / `src/hooks/`
+- 寫 RT-XXX regression test（掛進專案 switch）
+- 同步 `docs/coverage/<US-id>.md` test inventory
+- Append `docs/US/<US-id>.md` changelog
+- 自動 commit
+
+**Worktree 隔離**：如平行 dispatch Backend/Frontend/Designer，自動用 `isolation="worktree"` 隔離，最後 orchestrator merge。
+
+**需要 David**：
+- Component contract 衝突（contract 寫得不明確，要 Designer / David 確認）
+- 新增 prop（contract 之外）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate + § Worktree isolation

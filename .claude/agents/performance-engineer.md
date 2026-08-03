@@ -27,6 +27,23 @@ model: sonnet
 
 See: `docs/testing-strategy.md` § Performance Tests
 
+## Auto-execute mode
+
+當 trigger table 命中（「load test / k6 / benchmark / 瓶頸」），Performance Engineer 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 跑 k6 / Gatling 在 staging
+- 收集 p50/p95/p99 latency
+- 對比 baseline
+- 寫 perf report
+- 自動 commit
+
+**需要 David 升級**：
+- 紅線 16 違規（performance regression 影響 P0 US）
+- threshold breach 持續 > 1 週
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Test-phase):
 - Load test 在 staging（不在 production）
 - 設 threshold breach alert（T2+ tier — per `testing-strategy-tiered.md`）

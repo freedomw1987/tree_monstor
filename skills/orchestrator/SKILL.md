@@ -681,6 +681,69 @@ Escalation section 必須包含：卡住的 item、finding 全文、dev 已嘗�
 
 ---
 
+## Auto-execute Gate
+
+> 當 trigger table 命中時，Agent **必須 auto-execute workflow**（dispatch subagent + 寫 docs + commit + 跑 test），**唔需要逐 step 問 David**。Auto-execute 唔係繞過 LLM — LLM 仍然要主動 call tool — 但 LLM 嘅 decision cost 接近零（standards 講晒做咩、gate 講晒唔使問）。
+
+### Auto-execute（默認，唔使問 David）
+
+| 動作 | 觸發 | 自動行為 |
+|------|------|---------|
+| Dispatch subagent | Trigger table 命中 | 立即 `Agent tool call`（唔重新確認） |
+| 寫 per-X file | Plan / Build phase 標準產出 | `Write tool`，跟 templates |
+| 寫 contract / spec | 標準化 output | `Write tool`，跟 modular structure |
+| Commit | 寫完 file 後 | `git add` + `git commit` 連同 verify log |
+| Coverage sync | 改 code / spec | `Write tool` 同步 `coverage/<US-id>.md` |
+| US changelog append | 改 code | 自動 append 行（含 commit SHA） |
+| RT-XXX 註冊 | 功能型 item | 自動加 `coverage/<US-id>.md` row + `TEST-COVERAGE.md` row |
+| Update master index | 改 per-X file | 自動 sync `PRD.md` / `DESIGN.md` / `API.md` US index / component index |
+| Test runs | Regression / coverage check | `Bash tool` 跑 `bun test` / `pytest` / `go test` |
+| Docs sync | Code / spec 改 | `Write tool` 對應 per-X doc |
+
+### 例外（需要 David 確認 / 升級）
+
+| 動作 | 觸發 | 點解 |
+|------|------|------|
+| **Scope 改變** | US AC 變、刪 US、新 US | 業務決策，David 確認 |
+| **架構 breaking change** | Framework / DB / Schema 換 | ADR 必先開，David 確認 |
+| **Production deploy** | Release Manager 執行 | 紅線 17 失敗即 rollback — 但 deploy 本身要 David 知情 |
+| **紅線 13** | Bug fix RG-XXX 唔可以 silent | 必報 David |
+| **紅線 17** | Smoke test 失敗 | 必報 David + 自動 rollback |
+| **紅線 18** | Critical/High CVE 出現 | 必報 David + 阻擋 merge |
+| **跨 US architectural decision** | 影響 ≥2 US | 開新 ADR，David 確認 |
+| **新增 / 修改 / 刪除 RG-XXX** | 改 RG entry | 必報 David |
+| **修改 orchestrator SKILL.md / agents / standards** | David 確認先改 | 改 standards 屬 meta-level |
+
+### Worktree isolation example
+
+```python
+# 平行 dispatch + 自動 worktree 隔離（避免互相干擾 main branch）
+parallel([
+    Agent(
+        role="frontend",
+        goal="實作 Filter component per docs/components/Filter.md",
+        isolation="worktree",          # 自動 git worktree
+        worktree_branch="feature/us-005-filter-frontend"
+    ),
+    Agent(
+        role="backend",
+        goal="實作 filter API per docs/endpoints/products.md",
+        isolation="worktree",
+        worktree_branch="feature/us-005-filter-backend"
+    ),
+])
+
+# 兩個 agent 各自 worktree，最後：
+# 1. orchestrator 自動 merge worktree → main
+# 2. 跑 regression suite
+# 3. 如有 finding → 個別 rollback worktree
+# 4. 如 all green → auto-commit merge
+```
+
+> **Worktree 自動 merge 規則**：merge 前 orchestrator 必跑 `git diff main...<branch>` + regression suite 確認冇 conflict / break。失敗 = 留 worktree + 寫 CK-XXX finding，**唔 silent merge**。
+
+---
+
 ## Files owned
 
 | File | Owner | Scope |

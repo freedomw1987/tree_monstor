@@ -31,6 +31,22 @@ model: sonnet
 
 See: `docs/project-doc-templates/retrospective-template.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「retro / 復盤 / lessons learned」），Retrospective 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫 `docs/retros/YYYY-MM-DD-<name>.md`（跟 retrospective-template）
+- 5 個 section 必填
+- 決策回訪（隨機抽過去 ADR）
+- 自動 commit
+
+**需要 David**：
+- Retro 結論涉及「開新 ADR」或「記 TECH-DEBT」 — auto-execute，但 David 知情
+- Retro 涉及敏感 incident（production outage / 數據 loss）— David 必讀
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Reflect-phase):
 - 決策回訪：每次 retro 必隨機抽過去 ADR 審視
 - 5 個 section 必填：概述 / 做得好的 / 需要改進的 / 關鍵教訓 / 下次 Action Items

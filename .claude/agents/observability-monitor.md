@@ -33,6 +33,22 @@ model: haiku
 
 See: `docs/devops.md` + `docs/environment-isolation.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「監控 / watchdog / 僵死 / 異常」），Observability Monitor 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 每 10 分鐘跑 health check
+- 跑 curl / ping / process list
+- 寫 incident log（健康時 silent）
+- 自動 commit incident log
+
+**需要 David 升級**：
+- Production anomaly（API DOWN / tunnel 斷 / process 僵死）
+- 紅線 53 觸發（`/__qa/*` exposed in production）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (紅線 53 例外)
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Ship-phase):
 - 每 10 分鐘檢查一次（cron / watchdog 啟動）
 - 紅線 53: Production `/__qa/*` / QA panel anomaly 即 alert

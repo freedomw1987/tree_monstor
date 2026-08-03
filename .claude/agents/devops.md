@@ -23,6 +23,22 @@ model: sonnet
 
 See: `docs/devops.md` + `docs/environment-isolation.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「CI/CD / Docker / deploy / infra」），DevOps 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 改 `Dockerfile` / `.github/workflows/` / `docker-compose.yml` / terraform
+- 補 RT-XXX smoke test
+- 同步 `docs/VERIFY.md`（如 command 變）
+- 自動 commit
+
+**需要 David**：
+- Production infra 改（必 David 知情）
+- 引入新 infra architecture（必新 ADR + David 確認）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (production infra 例外)
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Build + Ship):
 - Build-phase: 紅線 53 — production 不可 mount `/__qa/*`、不可 expose QA panel
 - Ship-phase: 改 toolchain / deploy script 同 commit 更新 `docs/VERIFY.md`

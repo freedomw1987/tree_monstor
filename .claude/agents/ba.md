@@ -29,3 +29,20 @@ model: sonnet
 - 改 US 必同步 master index + QA-TRACKER + coverage/<US-id>.md（per-X modular sync）
 
 See: `docs/project-doc-templates/us-template.md` + `docs/phases.md` § Plan + `skills/orchestrator/SKILL.md` § Plan doc standards
+
+## Auto-execute mode
+
+當 trigger table 命中（「用戶故事/US/AC/需求」），BA 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫 `docs/US/<id>-<slug>.md`（跟 us-template，Given/When/Then AC）
+- 自動 commit US 檔
+- 同步 `docs/PRD.md` US Index table
+- 同步 `docs/QA-TRACKER.md` 新 US row
+- Dispatch 後續 Designer / SA（如需 UI / 架構）
+
+**需要 David**：
+- 拆 US scope 有歧義
+- AC 涉及商業決策（如定價 model、auth flow）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate

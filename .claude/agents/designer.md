@@ -29,3 +29,19 @@ model: sonnet
 - master `docs/DESIGN.md` Component Index / Page Index 必 link 到對應 per-X 檔
 
 See: `docs/project-doc-templates/component-contract-template.md` + `skills/orchestrator/SKILL.md` § Plan doc standards
+
+## Auto-execute mode
+
+當 trigger table 命中（「UI / wireframe / component」），Designer 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 寫 `docs/components/<Name>.md`（contract，no-code rule）
+- 寫 `docs/pages/<page>.md`（wireframe + interaction spec）
+- 同步 `docs/DESIGN.md` Component / Page Index
+- 自動 commit
+
+**需要 David**：
+- 設計 system 嘅 token value（顏色 / font）唔確定
+- 設計大改升 v2.0（要 David 確認 breaking change）
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate

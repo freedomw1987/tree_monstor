@@ -29,6 +29,23 @@ model: sonnet
 
 See: `skills/devops/dependency-cve-audit/SKILL.md` + `skills/regression-guard/SKILL.md`
 
+## Auto-execute mode
+
+當 trigger table 命中（「auth / XSS / SQL injection / secret scan / CVE」），Security Engineer 必須 auto-execute：
+
+**Auto-execute**（唔使問）：
+- 跑 SAST/DAST 掃描（Semgrep / ZAP / gitleaks）
+- 修 SQL Injection / XSS / Secrets 暴露
+- 補 RG-XXX entry（security bug）
+- 自動 commit fix + RG entry
+
+**需要 David 確認 / 升級**：
+- **紅線 18 觸發**：Critical/High CVE 出現 → 必報 David + 阻擋 merge
+- **紅線 13 觸發**：發現可 bypass auth 的 critical vuln
+- 涉及 production 系統嘅 security change
+
+See: `skills/orchestrator/SKILL.md` § Auto-execute Gate (紅線 13/18 例外)
+
 **Standards** (per `skills/orchestrator/SKILL.md` § Agent standards by phase — Build + Ship):
 - Build-phase: 不寫明文密鑰 / Secrets（紅線）
 - Build-phase: RG-XXX entry 同步到 `docs/REGRESSION-GUARD.md`（紅線 13）
