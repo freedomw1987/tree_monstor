@@ -243,13 +243,13 @@ Agent 走 Think/Plan 互動：
 >
 > 即係「**睇到 + 路由自動，做唔自動**」。
 
-| Agent 唔會...                               | Auto-load | Auto-route | Auto-execute | 你需要...                                                                                       |
-| ----------------------------------------- | --------- | ---------- | ------------ | -------------------------------------------------------------------------------------------- |
-| **Dispatch subagent** 做 multi-subagent 協調 | ✅         | ✅          | ❌            | Orchestrator trigger table 自動建議派邊個 role；但 `Agent tool call` 仍須主動                      |
+| Agent 唔會...                               | Auto-load | Auto-route | Auto-execute | 你需要...                                                                                                            |
+| ----------------------------------------- | --------- | ---------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **Dispatch subagent** 做 multi-subagent 協調 | ✅         | ✅          | ❌            | Orchestrator trigger table 自動建議派邊個 role；但 `Agent tool call` 仍須主動                                                  |
 | **寫 Plan docs**                           | ✅         | ✅          | ❌            | `plan-author` 載入自動；4 個 Plan-phase agents（BA / Designer / SA / Documentation Engineer）按標準寫入；US / ADR / docs 寫入仍須主動 |
-| **跑 dev+checker inner loop**              | ✅         | ✅          | ❌            | `orchestrator` § Inner loop 載入自動；STATE.md 協調 + spawn checker 仍須主動                          |
-| **補 RG entry**                            | ✅         | ✅          | ❌            | `regression-guard` 載入自動；reproduce + fix + RG-XXX 仍須主動                                  |
-| **寫 retrospective**                       | ✅         | ✅          | ❌            | `orchestrator` § Reflect 載入自動；retro 寫入仍須主動                                          |
+| **跑 dev+checker inner loop**              | ✅         | ✅          | ❌            | `orchestrator` § Inner loop 載入自動；STATE.md 協調 + spawn checker 仍須主動                                                 |
+| **補 RG entry**                            | ✅         | ✅          | ❌            | `regression-guard` 載入自動；reproduce + fix + RG-XXX 仍須主動                                                             |
+| **寫 retrospective**                       | ✅         | ✅          | ❌            | `orchestrator` § Reflect 載入自動；retro 寫入仍須主動                                                                        |
 
 **Auto-route 解釋**：orchestrator 嘅 trigger table（22 個 phase-signal → role 映射）+ 22 個 `.claude/agents/<role>.md` 定義 + 統一嘅「Agent standards by phase」section — 三者一齊令 Agent **唔使再自己決定派邊個**。Agent 讀 table 即知「Build phase + 前端 keyword → 派 `frontend` agent」，**路由決策成本接近零**。但 `Agent tool call` 本身仍須 Agent 主動 call。
 
