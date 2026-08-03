@@ -156,11 +156,27 @@ if [ "$GLOBAL_BRIDGE" -eq 1 ]; then
     echo ""
     echo "[3/3] Global bridge (~/.claude/CLAUDE.md → profile/CLAUDE.md)"
     symlink "$PROFILE_DIR/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md"
+    GLOBAL_BRIDGE_INSTALLED=1
 else
     echo ""
     echo "[3/3] Global bridge (skipped — pass --global-bridge to install)"
+    GLOBAL_BRIDGE_INSTALLED=0
 fi
 
+# Count installed items
+AGENT_COUNT=$(find "$PROFILE_DIR/.claude/agents" -maxdepth 1 -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+SKILL_COUNT=$(find "$PROFILE_DIR/skills" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+
 echo ""
-echo "Done. Verify with: ls -la $CLAUDE_HOME/agents/ | head"
+echo "=== Summary ==="
+echo "  → $AGENT_COUNT agents linked:    $CLAUDE_HOME/agents/"
+echo "  → $SKILL_COUNT skills linked:    $CLAUDE_HOME/skills/"
+if [ "$GLOBAL_BRIDGE_INSTALLED" -eq 1 ]; then
+    echo "  → Global bridge:           $CLAUDE_HOME/CLAUDE.md → profile/CLAUDE.md"
+else
+    echo "  → Global bridge:           (skipped)"
+fi
+echo ""
+echo "Verify: ls -la $CLAUDE_HOME/agents/ | head"
 echo "Or test: claude --agent orchestrator"
+echo "Or test: claude (then type '/orchestrator' or '/dev-loop' to trigger a skill)"
