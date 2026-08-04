@@ -1,4 +1,5 @@
 # Developer Profile — Long-Term Memory
+> **When to read:** Always
 
 > **Status:** Canonical. Long-term stable memory and durable operating preferences.
 

@@ -1,4 +1,5 @@
 # Think / Plan 互動範例
+> **When to read:** Plan
 
 > **Status:** Reference. Examples for Think / Plan interaction patterns and option framing.
 

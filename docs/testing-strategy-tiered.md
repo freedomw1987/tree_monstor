@@ -1,4 +1,5 @@
 # Testing Strategy Tiered — 按階段套用測試層級
+> **When to read:** Ship
 
 > **Status:** Canonical. Companion to `docs/testing-strategy.md` (13 層完整版) — 本文件按 project 成熟度把 13 層壓縮成 3 個 tier,對應 `docs/task-tiering.md` 嘅 T1/T2/T3 進入條件。
 
@@ -8,7 +9,7 @@
 
 ---
 
-## 🎯 三個測試 tier
+## 三個測試 tier
 
 對應 `docs/task-tiering.md` 嘅任務分級,但係 **project 層級** 而非單次任務:
 
@@ -110,11 +111,11 @@ T2 全部 +:
 
 ### QA Gate 對應
 
-跟 `docs/qa-gate.md` §4 嘅全套 11 步 + `skills/testing/mutation-testing/` 嘅 quarterly mutation score 報告附入 `docs/qa-tracker.md` 嘅 changelog。
+跟 `docs/qa-gate.md` §4 嘅全套 11 步 + quarterly mutation score 報告附入 `docs/qa-tracker.md` 嘅 changelog。
 
 ---
 
-## 🔄 Tier 升級 / 降級規則
+## Tier 升級 / 降級規則
 
 ### 升級時機(自然演進)
 
@@ -143,7 +144,7 @@ T2 全部 +:
 
 ---
 
-## 📊 Tier 自評 checklist
+## Tier 自評 checklist
 
 每個 project 在 `docs/PROJECT-OVERVIEW.md` 嘅「成功標準」section 旁邊加一個 **測試 tier 自我宣告**:
 
@@ -157,7 +158,7 @@ T2 全部 +:
 
 ---
 
-## 🛠 工具對照(per tier)
+## 工具對照(per tier)
 
 | Tier | Unit | Integration | E2E | Perf | Security | A11y | Visual |
 |------|------|-------------|-----|------|----------|------|--------|

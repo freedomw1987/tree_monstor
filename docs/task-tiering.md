@@ -1,4 +1,5 @@
 # 任務分級（Task Tiering）— 小型任務判準與 gate 適用範圍
+> **When to read:** Plan
 
 > **Status:** Canonical. Source of truth for task tiers, the small-task (T1) downgrade checklist, mid-task re-tiering, and the declaration template.
 

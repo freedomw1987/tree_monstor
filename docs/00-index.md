@@ -1,64 +1,98 @@
 # 文檔索引 — Developer Profile
+> **When to read:** Always
 
 > **Status:** Index. Documentation map for active Tree Monstor profile docs.
 
 > **用途**：這份文件是 Tree Monstor Developer Profile 的文檔地圖。新文檔加入 `docs/` 時，請同步更新本索引。
+>
+> **結構**：Always（每 session 讀）→ Plan → Build → Ship → Reflect → On-demand。Agent 按當前任務階段只讀對應 phase 的文檔，不必掃整個 map。
 
 ---
 
-## 核心文件
+## Always（每 session 必讀）
 
-| 文件 | 狀態 | 用途 |
-|------|------|------|
-| [`../README.md`](../README.md) | Overview | 人類入口、平台支援、快速開始 |
-| [`../CLAUDE.md`](../CLAUDE.md) | Adapter / Bridge | Claude Code auto-discovery bridge；指向 canonical profile docs 與 Claude Code adapter |
-| [`../SOUL.md`](../SOUL.md) | Canonical | 身份定位、核心原則、QA 姿態、紅線索引 |
-| [`../AGENTS.md`](../AGENTS.md) | Canonical | Session 啟動流程、工作區規範、長任務判斷 |
-| [`../MEMORY.md`](../MEMORY.md) | Canonical | 長期記憶、穩定偏好、常用流程摘要 |
+| 文件 | 用途 |
+|------|------|
+| [`../CLAUDE.md`](../CLAUDE.md) | Claude Code auto-discovery entrypoint；鐵律 + skill routing + verify gates |
+| [`../SOUL.md`](../SOUL.md) | 身份定位、核心原則、紅線索引 |
+| [`../AGENTS.md`](../AGENTS.md) | Session 啟動流程、工作區規範、長任務判斷 |
+| [`../MEMORY.md`](../MEMORY.md) | 長期記憶、穩定偏好、常用流程摘要 |
+| `docs/00-index.md`（本檔） | 文檔地圖（按 phase 組織） |
 
----
+## Plan（規劃 / 規格）
 
-## Canonical sources
+| 文件 | 用途 |
+|------|------|
+| [`docs/phases.md`](phases.md) | Think → Plan → Build → Review → Test → Ship → Reflect 詳細流程 |
+| [`docs/task-tiering.md`](task-tiering.md) | 任務分級（T1/T2/T3）、小型任務判準、例外申報格式 |
+| [`docs/project-documentation-standard.md`](project-documentation-standard.md) | Project 標準文檔、Build 前 documentation baseline；templates 在 `docs/project-doc-templates/` |
+| [`docs/project-doc-templates/`](project-doc-templates/) | 14 個 per-doc templates（US、component contract、endpoint resource 等） |
+| [`docs/think-plan-examples.md`](think-plan-examples.md) | Think / Plan 互動範例、架構選項與提問方式 |
+| `skills/plan-author/SKILL.md` | 把 Think/Plan 對話共識轉成 modular plan docs（PRD + per-US + DESIGN + components/pages + ADRs + QA-TRACKER baseline + VERIFY） | Plan phase 入口 — David 表達新需求 / 新項目 / 新大 feature 時 |
+| `.claude/agents/` | 22 個 Claude Code custom agent definitions（CEO / BA / Designer / SA / Frontend / Backend / QA / ...） | Orchestrator trigger table 自動 dispatch 對應 role |
+| `install.sh` | 一次性 install agents + skills 到 `~/.claude/` | Profile 安裝入口 |
 
-| Topic | Canonical source | Notes |
-|-------|------------------|-------|
-| Identity / philosophy | [`SOUL.md`](../SOUL.md) | 只放身份、流程、紅線和引用；避免變成完整 inventory |
-| Session startup / workspace | [`AGENTS.md`](../AGENTS.md) | Goal 確認、Think/Plan 互動、工作區規範 |
-| Long-term memory | [`MEMORY.md`](../MEMORY.md) | 穩定記憶摘要；不維護完整 skills / roles 清單 |
-| Claude Code entry bridge | [`CLAUDE.md`](../CLAUDE.md) + [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Claude Code startup / routing + Dynamic Workflow / 多 agent 編排 features；canonical behavior 仍在 SOUL / AGENTS / MEMORY / docs / skills |
-| Phase workflow | [`docs/phases.md`](phases.md) | Think → Plan → Build → Review → Test → Ship → Reflect |
-| Subagent role matrix | [`docs/subagents.md`](subagents.md) | 角色清單、輸入/輸出、model 選擇原則；不要在其他文件硬寫角色數量 |
-| Task Board format | [`docs/task-board.md`](task-board.md) | Canonical spelling uses hyphen: `docs/task-board.md` |
-| QA Gate | [`docs/qa-gate.md`](qa-gate.md) | Pre-Build documentation gate、doc-code sync、release / merge 交付門檻 |
-| Task tiering / 小型任務判準 | [`docs/task-tiering.md`](task-tiering.md) | T1/T2/T3 分級 checklist、申報格式；SOUL.md 條件紅線嘅「小型任務」以此為準 |
-| Testing strategy | [`docs/testing-strategy.md`](testing-strategy.md) | 測試層級、P0/P1 測試深度、健康指標 |
-| Regression hooks / QA regression mode | [`docs/testing-strategy.md`](testing-strategy.md) + [`docs/qa-gate.md`](qa-gate.md) + [`skills/regression-guard/SKILL.md`](../skills/regression-guard/SKILL.md) | Frontend/backend regression hooks、QA 啟用方式、production safety boundary |
-| Project documentation standard | [`docs/project-documentation-standard.md`](project-documentation-standard.md) | 每個 project 的標準文件、Build 前 documentation baseline 與 commit 規範 |
-| Skills catalog | [`skills/README.md`](../skills/README.md) | Local skills catalog；每個 skill 的 source 是 `skills/<name>/SKILL.md` |
+## Build（開發 / 品質）
 
----
+| 文件 | 用途 |
+|------|------|
+| [`docs/subagents.md`](subagents.md) | Subagent 角色矩陣（具體角色數見 canonical source；orchestrator skill 是實際 entry） |
+| [`docs/devops.md`](devops.md) | DevOps 規範、process 管理、Zombie 處理 |
+| [`docs/environment-isolation.md`](environment-isolation.md) | Dev / Prod / Agent Config 三層環境隔離 |
+| [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Claude Code runtime features：Dynamic Workflow / ultracode / 多 agent 編排 |
+| `skills/orchestrator/SKILL.md` | Multi-subagent + per-work-item dev+checker loop（內外層一體，2026-08-02 合併 dev-checker-loop；附 Subagent trigger table） |
+| `skills/regression-guard/SKILL.md` | bug fix SOP、RG-XXX entry format、QA enablement |
+| `skills/docs-sync/SKILL.md` | Review / QA feedback → durable docs（per-modular-doc sync rules） |
+| `skills/existing-project-intake/SKILL.md` | 接手現有 project 的 source-first baseline 流程 |
+| `skills/patch-corruption-recovery/SKILL.md` | replace-all / fuzzy-match edit 崩潰嘅救援 |
+| `skills/structural-doc-batch/SKILL.md` | 一次過補齊 8 份結構性文檔（modular docs） |
+| `.claude/agents/orchestrator.md` | Orchestrator agent definition（供 `claude --agent orchestrator` 直接 invoke） |
+| `.claude/agents/{ceo,ba,designer,sa,frontend,backend,qa,...}.md` | 22 個 role agent definitions（Orchestrator 自動 dispatch） |
 
-## 詳細文檔地圖
+## Build（開發 / 品質）
 
-| 文檔 | 狀態 | 內容 |
-|------|------|------|
-| [`docs/00-index.md`](00-index.md) | Index | 本文檔地圖；所有 top-level `docs/*.md` 應在此列出 |
-| [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Reference | Claude Code runtime features：Dynamic Workflow / 多 agent 編排 / ultracode mode |
-| [`docs/devops.md`](devops.md) | Runbook | DevOps 規範、process 管理、Zombie 處理 |
-| [`docs/environment-isolation.md`](environment-isolation.md) | Canonical | Dev / Prod / Agent Config 環境隔離規範 |
-| [`docs/failure-policy.md`](failure-policy.md) | Canonical | 失敗處理機制（L1/L2/L3） |
-| [`docs/feedback-loop.md`](feedback-loop.md) | Canonical | Feedback Loop 流程、Review/Test fail 後如何迭代 |
-| [`docs/phases.md`](phases.md) | Canonical | Think → Plan → Build → Review → Test → Ship → Reflect 詳細流程 |
-| [`docs/project-documentation-standard.md`](project-documentation-standard.md) | Standard | Project 標準文檔、commit 規範、文件 drift 要求 |
-| [`docs/qa-gate.md`](qa-gate.md) | Canonical | QA Gate 交付清單、文檔 gate、tracker gate、testing gate |
-| [`docs/qa-tracker.md`](qa-tracker.md) | Tracker | QA 持續追蹤；US → test task 對照、需求變更影響評估 |
-| [`docs/subagents.md`](subagents.md) | Canonical | Subagent 角色矩陣、Goal 關鍵字、調度規則、model 選擇原則 |
-| [`docs/task-board.md`](task-board.md) | Canonical | Task Board 格式、狀態定義、更新規則、PM 進度追蹤與用戶溝通原則 |
-| [`docs/task-tiering.md`](task-tiering.md) | Canonical | 任務分級（T1/T2/T3）、小型任務判準、中途升級規則、例外申報格式 |
-| [`docs/testing-strategy.md`](testing-strategy.md) | Canonical | 分層測試類型、健康指標、工具鏈 |
-| [`docs/testing-strategy-tiered.md`](testing-strategy-tiered.md) | Canonical | 按 project 成熟度分 T1/T2/T3,13 層壓縮成階段必做 / 應做 / 選做 |
-| [`docs/flaky-test-handling.md`](flaky-test-handling.md) | Canonical | Flaky test 偵測 / Quarantine / 修 / 預防 SOP |
-| [`docs/think-plan-examples.md`](think-plan-examples.md) | Reference | Think / Plan 互動範例、架構選項與提問方式 |
+| 文件 | 用途 |
+|------|------|
+| [`docs/subagents.md`](subagents.md) | Subagent 角色矩陣（具體角色數見 canonical source；orchestrator skill 是實際 entry） |
+| [`docs/devops.md`](devops.md) | DevOps 規範、process 管理、Zombie 處理 |
+| [`docs/environment-isolation.md`](environment-isolation.md) | Dev / Prod / Agent Config 三層環境隔離 |
+| [`docs/claude-code-workflow.md`](claude-code-workflow.md) | Claude Code runtime features：Dynamic Workflow / ultracode / 多 agent 編排 |
+| `skills/orchestrator/SKILL.md` | Multi-subagent + per-work-item dev+checker loop（內外層一體，2026-08-02 合併 dev-checker-loop） |
+| `skills/regression-guard/SKILL.md` | bug fix SOP、RG-XXX entry format、QA enablement |
+| `skills/docs-sync/SKILL.md` | Review / QA feedback → durable docs（per-modular-doc sync rules） |
+| `skills/existing-project-intake/SKILL.md` | 接手現有 project 的 source-first baseline 流程 |
+| `skills/patch-corruption-recovery/SKILL.md` | replace-all / fuzzy-match edit 崩潰嘅救援 |
+| `skills/structural-doc-batch/SKILL.md` | 一次過補齊 8 份結構性文檔（modular docs） |
+
+## Ship（驗證 / 上線）
+
+| 文件 | 用途 |
+|------|------|
+| [`docs/qa-gate.md`](qa-gate.md) | QA Gate 交付清單、Pre-Build documentation gate、doc-code sync、release / merge 門檻 |
+| [`docs/qa-tracker.md`](qa-tracker.md) | US ↔ test task 對照、需求變更影響評估 |
+| [`docs/testing-strategy.md`](testing-strategy.md) | 13 層測試策略、健康指標、工具鏈 |
+| [`docs/testing-strategy-tiered.md`](testing-strategy-tiered.md) | 按 project 成熟度 T1/T2/T3 必做 / 應做 / 選做 |
+| [`docs/flaky-test-handling.md`](flaky-test-handling.md) | Flaky test 偵測 / Quarantine / 修 / 預防 SOP |
+| `skills/orchestrator/` slash command（adapter → orchestrator canonical；`/dev-loop` 亦 redirect） | inner loop quick-start — 已於 2026-08-02 合併到 orchestrator skill |
+| `skills/devops/dependency-cve-audit/SKILL.md` | Critical/High CVE = 0 才可 merge（紅線 18） |
+| `skills/tech-debt-register/SKILL.md` | TECH-DEBT.md 5-field format |
+
+## Reflect（復盤 / 失敗處理）
+
+| 文件 | 用途 |
+|------|------|
+| [`docs/failure-policy.md`](failure-policy.md) | L1/L2/L3 失敗處理 + 進度停滯檢測 |
+| [`docs/feedback-loop.md`](feedback-loop.md) | Review/Test fail iteration 規則 + 獎勵 / 罰則 |
+| [`docs/task-board.md`](task-board.md) | Task Board 格式 + PM 進度追蹤與用戶溝通原則 |
+
+## On-demand（特定場景）
+
+| 文件 | 用途 |
+|------|------|
+| [`../README.md`](../README.md) | Human-facing overview；不是 agent 工作入口 |
+| [`docs/subagents.md`](subagents.md) | Conceptual role matrix；新增 / 刪除角色時才讀 |
+| `skills/README.md` | Skills catalog；只在確認 local skill 是否存在時讀 |
+| `SOUL-rationale.md` | SOUL.md 嘅 why / how / when-not context；反思 / 衝突解決時讀 |
 
 ---
 
@@ -66,57 +100,23 @@
 
 > **核心文件保持簡潔，詳細規則放在引用文檔。**
 
-- `README.md`：人類入口，不維護完整角色 / skills / QA 清單。
-- `SOUL.md`：身份、核心原則、紅線與索引，不做大型 inventory。
-- `AGENTS.md`：session 啟動與工作區規範。
-- `MEMORY.md`：長期穩定記憶，不複製完整 catalog。
-- `docs/*.md`：各 topic 的 canonical 規則與 reference。
-- `skills/*/SKILL.md`：每個 skill 的真正 source of truth。
-
----
-
-## Think → Plan → Build → Review → Test → Ship → Reflect
-
-完整 phase 定義、各階段角色與 gate 見 [`docs/phases.md`](phases.md)（唯一正本）。
-
----
-
-## Subagent roles
-
-完整角色矩陣、職責、輸入/輸出與調度規則見 [`docs/subagents.md`](subagents.md)。
-
-> 不要在本索引或 root docs 硬寫角色數量；新增 / 刪除角色時，先更新 `docs/subagents.md`，其他文件只引用 canonical source。
-
----
-
-## Skills
-
-Local skills catalog 見 [`skills/README.md`](../skills/README.md)。
-
-> 不要在 `README.md` / `SOUL.md` / `MEMORY.md` / `AGENTS.md` / `docs/00-index.md` 維護 partial skill list 或硬寫 skill count。每個 skill 的 source of truth 是 `skills/<name>/SKILL.md`。
-
----
-
-## 質量標準
-
-- **紅線 54-56（驗證驅動，最高優先級）**：修 bug 先重現、交付前實證驗證、改 code 前先讀後寫 → 見 [`SOUL.md`](../SOUL.md)
-- **QA Gate 未通過，絕對不能交付**；Build 前 documentation baseline / doc-code sync 亦屬 gate（適用於已採用文檔基線嘅 project）→ 見 [`docs/qa-gate.md`](qa-gate.md) + [`docs/project-documentation-standard.md`](project-documentation-standard.md)
-- Review 未 APPROVED，絕對不能進入 Test → 見 [`docs/feedback-loop.md`](feedback-loop.md)
-- 所有強制 Phase 必須完成才能進入下一階段 → 見 [`docs/phases.md`](phases.md)
-- **紅線 10-18**（文檔 gate、QA tracker、test tasks、regression guard、root cause、refactor invariant、三層測試、smoke test、CVE 0）→ 見 [`SOUL.md`](../SOUL.md) + [`docs/qa-gate.md`](qa-gate.md)
-
----
+- `README.md`：人類入口，不維護完整角色 / skills / QA 清單
+- `SOUL.md`：身份、核心原則、紅線與索引，不做大型 inventory
+- `AGENTS.md`：session 啟動與工作區規範
+- `MEMORY.md`：長期穩定記憶，不複製完整 catalog
+- `docs/*.md`：各 topic 的 canonical 規則與 reference
+- `skills/*/SKILL.md`：每個 skill 的真正 source of truth
 
 ## 維護規則
 
 新增或修改文檔時：
 
-1. 新增 top-level `docs/*.md` → 同步更新本索引。
-2. 新增 / 刪除 / 改名 `skills/<name>/SKILL.md` → 同步更新 [`skills/README.md`](../skills/README.md)。
-3. 不在 root docs 寫會 drift 的數字（角色數、skill 數、line count）。
-4. 歷史 incident docs 保留事實，不把 incident 當成現行 policy；現行 policy 應抽到 canonical docs。
-5. 文檔 / skills 導航改動後，執行 `python3 scripts/docs_consistency_check.py`，確保 index、catalog、status markers、related links 與本地連結沒有 drift。
-6. （可選）啟用 pre-commit 兜底：`git config core.hooksPath .githooks` — 之後每次 commit 自動跑上述 checker + catalog freshness check；GitHub push / PR 亦有 `.github/workflows/docs-check.yml` 跑同一套。
+1. 新增 top-level `docs/*.md` → 同步更新本索引對應 phase section
+2. 新增 / 刪除 / 改名 `skills/<name>/SKILL.md` → 同步更新 [`skills/README.md`](../skills/README.md)
+3. 不在 root docs 寫會 drift 的數字（角色數、skill 數、line count）
+4. 歷史 incident docs 保留事實，不把 incident 當成現行 policy；現行 policy 應抽到 canonical docs
+5. 文檔 / skills 導航改動後，執行 `python3 scripts/docs_consistency_check.py`，確保 index、catalog、status markers、related links 與本地連結沒有 drift
+6. （可選）啟用 pre-commit 兜底：`git config core.hooksPath .githooks` — 之後每次 commit 自動跑上述 checker + catalog freshness check；GitHub push / PR 亦有 `.github/workflows/docs-check.yml` 跑同一套
 
 ---
 

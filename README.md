@@ -1,4 +1,5 @@
-# 🌳 Tree Monstor — AI Software Development Team
+# Tree Monstor — AI Software Development Team
+> **When to read:** On-demand: project overview (user-facing)
 
 > **Status:** Overview. Human entry point for Tree Monstor; canonical rules live in `SOUL.md`, `AGENTS.md`, and `docs/00-index.md`.
 
@@ -8,7 +9,7 @@
 
 ---
 
-## 🛡️ 代碼品質鐵律（最高優先級，跨平台適用）
+## ️ 代碼品質鐵律（最高優先級，跨平台適用）
 
 品質判準是「實際執行、觀察行為」，不是「文檔存在」：**先重現、實證驗證、先讀後寫**，優先於所有流程規則。
 
@@ -96,9 +97,197 @@ Orchestrator 協調 CEO / Researcher / BA / Designer / SA / Frontend / Backend /
 
 ---
 
+## 如何使用這個 Agent
+
+> **Skill routing 兩層**：
+> 1. ✅ **Skill 載入係自動** — 你講嘅訊息命中某 skill 嘅 `trigger:` keyword 時，Claude Code 自動 inject 該 skill 嘅 SKILL.md 內容入 context。例如你講「派 subagent 修 bug」會自動帶入 `skills/orchestrator/SKILL.md` + `skills/regression-guard/SKILL.md`。
+> 2. ❌ **Workflow 執行唔自動** — Skill 載入後，Agent 仍要主動 dispatch subagent（call `Agent` tool）、寫 docs、跑 regression loop 等等。
+>
+> 即係「**睇到**自動，**做**唔自動**」。每個場景你需要嘅 trigger sequence 喺下面。
+
+### 常見場景
+
+### 場景 1：「我想做一個新嘢」（綠field）
+
+```
+你：「我想做一個 todo app，要有 due date、tag、filter」
+        ↓
+Agent 載入 SOUL.md + AGENTS.md（身份 + 流程）
+        ↓
+Trigger: plan-author skill
+        ↓
+Think/Plan 互動：
+  「MVP 範圍？local storage 定 sync server？」
+  「Auth 需要嗎？」
+  「Tech stack 選項：Next.js + Postgres / SvelteKit + SQLite / ...」
+        ↓
+Output（modular plan docs）：
+  docs/PRD.md                 ← US index
+  docs/US/US-001-add-todo.md
+  docs/US/US-002-filter.md
+  docs/US/US-003-due-date.md
+  docs/DESIGN.md              ← tokens + component index
+  docs/components/Button.md    ← contract（no-code rule）
+  docs/components/TodoItem.md
+  docs/architecture/0001-stack-choice.md
+  docs/QA-TRACKER.md          ← US ↔ test
+  docs/VERIFY.md
+        ↓
+Pre-Build Gate: docs_consistency_check.py --project-docs
+        ↓
+你：「OK 開工」
+        ↓
+Trigger: orchestrator skill（inner loop 自動啟用）
+        ↓
+dev + checker per US work item
+```
+
+### 場景 2：「接手 existing project」（已有 source code）
+
+```
+你：「呢個係 ~/www/legacy-app，幫我補 docs + QA」
+        ↓
+Trigger: existing-project-intake skill
+        ↓
+Source-first analysis（唔 hallucinate，係 read source）：
+  - 讀 source code、routes、schemas、tests、git history
+  - 輸出 docs baseline（8+1 份 docs）
+  - monolithic docs 自動拆 per-US / per-component / per-endpoint
+        ↓
+Output：同場景 1 嘅 plan docs，但係 derive 自 source 而非對話
+        ↓
+你：「可以開始改 X feature」
+        ↓
+Trigger: orchestrator skill
+```
+
+### 場景 3：「Bug：X」（紅線 54-56 觸發）
+
+```
+你：「用戶投訴 login 之後 redirect 去 /projects 但實際係 /」
+        ↓
+Trigger: regression-guard skill
+        ↓
+Step 1：先重現（紅線 54）
+  寫 failing test 證明 bug
+        ↓
+Step 2：寫 fix
+        ↓
+Step 3：RG entry
+  docs/REGRESSION-GUARD.md 加 RG-XXX
+  source code 加 RG-XXX comment marker
+        ↓
+Output：bug fixed + regression test 永遠守住
+```
+
+### 場景 4：「加 feature / 改 scope」（Build 中）
+
+```
+你：「US-005 嘅 filter 加埋 multi-tag AND/OR」
+        ↓
+Agent 讀 docs/US/US-005-filter.md（modular）
+        ↓
+Trigger: orchestrator skill § Inner loop
+        ↓
+dev agent：
+  - 改 src/components/Filter.tsx
+  - 補 RT-005 regression test
+  - 寫 docs/coverage/US-005.md 更新
+  - append docs/US/US-005.md changelog 行
+        ↓
+fresh checker agent（independent subagent）：
+  - 讀整份 docs/STATE.md
+  - 開 regression 開關實跑全套 regression suite
+  - 審計 coverage 表
+  - 寫 CK-XXX findings 回 STATE.md
+        ↓
+loop until VERIFIED 或 escalation
+```
+
+### 場景 5：「Review / QA feedback 要落 doc」
+
+```
+你：「Reviewer 話 US-012 嘅 AC 唔夠，應加 empty list case」
+        ↓
+Trigger: docs-sync skill
+        ↓
+同步：
+  docs/US/US-012.md ← append AC checkbox
+  docs/coverage/US-012.md ← 加 test inventory row
+  docs/QA-TRACKER.md ← Status 改 PARTIAL
+        ↓
+Spec 改完 → dev 跟改 → checker 覆核
+```
+
+### 場景 6：「純研究 / 純閱讀」
+
+```
+你：「比較 Elysia vs Hono 嘅 middleware pattern」
+        ↓
+Agent 走 Think/Plan 互動：
+  「2 個 framework 都係 Bun-native；Elysia 強在 type safety，Hono 強在跨 runtime」
+  「應用場景？serverless edge 揀 Hono，pure Bun server 揀 Elysia」
+  「漏咗咩？Express / Fastify legacy 相容... 」
+        ↓
+無 doc 產出（research 不需要 commit artifact）
+```
+
+---
+
+## 不會自動發生的事（三層 auto model）
+
+> **三層 automatic**：
+> 1. ✅ **Auto-load** — 你講嘅訊息命中某 skill 嘅 `trigger:` keyword → Claude Code 自動 inject SKILL.md 入 context
+> 2. ✅ **Auto-route** — 讀 orchestrator SKILL.md 嘅 trigger table → 知「咩時候派咩 role」（**呢個 layer 自動** — 唔使 Agent 自己決定）
+> 3. ❌ **Auto-execute** — 實際 `Agent tool call` / `Write` / `Bash` / git commit 仍須 Agent 主動執行
+>
+> 即係「**睇到 + 路由自動，做唔自動**」。
+
+| Agent 唔會...                               | Auto-load | Auto-route | Auto-execute | 你需要...                                                                                                            |
+| ----------------------------------------- | --------- | ---------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **Dispatch subagent** 做 multi-subagent 協調 | ✅         | ✅          | ❌            | Orchestrator trigger table 自動建議派邊個 role；但 `Agent tool call` 仍須主動                                                  |
+| **寫 Plan docs**                           | ✅         | ✅          | ❌            | `plan-author` 載入自動；4 個 Plan-phase agents（BA / Designer / SA / Documentation Engineer）按標準寫入；US / ADR / docs 寫入仍須主動 |
+| **跑 dev+checker inner loop**              | ✅         | ✅          | ❌            | `orchestrator` § Inner loop 載入自動；STATE.md 協調 + spawn checker 仍須主動                                                 |
+| **補 RG entry**                            | ✅         | ✅          | ❌            | `regression-guard` 載入自動；reproduce + fix + RG-XXX 仍須主動                                                             |
+| **寫 retrospective**                       | ✅         | ✅          | ❌            | `orchestrator` § Reflect 載入自動；retro 寫入仍須主動                                                                        |
+
+**Auto-route 解釋**：orchestrator 嘅 trigger table（22 個 phase-signal → role 映射）+ 22 個 `.claude/agents/<role>.md` 定義 + 統一嘅「Agent standards by phase」section — 三者一齊令 Agent **唔使再自己決定派邊個**。Agent 讀 table 即知「Build phase + 前端 keyword → 派 `frontend` agent」，**路由決策成本接近零**。但 `Agent tool call` 本身仍須 Agent 主動 call。
+
+### ✅ 自動嘅事（你唔使 trigger）
+
+| 自動發生                                               | 機制                                                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Skill SKILL.md 載入 context                          | `trigger:` keywords 命中你嘅訊息（例：「派 subagent」→ orchestrator 載入）                       |
+| Skill description 顯示                               | Claude Code 用 skill frontmatter `description:` 決定係咪相關                                   |
+| Adapter wrappers 啟用 (`/dev-loop`, `/orchestrator`) | 透過 `adapters/claude-code/skills/` symlink                                              |
+| **Subagent 路由**                                    | orchestrator trigger table + 22 個 `.claude/agents/<role>.md` → Agent 知派邊個                  |
+| **Agent standards 一致性**                              | `skills/orchestrator/SKILL.md` § Agent standards by phase 統一所有 agent 嘅產出標準              |
+
+詳見 [`AGENTS.md`](AGENTS.md) § Agent 開發預設路徑 + [`CLAUDE.md`](CLAUDE.md) § Skill routing + [`skills/orchestrator/SKILL.md`](skills/orchestrator/SKILL.md) § Agent standards by phase。
+
+---
+
 ## 安裝指南
 
-### Claude Code
+### Claude Code（推薦用 `install.sh`）
+
+```bash
+# 1. 安裝 agents + skills 到 ~/.claude/
+./install.sh
+
+# 2. （可選）裝 global CLAUDE.md bridge — 所有 project 自動 load profile
+./install.sh --global-bridge
+
+# 3. 卸載
+./install.sh --uninstall
+```
+
+`install.sh` 自動：
+- Symlink `.claude/agents/*.md`（22 個 subagent role）→ `~/.claude/agents/`
+- Symlink `skills/*/` → `~/.claude/skills/`
+- Optional：symlink `CLAUDE.md` → `~/.claude/CLAUDE.md`（global bridge）
+
+**手動安裝**（不跑 install.sh）：
 
 Claude Code 的 `CLAUDE.md` auto-discovery 只在 current working directory 及其 parent chain 內有效。**直接 `cd tree_monstor && claude` 不會自動載入**（你的下游 project 才是 cwd）。
 
@@ -116,18 +305,21 @@ Claude Code 的 `CLAUDE.md` auto-discovery 只在 current working directory 及�
 
 之後 `claude` 開任何 session 都會自動載入 Tree Monstor 紅線、QA Gate、文件索引。
 
-**2. 註冊 skills**
+**2. 註冊 agents + skills**
 
-profile 裡的 `skills/*/SKILL.md` 不是 Claude Code 標準位置，需要 symlink：
+profile 裡的 `.claude/agents/*.md` 同 `skills/*/SKILL.md` 不是 Claude Code 標準位置，需要 symlink 或跑 `./install.sh`：
 
 ```bash
-mkdir -p ~/.claude/skills
+mkdir -p ~/.claude/agents ~/.claude/skills
+for agent in ~/Sites/localhost/tree_monstor/.claude/agents/*.md; do
+  ln -s "$agent" ~/.claude/agents/
+done
 for skill in ~/Sites/localhost/tree_monstor/skills/*/; do
   ln -s "$skill" ~/.claude/skills/
 done
 ```
 
-之後 `/regression-guard`、`/existing-project-intake` 等 skill 直接 invoke。
+之後 `/regression-guard`、`/existing-project-intake` 等 skill 同 `orchestrator`、`ceo`、`ba`、`frontend` 等 agent 直接 invoke。
 
 **3. Per-project 載入（只在某個 project 用）**
 
@@ -143,12 +335,10 @@ done
 claude --append-system-prompt-file ~/Sites/localhost/tree_monstor/CLAUDE.md
 ```
 
-**5. 整個 session 跑成 Tree Monstor agent**
-
-把 profile 包成自訂 subagent 放 `~/.claude/agents/tree-monstor.md`，然後：
+**5. 整個 session 跑成 Tree Monstor orchestrator**
 
 ```bash
-claude --agent tree-monstor
+claude --agent orchestrator
 ```
 
 詳細文檔：[`CLAUDE.md`](CLAUDE.md) + [docs/claude-code-workflow.md](docs/claude-code-workflow.md)

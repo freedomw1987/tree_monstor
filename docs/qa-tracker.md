@@ -1,4 +1,5 @@
 # QA Tracker（持續測試追蹤）
+> **When to read:** Ship
 
 > **Status:** Tracker. Working format for US → test task traceability and requirement-change impact.
 
@@ -14,7 +15,7 @@
 
 ---
 
-## 🎯 核心概念
+## 核心概念
 
 ```
 PRD.md (US-XXX 列表)
@@ -30,7 +31,7 @@ TEST-COVERAGE.md (累積覆蓋率)
 
 ---
 
-## 📋 QA Tracker 模板
+## QA Tracker 模板
 
 每個 project 在 `docs/QA-TRACKER.md` 用以下結構（本文 `docs/qa-tracker.md` 是 profile 規則 / 模板；`docs/QA-TRACKER.md` 是每個 project 的實際 tracker artifact）:
 
@@ -116,7 +117,7 @@ TEST-COVERAGE.md (累積覆蓋率)
 
 ---
 
-## 🔄 工作流程
+## 工作流程
 
 ### 1. 需求變更時(David 改要求)
 
@@ -187,7 +188,7 @@ Test 必須 pass 之後先可以算 fix
 
 ---
 
-## 📐 測試覆蓋率指標
+## 測試覆蓋率指標
 
 每個 US 必須有最少覆蓋:
 
@@ -205,7 +206,7 @@ Test 必須 pass 之後先可以算 fix
 
 ---
 
-## 🎬 David 嘅實戰情境
+## David 嘅實戰情境
 
 情境:David 改咗 US-002,由「email 註冊」變成「email OR 電話號碼註冊」。
 
@@ -230,7 +231,7 @@ Test 必須 pass 之後先可以算 fix
 
 ---
 
-## 📚 跟其他文件的關係
+## 跟其他文件的關係
 
 - `docs/qa-gate.md` 嘅一次性清單 → 從 QA-TRACKER.md 抽取最新狀態
 - `docs/project-documentation-standard.md` §TEST-COVERAGE.md → 由 QA-TRACKER.md 自動 generate
@@ -239,7 +240,7 @@ Test 必須 pass 之後先可以算 fix
 
 ---
 
-## 🛠️ 工具建議
+## ️ 工具建議
 
 - **小 project**:人手維護 `docs/QA-TRACKER.md`(呢份模板)
 - **中 project**:Kanban 卡片化(每個 QA task 一張卡)

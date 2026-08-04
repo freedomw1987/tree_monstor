@@ -57,44 +57,239 @@ def templates(name: str, today: str) -> dict[str, str]:
 """,
         "docs/PRD.md": f"""# {name} — PRD
 
-## User Stories
+> **Status:** Living document. US index references per-US files in `docs/US/`.
+> 每個 US 一個獨立檔（per-US modular），方便 agent 為單一 feature 工作時只讀該檔。
 
-### US-001 — [一句話標題]
-**As** [誰] **I want** [做什麼] **so that** [為什麼]
+## Scope
 
-**優先級**: P0
-**驗收標準**:
-- [ ] Given [前置條件], when [動作], then [預期結果]
-**Out of scope**: [這個 story 不做什麼]
-**依賴**: 無
+[與 `docs/PROJECT-OVERVIEW.md` § 範圍 一致。scope 變更兩邊同步。]
+
+## User Story Index
+
+| US | 標題 | 優先級 | 狀態 | Spec |
+|----|------|--------|------|------|
+| US-001 | [一句話標題] | P0 | DRAFT | [docs/US/US-001-example.md](US/US-001-example.md) |
+
+狀態: `DRAFT` / `IN_PROGRESS` / `DONE` / `DEPRECATED`
 
 ## Non-Functional Requirements
 - 效能: [TBD]
 - 安全: [TBD]
+- 兼容性: [TBD]
 
 ## 假設與風險
 - 假設: [TBD]
+- 風險: [TBD]
 
 ## 變更紀錄
 | 日期 | US ID | 變更 | 原因 |
 |------|-------|------|------|
 | {today} | US-001 | 初版 baseline | bootstrap |
 """,
+        "docs/US/US-001-example.md": f"""# US-001 — [一句話標題]
+
+**狀態**: DRAFT
+**優先級**: P0
+**對應 master**: [docs/PRD.md § User Story Index](../PRD.md)
+**對應 QA tracker row**: US-001
+**對應 regression test**: (尚未建立)
+**最後更新**: {today} by bootstrap
+
+## 描述
+**As** [誰] **I want** [做什麼] **so that** [為什麼]
+
+## 驗收標準
+- [ ] Given [前置條件], when [動作], then [預期結果]
+- [ ] ...
+
+## 邊界情況
+- ...
+
+## Out of scope
+- ...
+
+## 依賴
+- 無
+
+## 變更紀錄
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| {today} | 初版 | bootstrap |
+""",
         "docs/DESIGN.md": f"""# Design Spec — {name}
 
+> **Status:** Living document. Tokens here are single source of truth;
+> per-component specs in `docs/components/`, per-page specs in `docs/pages/`.
+> **No-code rule**: 不含 source 語言 snippet（TS/JS/Python 等）；
+> component 用 props table / events / a11y / states 描述。
+
 ## Overview
-[設計理念與目標用戶畫像；無 UI 的 project 在此標 N/A + reason]
+[設計理念、品牌定位、目標用戶畫像、設計參考連結]
 
 ## Design Tokens
-[TBD — 定稿時補；參照 Tree Monstor project documentation standard 文件 3]
 
-## Components
-[TBD]
+### Colors
+| Token | HEX | 用途 |
+|-------|-----|------|
+| --color-primary | [TBD] | CTA, 強調 |
+| --color-bg | [TBD] | 背景 |
+| ... | ... | ... |
+
+### Typography
+| Token | Font | Size / Line-height | Weight | 用途 |
+|-------|------|-------------------|--------|------|
+| --text-h1 | [TBD] | [TBD] | [TBD] | 頁面標題 |
+| --text-body | [TBD] | [TBD] | [TBD] | 內文 |
+
+### Spacing
+[4px / 8px grid system; --space-1..5 tokens]
+
+### Elevation
+| Token | 用途 |
+|-------|------|
+| --elevation-1 | Card |
+| --elevation-2 | Modal |
+
+### Shapes
+[Border radius tokens]
+
+## Component Index
+
+| Component | 規格 | 對應 US |
+|-----------|------|---------|
+| Button | [docs/components/Button.md](components/Button.md) | US-001 |
+| Input | [docs/components/Input.md](components/Input.md) | US-001 |
+
+## Page Index
+
+| Page | 規格 | 對應 US |
+|------|------|---------|
+| Login | [docs/pages/Login.md](pages/Login.md) | US-001 |
+
+## Do's and Don'ts
+- ✅ Do: [TBD]
+- ❌ Don't: [TBD]
 
 ## Changelog
 | 日期 | 變更 | 原因 |
 |------|------|------|
 | {today} | 初版 baseline | bootstrap |
+""",
+        "docs/components/Button.md": f"""# Component: Button
+
+**對應 US**: US-001
+**對應實作**: (尚未建立)
+
+## Purpose
+Primary action affordance。
+
+## Props
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| variant | `primary` \| `secondary` \| `ghost` | no | `primary` | Visual variant |
+| size | `sm` \| `md` \| `lg` | no | `md` | Size token |
+| label | string | yes | — | Button text |
+| onClick | `() => void` | yes | — | Click handler |
+| disabled | boolean | no | `false` | Disabled state |
+| loading | boolean | no | `false` | Loading spinner replaces label |
+
+## Events
+- `click` → calls `onClick`
+- Keyboard: `Enter` / `Space` triggers click
+
+## States
+default / hover / active / disabled / loading
+
+## Accessibility
+- Min hit-area: 44×44px
+- `role="button"`
+- `aria-disabled` when disabled
+- Visible focus ring per `--focus-ring` token
+
+## Token usage
+- background → `--color-primary` (or variant-specific)
+- text → `--color-on-primary`
+- padding → `--space-2` `--space-3`
+
+## Do's and Don'ts
+- ✅ Do: 文字按鈕至少 44x44px
+- ❌ Don't: 嵌套 button
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| {today} | 初版 | bootstrap |
+""",
+        "docs/components/Input.md": f"""# Component: Input
+
+**對應 US**: US-001
+**對應實作**: (尚未建立)
+
+## Purpose
+Text input field。
+
+## Props
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| type | `text` \| `email` \| `password` | no | `text` | Input type |
+| value | string | yes | — | Controlled value |
+| onChange | `(v: string) => void` | yes | — | Change handler |
+| placeholder | string | no | — | Placeholder text |
+| error | string \| null | no | `null` | Error message |
+| disabled | boolean | no | `false` | Disabled state |
+
+## Events
+- `change` → calls `onChange`
+
+## States
+default / focus / error / disabled
+
+## Accessibility
+- Label association via `<label>` or `aria-label`
+- Error message via `aria-describedby` + `role="alert"`
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| {today} | 初版 | bootstrap |
+""",
+        "docs/pages/Login.md": f"""# Page: Login
+
+**對應 US**: US-001
+**URL**: `/login`
+**對應實作**: (尚未建立)
+
+## Purpose
+用戶輸入認證資訊。
+
+## Wireframe
+```
+[待畫 — ASCII wireframe]
+```
+
+## Components used
+- Input (email, password)
+- Button (primary, md)
+
+## Interaction spec
+1. 用戶輸入 → 表單 state 更新
+2. submit 按鈕：所有欄位 valid 前 disabled
+3. submit 後：顯示 loading state
+4. 成功 → 跳轉 dashboard
+5. 失敗 → 顯示錯誤訊息
+
+## States
+idle / submitting / error
+
+## Accessibility
+- Form labels 明確
+- 鍵盤 navigation
+- 錯誤訊息 `aria-live="polite"`
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| {today} | 初版 | bootstrap |
 """,
         "docs/architecture/0001-initial-architecture.md": f"""# ADR-0001 — Initial architecture baseline
 
@@ -122,13 +317,57 @@ Proposed
 """,
         "docs/API.md": f"""# API Reference — {name}
 
+> **Status:** Living document. Conventions here are cross-cutting;
+> per-resource contracts in `docs/endpoints/`.
+> **No-code rule**: JSON schema 保留（interface 規格）；
+> 不寫 TS/JS/Python 等 source 語言 client-side example。
+
 > Base URL: [TBD]
 > Auth: [TBD]
+> Content-Type: `application/json`
+
+## Conventions
+
+### Request format
+- All request bodies are JSON
+- Timestamps: ISO 8601 UTC
+- IDs: UUID v4 unless otherwise noted
+
+### Response format
+- Success: `2xx` with JSON body
+- Error: `4xx`/`5xx` with `{{ error: {{ code, message, details? }} }}` body
+
+### Error code convention
+| Status | Meaning |
+|--------|---------|
+| 400 | INVALID_* (client-side validation) |
+| 401 | UNAUTHENTICATED |
+| 403 | UNAUTHORIZED / FORBIDDEN |
+| 404 | NOT_FOUND |
+| 409 | CONFLICT_* |
+| 429 | RATE_LIMIT |
+| 5xx | INTERNAL — server-side, never leaks stack |
+
+### Auth
+- [TBD]
+
+## Endpoint Index
+
+> Per-resource contracts 喺 `docs/endpoints/<resource>.md`；master 只列 index。
+
+| Resource | 規格 | Endpoints |
+|----------|------|-----------|
+| example | [endpoints/example.md](endpoints/example.md) | POST /example, GET /example/{{id}} |
 
 ## Endpoints
 
-[無 API 的 project 在此標 N/A + reason。有 API 時每個 endpoint 一段：
-request / response / 錯誤碼 / 對應 US。]
+> 完整 request / response / error code 細節見 `docs/endpoints/<resource>.md`。
+> 下方列出 endpoint 索引供跨資源查閱。
+
+| Method | Path | Resource | Spec | 對應 US |
+|--------|------|----------|------|---------|
+| POST | /example | example | [endpoints/example.md](endpoints/example.md) | US-001 |
+| GET | /example/{id} | example | [endpoints/example.md](endpoints/example.md) | US-001 |
 
 ## QA / Regression Endpoints
 
@@ -136,10 +375,67 @@ request / response / 錯誤碼 / 對應 US。]
 project documentation standard 文件 5 的模板（production 不可 mount、
 auth / test tenant / audit / idempotency 欄位必填）。
 
-## 變更歷史
+## Changelog
 | 日期 | 變更 | 原因 |
 |------|------|------|
 | {today} | 初版 baseline | bootstrap |
+""",
+        "docs/endpoints/example.md": f"""# Endpoints: example
+
+**對應 US**: US-001
+**對應實作**: (尚未建立)
+
+## POST /example
+
+**描述**: [一句話]
+
+**對應 US**: US-001
+
+**Request Body**:
+```json
+{{
+  "field": "value"
+}}
+```
+
+**Response 200**:
+```json
+{{
+  "id": "uuid",
+  "field": "value"
+}}
+```
+
+**錯誤碼**:
+| Status | Code | 說明 |
+|--------|------|------|
+| 400 | INVALID_FIELD | [TBD] |
+
+**對應 Test**: (尚未建立)
+
+## GET /example/{{id}}
+
+**描述**: [一句話]
+
+**對應 US**: US-001
+
+**Response 200**:
+```json
+{{
+  "id": "uuid",
+  "field": "value"
+}}
+```
+
+**錯誤碼**:
+| Status | Code | 說明 |
+|--------|------|------|
+| 404 | NOT_FOUND | [TBD] |
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| {today} | 初版 | bootstrap |
 """,
         "docs/QA-TRACKER.md": f"""# QA Tracker — {name}
 
@@ -158,28 +454,79 @@ auth / test tenant / audit / idempotency 欄位必填）。
 """,
         "docs/TEST-COVERAGE.md": f"""# Test Coverage — {name}
 
+> **Status:** Living document. Master summary here; per-US detail in `docs/coverage/`.
+> **orchestrator inner loop 整合**：Work Item 直接 reference `coverage/<US-id>.md`。
+
 > 最後更新: {today}
 > 總體覆蓋率: TBD
 
 ## User Story → Test Case 對照
 
-| US | 描述 | Unit | Integration | E2E | 狀態 | 備註 |
-|----|------|------|-------------|-----|------|------|
-| US-001 | [一句話標題] | ❌ 0 | ❌ 0 | ❌ 0 | PENDING | baseline |
+> 完整 test inventory 喺 `docs/coverage/<US-id>.md`；master 只列 summary。
+> Per-US coverage 詳情見對應 coverage 檔。
 
-## Regression Mode / Hooks
+| US | 標題 | 規格 | Unit | Integration | E2E | 狀態 | 備註 |
+|----|------|------|------|-------------|-----|------|------|
+| US-001 | [一句話標題] | [coverage/US-001.md](coverage/US-001.md) | ❌ 0 | ❌ 0 | ❌ 0 | PENDING | baseline |
 
-尚未建立。Regression hooks 只可在 dev/test/staging 啟用；production
-必須 not mounted / hard reject（紅線 53）。有 bug fix 或 P0 flow 時
-在此建 matrix（欄位見 Tree Monstor testing strategy）。
+狀態: `PASS` / `PARTIAL` / `NONE` / `FLAKY`
+
+## 測試金字塔分佈
+- Unit tests: 0
+- Integration tests: 0
+- E2E tests: 0
+- Manual smoke tests: 0
+
+## Regression Mode / Hooks（RT/RG master index）
+
+| ID | Type | US | Spec | Test command | Status |
+|----|------|----|------|--------------|--------|
+| (尚未建立) | | | | | |
+
+Regression hooks 只可在 dev/test/staging 啟用；production 必須
+not mounted / hard reject（紅線 53）。
 
 ## 已知未覆蓋區域
 - [ ] 全部（baseline 階段）
 
-## 變更歷史
+## Changelog
 | 日期 | 變更 | 原因 |
 |------|------|------|
 | {today} | 初版 baseline | bootstrap |
+""",
+        "docs/coverage/US-001.md": f"""# Coverage: US-001 — [一句話標題]
+
+**對應 US**: [docs/US/US-001-example.md](../US/US-001-example.md)
+**對應 RT**: (尚未建立)
+**最後更新**: {today} by bootstrap
+
+## Test inventory
+
+### Unit tests
+| Test file | 覆蓋範圍 | 狀態 |
+|-----------|----------|------|
+| (尚未建立) | | |
+
+### Integration tests
+| Test file | 覆蓋範圍 | 狀態 |
+|-----------|----------|------|
+| (尚未建立) | | |
+
+### E2E tests
+| Test file | 覆蓋範圍 | 狀態 |
+|-----------|----------|------|
+| (尚未建立) | | |
+
+## RT-XXX (regression test)
+- (尚未建立)
+
+## 已知 gap
+- 全部（baseline 階段）
+
+## Changelog
+| 日期 | 變更 | 原因 |
+|------|------|------|
+| {today} | 初版 | bootstrap |
 """,
         "docs/TECH-DEBT.md": f"""# Tech Debt Register — {name}
 

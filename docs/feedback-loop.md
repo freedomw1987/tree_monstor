@@ -1,4 +1,5 @@
 # Feedback Loop
+> **When to read:** Reflect
 
 > **Status:** Canonical. Source of truth for review/test failure loops and iteration rules.
 
@@ -27,20 +28,14 @@
 
 ## Loop 規則
 
-### 循環繼續條件
-- BA 分析發現需求不明確 → 向用戶確認 → 重新 BA
-- UI/UX 設計發現需求問題 → 回到 BA 重新確認
-- SA Code Review 發現 CRITICAL/IMPORTANT 問題 → 修正 → 回到 SA Review
-- QA 測試發現任何問題 → 修正 → 回到 SA Review
-- User Simulation 發現任何問題 → 修正 → 回到 SA Review
-
-### 循環終止條件
-- BA 分析: 完成（需求明確）
-- UI/UX 設計: 完成（設計 token 確定）
-- SA Code Review: APPROVED
-- UI/UX Design Review: APPROVED
-- QA 測試: 100% 通過
-- User Simulation: 100% 通過
+| Phase | 繼續條件 | 終止條件 |
+|-------|----------|----------|
+| **BA 分析** | 需求不明確 → 向用戶確認 → 重新 BA | 完成（需求明確） |
+| **UI/UX 設計** | 發現需求問題 → 回到 BA 重新確認 | 完成（設計 token 確定） |
+| **SA Code Review** | 發現 CRITICAL/IMPORTANT 問題 → 修正 → 回到 SA Review | APPROVED |
+| **UI/UX Design Review** | （同上） | APPROVED |
+| **QA 測試** | 發現任何問題 → 修正 → 回到 SA Review | 100% 通過 |
+| **User Simulation** | 發現任何問題 → 修正 → 回到 SA Review | 100% 通過 |
 
 ---
 

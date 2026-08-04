@@ -1,4 +1,5 @@
 # 項目文檔規格（Project Documentation Standard）
+> **When to read:** Plan
 
 > **Status:** Standard. Source of truth for project documentation requirements and commit expectations.
 
@@ -11,7 +12,7 @@
 
 ---
 
-## 🗂️ 強制文件清單（每個 project 必須有）
+## ️ 強制文件清單（每個 project 必須有）
 
 | # | 文件 | 路徑 | 負責階段 | 何時 commit |
 |---|------|------|---------|------------|
@@ -29,7 +30,36 @@
 
 ---
 
-## 🧭 Documentation-First Rule（Build 前強制）
+## No-code-in-docs Rule（紅線延伸）
+
+> **核心原則**：source 語言 snippet（TS/JS/Python/Go/Rust 等）禁止出現在結構性文檔中。文檔只描述**規格、contract、interface**，不描述**實作細節**。
+
+**Why**：真實 code 一改，文檔 example 必然 drift。Agent 對照文檔寫 code，會撞「doc 寫 `<Button onClick={fn}>` 但實作是 `<Button onPress>` 嘅 prop 叫 onPress 唔叫 onClick」這種衝突。Component contract 不會 drift，因為 contract 本來就是給實作對齊用的。
+
+| 形式 | 允許？ | Why |
+|------|--------|-----|
+| TS / JS / Python / Go / Rust 等 source 語言 snippet | ⛔ | 必然 drift，製造 false signal |
+| JSON / YAML schema（request / response / config） | ✅ | Interface 規格，跟 code 解耦 |
+| ASCII wireframe / mock layout | ✅ | 純視覺描述 |
+| Mermaid diagram（declarative） | ✅ | 圖形化 spec，非 code |
+| Token table / props table / markdown table | ✅ | 結構化規格 |
+| SQL DDL、Docker compose、shell、`.env.example` | ✅ | Infra config，非 application logic example |
+
+**取代 DESIGN.md「用法: [code]」的格式**：
+
+| 舊（會 drift） | 新（contract 不會 drift） |
+|----------------|--------------------------|
+| `用法: <Button onClick={...}>OK</Button>` | **Props table**：variant / size / label / onClick / disabled / loading + **Events** + **States** + **A11y** + **Token usage** |
+
+API.md JSON 範例**保留**（屬 interface 規格）—— 不要寫 `fetch('/api/login', { ... })` 之類的 client code。
+
+**例外處理**：若某 component 真要 pseudo-code 講流程（例如 async state machine），寫入對應 retro 並 cite 例，作為 doc-rule 例外單獨記錄。
+
+**驗證**：`scripts/docs_consistency_check.py` 將擴充檢查「structural docs 含 source 語言 fenced code block」就 warn（advisory，預設不阻擋）。
+
+---
+
+## Documentation-First Rule（Build 前強制）
 
 > **核心原則**：Think / Plan 的共識必須先變成 project docs，才可以進入 Build。對話紀錄會消失，git 裡的文檔才是可交接、可驗收、可 QA 的真相。
 
@@ -119,42 +149,12 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 - Code 改動必須與受影響文檔同 commit / 同 PR；否則視為 doc-code drift。
 
 
-## 📄 文件 1 — PROJECT-OVERVIEW.md
+## 文件 1 — PROJECT-OVERVIEW.md
 
 **目的**:讓任何新人(包含 3 個月後的自己)在 5 分鐘內掌握這個 project 嘅全貌。
 
-**必填區塊**:
-```markdown
-# <Project Name> — Project Overview
-
-## 一句話
-[這個 project 做什麼,用一句非技術語言解釋]
-
-## 目標用戶
-- 主要: [誰會用]
-- 次要: [誰會間接受影響]
-
-## 核心價值主張
-- 用戶用呢個 project 解決咩問題?
-- 跟現有方案比,我們的差異點是?
-
-## 成功標準
-- KPI 1: [具體可量度,例:DAU > 1000]
-- KPI 2: ...
-
-## 範圍 (Scope)
-- ✅ In scope: [做咩]
-- ❌ Out of scope: [不做咩,防止 scope creep]
-
-## 主要 Risk
-- Risk 1: [風險] → Mitigation: [應對]
-- Risk 2: ...
-
-## 變更歷史
-| 日期 | 變更 | 原因 |
-|------|------|------|
-| 2026-06-06 | 初版 | 從 kanban task t_c658eba4 開始 |
-```
+**Template**: 見 [`./project-doc-templates/project-overview-template.md`](./project-doc-templates/project-overview-template.md)
+*Sections: 一句話 / 目標用戶 / 核心價值主張 / 成功標準 / 範圍 / 主要 Risk / 變更歷史*
 
 **更新時機**:
 - 每次 scope 變更
@@ -163,175 +163,79 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
-## 📄 文件 2 — PRD.md (Product Requirements Document)
+## 文件 2 — PRD.md (Product Requirements Document)
 
-**目的**:把口頭討論的 user stories 變成可驗收的規格。
+**目的**:把口頭討論的 user stories 變成可驗收的規格。Master 檔只放跨切內容 + US index，**每個 US 一個獨立檔**（per-US modular），方便 agent 為單一 feature 工作時只讀該 US。
 
-**必填區塊**:
-```markdown
-# <Project Name> — PRD
-
-## User Stories
-
-### US-001 — [一句話標題]
-**As** [誰] **I want** [做咩] **so that** [為什麼]
-
-**優先級**: P0 / P1 / P2 / P3
-**驗收標準**:
-- [ ] Given [前置條件], when [動作], then [預期結果]
-- [ ] ...
-**Out of scope**: [呢個 story 唔做咩]
-**依賴**: [依賴邊啲 US 或外部系統]
-
-### US-002 ...
-
-## Non-Functional Requirements
-- 效能: [response time < 200ms (p95)]
-- 安全: [敏感資料加密儲存,API rate limit 100 req/min]
-- 兼容性: [支援 Chrome/Firefox/Safari 最新兩個 major version]
-- 可用性: [99.9% uptime,允許每月 43 分鐘 downtime]
-
-## 假設與風險
-- 假設: [假設咗咩,例:用戶有 Gmail]
-- 風險: [風險列表]
-
-## 變更紀錄
-| 日期 | US ID | 變更 | 原因 |
-|------|-------|------|------|
+**結構**:
+```
+docs/
+├── PRD.md              ← master：scope、NFR、US index（指向 US/ 子檔）
+└── US/
+    ├── US-001-login.md
+    ├── US-002-registration.md
+    └── ...             ← 每 US 一個檔
 ```
 
-**User Story 編號規則**:`US-` + 3 位數（`US-001`, `US-002` ...）；如需拆細 sub-task，可用 `US-001.1` / `US-001.2`。**所有 test case 都引用 US 編號**。
+**PRD.md（master）Template**: 見 [`./project-doc-templates/prd-master-template.md`](./project-doc-templates/prd-master-template.md)
+*Sections: Scope / User Story Index / NFR / 假設與風險 / 變更紀錄*
+
+**Per-US Template**: 見 [`./project-doc-templates/us-template.md`](./project-doc-templates/us-template.md)
+*Sections: 描述 / 驗收標準 / 邊界情況 / Out of scope / 依賴 / 變更紀錄*
+
+**User Story 編號規則**:`US-` + 3 位數（`US-001`, `US-002` ...）；如需拆細 sub-task，可用 `US-001.1` / `US-001.2`。**所有 test case 都引用 US 編號**。Per-US 檔命名：`US-XXX-<kebab-slug>.md`（例：`US-001-login.md`）。
 
 **更新時機**:
-- 每次新功能加入 → 新增 US
-- 每次需求變更 → 修改 US + 標記 change log
-- 刪除 US → 標記 "DEPRECATED" 而非真的刪除(保留歷史)
+- 每次新功能加入 → 新增 US 檔 + 更新 master index
+- 每次需求變更 → 改 US 檔 + master 同步 + 標記 change log
+- 刪除 US → US 檔改名加 `.DEPRECATED.md` 後綴（保留歷史），master index 標 DEPRECATED
+- **orchestrator inner loop（dev+checker）Work Item 直接 reference per-US 檔**，不引用 master PRD.md 第 N 行
 
 ---
 
-## 📄 文件 3 — DESIGN.md (Design Spec)
+## 文件 3 — DESIGN.md (Design Spec)
 
-**目的**:UI/UX 的「單一真相來源」,所有 frontend 開發都依此實作。
+**目的**:UI/UX 的「單一真相來源」,所有 frontend 開發都依此實作。Master 檔只放跨切 tokens + component/page index,**每個 component / 每個 page 一個獨立檔**，方便 agent 為單一 component/page 工作時只讀該檔。
 
-**必填區塊**(沿用 `docs/phases.md` §Plan 嘅標準):
-```markdown
-# Design Spec — <Project Name>
-
-## Overview
-- 設計理念、品牌定位
-- 目標用戶畫像
-- 設計參考(inspiration links)
-
-## Design Tokens
-### Colors
-| Token | HEX | 用途 |
-|-------|-----|------|
-| --color-primary | #FF6B35 | CTA, 強調 |
-| --color-bg | #FFFFFF | 背景 |
-| ... | ... | ... |
-
-### Typography
-| Token | Font | Size / Line-height | Weight | 用途 |
-|-------|------|-------------------|--------|------|
-| --text-h1 | Inter | 32/40 | 700 | 頁面標題 |
-| --text-body | Inter | 16/24 | 400 | 內文 |
-| ... | ... | ... | ... | ... |
-
-### Spacing
-- 4px grid system
-- --space-1: 4px
-- --space-2: 8px
-- --space-3: 16px
-- --space-4: 24px
-- --space-5: 32px
-
-### Elevation
-| Token | CSS | 用途 |
-|-------|-----|------|
-| --elevation-1 | box-shadow: 0 1px 3px rgba(0,0,0,0.12) | Card |
-| --elevation-2 | box-shadow: 0 4px 6px rgba(0,0,0,0.16) | Modal |
-| ... | ... | ... |
-
-### Shapes
-- Border radius: 4px (small), 8px (medium), 16px (large)
-
-## Components
-### Button
-- Variants: primary / secondary / ghost
-- Sizes: sm / md / lg
-- States: default / hover / active / disabled / loading
-- 用法: [example code]
-
-### Input
-- ...
-
-### Card
-- ...
-
-## Page Layouts
-### Home
-- [ASCII wireframe 或 圖片連結]
-- 互動規格
-
-### Login
-- ...
-
-## Do's and Don'ts
-- ✅ Do: 文字按鈕至少 44x44px
-- ❌ Don't: 顏色用純黑/純白(用 neutral 9 / neutral 1)
-
-## Changelog
-| 日期 | 變更 | 原因 |
+**結構**:
+```
+docs/
+├── DESIGN.md                  ← master: tokens + component/page index
+├── components/
+│   ├── Button.md              ← per-component contract（props / events / a11y / states）
+│   ├── Input.md
+│   └── ...
+└── pages/
+    ├── Login.md               ← per-page: wireframe + interaction spec
+    └── ...
 ```
 
+**DESIGN.md（master）Template**: 見 [`./project-doc-templates/design-master-template.md`](./project-doc-templates/design-master-template.md)
+*Sections: Overview / Design Tokens (Colors/Typography/Spacing/Elevation/Shapes) / Component Index / Page Index / Do's and Don'ts / Changelog*
+
+**components/<Name>.md（per-component contract）Template**: 見 [`./project-doc-templates/component-contract-template.md`](./project-doc-templates/component-contract-template.md)
+*Sections: Purpose / Props / Events / States / Accessibility / Token usage / Do's and Don'ts / Changelog*
+*No-code rule*: contract 只列 props / events / a11y / states，**不寫 source 語言 example**。
+
+**pages/<page>.md（per-page spec）Template**: 見 [`./project-doc-templates/page-template.md`](./project-doc-templates/page-template.md)
+*Sections: Purpose / Wireframe (ASCII) / Components used / Interaction spec / States / Accessibility / Changelog*
+
 **更新時機**:
-- 加新 component → 加 component 段落
-- 改 token 值 → 全文件搜尋影響範圍
+- 加新 component → 加 `components/<Name>.md` + 更新 DESIGN.md index
+- 加新 page → 加 `pages/<page>.md` + 更新 DESIGN.md index
+- 改 token 值 → DESIGN.md + 全文搜尋影響範圍（影響所有 component/page specs）
 - 設計大改 → 升 version (`v1.0` → `v2.0`),保留舊版
 
 ---
 
-## 📄 文件 4 — Architecture Decision Records (ADR)
+## 文件 4 — Architecture Decision Records (ADR)
 
 **目的**:把架構決策**為什麼這樣選**記下來,避免 6 個月後「點解當初用 PostgreSQL 而唔用 MongoDB?」
 
 **位置**:`docs/architecture/NNNN-<short-title>.md`(NNNN 是 4 位數,單調遞增)
 
-**模板**(沿用 Michael Nygard ADR 格式):
-```markdown
-# ADR-0001 — <簡短標題>
-
-## Status
-- Proposed / Accepted / Deprecated / Superseded by ADR-XXXX
-
-## Context
-[面對咩問題?有咩 constraints?有咩 forces?]
-
-## Decision
-[揀咗咩方案?具體講做咩。]
-
-## Consequences
-### Positive
-- 好處 1
-- 好處 2
-### Negative
-- 壞處 1
-- 壞處 2
-### Neutral
-- 中性影響
-
-## Alternatives Considered
-### 方案 A — [名]
-- 優: ...
-- 缺: ...
-- 不選原因: ...
-
-### 方案 B — [名]
-- ...
-
-## References
-- [相關連結]
-```
+**Template**: 見 [`./project-doc-templates/adr-template.md`](./project-doc-templates/adr-template.md)（Michael Nygard 格式）
+*Sections: Status / Context / Decision / Consequences (Positive/Negative/Neutral) / Alternatives Considered / References*
 
 **範例 ADR**:
 - `0001-use-postgres-for-primary-db.md`
@@ -346,147 +250,77 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
-## 📄 文件 5 — API.md (API Reference)
+## 文件 5 — API.md (API Reference)
 
-**目的**:每個 endpoint 的 contract(輸入、輸出、錯誤碼、範例)。
+**目的**:每個 endpoint 的 contract（輸入、輸出、錯誤碼、範例）。Master 檔只放跨切 conventions + endpoint index，**每個 resource 一個獨立檔**，方便 agent 為單一 resource 工作時只讀該檔。
 
-**必填區塊**:
-```markdown
-# API Reference — <Project Name>
-
-> Base URL: `https://api.example.com/v1`
-> Auth: Bearer JWT in `Authorization` header
-
-## Endpoints
-
-### POST /auth/login
-**描述**: 用戶登入,回傳 access token
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "string (8+ chars)"
-}
+**結構**:
+```
+docs/
+├── API.md                ← master: conventions + endpoint index
+└── endpoints/
+    ├── auth.md           ← per-resource: 該 resource 全部 endpoints
+    ├── users.md
+    ├── orders.md
+    └── ...
 ```
 
-**Response 200**:
-```json
-{
-  "access_token": "eyJ...",
-  "refresh_token": "...",
-  "expires_in": 3600
-}
-```
+**API.md（master）Template**: 見 [`./project-doc-templates/api-master-template.md`](./project-doc-templates/api-master-template.md)
+*Sections: Conventions (Request/Response/Error code/Auth) / Endpoint Index / QA / Regression Endpoints / Changelog*
 
-**錯誤碼**:
-| Status | Code | 說明 |
-|--------|------|------|
-| 400 | INVALID_EMAIL | Email 格式錯 |
-| 401 | INVALID_CREDENTIALS | 帳號/密碼錯 |
-| 429 | RATE_LIMIT | 1 分鐘內超過 5 次 |
+**endpoints/<resource>.md（per-resource）Template**: 見 [`./project-doc-templates/endpoint-resource-template.md`](./project-doc-templates/endpoint-resource-template.md)
+*每 endpoint 一段: 描述 / Request Body (JSON) / Response (JSON) / 錯誤碼 / 對應 Test / 對應 regression hook*
 
-**對應 US**: US-001
-**對應 Test**: [link to test file]
-**變更歷史**: v1.0 (2026-06-06) 初版
-
-### GET /users/{id}
-...
-
-## QA / Regression Endpoints
-
-> Scope: dev/test/staging only. Production must not mount `/__qa/*` or must hard reject before side effects.
-
-| Method | Path | Purpose | Auth / Guard | Data Scope | Audit | Production Behavior | Related US/RG |
-|--------|------|---------|--------------|------------|-------|---------------------|---------------|
-| POST | /__qa/seed | Seed deterministic fixture | QA secret + staging auth | test tenant only | yes | 404 / 403 | US-001 / RG-001 |
-
-### POST /__qa/seed
-**描述**: Idempotently seed regression fixture for a `US-XXX` or `RG-XXX` scenario.
-
-**Allowed caller**: QA / CI / test automation only.
-**Allowed environments**: dev/test/staging only.
-**Production behavior**: Not mounted or returns 404 / 403 before side effects.
-**Auth / access control**: QA secret / staging SSO / IP allowlist / authenticated test role.
-**Tenant / data scope**: test tenant / test DB / test schema only.
-**Side effects**: No real email / SMS / payment; sandbox / fake services only.
-**Audit event**: Record actor, endpoint, tenant, US/RG, fixture version.
-**Idempotency**: Safe to rerun.
-**對應 US/RG**: US-001 / RG-001
-**對應 Test**: `test:regression:rg -- RG-001` or equivalent.
-**Safety verification**: production 404 / 403; `REGRESSION_MODE=true` production hard fail / reject.
-```
+**No-code rule**:JSON schema（request/response/error body）保留 — 它們是 interface 規格，跟 code 解耦。**不寫** TS/JS/Python 等 source 語言 fetch / axios / 客戶端範例。
 
 **生成方式**:
-- 手工維護(小 project)
-- 半自動:`auto-doc-gen` skill 從 JSDoc/TSDoc 生成,人手修飾
-- 完全自動:OpenAPI/Swagger codegen
+- 手工維護（小 project）
+- 半自動：每個 resource 從 JSDoc/TSDoc 生成初版，agent 修飾
+- 完全自動：OpenAPI/Swagger codegen
 
 **更新時機**:
 - Build 前 → 先寫 API contract draft；無 API 則明確標 N/A
-- 新 endpoint → 加段落 + commit
+- 新 endpoint → 加進對應 resource 檔 + 更新 API.md index
 - Request / response / error code 改動 → 同步更新 endpoint contract + TEST-COVERAGE
-- Breaking change → 升 major version,保留舊版文件
+- Breaking change → 升 major version，保留舊版文件
 
 ---
 
-## 📄 文件 6 — TEST-COVERAGE.md
+## 文件 6 — TEST-COVERAGE.md
 
-**目的**:把測試從「有跑過」變成「系統性覆蓋」。
+**目的**:把測試從「有跑過」變成「系統性覆蓋」。Master 檔只放跨切 summary + RT/RG index，**每個 US 一個獨立 coverage 檔**，方便 agent 為單一 US 工作時只讀該檔。
 
-**必填區塊**:
-```markdown
-# Test Coverage — <Project Name>
-
-> 最後更新: YYYY-MM-DD
-> 總體覆蓋率: X% (statement / branch / function / line)
-
-## User Story → Test Case 對照
-
-| US | 描述 | Unit | Integration | E2E | 狀態 | 備註 |
-|----|------|------|-------------|-----|------|------|
-| US-001 | 登入 | ✅ 3 | ✅ 1 | ✅ 1 | PASS | |
-| US-002 | 註冊 | ✅ 5 | ✅ 2 | ❌ 0 | PARTIAL | E2E 待補 |
-| US-003 | 忘記密碼 | ✅ 2 | ✅ 1 | ✅ 1 | PASS | |
-| ... | ... | ... | ... | ... | ... | ... |
-
-## 測試金字塔分佈
-- Unit tests: N
-- Integration tests: M
-- E2E tests: K
-- Manual smoke tests: L
-
-## Regression Mode / Hooks
-
-| ID | Type | US/RG | Frontend hook | Backend hook | QA enablement | Test command | Env | Production safety | Status |
-|----|------|-------|---------------|--------------|---------------|--------------|-----|-------------------|--------|
-| RG-001 | Bug regression | RG-001 / US-001 | `data-testid=login-form` | `/__qa/regression/RG-001` | `qa:seed -- RG-001` | `test:regression:rg -- RG-001` | dev/test/staging | `/__qa/*` not mounted in production | READY |
-| US-002 | P0 flow | US-002 | fake mailbox panel | `/__qa/mailbox` | `qa:seed -- US-002` | `test:regression:e2e` | staging | sandbox mailbox only | PARTIAL |
-
-## 已知未覆蓋區域
-- [ ] US-005 edge case: empty list
-- [ ] US-012 性能測試未做
-- [ ] US-020 a11y 測試
-
-## 變更歷史
-| 日期 | 變更 | 原因 |
-|------|------|------|
-| 2026-06-06 | 初版 | 從 kanban task t_c658eba4 開始 |
+**結構**:
 ```
+docs/
+├── TEST-COVERAGE.md            ← master: summary table + RT/RG index
+└── coverage/
+    ├── US-001.md               ← per-US: 該 US 嘅 Unit/Integration/E2E/RT 細節
+    ├── US-002.md
+    └── ...
+```
+
+**TEST-COVERAGE.md（master）Template**: 見 [`./project-doc-templates/test-coverage-master-template.md`](./project-doc-templates/test-coverage-master-template.md)
+*Sections: User Story → Coverage 對照 / 測試金字塔分佈 / Regression Mode / Hooks (RT/RG master index) / 已知未覆蓋區域 / Changelog*
+
+**coverage/US-XXX.md（per-US coverage）Template**: 見 [`./project-doc-templates/coverage-us-template.md`](./project-doc-templates/coverage-us-template.md)
+*Sections: Test inventory (Unit/Integration/E2E) / RT-XXX 詳情 / 已知 gap / Changelog*
 
 **更新時機**:
 - 每個 sprint 結束
 - 重大功能上線前
-- 新增 / 修改 regression hook、`/__qa/*` endpoint、QA panel、test fixture、fake mailbox、test clock 時
+- 新增 / 修改 regression hook、`/__qa/*` endpoint、QA panel、test fixture、fake mailbox、test clock 時 → 同步更新對應 coverage/US-XXX.md + master summary
 - 詳見 `docs/qa-tracker.md`
 
 **Regression rule**:`docs/REGRESSION-GUARD.md` 不是無 bug project 的必備文件；但 project 一旦有 bug fix / `RG-XXX` entry，就必須存在，且 `TEST-COVERAGE.md` 必須在 Regression Mode / Hooks matrix 收錄對應 QA 啟用方式。
 
-**`/__qa/*` hook rule**:Backend hook 以 `/__qa/` 開頭時，必須在 `docs/API.md` 的 QA / Regression Endpoints section 有對應 endpoint contract。該 row 的 `Production safety` 不可留空，且必須明確寫 production not mounted / 404 / 403 / hard reject、test tenant / test DB / test schema scope、auth / secret / allowlist。`READY` row 必須同時有 test command、QA enablement、environment 與 production safety。
+**`/__qa/*` hook rule**:Backend hook 以 `/__qa/` 開頭時，必須在 `endpoints/<resource>.md` 的 QA / Regression section 有對應 endpoint contract。該 row 的 `Production safety` 不可留空，且必須明確寫 production not mounted / 404 / 403 / hard reject、test tenant / test DB / test schema scope、auth / secret / allowlist。`READY` row 必須同時有 test command、QA enablement、environment 與 production safety。
+
+**orchestrator inner loop 整合**:Work Item 直接 reference `coverage/US-XXX.md` + `tests/regression/<file>.spec.ts`。Checker 驗 US-XXX 時只讀這兩個檔 + 對應 RT，跑一次 regression suite 即得到 RT-XXX PASS/FAIL。
 
 ---
 
-## 📄 文件 7 — TECH-DEBT.md
+## 文件 7 — TECH-DEBT.md
 
 **沿用 `skills/tech-debt-register/SKILL.md` 既模板**(已存在),**新要求**:
 - 必須 commit 入 git(放 `docs/TECH-DEBT.md`)
@@ -495,47 +329,12 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
-## 📄 文件 8 — Retrospective
+## 文件 8 — Retrospective
 
 **位置**:`docs/retros/YYYY-MM-DD-<short-name>.md`
 
-**必填區塊**:
-```markdown
-# Retrospective — <Feature> — YYYY-MM-DD
-
-## 概述
-- 做了什麼
-- 涉及哪些 user stories
-- 花了多少時間(預估 vs 實際)
-
-## 做得好的
-1. ...
-2. ...
-
-## 需要改進的
-1. ...
-2. ...
-
-## 關鍵教訓 (Lessons Learned)
-1. ...
-2. ...
-
-## 決策回訪（每次 retro 必做一個）
-- 抽查對象: [隨機抽一個過去的 ADR / 技術選擇 / Think-Plan 決策]
-- 當初的理由: [當時為什麼這樣選]
-- 以現在所知: [會不會選不同？為什麼]
-- 結論: [維持 / 需要新 ADR 修正 / 記入 TECH-DEBT]
-
-## 下次改進 Action Items
-- [ ] AI: ...
-- [ ] Owner: ...
-- [ ] Due: YYYY-MM-DD
-
-## 對文件的更新
-- [ ] TECH-DEBT.md 新增項目
-- [ ] 設計 token 需要更新
-- [ ] ADR 需要新增
-```
+**Template**: 見 [`./project-doc-templates/retrospective-template.md`](./project-doc-templates/retrospective-template.md)
+*Sections: 概述 / 做得好的 / 需要改進的 / 關鍵教訓 / 決策回訪 / 下次改進 Action Items / 對文件的更新*
 
 **更新時機**:
 - 每個 feature 完成後
@@ -546,39 +345,12 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
-## 📄 文件 9 — VERIFY.md (Verify Commands)
+## 文件 9 — VERIFY.md (Verify Commands)
 
 **目的**:紅線 55（實證驗證）的**執行入口**。把「這個專案的最小驗證命令是什麼」寫死在一個固定位置，agent 交付前照跑，不用每次重新推斷、不會跑錯或漏跑。
 
-**必填區塊**:
-```markdown
-# Verify — <Project Name>
-
-> 最後核對: YYYY-MM-DD（命令與 package.json / tooling 一致）
-
-## Verification commands
-
-| Gate | Command | N/A + reason |
-|------|---------|--------------|
-| Lint | `bun run lint` | |
-| Typecheck | `bun run typecheck` | |
-| Test | `bun test` | |
-| Build | `bun run build` | |
-| Smoke (deploy 後) | `curl -fsS https://<host>/health` | |
-
-## Regression suite
-
-- Full regression: `bun run test:regression`（或 N/A + reason）
-
-## 規則
-
-- 每個 gate 必須有 command 或明確 N/A + reason，**不可留空**。
-- 代碼改動交付前，跑最小相關 gates 並回報真實輸出（紅線 55）。
-- **驗證輸出必須落地成 artifact**：每次交付前的驗證寫入
-  `docs/verify-log/YYYY-MM-DD-<task>.txt`（執行的命令 + 真實輸出摘要 + exit code；
-  跑唔到嘅 gate 在 log 寫 N/A + reason）。「聲稱驗證過」必須可覆核。
-- `package.json` scripts / test runner / build tooling 變更時，本檔必須同 commit 更新。
-```
+**Template**: 見 [`./project-doc-templates/verify-template.md`](./project-doc-templates/verify-template.md)
+*Sections: Verification commands table / Regression suite / 規則 / Verify-log artifact 規則*
 
 **Verify-log artifact 規則**：
 
@@ -595,7 +367,7 @@ Operational workflow 見 `skills/docs-sync/SKILL.md`。
 
 ---
 
-## 🔗 文件之間的交叉引用
+## 文件之間的交叉引用
 
 ```
 PROJECT-OVERVIEW.md
@@ -623,7 +395,7 @@ retros/*.md (事後改進)
 
 ---
 
-## 📚 跟其他文件的關係
+## 跟其他文件的關係
 
 - `docs/phases.md` §Plan 的 project artifacts 以本文件的 `docs/PRD.md` / `docs/DESIGN.md` / `docs/architecture/0001-*.md` 為準,本文件加強:
   - 強制 commit(不只是寫了就好)

@@ -5,6 +5,7 @@ tags: [claude-code, runtime]
 ---
 
 # Claude Code Workflow Runtime
+> **When to read:** Build, Ship
 
 > **Status:** Reference. Claude Code-specific runtime feature guide. Canonical content lives in root and `docs/`; this doc covers features that only exist in the Claude Code runtime.
 
@@ -15,6 +16,8 @@ tags: [claude-code, runtime]
 ---
 
 ## When to consider Dynamic Workflow
+
+> `[REFERENCE]` — trigger scenarios overview; consult when planning multi-stage tasks.
 
 | Trigger scenario | Example |
 |-----------------|---------|
@@ -30,6 +33,8 @@ tags: [claude-code, runtime]
 ---
 
 ## Possible launch methods, if supported
+
+> `[REFERENCE]` — runtime-conditional options; pick based on your platform.
 
 ### Method 1: Include `workflow` keyword in prompt
 
@@ -56,6 +61,8 @@ If these mechanisms are not available, do not block the task; use normal Claude 
 ---
 
 ## Workflow script writing conventions
+
+> `[ACTION]` — apply when authoring Workflow script files.
 
 When the Workflow runtime is available, scripts Developer writes should follow:
 
@@ -90,6 +97,8 @@ return findings.filter(f => f.verdict === 'real')
 
 ## Developer decision tree
 
+> `[ACTION]` — run through this when choosing whether to use Workflow vs direct dispatch.
+
 ```
 Received task
   ├─ Need 3+ subagents in parallel + stage sync and Workflow is available?
@@ -104,6 +113,8 @@ Received task
 ---
 
 ## Example: Suggesting workflow to user
+
+> `[EXAMPLE]` — illustrative; skip if you've understood the conventions above.
 
 ```
 User: "Help me audit every API under src/routes/ for missing auth"

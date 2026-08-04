@@ -1,4 +1,5 @@
 # 環境隔離指南
+> **When to read:** On-demand: env isolation
 
 > **Status:** Canonical. Source of truth for Dev / Prod / Agent Config environment isolation.
 
