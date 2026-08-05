@@ -2,7 +2,6 @@
 name: frontend
 description: 前端實作、UI component、API 串接 — Phase 2 Build 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Frontend Subagent — UI implementation + API integration

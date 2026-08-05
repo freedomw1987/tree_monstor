@@ -2,7 +2,6 @@
 name: sprint-manager
 description: Sprint planning、進度追蹤、跨 sprint dependency — 持續 background 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Sprint Manager Subagent — Sprint planning + progress tracking

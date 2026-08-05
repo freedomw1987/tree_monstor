@@ -2,7 +2,6 @@
 name: devops
 description: CI/CD、Docker、deploy script、infrastructure — Phase 2 Build 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # DevOps Subagent — Infra + CI/CD + deploy

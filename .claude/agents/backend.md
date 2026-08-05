@@ -2,7 +2,6 @@
 name: backend
 description: 後端實作、API endpoint、business logic、DB schema — Phase 2 Build 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Backend Subagent — API + business logic + DB

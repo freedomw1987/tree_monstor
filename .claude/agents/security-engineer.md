@@ -2,7 +2,6 @@
 name: security-engineer
 description: Security-first 開發、SAST/DAST、secret 掃、CVE check — Phase 2 Build 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Security Engineer Subagent — Security-first dev + scanning

@@ -2,7 +2,6 @@
 name: orchestrator
 description: Multi-subagent 協調（outer loop: task board + 跨 phase dependency）+ per-work-item dev+checker verification（inner loop: STATE.md + regression test）
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Orchestrator — Multi-subagent coordination with dev+checker inner loop

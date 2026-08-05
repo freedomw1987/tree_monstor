@@ -2,7 +2,6 @@
 name: sa
 description: 架構設計、ADR、framework/ORM/schema 選型 — Phase 1 Plan 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # SA Subagent — Architecture + ADR

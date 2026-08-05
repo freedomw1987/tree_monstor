@@ -2,7 +2,6 @@
 name: context-manager
 description: Periodic context 摘要、長 task context 壓縮 — 持續 background 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: haiku
 ---
 
 # Context Manager Subagent — Periodic context summarization

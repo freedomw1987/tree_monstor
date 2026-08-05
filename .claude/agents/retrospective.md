@@ -2,7 +2,6 @@
 name: retrospective
 description: 結構化復盤、lessons learned、action items — Phase 6 Reflect 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Retrospective Subagent — Structured post-mortem

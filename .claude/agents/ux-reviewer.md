@@ -2,7 +2,6 @@
 name: ux-reviewer
 description: UI 合規、截圖比對、RWD、互動規範 review — Phase 3 Review 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # UX Reviewer Subagent — UI compliance + visual review

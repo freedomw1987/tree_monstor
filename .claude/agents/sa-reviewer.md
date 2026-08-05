@@ -2,7 +2,6 @@
 name: sa-reviewer
 description: 技術架構、代碼品質、安全性 review — Phase 3 Review 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # SA Reviewer Subagent — Architecture + code quality review

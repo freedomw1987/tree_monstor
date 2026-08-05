@@ -2,7 +2,6 @@
 name: ba
 description: 需求挖掘、用戶故事、PRD、acceptance criteria — Phase 1 Plan 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # BA Subagent — Requirements + user stories + PRD

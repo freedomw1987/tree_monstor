@@ -2,7 +2,6 @@
 name: ceo
 description: 市場分析、商業計劃、GTM、財務可行性 — Phase 0 Think 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # CEO Subagent — Market analysis + business plan

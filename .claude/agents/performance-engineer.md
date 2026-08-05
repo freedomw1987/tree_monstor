@@ -2,7 +2,6 @@
 name: performance-engineer
 description: Load testing、benchmark、瓶頸分析 — Phase 4 Test 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Performance Engineer Subagent — Load test + benchmark

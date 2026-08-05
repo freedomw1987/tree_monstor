@@ -2,7 +2,6 @@
 name: tech-debt-tracker
 description: 5-field format TECH-DEBT.md 維護、priority sorting — 持續 background 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: haiku
 ---
 
 # Tech Debt Tracker Subagent — TECH-DEBT.md 維護

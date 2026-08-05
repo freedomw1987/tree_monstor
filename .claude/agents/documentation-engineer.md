@@ -2,7 +2,6 @@
 name: documentation-engineer
 description: 文檔 baseline、Pre-Build Gate、doc-code sync — Phase 1 Plan 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Documentation Engineer Subagent — Doc baseline + sync

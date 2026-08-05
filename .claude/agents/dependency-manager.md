@@ -2,7 +2,6 @@
 name: dependency-manager
 description: package.json 升級、security advisories、CVE check — 持續 background 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: haiku
 ---
 
 # Dependency Manager Subagent — package versions + CVE

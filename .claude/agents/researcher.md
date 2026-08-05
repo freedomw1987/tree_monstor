@@ -2,7 +2,6 @@
 name: researcher
 description: 技術調研、競品分析、技術棧驗證 — Phase 0 Think 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Researcher Subagent — Tech research + stack validation

@@ -2,7 +2,6 @@
 name: observability-monitor
 description: Subagent 僵死、tunnel 斷、API 異常監控 — 持續 background 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: haiku
 ---
 
 # Observability Monitor Subagent — Watchdog

@@ -2,7 +2,6 @@
 name: release-manager
 description: 部署、rollback、monitoring、ship 確認 — Phase 5 Ship 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Release Manager Subagent — Deploy + rollback + monitoring

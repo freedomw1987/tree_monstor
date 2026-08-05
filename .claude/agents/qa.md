@@ -2,7 +2,6 @@
 name: qa
 description: 自動化測試、E2E、User Simulation、regression suite — Phase 4 Test 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # QA Subagent — Automated testing + E2E + User Simulation

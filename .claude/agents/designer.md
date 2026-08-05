@@ -2,7 +2,6 @@
 name: designer
 description: UI/UX 設計、Design System、tokens、component contract — Phase 1 Plan 自動 dispatch
 tools: Read, Write, Edit, Bash, WebFetch
-model: sonnet
 ---
 
 # Designer Subagent — UI/UX + Design System
