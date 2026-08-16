@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交付摘要 - <任務標題></title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #f9fafb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      color: white;
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+    }
+    header h1 { font-size: 28px; margin-bottom: 12px; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .meta-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .meta-item strong { display: block; opacity: 0.8; font-size: 12px; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-icon {
+      width: 32px; height: 32px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status-done { background: #d1fae5; color: #065f46; }
+    .status-partial { background: #fef3c7; color: #92400e; }
+    .status-fail { background: #fee2e2; color: #991b1b; }
+    .key-results { list-style: none; }
+    .key-results li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .key-results li:last-child { border-bottom: none; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    th { background: #f3f4f6; font-weight: 600; }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 13px;
+    }
+    .next-steps {
+      display: grid;
+      gap: 12px;
+    }
+    .step-card {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .progress-bar {
+      display: flex;
+      gap: 4px;
+      margin: 12px 0;
+    }
+    .progress-segment {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--border);
+      position: relative;
+    }
+    .progress-segment.done { background: var(--success); }
+    .progress-segment.partial { background: var(--warning); }
+    .progress-segment.fail { background: var(--danger); }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 32px;
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>📦 <任務標題></h1>
+      <div style="font-size: 14px; opacity: 0.9;">
+        <span class="status-pill status-done">✅ 完成</span>
+        <span style="margin-left: 8px;">交付日期：<YYYY-MM-DD></span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><strong>Backlog ID</strong>US-101</div>
+        <div class="meta-item"><strong>Sprint</strong>SP1</div>
+        <div class="meta-item"><strong>Module</strong>Module 1</div>
+        <div class="meta-item"><strong>交付者</strong>Agent</div>
+      </div>
+    </header>
+
+    <!-- 1. 這次完成什麼 -->
+    <section class="card">
+      <h2><span class="card-icon">🎯</span>這次完成什麼</h2>
+      <p>用 2-3 句話簡單說明這次交付的價值。</p>
+      <ul class="key-results">
+        <li>✅ <成果 1></li>
+        <li>✅ <成果 2></li>
+        <li>✅ <成果 3></li>
+      </ul>
+    </section>
+
+    <!-- 2. 視覺化進度 -->
+    <section class="card">
+      <h2><span class="card-icon">📊</span>驗收標準對應</h2>
+      <p>每個 AC（Acceptance Criteria）的對應狀態：</p>
+      <div class="progress-bar">
+        <div class="progress-segment done" title="AC-1"></div>
+        <div class="progress-segment done" title="AC-2"></div>
+        <div class="progress-segment partial" title="AC-3"></div>
+        <div class="progress-segment done" title="AC-4"></div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>AC</th><th>描述</th><th>結果</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>AC-1</td><td><AC 描述></td><td><span class="status-pill status-done">✅</span></td></tr>
+          <tr><td>AC-2</td><td><AC 描述></td><td><span class="status-pill status-done">✅</span></td></tr>
+          <tr><td>AC-3</td><td><AC 描述></td><td><span class="status-pill status-partial">⚠️</span></td></tr>
+          <tr><td>AC-4</td><td><AC 描述></td><td><span class="status-pill status-done">✅</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 3. 測試結果 -->
+    <section class="card">
+      <h2><span class="card-icon">🧪</span>測試結果</h2>
+      <table>
+        <thead><tr><th>測試類型</th><th>通過 / 總數</th><th>通過率</th></tr></thead>
+        <tbody>
+          <tr><td>單元測試</td><td>12 / 12</td><td>100%</td></tr>
+          <tr><td>整合測試</td><td>5 / 5</td><td>100%</td></tr>
+          <tr><td>E2E 測試</td><td>3 / 3</td><td>100%</td></tr>
+          <tr><td>回歸測試</td><td>20 / 20</td><td>100%</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 4. 改動檔案 -->
+    <section class="card">
+      <h2><span class="card-icon">📝</span>改了什麼</h2>
+      <table>
+        <thead><tr><th>類型</th><th>檔案</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td>➕ 新增</td><td><code>src/auth/login.ts</code></td><td>登入頁元件</td></tr>
+          <tr><td>➕ 新增</td><td><code>src/auth/login.test.ts</code></td><td>對應測試</td></tr>
+          <tr><td>✏️ 修改</td><td><code>src/router.ts</code></td><td>新增 /login 路由</td></tr>
+          <tr><td>✏️ 修改</td><td><code>README.md</code></td><td>更新使用說明</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 5. 已知問題 -->
+    <section class="card">
+      <h2><span class="card-icon">⚠️</span>已知問題 / 限制</h2>
+      <table>
+        <thead><tr><th>問題</th><th>嚴重性</th><th>已記錄</th></tr></thead>
+        <tbody>
+          <tr><td>手機版輸入框在 iOS 有時會被遮擋</td><td><span class="status-pill status-partial">P1</span></td><td>DE-202</td></tr>
+          <tr><td>第三方登入按鈕 loading 狀態未統一</td><td><span class="status-pill status-partial">P2</span></td><td>TECH-08</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. 下一步建議 -->
+    <section class="card" style="background: linear-gradient(135deg, #eef2ff 0%, #fae8ff 100%); border: none;">
+      <h2><span class="card-icon">🚀</span>下一步建議</h2>
+
+      <h3 style="margin-top: 16px; margin-bottom: 12px; color: var(--primary);">立即可做</h3>
+      <div class="next-steps">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div>
+            <strong>修 iOS 手機版輸入框遮擋問題</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">用戶反饋影響登入流程，需優先處理。</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div>
+            <strong>把 loading 狀態抽象為共用 hook</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">解決技債 TECH-08，避免下次重複出現。</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; color: var(--primary);">下一個 Sprint</h3>
+      <ul style="padding-left: 20px;">
+        <li>接續 US-102 收藏功能</li>
+        <li>整合忘記密碼流程</li>
+      </ul>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; color: var(--primary);">長期方向（Think Big）</h3>
+      <ul style="padding-left: 20px;">
+        <li>考慮把整個 auth 模組抽成獨立 SDK，方便日後多產品複用</li>
+        <li>研究 passkey 生物登入的可行性</li>
+      </ul>
+    </section>
+
+    <footer>
+      🌳 由 dav-submitter skill 自動產生 · <YYYY-MM-DD HH:mm>
+    </footer>
+
+  </div>
+</body>
+</html>
+```
+
+---
+
+## 使用說明
+
+1. **複製模板**：複製 `<!DOCTYPE html>` 到 `</html>` 的整段內容
+2. **填寫實際內容**：
+   - 標題、日期、Backlog ID
+   - 關鍵成果（用 emoji 開頭）
+   - AC 對應狀態（用 `progress-segment` 標記 `done` / `partial` / `fail`）
+   - 測試結果、改動檔案、已知問題
+   - 下一步建議（特別重要）
+3. **視覺化設計原則**：
+   - 每個 section 是一個 `.card`
+   - 狀態用顏色 + emoji 雙重標記（色盲用戶也能看）
+   - 進度條用 `progress-segment` 視覺化
+   - 下一步用 `step-card` 帶編號
+4. **可選 SVG 插圖**：可在 header 或 section 加 SVG（如圖標、流程圖）
+5. **RWD 設計**：style 已內建響應式 grid，手機 / 平板 / 桌面都能正確顯示
+6. **存檔路徑**：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.html`
+
+## 設計特點
+
+- 🎨 **美觀**：漸層 header、card 陰影、進度條
+- 📱 **響應式**：CSS Grid + Flexbox 自動調整
+- ♿ **可訪問性**：emoji + 顏色雙重標記、語意化 HTML
+- 🚀 **可擴展**：可在每個 `.card` 加自訂 SVG 插圖
+- 🎯 **重點突出**：下一步建議用漸層背景，視覺上最突出
