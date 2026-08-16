@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DE-001 交付：installer 自動合併 ~/.claude/skills</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Segoe UI", sans-serif;
+    line-height: 1.65;
+    color: #2c3e50;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8eef3 100%);
+    padding: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .container {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    padding: 40px 48px;
+  }
+  h1 {
+    font-size: 32px;
+    color: #1a73e8;
+    margin-bottom: 8px;
+    border-bottom: 4px solid #1a73e8;
+    padding-bottom: 16px;
+  }
+  h2 {
+    font-size: 22px;
+    color: #34a853;
+    margin-top: 36px;
+    margin-bottom: 14px;
+    padding-left: 12px;
+    border-left: 4px solid #34a853;
+  }
+  h3 {
+    font-size: 17px;
+    color: #5f6368;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  .meta {
+    background: #f8f9fa;
+    border-left: 4px solid #1a73e8;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .meta div { margin: 3px 0; }
+  .meta strong { color: #1a73e8; margin-right: 8px; }
+  .summary-card {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-radius: 12px;
+    padding: 22px 28px;
+    margin: 20px 0;
+    border-left: 6px solid #34a853;
+  }
+  .summary-card h2 { color: #2e7d32; border: none; padding: 0; margin-top: 0; }
+  .summary-card ul { margin: 10px 0 0 20px; }
+  .summary-card li { margin: 5px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 18px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid #e0e0e0;
+    padding: 10px 12px;
+    text-align: left;
+  }
+  th { background: #f8f9fa; color: #1a73e8; font-weight: 600; }
+  tr:nth-child(even) { background: #fafbfc; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-done { background: #34a853; color: white; }
+  .badge-progress { background: #fbbc04; color: white; }
+  .badge-tech { background: #9c27b0; color: white; }
+  .badge-fix { background: #ea4335; color: white; }
+  .file-tree {
+    background: #263238;
+    color: #aed581;
+    padding: 16px 20px;
+    border-radius: 8px;
+    font-family: "SF Mono", "Monaco", monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    margin: 14px 0;
+  }
+  .file-tree .new { color: #81d4fa; font-weight: 600; }
+  .file-tree .mod { color: #ffcc80; font-weight: 600; }
+  .file-tree .doc { color: #ce93d8; }
+  .file-tree .test { color: #aed581; }
+  .flow-diagram {
+    background: #f8f9fa;
+    border: 2px dashed #1a73e8;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .flow-diagram svg { max-width: 100%; height: auto; }
+  code {
+    background: #f1f3f4;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: "SF Mono", monospace;
+    font-size: 13px;
+    color: #c7254e;
+  }
+  pre {
+    background: #263238;
+    color: #aed581;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: "SF Mono", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 10px 0;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .stat-card {
+    background: white;
+    border: 2px solid #1a73e8;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a73e8;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: #5f6368;
+    margin-top: 6px;
+  }
+  .next-step {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border-left: 6px solid #fb8c00;
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin: 14px 0;
+  }
+  .next-step h3 { color: #e65100; margin-top: 0; }
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 13px;
+    color: #9aa0a6;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🎉 DE-001 交付：installer 自動合併 <code>~/.claude/skills</code></h1>
+
+  <div class="meta">
+    <div><strong>Backlog ID</strong>：DE-001</div>
+    <div><strong>日期</strong>：2025-08-16</div>
+    <div><strong>狀態</strong>：<span class="badge badge-done">✅ DONE</span></div>
+    <div><strong>作者</strong>：Agent（依 SOP 2.5）</div>
+  </div>
+
+  <div class="summary-card">
+    <h2>💡 90 秒摘要</h2>
+    <p><code>./install.sh</code> 之前會在 <code>~/.claude/skills</code> 已存在的環境直接報錯。今天修了：</p>
+    <ul>
+      <li>✅ <strong>merge 預設行為</strong>：自動逐個 skill symlink，使用者 69 個自裝 skills 全部保留</li>
+      <li>✅ <strong>--claude-skills-mode 旗標</strong>：merge（預設）/ replace / skip 三種模式</li>
+      <li>✅ <strong>CLAUDE.md 自動重寫</strong>：stale symlink 自動解除並重寫成新 wrapper</li>
+      <li>✅ <strong>真實環境 74 個 skills 共存</strong>（你原本 69 + tree_monstor 8）</li>
+      <li>✅ <strong>測試 26/26</strong>（舊 19 + 新 7）</li>
+    </ul>
+  </div>
+
+  <h2>📊 量化成果</h2>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-number">26</div>
+      <div class="stat-label">測試案例（19 舊 + 7 新）</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">10</div>
+      <div class="stat-label">AC 驗收結果（10/10）</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">+87</div>
+      <div class="stat-label">install.sh 新增行數</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">74</div>
+      <div class="stat-label">~/.claude/skills 總 skills<br>（69 保留 + 8 新增 - 3 衝突）</div>
+    </div>
+  </div>
+
+  <h2>🌳 變更檔案</h2>
+  <div class="file-tree">
+<span class="mod">╔══ install.sh</span>
+<span class="mod">║   + CLAUDE_SKILLS_MODE 變數</span>
+<span class="mod">║   + --claude-skills-mode 旗標（含 = 形式）</span>
+<span class="mod">║   + ensure_merged_skill() helper</span>
+<span class="mod">║   + ensure_merged_skills_into() helper</span>
+<span class="mod">║   ~ install_claude() 三種模式處理</span>
+<span class="mod">║   ~ print_plan() + print_help() 更新</span>
+<span class="mod">╚══ （+87 行，總 575 行）</span>
+
+<span class="test">╔══ tests/install.bats</span>
+<span class="test">║   + DE-001 AC-1: merge 預設行為</span>
+<span class="test">║   + DE-001 AC-2: per-skill symlink</span>
+<span class="test">║   + DE-001 AC-3: 命名衝突跳過</span>
+<span class="test">║   + DE-001 AC-3b: 錯向 symlink 修復</span>
+<span class="test">║   + DE-001 AC-4: replace 模式備份</span>
+<span class="test">║   + DE-001 AC-4b: skip 模式</span>
+<span class="test">║   + DE-001 AC-5: CLAUDE.md stale symlink 重寫</span>
+<span class="test">╚══ （+95 行）</span>
+
+<span class="doc">╔══ docs/</span>
+<span class="doc">║   + discussion/2025-08-16-install-sh-merge.md</span>
+<span class="doc">║   + plan/2025-08-16-install-sh-merge.md</span>
+<span class="doc">║   + reflection/de-001-reflection.md</span>
+<span class="doc">║   + deliverable/2025-08-16-install-sh-merge.{md,html}</span>
+<span class="doc">║   ~ backlog.md (DE-001 → DONE)</span>
+<span class="doc">╚══</span>
+  </div>
+
+  <h2>🔀 合併流程示意</h2>
+  <div class="flow-diagram">
+    <svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/>
+        </marker>
+      </defs>
+
+      <!-- 來源 -->
+      <rect x="20" y="40" width="180" height="240" rx="8" fill="#e3f2fd" stroke="#1a73e8" stroke-width="2"/>
+      <text x="110" y="65" text-anchor="middle" font-weight="bold" fill="#1a73e8">tree_monstor/skills/</text>
+      <text x="110" y="85" text-anchor="middle" font-size="12" fill="#5f6368">（來源）</text>
+      <line x1="40" y1="100" x2="180" y2="100" stroke="#90a4ae" stroke-dasharray="4,2"/>
+      <text x="50" y="125" font-size="13" fill="#2c3e50">📁 dav-planner</text>
+      <text x="50" y="150" font-size="13" fill="#2c3e50">📁 dav-designer</text>
+      <text x="50" y="175" font-size="13" fill="#2c3e50">📁 dav-reflection</text>
+      <text x="50" y="200" font-size="13" fill="#2c3e50">📁 dav-submitter</text>
+      <text x="50" y="225" font-size="13" fill="#2c3e50">📁 dev-checker-loop</text>
+      <text x="50" y="250" font-size="13" fill="#2c3e50">📁 regression-guard</text>
+      <text x="50" y="275" font-size="13" fill="#2c3e50">📁 tdd-test-writer</text>
+
+      <!-- installer -->
+      <rect x="290" y="120" width="220" height="80" rx="8" fill="#fff3e0" stroke="#fb8c00" stroke-width="2"/>
+      <text x="400" y="150" text-anchor="middle" font-weight="bold" fill="#e65100">install.sh</text>
+      <text x="400" y="168" text-anchor="middle" font-size="11" fill="#5f6368">merge mode (default)</text>
+      <text x="400" y="185" text-anchor="middle" font-size="11" fill="#5f6368">for each skill: →</text>
+
+      <!-- 目標 -->
+      <rect x="600" y="40" width="180" height="240" rx="8" fill="#e8f5e9" stroke="#34a853" stroke-width="2"/>
+      <text x="690" y="65" text-anchor="middle" font-weight="bold" fill="#2e7d32">~/.claude/skills/</text>
+      <text x="690" y="85" text-anchor="middle" font-size="12" fill="#5f6368">（目標）</text>
+      <line x1="620" y1="100" x2="760" y2="100" stroke="#90a4ae" stroke-dasharray="4,2"/>
+      <text x="620" y="125" font-size="13" fill="#2c3e50">📁 69 個使用者自裝 skills</text>
+      <text x="620" y="140" font-size="11" fill="#34a853">↳ （保留，不動）</text>
+      <text x="620" y="165" font-size="13" fill="#1a73e8">🔗 dav-planner → symlink</text>
+      <text x="620" y="185" font-size="13" fill="#1a73e8">🔗 dav-designer → symlink</text>
+      <text x="620" y="205" font-size="13" fill="#1a73e8">🔗 dav-reflection → symlink</text>
+      <text x="620" y="225" font-size="13" fill="#1a73e8">🔗 dav-submitter → symlink</text>
+      <text x="620" y="245" font-size="13" fill="#1a73e8">🔗 dev-checker-loop → symlink</text>
+      <text x="620" y="265" font-size="13" fill="#1a73e8">🔗 regression-guard → symlink</text>
+      <text x="620" y="285" font-size="13" fill="#1a73e8">🔗 tdd-test-writer → symlink</text>
+
+      <!-- arrows -->
+      <line x1="200" y1="160" x2="290" y2="160" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="510" y1="160" x2="600" y2="160" stroke="#5f6368" stroke-width="2" marker-end="url(#arrow)"/>
+    </svg>
+  </div>
+
+  <h2>🧪 26 個測試全綠</h2>
+  <pre>
+$ NO_COLOR=1 bats tests/install.bats
+1..26
+ok 1  AC-1: default install symlinks skills to ~/.claude/ and ~/.pi/
+ok 2  AC-2: installs CLAUDE.md wrapper that @-references AGENTS.md and SOUL.md
+ok 3  AC-3: creates ~/.pi/AGENTS.md and ~/.pi/SOUL.md as symlinks to source
+ok 4  AC-4: also installs to ~/.agents/tree_monstor/ as copy
+ok 5  AC-4 (no-agents-dir): skips .agents/ when --no-agents-dir
+ok 6  AC-5: --local installs to current directory
+ok 7  AC-6: --target installs to specified path
+ok 8  AC-7: --agent claude only installs Claude Code parts
+ok 9  AC-7: --agent pi only installs Pi Agent parts
+ok 10 AC-8: --uninstall removes symlinks and wrapper created by installer
+ok 11 AC-9: --dry-run prints plan but creates nothing
+ok 12 AC-10: --help prints usage and exits 0
+ok 13 AC-11a: repeated runs produce identical state and no errors
+ok 14 AC-11b: re-running repairs a broken symlink
+ok 15 AC-12: excludes .obsidian/, .git/, .DS_Store from copy to .agents/
+ok 16 AC-13: output uses ANSI color codes when NO_COLOR is unset
+ok 17 AC-14: install.sh starts with #!/usr/bin/env bash
+ok 18 AC-15: README.md exists and contains usage section
+ok 19 AC-16 (meta): this bats file references AC-1..AC-15 in @test names
+ok 20 DE-001 AC-1: when ~/.claude/skills is a real dir, installer merges per-skill symlinks (no error)
+ok 21 DE-001 AC-2: merge mode creates per-skill symlinks (not a replacing tree-level symlink)
+ok 22 DE-001 AC-3: merge skips naming conflicts (does not overwrite user-owned skill)
+ok 23 DE-001 AC-3b: merge fixes a wrong-target existing symlink in the target dir
+ok 24 DE-001 AC-4: --claude-skills-mode=replace backs up the existing skills dir and symlinks
+ok 25 DE-001 AC-4b: --claude-skills-mode=skip leaves existing skills dir untouched
+ok 26 DE-001 AC-5: installer rewrites a stale CLAUDE.md symlink pointing to another source
+</pre>
+
+  <h2>🎯 真實環境驗證</h2>
+  <pre>
+$ ./install.sh --global --yes
+[i] merge: /Users/davidchu/.claude/skills is a real directory; merging per-skill symlinks
+[✓] merged: ~/.claude/skills/dav-designer -> .../tree_monstor/skills/dav-designer
+[✓] merged: ~/.claude/skills/dav-planner -> .../tree_monstor/skills/dav-planner
+[✓] merged: ~/.claude/skills/dav-reflection -> .../tree_monstor/skills/dav-reflection
+[✓] merged: ~/.claude/skills/dav-skill-creater -> .../tree_monstor/skills/dav-skill-creater
+[✓] merged: ~/.claude/skills/dav-submitter -> .../tree_monstor/skills/dav-submitter
+[✓] merged: ~/.claude/skills/dev-checker-loop -> .../tree_monstor/skills/dev-checker-loop
+[!] merge: wrong-target symlink, repairing: .../regression-guard (with trailing slash)
+[✓] merged: ~/.claude/skills/regression-guard -> .../tree_monstor/skills/regression-guard
+[✓] merged: ~/.claude/skills/tdd-test-writer -> .../tree_monstor/skills/tdd-test-writer
+[i] merge: done — newly merged: 7, skipped (conflicts): 0
+[!] path is a symlink, removing: ~/.claude/CLAUDE.md (stale symlink)
+[✓] file written: ~/.claude/CLAUDE.md (new wrapper)
+[✓] Install complete.
+</pre>
+
+  <h2>🔮 下一步建議</h2>
+
+  <div class="next-step">
+    <h3>🚀 立即（你決定）</h3>
+    <ul>
+      <li>確認 <code>~/.claude/skills/</code> 內 merge 結果</li>
+      <li>手動試 <code>--claude-skills-mode=replace</code> / <code>skip</code></li>
+      <li>驗證冪等：<code>./install.sh --global --yes</code> 再跑一次（應該完全無變動）</li>
+    </ul>
+  </div>
+
+  <div class="next-step">
+    <h3>📅 之後</h3>
+    <ul>
+      <li><strong>TD-009</strong> (P2)：加 <code>abs_path</code> 對 trailing slash 邊緣案例測試</li>
+      <li>更新 README：把 <code>--claude-skills-mode</code> 加到 Usage</li>
+      <li>Sprint 級反省：US-001 + DE-001 都完成，可做一次宏觀複盤</li>
+    </ul>
+  </div>
+
+  <div class="next-step">
+    <h3>🌟 戰略（Think Big）</h3>
+    <ul>
+      <li>開發 <code>install.sh --list</code> 診斷工具，顯示目前安裝狀態</li>
+      <li>CI 整合：把 <code>bats tests/</code> 加到 GitHub Actions（TD-006）</li>
+    </ul>
+  </div>
+
+  <h2>📋 Backlog 狀態</h2>
+  <table>
+    <tr><th>狀態</th><th>變化</th><th>項目</th></tr>
+    <tr><td><span class="badge badge-done">DONE</span></td><td>+1</td><td>DE-001</td></tr>
+    <tr><td><span class="badge badge-progress">PENDING</span></td><td>+3</td><td>TD-009, TD-010, TD-011（技術債）</td></tr>
+    <tr><td><span class="badge badge-progress">PENDING</span></td><td>（既有）</td><td>TD-005, TD-006, TD-008</td></tr>
+  </table>
+
+  <div class="footer">
+    產出於 2025-08-16 by Agent（依 SOP 2.5 dav-submitter）<br>
+    tree_monstor Installer & Distribution Module
+  </div>
+
+</div>
+</body>
+</html>

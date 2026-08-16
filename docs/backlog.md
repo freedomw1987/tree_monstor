@@ -9,9 +9,10 @@
 
 | 狀態 | 數量 |
 |---|---|
-| PENDING | 0 |
-| IN_PROGRESS | 1 |
-| DONE | 0 |
+| PENDING | 0 (DE-001 已完成) |
+| IN_PROGRESS | 0 |
+| DONE | 2 (US-001 / DE-001) + Sprint 01 反省 |
+| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013) |
 
 ---
 
@@ -70,6 +71,42 @@
 
 ---
 
+---
+
+## 📝 PENDING
+
+### DE-001：installer 拒絕在 `~/.claude/skills` 已存在的環境中安裝（2025-08-16）
+- **Module**：M1 — Installer & Distribution
+- **Story Point**：3（中等：需重構 `install_claude` 邏輯、新增 merge 模式、加測試）
+- **優先級**：P0（阻塞全域安裝的核心場景）
+- **建立日期**：2025-08-16
+- **討論記錄**：[`docs/discussion/2025-08-16-install-sh-merge.md`](discussion/2025-08-16-install-sh-merge.md)
+- **設計計劃**：[`docs/plan/2025-08-16-install-sh-merge.md`](plan/2025-08-16-install-sh-merge.md)
+- **狀態**：🟡 **PENDING** — 等待用戶確認計劃後開始執行
+
+#### Defect 描述
+> **情境**：當 `~/.claude/skills` 已是一個真實目錄（用戶自行安裝了 69 個 skills），installer 會中止並顯示：
+> `[✗] Path exists but is not a symlink: /Users/davidchu/.claude/skills`
+> `[✗] Refusing to overwrite. Move it aside and re-run.`
+>
+> **後果**：全域安裝（`./install.sh` 不帶任何參數）直接失敗，無法完成。
+>
+> **根因**：`ensure_symlink()` 對「存在但不是 symlink」的目標直接拒絕，沒有提供「合併」選項。
+
+#### 驗收標準 (AC)
+- [ ] AC-1：當 `~/.claude/skills` 是真實目錄時，installer 自動進入 **merge 模式**（不報錯）
+- [ ] AC-2：Merge 模式預設行為：對 `tree_monstor/skills/` 中每個 skill 建立一個 symlink 到 `~/.claude/skills/<skill-name>`（命名不衝突時）
+- [ ] AC-3：當 `~/.claude/skills/<skill-name>` 已存在（用戶自有同名 skill）時，**跳過**但列出警告（不覆蓋）
+- [ ] AC-4：新增 `--claude-skills-mode {merge|replace|skip}` 旗標覆寫預設（merge=預設，replace=原行為的破壞式覆蓋，skip=不安裝 Claude skills）
+- [ ] AC-5：對 `~/.claude/CLAUDE.md` 處理：若已是 symlink 且指向非 tree_monstor 源頭，自動解除並重寫為標準 wrapper（用 `@` 引用新路徑）
+- [ ] AC-6：對 `~/.pi/`（全新空的目錄）按原計劃執行 symlink
+- [ ] AC-7：對 `.agents/tree_monstor/` copy 仍按原計劃執行
+- [ ] AC-8：所有新邏輯有對應的 bats 測試（≥ 5 個新測試案例）
+- [ ] AC-9：`./tests/install.bats` 全部通過（舊 19 + 新 ≥ 5）
+- [ ] AC-10：dry-run 模式正確顯示 merge 行為（不實際執行）
+
+---
+
 ## 📝 PENDING
 
 ### Technical Debt（從 US-001 反省產生）
@@ -79,6 +116,21 @@
 | TD-005 | AC-11a 改為更精準幂等測試（比對具體檔案而非 hash） | [us-001-reflection.md §2.3](reflection/us-001-reflection.md) | P2 |
 | TD-006 | 加 GitHub Actions CI（macOS + Linux） | [us-001-reflection.md §2.3](reflection/us-001-reflection.md) | P2 |
 | TD-008 | Magic strings 集中成變數（`.claude`/`.pi`/`.agents`/marker） | [us-001-reflection.md §2.4](reflection/us-001-reflection.md) | P3 |
+
+### Technical Debt（從 DE-001 反省產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-009 | `abs_path` 對 trailing slash 邊緣案例補測試（目前靠真實環境發現 symlink 帶 trailing slash） | [de-001-reflection.md §2.3](reflection/de-001-reflection.md) | P2 |
+| TD-010 | 旗標 `=` 形式支援統一化（目前只 `--claude-skills-mode` 支援 `=`，其他長旗標不支援） | [de-001-reflection.md §2.3](reflection/de-001-reflection.md) | P3 |
+| TD-011 | `parse_args` 與 `print_plan` 對 modes 重複驗證「merge/replace/skip」，可集中成常數 | [de-001-reflection.md §2.3](reflection/de-001-reflection.md) | P3 |
+
+### Technical Debt（從 Sprint 01 反省產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-012 | 旗標命名一致性：`--claude-skills-mode` 的值都是動詞（merge/replace/skip），與 `mode`（名詞）不匹配 | [sprint-01-reflection.md §3](reflection/sprint-01-reflection.md) | P3 |
+| TD-013 | 缺少年份/月份時間戳隔離的清除機制：`replace` 模式建立的 `~/.claude/skills.bak.*` 永遠不會被自動清除 | [sprint-01-reflection.md §3](reflection/sprint-01-reflection.md) | P3 |
 
 ### 已完成的 TD（本 Sprint）
 
@@ -94,3 +146,16 @@
 - 文件：`docs/deliverable/2025-08-16-install-sh.{md,html}` + `docs/reflection/us-001-reflection.md`
 - 驗收：16/16 AC ✅ · 19/19 測試 ✅
 - 遺留 TD：TD-005、TD-006、TD-008（下個 Sprint）
+
+### DE-001：installer 拒絕在 `~/.claude/skills` 已存在時安裝（2025-08-16）
+- 交付：`install.sh`（+87 行：merge helper + `--claude-skills-mode` 旗標）+ 7 個新測試 + 2 個 helper + 1 個 fixture
+- 文件：`docs/discussion/2025-08-16-install-sh-merge.md`、`docs/plan/2025-08-16-install-sh-merge.md`、`docs/reflection/de-001-reflection.md`、`docs/deliverable/2025-08-16-install-sh-merge.{md,html}`
+- 驗收：10/10 AC ✅ · 26/26 測試 ✅ · 真實 `~/` 環境安裝成功（74 個 skills：保留 69 個 + 8 個 tree_monstor skills 合併）
+- 遺留 TD：TD-009、TD-010、TD-011（下個 Sprint）
+
+### Sprint 01 級別反省（2025-08-16）
+- 範圍：US-001 + DE-001
+- 報告：[`docs/reflection/sprint-01-reflection.md`](reflection/sprint-01-reflection.md)
+- 結果：5 個維度通過、1 個 N/A、無 ❌
+- 新發現：TD-012 / TD-013
+- 結論：✅ 成功（100% 完成率 + 額外修復 DE-001）

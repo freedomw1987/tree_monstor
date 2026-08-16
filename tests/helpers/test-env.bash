@@ -92,3 +92,35 @@ assert_file_contains() {
     return 1
   fi
 }
+
+# create_existing_claude_skills_dir
+# Pre-populate $TEST_HOME/.claude/skills with two fake user skills plus
+# one that will conflict with the source fixture's `conflict-skill`.
+create_existing_claude_skills_dir() {
+  mkdir -p "$TEST_HOME/.claude"
+  mkdir -p "$TEST_HOME/.claude/skills/user-skill-a"
+  mkdir -p "$TEST_HOME/.claude/skills/user-skill-b"
+  mkdir -p "$TEST_HOME/.claude/skills/conflict-skill"
+
+  cat > "$TEST_HOME/.claude/skills/user-skill-a/SKILL.md" <<'EOF'
+# user-skill-a
+Owned by user. Must survive install.
+EOF
+  cat > "$TEST_HOME/.claude/skills/user-skill-b/SKILL.md" <<'EOF'
+# user-skill-b
+Owned by user. Must survive install.
+EOF
+  cat > "$TEST_HOME/.claude/skills/conflict-skill/SKILL.md" <<'EOF'
+# conflict-skill
+User-owned version. Must NOT be overwritten by installer.
+EOF
+}
+
+# create_existing_claude_wrapper_symlink <target_path>
+# Pre-create $TEST_HOME/.claude/CLAUDE.md as a symlink pointing to <target_path>.
+# Used to test that installer overwrites stale symlinks pointing to wrong sources.
+create_existing_claude_wrapper_symlink() {
+  local target="$1"
+  mkdir -p "$TEST_HOME/.claude"
+  ln -s "$target" "$TEST_HOME/.claude/CLAUDE.md"
+}
