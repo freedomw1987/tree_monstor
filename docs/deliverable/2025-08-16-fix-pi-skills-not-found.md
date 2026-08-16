@@ -140,6 +140,33 @@ ok 3 AC-3:  creates ~/.pi/agent/AGENTS.md symlink (NOT ~/.pi/AGENTS.md)
 1. **Claude Code 端有對稱 bug**：`install_claude` 在 `~/.claude/skills` 不存在時會建 tree-level symlink，可能遮蔽用戶其他 skill。但這不在本次任務範圍（用戶只要求修 Pi 端）。
 2. **沒有給 `install.sh` 加 self-test 確認 AGENTS.md 真的被 pi 載入**。下次可加一個 smoke test（啟動 pi 一次，看 banner 有沒有列出 dav-* skill description）。
 
+---
+
+## 🛠 Follow-up: 內嵌 SOUL.md 進 AGENTS.md
+
+### 問題
+pi 只認 `AGENTS.md`/`CLAUDE.md`/`AGENTS.override.md` 三個 context 檔名（pi `docs/usage.md:100-108`），**完全不認 `SOUL.md`**。即使全局 symlink `~/.pi/agent/SOUL.md` 也不會被讀取。
+
+原本 `tree_monstor/AGENTS.md` 開頭用 Obsidian 風格 `[[SOUL]]` 引用 SOUL.md —— Obsidian app 會解析，但 pi 不會，導致 7 條萬事原則（誠實/平等/承擔/Think Big/有耐性/簡單易懂）**實際上從未進入 pi 的 system prompt**。
+
+### 修復
+1. 將 `SOUL.md` 全部 7 條「萬事原則」內嵌到 `AGENTS.md` 第 1 區塊開頭
+2. 移除 `[[SOUL]]` 引用（pi 看不到，且會誤導）
+3. 修改 2.5 提交成果裡另一處 `（對應 SOUL.md "..."）` 為 `（對應上面「萬事原則」 "..."）`
+4. 保留 `SOUL.md` 原檔，供 Obsidian 用戶查閱
+5. 在 `AGENTS.md` 加一句註解說明為何要內嵌（防止未來有人誤刪）
+
+### 新增測試
+`tests/agents-md.bats` —— 4 個 AC：
+- SOUL-1: SOUL.md 每一條 bullet 必須字面出現在 AGENTS.md
+- SOUL-2: AGENTS.md 不得有 `[[SOUL]]` 引用
+- SOUL-3: AGENTS.md 內嵌區塊的條目數必須等於 SOUL.md 條目數
+- SOUL-4: AGENTS.md 必須明示 pi 不會讀 SOUL.md
+
+### 踩坑記錄
+- 第一次手動 edit 時**重複貼**了第 3 條，並漏了第 4、5 條。靠 SOUL-1/3 測試抓到（雖然是寫完測試才抓到，但下次會自動抓）。
+- 第二次 write 又把 `</content></invoke>` 字串寫進了檔尾。靠尾段人工檢查抓到。
+
 ## 🧪 驗證結果
 
 - ✅ `~/.pi/agent/skills/` 內 8 個 SKILL.md 全部可讀到 description
