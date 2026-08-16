@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交付摘要 — install.sh (US-001)</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #f9fafb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      color: white;
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+    }
+    header h1 { font-size: 28px; margin-bottom: 12px; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .meta-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .meta-item strong { display: block; opacity: 0.8; font-size: 12px; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-icon {
+      width: 32px; height: 32px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status-done { background: #d1fae5; color: #065f46; }
+    .status-partial { background: #fef3c7; color: #92400e; }
+    .status-fail { background: #fee2e2; color: #991b1b; }
+    .key-results { list-style: none; }
+    .key-results li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .key-results li:last-child { border-bottom: none; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    th { background: #f3f4f6; font-weight: 600; }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 13px;
+    }
+    .next-steps {
+      display: grid;
+      gap: 12px;
+    }
+    .step-card {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .progress-bar {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+      margin: 12px 0;
+    }
+    .progress-segment {
+      height: 16px;
+      border-radius: 4px;
+      background: var(--border);
+      position: relative;
+    }
+    .progress-segment.done { background: var(--success); }
+    .progress-segment.partial { background: var(--warning); }
+    .progress-segment.fail { background: var(--danger); }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .stat-box {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-num { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .flow-svg {
+      width: 100%;
+      max-width: 600px;
+      margin: 12px auto;
+      display: block;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 32px;
+      padding: 16px;
+    }
+    .timeline {
+      display: grid;
+      gap: 8px;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border-left: 3px solid var(--success);
+    }
+    .timeline-item .check { color: var(--success); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>📦 install.sh (US-001)</h1>
+      <div style="font-size: 14px; opacity: 0.9;">
+        <span class="status-pill status-done">✅ 完成</span>
+        <span style="margin-left: 8px;">交付日期：2025-08-16</span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><strong>Backlog ID</strong>US-001</div>
+        <div class="meta-item"><strong>Sprint</strong>SP0</div>
+        <div class="meta-item"><strong>Module</strong>M1 — Installer</div>
+        <div class="meta-item"><strong>交付者</strong>Agent</div>
+      </div>
+    </header>
+
+    <!-- 1. 這次完成什麼 -->
+    <section class="card">
+      <h2><span class="card-icon">🎯</span>這次完成什麼</h2>
+      <p style="margin-bottom: 12px;">為 <code>tree_monstor</code> 加入 <code>install.sh</code> 安裝腳本，讓 <strong>Claude Code</strong> 和 <strong>Pi Agent</strong> 能在全域或專案層讀取到 <code>AGENTS.md</code>、<code>SOUL.md</code> 和 <code>skills/</code>，且改源檔能即時生效。</p>
+
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-num">488</div>
+          <div class="stat-label">行 install.sh</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">19/19</div>
+          <div class="stat-label">測試通過 (100%)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">16/16</div>
+          <div class="stat-label">AC 完成</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">5</div>
+          <div class="stat-label">Regression 探針</div>
+        </div>
+      </div>
+
+      <ul class="key-results">
+        <li>✅ 純 Bash 488 行，相容 macOS / Linux</li>
+        <li>✅ 19 個 bats 自動化測試 100% 通過</li>
+        <li>✅ 完全冪等 + 安全卸載（marker 保護使用者檔案）</li>
+        <li>✅ 6 種安裝模式：global / local / target / agent 篩選 / dry-run / no-agents-dir</li>
+        <li>✅ 完整 README（Quick Start、Examples、疑難排解）</li>
+      </ul>
+    </section>
+
+    <!-- 2. 安裝流程示意 -->
+    <section class="card">
+      <h2><span class="card-icon">�</span>安裝流程</h2>
+      <svg class="flow-svg" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Source -->
+        <rect x="20" y="60" width="140" height="80" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="90" y="95" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e">tree_monstor</text>
+        <text x="90" y="115" text-anchor="middle" font-size="11" fill="#92400e">AGENTS.md</text>
+        <text x="90" y="130" text-anchor="middle" font-size="11" fill="#92400e">SOUL.md / skills/</text>
+
+        <!-- Arrows -->
+        <path d="M 165 100 L 215 100" stroke="#4f46e5" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+        <text x="190" y="92" text-anchor="middle" font-size="11" fill="#4f46e5" font-weight="700">symlink</text>
+
+        <!-- Targets -->
+        <rect x="220" y="20" width="160" height="50" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+        <text x="300" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">~/.claude/</text>
+        <text x="300" y="58" text-anchor="middle" font-size="10" fill="#065f46">CLAUDE.md + skills/</text>
+
+        <rect x="220" y="80" width="160" height="50" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+        <text x="300" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#065f46">~/.pi/</text>
+        <text x="300" y="118" text-anchor="middle" font-size="10" fill="#065f46">AGENTS.md + SOUL.md + skills/</text>
+
+        <rect x="220" y="140" width="160" height="50" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+        <text x="300" y="162" text-anchor="middle" font-size="13" font-weight="700" fill="#3730a3">~/.agents/</text>
+        <text x="300" y="178" text-anchor="middle" font-size="10" fill="#3730a3">tree_monstor/ (copy)</text>
+
+        <!-- Agents -->
+        <rect x="420" y="40" width="160" height="40" rx="8" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
+        <text x="500" y="65" text-anchor="middle" font-size="13" font-weight="700" fill="#9f1239">Claude Code</text>
+
+        <rect x="420" y="90" width="160" height="40" rx="8" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
+        <text x="500" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#9f1239">Pi Agent</text>
+
+        <path d="M 385 45 L 415 60" stroke="#ec4899" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-pink)"/>
+        <path d="M 385 105 L 415 110" stroke="#ec4899" stroke-width="1.5" fill="none" marker-end="url(#arrowhead-pink)"/>
+
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#4f46e5"/>
+          </marker>
+          <marker id="arrowhead-pink" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#ec4899"/>
+          </marker>
+        </defs>
+      </svg>
+    </section>
+
+    <!-- 3. 視覺化進度 -->
+    <section class="card">
+      <h2><span class="card-icon">📊</span>驗收標準對應</h2>
+      <p>16 條 AC 全部 ✅ 通過：</p>
+      <div class="progress-bar">
+        <div class="progress-segment done" title="AC-1"></div>
+        <div class="progress-segment done" title="AC-2"></div>
+        <div class="progress-segment done" title="AC-3"></div>
+        <div class="progress-segment done" title="AC-4"></div>
+        <div class="progress-segment done" title="AC-5"></div>
+        <div class="progress-segment done" title="AC-6"></div>
+        <div class="progress-segment done" title="AC-7"></div>
+        <div class="progress-segment done" title="AC-8"></div>
+        <div class="progress-segment done" title="AC-9"></div>
+        <div class="progress-segment done" title="AC-10"></div>
+        <div class="progress-segment done" title="AC-11"></div>
+        <div class="progress-segment done" title="AC-12"></div>
+        <div class="progress-segment done" title="AC-13"></div>
+        <div class="progress-segment done" title="AC-14"></div>
+        <div class="progress-segment done" title="AC-15"></div>
+        <div class="progress-segment done" title="AC-16"></div>
+      </div>
+      <p style="text-align: center; color: var(--success); font-weight: 700; margin-top: 8px;">100% 完成</p>
+    </section>
+
+    <!-- 4. 測試結果 -->
+    <section class="card">
+      <h2><span class="card-icon">🧪</span>測試結果</h2>
+      <table>
+        <thead><tr><th>測試類型</th><th>通過 / 總數</th><th>通過率</th><th>備註</th></tr></thead>
+        <tbody>
+          <tr><td>Bats 黑盒測試</td><td><strong>19 / 19</strong></td><td><span class="status-pill status-done">100%</span></td><td>覆蓋 16 條 AC + 3 個子測試</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 12px; font-size: 13px; color: var(--muted);">
+        執行：<code>bats tests/</code> （需 <code>brew install bats-core</code>）<br>
+        每個測試用 <code>mktemp -d</code> + <code>env -i</code> 隔離環境，<strong>不污染真實 ~/</strong>
+      </p>
+    </section>
+
+    <!-- 5. 改動檔案 -->
+    <section class="card">
+      <h2><span class="card-icon">📝</span>改了什麼</h2>
+      <table>
+        <thead><tr><th>類型</th><th>檔案</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td>➕ 新增</td><td><code>install.sh</code></td><td>主腳本 488 行純 Bash</td></tr>
+          <tr><td>➕ 新增</td><td><code>README.md</code></td><td>用戶文件 213 行</td></tr>
+          <tr><td>➕ 新增</td><td><code>tests/install.bats</code></td><td>19 個 bats 測試</td></tr>
+          <tr><td>➕ 新增</td><td><code>tests/helpers/test-env.bash</code></td><td>測試環境 helper</td></tr>
+          <tr><td>➕ 新增</td><td><code>tests/fixtures/mock-tree-monstor/</code></td><td>測試 fixture（含 .obsidian/.git/.DS_Store）</td></tr>
+          <tr><td>➕ 新增</td><td><code>docs/discussion/2025-08-16-install-sh-design.md</code></td><td>6 題設計討論記錄</td></tr>
+          <tr><td>➕ 新增</td><td><code>docs/plan/2025-08-16-install-sh-design.md</code></td><td>詳細設計計劃</td></tr>
+          <tr><td>➕ 新增</td><td><code>docs/backlog.md</code></td><td>專案 backlog</td></tr>
+          <tr><td>➕ 新增</td><td><code>docs/reflection/us-001-reflection.md</code></td><td>反省報告</td></tr>
+          <tr><td>✏️ 修改</td><td><code>docs/backlog.md</code></td><td>加入 TD 區塊</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. SOP 流程記錄 -->
+    <section class="card">
+      <h2><span class="card-icon">🛣️</span>SOP 流程記錄</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <span class="check">✓</span>
+          <div><strong>2.1 溝通 & 思考</strong>（6 題一題一題問）— 用戶決定全部 6 項</div>
+        </div>
+        <div class="timeline-item">
+          <span class="check">✓</span>
+          <div><strong>2.2 計劃</strong>（dav-designer）— 寫詳細計劃含架構圖、模組劃分、AC 對應</div>
+        </div>
+        <div class="timeline-item">
+          <span class="check">✓</span>
+          <div><strong>2.3 執行</strong>（TDD + 分階段）— A 旗標 / B 冪等+Claude / C Pi+agents/ D uninstall / E README</div>
+        </div>
+        <div class="timeline-item">
+          <span class="check">✓</span>
+          <div><strong>2.4 自我反省</strong>（dav-reflection）— 6 維度檢查 + 3 個 TD 已記錄</div>
+        </div>
+        <div class="timeline-item">
+          <span class="check">✓</span>
+          <div><strong>2.5 提交成果</strong>（dav-submitter）— 你正在看這份</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. 已知問題 -->
+    <section class="card">
+      <h2><span class="card-icon">⚠️</span>已知問題 / 限制</h2>
+      <table>
+        <thead><tr><th>問題</th><th>嚴重性</th><th>已記錄</th></tr></thead>
+        <tbody>
+          <tr><td>沒做 CI（GitHub Actions）</td><td><span class="status-pill status-partial">P2</span></td><td>TD-006</td></tr>
+          <tr><td>冪等測試用 hash 比對，跨平台可能不一致</td><td><span class="status-pill status-partial">P2</span></td><td>TD-005</td></tr>
+          <tr><td>Magic strings 未集中成變數</td><td><span class="status-pill status-partial">P3</span></td><td>TD-008</td></tr>
+          <tr><td>不支援 Windows 原生（WSL 可）</td><td>By design</td><td>README</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 8. 下一步建議 -->
+    <section class="card" style="background: linear-gradient(135deg, #eef2ff 0%, #fae8ff 100%); border: none;">
+      <h2><span class="card-icon">🚀</span>下一步建議</h2>
+
+      <h3 style="margin-top: 16px; margin-bottom: 12px; color: var(--primary);">立即可做</h3>
+      <div class="next-steps">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div>
+            <strong>第一次實際安裝驗證</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">
+              <code>./install.sh --dry-run --global</code> 先預覽 → 確認 OK 後 <code>./install.sh --global</code>
+            </p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div>
+            <strong>驗證卸載不會誤刪檔案</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">
+              先在 <code>~/.claude/</code> 放個自己的檔案 → 跑 <code>--uninstall</code> → 確認它還在
+            </p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div>
+            <strong>在 Claude Code / Pi Agent 實際測試</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">
+              啟動 agent，問它：「請讀取 SOUL.md 並講解萬事原則」，確認能讀到
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; color: var(--primary);">下一個 Sprint 考慮</h3>
+      <ul style="padding-left: 20px;">
+        <li><strong>TD-006</strong>：加 GitHub Actions CI（macOS + Ubuntu）</li>
+        <li><strong>TD-005</strong>：冪等測試改用具體檔案比對</li>
+        <li><strong>TD-008</strong>：Magic strings 集中成常數</li>
+        <li>擴充支援：<code>--agent cursor</code>、<code>--agent aider</code></li>
+      </ul>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; color: var(--primary);">長期方向（Think Big）</h3>
+      <ul style="padding-left: 20px;">
+        <li>跨專案 skills 分享 — 把 tree_monstor skills 變可分享 library</li>
+        <li>版本管理 — 支援多版本並存（<code>--source /path/to/v0.2.0</code>）</li>
+        <li>把安裝過程做成可審核的 log（給企業環境用）</li>
+      </ul>
+    </section>
+
+    <footer>
+      � 由 dav-submitter skill 自動產生 · 2025-08-16 · 對應 US-001
+    </footer>
+
+  </div>
+</body>
+</html>

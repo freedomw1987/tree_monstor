@@ -9,4 +9,8 @@ node_modules/
 *.bak-*
 *.md.bak
 __pycache__/
-.agents
+
+# Installer outputs (created by install.sh on user machines; never commit)
+.agents/
+.claude/
+.pi/

@@ -15,8 +15,8 @@
 
 ### 2.1. 溝通 &amp; 思考
 
-要與用戶溝通討論出一個完整完善的方案；
-**務必使用 **[[skills/dav-planner/SKILL|skills:/dav-planner]]** 技能**；
+- 要與用戶溝通討論出一個完整完善的方案；
+- **務必使用 **[[skills/dav-planner/SKILL|skills:/dav-planner]]** 技能**；
 
 ### 2.2. 計劃
 
