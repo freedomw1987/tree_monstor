@@ -18,7 +18,7 @@ description: 當用戶在設計階段時候，都要根據項目目錄中docs/ba
 ## 3. 技術架構設計
 
 - 按照Backlog 的需求定義好項目的：技術棧、系統組成部件（前端、後端、數據庫或其他服務等），以及按功能模組(Module)去劃分整個項目系統，更新或編寫在 docs/system-design.md；
-- 劃分功能模組(Module)的目的是為每一個模組各自有一套完善的流程：執行、測試（自我反省）、提交成果的，一個模組(Module)的變更和問題，不會導致全局項目出現問題；
+- 劃分功能模組(Module)的目的是為每一個模組各自有一套完善的流程：執行、測試、PR Review、提交成果的，一個模組(Module)的變更和問題，不會導致全局項目出現問題；
 - 在docs/backlog.md更新Backlog中用戶故事(User Story)對應的Module，方便之後可以針對每一個Module進行執行開發或其後的工作，也評估用戶故事(User Story)按照重要性和難度去評估出Story Point;
 - 留意技術架構設計的編寫不要有真實代碼或示範代碼出現；
 
@@ -26,4 +26,5 @@ description: 當用戶在設計階段時候，都要根據項目目錄中docs/ba
 
 - 按功能模組(Module)去修改和新增PRD文檔在項目目錄中 `docs/prd/<序號-module-name>.md`，例如: `docs/prd/01-user-login.md、docs/prd/02-dashboard.md`；
 - 在PRD文檔中，要列出Module中，所有功能清單 (FR)，方便後面進行開發；
+- 除了生成功能模組(Module)的markdown file 之外，也要有一份`docs/prd/<序號-module-name>.html`，這份html檔是給用戶更易理解PRD內容的，所以必須要用最易明瞭的方式去編寫，例如SVG插圖＋解釋；
 

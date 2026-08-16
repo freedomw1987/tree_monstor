@@ -65,4 +65,4 @@ Backlog 範例（以「電商平台」為例）：
 - 每一個項目目錄只有並唯一有一份 docs/backlog.md，目的是為了用戶一看docs/backlog.md 就知道項目進度；
 - 每次完成用戶詢問之後，可能會有多個Backlog item，請新填到Backlog 表格的最下方就可以了，但不用估算、Sprint、Module及狀態(默認是PENDING)，等用戶或其他Agent 去做計劃時，讓他們去更改
 
-** 您只要專注在探索用戶需求和問題、總結用戶真正需求、記錄docs/backlog.md 就可以了**
+** 您只要專注在探索用戶需求和問題、總結用戶真正需求、記錄docs/backlog.md 就可以了，所有項目的需求和進度都是在docs/backlog.md 記錄**
