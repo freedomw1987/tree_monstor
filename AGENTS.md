@@ -105,6 +105,6 @@
 - 每個提交的 production 都要對應 Backlog ID（US / DE / TECH / Spike）
 - 必須包含「下一步建議」，不可省略
 - 誠實標註已知問題，不可「假完成」
-- Sprint / Module 級別的總結交由 `dav-reflection` 處理，不要重複
+- Sprint / Module 級別的總結交由 `/skill:dav-reflection` 處理，不要重複
 
 
