@@ -18,12 +18,21 @@ teardown() {
 }
 
 # ---------- AC-1: skills symlinks globally ----------
-@test "AC-1: default install symlinks skills to ~/.claude/ and ~/.pi/" {
+@test "AC-1: default install symlinks skills to ~/.claude/skills and ~/.pi/agent/skills/" {
   run run_install --global --yes
   [ "$status" -eq 0 ]
 
-  assert_path_is_symlink "$TEST_HOME/.claude/skills" "$TEST_SOURCE/skills"
-  assert_path_is_symlink "$TEST_HOME/.pi/skills"     "$TEST_SOURCE/skills"
+  # Claude Code: behavior unchanged from before this fix (merge if dir
+  # pre-existed, otherwise tree-level symlink). Covered by DE-001 tests.
+  [ -e "$TEST_HOME/.claude/skills" ]
+
+  # Pi Agent: per-skill symlinks under ~/.pi/agent/skills/ (NOT ~/.pi/skills).
+  # ~/.pi/agent/ is pi's documented global resource dir (see docs/usage.md).
+  assert_path_is_symlink "$TEST_HOME/.pi/agent/skills/dav-planner" "$TEST_SOURCE/skills/dav-planner"
+  assert_path_is_symlink "$TEST_HOME/.pi/agent/skills/dav-designer" "$TEST_SOURCE/skills/dav-designer"
+
+  # ~/.pi/skills (the legacy wrong location) must NOT be created.
+  [ ! -e "$TEST_HOME/.pi/skills" ]
 }
 
 # ---------- AC-2: Claude wrapper with @ references ----------
@@ -38,12 +47,22 @@ teardown() {
 }
 
 # ---------- AC-3: Pi Agent symlinks source files ----------
-@test "AC-3: creates ~/.pi/AGENTS.md and ~/.pi/SOUL.md as symlinks to source" {
+@test "AC-3: creates ~/.pi/agent/AGENTS.md symlink (NOT ~/.pi/AGENTS.md)" {
   run run_install --global --agent pi --yes
   [ "$status" -eq 0 ]
 
-  assert_path_is_symlink "$TEST_HOME/.pi/AGENTS.md" "$TEST_SOURCE/AGENTS.md"
-  assert_path_is_symlink "$TEST_HOME/.pi/SOUL.md"   "$TEST_SOURCE/SOUL.md"
+  # Correct location per pi docs/usage.md:100.
+  assert_path_is_symlink "$TEST_HOME/.pi/agent/AGENTS.md" "$TEST_SOURCE/AGENTS.md"
+
+  # Legacy wrong location must NOT exist.
+  [ ! -e "$TEST_HOME/.pi/AGENTS.md" ]
+
+  # SOUL.md is intentionally NOT installed globally:
+  #   - pi does not read SOUL.md anywhere in its docs.
+  #   - tree_monstor/AGENTS.md references SOUL.md via [[SOUL]] (same dir).
+  #   - Global SOUL symlink would be a dead file no agent reads.
+  [ ! -e "$TEST_HOME/.pi/SOUL.md" ]
+  [ ! -e "$TEST_HOME/.pi/agent/SOUL.md" ]
 }
 
 # ---------- AC-4: also installs to local .agents/ ----------
@@ -81,9 +100,13 @@ teardown() {
   run run_install --target "$target" --yes
   [ "$status" -eq 0 ]
 
-  [ -L "$target/.claude/skills" ]
-  [ -L "$target/.pi/skills" ]
+  [ -e "$target/.claude/skills" ]
+  # Pi Agent target mirrors global layout: ~/.pi/agent/{AGENTS.md,skills/}.
+  [ -L "$target/.pi/agent/AGENTS.md" ]
+  [ -e "$target/.pi/agent/skills" ]
   [ -f "$target/.claude/CLAUDE.md" ]
+  # Legacy wrong location must not be created under --target either.
+  [ ! -e "$target/.pi/skills" ]
 }
 
 # ---------- AC-7: --agent filters targets ----------
@@ -99,8 +122,8 @@ teardown() {
   run run_install --global --agent pi --yes
   [ "$status" -eq 0 ]
 
-  assert_path_exists "$TEST_HOME/.pi/AGENTS.md"
-  assert_path_exists "$TEST_HOME/.pi/SOUL.md"
+  assert_path_exists "$TEST_HOME/.pi/agent/AGENTS.md"
+  assert_path_exists "$TEST_HOME/.pi/agent/skills/dav-planner"
   [ ! -e "$TEST_HOME/.claude" ]
 }
 
@@ -117,9 +140,11 @@ teardown() {
 
   [ ! -e "$TEST_HOME/.claude/CLAUDE.md" ]
   [ ! -e "$TEST_HOME/.claude/skills" ]
-  [ ! -e "$TEST_HOME/.pi/AGENTS.md" ]
-  [ ! -e "$TEST_HOME/.pi/SOUL.md" ]
-  [ ! -e "$TEST_HOME/.pi/skills" ]
+  [ ! -e "$TEST_HOME/.pi/agent/AGENTS.md" ]
+  # ~/.pi/agent/skills/ may legitimately remain (empty) since we pre-create
+  # the dir to take the merge path; we only assert our per-skill symlinks
+  # are gone, not the dir itself.
+  [ ! -L "$TEST_HOME/.pi/agent/skills/dav-planner" ]
   [ ! -e "$TEST_HOME/.agents/tree_monstor" ]
   # Unrelated file must remain
   assert_path_is_file "$TEST_HOME/.claude/user-notes.md"

@@ -220,9 +220,17 @@ print_plan() {
         esac
         ;;
       pi)
-        log_plan "$TARGET_ROOT/.pi/AGENTS.md -> $SOURCE_DIR/AGENTS.md"
-        log_plan "$TARGET_ROOT/.pi/SOUL.md   -> $SOURCE_DIR/SOUL.md"
-        log_plan "$TARGET_ROOT/.pi/skills    -> $SOURCE_DIR/skills"
+        # Pi Agent global resource dir is ~/.pi/agent/ (per pi docs/usage.md),
+        # not ~/.pi/. Earlier versions of this script installed to ~/.pi/
+        # which is silently ignored by pi.
+        log_plan "$TARGET_ROOT/.pi/agent/AGENTS.md -> $SOURCE_DIR/AGENTS.md"
+        # Skills are merged per-skill into ~/.pi/agent/skills/ (same model as
+        # Claude Code's merge mode). Tree-level symlink would clobber the
+        # user's other global skills (e.g. ~/.agents/skills/ peers).
+        log_plan "$TARGET_ROOT/.pi/agent/skills/ (merge: per-skill symlinks)"
+        # SOUL.md is intentionally NOT installed globally:
+        #   - pi does not read SOUL.md (no mention in any pi doc).
+        #   - tree_monstor/AGENTS.md references SOUL.md via [[SOUL]] (same dir).
         ;;
     esac
   done
@@ -464,6 +472,60 @@ do_uninstall() {
   fi
 }
 
+# Remove per-skill symlinks we created in a merged skills dir, leaving the
+# user's own skills and any non-symlink entries untouched.
+# Args: <merged_skills_dir> <source_skills_dir>
+# Used by uninstall_pi() to clean ~/.pi/agent/skills/ entries that point
+# at <source_skills_dir>/<skill>, without touching siblings owned by the user.
+remove_merged_skills() {
+  local merged_dir="$1"
+  local source_dir="$2"
+
+  if [[ ! -d "$merged_dir" ]] && [[ ! -L "$merged_dir" ]]; then
+    return 0
+  fi
+
+  # If the merged dir itself is a tree-level symlink (legacy install),
+  # remove it entirely.
+  if [[ -L "$merged_dir" ]]; then
+    local target
+    target="$(readlink "$merged_dir")"
+    if [[ "$target" == "$source_dir" ]]; then
+      run rm "$merged_dir"
+      log_ok "removed tree-level symlink: $merged_dir"
+      return 0
+    fi
+    log_warn "skipping symlink (not ours): $merged_dir -> $target"
+    return 0
+  fi
+
+  # Real dir: scan and remove only our per-skill symlinks.
+  shopt -s nullglob
+  local entry removed=0 skipped=0
+  for entry in "$merged_dir"/*; do
+    local name
+    name="$(basename "$entry")"
+    if [[ ! -L "$entry" ]]; then
+      skipped=$((skipped + 1))
+      continue
+    fi
+    local target
+    target="$(readlink "$entry")"
+    # Match per-skill symlinks pointing into <source_dir>/<skill>.
+    if [[ "$target" == "$source_dir/$name" ]]; then
+      run rm "$entry"
+      log_ok "removed merged skill: $entry"
+      removed=$((removed + 1))
+    else
+      skipped=$((skipped + 1))
+    fi
+  done
+  shopt -u nullglob
+
+  # If the merged dir is now empty, leave it (may be owned by user).
+  log_info "remove_merged_skills: removed=$removed, skipped=$skipped"
+}
+
 # Remove a path only if it looks like something we created.
 # Safe to call on missing paths.
 remove_managed_path() {
@@ -511,9 +573,11 @@ uninstall_claude() {
 
 uninstall_pi() {
   local pi_root="$TARGET_ROOT/.pi"
-  remove_managed_path "$pi_root/AGENTS.md" symlink
-  remove_managed_path "$pi_root/SOUL.md"   symlink
-  remove_managed_path "$pi_root/skills"    symlink
+  # Global AGENTS.md lives at $pi_root/agent/AGENTS.md (NOT $pi_root/AGENTS.md,
+  # which pi silently ignores). See install_pi() and pi docs/usage.md.
+  remove_managed_path "$pi_root/agent/AGENTS.md" symlink
+  # Skills are merged per-skill into $pi_root/agent/skills/.
+  remove_merged_skills "$pi_root/agent/skills" "$SOURCE_DIR/skills"
 }
 
 uninstall_agents_dir() {
@@ -525,9 +589,28 @@ uninstall_agents_dir() {
 install_pi() {
   log_info "Installing for Pi Agent..."
   local pi_root="$TARGET_ROOT/.pi"
-  ensure_symlink "$pi_root/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
-  ensure_symlink "$pi_root/SOUL.md"   "$SOURCE_DIR/SOUL.md"
-  ensure_symlink "$pi_root/skills"    "$SOURCE_DIR/skills"
+
+  # Pi's documented global resource dir is ~/.pi/agent/ (see pi
+  # docs/usage.md:100 and docs/skills.md#locations). Earlier versions of
+  # this script installed to ~/.pi/ (e.g. ~/.pi/AGENTS.md,
+  # ~/.pi/skills), which pi silently ignores — AGENTS.md was never
+  # loaded at startup and skills were never discovered.
+  local agent_root="$pi_root/agent"
+  [[ -d "$agent_root" ]] || run mkdir -p "$agent_root"
+
+  # AGENTS.md: single symlink at the correct location.
+  ensure_symlink "$agent_root/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
+
+  # Skills: merge per-skill symlinks into ~/.pi/agent/skills/.
+  # Use a dedicated merge function so we never clobber other global skills
+  # the user may have placed there (e.g. ~/.pi/agent/skills/gsap-*).
+  # Pre-create the dir so ensure_merged_skills_into() takes the merge path
+  # instead of falling back to a tree-level symlink (which would shadow any
+  # skills the user adds later).
+  [[ -d "$agent_root/skills" ]] || [[ -L "$agent_root/skills" ]] || run mkdir -p "$agent_root/skills"
+  ensure_merged_skills_into "$SOURCE_DIR/skills" "$agent_root/skills"
+
+  # SOUL.md is NOT installed globally. See plan output above for rationale.
 }
 
 # ---------- Local .agents/ copy installer ----------
