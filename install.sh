@@ -415,6 +415,15 @@ install_claude() {
 
   case "$CLAUDE_SKILLS_MODE" in
     merge)
+      # Pre-create $skills_link as an empty real directory so
+      # ensure_merged_skills_into() takes the per-skill merge path
+      # (matching ~/.pi/agent/skills/ behavior). Falling back to a
+      # tree-level symlink here would silently shadow any other skills
+      # the user later drops into ~/.claude/skills/.
+      # Idempotent: skip if it already exists (file, symlink, or dir).
+      if [[ ! -e "$skills_link" ]] && [[ ! -L "$skills_link" ]]; then
+        run mkdir -p "$skills_link"
+      fi
       ensure_merged_skills_into "$SOURCE_DIR/skills" "$skills_link"
       ;;
     replace)
@@ -567,7 +576,15 @@ remove_managed_path() {
 
 uninstall_claude() {
   local claude_root="$TARGET_ROOT/.claude"
-  remove_managed_path "$claude_root/skills"   symlink
+  # ~/.claude/skills/ may be either a tree-level symlink (legacy install)
+  # or a real directory holding our per-skill symlinks. Handle both:
+  #   - symlink: remove only if it points at $SOURCE_DIR/skills.
+  #   - real dir: remove only our per-skill symlinks, leave user skills.
+  if [[ -L "$claude_root/skills" ]]; then
+    remove_managed_path "$claude_root/skills" symlink
+  elif [[ -d "$claude_root/skills" ]]; then
+    remove_merged_skills "$claude_root/skills" "$SOURCE_DIR/skills"
+  fi
   remove_managed_path "$claude_root/CLAUDE.md" marker-file
 }
 

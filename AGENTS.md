@@ -27,12 +27,12 @@
 ### 2.1. 溝通 &amp; 思考
 
 - 要與用戶溝通討論出一個完整完善的方案；
-- **務必使用 **[[skills/dav-planner/SKILL|skills:/dav-planner]]** 技能**；
+- **務必使用 **`/skill:dav-planner`** 技能**；
 
 ### 2.2. 計劃
 
 用戶有機會想做一項好大的工作任務，所以你為他計劃如何去執行，並給用戶確認；
-**務必使用 **[[skills/dav-designer/SKILL.md|skills:dav-designer]]** 技能**；
+**務必使用 **`/skill:dav-designer`** 技能**；
 
 ### 2.3. 執行
 
@@ -40,16 +40,16 @@
 
 **一開始就必須使用：**
 
-1. [[skills/tdd-test-writer/SKILL.md|skills:tdd-test-writer]] 根據目標項目的 docs/backlog.md 編寫測試用例，為 Test-Driven Development 打好基礎；
+1. `/skill:tdd-test-writer` 根據目標項目的 docs/backlog.md 編寫測試用例，為 Test-Driven Development 打好基礎；
 **開發過程中配合使用：**
-2. [[skills/regression-guard/SKILL.md|skills:regression-guard]] 這個是在執行開發項目時，必須要預留測試用的探針，以及自我測試修復機制技能；
-3. [[skills/dev-checker-loop/SKILL.md|skills:dev-checker-loop]] 這個是一個開發項目中，自我開發和測試的循環，目的是為了出品質量是高質量；
+2. `/skill:regression-guard` 這個是在執行開發項目時，必須要預留測試用的探針，以及自我測試修復機制技能；
+3. `/skill:dev-checker-loop` 這個是一個開發項目中，自我開發和測試的循環，目的是為了出品質量是高質量；
 
 ### 2.4. 自我反省
 
 對執行階段得出的結果作一個宏觀的反思和檢討，包括UX/UI是否符合用戶需求原意、RWD是否有考慮和完成、系統是否有技術債等問題，這個階段看整體，也要看和更改docs/backlog.md；
 
-**務必使用 **[[skills/dav-reflection/SKILL|skills:/dav-reflection]]** 技能**；
+**務必使用 **`/skill:dav-reflection`** 技能**；
 
 **觸發時機（三層級）**：
 
@@ -86,7 +86,7 @@
 
 當一個單元任務（User Story / 子任務 / Bug 修復）完成後，Agent 必須立即產出交付摘要，包含對話輸出 + Markdown + HTML 三層交付物；
 
-**務必使用 **[[skills/dav-submitter/SKILL.md|skills:dav-submitter]]** 技能**；
+**務必使用 **`/skill:dav-submitter`** 技能**；
 
 **目的**：
 

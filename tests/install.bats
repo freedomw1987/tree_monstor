@@ -22,9 +22,14 @@ teardown() {
   run run_install --global --yes
   [ "$status" -eq 0 ]
 
-  # Claude Code: behavior unchanged from before this fix (merge if dir
-  # pre-existed, otherwise tree-level symlink). Covered by DE-001 tests.
-  [ -e "$TEST_HOME/.claude/skills" ]
+  # Claude Code: per-skill symlinks merged into a freshly-created
+  # ~/.claude/skills/ (matching ~/.pi/agent/skills/ behavior).
+  # Pre-creating the dir as a real directory avoids the legacy tree-level
+  # symlink that would shadow any other skills the user adds later.
+  [ -d "$TEST_HOME/.claude/skills" ]
+  [ ! -L "$TEST_HOME/.claude/skills" ]
+  assert_path_is_symlink "$TEST_HOME/.claude/skills/dav-planner" "$TEST_SOURCE/skills/dav-planner"
+  assert_path_is_symlink "$TEST_HOME/.claude/skills/dav-designer" "$TEST_SOURCE/skills/dav-designer"
 
   # Pi Agent: per-skill symlinks under ~/.pi/agent/skills/ (NOT ~/.pi/skills).
   # ~/.pi/agent/ is pi's documented global resource dir (see docs/usage.md).
@@ -139,7 +144,11 @@ teardown() {
   [ "$status" -eq 0 ]
 
   [ ! -e "$TEST_HOME/.claude/CLAUDE.md" ]
-  [ ! -e "$TEST_HOME/.claude/skills" ]
+  # ~/.claude/skills/ may legitimately remain (empty or with user skills)
+  # since we pre-create the dir to take the merge path; we only assert our
+  # per-skill symlinks are gone, not the dir itself.
+  [ ! -L "$TEST_HOME/.claude/skills/dav-planner" ]
+  [ ! -L "$TEST_HOME/.claude/skills/dav-designer" ]
   [ ! -e "$TEST_HOME/.pi/agent/AGENTS.md" ]
   # ~/.pi/agent/skills/ may legitimately remain (empty) since we pre-create
   # the dir to take the merge path; we only assert our per-skill symlinks

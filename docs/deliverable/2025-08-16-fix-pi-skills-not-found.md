@@ -167,6 +167,38 @@ pi 只認 `AGENTS.md`/`CLAUDE.md`/`AGENTS.override.md` 三個 context 檔名（p
 - 第一次手動 edit 時**重複貼**了第 3 條，並漏了第 4、5 條。靠 SOUL-1/3 測試抓到（雖然是寫完測試才抓到，但下次會自動抓）。
 - 第二次 write 又把 `</content></invoke>` 字串寫進了檔尾。靠尾段人工檢查抓到。
 
+---
+
+## 🛠 Follow-up 2: 清理 AGENTS.md 裡 Obsidian `[[skills/...]]` 引用 + 修 Claude 端對稱 bug
+
+### Part A: 清理 7 處 Obsidian skill 引用（AGENTS.md）
+
+`AGENTS.md` 裡 7 處 SOP 說明使用 Obsidian 雙括號連結：
+```
+[[skills/dav-planner/SKILL|skills:/dav-planner]]
+```
+pi 完全不認這個語法（`docs/skills.md` 只提 `/skill:<name>` 命令格式）。改寫為：
+```
+`/skill:dav-planner`
+```
+（用反引號包起來表示這是個可被 pi 認到的斜槓命令）。
+
+### Part B: 修 Claude 端對稱 bug
+
+**問題**：`install_claude()` 在 `~/.claude/skills` 不存在時建 tree-level symlink，會遮蔽用戶之後放進去的所有其他 skill。
+
+**修復**：跟 Pi 端對齊 —— 預建 `~/.claude/skills/` 為空目錄，確保走 `ensure_merged_skills_into()` 的 per-skill merge 路徑。
+
+**順帶修復**：舊 `uninstall_claude()` 用 `remove_managed_path ... symlink`，對真實目錄（不是 symlink）無效。改成 `remove_merged_skills()`（與 Pi 端一致）。
+
+### 新增/修改測試
+- `tests/install.bats`：AC-1 改為斷言 `~/.claude/skills/` 是真實目錄（含 per-skill symlink），不是 tree-level symlink
+- `tests/install.bats`：AC-8 改為斷言 per-skill symlink 被卸載刪除，但目錄保留（保護用戶其他 skill）
+- `tests/agents-md.bats`：新增 SKILL-REF-1（無 `[[skills/`）和 SKILL-REF-2（每個「務必使用」行必須指向已安裝 skill）
+
+### 踩坑記錄
+- 第一次用 perl 做 `[[skills/...]]` 替換時，被 shell 把反引號當命令替換符號 + perl regex 解析 `]` 失敗，導致出現 `\`/skill:xxx\`|\`/skill:xxx\`` 重複內容。改用 Python `re.subn()`（有 `subn` 計數保險），一次性正確完成。
+
 ## 🧪 驗證結果
 
 - ✅ `~/.pi/agent/skills/` 內 8 個 SKILL.md 全部可讀到 description

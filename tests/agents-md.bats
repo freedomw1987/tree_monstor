@@ -37,3 +37,27 @@ setup() {
 @test "SOUL-4: AGENTS.md explicitly notes that pi does not read SOUL.md" {
   grep -F -q "pi 不會讀" "$REPO_AGENTS"
 }
+
+# ---------- Skill references must use pi-recognised /skill:name form ----------
+# pi does not parse Obsidian wiki-link syntax [[skills/...]]. See
+# pi docs/skills.md#skill-commands: skills are invoked via /skill:name.
+@test "SKILL-REF-1: AGENTS.md does not use Obsidian [[skills/...]] syntax" {
+  ! grep -qE '\[\[skills/' "$REPO_AGENTS"
+}
+
+@test "SKILL-REF-2: every mandatory-skill-use line references a real /skill:<name> command" {
+  # Each SOP step that says "務必使用" must point at a skill that actually
+  # exists in skills/ (and therefore will be installed globally).
+  installed=$(ls "$REPO_ROOT/skills" | sort -u)
+  while IFS= read -r line; do
+    [[ "$line" =~ /skill:([a-z-]+) ]] || {
+      echo "FAIL: mandatory-use line missing /skill: reference: $line" >&2
+      return 1
+    }
+    name="${BASH_REMATCH[1]}"
+    if ! grep -Fxq "$name" <(echo "$installed"); then
+      echo "FAIL: referenced skill not installed: $name" >&2
+      return 1
+    fi
+  done < <(grep "務必使用" "$REPO_AGENTS")
+}
