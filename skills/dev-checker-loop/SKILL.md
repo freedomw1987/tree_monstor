@@ -11,10 +11,11 @@ description: 雙 Subagent 工作循環，dev 開發任務、checker 校驗質量
 
 ## 核心角色
 
-| 角色 | 職責概述 |
-|------|---------|
-| **dev** | 領取任務 → 按 PRD 開發 → 保留 regression-guard 探針 → 完成後標記"等待校驗" |
-| **checker** | 監控 backlog → 發現"等待校驗"任務 → 全面校驗 → 發現問題則記錄並由 dev 自動修復 |
+| 角色          | 職責概述                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------- |
+| **dev**     | 領取任務 → 按 docs/DESIGN.md、docs/system-design.md、 docs/功能模組Module 的PRD 開發 → 保留 regression-guard 探針 → 完成後標記"等待校驗" |
+| **checker** | 監控 backlog → 發現"等待校驗"任務 → 全面校驗 → 發現問題則記錄並由 dev 自動修復                                                           |
+|             |                                                                                                               |
 
 詳細工作流程請參考 [[workflow]]
 
@@ -55,7 +56,7 @@ description: 雙 Subagent 工作循環，dev 開發任務、checker 校驗質量
 
 ## 關鍵原則
 
-- **dev** 必須參照 [[skills:regression-guard]] 保留探針和自我修正
+- **dev** 必須參照 [[skills/regression-guard/SKILL|skills:regression-guard]] 開發時保留探針和自我修正
 - **dev** 領取任務後立即更新 backlog 狀態
 - **checker** 校驗範圍：功能正確性、代碼品質、測試覆蓋、regression-guard 探針
 - **dev** 自動監控並領取"需修復"狀態的問題
