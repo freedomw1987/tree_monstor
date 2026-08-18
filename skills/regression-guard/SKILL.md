@@ -2,17 +2,20 @@
 name: regression-guard
 description: 在開發過程中埋入探針，透過 REGRESSION_MODE 自動運行驗證，失敗時提供建議讓 Agent 自動修正。
 ---
-
 # Regression Guard Skill
 
 ## 核心原則
 
-| 原則 | 說明 |
-|------|------|
-| **1. 預留探針** | 在關鍵代碼位置埋入測試點 |
+在開發過程中埋入探針，目的是為了系統的代碼是可以對之後的測試和排錯工作友好，測試和排錯checker agent 可以根據開發項目中探針的報錯和測試記錄進行驗證；
+
+
+| 原則          | 說明                       |
+| ----------- | ------------------------ |
+| **1. 預留探針** | 在關鍵代碼位置埋入測試點             |
 | **2. 環境控制** | `REGRESSION_MODE` 控制探針開關 |
-| **3. 自動運行** | 開關開啟時執行所有探針 |
-| **4. 自我修正** | Agent 閱讀結果，有問題就自動修正 |
+| **3. 自動運行** | 開關開啟時執行所有探針              |
+| **4. 自我修正** | Agent 閱讀結果，有問題就自動修正      |
+
 
 ## 環境變量
 
@@ -26,7 +29,9 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ## API 合約
 
 ### probe(name, actual, expected)
+
 比對實際值與預期值。
+
 ```
 參數:
   name     - 探針名稱（描述性）
@@ -35,7 +40,9 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ```
 
 ### assert(condition, message)
+
 斷言條件為真。
+
 ```
 參數:
   condition - 布林條件
@@ -43,7 +50,9 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ```
 
 ### describe(name, fn)
+
 分組管理探針。
+
 ```
 參數:
   name - 套件名稱
@@ -53,6 +62,7 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ## 輸出格式
 
 ### 文本輸出
+
 ```
 ✅ probe: user-login (12ms)
 ❌ probe: data-fetch (234ms)
@@ -62,6 +72,7 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ```
 
 ### JSON 報告
+
 ```json
 {
   "timestamp": "2024-01-15T10:30:00Z",
@@ -96,14 +107,17 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ```
 
 ## 多語言實現示例
+
 詳細可以參考 [[examples]]
 
 ## 測試方法參考
+
 日常開發常用的測試方法指南，可以參考 [[testing-methods]]
 
 ## 最佳實踐
 
 ### 探針命名
+
 ```
 ✅ 'user-login-returns-correct-data'
 ✅ 'api-v1-users-[id]-returns-404'
@@ -111,7 +125,9 @@ REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ```
 
 ### 預期值管理
+
 將預期值存放在 `fixtures/` 目錄：
+
 ```
 fixtures/
 ├── user.json
@@ -121,11 +137,13 @@ fixtures/
 
 ### 粒度控制
 
-| 粒度 | 說明 |
-|------|------|
-| 太粗 | 一個功能一個探針 |
-| 太細 | 每一行都探針 |
-| 適中 | 每個邏輯斷言一個探針 |
+
+| 粒度  | 說明         |
+| --- | ---------- |
+| 太粗  | 一個功能一個探針   |
+| 太細  | 每一行都探針     |
+| 適中  | 每個邏輯斷言一個探針 |
+
 
 ## 關鍵實現要求
 
