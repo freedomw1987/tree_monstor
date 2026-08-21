@@ -231,6 +231,11 @@ print_plan() {
         # SOUL.md is intentionally NOT installed globally:
         #   - pi does not read SOUL.md (no mention in any pi doc).
         #   - tree_monstor/AGENTS.md references SOUL.md via [[SOUL]] (same dir).
+        # Subagents: per-file symlinks into ~/.agents/<name>.md (user-scope).
+        # Currently pi-only (pi-subagents discovers them automatically).
+        if [[ -d "$SOURCE_DIR/agents" ]]; then
+          log_plan "$TARGET_ROOT/.agents/*.md (merge: per-agent symlinks)"
+        fi
         ;;
     esac
   done
@@ -595,6 +600,8 @@ uninstall_pi() {
   remove_managed_path "$pi_root/agent/AGENTS.md" symlink
   # Skills are merged per-skill into $pi_root/agent/skills/.
   remove_merged_skills "$pi_root/agent/skills" "$SOURCE_DIR/skills"
+  # Subagents are symlinked into ~/.agents/<name>.md (user-scope).
+  uninstall_subagents
 }
 
 uninstall_agents_dir() {
@@ -628,6 +635,111 @@ install_pi() {
   ensure_merged_skills_into "$SOURCE_DIR/skills" "$agent_root/skills"
 
   # SOUL.md is NOT installed globally. See plan output above for rationale.
+
+  # Subagents: per-file symlinks into ~/.agents/<name>.md (user-scope).
+  # pi-subagents discovers them automatically and they take precedence
+  # over builtins but lose to project-scope agents.
+  install_subagents
+}
+
+# ---------- Subagent installer (pi-only) ----------
+# Installs tree_monstor's subagents (e.g. suggester) to ~/.agents/<name>.md
+# (user-scope). pi-subagents discovers them automatically; they take
+# precedence over builtins but lose to project-scope agents.
+#
+# Layout:
+#   - Source: $SOURCE_DIR/agents/<name>.md
+#   - Target: $TARGET_ROOT/.agents/<name>.md  (symlink)
+#
+# Conflicts: if a non-symlink file already exists at the target, we skip
+# with a warning (preserves user-owned subagents, mirroring skill merge).
+# REGRESSION-GUARD PROBE: subagent-install
+install_subagents() {
+  local src_agents_dir="$SOURCE_DIR/agents"
+  if [[ ! -d "$src_agents_dir" ]]; then
+    return 0
+  fi
+
+  local dst_agents_dir="$TARGET_ROOT/.agents"
+  [[ -d "$dst_agents_dir" ]] || run mkdir -p "$dst_agents_dir"
+
+  shopt -s nullglob
+  local agent_path installed=0 updated=0 ok=0 skipped=0
+  for agent_path in "$src_agents_dir"/*.md; do
+    local name
+    name="$(basename "$agent_path")"
+    local link="$dst_agents_dir/$name"
+    local target_abs
+    target_abs="$(abs_path "$agent_path")"
+
+    if [[ -L "$link" ]]; then
+      # Existing symlink — check target matches our source.
+      local current
+      current="$(readlink "$link")"
+      if [[ "$current" == "$target_abs" ]]; then
+        log_ok "subagent OK: $link -> $target_abs"
+        ok=$((ok + 1))
+        continue
+      fi
+      # Wrong target — ensure_symlink() will repair it (logs "wrong target,
+      # repairing" + "symlink created").
+      ensure_symlink "$link" "$agent_path"
+      updated=$((updated + 1))
+      continue
+    fi
+
+    # Not a symlink — either missing (create) or regular file (skip).
+    if [[ -e "$link" ]]; then
+      log_warn "subagent: target exists and is not a symlink, skipping: $link"
+      skipped=$((skipped + 1))
+      continue
+    fi
+
+    # Missing — create new (ensure_symlink() logs "symlink created").
+    ensure_symlink "$link" "$agent_path"
+    installed=$((installed + 1))
+  done
+  shopt -u nullglob
+
+  local total=$((installed + updated + ok + skipped))
+  if (( total > 0 )); then
+    log_info "subagents: installed=$installed, updated=$updated, ok=$ok, skipped=$skipped"
+  fi
+}
+
+# uninstall_subagents: remove symlinks we created in ~/.agents/.
+# Only removes symlinks pointing into our SOURCE_DIR/agents/ (safe against
+# user-owned subagents, mirrors remove_merged_skills() pattern).
+uninstall_subagents() {
+  local src_agents_dir="$SOURCE_DIR/agents"
+  [[ -d "$src_agents_dir" ]] || return 0
+
+  local dst_agents_dir="$TARGET_ROOT/.agents"
+  [[ -d "$dst_agents_dir" ]] || return 0
+
+  shopt -s nullglob
+  local removed=0
+  for agent_path in "$src_agents_dir"/*.md; do
+    local name
+    name="$(basename "$agent_path")"
+    local link="$dst_agents_dir/$name"
+    if [[ -L "$link" ]]; then
+      local target
+      target="$(readlink "$link")"
+      if [[ "$target" == "$src_agents_dir/$name" ]] || [[ "$target" == "$(abs_path "$agent_path")" ]]; then
+        run rm "$link"
+        log_ok "removed subagent: $link"
+        removed=$((removed + 1))
+      else
+        log_warn "skipping subagent (not ours): $link -> $target"
+      fi
+    fi
+  done
+  shopt -u nullglob
+
+  if (( removed > 0 )); then
+    log_info "subagents uninstalled: $removed"
+  fi
 }
 
 # ---------- Local .agents/ copy installer ----------
