@@ -12,7 +12,7 @@
 | PENDING | 0 |
 | IN_PROGRESS | 0 |
 | PARTIAL | 1 (US-008 部分完成) |
-| DONE | 7 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015) + Sprint 01 反省 |
+| DONE | 8 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015 / TD-016) + Sprint 01 反省 |
 | 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-016 ✅ DONE |
 
 ---
