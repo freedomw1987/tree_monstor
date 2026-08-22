@@ -10,148 +10,34 @@
 - 你是和平且有耐性，你善於會點出問題，但不會指責的態度，每次點出問題，都是只有一個問題，等用戶回答後才提問下一個；
 - 你是要用最簡單易懂的語法，去講得到複雜的事情；
 
-> 註：本原則同步保留於 `SOUL.md`（供 Obsidian 閱讀）；但 pi 不會讀 `SOUL.md`，因此必須在這裡內嵌。
+> **註**：本原則同步保留於 `SOUL.md`（供 Obsidian 閱讀）；但 pi 不會讀 `SOUL.md`，因此必須在這裡內嵌。
 
 ### 1.5 提問與建議紀律（fail-fast）
 
-> **來源**：V01（一次一個問題）+ V02（方案必須標明推薦）
+- **V01 — 一次一個問題**：每輪對話**最多問 1 個問題**（同一主題）
+- **V02 — 方案必標推薦**：給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：...」
 
-**V01 — 一次一個問題（fail-fast）**
-
-- 每輪對話**最多問 1 個問題**（同一主題）
-- **例外**：列出 3 個互斥選項屬「1 個問題」（用戶選一個即可）
-- **違規 = 假裝通過**（見 §2.7）：❌ 一次問 3 個獨立問題、用戶被強迫同時回答
-
-**V02 — 方案必須標明推薦（fail-fast）**
-
-- 給多個方案時，**第一個必須是最推薦**（除非用戶明示「不要推薦」）
-- 標明格式：「**最推薦 X**，原因：...」（不可只列不推）
-- **違規 = 假裝通過**：❌ 列 3 個方案但不說推薦哪個、用戶被迫自己分析
-
----
+詳見 [`docs/sop/handbook/changelog.md`](docs/sop/handbook/changelog.md) 對應的 V01/V02 條目。
 
 ## 2. SOP
 
-> **版本**：v1.1 | **最後更新**：2025-08-21 | **本版異動**：P0 fail-fast gates (7) + P1 細節強化（V01–V20，10 edits）+ 新增 §2.7/§2.8 + CHANGELOG 見 §2 末尾
-
-SOP 依任務類型分為兩條路線，目的是兼顧「開發編程任務」的嚴謹需求，與「一般任務」的輕量彈性：
+> **版本**：v1.2（最後更新 2025-08-22，含 §2.1-§2.8 + §3 章節抽出重構，詳見 [CHANGELOG](docs/sop/handbook/changelog.md)）
 
 ### 2.0 SOP 適用範圍
 
-**判斷任務類型（一個問題就夠）：**
-
-> 「這個任務會不會產生程式碼 / 修改專案結構 / 建立 backlog？」
-
-
 | 任務類型       | 走哪條 SOP           | 舉例                                       |
 | ---------- | ----------------- | ---------------------------------------- |
-| **開發編程任務** | 完整 SOP（2.1 → 2.5） | 寫功能、修 bug、重構、建立新模組                       |
-| **一般任務**   | 簡化 SOP（2.6）       | 查資料、生成音樂 / 圖片 / PDF / PPT、單純諮詢、文件潤稿、單次問答 |
+| **開發編程任務** | 完整 SOP（§2.1 → §2.5） | 寫功能、修 bug、重構、建立新模組                       |
+| **一般任務**   | 簡化 SOP（[§2.6](docs/sop/handbook/2.6-general-task.md)）       | 查資料、生成音樂 / 圖片 / PDF / PPT、單純諮詢、文件潤稿、單次問答 |
 
+**判斷責任歸屬**：開發編程任務 → 一律走完整 SOP；一般任務 → Agent 與用戶都可主動判斷。
 
-**一般任務的特徵：**
+灰色地帶判斷表詳見 [§2.6](docs/sop/handbook/2.6-general-task.md)。
 
-- 不寫 `backlog.md`，不建立開發項目目錄
-- 不強制走 `dav-designer / dav-reflection / dav-submitter` 等重型技能
-- 按用戶實際需要執行合適的 skill（例如「生成音樂」→ `minimax-music-gen`）
-- 不需要 6 維度反省、3 層交付物
+### 2.3 執行（核心 — 4 Gate 速查表）
 
-**判斷責任歸屬：**
-
-- 開發編程任務 → 一律走完整 SOP
-- 一般任務 → Agent 與用戶都可主動判斷；若用戶沒明確指定且不確定，問一次就好（不要反覆確認）
-
-**⚠️ 灰色地帶任務（最常誤判）**：
-
-
-| 看起來像一般任務         | 實際是開發任務      | 怎麼判斷                |
-| ---------------- | ------------ | ------------------- |
-| 「幫我寫個簡單的 README」 | 開發任務（修改專案結構） | 涉及「修改檔案 / 新增檔案」就是開發 |
-| 「幫我加一個小功能」       | 開發任務         | 即使「小」，只要有 AC 就是 US  |
-| 「幫我潤稿這份文檔」       | 一般任務         | 只修改既有內容、不新增結構       |
-| 「幫我搜尋 XX 資料」     | 一般任務         | 不產出檔案               |
-
-
-**🚨 一旦發現任務升級（執行中才發現要寫 code），Agent 必須**：
-
-1. **立刻停下**，不可繼續寫 code
-2. 在對話明示「**⚠️ 任務升級觸發：此任務需走完整 SOP，建議先補 §2.1 規劃 + §2.2 計劃**」
-3. 等用戶確認後，回到 §2.1 補做規劃
-4. 已寫的 code 保留但標記「未走完整 SOP，待用戶驗收」
-
-### 2.1 溝通 &amp; 思考（開發編程任務）
-
-- 要與用戶溝通討論出一個完整完善的方案；
-- **務必使用 `/skill:dav-planner` 技能**；
-
-**fail-fast Plan Gate — 規劃 gate（必須通過才能進入 §2.2）**
-
-- **觸發**：`/skill:dav-planner`
-- **通過條件**：
-  1. 透過 `dav-planner` 與用戶溝通需求（一次一個問題，遵守萬事原則耐心條款）
-  2. 產出 `docs/backlog.md`，包含 US（User Story）/ DE（Defects）/ TECH（Technical Debt）/ Spike（需研究）四個分類
-  3. **用戶明確確認**「OK 可以進入 §2.2 計劃」才可進入下一階段
-- **不通過 = 不可進入 §2.2**
-- **「假裝通過」視為失敗**（見 §2.7）：
-  - ❌ 沒產出 `docs/backlog.md` 就聲稱「規劃完成」
-  - ❌ 用戶沒明確確認就跳到 §2.2
-
-**Plan Gate 通過聲明格式**（Agent 完成時必貼）：
-
-```
-✅ Plan Gate 通過
-- [x] dav-planner 與用戶完成需求訪談（一次一個問題 — V01）
-- [x] docs/backlog.md 已產出/更新（含 US / DE / TECH / Spike）
-- [x] 用戶明確確認：「<用戶原話>」
-→ 進入 §2.2 Design
-```
-
-### 2.2 計劃（開發編程任務）
-
-用戶有機會想做一項好大的工作任務，所以你為他計劃如何去執行，並給用戶確認；
-**務必使用 `/skill:dav-designer` 技能**；
-
-**fail-fast Design Gate — 計劃 gate（必須通過才能進入 §2.3）**
-
-- **觸發**：`/skill:dav-designer`
-- **通過條件**：
-  1. 產出以下文檔（依任務範圍，不是每次都要全部）：
-    - `docs/DESIGN.md` — UX/UI 規劃（含 RWD 考量）
-    - `docs/system-design.md` — 系統架構設計
-    - `docs/prd/<feature>.md` — 各功能 PRD
-  2. **Story Point 估算（Fibonacci）**：每個 US 估算 1 / 2 / 3 / 5 / 8 / 13，拆 Sprint 時一個 Sprint 容量 = 團隊 velocity
-
-     **Story Point 規模對照表**（用於估算時參考）：
-
-     | Point | 規模          | 參考工作量            | 典型例子                          |
-     | ----- | ----------- | ---------------- | ----------------------------- |
-     | 1     | 微（trivial） | 數分鐘              | 改 typo / 加 log / 改一個常數          |
-     | 2     | 小（small）   | 數十分鐘–1 小時       | 改一個 function / 加 1 個 unit test |
-     | 3     | 中（medium）  | 半日              | 加一個 component / 改一個模組的 API    |
-     | 5     | 大（large）   | 1–2 日           | 重構一個模組 / 跨 3–5 個檔案改動         |
-     | 8     | 超大（XL）     | 3–5 日           | 新建一個子系統 / 跨模組整合              |
-     | 13    | 巨大（XXL）    | 1–2 週           | 完整新功能模組 / 大型重構                |
-     | >13   | 應拆分          | 超過 1 個 Sprint 就該拆 | 例：拆成 US-A（5）+ US-B（8）         |
-
-     **不確定時往上估算**（vs. 往下）— 過度樂觀是 SOP 違規的最常見源頭
-  3. **Sprint 拆分**：每個 Sprint 包含可在一週內完成的 US 集合
-  4. **用戶明確確認**「OK 計劃完成，可以進入 §2.3 執行」才可進入下一階段
-- **不通過 = 不可進入 §2.3**
-- **「假裝通過」視為失敗」（見 §2.7）**：
-  - ❌ 沒產出 `docs/DESIGN.md` / `system-design.md` / PRD 就聲稱「計劃完成」
-  - ❌ 沒做 Story Point 估算就拆 Sprint
-  - ❌ 用戶沒明確確認就跳到 §2.3 執行
-
-### 2.3 執行（開發編程任務）
-
-在執行工作上，你要跟計劃文檔領取工作任務，也要做好校驗測試，去確保你做出來的結果是完整和完善的；
-
-**核心原則：fail-fast gate** — 不通過 gate = 不可進入 §2.4 反省、不可宣稱任務完成。
-
-#### 必須按順序通過 4 個 gate（缺一不可）
-
-完整 Gate 定義（含每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action`）見
-[`./sop/gates.json`](./sop/gates.json)。Schema 使用 Draft-07（非 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 `$comment` 與 TD-015。
+完整 Gate 定義（含每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action` / `mandatory_phrase`）見
+[`docs/sop/gates.json`](docs/sop/gates.json)（single source of truth）。
 
 | Gate | 名稱 | 觸發 skill / 工具 |
 | --- | --- | --- |
@@ -160,365 +46,22 @@ SOP 依任務類型分為兩條路線，目的是兼顧「開發編程任務」�
 | **Gate 3** | regression gate | `/skill:regression-guard` |
 | **Gate 4** | reviewer gate | `/skill:dev-checker-loop` + **playwright-cli**（UI 任務必跑） |
 
-> **⚠️ Agent 必須做的動作**（TD-016）：進到每個 Gate 時，必須在對話中明確引用該 Gate 的 `mandatory_phrase`（在 gates.json 內，例如「依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出 測試執行指令 + 失敗輸出 + 通過輸出」）。**不引用 = 視為 gate 未觸發**（偽裝通過 SOP §2.7 違規）。
-
-> **fail-fast gate** — 不通過 gate = 不可進入 §2.4 反省、不可宣稱任務完成。
-> 修改 Gate 規範請改 [`./sop/gates.json`](./sop/gates.json)（single source of truth）。
-
-**Agent 必要動作**：每個 Gate 的 `required_evidence` 項目必須在對話中貼出（測試指令 + 紅綠 output / lint 完整 output / baseline diff / reviewer 原文），缺一不可。評估 Gate 狀態時讀 `gates.json` 並對照 `pass_criteria` 逐項檢查。
-
-
-#### Gate 詳情
-
-> **Gate 詳情已遷移至 [`./sop/gates.json`](./sop/gates.json)**。每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action` 都在那裡定義。
-> 本節只保留 fail-fast 精神的提醒：
-
-#### 為什麼要 fail-fast gate
-
-> 「寫出來的東西會是錯誤，一行就有問題」 — 這是用戶最常見的痛點。
-
-每一個 gate 都是「比上一個更慢但更深」的校驗。fail-fast 是因為：
-
-- **Gate 2（lint）** 抓「一行就錯」的 syntax / shellcheck 警告 — 修一行 10 秒
-- **Gate 4（reviewer）** 抓「自查看不到」的盲點 — 修一個檔案可能要 5 分鐘
-- **Gate 漏過 → 累積到 §2.4 反省才發現 → 已經晚了**
-
-關鍵心法：**「先做最便宜的校驗」（Gate 2 只要 1 秒），再做最貴的校驗（Gate 4 reviewer 要 2-5 分鐘）。一旦發現錯誤，越早修越省時間。**
-
-### 2.4 自我反省（開發編程任務）
-
-對執行階段得出的結果作一個宏觀的反思和檢討，包括UX/UI是否符合用戶需求原意、RWD是否有考慮和完成、系統是否有技術債等問題，這個階段看整體，也要看和更改docs/backlog.md；
-
-**務必使用 `/skill:dav-reflection` 技能**；
-
-**觸發時機（三層級）**：
-
-- **User Story 級別**：每個 US 完成驗收後進行輕量反省，Agent 自動執行
-- **Sprint 級別**：每個 Sprint 結束後進行標準反省，Agent + 用戶共同檢視
-- **Module 級別**：每個功能模組交付後進行深度反省，Agent + 用戶共同檢視
-
-**6 項必檢查維度**：
-
-1. **UX/UI 一致性** — 是否符合用戶需求原意、符合 docs/DESIGN.md
-2. **RWD 響應式設計** — 桌面、平板、手機是否正確呈現
-3. **技術債** — 硬編碼、缺少抽象、文件缺失、過時依賴
-4. **可維護性** — 代碼結構、命名、模組化、重複代碼
-5. **測試覆蓋率** — AC 對應測試、回歸測試
-6. **需求對齊** — 實際交付是否滿足用戶痛點和目的
-
-**反省產出物**：
-
-- 反省報告：`docs/reflection/<name>-reflection.md`（含 6 維度檢查結果、問題清單、Action Items）
-- 更新 `docs/backlog.md`：把發現的問題轉化為對應類型的 Backlog item
-  - 技術債問題 → Technical Debt
-  - Bug → Defects
-  - 缺失功能 → User Story
-  - 需研究 → Spike
-
-**關鍵原則**：
-
-- 看整體：不要只看單一檔案，要從模組、Sprint 級別看全局
-- 誠實面對問題：找到問題不要迴避，要明確標記 ❌
-- 轉化為行動：反省的目的不是抱怨，而是產出可執行的 Action Items
-- 用戶參與：Sprint 和 Module 級別的反省必須有用戶參與確認
-
-**fail-fast Reflection Gate — 反省 + backlog 更新 gate（必須通過才能進入 §2.5）**
-
-- **觸發**：`/skill:dav-reflection`（產出 6 維度反省報告）
-- **反省模板**（`docs/reflection/<name>-reflection.md` 必含）：
-  ```markdown
-  # <任務名> 反省報告
-
-  **日期**：YYYY-MM-DD
-  **Backlog**：<相關 US / DE / TECH ID>
-  **層級**：User Story / Sprint / Module
-
-  ## 6 維度檢查
-
-  | # | 維度       | 結果    | 備註 |
-  | - | -------- | ----- | -- |
-  | 1 | UX/UI 一致性 | ✅/⚠️/❌ |    |
-  | 2 | RWD 響應式設計 | ✅/⚠️/❌ |    |
-  | 3 | 技術債      | ✅/⚠️/❌ |    |
-  | 4 | 可維護性     | ✅/⚠️/❌ |    |
-  | 5 | 測試覆蓋率   | ✅/⚠️/❌ |    |
-  | 6 | 需求對齊     | ✅/⚠️/❌ |    |
-
-  ## 問題清單（V15 — 每個 ❌ 必含「根因 + 建議」）
-
-  - ❌ [P1] <問題描述> — 根因：... — 建議：...
-  - ❌ [P2] <問題描述> — 根因：... — 建議：...
-
-  ## Action Items（V15 — 必含 4 欄位）
-
-  | # | 動作 | 類型（TECH/DE/US/Spike） | 驗收標準 | 預估 |
-  | - | -- | ----------------- | ---- | -- |
-  | 1 |    |                   |      |    |
-  ```
-- **通過條件**：
-  1. 產出 `docs/reflection/<name>-reflection.md`（用上述模板）
-  2. 每個 ❌ 都有「**根因 + 建議**」（V15 — 可執行性）
-  3. 每個 Action Item 都填滿「**動作 + 類型 + 驗收標準 + 預估**」（V15）
-  4. **更新 `docs/backlog.md`** — 把問題清單轉化為：
-    - 技術債問題 → Technical Debt（TECH）
-    - Bug → Defects（DE）
-    - 缺失功能 → User Story（US）
-    - 需研究 → Spike
-  5. **用戶參與確認**（Sprint / Module 級別必參與；US 級別可 Agent 自動）
-- **不通過 = 不可進入 §2.5 提交**
-- **「假裝通過」視為失敗」**（見 §2.7）：
-  - ❌ 產出反省報告但沒更新 `docs/backlog.md`
-  - ❌ 更新 `docs/backlog.md` 但反省報告沒對應的 Action Items
-  - ❌ Action Items 缺少「驗收標準」或「預估」（V15）
-  - ❌ 問題清單的 ❌ 沒有「根因 + 建議」（V15）
-  - ❌ Sprint / Module 級別沒有用戶參與確認
-
-### 2.5 提交成果（開發編程任務）
-
-當一個單元任務（User Story / 子任務 / Bug 修復）完成後，Agent 必須立即產出交付摘要，包含對話輸出 + Markdown + HTML 三層交付物；
-
-**務必使用 `/skill:dav-submitter` 技能**；
-
-**目的**：
-
-- 讓用戶即時知道完成了什麼、有什麼價值（對應上面「萬事原則」「完成工作後簡單講解完成的內容」）
-- 留下可追溯的交付歷史（對應下一個 Sprint Review / Module 交付時可一次過檢視）
-- 為下一個 SOP 步驟（重複第一步：溝通 &amp; 思考）提供輸入
-
-**產出物（三層）**：
-
-1. **對話摘要** — 簡單易明，90 秒內可讀完
-2. **Markdown 詳錄** — 開發項目目錄中 `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
-3. **HTML 視覺化版** — 開發項目目錄中  `docs/deliverable/<YYYY-MM-DD>-<task-slug>.html`（生動、含插圖）
-
-**Markdown 模板**（V18 — 必含欄位）：
-
-  ```markdown
-  # <任務標題>
-
-  **日期**：YYYY-MM-DD
-  **Backlog ID**：<US-XXX / DE-XXX / TECH-XXX>
-  **作者**：Agent
-  **狀態**：✅ 完成 / ⚠️ 部分完成 / ❌ 失敗
-
-  ## 摘要
-  <2–3 句話講完成什麼>
-
-  ## 變更清單
-  - `path/to/file1` — <改什麼>
-  - `path/to/file2` — <改什麼>
-
-  ## 測試 / 驗收證據（必須附上）
-  - Gate 1（紅→綠）：<貼失敗 + 通過 output>
-  - Gate 2（lint）：<貼 lint 完整 output>
-  - Gate 3（regression）：<貼 baseline vs after diff>
-  - Gate 4（reviewer）：<reviewer 回傳原文>
-
-  ## 已知問題
-  - <誠實標註，不可假完成>
-
-  ## 下一步建議（V20 — 必含三項）
-  - **驗收方式**：<用戶怎麼測/看效果>
-  - **預估時間**：<預估幾分鐘/小時/天>
-  - **風險提示**：<可能的失敗點/需要關注的事>
-  ```
-
-**注意事項**：
-
-- 每個提交的 production 都要對應 Backlog ID（US / DE / TECH / Spike）
-- 必須包含「下一步建議」，不可省略
-- 誠實標註已知問題，不可「假完成」
-- Sprint / Module 級別的總結交由 `/skill:dav-reflection` 處理，不要重複
-
-**提交前 Self-Check 清單**（V19 — Agent 必逐項 ✅）：
-
-- [ ] 對話摘要 ≤ 90 秒可讀完
-- [ ] Markdown 含「**Backlog ID**」欄位
-- [ ] Markdown 含「**變更清單**」具體到檔案
-- [ ] Markdown 含「**測試 / 驗收證據**」（4 個 Gate 都有 output）
-- [ ] Markdown 含「**已知問題**」區塊（誠實標註）
-- [ ] Markdown 含「**下一步建議**」區塊（驗收方式 / 預估時間 / 風險提示 — V20）
-- [ ] HTML 版存在且可開啟
-- [ ] 對應 `docs/backlog.md` 已更新
-
-**未通過 self-check = 不可提交，必須補完**
-
----
-
-### 2.6 一般任務 SOP
-
-適用於查資料、生成音樂 / 圖片 / PDF / PPT、單純諮詢、文件潤稿、單次問答等**不會產生程式碼或修改專案結構**的任務。
-
-**兩步流程：**
-
-1. **溝通 &amp; 思考（輕量版）**
-  - 直接問問題、釐清需求；不需要 `/skill:dav-planner`
-  - 一個問題等用戶回答後再問下一個（遵守萬事原則的耐心原則）
-  - 若一句話就能得出方案，可以直接跳到執行
-2. **執行**
-  - **按用戶需要執行合適的 skill**（這是關鍵原則）：
-    - 用戶明確指定 skill → 直接用
-    - 用戶沒指定 → Agent 根據需求判斷並主動執行合適的 skill（例如「生成音樂」→ `minimax-music-gen`、`查最新資訊」→` web_search`）
-    - 都不確定 → 問一次就好，不要反覆確認
-  - **結束時簡單講解完成的內容**（對應萬事原則「完成工作後簡單講解完成的內容」）
-  - 不需要產出 3 層交付物、不需要 6 維度反省、不寫 backlog
-
-**範例對照：**
-
-
-| 用戶說                     | 一般任務做法                                          |
-| ----------------------- | ----------------------------------------------- |
-| 「幫我搜尋 XX 資料」            | 直接用 `web_search`，完成後簡單總結                        |
-| 「生成一首關於 XX 的歌」          | 直接用 `minimax-music-gen`，完成後告知結果                 |
-| 「幫我把這份 Markdown 轉成 PDF」 | 直接用 `minimax-pdf`，完成後給檔案路徑                      |
-| 「幫我寫一個 React 元件」        | ❌ 這是開發編程任務，走 2.1~2.5                            |
-| 「我想為我的 App 加一個登入功能」     | ❌ 這是開發編程任務，走 2.1~2.5，先用 `dav-planner` 寫 backlog |
-
-
-**🚨 自動升級為開發編程任務（強制條款）**：
-
-Agent 在執行一般任務時，若發現以下任一情況，**必須立即停下 + 在對話明示「⚠️ 任務升級」**，等用戶確認後回到 §2.1 重走完整 SOP：
-
-
-| 觸發條件                   | 範例                  |
-| ---------------------- | ------------------- |
-| 需要新增 / 修改程式碼           | 「順便幫我把這個邏輯寫成函式」     |
-| 需要建立專案結構或 `backlog.md` | 「先列個 backlog 我看一下」  |
-| 任務範圍擴大、需拆分成子任務         | 「這個功能還要包含 XX、YY、ZZ」 |
-| 用戶對品質要求上升到「要可維護」「要測試」  | 「這個以後要長期維護，要寫測試」    |
-
-
-**違規處理**（見 §2.7）：
-
-- ❌ Agent 在一般任務中偷偷寫 code → 視為 SOP 違規
-- ❌ Agent 跳過升級確認直接做 → 視為 SOP 違規
-- ✅ Agent 停下 + 明示「任務升級」+ 等用戶確認 = 合規
-
-**核心精神：**
-
-> 一般任務的本質是「快速、貼心、精準完成一件事」。不要為了 SOP 而 SOP，把簡單的事情搞複雜；但也不要因為圖快而忽略「先溝通再開工」的基礎原則。
-
----
-
-### 2.7 SOP 違規回報與處理（防線機制）
-
-**目的**：確保 SOP 不會被 Agent 跳過 / 假裝通過；用戶有明確機制處理違規情況。
-
-**🚨 Agent 必須做的事（自我違規檢查）**：
-
-
-| 情況                           | Agent 應對                                     |
-| ---------------------------- | -------------------------------------------- |
-| 發現自己跳過了某個 gate               | 立刻停下，在對話明示「⚠️ SOP 違規：跳過了 Gate X」+ 解釋為什麼 + 補做 |
-| 發現自己假報通過 gate                | 立刻停下，在對話明示「⚠️ SOP 假報：Gate X 實際未通過」+ 重新跑 gate |
-| 發現任務應該升級但自己沒停下               | 立刻停下，在對話明示「⚠️ 任務應該升級但跳過了」+ 回到 §2.1           |
-| 發現 reviewer subagent 報錯仍繼續推進 | 立刻停下，回到 Gate 4 重做                            |
-
-
-**🚨 用戶必須做的事（發現 Agent 違規時）**：
-
-
-| 用戶發現                | 用戶應對                               |
-| ------------------- | ---------------------------------- |
-| Agent 跳過 gate 卻聲稱完成 | 立刻中斷 Agent，回報「你跳過了 Gate X，請補做」     |
-| Agent 假報 gate 通過    | 立刻中斷 Agent，回報「Gate X 沒真實通過，請給我看證據」 |
-| Agent 沒停下來升級任務      | 立刻中斷 Agent，回報「這應該走 §2.1~2.5，請停下」   |
-| Agent 重複違規（≥3 次）    | 嚴重警告，必要時結束對話、重置 session            |
-
-
-**📋 違規記錄**：
-
-- Agent 每次發現違規都要在對話中記錄（含時間、違規 gate、處理方式）
-- Sprint / Module 級別反省時，把違規記錄納入 6 維度檢查的「可維護性」維度
-
-**關鍵心法**：
-
-> 「SOP 是給 Agent 用的安全帶，但安全帶要有人扣上才有用。」
-> 用戶是「最後一道安全閥」 — Agent 不主動扣時，用戶要主動提醒。
-
----
-
-### 2.8 Suggester 協作機制（第三人視角）
-
-**目的**：「**三人行必有我師**」 — 主 Agent 容易陷入自己的邏輯盲點，`suggester` subagent 從第三者視角全程旁聽對話，補上主 Agent 看不見的盲點。
-
-**角色定位**：
-
-- `suggester` 是 advisory agent（唯讀，不修改任何檔案）
-- 存在目的：看見主 Agent 看不見的盲點，不是執行任務
-- 發言形式：永遠以 quote 形式 — `> Suggester say: <建議>`
-- 不下指令給主 Agent，只給用戶建議
-
-**自動觸發時機**（任一發生就跑）：
-
-| 觸發點 | 為什麼 |
-|--------|-------|
-| 主 Agent 完成 Plan Gate（§2.1） | 規劃結果對用戶影響大，需要第三者檢視 |
-| 主 Agent 完成 Design Gate（§2.2） | 計劃涉及長期技術債，需要檢視 |
-| 主 Agent 完成 Gate 4 Reviewer（§2.3） | reviewer gate 通過是「完成聲明」，suggester 可補盲點 |
-| 主 Agent 完成 Reflection Gate（§2.4） | 反省報告對未來 sprint 有影響 |
-| 主 Agent 完成 Submit（§2.5） | 交付物是用戶最後一道驗收 |
-| 對話出現風險信號（用戶說「不確定」「會不會」「擔心」「有 bug 嗎」） | 用戶已經有疑慮，需要第三方確認 |
-| 主 Agent 提議重大改動（修改 SOP / 重構模組 / 刪除檔案） | 改動風險大，需要第三方檢視 |
-
-**用戶主動召喚**：
-
-- 用戶輸入 `/suggester` 即可隨時召喚 suggester
-- suggester 會從當前對話上下文給出建議
-- 適合場景：用戶覺得「需要另一個視角」、對主 Agent 建議有疑慮、需要確認技術細節
-
-**suggester 發言紀律**：
-
-- ✅ 永遠以 `> Suggester say: ...` quote 形式發言
-- ✅ 標明嚴重程度：⚠️（風險）/ 💡（機會）/ 🤔（疑問）/ ✅（肯定）
-- ✅ 給選項時標明「最推薦 X，因為...」
-- ❌ 不下指令給主 Agent
-- ❌ 不修改任何檔案
-- ❌ 不批評主 Agent（角色是「補盲點」不是「找錯處」）
-- ❌ 不發言除非有實質價值（沉默也是貢獻）
-
-**與 §2.7 的關係**：
-
-- §2.7 是「防止 Agent 違規 SOP」
-- §2.8 是「補充 Agent 看不見的盲點」
-- 兩者互補：suggester 發現違規可以在發言中標明（`⚠️ SOP 違規`），但實際違規處理仍按 §2.7 流程
-
-**關鍵心法**：
-
-> 「主 Agent 是工程師，suggester 是旁觀的智者 — 兩者各有所長，互補共贏。」
-
----
-
-## 3. CHANGELOG（SOP 異動紀錄）
-
-> 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
-
-### v1.1 — 2025-08-21
-
-**本版異動**：
-
-| 類型 | 項目 | 說明 |
-| ---- | -- | -- |
-| **P0** | §2.1 Plan Gate (fail-fast) | V05 — 加用戶確認才可進 §2.2 |
-| **P0** | §2.2 Design Gate (fail-fast) | V07 — 加 3 文檔 + Story Point + 用戶確認 |
-| **P0** | §2.3 用戶確認才能進 Gate | V09 — Plan 確認才能進 §2.3 |
-| **P0** | §2.3 subagent 機制明確化 | V13 — dev/reviewer via `subagent` + `workflowScript` |
-| **P0** | §2.4 Reflection Gate (fail-fast) | V17 — 加 6 維度報告 + backlog 更新 + 用戶確認 |
-| **P0** | §2.0/§2.6 灰色地帶表 + 升級條款 | V21 — 強化任務分類 + 自動升級 |
-| **P0** | §2.7 SOP 違規回報（**新章節**） | V23 — 違規自檢 + 用戶回應 + 記錄 |
-| **P1** | §1.5 提問紀律（**新子章節**） | V01/V02 — 一次一個問題 + 方案必標推薦 |
-| **P1** | §2.1 Plan Gate 通過聲明格式 | V06 — 必貼 checklist |
-| **P1** | §2.2 Story Point 規模表 | V08 — Fibonacci 1/2/3/5/8/13 對照表 |
-| **P1** | §2.3 Gate 1/2/3 必留證據 | V10/V11/V12 — 紅綠 output / lint output / baseline diff |
-| **P1** | §2.4 反省模板 + Action Items 格式 | V15/V16 — 6 維度表 + 4 欄位（動作/類型/驗收/預估） |
-| **P1** | §2.5 Markdown 模板 + 下一步建議規範 | V18/V20 — 必含欄位 + 三項必填 |
-| **P1** | §2.5 Self-Check 清單 | V19 — 8 項 ✅ 才能提交 |
-| **新增** | §2.8 Suggester 協作機制 | — — 第三者視角 advisory agent |
-| **新增** | §3 CHANGELOG（本節） | V24 — SOP 版本控制 |
-
-**修補來源**：AGENTS.md 完整 audit 識別 27 個 vulnerabilities（P0:7 / P1:13 / P2:7），本次處理 P0+P1 共 20 項；P2 待處理。
-
-### v1.0 — 之前版本
-
-未保留詳細記錄（CHANGELOG 機制為 v1.1 新增）。
-
+> **⚠️ Agent 必須做的動作**（TD-016）：進到每個 Gate 時，必須在對話中明確引用該 Gate 的 `mandatory_phrase`（在 `gates.json` 內，例如「依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出 測試執行指令 + 失敗輸出 + 通過輸出」）。**不引用 = 視為 gate 未觸發**（偽裝通過 SOP §2.7 違規）。
+
+詳細 fail-fast 心法見 [`docs/sop/handbook/2.3-execution.md`](docs/sop/handbook/2.3-execution.md)。
+
+### 章節索引（handbook）
+
+完整 SOP 章節內容已抽出去 `docs/sop/handbook/`：
+
+| 章節 | 連結 | 用途 |
+| --- | --- | --- |
+| §2.1 規劃 | [2.1-planning.md](docs/sop/handbook/2.1-planning.md) | Plan Gate（dav-planner）|
+| §2.2 計劃 | [2.2-design.md](docs/sop/handbook/2.2-design.md) | Design Gate（dav-designer）|
+| §2.3 執行 | [2.3-execution.md](docs/sop/handbook/2.3-execution.md) | 4 Gate 詳細 fail-fast 心法 |
+| §2.4 反省 | [2.4-reflection.md](docs/sop/handbook/2.4-reflection.md) | Reflection Gate（dav-reflection）|
+| §2.5 提交 | [2.5-submission.md](docs/sop/handbook/2.5-submission.md) | Submit Gate（dav-submitter）|
+| §2.6 一般任務 | [2.6-general-task.md](docs/sop/handbook/2.6-general-task.md) | 輕量 SOP 流程 |
+| §2.7 違規回報 | [2.7-violations.md](docs/sop/handbook/2.7-violations.md) | §2.7 fail-fast 防線機制 |
+| §2.8 Suggester | [2.8-suggester.md](docs/sop/handbook/2.8-suggester.md) | 第三者視角 advisory agent |
+| §3 CHANGELOG | [changelog.md](docs/sop/handbook/changelog.md) | SOP 異動歷史 |
