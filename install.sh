@@ -218,6 +218,10 @@ print_plan() {
             log_plan "$TARGET_ROOT/.claude/skills (skip: leave alone)"
             ;;
         esac
+        # US-007 AC-6: sop/gates.json deployment plan
+        if [[ -d "$SOURCE_DIR/docs/sop" ]]; then
+          log_plan "$TARGET_ROOT/.claude/sop/*.json (per-file symlinks into docs/sop/)"
+        fi
         ;;
       pi)
         # Pi Agent global resource dir is ~/.pi/agent/ (per pi docs/usage.md),
@@ -235,6 +239,10 @@ print_plan() {
         # Currently pi-only (pi-subagents discovers them automatically).
         if [[ -d "$SOURCE_DIR/agents" ]]; then
           log_plan "$TARGET_ROOT/.agents/*.md (merge: per-agent symlinks)"
+        fi
+        # US-007 AC-6: sop/gates.json deployment plan
+        if [[ -d "$SOURCE_DIR/docs/sop" ]]; then
+          log_plan "$TARGET_ROOT/.pi/sop/*.json (per-file symlinks into docs/sop/)"
         fi
         ;;
     esac
@@ -749,6 +757,36 @@ install_agents_dir() {
   ensure_copy_tree "$SOURCE_DIR" "$TARGET_ROOT/.agents/tree_monstor"
 }
 
+# ---------- sop/ directory installer (US-007) ----------
+# Symlinks every *.json file under $SOURCE_DIR/docs/sop/ into
+# <agent_root>/sop/. Each .json becomes its own symlink so that edits
+# to the source files take effect immediately (no need to re-run install).
+# REGRESSION-GUARD PROBE: sop-per-file-symlinks
+install_sop() {
+  local agent_root="$1"
+  local sop_src="$SOURCE_DIR/docs/sop"
+  local sop_dst="$agent_root/sop"
+
+  if [[ ! -d "$sop_src" ]]; then
+    log_dry "skip: source has no docs/sop/ (sop not required for this agent)"
+    return 0
+  fi
+
+  if [[ $DRY_RUN -eq 1 ]]; then
+    log_dry "sop per-file symlinks: $sop_src/*.json -> $sop_dst/"
+    return 0
+  fi
+
+  [[ -d "$sop_dst" ]] || run mkdir -p "$sop_dst"
+  local f name
+  for f in "$sop_src"/*.json; do
+    [[ -e "$f" ]] || continue
+    name="$(basename "$f")"
+    run ln -sfn "$f" "$sop_dst/$name"
+  done
+  log_ok "sop installed: $sop_dst (per-file symlinks into $sop_src)"
+}
+
 # ---------- Exclusion rules ----------
 # Anything matching these name patterns is skipped during copy.
 # Used for the .agents/ snapshot (we never symlink that — it's a real copy).
@@ -821,8 +859,14 @@ main() {
   # Hooks for later phases (still no-op in Phase A).
   for agent in "${AGENTS[@]}"; do
     case "$agent" in
-      claude) install_claude ;;
-      pi)     install_pi ;;
+      claude)
+        install_claude
+        install_sop "$TARGET_ROOT/.claude"
+        ;;
+      pi)
+        install_pi
+        install_sop "$TARGET_ROOT/.pi"
+        ;;
       *)      log_warn "Unknown agent '$agent' — skipping"; ;;
     esac
   done

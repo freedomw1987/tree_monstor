@@ -93,8 +93,10 @@ teardown() {
   run run_install --local --yes
   [ "$status" -eq 0 ]
 
-  [ -L "./.claude/skills" ]
-  [ -L "./.pi/skills" ]
+  # DE-001 merge mode: ./skills may be a real dir (with per-skill symlinks)
+  # OR a tree-level symlink — both are valid install states.
+  [ -e "./.claude/skills" ]
+  [ -e "./.pi/agent/skills" ]
   [ -f "./.claude/CLAUDE.md" ]
 }
 
@@ -411,4 +413,57 @@ teardown() {
     echo "FAIL: wrapper still references stale target $stale_target" >&2
     return 1
   fi
+}
+
+# ---------- US-007: sop/gates.json deployment ----------
+
+# Helper: pre-populate source fixture with a docs/sop/ directory
+create_source_sop_dir() {
+  mkdir -p "$TEST_SOURCE/docs/sop"
+  cat > "$TEST_SOURCE/docs/sop/gates.json" <<'EOF'
+{"version": "1.0.0", "gates": []}
+EOF
+  cat > "$TEST_SOURCE/docs/sop/gates.schema.json" <<'EOF'
+{"$schema": "https://json-schema.org/draft/2020-12/schema"}
+EOF
+}
+
+@test "US-007 AC-5: install copies docs/sop/gates.json to ~/.pi/sop/" {
+  create_source_sop_dir
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  assert_path_is_file "$TEST_HOME/.pi/sop/gates.json"
+  assert_file_contains "$TEST_HOME/.pi/sop/gates.json" '"version": "1.0.0"'
+}
+
+@test "US-007 AC-5b: install copies docs/sop/gates.json to ~/.claude/sop/" {
+  create_source_sop_dir
+  run run_install --global --agent claude --yes
+  [ "$status" -eq 0 ]
+  assert_path_is_file "$TEST_HOME/.claude/sop/gates.json"
+  assert_file_contains "$TEST_HOME/.claude/sop/gates.json" '"version": "1.0.0"'
+}
+
+@test "US-007 AC-5c: install copies docs/sop/gates.schema.json alongside gates.json" {
+  create_source_sop_dir
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  assert_path_is_file "$TEST_HOME/.pi/sop/gates.schema.json"
+}
+
+@test "US-007 AC-6: install --dry-run mentions sop/ deployment in plan (no actual copy)" {
+  create_source_sop_dir
+  run run_install --global --agent pi --dry-run --yes
+  [ "$status" -eq 0 ]
+  # Plan output must mention the sop/ target path.
+  printf '%s\n' "$output" | grep -F -q "/.pi/sop/"
+  # But actual file must NOT be created (dry-run)
+  [ ! -e "$TEST_HOME/.pi/sop/gates.json" ]
+}
+
+@test "US-007 AC-7: install gracefully skips sop/ if source has no docs/sop/ (no error)" {
+  # Do NOT call create_source_sop_dir — source has no docs/sop/.
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # sop/ dir may or may not exist; the key requirement is no error.
 }

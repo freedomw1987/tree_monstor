@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>US-007 交付摘要 — gates.json SOP Single Source of Truth</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 980px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+    }
+    h1, h2, h3 { color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.5em; margin-top: 2em; }
+    h3 { font-size: 1.2em; }
+    code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.2em 0.4em;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85em;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5em 0.8em;
+      text-align: left;
+    }
+    th { background: var(--surface); color: var(--accent); }
+    blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 0.5em 1em;
+      margin: 1em 0;
+      background: var(--surface);
+      border-radius: 0 4px 4px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2em 0.6em;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: 600;
+    }
+    .badge-success { background: rgba(63, 185, 80, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .badge-warning { background: rgba(210, 153, 34, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+    .badge-info { background: rgba(88, 166, 255, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .card h4 { margin-top: 0; color: var(--accent); font-size: 1em; }
+    .card .stat { font-size: 1.8em; font-weight: 700; color: var(--success); }
+    .file-tree {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 0.85em;
+    }
+    .file-tree .new { color: var(--success); }
+    .file-tree .modified { color: var(--warning); }
+    .arrow-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .arrow-flow .node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5em 1em;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 0.85em;
+    }
+    .arrow-flow .arrow { color: var(--accent); font-size: 1.5em; }
+    .checklist li { margin: 0.4em 0; }
+    .checklist input[type=checkbox] { margin-right: 0.5em; }
+  </style>
+</head>
+<body>
+
+<h1>🎯 US-007 交付摘要</h1>
+<p>
+  <span class="badge badge-success">✅ DONE</span>
+  <span class="badge badge-info">M2 — SOP Infrastructure</span>
+  <span class="badge badge-info">13 SP</span>
+  <strong>2025-08-22</strong>
+</p>
+
+<blockquote>
+  把 AGENTS.md §2.3 的「4 個 Gate 邏輯」抽成 <code>docs/sop/gates.json</code>，AGENTS.md 改為引用（從 583 行縮為 522 行），install.sh 增加 <code>docs/sop/</code> 部署邏輯。未來改 Gate 規範只需改 JSON 一處。
+</blockquote>
+
+<h2>📊 一頁看結果</h2>
+<div class="grid">
+  <div class="card">
+    <h4>結構驗收</h4>
+    <div class="stat">7 / 7</div>
+    <p>全部通過</p>
+  </div>
+  <div class="card">
+    <h4>測試套件</h4>
+    <div class="stat">37 / 37</div>
+    <p>bats 全綠</p>
+  </div>
+  <div class="card">
+    <h4>AGENTS.md 縮短</h4>
+    <div class="stat">-61 行</div>
+    <p>583 → 522 行</p>
+  </div>
+  <div class="card">
+    <h4>行為驗收</h4>
+    <div class="stat">0 / 3</div>
+    <p>接力 US-008</p>
+  </div>
+</div>
+
+<h2>🔄 部署鏈</h2>
+<div class="arrow-flow">
+  <div class="node">docs/sop/gates.json<br><small>(source)</small></div>
+  <span class="arrow">→</span>
+  <div class="node">install.sh<br><small>(install_sop)</small></div>
+  <span class="arrow">→</span>
+  <div class="node">~/.pi/sop/gates.json<br><small>(symlink)</small></div>
+</div>
+
+<div class="file-tree">
+📁 tree_monstor/
+├── <span class="new">📁 docs/sop/  (新增)</span>
+│   ├── <span class="new">📄 gates.json        (1907 bytes)</span>
+│   └── <span class="new">📄 gates.schema.json  (3380 bytes)</span>
+├── <span class="modified">📄 AGENTS.md           (-61 行)</span>
+├── <span class="modified">📄 install.sh          (+45 行)</span>
+├── <span class="modified">📄 tests/install.bats  (+52 行)</span>
+├── <span class="new">📁 docs/review/  (新增)</span>
+│   └── <span class="new">📄 2025-08-22-us-007-reviewer-check.md</span>
+├── <span class="new">📁 docs/reflection/  (新增)</span>
+│   └── <span class="new">📄 us-007-reflection.md</span>
+└── <span class="new">📁 docs/deliverable/  (新增)</span>
+    ├── <span class="new">📄 2025-08-22-us-007-gates-json.md</span>
+    └── <span class="new">📄 2025-08-22-us-007-gates-json.html</span>
+</div>
+
+<h2>🚦 4 個 Gate 結果</h2>
+<table>
+  <thead>
+    <tr><th>Gate</th><th>名稱</th><th>結果</th><th>證據</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gate 1</td>
+      <td>TDD gate</td>
+      <td><span class="badge badge-success">✅</span></td>
+      <td>5 個 US-007 bats 測試紅→綠（已貼紅+綠 output）</td>
+    </tr>
+    <tr>
+      <td>Gate 2</td>
+      <td>lint / syntax</td>
+      <td><span class="badge badge-success">✅</span></td>
+      <td>ajv: <code>docs/sop/gates.json valid</code> + bash -n 0 error</td>
+    </tr>
+    <tr>
+      <td>Gate 3</td>
+      <td>regression</td>
+      <td><span class="badge badge-success">✅</span></td>
+      <td>baseline 32 → after 37（+5 新增，0 破壞）</td>
+    </tr>
+    <tr>
+      <td>Gate 4</td>
+      <td>reviewer</td>
+      <td><span class="badge badge-success">✅</span></td>
+      <td>手工 reviewer 模式（環境無 subagent，誠實標記）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>📦 gates.json 結構</h2>
+<pre><code>{
+  "$schema": "./gates.schema.json",
+  "version": "1.0.0",
+  "description": "...",
+  "gates": [
+    {
+      "id": "gate-1",
+      "name": "TDD gate",
+      "trigger_skill": "tdd-test-writer",
+      "pass_criteria": [...],
+      "required_evidence": [...],
+      "fail_action": "不可寫實作 code"
+    },
+    ...4 個 Gate
+  ]
+}</code></pre>
+
+<h2>⚠️ 已知問題</h2>
+<table>
+  <thead>
+    <tr><th>問題</th><th>嚴重</th><th>處理</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ajv-cli 不支援 Draft 2020-12，臨時用 Draft 07</td>
+      <td><span class="badge badge-warning">P3</span></td>
+      <td>TD-015（未來升級 ajv API 可解）</td>
+    </tr>
+    <tr>
+      <td>do_uninstall 不清理 ~/.pi/sop/ 與 ~/.claude/sop/</td>
+      <td><span class="badge badge-warning">P3</span></td>
+      <td>TD-014（用 remove_managed_path 模式）</td>
+    </tr>
+    <tr>
+      <td>行為驗收 AC-8/9/10 未跑</td>
+      <td><span class="badge badge-info">接力</span></td>
+      <td>US-008（1 SP，使用 dav-skill-creater）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>✅ Self-Check（V19 — 8 項必 ✅）</h2>
+<ul class="checklist">
+  <li><input type="checkbox" checked> 對話摘要 ≤ 90 秒可讀完</li>
+  <li><input type="checkbox" checked> Markdown 含 Backlog ID（US-007）</li>
+  <li><input type="checkbox" checked> Markdown 含變更清單（具體到檔案）</li>
+  <li><input type="checkbox" checked> Markdown 含測試/驗收證據（4 個 Gate 都有 output）</li>
+  <li><input type="checkbox" checked> Markdown 含已知問題區塊</li>
+  <li><input type="checkbox" checked> Markdown 含下一步建議（驗收方式 / 預估時間 / 風險提示）</li>
+  <li><input type="checkbox" checked> HTML 版存在且可開啟</li>
+  <li><input type="checkbox" checked> 對應 docs/backlog.md 已更新</li>
+</ul>
+
+<h2>🎯 下一步</h2>
+<ol>
+  <li>驗收（~10 分鐘）：
+    <ul>
+      <li>跑 <code>bats tests/install.bats tests/agents-md.bats</code> 看 37/37</li>
+      <li>跑 <code>bash install.sh --source . --global --agent pi --yes</code> 看 <code>~/.pi/sop/</code></li>
+      <li>讀 <code>docs/sop/gates.json</code> 確認 4 個 Gate 結構</li>
+    </ul>
+  </li>
+  <li>風險：
+    <ul>
+      <li><strong>R1</strong>：Draft 07 而非 2020-12（已登記 TD-015）</li>
+      <li><strong>R2</strong>：symlink 源檔被刪時失效（已登記 TD-014）</li>
+      <li><strong>R3</strong>：行為驗收要等 US-008 才完成</li>
+    </ul>
+  </li>
+  <li>下一個 sprint 第一個任務：<strong>US-008</strong>（用 dav-skill-creater 跑 1 SP 真實任務驗證）</li>
+</ol>
+
+<hr>
+<p style="color: var(--text-muted); font-size: 0.9em;">
+  Generated by Agent on 2025-08-22 · tree_monstor SOP Infra Sprint 01 · US-007
+</p>
+
+</body>
+</html>

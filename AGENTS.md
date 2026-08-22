@@ -150,80 +150,26 @@ SOP 依任務類型分為兩條路線，目的是兼顧「開發編程任務」�
 
 #### 必須按順序通過 4 個 gate（缺一不可）
 
+完整 Gate 定義（含每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action`）見
+[`./sop/gates.json`](./sop/gates.json)。
 
-| Gate       | 名稱                 | 觸發 skill / 工具                                           | 通過條件                                                        | 不通過的後果     |
-| ---------- | ------------------ | ------------------------------------------------------- | ----------------------------------------------------------- | ---------- |
-| **Gate 1** | TDD gate           | `/skill:tdd-test-writer`                                | 測試可運行 + 看到「先紅後綠」（失敗→通過）                                     | 不可寫實作 code |
-| **Gate 2** | lint / syntax gate | 語言對應工具                                                  | 0 error / 0 warning                                         | 不可寫更多 code |
-| **Gate 3** | regression gate    | `/skill:regression-guard`                               | 探針埋好 + 完整測試套件跑過                                             | 不可聲稱「做完了」  |
-| **Gate 4** | reviewer gate      | `/skill:dev-checker-loop` + **playwright-cli**（UI 任務必跑） | checker subagent 回傳「沒找到更多問題」 + playwright-cli E2E 全綠（含截圖證據） | 不可進入 §2.4  |
+| Gate | 名稱 | 觸發 skill / 工具 |
+| --- | --- | --- |
+| **Gate 1** | TDD gate | `/skill:tdd-test-writer` |
+| **Gate 2** | lint / syntax gate | 語言對應工具 |
+| **Gate 3** | regression gate | `/skill:regression-guard` |
+| **Gate 4** | reviewer gate | `/skill:dev-checker-loop` + **playwright-cli**（UI 任務必跑） |
+
+> **fail-fast gate** — 不通過 gate = 不可進入 §2.4 反省、不可宣稱任務完成。
+> 修改 Gate 規範請改 [`./sop/gates.json`](./sop/gates.json)（single source of truth）。
+
+**Agent 必要動作**：每個 Gate 的 `required_evidence` 項目必須在對話中貼出（測試指令 + 紅綠 output / lint 完整 output / baseline diff / reviewer 原文），缺一不可。評估 Gate 狀態時讀 `gates.json` 並對照 `pass_criteria` 逐項檢查。
 
 
 #### Gate 詳情
 
-**Gate 1 — TDD gate（一開始就必須做）**
-
-- 根據目標項目的 `docs/backlog.md` 編寫測試用例
-- **必須「先紅後綠」**：測試先看到失敗，再看到通過 — 這才能證明測試真的在測東西
-- **必留證據**（Agent 在對話貼出，缺一不可）：
-  - `(a)` **測試執行指令**（如 `pytest tests/test_x.py::test_y -v`）
-  - `(b)` **失敗輸出**：修改實作前的測試失敗訊息截錄（證明測試真的在測東西）
-  - `(c)` **通過輸出**：修改實作後的測試通過訊息截錄
-- **違規 = 假裝通過**：❌ 只貼「測試通過」沒貼「先失敗」；❌ 沒貼執行指令
-- 不通過 = 不可寫實作 code
-
-**Gate 2 — lint / syntax gate（寫完每一段 code 立即跑，不要累積錯誤）**
-
-- **bash / sh**：`shellcheck <file>` 必須 0 warning
-- **python**：`python -m py_compile <file>` 或 `ruff check <file>` 必須 0 error
-- **其他語言**：對應的 syntax check / linter / type check
-- **語言不確定時**：在 gate 開始時問用戶該語言的標準 linter 是什麼
-- **必留證據**：Agent 在對話貼出 lint 工具的**完整 output**（不可只說「過了」），並明確標明「**0 error / 0 warning**」
-- **違規 = 假裝通過**：❌ 只說「lint 過了」沒貼 output
-- 不通過 = 立即修，不可繼續寫更多 code（讓錯誤累積）
-
-**Gate 3 — regression gate（埋探針 + 跑完整測試）**
-
-- 預留測試用的探針：記錄關鍵 state、行為、boundary
-- 跑一次完整測試套件確認探針正常 + 沒破壞既有測試
-- **必留證據**（Agent 在對話貼出，缺一不可）：
-  - `(a)` **修改前 baseline**：執行完整測試套件的 output（含 pass/fail 計數）
-  - `(b)` **修改後 output**：再跑一次完整測試套件
-  - `(c)` **Diff 對比**：證明既有測試結果一致（沒破壞），新探針如預期觸發
-- **違規 = 假裝通過**：❌ 只貼「測試都過」沒貼 baseline 對比；❌ 沒跑完整套件只跑新探針
-- 不通過 = 不可聲稱「做完了」
-
-**Gate 4 — reviewer gate（最後一道，深層校驗）**
-
-- **Subagent 機制（明確化）**：
-  - **dev subagent**：負責寫 code，使用 `subagent` 工具 + agent = `dev` 派發
-  - **checker subagent**：負責校驗，使用 `subagent` 工具 + agent = `reviewer` 派發
-  - **派發方式**：`workflowScript` 配合 `runs.run` 或 `runs.all` 並行 dispatch；兩個 subagent 的 output 必須都貼到對話
-  - 不通過 = 不可進入 §2.4
-- **E2E 驗證（playwright-cli = `@playwright/test` CLI）**：checker subagent 必須主動用 `npx playwright test` 跑端到端測試
-  - **必跑範圍**：**happy path**（核心用戶路徑）+ **至少一個 edge case / 異常路徑**
-  - **必留證據**：
-    - 測試輸出：`npx playwright test` 的 console 結果
-    - 截圖：失敗自動存到 `test-results/`，或在 spec 內 `await page.screenshot()` 留證據
-    - HTML report 路徑：`playwright-report/`（執行 `npx playwright show-report` 可開啟）
-    - 把 **report 路徑 + 截圖路徑**貼到對話
-  - **適用範圍**：有 UI 的任務必跑；純後端 / CLI / 腳本任務可跳過，但要在對話明示「無 UI 故不適用 playwright-cli」及理由
-  - **失敗處理**：`npx playwright test` 任一斷言失敗 = Gate 4 不通過，不可聲稱完成
-  - **專案初始化**：若專案尚未有 `playwright.config.ts`，checker 必須先執行 `npm init playwright@latest`（或手動建立 `playwright.config.ts` + 至少 1 個 `.spec.ts`），不可假裝「環境不支援」跳過
-- **必須主動驗證 reviewer 報的問題** — reviewer 也會犯錯，不能盲信（見 §2.4）
-- 不通過 = 不可進入 §2.4 反省
-
-#### 「假裝通過」視為失敗（重要！）
-
-
-| 違規行為                                            | 後果                   |
-| ----------------------------------------------- | -------------------- |
-| 跳過任何一個 gate                                     | 任務失敗，即使 code 看起來能跑   |
-| 在 gate 失敗時假報通過                                  | 任務失敗，必須回到失敗的 gate 重做 |
-| 在 reviewer subagent 報錯時繼續推進                     | 任務失敗                 |
-| 沒有「真實通過 gate 的證據」（如測試 output、shellcheck report） | 視為假報通過               |
-| 有 UI 但 checker 沒用 playwright-cli 跑 E2E（或沒貼截圖證據） | 視為假報通過               |
-
+> **Gate 詳情已遷移至 [`./sop/gates.json`](./sop/gates.json)**。每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action` 都在那裡定義。
+> 本節只保留 fail-fast 精神的提醒：
 
 #### 為什麼要 fail-fast gate
 
