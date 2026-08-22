@@ -151,7 +151,7 @@ SOP 依任務類型分為兩條路線，目的是兼顧「開發編程任務」�
 #### 必須按順序通過 4 個 gate（缺一不可）
 
 完整 Gate 定義（含每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action`）見
-[`./sop/gates.json`](./sop/gates.json)。
+[`./sop/gates.json`](./sop/gates.json)。Schema 使用 Draft-07（非 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 `$comment` 與 TD-015。
 
 | Gate | 名稱 | 觸發 skill / 工具 |
 | --- | --- | --- |

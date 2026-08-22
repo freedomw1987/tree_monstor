@@ -1,7 +1,7 @@
 {
   "$schema": "./gates.schema.json",
   "version": "1.0.0",
-  "description": "tree_monstor SOP 的 4 個 Gate 定義。每個 Gate 是 fail-fast 屏障 — 不通過 = 不可進入下一階段或聲稱任務完成。修改 Gate 規範請改本檔（single source of truth），AGENTS.md §2.3 會自動引用。",
+  "description": "tree_monstor SOP 的 4 個 Gate 定義。每個 Gate 是 fail-fast 屏障 — 不通過 = 不可進入下一階段或聲稱任務完成。修改 Gate 規範請改本檔（single source of truth），AGENTS.md §2.3 會自動引用。Schema 使用 Draft-07（非原計劃 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 $comment 與 TD-015。",
   "gates": [
     {
       "id": "gate-1",

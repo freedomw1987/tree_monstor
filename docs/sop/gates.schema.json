@@ -3,6 +3,7 @@
   "$id": "https://tree-monstor.local/sop/gates.schema.json",
   "title": "tree_monstor SOP Gates Definition",
   "description": "Schema for docs/sop/gates.json — defines the 4 development gates (TDD / lint / regression / reviewer) that agents must pass before declaring a task complete. This file is the single source of truth for gate definitions in tree_monstor/AGENTS.md §2.3.",
+  "$comment": "Schema uses Draft-07 (not Draft 2020-12 as originally planned) because ajv-cli (the validation tool used by `npm install -g ajv-cli` and invoked via `ajv validate -s ... -d ...`) only supports Draft-07 and Draft 2019-09. Draft 2020-12 features (prefixItems, $dynamicRef, etc.) are not used here, so Draft-07 is functionally equivalent for this schema. To upgrade to 2020-12, switch from ajv-cli to ajv API (Node.js import). See TD-015.",
   "type": "object",
   "required": ["version", "gates"],
   "additionalProperties": false,
