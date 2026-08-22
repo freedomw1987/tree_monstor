@@ -33,7 +33,8 @@
           "trigger_skill",
           "pass_criteria",
           "required_evidence",
-          "fail_action"
+          "fail_action",
+          "mandatory_phrase"
         ],
         "additionalProperties": false,
         "properties": {
@@ -75,7 +76,13 @@
           "fail_action": {
             "type": "string",
             "minLength": 1,
-            "description": "What the agent is forbidden to do if this gate fails (e.g. \"不可寫實作 code\")."
+            "description": "What the agent is forbidden to do if this gate fails (e.g. \"不可寫作 code\")."
+          },
+          "mandatory_phrase": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^依 gates.json 規範",
+            "description": "Mandatory phrase the agent MUST cite verbatim (or close paraphrase) in the conversation when invoking this gate. Enforces that gate invocation is auditable and traceable to gates.json. See TD-016."
           },
           "notes": {
             "type": "string",

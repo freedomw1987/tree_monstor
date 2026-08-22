@@ -17,6 +17,7 @@
         "通過輸出（修改實作後的測試通過訊息截錄）"
       ],
       "fail_action": "不可寫實作 code",
+      "mandatory_phrase": "依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出「測試執行指令 + 失敗輸出 + 通過輸出」。",
       "notes": "純文件/配置改動可豁免，但須在 deliverable 註明『無 TDD 需求』。"
     },
     {
@@ -30,6 +31,7 @@
         "linter 完整 output（不可只說「過了」）"
       ],
       "fail_action": "不可繼續寫更多 code",
+      "mandatory_phrase": "依 gates.json 規範，Gate 2 (lint / syntax) 需要：對應語言的 linter 0 error / 0 warning，並在對話貼出 linter 完整 output。",
       "notes": "bash/sh → shellcheck；python → ruff check 或 python -m py_compile；其他語言用對應工具。"
     },
     {
@@ -45,7 +47,9 @@
         "修改後 output（完整測試套件 output）",
         "Diff 對比（既有測試結果一致 + 新探針如預期觸發）"
       ],
-      "fail_action": "不可聲稱『做完了』"
+      "fail_action": "不可聲稱『做完了』",
+      "mandatory_phrase": "依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 完整測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。",
+      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。"
     },
     {
       "id": "gate-4",
@@ -60,6 +64,7 @@
         "playwright test 報告路徑 + 截圖路徑（若有 UI）"
       ],
       "fail_action": "不可進入 §2.4 反省",
+      "mandatory_phrase": "依 gates.json 規範，Gate 4 (reviewer) 需要：checker 回傳『沒找到更多問題』+ playwright-cli E2E 全綠（含截圖），並在對話貼出 checker subagent 原文回傳。",
       "notes": "純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示『無 UI 故不適用』及理由。"
     }
   ]

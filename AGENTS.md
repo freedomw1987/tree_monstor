@@ -160,6 +160,8 @@ SOP 依任務類型分為兩條路線，目的是兼顧「開發編程任務」�
 | **Gate 3** | regression gate | `/skill:regression-guard` |
 | **Gate 4** | reviewer gate | `/skill:dev-checker-loop` + **playwright-cli**（UI 任務必跑） |
 
+> **⚠️ Agent 必須做的動作**（TD-016）：進到每個 Gate 時，必須在對話中明確引用該 Gate 的 `mandatory_phrase`（在 gates.json 內，例如「依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出 測試執行指令 + 失敗輸出 + 通過輸出」）。**不引用 = 視為 gate 未觸發**（偽裝通過 SOP §2.7 違規）。
+
 > **fail-fast gate** — 不通過 gate = 不可進入 §2.4 反省、不可宣稱任務完成。
 > 修改 Gate 規範請改 [`./sop/gates.json`](./sop/gates.json)（single source of truth）。
 

@@ -13,7 +13,7 @@
 | IN_PROGRESS | 0 |
 | PARTIAL | 1 (US-008 部分完成) |
 | DONE | 7 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015) + Sprint 01 反省 |
-| 登記 TD | 9 個 PENDING (TD-005/006/008/009/010/011/012/013/016) |
+| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-016 ✅ DONE |
 
 ---
 
@@ -262,7 +262,9 @@
 
 | ID | 標題 | 來源 | 優先級 |
 |---|---|---|---|
-| TD-016 | gates.json 規範未真正約束 Agent 行為：執行 4 Gate 流程但未即時明確標示「依 gates.json 規範, Gate X 需要...」引用來源 | [us-008-behavior-verification.md](deliverable/2025-08-22-us-008-behavior-verification.md) | P2 |
+| TD-016 ✅ | gates.json 規範未真正約束 Agent 行為：執行 4 Gate 流程但未即時明確標示「依 gates.json 規範, Gate X 需要...」引用來源 | [us-008-behavior-verification.md](deliverable/2025-08-22-us-008-behavior-verification.md) | P2 |
+
+> **TD-016 ✅ 已修復**（2025-08-22）：加 `mandatory_phrase` 欄位（4 個 Gate 都加）+ Schema pattern `^依 gates.json 規範` + AGENTS.md §2.3 加 Agent 必須做的動作指示。詳見 [docs/deliverable/2025-08-22-td-016-mandatory-phrase.md](deliverable/2025-08-22-td-016-mandatory-phrase.md)。
 
 **TD-016 詳細說明**：
 - US-008 揭露的 SOP 規範形式大於實質問題
@@ -276,6 +278,7 @@
 - TD-007 ✅：README 加 `chmod +x` Quick Start
 - TD-015 ✅：gates.schema.json 加 Draft-07 `$comment` 註記（三層同步：schema / gates.json / AGENTS.md）
 - TD-014 ✅：`do_uninstall` 加 sop/ 清理（`remove_merged_sop` 函式，與 `remove_merged_skills` 對稱）
+- TD-016 ✅：gates.json 加 `mandatory_phrase` 欄位 + Schema pattern 強制 + AGENTS.md §2.3 加 Agent 必須做的動作指示
 
 ---
 
