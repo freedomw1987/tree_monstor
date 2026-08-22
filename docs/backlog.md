@@ -11,7 +11,7 @@
 |---|---|
 | PENDING | 0 |
 | IN_PROGRESS | 0 |
-| PARTIAL | 1 (US-008 部分完成) |
+| PARTIAL | 0 |
 | DONE | 8 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015 / TD-016) + Sprint 01 反省 |
 | 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-016/017/018 ✅ DONE |
 
@@ -198,7 +198,7 @@
 
 ### US-008：驗收 US-007 AC-8/9/10 — 用 `dav-skill-creater` 產 1 SP 任務模板（2025-08-22）
 - **Module**：M2 — SOP Infrastructure
-- **狀態**：⚠️ **部分完成**（AC-1 ✅, AC-2 ⚠️, AC-3 ✅ 補做, AC-4 ⚠️）
+- **狀態**：✅ **完成**（re-verify 於 2025-08-22，AC-2/AC-4 補為即時標示每個證據對應 `required_evidence` 第 X 項）
 - **重要揭露**：執行過程發現「Agent 未即時引用 gates.json」 → 登記 TD-016
 - **來源**：US-007 的 AC-8/9/10（行為驗收），因 reviewer == implementer 反 pattern 不能在 US-007 內驗證
 - **Story Point**：1（trivial — 使用 `dav-skill-creater` 產模板）

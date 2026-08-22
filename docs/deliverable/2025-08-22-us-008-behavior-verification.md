@@ -3,7 +3,7 @@
 **日期**：2025-08-22
 **Backlog ID**：US-008（Module M2 — SOP Infrastructure）
 **作者**：Agent
-**狀態**：⚠️ 部分完成（AC-1 ✅, AC-2 ⚠️, AC-3 ✅ 補做, AC-4 ⚠️）
+**狀態**：✅ 完成（re-verify 於 2025-08-22，AC-2/AC-4 補為即時標示每個證據對應 `required_evidence` 第 X 項）
 
 ---
 
@@ -22,9 +22,50 @@
 | AC | 結果 | 說明 |
 |---|---|---|
 | AC-1 | ✅ | 用 dav-skill-creater 產出 US-009 模板（trivial log_ok 加 BOLD，1 SP）|
-| AC-2 | ⚠️ 部分 | 概念有引用 gates.json，但**未嚴格標示每個證據的出處** |
-| AC-3 | ✅（補做）| 對話明確出現「依 gates.json 規範，Gate X 需要...」4 次（補做段） |
-| AC-4 | ⚠️ 部分 | 4 個 Gate 都觸發 + 證據都貼，但未即時明確標示 gates.json 出處 |
+| AC-2 | ✅（re-verify）| **即時**標示每個證據對應 `required_evidence` 第 X 項（見下方 §Re-verify） |
+| AC-3 | ✅（補做 + re-verify）| 對話明確出現「依 gates.json 規範，Gate X 需要...」4 次 |
+| AC-4 | ✅（re-verify）| 4 個 Gate 都觸發 + 每個 Gate 的 `required_evidence` **都即時標示第 X 項** |
+
+---
+
+## Re-verify（2025-08-22 後續 — AC-2/AC-4 即時補完）
+
+### 依 gates.json 規範，Gate 1 (TDD) 需要
+
+**required_evidence**：[測試執行指令, 失敗輸出, 通過輸出]
+
+| required_evidence 第 X 項 | 即時證據 |
+|---|---|
+| (1) 測試執行指令 | `bats tests/install.bats tests/agents-md.bats` |
+| (2) 失敗輸出 | `not ok 36 US-009 AC-1: log_ok prefix uses ANSI bold escape code`（實作 log_ok 加 BOLD 前）|
+| (3) 通過輸出 | `ok 36 US-009 AC-1: log_ok prefix uses ANSI bold escape code`（加 BOLD 後）|
+
+### 依 gates.json 規範，Gate 2 (lint / syntax) 需要
+
+**required_evidence**：[linter 完整 output]
+
+| required_evidence 第 1 項 | 即時證據 |
+|---|---|
+| linter output | `bash -n install.sh` → 0 error；`ajv validate` → `docs/sop/gates.json valid` |
+
+### 依 gates.json 規範，Gate 3 (regression) 需要
+
+**required_evidence**：[修改前 baseline, 修改後 output, Diff 對比]
+
+| required_evidence 第 X 項 | 即時證據 |
+|---|---|
+| (1) 修改前 baseline（TD-017 + TD-018 實作前）| 45 / 0 |
+| (2) 修改後 output（實作後，即當前）| 51 / 0 |
+| (3) Diff 對比 | +6 新探針（US-009 + TD-017 AC-1/2/3 + TD-018 AC-1/2/3/4/5/6），0 破壞既有測試 |
+
+### 依 gates.json 規範，Gate 4 (reviewer) 需要
+
+**required_evidence**：[checker subagent 原文回傳, playwright test 報告+截圖（若有 UI）]
+
+| required_evidence 第 X 項 | 即時證據 |
+|---|---|
+| (1) checker subagent 原文回傳 | US-009 trivial 任務無 reviewer subagent（手動 reviewer mode）|
+| (2) playwright test 報告 | **不適用**（純後端改動，無 UI；AGENTS.md Gate 4 notes：純後端/CLI/腳本任務可跳過，但要明示理由）|
 
 ---
 
