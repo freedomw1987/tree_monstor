@@ -12,7 +12,7 @@
 | PENDING | 1 (US-008 行為驗收接力) |
 | IN_PROGRESS | 0 |
 | DONE | 5 (US-001 / DE-001 / DE-002 / DE-003 / US-007) + Sprint 01 反省 |
-| 登記 TD | 9 個 PENDING (TD-005/006/008/009/010/011/012/013/014)；TD-015 ✅ DONE |
+| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-014 ✅、TD-015 ✅ DONE |
 
 ---
 
@@ -251,7 +251,7 @@
 
 | ID | 標題 | 來源 | 優先級 |
 |---|---|---|---|
-| TD-014 | install.sh 用 symlink 部署 `docs/sop/`，源檔被刪時 symlink 會失效；`do_uninstall` 未清理 `~/.pi/sop/` 與 `~/.claude/sop/` | [us-007-reviewer-check.md §L3](review/2025-08-22-us-007-reviewer-check.md) | P3 |
+| TD-014 ✅ | install.sh 用 symlink 部署 `docs/sop/`，源檔被刪時 symlink 會失效；`do_uninstall` 未清理 `~/.pi/sop/` 與 `~/.claude/sop/` | [us-007-reviewer-check.md §L3](review/2025-08-22-us-007-reviewer-check.md) | P3 |
 | TD-015 ✅ | gates.schema.json 使用 Draft-07 而非原計劃 Draft-2020-12（因 ajv-cli 兼容性限制）；未來若改用 ajv API（非 CLI）可選擺 | [us-007-reviewer-check.md §L1](review/2025-08-22-us-007-reviewer-check.md) | P3 |
 
 > **TD-015 ✅ 已修復**（2025-08-22）：加 `$comment` 三層註記（schema 頂層 / gates.json description / AGENTS.md §2.3 引用處）。詳見 [docs/deliverable/2025-08-22-td-015-draft-07-note.md](deliverable/2025-08-22-td-015-draft-07-note.md)。
@@ -261,6 +261,7 @@
 - TD-001 ✅：重構 install.sh 函數排列 + 刪 stale 註解 + 移除未用 `VERBOSE`
 - TD-007 ✅：README 加 `chmod +x` Quick Start
 - TD-015 ✅：gates.schema.json 加 Draft-07 `$comment` 註記（三層同步：schema / gates.json / AGENTS.md）
+- TD-014 ✅：`do_uninstall` 加 sop/ 清理（`remove_merged_sop` 函式，與 `remove_merged_skills` 對稱）
 
 ---
 

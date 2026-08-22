@@ -548,6 +548,62 @@ remove_merged_skills() {
   log_info "remove_merged_skills: removed=$removed, skipped=$skipped"
 }
 
+# Remove per-file symlinks we created in a merged sop/ directory
+# (one symlink per .json file in <source_dir>/docs/sop/). Leaves the
+# user's own .json files untouched.
+# Args: <merged_sop_dir> <source_sop_dir>
+# Used by uninstall_claude() and uninstall_pi() to clean
+# ~/.pi/sop/*.json and ~/.claude/sop/*.json entries that point at
+# <source_sop_dir>/<file>, without touching user-owned siblings.
+remove_merged_sop() {
+  local merged_dir="$1"
+  local source_dir="$2"
+
+  if [[ ! -d "$merged_dir" ]] && [[ ! -L "$merged_dir" ]]; then
+    return 0
+  fi
+
+  # If sop/ itself is a tree-level symlink (legacy install), remove it
+  # entirely (same pattern as remove_merged_skills).
+  if [[ -L "$merged_dir" ]]; then
+    local target
+    target="$(readlink "$merged_dir")"
+    if [[ "$target" == "$source_dir" ]]; then
+      run rm "$merged_dir"
+      log_ok "removed tree-level sop/ symlink: $merged_dir"
+      return 0
+    fi
+    log_warn "skipping symlink (not ours): $merged_dir -> $target"
+    return 0
+  fi
+
+  # Real dir: scan and remove only our per-file symlinks.
+  shopt -s nullglob
+  local entry removed=0 skipped=0
+  for entry in "$merged_dir"/*; do
+    local name
+    name="$(basename "$entry")"
+    if [[ ! -L "$entry" ]]; then
+      skipped=$((skipped + 1))
+      continue
+    fi
+    local target
+    target="$(readlink "$entry")"
+    # Match per-file symlinks pointing into <source_dir>/<file>.
+    if [[ "$target" == "$source_dir/$name" ]]; then
+      run rm "$entry"
+      log_ok "removed merged sop file: $entry"
+      removed=$((removed + 1))
+    else
+      skipped=$((skipped + 1))
+    fi
+  done
+  shopt -u nullglob
+
+  # If the merged dir is now empty, leave it (may be owned by user).
+  log_info "remove_merged_sop: removed=$removed, skipped=$skipped"
+}
+
 # Remove a path only if it looks like something we created.
 # Safe to call on missing paths.
 remove_managed_path() {
@@ -599,6 +655,14 @@ uninstall_claude() {
     remove_merged_skills "$claude_root/skills" "$SOURCE_DIR/skills"
   fi
   remove_managed_path "$claude_root/CLAUDE.md" marker-file
+  # ~/.claude/sop/ may be either a tree-level symlink (legacy install)
+  # or a real directory holding our per-file .json symlinks. Handle both,
+  # mirroring the skills logic so user-owned .json files are preserved.
+  if [[ -L "$claude_root/sop" ]]; then
+    remove_managed_path "$claude_root/sop" symlink
+  elif [[ -d "$claude_root/sop" ]]; then
+    remove_merged_sop "$claude_root/sop" "$SOURCE_DIR/docs/sop"
+  fi
 }
 
 uninstall_pi() {
@@ -608,6 +672,13 @@ uninstall_pi() {
   remove_managed_path "$pi_root/agent/AGENTS.md" symlink
   # Skills are merged per-skill into $pi_root/agent/skills/.
   remove_merged_skills "$pi_root/agent/skills" "$SOURCE_DIR/skills"
+  # sop/ is merged per-file into $pi_root/sop/ (mirrors the skills logic
+  # so user-owned .json files are preserved).
+  if [[ -L "$pi_root/sop" ]]; then
+    remove_managed_path "$pi_root/sop" symlink
+  elif [[ -d "$pi_root/sop" ]]; then
+    remove_merged_sop "$pi_root/sop" "$SOURCE_DIR/docs/sop"
+  fi
   # Subagents are symlinked into ~/.agents/<name>.md (user-scope).
   uninstall_subagents
 }

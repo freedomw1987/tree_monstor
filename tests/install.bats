@@ -467,3 +467,54 @@ EOF
   [ "$status" -eq 0 ]
   # sop/ dir may or may not exist; the key requirement is no error.
 }
+
+# ---------- TD-014: --uninstall removes managed sop/ symlinks ----------
+
+@test "TD-014 AC-1: --uninstall removes ~/.pi/sop/gates.json symlink created by installer" {
+  create_source_sop_dir
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  assert_path_is_file "$TEST_HOME/.pi/sop/gates.json"
+
+  run run_install --uninstall --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # Our gates.json symlink must be gone.
+  [ ! -e "$TEST_HOME/.pi/sop/gates.json" ]
+  [ ! -e "$TEST_HOME/.pi/sop/gates.schema.json" ]
+}
+
+@test "TD-014 AC-2: --uninstall removes ~/.claude/sop/gates.json symlink" {
+  create_source_sop_dir
+  run run_install --global --agent claude --yes
+  [ "$status" -eq 0 ]
+  assert_path_is_file "$TEST_HOME/.claude/sop/gates.json"
+
+  run run_install --uninstall --global --agent claude --yes
+  [ "$status" -eq 0 ]
+  [ ! -e "$TEST_HOME/.claude/sop/gates.json" ]
+  [ ! -e "$TEST_HOME/.claude/sop/gates.schema.json" ]
+}
+
+@test "TD-014 AC-3: --uninstall preserves user-owned .json files in ~/.pi/sop/" {
+  create_source_sop_dir
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+
+  # User adds their own JSON file to ~/.pi/sop/ after install.
+  echo '{"user": "data"}' > "$TEST_HOME/.pi/sop/my-rules.json"
+  assert_path_is_file "$TEST_HOME/.pi/sop/my-rules.json"
+
+  run run_install --uninstall --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # Our gates.json symlinks must be gone.
+  [ ! -e "$TEST_HOME/.pi/sop/gates.json" ]
+  [ ! -e "$TEST_HOME/.pi/sop/gates.schema.json" ]
+  # But user's file must remain.
+  assert_path_is_file "$TEST_HOME/.pi/sop/my-rules.json"
+}
+
+@test "TD-014 AC-4: --uninstall gracefully handles missing ~/.pi/sop/ (no error)" {
+  # No install first — no ~/.pi/sop/ exists.
+  run run_install --uninstall --global --agent pi --yes
+  [ "$status" -eq 0 ]
+}
