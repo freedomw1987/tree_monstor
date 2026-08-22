@@ -518,3 +518,17 @@ EOF
   run run_install --uninstall --global --agent pi --yes
   [ "$status" -eq 0 ]
 }
+
+# ---------- US-009 (trivial 1 SP — added by US-008 verification) ----------
+
+@test "US-009 AC-1: log_ok prefix uses ANSI bold escape code" {
+  # Trivial verification: log_ok() should emit the ANSI BOLD escape (\033[1m)
+  # before the [✓] checkmark. This makes success messages more prominent.
+  # Use a minimal env (like AC-13) so NO_COLOR is NOT inherited, otherwise
+  # install.sh strips all ANSI codes and we can't observe BOLD output.
+  run env -i HOME="$TEST_HOME" PATH="/usr/bin:/bin" TERM="xterm" \
+    bash "$INSTALL_SH" --source "$TEST_SOURCE" --local --yes
+  [ "$status" -eq 0 ]
+  # Look for ESC[1m (bold on) in the install output.
+  [[ "$output" == *$'\033[1m'* ]]
+}

@@ -9,10 +9,11 @@
 
 | 狀態 | 數量 |
 |---|---|
-| PENDING | 1 (US-008 行為驗收接力) |
+| PENDING | 0 |
 | IN_PROGRESS | 0 |
-| DONE | 5 (US-001 / DE-001 / DE-002 / DE-003 / US-007) + Sprint 01 反省 |
-| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-014 ✅、TD-015 ✅ DONE |
+| PARTIAL | 1 (US-008 部分完成) |
+| DONE | 7 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015) + Sprint 01 反省 |
+| 登記 TD | 9 個 PENDING (TD-005/006/008/009/010/011/012/013/016) |
 
 ---
 
@@ -197,7 +198,8 @@
 
 ### US-008：驗收 US-007 AC-8/9/10 — 用 `dav-skill-creater` 產 1 SP 任務模板（2025-08-22）
 - **Module**：M2 — SOP Infrastructure
-- **狀態**：🟡 **PENDING**（等待 sprint 排程）
+- **狀態**：⚠️ **部分完成**（AC-1 ✅, AC-2 ⚠️, AC-3 ✅ 補做, AC-4 ⚠️）
+- **重要揭露**：執行過程發現「Agent 未即時引用 gates.json」 → 登記 TD-016
 - **來源**：US-007 的 AC-8/9/10（行為驗收），因 reviewer == implementer 反 pattern 不能在 US-007 內驗證
 - **Story Point**：1（trivial — 使用 `dav-skill-creater` 產模板）
 - **Sprint**：下一個 Sprint（SOP Infra Sprint 02）
@@ -255,6 +257,18 @@
 | TD-015 ✅ | gates.schema.json 使用 Draft-07 而非原計劃 Draft-2020-12（因 ajv-cli 兼容性限制）；未來若改用 ajv API（非 CLI）可選擺 | [us-007-reviewer-check.md §L1](review/2025-08-22-us-007-reviewer-check.md) | P3 |
 
 > **TD-015 ✅ 已修復**（2025-08-22）：加 `$comment` 三層註記（schema 頂層 / gates.json description / AGENTS.md §2.3 引用處）。詳見 [docs/deliverable/2025-08-22-td-015-draft-07-note.md](deliverable/2025-08-22-td-015-draft-07-note.md)。
+
+### Technical Debt（從 US-008 反省產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-016 | gates.json 規範未真正約束 Agent 行為：執行 4 Gate 流程但未即時明確標示「依 gates.json 規範, Gate X 需要...」引用來源 | [us-008-behavior-verification.md](deliverable/2025-08-22-us-008-behavior-verification.md) | P2 |
+
+**TD-016 詳細說明**：
+- US-008 揭露的 SOP 規範形式大於實質問題
+- 提案 1：在 AGENTS.md §2.3 引用處加「每次進 Gate 必須在對話標示『依 gates.json 規範』+ 列出 required_evidence 編號」
+- 提案 2：考慮 agent 框架層把 gates.json 變成 system prompt 注入
+- 提案 3：在 gates.json 加 `mandatory_phrase` 欄位，Agent 進 Gate 時必須引用
 
 ### 已完成的 TD（本 Sprint）
 

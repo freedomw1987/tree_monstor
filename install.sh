@@ -42,7 +42,7 @@ fi
 # ---------- Logging ----------
 # REGRESSION-GUARD PROBE: log-output
 log_info()  { [[ $QUIET -eq 1 ]] || printf "%b[i]%b %s\n" "$C_BLUE"   "$C_RESET" "$*"; }
-log_ok()    { [[ $QUIET -eq 1 ]] || printf "%b[✓]%b %s\n" "$C_GREEN"  "$C_RESET" "$*"; }
+log_ok()    { [[ $QUIET -eq 1 ]] || printf "%b%b[✓]%b %s\n" "$C_BOLD" "$C_GREEN"  "$C_RESET" "$*"; }
 log_warn()  { printf "%b[!]%b %s\n" "$C_YELLOW" "$C_RESET" "$*" >&2; }
 log_err()   { printf "%b[✗]%b %s\n" "$C_RED"    "$C_RESET" "$*" >&2; }
 log_dry()   { printf "%b[~]%b %s (dry-run)\n" "$C_DIM" "$C_RESET" "$*"; }
