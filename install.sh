@@ -553,8 +553,9 @@ remove_merged_skills() {
 # user's own .json files untouched.
 # Args: <merged_sop_dir> <source_sop_dir>
 # Used by uninstall_claude() and uninstall_pi() to clean
-# ~/.pi/sop/*.json and ~/.claude/sop/*.json entries that point at
-# <source_sop_dir>/<file>, without touching user-owned siblings.
+# ~/.pi/sop/ and ~/.claude/sop/ entries that point at files under
+# <source_sop_dir>/ (including <source_sop_dir>/handbook/ subdir), without
+# touching user-owned siblings.
 remove_merged_sop() {
   local merged_dir="$1"
   local source_dir="$2"
@@ -578,27 +579,37 @@ remove_merged_sop() {
   fi
 
   # Real dir: scan and remove only our per-file symlinks.
-  shopt -s nullglob
-  local entry removed=0 skipped=0
-  for entry in "$merged_dir"/*; do
-    local name
-    name="$(basename "$entry")"
-    if [[ ! -L "$entry" ]]; then
-      skipped=$((skipped + 1))
-      continue
-    fi
-    local target
-    target="$(readlink "$entry")"
-    # Match per-file symlinks pointing into <source_dir>/<file>.
-    if [[ "$target" == "$source_dir/$name" ]]; then
-      run rm "$entry"
-      log_ok "removed merged sop file: $entry"
-      removed=$((removed + 1))
-    else
-      skipped=$((skipped + 1))
-    fi
-  done
-  shopt -u nullglob
+  # We recurse into subdirs (e.g. handbook/) so handbook symlinks created
+  # by install_sop() are also cleaned up on uninstall (TD-018).
+  local removed=0 skipped=0
+  _remove_merged_sop_recurse() {
+    local dir="$1"
+    local base_src="$2"
+    local entry
+    for entry in "$dir"/*; do
+      [[ -e "$entry" || -L "$entry" ]] || continue
+      local name
+      name="$(basename "$entry")"
+      if [[ -L "$entry" ]]; then
+        local target
+        target="$(readlink "$entry")"
+        if [[ "$target" == "$base_src/$name" ]]; then
+          run rm "$entry"
+          log_ok "removed merged sop file: $entry"
+          removed=$((removed + 1))
+        else
+          skipped=$((skipped + 1))
+        fi
+      elif [[ -d "$entry" ]]; then
+        # Recurse: handbook/ subdir contains per-file symlinks whose targets
+        # live under <source_sop_dir>/handbook/<file>.
+        _remove_merged_sop_recurse "$entry" "$base_src/$name"
+      else
+        skipped=$((skipped + 1))
+      fi
+    done
+  }
+  _remove_merged_sop_recurse "$merged_dir" "$source_dir"
 
   # If the merged dir is now empty, leave it (may be owned by user).
   log_info "remove_merged_sop: removed=$removed, skipped=$skipped"
@@ -828,10 +839,11 @@ install_agents_dir() {
   ensure_copy_tree "$SOURCE_DIR" "$TARGET_ROOT/.agents/tree_monstor"
 }
 
-# ---------- sop/ directory installer (US-007) ----------
-# Symlinks every *.json file under $SOURCE_DIR/docs/sop/ into
-# <agent_root>/sop/. Each .json becomes its own symlink so that edits
-# to the source files take effect immediately (no need to re-run install).
+# ---------- sop/ directory installer (US-007, TD-018) ----------
+# Symlinks every .json file at top level AND every .md file under handbook/
+# in $SOURCE_DIR/docs/sop/ into <agent_root>/sop/. Each file becomes its own
+# symlink so that edits to the source files take effect immediately
+# (no need to re-run install).
 # REGRESSION-GUARD PROBE: sop-per-file-symlinks
 install_sop() {
   local agent_root="$1"
@@ -845,16 +857,31 @@ install_sop() {
 
   if [[ $DRY_RUN -eq 1 ]]; then
     log_dry "sop per-file symlinks: $sop_src/*.json -> $sop_dst/"
+    if [[ -d "$sop_src/handbook" ]]; then
+      log_dry "sop handbook per-file symlinks: $sop_src/handbook/*.md -> $sop_dst/handbook/"
+    fi
     return 0
   fi
 
   [[ -d "$sop_dst" ]] || run mkdir -p "$sop_dst"
   local f name
+  # Top-level *.json files (gates.json + gates.schema.json)
   for f in "$sop_src"/*.json; do
     [[ -e "$f" ]] || continue
     name="$(basename "$f")"
     run ln -sfn "$f" "$sop_dst/$name"
   done
+  # handbook/*.md files (TD-018: required for AGENTS.md relative links)
+  if [[ -d "$sop_src/handbook" ]]; then
+    local hb_dst="$sop_dst/handbook"
+    [[ -d "$hb_dst" ]] || run mkdir -p "$hb_dst"
+    for f in "$sop_src/handbook"/*.md; do
+      [[ -e "$f" ]] || continue
+      name="$(basename "$f")"
+      run ln -sfn "$f" "$hb_dst/$name"
+    done
+    log_ok "sop handbook installed: $hb_dst (per-file symlinks into $sop_src/handbook)"
+  fi
   log_ok "sop installed: $sop_dst (per-file symlinks into $sop_src)"
 }
 

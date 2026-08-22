@@ -13,7 +13,7 @@
 | IN_PROGRESS | 0 |
 | PARTIAL | 1 (US-008 部分完成) |
 | DONE | 8 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015 / TD-016) + Sprint 01 反省 |
-| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-016 ✅ DONE |
+| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-016/017/018 ✅ DONE |
 
 ---
 
@@ -271,6 +271,35 @@
 - 提案 1：在 AGENTS.md §2.3 引用處加「每次進 Gate 必須在對話標示『依 gates.json 規範』+ 列出 required_evidence 編號」
 - 提案 2：考慮 agent 框架層把 gates.json 變成 system prompt 注入
 - 提案 3：在 gates.json 加 `mandatory_phrase` 欄位，Agent 進 Gate 時必須引用
+
+### Technical Debt（從用戶建議 2025-08-22 產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-017 ✅ | AGENTS.md 524 行過長，大模型難以穩記內容；§2.1-§2.8 + CHANGELOG 抽出去 `docs/sop/handbook/*.md` 一章一檔，AGENTS.md 精簡到 ~150 行 | 用戶建議 2025-08-22 | P1 |
+
+> **TD-017 ✅ 已修復**（2025-08-22）：AGENTS.md 從 524 → 68 行（-87%），9 個 handbook 檔案新建 + 加 3 個 regression 探針保護。詳見 [docs/deliverable/2025-08-22-td-017-agents-md-slim.md](deliverable/2025-08-22-td-017-agents-md-slim.md)。
+
+**TD-017 詳細說明**：
+- 用戶反饋：「AGENTS.md 是精簡的（150 行左右），目的是讓大模型可以穩記 AGENTS.md 的內容去做任務」
+- 提案 1：每個章節一個檔：`docs/sop/handbook/2.{1-8}-*.md` + `changelog.md`（方案 A，勳用）
+- AGENTS.md 保留：§1 萬事原則 + §1.5 提問紀律 + §2.0 SOP 範圍 + §2.3 執行（精簡表格） + §3 引用索引
+- AGENTS.md 用相對路徑引用 handbook：`[§2.1 規劃完整內容](./sop/handbook/2.1-planning.md)`
+- 預估 SP：3（中量重構）
+
+### Technical Debt（從 TD-017 反省產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-018 ✅ | install.sh 部署 `docs/sop/*.json` 但**未部署 `docs/sop/handbook/*.md`**；AGENTS.md 用相對路徑引用 handbook，部署後若 handbook 不存在則引用全失效 | 用戶反饋 2025-08-22 + [td-017-deliverable §已知問題](deliverable/2025-08-22-td-017-agents-md-slim.md) | P1 |
+
+> **TD-018 ✅ 已修復**（2025-08-22）：install_sop() 加 handbook/*.md 處理 + remove_merged_sop() 改遞迴清理 + AGENTS.md 加裝安裝後路徑表 + 6 個 bats 探針保護。詳見 [docs/deliverable/2025-08-22-td-018-handbook-deploy.md](deliverable/2025-08-22-td-018-handbook-deploy.md)。
+
+**TD-018 詳細說明**：
+- TD-017 精簡 AGENTS.md 用 `[§2.1](./sop/handbook/2.1-planning.md)` 引用 handbook
+- 但 install.sh 只 symlink `docs/sop/*.json`（US-007 範圍），handbook/*.md 未被部署
+- 提案：handbook/*.md 用**同樣 per-file symlink 機制**部署到 `~/.pi/sop/handbook/*.md` + `~/.claude/sop/handbook/*.md`
+- 預估 SP：3（中量改動 — 要動 install.sh 的 plan + install + uninstall + 加 4-6 個 bats 測試）
 
 ### 已完成的 TD（本 Sprint）
 

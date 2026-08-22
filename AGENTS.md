@@ -52,7 +52,9 @@
 
 ### 章節索引（handbook）
 
-完整 SOP 章節內容已抽出去 `docs/sop/handbook/`：
+完整 SOP 章節內容已抽出去 `docs/sop/handbook/`。
+
+**本地開發時**（在 repo 根目錄 `tree_monstor/` 下看 AGENTS.md）：
 
 | 章節 | 連結 | 用途 |
 | --- | --- | --- |
@@ -65,3 +67,13 @@
 | §2.7 違規回報 | [2.7-violations.md](docs/sop/handbook/2.7-violations.md) | §2.7 fail-fast 防線機制 |
 | §2.8 Suggester | [2.8-suggester.md](docs/sop/handbook/2.8-suggester.md) | 第三者視角 advisory agent |
 | §3 CHANGELOG | [changelog.md](docs/sop/handbook/changelog.md) | SOP 異動歷史 |
+
+**安裝後**（執行 `./install.sh --global` 後，AGENTS.md 是 symlink 指向本檔）：
+
+| Agent | handbook 安裝位置 | gates.json 安裝位置 |
+| --- | --- | --- |
+| **pi** | `~/.pi/sop/handbook/*.md`（per-file symlinks）| `~/.pi/sop/gates.json` + `~/.pi/sop/gates.schema.json` |
+| **Claude Code** | `~/.claude/sop/handbook/*.md`（per-file symlinks）| `~/.claude/sop/gates.json` + `~/.claude/sop/gates.schema.json` |
+
+> **⚠️ 路徑說明**：AGENTS.md 安裝後是 symlink 指向本檔（`tree_monstor/AGENTS.md`），上面的本地路徑從 symlink 目標（repo 根目錄）計算，所以安裝後仍可正常解析。
+> handbook 本身的 per-file symlink 安裝在 `<agent_root>/sop/handbook/`（**不是** `<agent_root>/docs/sop/handbook/`）。

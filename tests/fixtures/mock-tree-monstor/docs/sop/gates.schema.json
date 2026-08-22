@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tree-monstor.local/sop/gates.schema.json",
+  "title": "tree_monstor SOP Gates Definition",
+  "description": "Schema for docs/sop/gates.json — defines the 4 development gates (TDD / lint / regression / reviewer) that agents must pass before declaring a task complete. This file is the single source of truth for gate definitions in tree_monstor/AGENTS.md §2.3.",
+  "$comment": "Schema uses Draft-07 (not Draft 2020-12 as originally planned) because ajv-cli (the validation tool used by `npm install -g ajv-cli` and invoked via `ajv validate -s ... -d ...`) only supports Draft-07 and Draft 2019-09. Draft 2020-12 features (prefixItems, $dynamicRef, etc.) are not used here, so Draft-07 is functionally equivalent for this schema. To upgrade to 2020-12, switch from ajv-cli to ajv API (Node.js import). See TD-015.",
+  "type": "object",
+  "required": ["version", "gates"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema (for tooling)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of this gates definition (e.g. \"1.0.0\"). Bump when adding/removing gates or changing pass_criteria semantics."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the gates collection."
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of gates an agent must pass (in order) before declaring a development task complete.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "trigger_skill",
+          "pass_criteria",
+          "required_evidence",
+          "fail_action",
+          "mandatory_phrase"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^gate-[0-9]+$",
+            "description": "Stable gate identifier (e.g. \"gate-1\"). Used as the key in agent logs."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable gate name (e.g. \"TDD gate\")."
+          },
+          "trigger_skill": {
+            "oneOf": [
+              { "type": "string", "pattern": "^(dav-|tdd-|regression-|dev-|minimax-).*$" },
+              { "type": "null" }
+            ],
+            "description": "Skill that orchestrates this gate (e.g. \"/skill:tdd-test-writer\"), or null if no skill is involved (e.g. lint gate uses language-specific tools)."
+          },
+          "pass_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Conditions that must all be true to pass this gate. Each item is a plain English statement checked off in the agent's deliverable.",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required_evidence": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Concrete artifacts the agent must produce and cite in the conversation (e.g. test command output, lint output, screenshots). Pass-criteria without evidence is not valid.",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "fail_action": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the agent is forbidden to do if this gate fails (e.g. \"不可寫作 code\")."
+          },
+          "mandatory_phrase": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^依 gates.json 規範",
+            "description": "Mandatory phrase the agent MUST cite verbatim (or close paraphrase) in the conversation when invoking this gate. Enforces that gate invocation is auditable and traceable to gates.json. See TD-016."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional clarifications or context for this gate."
+          }
+        }
+      }
+    }
+  }
+}

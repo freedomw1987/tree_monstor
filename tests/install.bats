@@ -532,3 +532,50 @@ EOF
   # Look for ESC[1m (bold on) in the install output.
   [[ "$output" == *$'\033[1m'* ]]
 }
+
+# ---------- TD-018: handbook/*.md deploy ----------
+
+@test "TD-018 AC-1: --global install creates ~/.pi/sop/handbook/ symlinks (per-file)" {
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # Should have created at least one handbook symlink.
+  [ -L "$TEST_HOME/.pi/sop/handbook/2.1-planning.md" ]
+}
+
+@test "TD-018 AC-2: --global install creates ~/.claude/sop/handbook/ symlinks (per-file)" {
+  run run_install --global --agent claude --yes
+  [ "$status" -eq 0 ]
+  # Should have created at least one handbook symlink.
+  [ -L "$TEST_HOME/.claude/sop/handbook/2.1-planning.md" ]
+}
+
+@test "TD-018 AC-3: handbook symlink resolves to source file in repo" {
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # The symlink should resolve (follow it) to the source file in the repo.
+  [ -f "$TEST_HOME/.pi/sop/handbook/2.1-planning.md" ]
+  # The target must be inside the repo's docs/sop/handbook/ dir.
+  local target
+  target=$(readlink "$TEST_HOME/.pi/sop/handbook/2.1-planning.md")
+  [[ "$target" == *"/docs/sop/handbook/2.1-planning.md" ]]
+}
+
+@test "TD-018 AC-4: --uninstall removes handbook symlinks but preserves user files" {
+  run run_install --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # Create a user-owned handbook file (should survive uninstall).
+  touch "$TEST_HOME/.pi/sop/handbook/my-custom.md"
+  # Uninstall.
+  run run_install --uninstall --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  # Managed symlink gone, user file preserved.
+  [ ! -L "$TEST_HOME/.pi/sop/handbook/2.1-planning.md" ]
+  [ -f "$TEST_HOME/.pi/sop/handbook/my-custom.md" ]
+}
+
+@test "TD-018 AC-5: --dry-run shows handbook deployment in plan" {
+  run run_install --global --agent pi --dry-run
+  [ "$status" -eq 0 ]
+  # Plan should mention handbook deployment.
+  [[ "$output" == *"handbook"* ]] || [[ "$output" == *"sop"* ]]
+}
