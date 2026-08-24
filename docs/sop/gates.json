@@ -59,7 +59,7 @@
       ],
       "fail_action": "不可聲稱『做完了』",
       "mandatory_phrase": "依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 完整測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。",
-      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。",
+      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。測試指令必須禁用 interactive / watch 模式（vitest 用 --run、jest 用 --ci、npm test 加 CI=1 並顯式關 watch、或 < /dev/null 強制關 TTY）— 詳見 regression-guard SKILL.md「測試指令執行規範」。",
       "remediation": {
         "strategy": "auto_fix_with_limit",
         "max_attempts": 3,
