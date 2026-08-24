@@ -87,6 +87,35 @@
           "notes": {
             "type": "string",
             "description": "Optional clarifications or context for this gate."
+          },
+          "remediation": {
+            "type": "object",
+            "description": "What the agent should do when this gate fails. Without this, behavior is undefined (some agents auto-fix, others stop and wait). See TD-019.",
+            "required": ["strategy"],
+            "additionalProperties": false,
+            "properties": {
+              "strategy": {
+                "type": "string",
+                "enum": ["auto_fix", "auto_fix_with_limit", "ask_user"],
+                "description": "auto_fix = retry until pass (use for cheap fixes like lint); auto_fix_with_limit = retry up to max_attempts then fallback (use for gates that may need user input); ask_user = stop and ask the user immediately (use for high-stakes decisions like reviewer)."
+              },
+              "max_attempts": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 3,
+                "description": "Maximum retry attempts for auto_fix_with_limit. Ignored for other strategies."
+              },
+              "fallback": {
+                "type": "string",
+                "enum": ["ask_user", "fail"],
+                "default": "ask_user",
+                "description": "What to do when auto_fix_with_limit exhausts attempts. Default: ask_user (let the user decide next step)."
+              },
+              "description": {
+                "type": "string",
+                "description": "Human-readable explanation of the remediation behavior for this gate."
+              }
+            }
           }
         }
       }

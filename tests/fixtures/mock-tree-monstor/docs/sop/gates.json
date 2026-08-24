@@ -18,7 +18,13 @@
       ],
       "fail_action": "不可寫實作 code",
       "mandatory_phrase": "依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出「測試執行指令 + 失敗輸出 + 通過輸出」。",
-      "notes": "純文件/配置改動可豁免，但須在 deliverable 註明『無 TDD 需求』。"
+      "notes": "純文件/配置改動可豁免，但須在 deliverable 註明『無 TDD 需求』。",
+      "remediation": {
+        "strategy": "auto_fix_with_limit",
+        "max_attempts": 3,
+        "fallback": "ask_user",
+        "description": "測試寫錯或實作小錯可自調；3 次還失敗則停下來問用戶（可能要改 AC 或測試設計）。"
+      }
     },
     {
       "id": "gate-2",
@@ -32,7 +38,11 @@
       ],
       "fail_action": "不可繼續寫更多 code",
       "mandatory_phrase": "依 gates.json 規範，Gate 2 (lint / syntax) 需要：對應語言的 linter 0 error / 0 warning，並在對話貼出 linter 完整 output。",
-      "notes": "bash/sh → shellcheck；python → ruff check 或 python -m py_compile；其他語言用對應工具。"
+      "notes": "bash/sh → shellcheck；python → ruff check 或 python -m py_compile；其他語言用對應工具。",
+      "remediation": {
+        "strategy": "auto_fix",
+        "description": "lint 錯誤幾乎都是一行可修（縮排、未引用變數、shellcheck 警告），自動修到通過為止。"
+      }
     },
     {
       "id": "gate-3",
@@ -49,7 +59,13 @@
       ],
       "fail_action": "不可聲稱『做完了』",
       "mandatory_phrase": "依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 完整測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。",
-      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。"
+      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。",
+      "remediation": {
+        "strategy": "auto_fix_with_limit",
+        "max_attempts": 3,
+        "fallback": "ask_user",
+        "description": "回歸測試失敗可能涉及多檔；給 3 次自動修機會，仍失敗則停下來問用戶（可能需改架構）。"
+      }
     },
     {
       "id": "gate-4",
@@ -65,7 +81,11 @@
       ],
       "fail_action": "不可進入 §2.4 反省",
       "mandatory_phrase": "依 gates.json 規範，Gate 4 (reviewer) 需要：checker 回傳『沒找到更多問題』+ playwright-cli E2E 全綠（含截圖），並在對話貼出 checker subagent 原文回傳。",
-      "notes": "純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示『無 UI 故不適用』及理由。"
+      "notes": "純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示『無 UI 故不適用』及理由。",
+      "remediation": {
+        "strategy": "ask_user",
+        "description": "reviewer 已是 subagent 給建議；最終決策（接受 / 退回 / 改架構）由用戶決定，agent 不自動修。"
+      }
     }
   ]
 }
