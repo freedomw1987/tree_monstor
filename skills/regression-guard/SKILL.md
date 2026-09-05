@@ -26,6 +26,50 @@ REGRESSION_STRICT=true        # 遇錯即停
 REGRESSION_REPORT_PATH=./report.json  # 報告路徑
 ```
 
+## 測試指令執行規範（fail-fast）
+
+> **為什麼有這節**：agent shell 在 TTY 偵測上是模糊的（watch mode 通常依賴 isatty()），若 runner 進入 watch / interactive，shell 會卡住等 stdin，整個 session 凍結（截圖症狀：`Waiting for task (esc to give additional instructions)`）。
+
+**強制規則**：執行 Gate 3 baseline / 修改後 output 時，**測試指令必須禁用 interactive / watch 模式**。不可使用會預設進入 watch 的指令。
+
+### 主流 runner 前綴對照表
+
+| Runner | ❌ 禁用（會卡） | ✅ 使用（一次性跑完） |
+|---|---|---|
+| **vitest** | `vitest` / `npx vitest` | `vitest run` / `npx vitest --run` |
+| **jest** | `jest` / `npm test`（若 script 帶 watch） | `jest --ci` / `CI=1 npm test -- --watchAll=false` |
+| **npm test** | 視 package.json 設定 | 加 `CI=1` 前綴，並顯式傳 `--watchAll=false`（jest）或 `--run`（vitest） |
+| **bats** | — | `bats tests/`（無 watch，預設 OK）|
+| **pytest** | `pytest --watch` | `pytest` / `pytest -x`（預設非 watch）|
+| **playwright** | `playwright test --ui` | `playwright test`（預設 headless、非 watch）|
+| **cargo test** | — | `cargo test`（無 watch）|
+| **go test** | — | `go test ./...`（無 watch）|
+
+### 通用保險：TTY 強制關閉
+
+若不確定 runner 行為，**一律在指令後加 `< /dev/null`** 強制關閉 stdin：
+
+```bash
+npm test < /dev/null
+npx vitest < /dev/null     # 即使忘記加 --run，也會立刻退出 watch
+```
+
+或設定環境變量 `CI=1`（多數 runner 會自動關 watch）：
+
+```bash
+CI=1 npm test
+```
+
+### Fail-fast 自檢
+
+執行後若出現以下任一情況，視為 **Gate 3 失敗**，不可聲稱「做完了」：
+
+- shell 卡住 > 30 秒無輸出
+- 輸出末端出現 `Watch Usage` / `press h to show help` / `Waiting for file changes`
+- 進程未退出、`Ctrl+C` 才能結束
+
+正確做法：kill 進程 → 補上前綴規則 → 重跑。
+
 ## API 合約
 
 ### probe(name, actual, expected)
