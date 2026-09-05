@@ -1,142 +1,148 @@
 ---
 name: dav-trust
-description: 當用戶提供「一個大目標 + 時間 deadline」並希望 Agent 自主完成整個任務、中間不打擾用戶、由 Agent 自行代答所有中間問題時使用。Agent 走完整 SOP 5 階段（規劃 → 設計 → 執行 → 反省 → 提交），所有代答決定寫進 docs/trust-log.md，完成後用戶一次性驗收。
+description: 當用戶提供「大目標 + 時間 deadline」並希望 Agent 自主完成、中間不打擾、由 Agent 代答所有中間問題時使用。Agent 走 SOP 5 階段（規劃→設計→執行→反省→提交），代答寫進 docs/trust-log.md，完成後用戶驗收。提早完成或 deadline 到達時自動停下，**結束後 Agent 退出 trust 身份、進入普通對話模式、不再自動做事**。
 ---
 
 ## 1. 什麼是 dav-trust
 
-信任模式（Trust Mode）：用戶把「**大目標 + Deadline**」交給 Agent，Agent 在不打擾用戶的前提下，自主完成從需求拆解到成果提交的全流程。
+信任模式：把「大目標 + Deadline」交給 Agent，Agent 自主完成從拆解到提交的全流程。
 
 **核心承諾**：
-- ✅ Agent 不會中途問問題（即使遇到設計歧義、技術選型、命名也自己決定）
-- ✅ Agent 所有代答決定都有時間戳記錄，用戶最後可逐一檢視、推翻或接受
-- ✅ 到 deadline 自動停下，無論完成度多少都誠實提交
+- ✅ 不會中途問問題（設計歧義、技術選型、命名都自己決定）
+- ✅ 所有代答有時間戳 + 理由 + 可推翻標記
+- ✅ 到 deadline **或提早完成**時自動停下，輸出 `🏁 Trust Mode 已結束`
+- ✅ 結束後退出 trust 身份、進入普通對話模式（見 §9）
+- ✅ 對 Backlog 有擔憂時**跳過不執行**，記錄到 `docs/need-you-help.md`，**不停下來等用戶**（見 §5.5）
 
 ## 2. 適用場景
 
 | ✅ 適用 | ❌ 不適用 |
 |--------|----------|
-| 大型獨立功能（CRM、會員系統、後台等） | 需要用戶即時互動的探索性任務 |
-| 已有清晰技術棧的項目擴展 | 第一次接觸的全新項目（要先用 dav-planner 探索） |
-| 用戶可長時間不查看對話 | 涉及真金白銀、刪資料、生產環境操作 |
-| 截止時間明確的工作（Demo、Sprint、比賽） | 沒有 deadline 的長期迭代 |
+| 大型獨立功能（CRM、會員系統等） | 需要即時互動的探索任務 |
+| 已有清晰技術棧的擴展 | 全新項目（先 dav-planner 探索） |
+| 用戶可長時間不看對話 | 涉及金流、刪資料、生產操作 |
 
 ## 3. 啟動條件
 
-Agent 必須在對話中**明確確認兩件事**，缺一不可：
+必須明確兩件事，缺一不可：
 
-1. **大目標**：用戶說清楚「要做什麼」，可模糊但不可無
-2. **Deadline**：明確時間（例如「2 小時」「今天下班前」），Agent 會換算成截止 ISO 時間戳
+1. **大目標**：要做什麼（可模糊但不可無）
+2. **Deadline**：明確時間（例「2 小時」「今天下班前」）
 
-> ⚠️ 若用戶只給大目標沒給時間，Agent 必須主動詢問 deadline 後再啟動。
+> ⚠️ 沒給 deadline 時，Agent 必須主動詢問後才啟動。
 
-## 4. 工作流程（嚴格 SOP 5 階段）
+## 4. 工作流程（SOP 5 階段）
 
-每階段遇到任何問題，**Agent 自己決定 + 寫 trust-log**，**禁止**呼叫 `ask_user_question` 問用戶。
+每階段遇到任何問題，**Agent 自己決定 + 寫 trust-log**，禁止呼叫 `ask_user_question`。
 
-### 階段 1：規劃（dav-planner）
-
-- 自主把大目標拆解成 Backlog 項目（User Story / Defect / Tech Debt / Spike）
-- 寫入 `docs/backlog.md`，每項必須有 AC（驗收標準）與 Story Points
-
-### 階段 2：設計（dav-designer）
-
-- 產出或更新 `docs/design.md`（UX/UI）、`docs/system-design.md`（架構）
-- 按模組拆解 PRD，分配 Sprint 與 Module
-
-### 階段 3：執行（Gate 1-4 速查表）
-
-| Gate | 名稱 | 觸發 |
-|------|------|------|
-| **Gate 1** | TDD | `/skill:tdd-test-writer` |
-| **Gate 2** | lint / syntax | 語言對應工具 |
-| **Gate 3** | regression | `/skill:regression-guard` |
-| **Gate 4** | reviewer | `/skill:dev-checker-loop` + playwright（UI 任務） |
-
-每個 Backlog 項目都必須通過 4 個 Gate 才算完成。
-
-### 階段 4：反省（dav-reflection）
-
-- 對已完成項目做 6 維度檢查（User Story / Sprint / Module 層級）
-- 產出反省報告，更新 `docs/backlog.md`（補技術債、新 Backlog）
-
-### 階段 5：提交（dav-submitter）
-
-- 簡單對話摘要（90 秒可讀完）
-- Markdown 詳錄：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
-- HTML 視覺化版：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.html`
+| 階段 | 動作 | 觸發 skill |
+|------|------|-----------|
+| 1. 規劃 | 拆 Backlog、寫 `docs/backlog.md` | `dav-planner` |
+| 2. 設計 | 寫 `docs/design.md`、`docs/system-design.md` | `dav-designer` |
+| 3. 執行 | Gate 1-4 逐個通過 | `tdd-test-writer`、`regression-guard`、`dev-checker-loop` |
+| 4. 反省 | 6 維度檢查、補技術債 | `dav-reflection` |
+| 5. 提交 | 對話摘要 + Markdown + HTML | `dav-submitter` |
 
 ## 5. Trust Log 規範
 
-### 5.1 路徑與觸發
-
 - **路徑**：`docs/trust-log.md`
-- **觸發**：任何階段遇到需要「代答」的問題時
-- **時機**：**決定做出當下**立刻寫，**不延遲到後面補**
+- **觸發**：任何代答決定
+- **時機**：決定做出**當下**立刻寫，不延遲
+- **格式**：問題 / 決策 / 理由 / 可推翻 — 完整範本見 [[examples.md]]
 
-### 5.2 記錄格式
+## 5.5 擔憂處理 & 自動認領 ⭐ 新規範
 
-```markdown
-# Trust Log — <大目標簡述>
+### 5.5.1 自動認領原則
 
-> 啟動時間: <ISO>
-> Deadline:   <ISO>
+- **主軸**：`docs/backlog.md` 裏的 Backlog
+- **順序**：優先級 P0 → P1 → P2 → P3；同優先級按 Story Points 小→大
+- **不留白**：即使時間看起來不夠做完全部，繼續認領下一個能做的
+- **不停下來等**：不因為「時間不夠」就悲觀停工
+- **時間追蹤**：每階段記時間戳；剩餘 < 20% 自動縮小範圍
 
----
+### 5.5.2 擔憂跳過機制
 
-## YYYY-MM-DD HH:MM — <階段名>
+Agent 對某 Backlog **有擔憂**（技術風險、依賴不穩、業務不確定）時：
 
-**問題**：<用戶沒指定什麼>
-**決策**：<Agent 選了什麼>
-**理由**：<為什麼這樣選>
-**可推翻**：✅ / ❌（底線規則不可推翻）
-```
+1. **不執行**那個 Backlog，標為 `⏸️ 待用戶確認（擔憂）`
+2. 寫入 `docs/need-you-help.md`（首次創建，後續 append）
+3. **立即認領下一個** Backlog
+4. 最終交付把 need-you-help.md 列入輸出物
 
-> 完整範例見 [[examples.md]]
+### 5.5.3 need-you-help.md 格式
+
+每條記錄包含：Backlog ID、具體擔憂、影響範圍、用戶抉擇（繼續做 / 改設計 / 跳過）。完整範本 → [[examples.md]]
 
 ## 6. Deadline 處理
 
 ### 6.1 時間內完成
 
-走完整 5 階段，最終 submission 標註「✅ 全部完成」。
+走完整 5 階段，submission 標註「✅ 全部完成」。
 
-### 6.2 時間到未完成（自動停）
+### 6.2 時間到未完成
 
-1. **立即停止**所有執行工作
-2. 跳過階段 4 反省
-3. 用 dav-submitter 提交，標註已完成 / 未完成的 Backlog
-4. 在 trust-log 寫最終記錄：「⏰ Deadline 到達，自動停止」
+立即停止、跳過階段 4、用 `dav-submitter` 提交（含已完成 / 未完成清單）、trust-log 寫「⏰ Deadline 到達」。
 
-### 6.3 時間追蹤
+### 6.3 提早完成（早於 deadline）⚠️ 不延伸工作
 
-- 每階段開始記錄時間戳
-- 剩餘時間 < 20% 時，主動縮小範圍（把 Backlog 標為「不在此次範圍」）
+所有 Backlog ✅ 完成時：
+1. **立即**提交，標註「提早 X 分鐘」
+2. **不要**主動加做（測試改進、重構、新功能）
+3. 直接進入 §9 結束邊界
 
 ## 7. 底線規則（不可跨越）
 
-| # | 規則 | 違反處理 |
-|---|------|---------|
-| 1 | **不可發出外部指令**：不能寄 email、課金、推送通知、刪除線上資料、呼叫付費 API | trust-log 強制記錄 + 停下來等用戶 |
-| 2 | **不可修改不可逆文件**：不修改已 production 的檔案、不直接 push master / main | 必須先 commit 到分支，由用戶手動 merge |
+| # | 規則 |
+|---|------|
+| 1 | **不可發出外部指令**：不寄 email、課金、推送通知、刪線上資料、呼叫付費 API |
+| 2 | **不可修改不可逆文件**：不直接 push master/main、不改 production |
 
-## 8. 輸出物清單
+違反處理：trust-log 強制記錄 + 停下來等用戶。
 
-| 文件 | 必填 | 用途 |
-|------|------|------|
-| `docs/backlog.md` | ✅ | 任務拆解 |
-| `docs/design.md` | 視需要 | UX/UI 設計 |
-| `docs/system-design.md` | 視需要 | 系統架構 |
-| `docs/trust-log.md` | ✅ | 所有代答決定 |
-| `docs/deliverable/<date>-<slug>.md` | ✅ | Markdown 交付摘要 |
-| `docs/deliverable/<date>-<slug>.html` | ✅ | HTML 視覺化版 |
+## 8. 輸出物
 
-## 9. 注意事項
+| 文件 | 必填 |
+|------|------|
+| `docs/backlog.md` | ✅ |
+| `docs/design.md`、`docs/system-design.md` | 視需要 |
+| `docs/trust-log.md` | ✅ |
+| `docs/need-you-help.md` | ⚠️ 有擔憂時才生成 |
+| `docs/deliverable/<date>-<slug>.{md,html}` | ✅ |
 
-- **不要假裝完成**：未做的 Backlog 必須明確標註，不可偽造 ✅
-- **不要省略 trust-log**：每個代答都要有記錄，這是用戶驗收的依據
-- **不要超出底線**：底線規則是硬約束，無論時間多緊都不破例
-- **保持時間觀念**：剩餘時間 < 20% 時主動收斂範圍
+## 9. Trust Mode 結束邊界 ⭐
+
+> **這是 trust mode 最重要的一條新規範** — Agent 必須明確知道何時停止，以及停止後怎樣回應用戶。
+
+### 9.1 三種結束點
+
+- ✅ **提早完成**（見 §6.3）
+- ⏰ **Deadline 到達**（見 §6.2）
+- 🛑 **用戶主動結束**：「結束 trust mode」「停」
+
+### 9.2 結束時必做 3 動作
+
+1. 用 `dav-submitter` 提交最終交付
+2. 對話明確輸出 `🏁 Trust Mode 已結束`
+3. trust-log 寫最終記錄（結束時間 + 原因）
+
+### 9.3 結束後的 Agent 行為 ⭐ 核心新規範
+
+**Agent 自動退出 trust 身份，進入普通對話模式：**
+
+| ❌ 不再做 | ✅ 改為 |
+|----------|--------|
+| 自主做事、寫代碼 | 等用戶指示 |
+| 自動讀 trust-log | 只在被問時參考 |
+| 代答新問題 | 純對話回應 |
+| 自動延伸工作（反省、加 Bug、修改進） | **必須等用戶明確指示** |
+| 用戶問「為什麼這樣選？」 | ✅ 純對話解釋 |
+| 用戶推翻某條決策 | ✅ 改並標「事後修改（用戶指示）」 |
+| 用戶要加新任務 | 🚀 啟動新 trust mode，或保持普通對話 |
+
+### 9.4 重新進入
+
+用戶說「繼續 trust mode」或「新任務用 trust mode 跑 X 分鐘」即重啟。
 
 ---
 
-**範本與代答類別**：→ [[examples.md]]
+**範本、結束後行為對照表、反模式**：→ [[examples.md]]
