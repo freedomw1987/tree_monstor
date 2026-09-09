@@ -65,7 +65,6 @@
 | §2.5 提交 | [2.5-submission.md](docs/sop/handbook/2.5-submission.md) | Submit Gate（dav-submitter）|
 | §2.6 一般任務 | [2.6-general-task.md](docs/sop/handbook/2.6-general-task.md) | 輕量 SOP 流程 |
 | §2.7 違規回報 | [2.7-violations.md](docs/sop/handbook/2.7-violations.md) | §2.7 fail-fast 防線機制 |
-| §2.8 Suggester | [2.8-suggester.md](docs/sop/handbook/2.8-suggester.md) | 第三者視角 advisory agent |
 | §3 CHANGELOG | [changelog.md](docs/sop/handbook/changelog.md) | SOP 異動歷史 |
 
 **安裝後**（執行 `./install.sh --global` 後，AGENTS.md 是 symlink 指向本檔）：

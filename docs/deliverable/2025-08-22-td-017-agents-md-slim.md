@@ -27,8 +27,9 @@
 | `docs/sop/handbook/2.5-submission.md` | 新建（72 行）|
 | `docs/sop/handbook/2.6-general-task.md` | 新建（54 行）|
 | `docs/sop/handbook/2.7-violations.md` | 新建（36 行）|
-| `docs/sop/handbook/2.8-suggester.md` | 新建（53 行）|
 | `docs/sop/handbook/changelog.md` | 新建（46 行）|
+
+> **後續清理**：原 `2.8-suggester.md`（53 行）已於後續清理時移除（suggester subagent 設計未落地，從 SOP 撤回）。
 | `tests/agents-md.bats` | 加 3 個 TD-017 AC 測試 + 修 SOUL-3 awk pattern |
 | `docs/backlog.md` | 加 TD-017 條目 |
 

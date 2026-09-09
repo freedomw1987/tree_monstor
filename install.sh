@@ -733,7 +733,7 @@ install_pi() {
 }
 
 # ---------- Subagent installer (pi-only) ----------
-# Installs tree_monstor's subagents (e.g. suggester) to ~/.agents/<name>.md
+# Installs tree_monstor's subagents to ~/.agents/<name>.md
 # (user-scope). pi-subagents discovers them automatically; they take
 # precedence over builtins but lose to project-scope agents.
 #

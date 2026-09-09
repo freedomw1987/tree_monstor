@@ -80,7 +80,6 @@ setup() {
     "docs/sop/handbook/2.5-submission.md"
     "docs/sop/handbook/2.6-general-task.md"
     "docs/sop/handbook/2.7-violations.md"
-    "docs/sop/handbook/2.8-suggester.md"
     "docs/sop/handbook/changelog.md"
   )
   for path in "${expected[@]}"; do
@@ -97,7 +96,6 @@ setup() {
     "docs/sop/handbook/2.5-submission.md"
     "docs/sop/handbook/2.6-general-task.md"
     "docs/sop/handbook/2.7-violations.md"
-    "docs/sop/handbook/2.8-suggester.md"
     "docs/sop/handbook/changelog.md"
   )
   for path in "${files[@]}"; do

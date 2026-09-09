@@ -25,7 +25,7 @@
 
 | 類型 | 項目 | 說明 |
 | ---- | -- | -- |
-| 重構 | §2.1-§2.8 + §3 抽出去 `docs/sop/handbook/*.md` | 一章一檔，AGENTS.md 從 524 行 → ~150 行 |
+| 重構 | §2.1-§2.7 + §3 抽出去 `docs/sop/handbook/*.md` | 一章一檔，AGENTS.md 從 524 行 → ~150 行 |
 | 重構 | AGENTS.md 引用方式 | Markdown 相對路徑 `[§2.1](./sop/handbook/2.1-planning.md)` |
 
 **目的**：讓大模型可穩記 AGENTS.md 的核心內容（萬事原則、提問紀律、SOP 範圍判斷、4 Gate 表格、引用索引）。
@@ -50,7 +50,6 @@
 | **P1** | §2.4 反省模板 + Action Items 格式 | V15/V16 — 6 維度表 + 4 欄位（動作/類型/驗收/預估） |
 | **P1** | §2.5 Markdown 模板 + 下一步建議規範 | V18/V20 — 必含欄位 + 三項必填 |
 | **P1** | §2.5 Self-Check 清單 | V19 — 8 項 ✅ 才能提交 |
-| **新增** | §2.8 Suggester 協作機制 | — — 第三者視角 advisory agent |
 | **新增** | §3 CHANGELOG（本節） | V24 — SOP 版本控制 |
 
 **修補來源**：AGENTS.md 完整 audit 識別 27 個 vulnerabilities（P0:7 / P1:13 / P2:7），本次處理 P0+P1 共 20 項；P2 待處理。
