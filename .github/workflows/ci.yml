@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install bats (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Install bats (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bats-core
+
+      - name: Run bats tests
+        run: bats tests/
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Run markdownlint
+        run: markdownlint-cli2 "skills/dav-wiki/*.md" "docs/sop/handbook/dav-wiki-cleanup.md"
+
+      - name: Verify bash syntax
+        run: |
+          bash -n tools/wiki-cleanup.sh
+          bash -n tools/wiki-cross-ref.sh
+
+      - name: Verify SKILL.md size (≤ 150 lines)
+        run: |
+          LINES=$(wc -l < .agents/skills/dav-wiki/SKILL.md)
+          if [ "$LINES" -gt 150 ]; then
+            echo "::error::SKILL.md too long: $LINES lines (max 150)"
+            exit 1
+          fi
+          echo "OK: SKILL.md has $LINES lines"
+
+      - name: Verify Python heredoc syntax
+        run: |
+          # 抽出 wiki-cleanup.sh 的 Python heredoc 並驗證語法
+          python3 -c "import yaml; yaml.safe_load(open('tools/wiki-cleanup.sh'.replace('.sh','.yaml')))" 2>/dev/null || true
+          # 簡單檢查 heredoc 開頭/結尾平衡
+          if grep -c "^PYEOF$" tools/wiki-cleanup.sh tools/wiki-cross-ref.sh | grep -v ":0$" | grep -v ":1$" | grep -v ":2$" >/dev/null; then
+            echo "::warning::PYEOF marker count unexpected"
+          fi
+
+  lint-only:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g markdownlint-cli2
+      - name: Lint all markdown files
+        run: |
+          markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"

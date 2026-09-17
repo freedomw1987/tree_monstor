@@ -9,11 +9,10 @@
 
 | 狀態 | 數量 |
 |---|---|
-| PENDING | 0 |
+| PENDING | **0 🎉** |
 | IN_PROGRESS | 0 |
 | PARTIAL | 0 |
-| DONE | 8 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / TD-014 / TD-015 / TD-016) + Sprint 01 反省 |
-| 登記 TD | 8 個 PENDING (TD-005/006/008/009/010/011/012/013)；TD-016/017/018 ✅ DONE |
+| DONE | 27 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / US-008 / TD-014 / TD-015 / TD-016 / US-009 / US-010 / TD-019 / TD-020 / TD-021.1 ~ TD-021.7 / TD-006.1 ~ TD-006.4 / **TD-005 / TD-008**) + Sprint 01 / 04 / 05 / 06 / 07 反省 |
 
 ---
 
@@ -83,7 +82,12 @@
 - **建立日期**：2025-08-16
 - **討論記錄**：[`docs/discussion/2025-08-16-install-sh-merge.md`](discussion/2025-08-16-install-sh-merge.md)
 - **設計計劃**：[`docs/plan/2025-08-16-install-sh-merge.md`](plan/2025-08-16-install-sh-merge.md)
-- **狀態**：🟡 **PENDING** — 等待用戶確認計劃後開始執行
+- **狀態**：✅ **DONE**（已修復，2025-08-21 隨 US-007 驗證期間推進。install.sh 重構為 merge 模式，5 個 bats 測試加；DE-003 負責測試期望調整）
+
+#### 實作記錄
+- 2025-08-21：原 commit 重構 install.sh merge 邏輯並加 5 個 bats 測試（DE-001 AC-1~5）
+- DE-003 同步修 AC-5 測試期望（symlink → 目錄）
+- 進度未更新到 backlog 狀態欄，補登如上
 
 #### Defect 描述
 > **情境**：當 `~/.claude/skills` 已是一個真實目錄（用戶自行安裝了 69 個 skills），installer 會中止並顯示：
@@ -95,16 +99,16 @@
 > **根因**：`ensure_symlink()` 對「存在但不是 symlink」的目標直接拒絕，沒有提供「合併」選項。
 
 #### 驗收標準 (AC)
-- [ ] AC-1：當 `~/.claude/skills` 是真實目錄時，installer 自動進入 **merge 模式**（不報錯）
-- [ ] AC-2：Merge 模式預設行為：對 `tree_monstor/skills/` 中每個 skill 建立一個 symlink 到 `~/.claude/skills/<skill-name>`（命名不衝突時）
-- [ ] AC-3：當 `~/.claude/skills/<skill-name>` 已存在（用戶自有同名 skill）時，**跳過**但列出警告（不覆蓋）
-- [ ] AC-4：新增 `--claude-skills-mode {merge|replace|skip}` 旗標覆寫預設（merge=預設，replace=原行為的破壞式覆蓋，skip=不安裝 Claude skills）
-- [ ] AC-5：對 `~/.claude/CLAUDE.md` 處理：若已是 symlink 且指向非 tree_monstor 源頭，自動解除並重寫為標準 wrapper（用 `@` 引用新路徑）
-- [ ] AC-6：對 `~/.pi/`（全新空的目錄）按原計劃執行 symlink
-- [ ] AC-7：對 `.agents/tree_monstor/` copy 仍按原計劃執行
-- [ ] AC-8：所有新邏輯有對應的 bats 測試（≥ 5 個新測試案例）
-- [ ] AC-9：`./tests/install.bats` 全部通過（舊 19 + 新 ≥ 5）
-- [ ] AC-10：dry-run 模式正確顯示 merge 行為（不實際執行）
+- [x] AC-1：當 `~/.claude/skills` 是真實目錄時，installer 自動進入 **merge 模式**（不報錯）
+- [x] AC-2：Merge 模式預設行為：對 `tree_monstor/skills/` 中每個 skill 建立一個 symlink 到 `~/.claude/skills/<skill-name>`（命名不衝突時）
+- [x] AC-3：當 `~/.claude/skills/<skill-name>` 已存在（用戶自有同名 skill）時，**跳過**但列出警告（不覆蓋）
+- [x] AC-4：新增 `--claude-skills-mode {merge|replace|skip}` 旗標覆寫預設（merge=預設，replace=原行為的破壞式覆蓋，skip=不安裝 Claude skills）
+- [x] AC-5：對 `~/.claude/CLAUDE.md` 處理：若已是 symlink 且指向非 tree_monstor 源頭，自動解除並重寫為標準 wrapper（用 `@` 引用新路徑）
+- [x] AC-6：對 `~/.pi/`（全新空的目錄）按原計劃執行 symlink
+- [x] AC-7：對 `.agents/tree_monstor/` copy 仍按原計劃執行
+- [x] AC-8：所有新邏輯有對應的 bats 測試（≥ 5 個新測試案例）— 5 個 ✅（DE-001 AC-1~5）
+- [x] AC-9：`./tests/install.bats` 全部通過（舊 19 + 新 ≥ 5）— 26/26 過 ✅
+- [x] AC-10：dry-run 模式正確顯示 merge 行為（不實際執行）
 
 ---
 
@@ -226,6 +230,99 @@
 
 ---
 
+### US-009：建立 `dav-wiki` skill — 統一文件資料提取與 Markdown 化（2026-01-15）
+- **Module**：M3 — Knowledge Management
+- **Story Point**：8（中等偏重：含核心流程 + schema + 演進規則 + examples + 測試）
+- **Sprint**：Sprint 03（建議）— 強相依不拆
+- **優先級**：P1（個人 / 團隊知識管理基礎設施）
+- **建立日期**：2026-01-15
+- **討論記錄**：[`docs/discussion/2026-01-15-dav-wiki-design.md`](discussion/2026-01-15-dav-wiki-design.md)
+- **設計計劃**：[`docs/plan/2026-01-15-dav-wiki-design.md`](plan/2026-01-15-dav-wiki-design.md)
+- **PRD**：[`docs/prd/03-knowledge-extraction.md`](prd/03-knowledge-extraction.md) + [HTML 版](prd/03-knowledge-extraction.html)
+- **架構設計**：[`docs/system-design.md`](system-design.md)、[`docs/DESIGN.md`](DESIGN.md)
+- **狀態**：🟢 **執行完成** — 4 Gate 全部通過，提交交付物中
+
+#### User Story
+> **作為** tree_monstor 的使用者，
+> **我想要** 一個 `dav-wiki` skill，可以接收各種來源的資料（純文字、Office 文件、網頁、圖片 OCR、影音字幕）並自動轉成 Markdown 知識庫，
+> **以便** 我能把所有學習資料、研究筆記、會議記錄統一沉澱在 `docs/wiki/`，且未來 AI 引用時可透過 frontmatter、tag、概念交叉關聯快速取用。
+
+#### 來源支援（核心 + 擴充）
+| 來源 | 層級 | 備註 |
+| --- | --- | --- |
+| 純文字（.txt, .md） | 核心 | 最簡單、最快 |
+| Office（.pdf, .docx, .pptx） | 核心 | 用 pandoc / pdf2text 等工具 |
+| 網頁 URL | 核心 | 用 fetch_content 或爬蟲 |
+| 圖片 OCR | 擴充模組 | 可選安裝 |
+| YouTube 字幕 / 影片 | 擴充模組 | 可選安裝 |
+
+#### 輸出結構
+```
+docs/
+├── README.md                          ← 自動生成的導航頁
+├── wiki/
+│   ├── _index.json                    ← 文件索引
+│   ├── _tags.json                     ← tag 反向索引
+│   └── {category}/
+│       └── {YYYY-MM}/
+│           └── {title}.md             ← 帶 frontmatter
+└── concepts/
+    ├── _concepts.json                 ← 概念索引
+    └── {slug}.md                      ← 獨立概念文件
+```
+
+#### 內容處理
+- ✅ 清理格式噪音、加標題層級、提取重點摘要、標記圖表
+- ✅ AI 加 tag、交叉引用相關文件（透過 `_index.json` 索引式比對）
+- ✅ **概念提取**：從文件提煉概念（1-5 個/篇），寫進 `docs/concepts/`
+- ✅ **概念演進**：衍生（derive）/ 修正（revise）/ 合併（merge）/ 棄用（deprecate）
+- ✅ Obsidian-style 雙向連結 `[[xxx]]`
+- ❌ QA 問答對（不做）
+
+#### Trust 整合
+- 用戶輸入加 `/trust` 前綴 → 走 `dav-trust` 自主模式
+- 否則正常對話流程
+
+#### Acceptance Criteria
+- [x] AC-1：skill 存放於 `.agents/skills/dav-wiki/` 下，含 SKILL.md + examples.md + frontmatter-schema.md + concept-evolution.md
+- [x] AC-2：SKILL.md **≤ 150 行**（dav-skill-creater 規則）— 107 行 ✅
+- [x] AC-3：支援所有 5 種輸入來源（核心 3 種必支援；OCR / 字幕標為擴充模組）
+- [x] AC-4：Category 走「AI 建議 + 用戶確認」流程（V01/V02 紀律）
+- [x] AC-5：每篇產出檔案含完整 frontmatter（source, extracted_at, category, tags, summary, related, concepts）
+- [x] AC-6：交叉引用透過 `_index.json` 索引式比對，結果用 `[[xxx]]` 標記
+- [x] AC-7：概念提取成功後同時產出 `docs/concepts/{slug}.md` 並更新 `_concepts.json`
+- [x] AC-8：概念演進 4 種動作（derive/revise/merge/deprecate）都有明確規則文件
+- [x] AC-9：用 `/trust` 前綴時啟動 `dav-trust` 自主模式
+- [x] AC-10：`docs/README.md` 在每次任務完成後自動重建
+- [x] AC-11：軟刪除用 frontmatter 標記（`superseded_by` / `deprecated`）
+- [x] AC-12：含測試（用 `tdd-test-writer` 流程，覆蓋核心路徑）— 20 tests ✅
+
+#### 子任務（待拆解）
+| ID | 標題 | 備註 |
+| --- | --- | --- |
+| US-009-T1 | 用 `dav-designer` 完成設計計劃 | ✅ DONE — DESIGN.md + system-design.md + PRD (.md/.html) + plan.md |
+| US-009-T2 | 用 `tdd-test-writer` 寫測試 | ✅ DONE — tests/dav-wiki.bats（20 tests） |
+| US-009-T3 | 實作 `SKILL.md`（核心流程 ≤ 150 行） | ✅ DONE — 107 行（含空行） |
+| US-009-T4 | 實作 `frontmatter-schema.md` | ✅ DONE — 文件 + 概念兩種 schema |
+| US-009-T5 | 實作 `concept-evolution.md` | ✅ DONE — 4 種演進動作規則 |
+| US-009-T6 | 實作 `examples.md` | ✅ DONE — 9 個操作範例 |
+| US-009-T7 | 用 `dev-checker-loop` 跑質量檢查 | ✅ DONE — reviewer verdict: OK with notes（2 P1 + 7 P2 已修） |
+| US-009-T8 | 用 `regression-guard` 預留探針 | ✅ DONE — bats tests/dav-wiki.bats 充當探針；全套 76/76 通過 |
+| US-009-T9 | 用 `dav-reflection` 反省 | ✅ DONE — docs/reflection/us-009-reflection.md |
+| US-009-T10 | 用 `dav-submitter` 產出交付物 | ✅ DONE — .md + .html + 對話摘要 |
+
+#### 設計決策摘要
+- ✅ 核心三來源（純文字 / Office / 網頁）+ 兩個擴充（OCR / 字幕）
+- ✅ 輸出結構：docs/README.md + docs/wiki/ + docs/concepts/
+- ✅ 內容處理：C 級深度加工（不含 QA 問答對）
+- ✅ Category：AI 建議 + 用戶確認
+- ✅ 交叉引用：`_index.json` 索引式比對 + Obsidian `[[xxx]]`
+- ✅ Trust 整合：可選 `/trust` 前綴
+- ✅ 軟刪除：用 frontmatter 標記
+- ✅ Skill 結構：SKILL.md + 3 個附件（examples / schema / concept-evolution）
+
+---
+
 ### Technical Debt（從 US-001 反省產生）
 
 | ID | 標題 | 來源 | 優先級 |
@@ -301,6 +398,21 @@
 - 提案：handbook/*.md 用**同樣 per-file symlink 機制**部署到 `~/.pi/sop/handbook/*.md` + `~/.claude/sop/handbook/*.md`
 - 預估 SP：3（中量改動 — 要動 install.sh 的 plan + install + uninstall + 加 4-6 個 bats 測試）
 
+### Technical Debt（從 US-009 反省產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-019 ✅ | 軟刪除磁碟清理機制（deprecated 檔案永遠保留）— 加定期清理工具 + `docs/wiki/_deprecated/` 子目錄隔離 | [us-009-reflection.md §2.3](reflection/us-009-reflection.md) | P1 |
+| TD-020 ✅ | 交叉引用品質改善（純 tag 重疊比對 → 加上 summary 關鍵詞比對） | [us-009-reflection.md §2.3](reflection/us-009-reflection.md) | P1 |
+
+> **TD-019 / TD-020 ✅ 已修復**（Sprint 04）：加 `tools/wiki-cleanup.sh` + `tools/wiki-cross-ref.sh` + 兩個 handbook + 20 個 bats tests。詳見 [docs/deliverable/2026-01-15-sprint-04.md](deliverable/2026-01-15-sprint-04.md)。
+
+### Technical Debt（從 Sprint 04 reviewer 產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-021 | cleanup 工具強化 + README 重建 + 8 條 reviewer findings + 7 個邊緣案例測試 | [sprint-04-review.md](review/2026-01-15-sprint-04-review.md) | P1 |
+
 ### 已完成的 TD（本 Sprint）
 
 - TD-001 ✅：重構 install.sh 函數排列 + 刪 stale 註解 + 移除未用 `VERBOSE`
@@ -331,3 +443,115 @@
 - 結果：5 個維度通過、1 個 N/A、無 ❌
 - 新發現：TD-012 / TD-013
 - 結論：✅ 成功（100% 完成率 + 額外修復 DE-001）
+
+---
+
+## 🚀 Sprint 04 — dav-wiki 優化（2026-01-15 規劃）
+
+**主題**：讓剛完工的 dav-wiki skill 從「規格通過」走到「實戰驗證 + 兩個 P1 技術債清除」
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **US-010** | dav-wiki 實戰測試（PDF + URL） | 2 | P0 | ✅ DONE |
+| **TD-019** | 軟刪除磁碟清理機制 | 1.5 | P1 | ✅ DONE |
+| **TD-020** | 交叉引用品質改善 | 1.5 | P1 | ✅ DONE |
+
+**計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-04.md`](plan/2026-01-15-dav-wiki-sprint-04.md)
+**交付文件**：[`docs/deliverable/2026-01-15-sprint-04.md`](deliverable/2026-01-15-sprint-04.md)
+**反省報告**：[`docs/reflection/sprint-04-reflection.md`](reflection/sprint-04-reflection.md)
+**Reviewer 檢查**：[`docs/review/2026-01-15-sprint-04-review.md`](review/2026-01-15-sprint-04-review.md)
+**總 SP**：5 SP
+**前置**：US-009 ✅ DONE
+
+### US-010：dav-wiki 實戰測試
+- **User Story**：拿真實的文件（1 個 PDF + 1 個 URL）跑 `dav-wiki` 流程，驗證 7 步流程順暢
+- **AC-1**：拿真實 PDF 跑 dav-wiki，產出 1 篇 wiki + 1-5 個概念
+- **AC-2**：拿真實 URL 跑 dav-wiki，產出 1 篇 wiki
+- **AC-3**：發現 ≥ 2 個「規格沒說清楚」的問題
+- **AC-4**：每個問題登記成 TD 或更新文件
+- **AC-5**：產出 smoke-test 紀錄文件
+
+### TD-019：軟刪除磁碟清理機制
+- **User Story**：清理工具把 deprecated 標記超過 N 天的檔案移到 `docs/wiki/_deprecated/` 隔離
+- **方案 A（推薦）**：移到 `_deprecated/{YYYY-MM}/` + 反向索引
+- **方案 B**：CLI `tools/wiki-cleanup.sh` 手動清理
+- **方案 C**：自動清理 N 天前
+
+### TD-020：交叉引用品質改善
+- **User Story**：交叉引用不只看 tag，也看 summary 關鍵詞，推薦更準
+- **方案**：`_index.json` 加 `keywords: [string]` 欄位（從 summary 提取 3-5 個）+ tag+keywords 比對
+
+---
+
+## 🚀 Sprint 05 — TD-021 cleanup 強化（2026-01-15 規劃）
+
+**主題**：清掉 Sprint 04 reviewer 找到的 P2/P3 + 7 個邊緣案例 + cleanup README 重建
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **TD-021.1** | `wiki-cleanup.sh` README 重建（補 step [9] 實作） | 0.5 | P1 | ✅ DONE |
+| **TD-021.2** | `wiki-cleanup.sh` 修 `errors` counter 不變問題 | 0.25 | P2 | ✅ DONE |
+| **TD-021.3** | `wiki-cross-ref.sh` 加第三排序鍵 tie 確定性 | 0.25 | P2 | ✅ DONE |
+| **TD-021.4** | `wiki-cleanup.sh` 程式碼風格 | 0.25 | P3 | ✅ DONE |
+| **TD-021.5** | `wiki-cross-ref.sh` 旗標解析風格統一 | 0.25 | P3 | ✅ DONE |
+| **TD-021.6** | examples.md 範例 1 補 keywords 步驟 | 0.25 | P2 | ✅ DONE |
+| **TD-021.7** | 7 個邊緣案例測試（E1-E7） | 1 | P1 | ✅ DONE |
+
+**交付文件**：[`docs/deliverable/2026-01-15-sprint-05.md`](deliverable/2026-01-15-sprint-05.md)
+**反省報告**：[`docs/reflection/sprint-05-reflection.md`](reflection/sprint-05-reflection.md)
+**Reviewer 檢查**：[`docs/review/2026-01-15-sprint-05-review.md`](review/2026-01-15-sprint-05-review.md)
+
+**計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-05.md`](plan/2026-01-15-dav-wiki-sprint-05.md)
+**總 SP**：2.75 SP
+**前置**：Sprint 04 ✅ DONE
+
+### 邊緣案例清單（E1-E7）
+| ID | 測試內容 |
+| --- | --- |
+| E1 | `--purge` 真刪除 |
+| E2 | 季度分類正確性（2026-02 → 2026-Q1） |
+| E3 | 無效 `deprecated_at` fallback |
+| E4 | 冪等性 |
+| E5 | new-doc.tags=[] 應回 0 推薦 |
+| E6 | self-match 排除 |
+| E7 | tie 排序 deterministic |
+
+---
+
+## 🚀 Sprint 06 — TD-006 GitHub Actions CI（2026-01-15 規劃）
+
+**主題**：把技術債推到 0 — 從 US-001 留下的 P2 技術債
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **TD-006.1** | GitHub Actions workflow（`.github/workflows/ci.yml`）| 1 | P2 | ✅ DONE |
+| **TD-006.2** | 在 README.md 加 CI badge | 0.25 | P3 | ✅ DONE |
+| **TD-006.3** | 文件：貢獻者指南（CONTRIBUTING.md）含 CI 說明 | 0.5 | P3 | ✅ DONE |
+| **TD-006.4** | 補一個 Linux-specific test fixture | 0.25 | P2 | ✅ DONE |
+
+**交付文件**：[`docs/deliverable/2026-01-15-sprint-06.md`](deliverable/2026-01-15-sprint-06.md)
+**反省報告**：[`docs/reflection/sprint-06-reflection.md`](reflection/sprint-06-reflection.md)
+**Reviewer 檢查**：[`docs/review/2026-01-15-sprint-06-review.md`](review/2026-01-15-sprint-06-review.md)
+
+**計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-06.md`](plan/2026-01-15-dav-wiki-sprint-06.md)
+**總 SP**：2 SP
+**前置**：Sprint 05 ✅ DONE
+
+---
+
+## 🚀 Sprint 07 — TD-005 + TD-008 剩餘技術債（2026-01-15 規劃）
+
+**主題**：把技術債從 2 推到 0
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **TD-005** | install.sh AC-11a 改為更精準冪等測試（比對具體檔案而非 hash） | 0.5 | P2 | ✅ DONE |
+| **TD-008** | install.sh Magic strings 集中成變數（`.claude`/`.pi`/`.agents`/marker） | 1 | P3 | ✅ DONE |
+
+**交付文件**：[`docs/deliverable/2026-01-15-sprint-07.md`](deliverable/2026-01-15-sprint-07.md)
+**反省報告**：[`docs/reflection/sprint-07-reflection.md`](reflection/sprint-07-reflection.md)
+**Reviewer 檢查**：[`docs/review/2026-01-15-sprint-07-review.md`](review/2026-01-15-sprint-07-review.md)
+
+**計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-07.md`](plan/2026-01-15-dav-wiki-sprint-07.md)
+**總 SP**：1.5 SP
+**前置**：Sprint 06 ✅ DONE

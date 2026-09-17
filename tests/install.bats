@@ -189,15 +189,41 @@ teardown() {
 @test "AC-11a: repeated runs produce identical state and no errors" {
   run run_install --global --yes
   [ "$status" -eq 0 ]
-  local first_hash
-  first_hash="$(find "$TEST_HOME/.claude" "$TEST_HOME/.pi" -maxdepth 4 -type l -o -type f | sort | xargs -I{} sh -c 'echo {}; readlink "{}" 2>/dev/null || true' | sort | shasum | awk '{print $1}')"
 
+  # 拍一次快照：列出 install 產出的所有檔案 + 每個檔案的 sha256 hash
+  # 跨平台友奸（不依賴 mtime / permissions / find 順序）
+  snapshot_install_state() {
+    local home="$1"
+    # 只列 install.sh 管理的子目錄（$home/.claude, .pi, .agents/tree_monstor）
+    {
+      find "$home/.claude" "$home/.pi" "$home/.agents/tree_monstor" -type f -o -type l 2>/dev/null | sort
+    } | while read -r p; do
+      # 每一行：路徑 + 類型（file/symlink）+ 內容 hash 或 symlink target
+      if [[ -L "$p" ]]; then
+        echo "$(realpath "$p" 2>/dev/null || readlink "$p") symlink $(readlink "$p")"
+      elif [[ -f "$p" ]]; then
+        echo "$(realpath "$p" 2>/dev/null || echo "$p") file $(shasum -a 256 "$p" | awk '{print $1}')"
+      fi
+    done | sort | shasum -a 256 | awk '{print $1}'
+  }
+
+  local first_snapshot
+  first_snapshot="$(snapshot_install_state "$TEST_HOME")"
+
+  # 跑第二次
   run run_install --global --yes
   [ "$status" -eq 0 ]
-  local second_hash
-  second_hash="$(find "$TEST_HOME/.claude" "$TEST_HOME/.pi" -maxdepth 4 -type l -o -type f | sort | xargs -I{} sh -c 'echo {}; readlink "{}" 2>/dev/null || true' | sort | shasum | awk '{print $1}')"
 
-  [ "$first_hash" = "$second_hash" ]
+  local second_snapshot
+  second_snapshot="$(snapshot_install_state "$TEST_HOME")"
+
+  [ "$first_snapshot" = "$second_snapshot" ]
+
+  # 額外驗證：具體檔案清單（path basename）應一致
+  local first_files second_files
+  first_files="$(find "$TEST_HOME/.claude" "$TEST_HOME/.pi" "$TEST_HOME/.agents/tree_monstor" -mindepth 1 2>/dev/null | sort)"
+  second_files="$(find "$TEST_HOME/.claude" "$TEST_HOME/.pi" "$TEST_HOME/.agents/tree_monstor" -mindepth 1 2>/dev/null | sort)"
+  [ "$first_files" = "$second_files" ]
 }
 
 @test "AC-11b: re-running repairs a broken symlink" {

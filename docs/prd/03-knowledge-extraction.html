@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD-03 — Knowledge Extraction（dav-wiki skill）</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #2563eb;
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --code-bg: #f3f4f6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.7;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; border-bottom: 3px solid var(--accent); padding-bottom: 0.3rem; }
+  h2 { font-size: 1.5rem; margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.2rem; margin-top: 1.5rem; color: var(--accent); }
+  .meta { background: var(--code-bg); padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 2rem; font-size: 0.9rem; }
+  .meta strong { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; font-size: 0.9rem; }
+  th { background: var(--code-bg); font-weight: 600; }
+  code { background: var(--code-bg); padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; }
+  .success { color: var(--success); font-weight: 600; }
+  .warning { color: var(--warning); font-weight: 600; }
+  .danger { color: var(--danger); font-weight: 600; }
+  .callout { background: #eff6ff; border-left: 4px solid var(--accent); padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+  .diagram { text-align: center; margin: 2rem 0; padding: 1rem; background: #fafafa; border-radius: 8px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  ul { padding-left: 1.5rem; }
+  li { margin: 0.25rem 0; }
+  .legend { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+  .legend-core { background: #dbeafe; color: #1e40af; }
+  .legend-ext { background: #fef3c7; color: #92400e; }
+</style>
+</head>
+<body>
+
+<h1>📚 PRD-03 — Knowledge Extraction</h1>
+<p style="font-size: 1.1rem; color: var(--muted);"><strong>dav-wiki skill</strong> — 統一文件資料提取與 Markdown 化</p>
+
+<div class="meta">
+  <strong>對應 Backlog</strong>：<a href="../../backlog.md#us-009建立-dav-wiki-skill--統一文件資料提取與-markdown-化2026-01-15">US-009</a><br>
+  <strong>模組</strong>：M3 — Knowledge Management<br>
+  <strong>Story Point</strong>：8（中等偏重）<br>
+  <strong>建立日期</strong>：2026-01-15
+</div>
+
+<div class="callout">
+  <strong>🎯 模組目標</strong><br>
+  建立 <code>dav-wiki</code> skill，統一文件資料提取與 Markdown 化流程，
+  讓用戶能把所有學習資料、研究筆記、會議記錄沉澱在結構化知識庫中，
+  且未來可透過 frontmatter、tag、概念交叉關聯被 AI 高效引用。
+</div>
+
+<h2>📊 系統流程圖</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1f2937"/>
+    </marker>
+    <linearGradient id="gradInput" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#dbeafe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#bfdbfe;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradProcess" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e0e7ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c7d2fe;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradOutput" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#dcfce7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#bbf7d0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- 標題 -->
+  <text x="450" y="25" text-anchor="middle" font-size="18" font-weight="700" fill="#1e40af">dav-wiki 7 步主流程</text>
+
+  <!-- 輸入來源（左側） -->
+  <text x="100" y="60" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">輸入來源</text>
+  <rect x="20" y="75" width="160" height="40" rx="6" fill="url(#gradInput)" stroke="#1e40af"/>
+  <text x="100" y="100" text-anchor="middle" font-size="12">📄 純文字</text>
+
+  <rect x="20" y="125" width="160" height="40" rx="6" fill="url(#gradInput)" stroke="#1e40af"/>
+  <text x="100" y="150" text-anchor="middle" font-size="12">📑 Office（PDF/Word/PPT）</text>
+
+  <rect x="20" y="175" width="160" height="40" rx="6" fill="url(#gradInput)" stroke="#1e40af"/>
+  <text x="100" y="200" text-anchor="middle" font-size="12">🌐 網頁 URL</text>
+
+  <rect x="20" y="225" width="160" height="40" rx="6" fill="#fef3c7" stroke="#92400e" stroke-dasharray="4,2"/>
+  <text x="100" y="250" text-anchor="middle" font-size="12">🖼️ 圖片 OCR <tspan fill="#92400e" font-size="10">（擴充）</tspan></text>
+
+  <rect x="20" y="275" width="160" height="40" rx="6" fill="#fef3c7" stroke="#92400e" stroke-dasharray="4,2"/>
+  <text x="100" y="300" text-anchor="middle" font-size="12">🎬 影片字幕 <tspan fill="#92400e" font-size="10">（擴充）</tspan></text>
+
+  <!-- 統一箭頭到 [1] -->
+  <line x1="180" y1="175" x2="245" y2="175" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="212" y="170" text-anchor="middle" font-size="10" fill="#374151">提取</text>
+
+  <!-- [1] 來源識別 -->
+  <rect x="250" y="150" width="160" height="50" rx="8" fill="url(#gradProcess)" stroke="#4338ca" stroke-width="2"/>
+  <text x="330" y="172" text-anchor="middle" font-size="13" font-weight="600">[1] 來源識別</text>
+  <text x="330" y="190" text-anchor="middle" font-size="10" fill="#4338ca">統一文字流</text>
+
+  <!-- 連到 [2] -->
+  <line x1="410" y1="175" x2="445" y2="175" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- [2] 內容處理 -->
+  <rect x="450" y="150" width="160" height="50" rx="8" fill="url(#gradProcess)" stroke="#4338ca" stroke-width="2"/>
+  <text x="530" y="172" text-anchor="middle" font-size="13" font-weight="600">[2] 內容處理</text>
+  <text x="530" y="190" text-anchor="middle" font-size="10" fill="#4338ca">清理 / 結構 / 摘要</text>
+
+  <!-- [3] Category 互動（菱形） -->
+  <line x1="610" y1="175" x2="645" y2="175" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <polygon points="780,175 850,140 920,175 850,210" fill="#fde68a" stroke="#b45309" stroke-width="2"/>
+  <text x="850" y="170" text-anchor="middle" font-size="12" font-weight="600">[3] Category</text>
+  <text x="850" y="186" text-anchor="middle" font-size="10" fill="#b45309">用戶確認</text>
+
+  <!-- 從 Category 回到 [2] 如果用戶拒絕 -->
+  <path d="M 850 210 Q 850 250 600 220 Q 530 215 530 200" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <text x="730" y="252" font-size="10" fill="#dc2626">↺ 重試</text>
+
+  <!-- [4] Tag 提取 -->
+  <line x1="780" y1="175" x2="745" y2="175" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="610" y="150" width="130" height="50" rx="8" fill="url(#gradProcess)" stroke="#4338ca" stroke-width="2"/>
+  <text x="675" y="172" text-anchor="middle" font-size="13" font-weight="600">[4] Tag</text>
+  <text x="675" y="190" text-anchor="middle" font-size="10" fill="#4338ca">AI 自動</text>
+
+  <!-- 從 [4] 換行向下到 [5] -->
+  <path d="M 675 200 L 675 240" fill="none" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- [5] 交叉引用 -->
+  <rect x="595" y="245" width="160" height="50" rx="8" fill="url(#gradProcess)" stroke="#4338ca" stroke-width="2"/>
+  <text x="675" y="267" text-anchor="middle" font-size="13" font-weight="600">[5] 交叉引用</text>
+  <text x="675" y="285" text-anchor="middle" font-size="10" fill="#4338ca">讀 _index.json</text>
+
+  <!-- 連到 _index.json -->
+  <line x1="595" y1="270" x2="450" y2="270" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <rect x="370" y="255" width="80" height="30" rx="4" fill="#f3f4f6" stroke="#6b7280"/>
+  <text x="410" y="274" text-anchor="middle" font-size="11">📇 _index.json</text>
+
+  <!-- [6] 概念提取 -->
+  <path d="M 595 270 L 540 270" fill="none" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="380" y="245" width="160" height="50" rx="8" fill="url(#gradProcess)" stroke="#4338ca" stroke-width="2"/>
+  <text x="460" y="267" text-anchor="middle" font-size="13" font-weight="600">[6] 概念提取</text>
+  <text x="460" y="285" text-anchor="middle" font-size="10" fill="#4338ca">1-5 個 concept</text>
+
+  <!-- 連到 [7] -->
+  <line x1="380" y1="270" x2="345" y2="270" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- [7] 寫入 -->
+  <rect x="190" y="245" width="160" height="50" rx="8" fill="url(#gradProcess)" stroke="#4338ca" stroke-width="2"/>
+  <text x="270" y="267" text-anchor="middle" font-size="13" font-weight="600">[7] 寫入 + 索引</text>
+  <text x="270" y="285" text-anchor="middle" font-size="10" fill="#4338ca">.md + JSON</text>
+
+  <!-- 輸出結構（下方） -->
+  <text x="450" y="370" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">產出結構</text>
+
+  <rect x="20" y="385" width="200" height="50" rx="6" fill="url(#gradOutput)" stroke="#15803d"/>
+  <text x="120" y="407" text-anchor="middle" font-size="12">📄 docs/wiki/...</text>
+  <text x="120" y="423" text-anchor="middle" font-size="10" fill="#15803d">{category}/{YYYY-MM}/{title}.md</text>
+
+  <rect x="240" y="385" width="160" height="50" rx="6" fill="url(#gradOutput)" stroke="#15803d"/>
+  <text x="320" y="407" text-anchor="middle" font-size="12">💡 docs/concepts/...</text>
+  <text x="320" y="423" text-anchor="middle" font-size="10" fill="#15803d">{slug}.md</text>
+
+  <rect x="420" y="385" width="160" height="50" rx="6" fill="url(#gradOutput)" stroke="#15803d"/>
+  <text x="500" y="407" text-anchor="middle" font-size="12">📇 _index.json</text>
+  <text x="500" y="423" text-anchor="middle" font-size="10" fill="#15803d">_tags.json + _concepts.json</text>
+
+  <rect x="600" y="385" width="160" height="50" rx="6" fill="url(#gradOutput)" stroke="#15803d"/>
+  <text x="680" y="407" text-anchor="middle" font-size="12">🧭 docs/README.md</text>
+  <text x="680" y="423" text-anchor="middle" font-size="10" fill="#15803d">自動導航頁</text>
+
+  <!-- 從 [7] 連到產出 -->
+  <line x1="270" y1="295" x2="120" y2="385" stroke="#15803d" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="270" y1="295" x2="320" y2="385" stroke="#15803d" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="270" y1="295" x2="500" y2="385" stroke="#15803d" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="270" y1="295" x2="680" y2="385" stroke="#15803d" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 完成標記 -->
+  <ellipse cx="450" cy="500" rx="160" ry="35" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+  <text x="450" y="495" text-anchor="middle" font-size="14" font-weight="700" fill="#15803d">✅ 完成</text>
+  <text x="450" y="513" text-anchor="middle" font-size="11" fill="#15803d">{N} 檔案 + {M} 概念</text>
+
+  <line x1="450" y1="435" x2="450" y2="465" stroke="#15803d" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- 圖例 -->
+  <rect x="20" y="540" width="240" height="20" fill="#f3f4f6" stroke="#9ca3af"/>
+  <text x="35" y="555" font-size="11">
+    <rect x="0" y="546" width="12" height="10" fill="url(#gradInput)"/><tspan dx="4">核心</tspan>
+    <rect x="60" y="546" width="12" height="10" fill="#fef3c7"/><tspan dx="4">擴充</tspan>
+    <rect x="120" y="546" width="12" height="10" fill="url(#gradProcess)"/><tspan dx="4">處理步驟</tspan>
+    <rect x="200" y="546" width="12" height="10" fill="url(#gradOutput)"/><tspan dx="4">產出</tspan>
+  </text>
+</svg>
+</div>
+
+<h2>🎨 概念演進規則</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg">
+  <text x="400" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1e40af">Concept Evolution（4 種動作）</text>
+
+  <!-- derive -->
+  <rect x="20" y="60" width="170" height="180" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="105" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#1e40af">derive 衍生</text>
+  <text x="105" y="108" text-anchor="middle" font-size="10" fill="#6b7280">新文件發現子概念</text>
+
+  <ellipse cx="105" cy="135" rx="60" ry="20" fill="#fff" stroke="#1e40af"/>
+  <text x="105" y="140" text-anchor="middle" font-size="10">舊概念</text>
+
+  <line x1="105" y1="155" x2="105" y2="180" stroke="#1e40af" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <ellipse cx="60" cy="210" rx="50" ry="18" fill="#fff" stroke="#1e40af"/>
+  <text x="60" y="214" text-anchor="middle" font-size="9">新子概念</text>
+
+  <ellipse cx="150" cy="210" rx="50" ry="18" fill="#fff" stroke="#1e40af"/>
+  <text x="150" y="214" text-anchor="middle" font-size="9">另一子概念</text>
+
+  <!-- revise -->
+  <rect x="220" y="60" width="170" height="180" rx="8" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+  <text x="305" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#15803d">revise 修正</text>
+  <text x="305" y="108" text-anchor="middle" font-size="10" fill="#6b7280">修改定義 + 加 history</text>
+
+  <ellipse cx="305" cy="140" rx="55" ry="22" fill="#fff" stroke="#15803d"/>
+  <text x="305" y="136" text-anchor="middle" font-size="10">原概念</text>
+  <text x="305" y="148" text-anchor="middle" font-size="9" fill="#6b7280">v1</text>
+
+  <line x1="305" y1="162" x2="305" y2="185" stroke="#15803d" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <ellipse cx="305" cy="215" rx="55" ry="22" fill="#fff" stroke="#15803d" stroke-width="2"/>
+  <text x="305" y="211" text-anchor="middle" font-size="10">更新概念</text>
+  <text x="305" y="223" text-anchor="middle" font-size="9" fill="#15803d">v2 + history</text>
+
+  <!-- merge -->
+  <rect x="420" y="60" width="170" height="180" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+  <text x="505" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#b45309">merge 合併</text>
+  <text x="505" y="108" text-anchor="middle" font-size="10" fill="#6b7280">兩個概念合成一個</text>
+
+  <ellipse cx="465" cy="140" rx="40" ry="18" fill="#fff" stroke="#b45309"/>
+  <text x="465" y="144" text-anchor="middle" font-size="9">概念 A</text>
+
+  <ellipse cx="545" cy="140" rx="40" ry="18" fill="#fff" stroke="#b45309"/>
+  <text x="545" y="144" text-anchor="middle" font-size="9">概念 B</text>
+
+  <line x1="465" y1="158" x2="490" y2="190" stroke="#b45309" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="545" y1="158" x2="520" y2="190" stroke="#b45309" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <ellipse cx="505" cy="215" rx="60" ry="20" fill="#fff" stroke="#b45309" stroke-width="2"/>
+  <text x="505" y="219" text-anchor="middle" font-size="10">合併概念</text>
+
+  <!-- deprecate -->
+  <rect x="620" y="60" width="170" height="180" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="705" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#dc2626">deprecate 棄用</text>
+  <text x="705" y="108" text-anchor="middle" font-size="10" fill="#6b7280">標 superseded_by</text>
+
+  <ellipse cx="705" cy="140" rx="50" ry="20" fill="#fff" stroke="#dc2626"/>
+  <text x="705" y="144" text-anchor="middle" font-size="10">舊概念</text>
+
+  <line x1="705" y1="160" x2="705" y2="185" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <ellipse cx="705" cy="215" rx="60" ry="22" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="705" y="211" text-anchor="middle" font-size="10" fill="#dc2626"">⚠️ DEPRECATED</text>
+  <text x="705" y="223" text-anchor="middle" font-size="9" fill="#dc2626">superseded_by: new</text>
+</svg>
+</div>
+
+<h2>📋 功能總覽（FR）</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>類別</th>
+      <th>ID</th>
+      <th>功能</th>
+      <th>層級</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td rowspan="8"><strong>FR-1 多來源</strong></td><td>FR-1.1</td><td>純文字（.txt, .md）</td><td><span class="legend legend-core">核心</span></td></tr>
+    <tr><td>FR-1.2</td><td>PDF 文件</td><td><span class="legend legend-core">核心</span></td></tr>
+    <tr><td>FR-1.3</td><td>Word（.docx）</td><td><span class="legend legend-core">核心</span></td></tr>
+    <tr><td>FR-1.4</td><td>PowerPoint（.pptx）</td><td><span class="legend legend-core">核心</span></td></tr>
+    <tr><td>FR-1.5</td><td>網頁 URL</td><td><span class="legend legend-core">核心</span></td></tr>
+    <tr><td>FR-1.6</td><td>圖片 OCR</td><td><span class="legend legend-ext">擴充</span></td></tr>
+    <tr><td>FR-1.7</td><td>YouTube 字幕</td><td><span class="legend legend-ext">擴充</span></td></tr>
+    <tr><td>FR-1.8</td><td>影片本地檔</td><td><span class="legend legend-ext">擴充</span></td></tr>
+
+    <tr><td rowspan="6"><strong>FR-2 內容處理</strong></td><td>FR-2.1</td><td>格式清理</td><td>—</td></tr>
+    <tr><td>FR-2.2</td><td>標題層級</td><td>—</td></tr>
+    <tr><td>FR-2.3</td><td>重點摘要</td><td>—</td></tr>
+    <tr><td>FR-2.4</td><td>圖表標記</td><td>—</td></tr>
+    <tr><td>FR-2.5</td><td>Tag 自動生成</td><td>—</td></tr>
+    <tr><td>FR-2.6</td><td>交叉引用</td><td>—</td></tr>
+
+    <tr><td rowspan="3"><strong>FR-3 Category</strong></td><td>FR-3.1</td><td>AI 建議 2-3 個</td><td>—</td></tr>
+    <tr><td>FR-3.2</td><td>用戶確認 / 拒絕 / 自訂</td><td>—</td></tr>
+    <tr><td>FR-3.3</td><td>新 category 自動建立</td><td>—</td></tr>
+
+    <tr><td rowspan="6"><strong>FR-4 概念系統</strong></td><td>FR-4.1</td><td>概念提取（1-5 個）</td><td>—</td></tr>
+    <tr><td>FR-4.2</td><td>概念獨立文件</td><td>—</td></tr>
+    <tr><td>FR-4.3</td><td>衍生（derive）</td><td>—</td></tr>
+    <tr><td>FR-4.4</td><td>修正（revise）</td><td>—</td></tr>
+    <tr><td>FR-4.5</td><td>合併（merge）</td><td>—</td></tr>
+    <tr><td>FR-4.6</td><td>棄用（deprecate）</td><td>—</td></tr>
+
+    <tr><td rowspan="5"><strong>FR-5 索引導航</strong></td><td>FR-5.1</td><td>_index.json</td><td>—</td></tr>
+    <tr><td>FR-5.2</td><td>_tags.json</td><td>—</td></tr>
+    <tr><td>FR-5.3</td><td>_concepts.json</td><td>—</td></tr>
+    <tr><td>FR-5.4</td><td>docs/README.md 自動重建</td><td>—</td></tr>
+    <tr><td>FR-5.5</td><td>Obsidian 雙向連結 [[xxx]]</td><td>—</td></tr>
+
+    <tr><td rowspan="2"><strong>FR-6 Trust</strong></td><td>FR-6.1</td><td>/trust 前綴</td><td>—</td></tr>
+    <tr><td>FR-6.2</td><td>正常對話模式</td><td>—</td></tr>
+
+    <tr><td rowspan="3"><strong>FR-7 軟刪除</strong></td><td>FR-7.1</td><td>軟刪除文件</td><td>—</td></tr>
+    <tr><td>FR-7.2</td><td>軟刪除概念</td><td>—</td></tr>
+    <tr><td>FR-7.3</td><td>從 README 隱藏</td><td>—</td></tr>
+
+    <tr><td rowspan="4"><strong>FR-8 錯誤處理</strong></td><td>FR-8.1</td><td>寫入失敗 rollback</td><td>—</td></tr>
+    <tr><td>FR-8.2</td><td>索引更新重試</td><td>—</td></tr>
+    <tr><td>FR-8.3</td><td>概念提取失敗標 [draft]</td><td>—</td></tr>
+    <tr><td>FR-8.4</td><td>網路斷線快取</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h2>📅 Sprint 拆解</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>標題</th>
+      <th>預估 SP</th>
+      <th>依賴</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>US-009-T1</td><td>設計文件（本 PRD + design + system-design）</td><td>1</td><td>—</td></tr>
+    <tr><td>US-009-T2</td><td>tdd-test-writer 寫測試</td><td>1</td><td>T1</td></tr>
+    <tr><td>US-009-T3</td><td>實作 SKILL.md（核心流程 ≤ 150 行）</td><td>2</td><td>T2</td></tr>
+    <tr><td>US-009-T4</td><td>實作 frontmatter-schema.md</td><td>1</td><td>T2</td></tr>
+    <tr><td>US-009-T5</td><td>實作 concept-evolution.md</td><td>1</td><td>T2</td></tr>
+    <tr><td>US-009-T6</td><td>實作 examples.md</td><td>1</td><td>T3-T5</td></tr>
+    <tr><td>US-009-T7</td><td>dev-checker-loop 質量檢查</td><td>0.5</td><td>T6</td></tr>
+    <tr><td>US-009-T8</td><td>regression-guard 探針</td><td>0.5</td><td>T6</td></tr>
+    <tr><td>US-009-T9</td><td>dav-reflection 反省</td><td>0.5</td><td>T7, T8</td></tr>
+    <tr><td>US-009-T10</td><td>dav-submitter 交付</td><td>0.5</td><td>T9</td></tr>
+    <tr style="background:#fef3c7; font-weight:600;"><td colspan="2">合計</td><td>8</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h2>⚠️ 風險與緩解</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>風險</th>
+      <th>機率</th>
+      <th>影響</th>
+      <th>緩解</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>OCR / 字幕需要外部依賴</td><td class="warning">中</td><td class="warning">中</td><td>列為擴充，預設不安裝</td></tr>
+    <tr><td>AI 交叉引用品質不穩定</td><td class="warning">中</td><td class="warning">中</td><td>索引式比對 + 用戶確認</td></tr>
+    <tr><td>概念提取主觀性高</td><td class="danger">高</td><td class="warning">低</td><td>留 [draft] 標記供後續調整</td></tr>
+    <tr><td>軟刪除累積磁碟</td><td class="warning">中</td><td class="warning">低</td><td>登記 TD-019 規劃清理</td></tr>
+    <tr><td>文件命名衝突</td><td class="success">低</td><td class="warning">中</td><td>slug 規則 + 自動加 -2 後綴</td></tr>
+  </tbody>
+</table>
+
+<h2>📚 參考資料</h2>
+
+<ul>
+  <li><a href="../../DESIGN.md">docs/DESIGN.md</a> — 互動設計系統</li>
+  <li><a href="../../system-design.md">docs/system-design.md</a> — 技術架構</li>
+  <li><a href="../../discussion/2026-01-15-dav-wiki-design.md">docs/discussion/2026-01-15-dav-wiki-design.md</a> — 需求討論</li>
+  <li><a href="../../.agents/skills/dav-skill-creater/SKILL.md">dav-skill-creater</a> — skill 創建規範</li>
+  <li><a href="../../.agents/skills/dav-trust/SKILL.md">dav-trust</a> — trust 整合</li>
+</ul>
+
+<hr style="margin-top: 3rem; border: none; border-top: 1px solid var(--border);">
+<p style="text-align: center; color: var(--muted); font-size: 0.9rem;">
+  由 dav-designer 自動產生 · 對應 Backlog US-009 · 建立日期 2026-01-15
+</p>
+
+</body>
+</html>

@@ -24,6 +24,19 @@ YES=0
 QUIET=0
 CLAUDE_SKILLS_MODE="merge"  # merge | replace | skip
 
+# ---------- TD-008: Agent 路徑 / marker 常數集中 ----------
+# 改這些變數就能影響全部 install.sh / uninstall 邏輯
+readonly DIR_CLAUDE=".claude"
+readonly DIR_PI=".pi"
+readonly DIR_AGENTS=".agents"
+
+# Loader marker 用來識別被本腳本管理的檔案
+readonly LOADER_MARKER="tree-monstor-loader:DO-NOT-EDIT-START"
+readonly LOADER_END_MARKER="tree-monstor-loader:DO-NOT-EDIT-END"
+
+# 已知 agent 列表（驗證用）
+readonly KNOWN_AGENTS=("claude" "pi")
+
 # ---------- Color setup ----------
 # Respect NO_COLOR (https://no-color.org/) — only opt-out mechanism.
 # Default to colors so piped output (e.g. CI logs) is also visible.
@@ -419,7 +432,7 @@ ensure_file() {
 install_claude() {
   log_info "Installing for Claude Code..."
 
-  local claude_root="$TARGET_ROOT/.claude"
+  local claude_root="$TARGET_ROOT/${DIR_CLAUDE}"
   local skills_link="$claude_root/skills"
   local wrapper="$claude_root/CLAUDE.md"
 
@@ -637,7 +650,7 @@ remove_managed_path() {
       ;;
     marker-file)
       # Remove only if the file contains our marker.
-      if [[ -f "$p" ]] && grep -q "tree-monstor-loader:DO-NOT-EDIT-START" "$p" 2>/dev/null; then
+      if [[ -f "$p" ]] && grep -q "${LOADER_MARKER}" "$p" 2>/dev/null; then
         run rm "$p"
         log_ok "removed managed file: $p"
       else
@@ -655,7 +668,7 @@ remove_managed_path() {
 }
 
 uninstall_claude() {
-  local claude_root="$TARGET_ROOT/.claude"
+  local claude_root="$TARGET_ROOT/${DIR_CLAUDE}"
   # ~/.claude/skills/ may be either a tree-level symlink (legacy install)
   # or a real directory holding our per-skill symlinks. Handle both:
   #   - symlink: remove only if it points at $SOURCE_DIR/skills.
@@ -677,7 +690,7 @@ uninstall_claude() {
 }
 
 uninstall_pi() {
-  local pi_root="$TARGET_ROOT/.pi"
+  local pi_root="$TARGET_ROOT/${DIR_PI}"
   # Global AGENTS.md lives at $pi_root/agent/AGENTS.md (NOT $pi_root/AGENTS.md,
   # which pi silently ignores). See install_pi() and pi docs/usage.md.
   remove_managed_path "$pi_root/agent/AGENTS.md" symlink
@@ -695,14 +708,14 @@ uninstall_pi() {
 }
 
 uninstall_agents_dir() {
-  remove_managed_path "$TARGET_ROOT/.agents/tree_monstor" tree
+  remove_managed_path "$TARGET_ROOT/${DIR_AGENTS}/tree_monstor" tree
 }
 
 # ---------- Pi Agent installer ----------
 # REGRESSION-GUARD PROBE: pi-install
 install_pi() {
   log_info "Installing for Pi Agent..."
-  local pi_root="$TARGET_ROOT/.pi"
+  local pi_root="$TARGET_ROOT/${DIR_PI}"
 
   # Pi's documented global resource dir is ~/.pi/agent/ (see pi
   # docs/usage.md:100 and docs/skills.md#locations). Earlier versions of
@@ -750,7 +763,7 @@ install_subagents() {
     return 0
   fi
 
-  local dst_agents_dir="$TARGET_ROOT/.agents"
+  local dst_agents_dir="$TARGET_ROOT/${DIR_AGENTS}"
   [[ -d "$dst_agents_dir" ]] || run mkdir -p "$dst_agents_dir"
 
   shopt -s nullglob
@@ -804,7 +817,7 @@ uninstall_subagents() {
   local src_agents_dir="$SOURCE_DIR/agents"
   [[ -d "$src_agents_dir" ]] || return 0
 
-  local dst_agents_dir="$TARGET_ROOT/.agents"
+  local dst_agents_dir="$TARGET_ROOT/${DIR_AGENTS}"
   [[ -d "$dst_agents_dir" ]] || return 0
 
   shopt -s nullglob
@@ -836,7 +849,7 @@ uninstall_subagents() {
 # REGRESSION-GUARD PROBE: agents-dir-copy
 install_agents_dir() {
   log_info "Installing local .agents/ copy..."
-  ensure_copy_tree "$SOURCE_DIR" "$TARGET_ROOT/.agents/tree_monstor"
+  ensure_copy_tree "$SOURCE_DIR" "$TARGET_ROOT/${DIR_AGENTS}/tree_monstor"
 }
 
 # ---------- sop/ directory installer (US-007, TD-018) ----------
@@ -959,11 +972,11 @@ main() {
     case "$agent" in
       claude)
         install_claude
-        install_sop "$TARGET_ROOT/.claude"
+        install_sop "$TARGET_ROOT/${DIR_CLAUDE}"
         ;;
       pi)
         install_pi
-        install_sop "$TARGET_ROOT/.pi"
+        install_sop "$TARGET_ROOT/${DIR_PI}"
         ;;
       *)      log_warn "Unknown agent '$agent' — skipping"; ;;
     esac

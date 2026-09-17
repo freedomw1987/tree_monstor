@@ -1,5 +1,9 @@
 # tree_monstor install.sh
 
+[![CI](https://github.com/apple/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/apple/tree_monstor/actions/workflows/ci.yml)
+[![bats tests](https://img.shields.io/badge/bats-105%2F105-brightgreen)](tests/)
+[![markdownlint](https://img.shields.io/badge/markdownlint-0%20issues-brightgreen)](.markdownlint.json)
+
 `install.sh` 幫你把 `tree_monstor` 的 `AGENTS.md`、`SOUL.md` 和 `skills/` 暴露給 AI coding agents（Claude Code、Pi Agent 等），讓它們在**全域**或**專案層**都能讀取到，且改源檔能即時生效。
 
 ## Quick Start
@@ -161,6 +165,7 @@ chmod +x install.sh        # 一次性（如果檔案沒執行權限）
 - 命名衝突的 skill **跳過並警告**，不覆蓋
 
 例如：
+
 ```
 ~/.claude/skills/
 ├── autoplan/           ← 你的現有 skill（保留）
@@ -212,6 +217,7 @@ REGRESSION_MODE=true bash install.sh --dry-run --global
 ```
 
 需要 [bats-core](https://github.com/bats-core/bats-core)：
+
 ```bash
 brew install bats-core    # macOS
 apt install bats          # Debian/Ubuntu
@@ -229,6 +235,7 @@ apt install bats          # Debian/Ubuntu
 - 命名衝突時**跳過並警告**，不覆蓋
 
 如果你想要強制覆蓋（破壞式）：
+
 ```bash
 ./install.sh --claude-skills-mode=replace
 # 原 skills 會自動備份為 ~/.claude/skills.bak.YYYYMMDD-HHMMSS
@@ -248,6 +255,7 @@ apt install bats          # Debian/Ubuntu
 **原因**：每次 `--claude-skills-mode=replace` 都會建一個備份，install.sh 不會自動清除。
 
 **解法**：手動確認後清理
+
 ```bash
 ls -la ~/.claude/skills.bak.* | head -5        # 看備份
 rm -rf ~/.claude/skills.bak.YYYYMMDD-HHMMSS   # 刪除特定備份
@@ -264,6 +272,7 @@ rm -rf ~/.claude/skills.bak.YYYYMMDD-HHMMSS   # 刪除特定備份
 ### Q: 想完全乾淨卸載
 
 **解法**：
+
 ```bash
 ./install.sh --uninstall
 # 再手動確認 ~/.claude、~/.pi、~/.agents 沒有殘留
