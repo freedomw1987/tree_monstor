@@ -9,10 +9,10 @@
 
 | 狀態 | 數量 |
 |---|---|
-| PENDING | **0 🎉** |
+| PENDING | 3 (FR-2.2.3 / FR-2.5.1 / FR-2.5.2 — Sprint 09 等待進設計 / 執行階段) |
 | IN_PROGRESS | 0 |
 | PARTIAL | 0 |
-| DONE | 27 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / US-008 / TD-014 / TD-015 / TD-016 / US-009 / US-010 / TD-019 / TD-020 / TD-021.1 ~ TD-021.7 / TD-006.1 ~ TD-006.4 / **TD-005 / TD-008**) + Sprint 01 / 04 / 05 / 06 / 07 反省 |
+| DONE | 41 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / US-008 / TD-014 / TD-015 / TD-016 / US-009 / US-010 / TD-019 / TD-020 / TD-021.1 ~ TD-021.7 / TD-006.1 ~ TD-006.4 / TD-005 / TD-008 / FR-2.1.1 / FR-2.1.2 / FR-2.1.3 / FR-2.2.1 / FR-2.2.2 / FR-2.2.4 / FR-2.3.1 / FR-2.3.2 / FR-2.3.3 / FR-2.3.4 / FR-2.3.5 / FR-2.4.1 / FR-2.4.2 / FR-2.6.1 / FR-2.6.2 / FR-2.6.3) + Sprint 01 / 04 / 05 / 06 / 07 / 08 反省 |
 
 ---
 
@@ -555,3 +555,62 @@ docs/
 **計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-07.md`](plan/2026-01-15-dav-wiki-sprint-07.md)
 **總 SP**：1.5 SP
 **前置**：Sprint 06 ✅ DONE
+
+---
+
+## 🚀 Sprint 08 — dav-wiki 多模組擴充（2026-01-15 規劃）
+
+**主題**：單檔多模組（文字 + 圖片 + 影片 + 音訊）完整處理
+
+### FR-2.1：文件類型偵測與資產提取
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **FR-2.1.1** | PDF 資產提取（圖片 / 文字） | 2 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.1.2** | DOCX 資產提取（圖片 / 文字） | 1 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.1.3** | PPTX 資產提取（圖片 / 文字 / slides） | 1.5 | P1 | ✅ DONE (Sprint 08) |
+
+### FR-2.2：圖片處理
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **FR-2.2.1** | 圖片存檔至 `assets/images/` | 0.25 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.2.2** | Vision 模型生圖片描述（mock 模式完成，真實 API 待 Sprint 09） | 1 | P1 | ✅ DONE (Sprint 08 mock) |
+| **FR-2.2.3** | OCR 補強（圖含文字） | 0.25 | P2 | 🟡 PENDING |
+| **FR-2.2.4** | 圖片加入 frontmatter `images` 陣列（merge-media 工具） | 0.5 | P1 | ✅ DONE (Sprint 08) |
+
+### FR-2.3：影片處理
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **FR-2.3.1** | 影片存檔至 `assets/videos/`（wiki-extract-video 涵蓋） | 0.25 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.3.2** | Whisper 轉字幕（mock 完成，真實 API 待 Sprint 09） | 1 | P1 | ✅ DONE (Sprint 08 mock) |
+| **FR-2.3.3** | ffmpeg 抽關鍵 frame（場景偵測） | 0.5 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.3.4** | 章節切分（chapters.json 輸出） | 1 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.3.5** | 影片資訊加入 frontmatter `videos` 陣列（merge-media） | 0.5 | P1 | ✅ DONE (Sprint 08) |
+
+### FR-2.4：音訊處理
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **FR-2.4.1** | 音訊存檔至 `assets/audio/`（wiki-extract-audio 涵蓋） | 0.25 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.4.2** | Whisper 轉錄 + 段落切分（mock 完成） | 0.5 | P1 | ✅ DONE (Sprint 08 mock) |
+
+### FR-2.5：交叉引用擴充
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **FR-2.5.1** | `_index.json` 加 `images` / `videos` / `audio` 索引 | 0.5 | P2 | 🟡 PENDING (Sprint 09) |
+| **FR-2.5.2** | 交叉引用演算法支援「同文件 / 同主題」多模組比對 | 0.5 | P2 | 🟡 PENDING (Sprint 09) |
+
+### FR-2.6：工具與測試
+
+| ID | 標題 | SP | 優先級 | 狀態 |
+| --- | --- | --- | --- | --- |
+| **FR-2.6.1** | `tools/wiki-extract-media.sh`：PDF/DOCX/PPTX 媒體提取腳本 | 1 | P1 | ✅ DONE (Sprint 08) |
+| **FR-2.6.2** | `tools/wiki-media-describe.sh`：Vision + Whisper 調用腳本（mock 模式完成） | 0.5 | P1 | ✅ DONE (Sprint 08 mock) |
+| **FR-2.6.3** | `tools/wiki-extract-video.sh` + `tools/wiki-extract-audio.sh` + `tools/wiki-merge-media.sh` | 1 | P2 | ✅ DONE (Sprint 08) |
+
+**計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-08.md`](plan/2026-01-15-dav-wiki-sprint-08.md)
+**總 SP**：13 SP
+**前置**：Sprint 07 ✅ DONE

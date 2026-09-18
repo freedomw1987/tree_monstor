@@ -491,6 +491,118 @@ C. 中止（用戶手動處理後再來）
 
 ---
 
+## 範例 6：PDF 含圖片 + 影片（FR-3 多模組）
+
+### 輸入
+
+```
+用戶：把這份 PDF 變 wiki
+     （附檔：rsc-multimodal.pdf，內含 5 張圖 + 1 段 3 分鐘 demo 影片）
+```
+
+### 對話流程
+
+```
+Agent: 開始執行 dav-wiki：將 rsc-multimodal.pdf 轉成 wiki 文件
+
+⏳ [1/7] 來源識別：PDF，偵測到 5 張圖 + 1 影片
+⏳ [2/7] 內容處理（多模組）：
+   [2a] 圖片提取（pdfimages） → assets/images/{1-5}.png
+   [2b] Vision API 描述（GPT-4V）：為每張圖生 1-3 句描述
+   [2c] 影片提取（ffmpeg） → assets/videos/demo.mp4
+   [2d] Whisper 字幕轉錄 → assets/videos/demo.transcript.md
+   [2e] 章節切分（場景偵測 + AI 摘要） → demo.chapters.json
+⏳ [3/7] Category 建議（選擇或自訂）：
+⏳ [4/7] Tag 自動提取
+⏳ [4b/7] Keywords
+⏳ [5/7] 交叉引用
+⏳ [6/7] 概念提取
+⏳ [7/7] 寫入 + 更新索引 + 重建 docs/README.md
+
+✅ 完成！
+  - 主文件：docs/wiki/frontend/2026-01/react-multimodal-deep-dive.md
+  - 圖片：assets/images/{1-5}.png（含 Vision AI caption）
+  - 影片：assets/videos/demo.mp4 + demo.transcript.md + demo.chapters.json
+  - 概念：docs/concepts/{3 個概念}.md
+```
+
+### 產出檔案結構
+
+```
+docs/wiki/frontend/2026-01/
+├── react-multimodal-deep-dive.md     # 主文件（含 image captions + 章節摘要）
+└── assets/
+    ├── images/1.png                   # RSC 架構圖
+    ├── images/2.png                   # Streaming 流程圖
+    ├── images/3.png                   # Bundle size 比較圖
+    ├── images/4.png                   # Hydration 流程
+    ├── images/5.png                   # 錯誤處理示意圖
+    ├── videos/demo.mp4                # 3 分鐘 demo 影片
+    ├── videos/demo.transcript.md      # Whisper 字幕
+    └── videos/demo.chapters.json      # 章節切分
+```
+
+### 主檔 frontmatter 片段
+
+```yaml
+images:
+  - path: "assets/images/1.png"
+    caption: "RSC 架構圖：展示 Server Component 與 Client Component 的邊界"
+    ocr_text: ""
+    alt_text: "React Server Components 架構示意圖"
+videos:
+  - path: "assets/videos/demo.mp4"
+    duration: 180
+    transcript_path: "assets/videos/demo.transcript.md"
+    chapters:
+      - title: "開場"
+        start: 0
+        end: 30
+        summary: "介紹 RSC 動機、與傳統 SSR 差異"
+      - title: "原理講解"
+        start: 30
+        end: 120
+        summary: "講解序列化邊界、streaming、partial hydration"
+      - title: "實戰 demo"
+        start: 120
+        end: 180
+        summary: "在 Next.js 14 App Router 實作 RSC"
+    thumbnail: "assets/videos/demo.thumb.jpg"
+```
+
+---
+
+## 範例 7：PPTX 內含影片（FR-3.3 + FR-3.7）
+
+### 輸入
+
+```
+用戶：把這份 PPT 變 wiki
+     （附檔：tech-talk.pptx，內含 10 slides + 2 段嵌入影片）
+```
+
+### 對話流程
+
+```
+Agent: 開始執行 dav-wiki：將 tech-talk.pptx 轉成 wiki 文件
+
+⏳ [1/7] 來源識別：PPTX，10 slides + 2 影片
+⏳ [2/7] 內容處理：
+   [2a] 提取 slide 圖片 → assets/images/slide-{1-10}.png
+   [2b] 提取嵌入影片 → assets/videos/intro.mp4 + demo.mp4
+   [2c] Whisper 轉字幕（每段影片各一個）
+   [2d] 提取每個 slide 的文字 + 表格
+⏳ [3/7] Category
+⏳ [4/7] Tag
+⏳ [5/7] 交叉引用
+⏳ [6/7] 概念
+⏳ [7/7] 寫入
+
+✅ 完成！
+```
+
+---
+
 ## 參考
 
 - [SKILL.md](SKILL.md) — 主流程

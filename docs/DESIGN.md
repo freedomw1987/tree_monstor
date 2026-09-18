@@ -55,7 +55,7 @@ command_prefix:
 | Token | 規則 | 範例 |
 | --- | --- | --- |
 | Skill 名稱 | kebab-case（小寫 + 連字號） | `dav-wiki`、`dav-submitter` |
-| Trust 前綴 | `/trust ` 後接任意任務 | `/trust 批次處理這 5 份 PDF` |
+| Trust 前綴 | `/trust` 後接任意任務 | `/trust 批次處理這 5 份 PDF` |
 | 旗標 | `--kebab-case` | `--auto-confirm` |
 | 簡寫 | `-X`（單字符） | `-y` (yes), `-v` (verbose) |
 
@@ -89,6 +89,7 @@ confirmation:
 ```
 
 **確認 prompt 格式**：
+
 ```
 {emoji} {動作描述}
   → {將影響的範圍}
@@ -97,6 +98,7 @@ confirmation:
 ```
 
 **範例**：
+
 ```
 ⚠️ 將覆蓋 docs/wiki/frontend/2026-01/react-server-components.md
   → 原檔案 142 行、extracted_at: 2026-01-10
@@ -139,7 +141,7 @@ fallback_input: "或輸入你自己的答案"          # 開放選項
 
 ## 4. 檔案結構設計（File System Tokens）
 
-### 4.1 dav-wiki 產出結構
+### 4.1 dav-wiki 產出結構（FR-3 多模組擴充版）
 
 ```
 docs/
@@ -149,7 +151,12 @@ docs/
 │   ├── _tags.json                     # tag 反向索引
 │   └── {category}/
 │       └── {YYYY-MM}/
-│           └── {title}.md             # 帶 frontmatter 的內容檔
+│           ├── {title}.md             # 帶 frontmatter 的內容檔
+│           └── assets/                # FR-3 多模組資產（2026 Sprint 08+）
+│               ├── images/{n}.png
+│               ├── videos/{n}.mp4
+│               ├── videos/{n}.transcript.md
+│               └── audio/{n}.mp3
 └── concepts/
     ├── _concepts.json                 # 概念索引
     └── {slug}.md                      # 概念文件
@@ -237,6 +244,6 @@ error_template:
 
 ## 8. 參考資料
 
-- [Google Stitch DESIGN.md spec](https://stitch.withgoogle.com/docs/design-md/specification/) — frontmatter + markdown body 結構
+- [Google Stitch DESIGN.md spec](https://stitch.withgoogle.com/docs/design-md/specification/)
 - [tree_monstor SOP §1.5](../sop/handbook/changelog.md) — V01 / V02 提問與建議紀律
 - [dav-skill-creater](../.agents/skills/dav-skill-creater/SKILL.md) — skill 命名與結構規範

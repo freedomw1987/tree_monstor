@@ -49,39 +49,60 @@ tree_monstor/
 
 ## 3. M3 — Knowledge Management 詳細設計（US-009）
 
-### 3.1 系統組成部件
+### 3.1 系統組成部件（FR-3 Sprint 08 多模組擴充）
 
 ```
 dav-wiki skill (M3)
 ├── SKILL.md                       # 主流程定義（≤150 行）
 ├── examples.md                    # 5+ 操作範例
-├── frontmatter-schema.md          # frontmatter 欄位定義
+├── frontmatter-schema.md          # frontmatter 欄位定義（含 FR-3 圖/影/音）
 └── concept-evolution.md           # 概念演進規則
+
+工具（tools/）
+├── wiki-cleanup.sh                # Sprint 04 TD-019 軟刪除
+├── wiki-cross-ref.sh              # Sprint 04 TD-020 交叉引用
+├── wiki-extract-media.sh          # Sprint 08 FR-3.1 PDF/DOCX/PPTX 媒體提取
+└── wiki-media-describe.sh         # Sprint 08 FR-3.4 Vision + Whisper 調用
 
 產物（被 M3 寫入 docs/）
 ├── README.md                      # 自動導航頁
 ├── wiki/
 │   ├── _index.json
 │   ├── _tags.json
-│   └── {category}/{YYYY-MM}/{title}.md
+│   └── {category}/{YYYY-MM}/
+│       ├── {title}.md
+│       └── assets/                # FR-3 多模組資產
+│           ├── images/{n}.png
+│           ├── videos/{n}.mp4
+│           ├── videos/{n}.transcript.md
+│           └── audio/{n}.mp3
 └── concepts/
     ├── _concepts.json
     └── {slug}.md
 ```
 
-### 3.2 資料流（Data Flow）
+### 3.2 資料流（Data Flow，FR-3 多模組版）
 
 ```
 用戶輸入（文件 / URL / 文字）
     │
     ▼
-[1] 來源識別與提取
+[1] 來源識別與提取（FR-3.1）
     │   純文字 → 直接讀
-    │   Office → pandoc / pdf2text
+    │   PDF → pdfimages + pdf2text
+    │   DOCX → pandoc --extract-media
+    │   PPTX → python-pptx
     │   網頁 → fetch_content
-    │   圖片 → OCR (擴充)
-    │   影片 → 字幕提取 (擴充)
-    ▼
+    │
+    ├─→ [2a] 圖片處理（FR-3.4 Vision API + OCR）
+    │      存 assets/images/ + AI 生 1-3 句描述
+    │
+    ├─→ [2b] 影片處理（FR-3.6 ffmpeg + Whisper）
+    │      存 assets/videos/ + 字幕 .transcript.md + chapters.json
+    │
+    └─→ [2c] 音訊處理（FR-3.8 Whisper）
+           存 assets/audio/ + 字幕 .transcript.md
+    │
 [2] 內容處理（AI）
     │   清理噪音 / 加標題層級 / 摘要
     ▼
@@ -226,6 +247,7 @@ dav-trust skill 接管
 ## 5. 部署架構（Deployment Architecture）
 
 ### 5.1 本地開發
+
 ```
 /Users/<user>/www/tree_monstor/
 ├── .agents/skills/dav-wiki/        # skill 源碼
@@ -237,6 +259,7 @@ dav-trust skill 接管
 ```
 
 ### 5.2 全域安裝後
+
 ```
 ~/.pi/skills/
 └── dav-wiki/                        # symlink 到源碼
@@ -266,7 +289,7 @@ dav-trust skill 接管
 
 | 案例 | 輸入 | 預期 |
 | --- | --- | --- |
-| T1: 純文字 → wiki | `notes.txt` | 產出 .md + 更新 _index.json + _tags.json |
+| T1: 純文字 → wiki | `notes.txt` | 產出 .md + 更新 `_index.json` + `_tags.json` |
 | T2: 網頁 → wiki + concepts | URL | 產出 .md + 至少 1 個 concept 獨立檔 |
 | T3: 概念衍生 | 既有 concept + 新文件 | 新建子 concept，更新 parent.children |
 | T4: 概念合併 | 2 個重疊 concept | 一個標 superseded_by，另一個保留 |

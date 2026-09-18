@@ -41,6 +41,52 @@
 | FR-2.5 | Tag 自動生成 | 3-8 個 tag / 篇（基於內容） |
 | FR-2.6 | 交叉引用 | 讀 `_index.json`，比對找 2-5 篇相關 |
 
+### FR-3：多模組資產處理（FR-2 Sprint 08 擴充）
+
+**目標**：單一檔案內含「文字 + 圖片 + 影片 + 音訊」時，完整處理所有模組。
+
+| ID | 功能 | 處理深度 | 工具 | 優先級 |
+| --- | --- | --- | --- | --- |
+| FR-3.1 | PDF 資產提取 | 圖 / 影 / 音 / 表 | pdfimages / ffmpeg / pandoc | P1 |
+| FR-3.2 | DOCX 資產提取 | 圖 / 影 / 音 / 表 | pandoc --extract-media | P1 |
+| FR-3.3 | PPTX 資產提取 | 圖 / 影 / 音 / 表 / slide | python-pptx | P1 |
+| FR-3.4 | 圖片 AI 描述 | Vision 模型（GPT-4V / Claude 3.5）生 1-3 句 | API 調用 | P1 |
+| FR-3.5 | 圖片 OCR 補強 | tesseract | 擴充 | P2 |
+| FR-3.6 | 影片章節切分 | ffmpeg 場景偵測 + AI 摘要 | ffmpeg | P1 |
+| FR-3.7 | Whisper 轉字幕 | 多語言支援 | OpenAI Whisper API | P1 |
+| FR-3.8 | 音訊轉錄 | 同 FR-3.7 | 同上 | P1 |
+| FR-3.9 | 資產索引 | `_index.json` 加 images / videos / audio 欄位 | 手寫 | P2 |
+| FR-3.10 | 資產路徑 | `docs/wiki/{cat}/{YYYY-MM}/assets/{images,videos,audio}/` | 手寫 | P1 |
+
+### FR-3 輸出結構
+
+```text
+docs/wiki/{category}/{YYYY-MM}/
+├── {title}.md
+└── assets/
+    ├── images/{n}.png
+    ├── videos/{n}.mp4
+    ├── videos/{n}.transcript.md
+    ├── videos/{n}.chapters.json
+    └── audio/{n}.mp3
+```
+
+### FR-3 降級策略
+
+- **無 pdfimages** → 警告「無法提取 PDF 圖片」，只處理文字
+- **無 ffmpeg** → 警告「無法處理影片」，跳過 FR-3.6
+- **無 Vision API key** → 警告「無法 AI 描述圖片」，跳過 FR-3.4，圖仍存檔但無 caption
+- **無 Whisper API** → 警告「無法轉字幕」，跳過 FR-3.7
+
+### FR-3 成本估算（單份 PDF，含 10 張圖 + 1 段 5 分鐘影片）
+
+| 項目 | 數量 | 單價 | 小計 |
+| --- | --- | --- | --- |
+| GPT-4V 圖描述 | 10 | $0.01/張 | $0.10 |
+| Whisper 字幕 | 5 分 | $0.006/分 | $0.03 |
+| 章節切分 | 1 | ~$0.02 | $0.02 |
+| **總計** | — | — | **~$0.15 / 文件** |
+
 ### FR-3：Category 互動
 
 | ID | 功能 | 說明 |

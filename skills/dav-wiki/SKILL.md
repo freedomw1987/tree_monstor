@@ -17,23 +17,38 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 | 用戶要批次處理 | 「把這 5 份報告都轉成 wiki」 |
 | 用戶要更新既有 | 「更新這篇 wiki 的概念」 |
 
-## 7 步主流程
+## 7 步主流程（FR-2 多模組擴充版）
 
 ```text
-輸入 → [1] 來源識別 → [2] 內容處理 → [3] Category 確認 → [4] Tag → [5] 交叉引用 → [6] 概念提取 → [7] 寫入 + README → 完成
+輸入 → [1] 來源識別 → [2] 內容處理（多模組） → [3] Category 確認 → [4] Tag → [5] 交叉引用 → [6] 概念提取 → [7] 寫入 + README → 完成
 ```
 
 ### [1] 來源識別
 
 - 純文字 / .md → 直接讀
-- PDF / DOCX / PPTX → pandoc / pdf2text
+- PDF / DOCX / PPTX → `tools/wiki-extract-media.sh` 提取文字 + 媒體
 - URL → fetch_content
-- 圖片 → OCR（擴充）
-- 影片字幕 → yt-dlp（擴充）
+- 圖片 → Vision 模型描述（FR-2.2）
+- 影片 / 音訊 → Whisper 轉字幕（FR-2.3 / FR-2.4）
 
-### [2] 內容處理
+### [2] 內容處理（FR-2 多模組）
 
-清理格式噪音、加標題層級、提取 1-3 句摘要、標記圖表
+**FR-2.2 圖片**：
+1. `pdfimages` / `pandoc --extract-media` 提取圖片至 `assets/images/`
+2. Vision 模型（GPT-4V / Claude 3.5）生 1-3 句描述
+3. 文中插入 `![[images/n.png]]`（Obsidian 語法）
+
+**FR-2.3 影片**：
+1. 提取影片至 `assets/videos/`
+2. ffmpeg 抽關鍵 frame + 場景偵測
+3. Whisper 轉字幕 → `assets/videos/*.transcript.md`
+4. 章節切分 + AI 摘要（每章 1-3 句）
+
+**FR-2.4 音訊**：
+1. 提取音訊至 `assets/audio/`
+2. Whisper 轉錄 → `*.transcript.md`
+
+**FR-2.1 資產結構**：`docs/wiki/{category}/{YYYY-MM}/assets/{images,videos,audio}/`
 
 ### [3] Category 確認（AI 建議 + 用戶確認）
 
@@ -75,7 +90,13 @@ docs/
 ├── README.md
 ├── wiki/
 │   ├── _index.json, _tags.json
-│   └── {category}/{YYYY-MM}/{title}.md
+│   └── {category}/{YYYY-MM}/
+│       ├── {title}.md
+│       └── assets/                         # FR-2 多模組資產
+│           ├── images/{n}.png
+│           ├── videos/{n}.mp4
+│           ├── videos/{n}.transcript.md
+│           └── audio/{n}.mp3
 └── concepts/
     ├── _concepts.json
     └── {slug}.md
@@ -110,6 +131,7 @@ docs/
 - **OCR / 字幕為擴充模組**：需另外安裝 tesseract / yt-dlp；核心三來源（純文字 / Office / 網頁）預設就支援
 - **預測性 token 用量**：索引式比對用 < 2k tokens（讀 `_index.json` 而非全文）
 - **失敗安全**：寫入失敗 rollback（temp file + rename）
+- **FR-2 多模組**需安裝：poppler（pdfimages）、ffmpeg、Whisper API / 本地模型；未裝時降級為純文字模式並警告
 
 ## 相關文件
 
