@@ -226,6 +226,7 @@ teardown() {
   [ "$status" -eq 0 ]
   # 從 manifest 抓 image_count
   expected=$(grep -o '"image_count": [0-9]*' "$WORK/out/manifest.json" | grep -o '[0-9]*')
-  actual=$(find "$WORK/out/images" -type f 2>/dev/null | wc -l | tr -d ' ')
+  # 不計 ocr/ 子目錄 (Sprint 09 FR-2.2.3)
+  actual=$(find "$WORK/out/images" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
   [ "$expected" = "$actual" ]
 }

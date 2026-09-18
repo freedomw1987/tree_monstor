@@ -1,5 +1,6 @@
 {
   "default": true,
+  "globs": ["**/*.md", "!**/tests/**/*.bats", "!**/node_modules/**"],
   "MD013": {
     "line_length": 120,
     "code_blocks": false,
