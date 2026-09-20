@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 13 RSI 主動化 — 交付報告</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1080px; margin: 0 auto; padding: 24px; line-height: 1.7; color: #2d3748; }
+h1 { color: #2b6cb0; border-bottom: 3px solid #2b6cb0; padding-bottom: 8px; }
+h2 { color: #2c5282; border-bottom: 1px solid #cbd5e0; padding-bottom: 6px; margin-top: 32px; }
+h3 { color: #2d3748; margin-top: 24px; }
+table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+th, td { border: 1px solid #cbd5e0; padding: 8px 12px; text-align: left; }
+th { background: #edf2f7; font-weight: 600; }
+tr:nth-child(even) { background: #f7fafc; }
+code { background: #f7fafc; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Consolas, monospace; font-size: 0.9em; }
+pre { background: #2d3748; color: #e2e8f0; padding: 16px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; color: inherit; }
+blockquote { border-left: 4px solid #4299e1; padding-left: 16px; color: #4a5568; margin: 16px 0; }
+hr { border: none; border-top: 2px dashed #cbd5e0; margin: 32px 0; }
+ul, ol { padding-left: 24px; }
+li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<h1 id="sprint-13-rsi-2026-09-20">Sprint 13 交付 — RSI 主動化（2026-09-20）</h1>
+<blockquote>
+<p><strong>對應 §2.5 dav-submitter</strong>
+<strong>Sprint</strong>：Sprint 13 RSI 主動化
+<strong>SP</strong>：6 SP（全部完成）
+<strong>狀態</strong>：✅ DONE</p>
+</blockquote>
+<hr />
+<h2 id="1-sprint-13">1. Sprint 13 概要</h2>
+<p>Sprint 13 為 RSI 機制加入 3 個主動化能力：</p>
+<ul>
+<li><strong>JSON 標準化</strong>（TD-037）：rsi-propose 加 JSON output</li>
+<li><strong>1 鍵部署</strong>（US-023）：rsi-deploy.sh 自動部署小型工具</li>
+<li><strong>Dry-run 預覽</strong>（US-024）：rsi-rollback 先看再滾</li>
+</ul>
+<p>加上 1 個研究項目：</p>
+<ul>
+<li><strong>跨專案規則去重研究</strong>（SP-005）：3 個 mock 場景、明確結論。結論：AI 提建議，人類決策合併；規則庫 ≤ 20 條</li>
+</ul>
+<hr />
+<h2 id="2">2. 量化指標</h2>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>Sprint 12 末</th>
+<th>Sprint 13 末</th>
+<th>變化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具總數</td>
+<td>12</td>
+<td>13（+rsi-deploy.sh）</td>
+<td>+1</td>
+</tr>
+<tr>
+<td>bats 累計</td>
+<td>250</td>
+<td>280</td>
+<td>+30</td>
+</tr>
+<tr>
+<td>FR 累計</td>
+<td>20</td>
+<td>24（+4.21~4.24）</td>
+<td>+4</td>
+</tr>
+<tr>
+<td>規則庫</td>
+<td>12</td>
+<td>12</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Sprint 09-13 SP</td>
+<td>32.5</td>
+<td><strong>38.5</strong></td>
+<td><strong>+6</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3">3. 變更檔案清單</h2>
+<h3 id="31-1">3.1 新建工具（1 個）</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>SP</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tools/rsi-deploy.sh</code></td>
+<td>2</td>
+<td>1 鍵部署小型 web app（含 python / node）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-2">3.2 工具擴充（2 個）</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>SP</th>
+<th>改動</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tools/rsi-propose.sh</code></td>
+<td>1</td>
+<td>加 <code>--output-format json</code></td>
+</tr>
+<tr>
+<td><code>tools/rsi-rollback.sh</code></td>
+<td>1</td>
+<td>加 <code>--dry-run</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-bats4-30">3.3 新建 bats（4 檔，30 個測試）</h3>
+<table>
+<thead>
+<tr>
+<th>bats 檔</th>
+<th>數量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/td037-propose-json.bats</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>tests/us023-rsi-deploy.bats</code></td>
+<td>10</td>
+</tr>
+<tr>
+<td><code>tests/us024-rsi-rollback-dryrun.bats</code></td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>tests/sp005-rule-dedup.bats</code></td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="34">3.4 新建文檔</h3>
+<table>
+<thead>
+<tr>
+<th>文檔</th>
+<th>章節</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/research/2026-09-20-cross-project-rule-dedup.md</code></td>
+<td>8 章節</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reviewer-verdict-2026-09-20-sprint13.md</code></td>
+<td>11 章節</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-td037.md</code></td>
+<td>6 章節</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-us023.md</code></td>
+<td>6 章節</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-us024.md</code></td>
+<td>6 章節</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-sp005.md</code></td>
+<td>7 章節</td>
+</tr>
+<tr>
+<td><code>docs/reflection/sprint-13-rsi-active-reflection.md</code></td>
+<td>8 章節</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-rsi-sprint-13-3">4. RSI 完整閉環（Sprint 13 加 3 能力）</h2>
+<pre><code>觀察（install + cron）
+  ↓
+聚合（rsi-aggregate.sh）
+  ↓
+趨勢（rsi-metrics.sh trend_history）
+  ↓
+回顧（rsi-review.sh）
+  ↓
+警告（rsi-alert.sh）
+  ↓
+反推規則庫（rsi-propose.sh text + json）  ⭐ Sprint 13 加 JSON
+  ↓
+SOP 改動（reviewer 二審）
+  ↓
+1 鍵部署（rsi-deploy.sh）  ⭐ Sprint 13 新增
+  ↓
+安全回滾（rsi-rollback.sh --dry-run）  ⭐ Sprint 13 新增
+</code></pre>
+<hr />
+<h2 id="5-5-gate">5. 5 Gate 驗證</h2>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>結果</th>
+<th>證據</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gate 1 (TDD)</td>
+<td>✅</td>
+<td>30 新加 bats + 紅→綠</td>
+</tr>
+<tr>
+<td>Gate 2 (lint)</td>
+<td>✅</td>
+<td>bash -n + markdownlint 0</td>
+</tr>
+<tr>
+<td>Gate 3 (regression)</td>
+<td>✅</td>
+<td>跑 9 個既有 bats 全綠</td>
+</tr>
+<tr>
+<td>Gate 4 (reviewer)</td>
+<td>✅</td>
+<td>V03 + Reviewer verdict APPROVED</td>
+</tr>
+<tr>
+<td>Gate 5 (RSI)</td>
+<td>✅</td>
+<td>4 份 Gate 5 反省</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-sprint-09-13-385-sp">6. Sprint 09-13 累計（38.5 SP）</h2>
+<table>
+<thead>
+<tr>
+<th>Sprint</th>
+<th>SP</th>
+<th>主軸</th>
+<th>狀態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sprint 09</td>
+<td>16</td>
+<td>RSI 機制建立</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Sprint 10</td>
+<td>5</td>
+<td>RSI 增強（tag + dry-run + 規則庫）</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Sprint 11</td>
+<td>6</td>
+<td>RSI 真實部署 + 規則擴充</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Sprint 12</td>
+<td>5.5</td>
+<td>RSI 回顧 + 告警</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Sprint 13</strong></td>
+<td><strong>6</strong></td>
+<td><strong>RSI 主動化（JSON + 1鍵部署 + dry-run）</strong></td>
+<td><strong>✅</strong></td>
+</tr>
+<tr>
+<td><strong>累計</strong></td>
+<td><strong>38.5</strong></td>
+<td></td>
+<td><strong>100%</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-sprint-14-5-3-sp">7. Sprint 14 候選（5 個，3 SP 推薦）</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>標題</th>
+<th>SP</th>
+<th>優先級</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>US-025</td>
+<td>rsi-sync.sh dry-run</td>
+<td>1</td>
+<td>P3</td>
+</tr>
+<tr>
+<td>US-026</td>
+<td>rsi-propose --show-similar</td>
+<td>1</td>
+<td>P3</td>
+</tr>
+<tr>
+<td>US-027</td>
+<td>rsi-propose YAML output</td>
+<td>1</td>
+<td>P3</td>
+</tr>
+<tr>
+<td>US-028</td>
+<td>rsi-deploy go/rust</td>
+<td>2</td>
+<td>P3</td>
+</tr>
+<tr>
+<td>TD-038</td>
+<td>rules/REVIEW.md 自動產生</td>
+<td>1</td>
+<td>P3</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sprint 14 推薦</strong>：US-025 + US-026 + TD-038 = 3 SP</p>
+<hr />
+<h2 id="8-sprint-13">8. 核心學習（Sprint 13）</h2>
+<h3 id="81-bash">8.1 bash 函式定義位置</h3>
+<p>函式定義必須在呼叫之前（或 main 函式內）。檔案末尾定義會「command not found」。</p>
+<h3 id="82-python-jsondumps">8.2 python json.dumps 與中文</h3>
+<p>預設 <code>ensure_ascii=True</code>，中文變 <code>\uXXXX</code>。傳 <code>ensure_ascii=False</code> 保留 UTF-8。</p>
+<h3 id="83-awk">8.3 awk 三元運算被截斷</h3>
+<p><code>... &gt; 1 ? 1 : (...)</code> 的 <code>&gt; 1</code> 被誤判為輸出重定向。改用 <code>if/else</code> 即可。</p>
+<h3 id="84-td-035">8.4 TD-035 隔離層通用</h3>
+<p><code>set +u</code> / <code>set -u</code> 隔離層可在任何函式內用，避免「unbound variable」報錯，不影響 caller。</p>
+<hr />
+<h2 id="9">9. 完成</h2>
+<p>Sprint 13 結束。RSI 從「被動監控」進化到「主動化」：</p>
+<ul>
+<li>[x] JSON 標準化輸出</li>
+<li>[x] 1 鍵部署（30 分鐘 → 5 分鐘）</li>
+<li>[x] Dry-run 預覽回滾</li>
+<li>[x] 跨專案規則去重研究（AI 提建議、人類決策）</li>
+<li>[x] 6 SP 全數完成</li>
+<li>[x] 30 新加 bats 全綠</li>
+<li>[x] 9 個既有 bats 全綠</li>
+</ul>
+<hr />
+<h2 id="10">10. 版本</h2>
+<ul>
+<li>v1.0（2026-09-20）— Sprint 13 交付</li>
+</ul>
+<footer style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #cbd5e0; color: #718096; font-size: 0.9em;">
+<p>Sprint 13 RSI 主動化 · 交付報告 · 2026-09-20</p>
+</footer>
+</body>
+</html>

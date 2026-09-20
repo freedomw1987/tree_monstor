@@ -1005,3 +1005,27 @@ docs/
 | **SP-005** | Spike | 研究「跨專案規則去重」：兩個 mock 專案觀察到同類事件如何合併 | 1. 寫 1 份技術評估文檔；2. 3 個 mock 測試 | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
 
 **Sprint 13 推薦**（TD-037 + US-023 + US-024）：4 SP
+
+## Sprint 13 完成記錄（2026-09-20）
+
+✅ **Sprint 13 全部完成**（6 SP：4 US/TD + SP-005 研究）
+
+| ID | 標題 | SP | 狀態 |
+|---|---|---|---|
+| TD-037 | rsi-propose JSON output | 1 | ✅ Done |
+| US-023 | rsi-deploy.sh 自動部署 | 2 | ✅ Done |
+| US-024 | rsi-rollback dry-run | 1 | ✅ Done |
+| SP-005 | 跨專案規則去重研究 | 2 | ✅ Done |
+| **小計** | | **6** | ✅ 100% |
+
+## Sprint 14 候選項（§2.4 反省 Sprint 13 後新增）
+
+| ID | 類型 | 項目標題 | 交付價值 | 優先級 | SP | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **US-025** | User Story | rsi-sync.sh 加 dry-run | 1. 列出將被同步的檔案清單；2. 含本地 vs 源頭 hash 對比；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-026** | User Story | rsi-propose 加 `--show-similar` | 1. 列出可能有相似規則的事件；2. 建議合併方案；3. ≥ 4 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-027** | User Story | rsi-propose 加 `--output-format yaml` | 1. YAML 格式輸出；2. 給 K8s / Ansible 用；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-028** | User Story | rsi-deploy.sh 加 go / rust 支援 | 1. --app-type go / rust；2. ≥ 3 個 bats | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+| **TD-038** | Tech Debt | rules/REVIEW.md 自動產生 | 1. 規則庫 ≤ 20 時自動產 review 提示；2. 列相似規則；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+
+**Sprint 14 推薦**（US-025 + US-026 + TD-038）：3 SP
