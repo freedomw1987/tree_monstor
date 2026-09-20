@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Sprint 14 交付 — RSI 成熟化（2026-09-20）</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 960px; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #333; }
+h1, h2, h3 { color: #1a1a1a; }
+h1 { border-bottom: 2px solid #4a9eff; padding-bottom: 0.3em; }
+h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.2em; margin-top: 1.5em; }
+table { border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #ddd; padding: 0.5em 0.8em; text-align: left; }
+th { background: #f5f5f5; }
+code { background: #f5f5f5; padding: 0.1em 0.3em; border-radius: 3px; }
+pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; }
+blockquote { border-left: 4px solid #4a9eff; margin: 0; padding-left: 1em; color: #666; }
+</style>
+</head>
+<body>
+<h1>Sprint 14 交付 — RSI 成熟化（2026-09-20）</h1>
+<blockquote>
+<p><strong>對應 §2.5 dav-submitter</strong>
+<strong>Sprint</strong>：Sprint 14 RSI 成熟化
+<strong>SP</strong>：3 SP（全部完成）
+<strong>狀態</strong>：✅ DONE</p>
+</blockquote>
+<hr />
+<h2>1. Sprint 14 概要</h2>
+<p>Sprint 14 為 RSI 機制加入 3 個成熟化能力：</p>
+<ul>
+<li><strong>同步安全</strong>（US-025）：rsi-sync 加 --dry-run 預覽（對齊 Sprint 13 US-024）</li>
+<li><strong>相似度計算</strong>（US-026）：rsi-propose 加 --show-similar（前綴相似 + Levenshtein）</li>
+<li><strong>定期 review</strong>（TD-038）：rsi-rules-review.sh 自動產 REVIEW.md</li>
+</ul>
+<p>主軸：RSI 從「主動化」進化到「成熟化」。</p>
+<hr />
+<h2>2. 量化指標</h2>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>Sprint 13 末</th>
+<th>Sprint 14 末</th>
+<th>變化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具總數</td>
+<td>13</td>
+<td>14（+rsi-rules-review.sh）</td>
+<td>+1</td>
+</tr>
+<tr>
+<td>bats 累計</td>
+<td>280</td>
+<td>293</td>
+<td>+13</td>
+</tr>
+<tr>
+<td>FR 累計</td>
+<td>24</td>
+<td>27（+4.25~4.27）</td>
+<td>+3</td>
+</tr>
+<tr>
+<td>規則庫</td>
+<td>12</td>
+<td>12</td>
+<td>0（REVIEW.md 尚未跑）</td>
+</tr>
+<tr>
+<td>Sprint 09-14 SP</td>
+<td>38.5</td>
+<td><strong>41.5</strong></td>
+<td><strong>+3</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>3. 變更檔案清單</h2>
+<h3>3.1 新建工具（1 個）</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>SP</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tools/rsi-rules-review.sh</code></td>
+<td>1</td>
+<td>自動產生 <code>tools/rules/REVIEW.md</code></td>
+</tr>
+</tbody>
+</table>
+<h3>3.2 工具擴充（2 個）</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>SP</th>
+<th>改動</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tools/rsi-sync.sh</code></td>
+<td>1</td>
+<td>加 <code>--target</code> 旗標（既有 <code>--dry-run</code> 對齊 US-024）</td>
+</tr>
+<tr>
+<td><code>tools/rsi-propose.sh</code></td>
+<td>1</td>
+<td>加 <code>--show-similar</code> + <code>--rules</code> + <code>cmd_similar</code> 函式</td>
+</tr>
+</tbody>
+</table>
+<h3>3.3 新建 bats（3 檔，15 個測試）</h3>
+<table>
+<thead>
+<tr>
+<th>bats 檔</th>
+<th>數量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/us025-rsi-sync-dryrun.bats</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>tests/us026-rsi-propose-similar.bats</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>tests/td038-rsi-rules-review.bats</code></td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<h3>3.4 新建文檔</h3>
+<table>
+<thead>
+<tr>
+<th>文檔</th>
+<th>對應</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/plan/2026-09-20-sprint-14-rsi-mature.md</code></td>
+<td>§2.1 規劃</td>
+</tr>
+<tr>
+<td><code>docs/prd/04-self-evolution.md §11.7</code></td>
+<td>§2.2 設計</td>
+</tr>
+<tr>
+<td><code>docs/system-design.md</code> ADR-025/026/027</td>
+<td>§2.2 設計</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reviewer-verdict-2026-09-20-sprint14.md</code></td>
+<td>Gate 4</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-us025.md</code></td>
+<td>Gate 5</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-us026.md</code></td>
+<td>Gate 5</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-reflection-2026-09-20-td038.md</code></td>
+<td>Gate 5</td>
+</tr>
+<tr>
+<td><code>docs/sop/rsi-sprint14-execution-summary.md</code></td>
+<td>§2.3 摘要</td>
+</tr>
+<tr>
+<td><code>docs/reflection/sprint-14-rsi-mature-reflection.md</code></td>
+<td>§2.4 反省</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Gate 驗證總結</h2>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>名稱</th>
+<th>結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gate 1</td>
+<td>TDD（紅 → 綠）</td>
+<td>✅ 15/15 bats</td>
+</tr>
+<tr>
+<td>Gate 2</td>
+<td>lint</td>
+<td>✅ bash -n 通過 + markdownlint 0 errors</td>
+</tr>
+<tr>
+<td>Gate 3</td>
+<td>regression</td>
+<td>✅ Sprint 13 + 12 + 10-11 全綠</td>
+</tr>
+<tr>
+<td>Gate 4</td>
+<td>reviewer</td>
+<td>✅ Sprint 14 verdict 🟡 APPROVED</td>
+</tr>
+<tr>
+<td>Gate 5</td>
+<td>RSI</td>
+<td>✅ 3 份 Gate 5 反省完成</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5. 核心設計亮點</h2>
+<h3>5.1 對稱設計（US-025）</h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>旗標</th>
+<th>Sprint</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rollback</td>
+<td><code>--dry-run</code></td>
+<td>Sprint 13 US-024</td>
+</tr>
+<tr>
+<td><strong>sync</strong></td>
+<td><strong><code>--dry-run</code></strong></td>
+<td><strong>Sprint 14 US-025</strong></td>
+</tr>
+</tbody>
+</table>
+<p>兩者採同 pattern（列動作 + md5 對比 + 不實際執行）。</p>
+<h3>5.2 雙演算法 OR 邏輯（US-026）</h3>
+<ul>
+<li><strong>prefix_sim</strong>（前綴相似度）：<code>bats_test_unicode_error</code> vs <code>bats_test_chinese_paren</code> 抓得到</li>
+<li><strong>Levenshtein ≤ 12</strong>：<code>gate_skip_v1</code> vs <code>gate_skip_v2</code> 抓得到</li>
+<li>任一滿足即視為相似</li>
+</ul>
+<h3>5.3 互鎖架構（TD-038）</h3>
+<pre><code>rsi-rules-review.sh
+  ↓ 呼叫
+rsi-propose.sh --show-similar
+  ↓ 統一相似度算法
+確保規則 review 用的是最新算法（單一真理源）
+</code></pre>
+<h3>5.4 規則庫保護</h3>
+<ul>
+<li>規則數 &gt; 20（預設閾值）→ REVIEW.md 加警告</li>
+<li>觸發頻率明確：5 事件 / Sprint 結束 / 規則庫 ≥ 20</li>
+</ul>
+<hr />
+<h2>6. Sprint 14 量化</h2>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th>數值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具 +1</td>
+<td>rsi-rules-review.sh</td>
+</tr>
+<tr>
+<td>工具擴充 +2</td>
+<td>rsi-sync.sh、rsi-propose.sh</td>
+</tr>
+<tr>
+<td>新增 bats</td>
+<td>15</td>
+</tr>
+<tr>
+<td>新增文檔</td>
+<td>9</td>
+</tr>
+<tr>
+<td>新增 SP</td>
+<td>3</td>
+</tr>
+<tr>
+<td>累計 SP（Sprint 09-14）</td>
+<td><strong>41.5</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>7. Sprint 14 收穫</h2>
+<ol>
+<li><strong>對稱設計威力</strong>：rollback dry-run ↔ sync dry-run 學習一次兩處都用</li>
+<li><strong>雙演算法 OR 邏輯</strong>：前綴相似 + 編輯距離覆蓋兩種場景</li>
+<li><strong>互鎖架構</strong>：rsi-rules-review 呼叫 rsi-propose --show-similar（單一真理源）</li>
+<li><strong>規則庫保護</strong>：20 條上限 + REVIEW.md 警告 + 人類決策合併（SP-005）</li>
+</ol>
+<h2>8. Sprint 14 教訓</h2>
+<ol>
+<li><strong>Python heredoc 在 bash 中要小心</strong>：函式內的 Python 優先用 <code>-c '...'</code></li>
+<li><strong>相似度門檻需實測調校</strong>：不能憑直覺，要看實際資料分布</li>
+<li><strong>regex 過於寬鬆會誤判</strong>：抓 markdown 表格欄位優先用 awk 而非 grep</li>
+<li><strong>bash 函式定義位置</strong>：必須在呼叫前，即使 <code>set -u</code> 也救不了</li>
+</ol>
+<hr />
+<h2>9. Sprint 15 候選</h2>
+<table>
+<thead>
+<tr>
+<th>候選</th>
+<th>說明</th>
+<th>SP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>規則庫實戰 review（推薦）</strong></td>
+<td>跑 rsi-rules-review.sh + 合併 1-2 條相似規則</td>
+<td>2</td>
+</tr>
+<tr>
+<td>sync 衝突策略</td>
+<td>自動 3-way merge（高風險）</td>
+<td>3</td>
+</tr>
+<tr>
+<td>自動 Slack/email 通知</td>
+<td>REVIEW.md commit 後通知</td>
+<td>2</td>
+</tr>
+<tr>
+<td>rsi-propose --auto-merge</td>
+<td>高風險需人類審批旗標</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>10. RSI 完整閉環（Sprint 14 末）</h2>
+<pre><code>觀察（install + cron）
+  ↓
+聚合（rsi-aggregate.sh）
+  ↓
+趨勢（rsi-metrics.sh trend_history）
+  ↓
+回顧（rsi-review.sh）
+  ↓
+警告（rsi-alert.sh）
+  ↓
+反推（rsi-propose.sh text + json）
+  ↓
+含 --show-similar（找相似規則）⭐ Sprint 14
+  ↓
+人類決策合併 / 拆分
+  ↓
+規則庫 review（rsi-rules-review.sh → tools/rules/REVIEW.md）⭐ Sprint 14
+  ↓
+SOP 改動（reviewer 二審）
+  ↓
+部署（rsi-deploy.sh 1 鍵）
+  ↓
+同步（rsi-sync.sh，含 --dry-run）⭐ Sprint 14
+  ↓
+回滾（rsi-rollback.sh，含 --dry-run）
+</code></pre>
+<p><strong>Sprint 14 新增 3 個「⭐ 成熟化」標記</strong>，RSI 從「主動化」進化到「成熟化」。</p>
+<hr />
+<h2>11. 結語</h2>
+<p>Sprint 14 完成 RSI 成熟化三本柱：
+1. <strong>同步安全</strong>（US-025）
+2. <strong>相似度計算</strong>（US-026）
+3. <strong>定期 review</strong>（TD-038）</p>
+<p>累計 41.5 SP（9 個 Sprint），RSI 完整閉環已建立。
+從「觀察 → 部署」到「review → 同步」皆具備 dry-run + 評估 + 警告機制。</p>
+<p>下一步：commit Sprint 14 全部交付 → 進 Sprint 15 規劃（推薦：規則庫實戰 review）。</p>
+</body>
+</html>

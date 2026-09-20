@@ -11,6 +11,7 @@ TRIGGER="manual"
 DRY_RUN=false
 ASSUME_YES=false
 PROJECT_LIST_FILE=""
+TARGET_DIR=""  # Sprint 14 US-025
 
 # === 旗標解析 ===
 usage() {
@@ -21,6 +22,7 @@ Usage: rsi-sync.sh [options]
 
 Options:
   --source <path>          來源 SOP 目錄（預設 ~/.pi/sop）
+  --target <path>          單一目標目錄（覆蓋自動掃瞄）
   --trigger <mode>         觸發模式：manual（預設）/ install / aggregate
   --project-list <file>    專案清單檔（每行一個路徑；預設自動掃 ~/.tree-monstor/）
   --dry-run                預覽，不實際同步
@@ -44,6 +46,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --source)
             SOURCE_SOP_DIR="$2"
+            shift 2
+            ;;
+        --target)
+            TARGET_DIR="$2"
             shift 2
             ;;
         --trigger)
@@ -107,6 +113,11 @@ else
             fi
         done
     fi
+fi
+
+# Sprint 14 US-025: --target 覆蓋 PROJECTS
+if [[ -n "$TARGET_DIR" ]]; then
+    PROJECTS=("$TARGET_DIR")
 fi
 
 if [[ ${#PROJECTS[@]} -eq 0 ]]; then

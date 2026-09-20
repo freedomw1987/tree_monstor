@@ -15,6 +15,8 @@ MIN_FREQUENCES="2"
 LIMIT="10"
 CONFIDENCE_THRESHOLD=""
 OUTPUT_FORMAT="text"  # text | json（Sprint 13 TD-037 新增）
+SHOW_SIMILAR=false  # Sprint 14 US-026
+RULES_FILE="docs/sop/rsi-rules.md"  # Sprint 14 US-026 預設規則庫
 
 # === 旗標解析 ===
 usage() {
@@ -30,6 +32,8 @@ Options:
   --limit <N>              最多產出 N 個提案（預設 10）
   --confidence <0~1>       confidence score 門檻（如 0.7）。未達則列為「需人工確認」
   --output-format <fmt>    輸出格式：text（預設）| json（Sprint 13 TD-037）
+  --show-similar            列相似規則（Levenshtein ≤ 3, Sprint 14 US-026）
+  --rules <file>            規則庫檔（--show-similar 用，預設 docs/sop/rsi-rules.md）
   --help / -h              顯示說明
 
 confidence 公式：min(1.0, freq × 0.3 + projects × 0.2 + 1)
@@ -77,6 +81,14 @@ while [[ $# -gt 0 ]]; do
             fi
             shift 2
             ;;
+        --show-similar)
+            SHOW_SIMILAR=true
+            shift
+            ;;
+        --rules)
+            RULES_FILE="$2"
+            shift 2
+            ;;
         --help|-h)
             usage
             exit 0
@@ -89,7 +101,104 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Sprint 14 US-026: --show-similar 列相似規則（用前綴相似度 > 0.6）
+cmd_similar() {
+    local rules_file="${1:-$RULES_FILE}"
+
+    if [[ ! -f "$rules_file" ]]; then
+        echo "⚠️  規則庫不存在：$rules_file" >&2
+        return 0
+    fi
+
+    local event_types
+    event_types="$(grep -E '^\| [0-9]+ \| [a-z]' "$rules_file" | awk -F'|' '{print $3}' | sed 's/^ *//; s/ *$//' | sort -u)"
+
+    if [[ -z "$event_types" ]]; then
+        echo "無相似規則（規則庫為空）"
+        return 0
+    fi
+
+    local similar_output
+    similar_output="$(printf '%s\n' "$event_types" | python3 -c '
+import sys, json
+
+events = [e.strip() for e in sys.stdin if e.strip()]
+
+def prefix_sim(a, b):
+    """前綴相似度：相同前綴長度 / 兩者最長長度"""
+    n = 0
+    while n < len(a) and n < len(b) and a[n] == b[n]:
+        n += 1
+    return n / max(len(a), len(b), 1)
+
+def lev(a, b):
+    if len(a) < len(b):
+        return lev(b, a)
+    if len(b) == 0:
+        return len(a)
+    prev_row = range(len(b) + 1)
+    for i, ca in enumerate(a):
+        curr_row = [i + 1]
+        for j, cb in enumerate(b):
+            ins = prev_row[j + 1] + 1
+            dele = curr_row[j] + 1
+            sub = prev_row[j] + (ca != cb)
+            curr_row.append(min(ins, dele, sub))
+        prev_row = curr_row
+    return prev_row[-1]
+
+pairs = []
+seen = set()
+for i in range(len(events)):
+    for j in range(i + 1, len(events)):
+        a, b = events[i], events[j]
+        if (b, a) in seen:
+            continue
+        # 兩種相似度：prefix > 0.6 或 lev ≤ 6（bats_test_xxx 形式差約 6-9）
+        sim = prefix_sim(a, b)
+        d = lev(a, b)
+        if sim > 0.4 or d <= 12:
+            seen.add((a, b))
+            pairs.append((a, b, sim, d))
+
+if "'"$OUTPUT_FORMAT"'" == "json":
+    result = {
+        "schema_version": "rsi-propose-similar/1.0",
+        "rules_file": "'"$rules_file"'",
+        "total_events": len(events),
+        "similar_pairs": [{"a": a, "b": b, "prefix_similarity": round(sim, 2), "lev_distance": d} for a, b, sim, d in pairs],
+        "total_similar_pairs": len(pairs)
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+else:
+    if not pairs:
+        print("無相似規則")
+    else:
+        print("=== 相似規則對 ===")
+        for a, b, sim, d in pairs:
+            print("  " + a + " <-> " + b + " (prefix_sim=" + str(round(sim, 2)) + ", lev=" + str(d) + ")")
+        print("")
+        print("總計：" + str(len(pairs)) + " 對相似")
+        print("")
+        print("💡 建議合併方案：人類決策，AI 提建議（依 SP-005 結論）")
+')"
+
+    if [[ -n "$OUTPUT" && "$OUTPUT_FORMAT" == "json" ]]; then
+        mkdir -p "$(dirname "$OUTPUT")"
+        printf "%s" "$similar_output" > "$OUTPUT"
+        echo "✅ 已寫相似規則：$OUTPUT" >&2
+    else
+        printf "%s" "$similar_output"
+    fi
+}
+
 # === 主程式 ===
+# Sprint 14 US-026: --show-similar 短路（不需 --report）
+if [[ "$SHOW_SIMILAR" == "true" ]]; then
+    cmd_similar "$RULES_FILE"
+    exit 0
+fi
+
 if [[ -z "$REPORT" ]]; then
     echo "❌ 錯誤：--report 必填" >&2
     usage
@@ -442,4 +551,7 @@ EOF
     fi
 }
 
+
 write_report
+
+# Sprint 14 US-026: --show-similar 短路邏輯在 --report 必填檢查前

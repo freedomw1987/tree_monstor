@@ -1022,10 +1022,22 @@ docs/
 
 | ID | 類型 | 項目標題 | 交付價值 | 優先級 | SP | Module | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **US-025** | User Story | rsi-sync.sh 加 dry-run | 1. 列出將被同步的檔案清單；2. 含本地 vs 源頭 hash 對比；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
-| **US-026** | User Story | rsi-propose 加 `--show-similar` | 1. 列出可能有相似規則的事件；2. 建議合併方案；3. ≥ 4 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-025** | User Story | rsi-sync.sh 加 dry-run | 1. 列出將被同步的檔案清單；2. 含本地 vs 源頭 hash 對比；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | ✅ Done（2026-09-20） |
+| **US-026** | User Story | rsi-propose 加 `--show-similar` | 1. 列出可能有相似規則的事件；2. 建議合併方案；3. ≥ 4 個 bats | P3 | 1 | M4 — Self-Evolution | ✅ Done（2026-09-20） |
 | **US-027** | User Story | rsi-propose 加 `--output-format yaml` | 1. YAML 格式輸出；2. 給 K8s / Ansible 用；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
 | **US-028** | User Story | rsi-deploy.sh 加 go / rust 支援 | 1. --app-type go / rust；2. ≥ 3 個 bats | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
-| **TD-038** | Tech Debt | rules/REVIEW.md 自動產生 | 1. 規則庫 ≤ 20 時自動產 review 提示；2. 列相似規則；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **TD-038** | Tech Debt | rules/REVIEW.md 自動產生 | 1. 規則庫 ≤ 20 時自動產 review 提示；2. 列相似規則；3. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | ✅ Done（2026-09-20） |
 
 **Sprint 14 推薦**（US-025 + US-026 + TD-038）：3 SP
+
+**Sprint 14 完成狀態**（2026-09-20）：✅ 全部 Done（41.5 SP 累計，3 SP 新增）
+
+### Sprint 15 候選項（§2.4 反省 Sprint 14 後新增）
+
+| ID | 類型 | 項目標題 | 交付價值 | 優先級 | SP | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **US-029** | User Story | 規則庫實戰 review | 1. 跑 rsi-rules-review.sh；2. 合併 1-2 條相似規則；3. 驗證 Sprint 14 工具實用性 | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-030** | User Story | sync 衝突策略 | 1. 自動 3-way merge；2. 高風險需審批；3. ≥ 3 個 bats | P4 | 3 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-031** | User Story | Slack/email 通知 | 1. REVIEW.md commit 後通知；2. ≥ 3 個 bats | P4 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+
+**Sprint 15 推薦**（US-029 規則庫實戰 review）：2 SP（低風險、可驗證 Sprint 14 工具）
