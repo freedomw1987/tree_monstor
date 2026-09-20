@@ -91,6 +91,13 @@ EVENTS=$(grep -E '^\| [0-9]+ \|' "$RULES_FILE" | awk -F'|' '{print $3}' | sed 's
 # 按前綴分類（取 _ 前綴）
 PREFIX_STATS=$(printf '%s\n' "$EVENTS" | awk -F'_' '{print $1}' | sort | uniq -c | sort -rn)
 
+# 格式化為 markdown 表格行（避免 heredoc 內 subshell 造成空行）
+PREFIX_TABLE=""
+if [[ -n "$PREFIX_STATS" ]]; then
+    PREFIX_TABLE=$(printf '%s' "$PREFIX_STATS" | awk '{printf "| %s | %s |\n", $2, $1}')
+fi
+[[ -z "$PREFIX_TABLE" ]] && PREFIX_TABLE="| (無) | 0 |"
+
 # === 2. 找相似規則 ===
 # 解決路徑：先找 rsi-propose.sh
 PROPOSE_SH=""
@@ -150,10 +157,10 @@ REVIEW_CONTENT="# RSI 規則庫 Review
 
 | 前綴 | 規則數 |
 | --- | --- |
-$(echo "$PREFIX_STATS" | awk '{printf "| %s | %s |\n", $2, $1}')
-
+$PREFIX_TABLE
+${WARNING_BLOCK:+
 $WARNING_BLOCK
-
+}
 ## 相似規則對
 
 \`\`\`json
@@ -188,12 +195,12 @@ $SIMILAR_OUTPUT
 - docs/sop/rsi-rule-extension-2026-09-20.md — 規則庫擴展歷史
 "
 
-printf "%s" "$REVIEW_CONTENT" > "$REVIEW_FILE"
+printf "%s" "${REVIEW_CONTENT%$'\n'$'\n'}" > "$REVIEW_FILE"
 
 echo "✅ 已產生 REVIEW.md：$REVIEW_FILE" >&2
-echo "（規則數 $TOTAL，相似對 $SIMILAR_COUNT，閾值 $THRESHOLD）" >&2
+echo "（規則數 ${TOTAL:-0}，相似對 ${SIMILAR_COUNT:-0}，閾值 ${THRESHOLD:-20}）" >&2
 
-if [[ "$TOTAL" -gt "$THRESHOLD" ]]; then
+if [[ "${TOTAL:-0}" -gt "${THRESHOLD:-20}" ]]; then
     echo "⚠️  規則數超過閾值，建議 review" >&2
     exit 0  # 不 exit 1（不阻擋流程，僅警告）
 fi

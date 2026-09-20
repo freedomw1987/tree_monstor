@@ -1036,8 +1036,20 @@ docs/
 
 | ID | 類型 | 項目標題 | 交付價值 | 優先級 | SP | Module | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **US-029** | User Story | 規則庫實戰 review | 1. 跑 rsi-rules-review.sh；2. 合併 1-2 條相似規則；3. 驗證 Sprint 14 工具實用性 | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-029** | User Story | 規則庫實戰 review（精簡版）| 1. 建規則庫 12 條；2. 跑 rsi-rules-review.sh；3. 不強求人類決策合併 | P3 | 1 | M4 — Self-Evolution | ✅ Done（2026-09-20，階段 A） |
 | **US-030** | User Story | sync 衝突策略 | 1. 自動 3-way merge；2. 高風險需審批；3. ≥ 3 個 bats | P4 | 3 | M4 — Self-Evolution | 🟡 Backlog |
 | **US-031** | User Story | Slack/email 通知 | 1. REVIEW.md commit 後通知；2. ≥ 3 個 bats | P4 | 2 | M4 — Self-Evolution | 🟡 Backlog |
 
-**Sprint 15 推薦**（US-029 規則庫實戰 review）：2 SP（低風險、可驗證 Sprint 14 工具）
+**Sprint 15 推薦**（US-029 規則庫實戰 review）：原 2 SP 精簡為 1 SP（避免 over engineering）
+
+**Sprint 15 完成狀態**（2026-09-20）：✅ 階段 A Done（42.5 SP 累計，1 SP 新增）
+
+### Sprint 16+ 候選項（§2.4 反省 Sprint 15 後新增）
+
+| ID | 類型 | 項目標題 | 交付價值 | 優先級 | SP | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **US-032** | User Story | 人類決策合併（US-029-B）| 1. 規則庫 ≥ 18 條時啟動；2. 合併 1-2 對相似規則 | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-033** | User Story | 規則庫 CI 整合 | 1. 規則庫 ≥ 20 條 → CI fail；2. ≥ 3 個 bats | P4 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-034** | User Story | 跨專案規則去重 | 1. 多機器規則庫同步；2. 觀察 ≥ 2 個專案後做 | P3 | 3 | M4 — Self-Evolution | 🟡 Backlog |
+
+**Sprint 16 推薦**：等待 — 規則庫 12/20，未達觸發條件
