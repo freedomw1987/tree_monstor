@@ -526,3 +526,83 @@ Sprint 13 補上「JSON 化」+「1 鍵部署」+「dry-run 預覽」三個能�
 2. **1 鍵部署原則**（新增）：重複性高、易出錯的手動步驟必有 1 鍵部署工具
 3. **dry-run 預覽原則**（新增）：所有破壞性操作必有 dry-run，先看再動
 4. **跨專案去重原則**（新增）：同類事件在多個專案出現時，必須評估是否合併（規則庫不爆）
+
+### 11.7 Sprint 14 增量 PRD（2026-09-20）
+
+#### 11.7.1 背景
+
+Sprint 13 完成了 RSI 的「主動化」（JSON + 1 鍵部署 + dry-run）。但仍有兩個缺口：
+
+1. **rsi-sync.sh 沒有 dry-run** — 從源 repo 拉更新到目標專案目前無預覽機制
+2. **規則庫缺乏健康監控** — 同類規則手動偵測、無主動提醒 review
+
+Sprint 14 補上「同步安全」+「規則庫健康」。
+
+#### 11.7.2 用戶故事（3 個，3 SP）
+
+| ID | 類型 | 標題 | 優先級 | SP | 對應 FR |
+|---|---|---|---|---|---|
+| US-025 | US | rsi-sync.sh 加 --dry-run | P3 | 1 | FR-4.25 |
+| US-026 | US | rsi-propose 加 --show-similar | P3 | 1 | FR-4.26 |
+| TD-038 | TD | rules/REVIEW.md 自動產生 | P3 | 1 | FR-4.27 |
+| **小計** | | | | **3** | |
+
+#### 11.7.3 詳細 AC
+
+**US-025（1 SP）**：
+
+- [ ] 加 `--dry-run` 旗標到 rsi-sync.sh
+- [ ] 列出將被同步的檔案清單
+- [ ] 對比本地 vs 源頭 hash
+- [ ] 模擬將執行的 cp / merge 操作
+- [ ] ≥ 3 個 bats
+- [ ] markdownlint 0 issues
+
+**US-026（1 SP）**：
+
+- [ ] 加 `--show-similar` 旗標到 rsi-propose.sh
+- [ ] 列出可能有相似規則的事件（Levenshtein 距離 ≤ 3）
+- [ ] 給人類建議合併方案
+- [ ] ≥ 4 個 bats
+- [ ] markdownlint 0 issues
+
+**TD-038（1 SP）**：
+
+- [ ] 建新工具 `tools/rsi-rules-review.sh`
+- [ ] 規則庫 ≤ 20 自動產 review 提示
+- [ ] 列相似規則對（呼叫 US-026 的相似度邏輯）
+- [ ] 寫入 `tools/rules/REVIEW.md`
+- [ ] ≥ 3 個 bats
+- [ ] markdownlint 0 issues
+
+#### 11.7.4 Sprint 14 FR 拆分表
+
+| Sprint | US/TD | SP |
+|---|---|---|
+| Sprint 09 | US-011~017 + TD-022 | 16 |
+| Sprint 10 | TD-031/032/030 + US-018 | 5 |
+| Sprint 11 | TD-033/034 + US-019/020 | 6 |
+| Sprint 12 | US-021/022 + TD-035 | 5.5 |
+| Sprint 13 | TD-037 + US-023/024 + SP-005 | 6 |
+| **Sprint 14** | **US-025/026 + TD-038** | **3** |
+| **總計** | — | **41.5** |
+
+#### 11.7.5 Sprint 14 設計原則
+
+1. **同步安全原則**（新增）：rsi-sync 屬破壞性操作，必須有 dry-run（與 rollback 對齊）
+2. **相似度計算原則**（新增）：AI 列相似規則供人類決策合併（執行 SP-005 結論）
+3. **定期 review 原則**（新增）：規則庫健康需工具主動提醒，不靠人類記憶
+
+#### 11.7.6 Sprint 14 模組間互動
+
+```
+[源 repo] tools/rsi-sync.sh --dry-run  ⭐ Sprint 14
+  ↓ 列出將被同步的檔案清單
+[目標專案] tools/rules/REVIEW.md       ⭐ Sprint 14
+  ↓ 規則健康提醒
+[人類決策] 合併/拆分/忽略
+  ↓ 觸發
+[源 repo] tools/rsi-propose.sh --show-similar  ⭐ Sprint 14
+  ↓ 列相似規則
+[人類決策] 合併方案
+```

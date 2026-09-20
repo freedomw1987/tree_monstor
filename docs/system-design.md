@@ -638,3 +638,47 @@ M4 — Self-Evolution
   - 規則庫不爆
   - 為 Sprint 14+ 提供規則庫結構決策
   - 3 個新 bats 測試
+## ADR-025：Sprint 14 rsi-sync.sh --dry-run（US-025，Sprint 14）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：rsi-sync 從源 repo 拉更新到目標專案，目前無預覽機制（破壞性操作）
+- **決策**：加 `--dry-run` 旗標
+  - 列出將被同步的檔案清單
+  - 對比本地 vs 源頭 hash
+  - 模擬將執行的 cp / merge 操作
+  - 不實際執行任何 sync 動作
+- **與 ADR-023 對齊**：與 rsi-rollback dry-run 結構對稱
+- **影響**：
+  - 使用者能先看再 sync，避免誤覆蓋
+  - 與現有 rsi-rollback 構成「兩大破壞性操作都有 dry-run」
+
+## ADR-026：Sprint 14 rsi-propose.sh --show-similar（US-026，Sprint 14）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：SP-005 研究結論「AI 列相似規則、人類決策合併」，需實作 `--show-similar` 旗標
+- **決策**：加 `--show-similar` 旗標
+  - 列相似規則（Levenshtein 距離 ≤ 3）
+  - 給人類建議合併方案
+  - 不自動合併（人類決策）
+- **相似度算法**：用 python 計算（awk 較困難）
+  - 兩個 event_type 字串的 Levenshtein 距離
+  - ≤ 3 視為相似
+- **影響**：
+  - 規則庫健康（主動提醒有相似規則）
+  - 落實 SP-005 結論
+
+## ADR-027：Sprint 14 tools/rsi-rules-review.sh 新建（TD-038，Sprint 14）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：規則庫 ≤ 20 健康，但需工具主動提醒「該 review 了」
+- **決策**：建 `tools/rsi-rules-review.sh`
+  - 規則庫 ≤ 20 自動產 review 提示
+  - 列相似規則對（呼叫 US-026 的相似度邏輯）
+  - 寫入 `tools/rules/REVIEW.md`（隨 rsync 同步到專案）
+- **REVIEW.md 內容**：
+  - 規則庫統計（總數 / 分佈）
+  - 相似規則對（fingerprint / 差異）
+  - 建議合併方案（AI 給、人類決）
+- **影響**：
+  - 規則庫健康監控自動化
+  - 同步到目標專案（被部署專案也能看健康狀態）
