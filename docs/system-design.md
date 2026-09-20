@@ -537,3 +537,48 @@ M4 — Self-Evolution
   - 第一次真實跨專案訊號
   - 為 Sprint 11 US-020 提供觀察資料
   - 8 個新 bats 測試
+
+## ADR-018：Sprint 12 14 天回顧機制（US-021，Sprint 12）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：Sprint 11 部署指南完成 + cron 自動跑 14 天，但沒人機制保證「跑完必回顧」
+- **決定**：
+  - 14 天後自動（或手動）跑 `rsi-aggregate.sh` 聚合 cron.log
+  - 分析 `trend_history --days 14` 趨勢
+  - 識別是否有第 13、14 個規則候選
+  - 寫 1 份 `docs/review/{date}-rsi-real-deploy-result.md`
+  - 如有新事件類型 → 加到 `lookup_proposal()`（規則庫 12→14）
+  - 如無新事件 → 寫「無新事件」報告（不是失敗）
+- **影響**：
+  - RSI 閉環從「觀察 → 改 SOP」完整跑 1 次
+  - 為 Sprint 13 提供「規則庫反應快慢」的量化指標
+  - 6 個新 bats 測試
+
+## ADR-019：Sprint 12 RSI 主動監控（US-022，Sprint 12）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：當前 RSI 是「事後看」，沒有「觀察數下降」告警
+- **決定**：
+  - 建新工具 `tools/rsi-alert.sh`
+  - 觀察數下降 30%+ 觸發告警
+  - 設基線 = 歷史 ≥ 0.7 confidence 的觀察數平均值
+  - 告警輸出：stderr（Agent 可讀）+ `~/.tree-monstor/alerts.log`（人類可查）
+  - 整合到 cron（每日 metrics + alert）
+- **影響**：
+  - RSI 從「被動」變「主動」
+  - 避免「裝了但壞了」的靜默失效
+  - 5 個新 bats 測試
+
+## ADR-020：Sprint 12 修 macOS bash 3.2 set -u 相容性（TD-035，Sprint 12）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：Sprint 11 留下技術債 — `local -a arr=()` 在 macOS bash 3.2 + `set -u` 下報 unbound variable
+- **決定**：
+  - 全 sprint 10/11 工具改用 string 累加：
+    - `local arr=""` 取代 `local -a arr=()`
+    - `arr="$arr val"` 取代 `arr+=("val")`
+  - 加 `tests/td035-bash-setu.bats` 驗證
+- **影響**：
+  - 修正後所有 sprint 10/11 工具都能在 macOS bash 3.2 + set -u 穩定跑
+  - 4 個新 bats 測試
+  - 避免後續 sprint 重複遇到

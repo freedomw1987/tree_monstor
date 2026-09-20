@@ -961,11 +961,22 @@ docs/
 
 | ID | 類型 | 項目標題 / User Story | 交付價值與驗收標準 (AC) | 優先級 | 估算 (SP) | Module | 狀態 |
 |---|---|---|---|---|---|---|---|
-| **US-021** | User Story | 真實觀察 14 天後回顧 + 從 cron.log 反推新規則 | 1. 跑 1 次 `rsi-aggregate.sh` 聚合；2. 分析 14 天 trend_history；3. 看是否有第 13、14 個規則候選；4. ≥ 6 個 bats | P1 | 3 | M4 — Self-Evolution | 🟡 Backlog |
-| **US-022** | User Story | rsi-metrics 加回歸警告（觀察數下降 30%+ 觸發告警） | 1. 加 `rsi-alert.sh`；3. ≥ 0.7 基線 設閾值；4. ≥ 5 個 bats | P2 | 2 | M4 — Self-Evolution | 🟡 Backlog |
-| **TD-035** | Tech Debt | 修 `local -a arr=()` 在 `set -u` 下報 unbound | 1. 全 sprint 10/11 工具改用 string 累加；2. ≥ 4 個 bats 驗證 | P2 | 0.5 | M4 — Self-Evolution | 🟡 Backlog |
-| **TD-036** | Tech Debt | trend_history 函式加 `set -u` 隔離層 | 1. 函式內 `set +u` / `set -u` 包起來；2. ≥ 2 個 bats | P3 | 0.5 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-021** | User Story | 真實觀察 14 天後回顧 + 從 cron.log 反推新規則 | 1. 跑 1 次 `rsi-aggregate.sh` 聚合；2. 分析 14 天 trend_history；3. 看是否有第 13、14 個規則候選；4. ≥ 6 個 bats | P1 | 3 | M4 — Self-Evolution | ✅ Done |
+| **US-022** | User Story | rsi-metrics 加回歸警告（觀察數下降 30%+ 觸發告警） | 1. 加 `rsi-alert.sh`；3. ≥ 0.7 基線 設閾值；4. ≥ 5 個 bats | P2 | 2 | M4 — Self-Evolution | ✅ Done |
+| **TD-035** | Tech Debt | 修 `local -a arr=()` 在 `set -u` 下報 unbound | 1. 全 sprint 10/11 工具改用 string 累加；2. ≥ 4 個 bats 驗證 | P2 | 0.5 | M4 — Self-Evolution | ✅ Done |
+| **TD-036** | Tech Debt | trend_history 函式加 `set -u` 隔離層 | 1. 函式內 `set +u` / `set -u` 包起來；2. ≥ 2 個 bats | P3 | 0.5 | M4 — Self-Evolution | ✅ Done（TD-035 順手解決） |
 | **TD-037** | Tech Debt | rsi-propose 加 `--output-format json` | 1. 加 json output；2. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
 | **SP-005** | Spike | 研究「跨專案規則去重」：兩個 mock 專案觀察到同類事件如何合併 | 1. 寫 1 份技術評估文檔；2. 3 個 mock 測試 | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
 
-**Sprint 12 推薦**（US-021 + US-022 + TD-035）：5.5 SP
+**Sprint 12 推薦**（US-021 + US-022 + TD-035）：5.5 SP ✅ **DONE**
+
+## Sprint 13 候選項（§2.4 反省 Sprint 12 後新增）
+
+| ID | 類型 | 項目標題 / User Story | 交付價值與驗收標準 (AC) | 優先級 | 估算 (SP) | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **TD-037** | Tech Debt | rsi-propose 加 `--output-format json` | 1. 加 json output；2. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-023** | User Story | rsi-deploy.sh 自動部署指南 | 1. 1 鍵部署小型 web app；2. ≥ 4 個 bats | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-024** | User Story | rsi-rollback 加 dry-run | 1. 列出將被回滾的變更；2. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **SP-005** | Spike | 研究「跨專案規則去重」：兩個 mock 專案觀察到同類事件如何合併 | 1. 寫 1 份技術評估文檔；2. 3 個 mock 測試 | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+
+**Sprint 13 推薦**（TD-037 + US-023 + US-024）：4 SP

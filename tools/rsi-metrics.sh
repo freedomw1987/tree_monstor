@@ -246,6 +246,10 @@ EOF
 # === trend_history：30 天滑動 trend ===
 # 8 級 sparkline：▁▂▃▄▅▆▇█
 trend_sparkline() {
+    # TD-035 fix: macOS bash 3.2 + set -u 對 `local -a arr=()` 不穩
+    # 改用 set +u / set -u 隔離層（最可靠，不需改 callers）
+    local prev_setopts="$-"
+    set +u
     local -a vals=("$@")
     local min=999999999 max=0
     for v in "${vals[@]}"; do
@@ -264,6 +268,10 @@ trend_sparkline() {
         result+="$ch"
     done
     echo "$result"
+    # TD-035 fix: 還原原 setopts
+    case "$prev_setopts" in
+        *u*) set -u ;;
+    esac
 }
 
 trend_history() {
