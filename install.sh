@@ -23,6 +23,7 @@ DRY_RUN=0
 YES=0
 QUIET=0
 CLAUDE_SKILLS_MODE="merge"  # merge | replace | skip
+ENABLE_RSI=1            # 1 = enable (default), 0 = disable (US-016)
 
 # ---------- TD-008: Agent 路徑 / marker 常數集中 ----------
 # 改這些變數就能影響全部 install.sh / uninstall 邏輯
@@ -94,6 +95,10 @@ ${C_BOLD}Actions:${C_RESET}
   --uninstall         Remove what this script installed
   --dry-run           Print actions without executing
 
+${C_BOLD}RSI (Recursive Self-Improvement):${C_RESET}
+      --enable-rsi                  Enable RSI observation (default)
+      --disable-rsi                 Skip RSI: don't deploy sop-evolver, don't init ~/.tree-monstor/
+
 ${C_BOLD}UX:${C_RESET}
   -y, --yes                          Skip confirmation prompt
   -q, --quiet                        Suppress info/ok output
@@ -133,6 +138,8 @@ parse_args() {
       --source)   SOURCE_DIR="${2:-}"; [[ -z "$SOURCE_DIR" ]] && { log_err "--source requires a path"; exit 2; }; shift ;;
       --uninstall) UNINSTALL=1 ;;
       --dry-run)   DRY_RUN=1 ;;
+      --enable-rsi)  ENABLE_RSI=1 ;;
+      --disable-rsi) ENABLE_RSI=0 ;;
       -y|--yes)    YES=1 ;;
       -q|--quiet)  QUIET=1 ;;
       --claude-skills-mode)
@@ -260,6 +267,15 @@ print_plan() {
         ;;
     esac
   done
+  # US-016: RSI plan (only when --enable-rsi, the default)
+  if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
+    log_plan "RSI: --enable-rsi (default)"
+    log_plan "  skills/sop-evolver/* -> per-file symlinks into .agents/skills/sop-evolver/"
+    log_plan "  ~/.tree-monstor/observations/ (init)"
+    log_plan "  ~/.tree-monstor/projects/ (init)"
+  else
+    log_plan "RSI: --disable-rsi (skip sop-evolver install + ~/.tree-monstor/ init)"
+  fi
   if [[ $INSTALL_AGENTS_DIR -eq 1 ]]; then
     log_plan "$TARGET_ROOT/.agents/tree_monstor/ (copy)"
   fi
@@ -494,9 +510,15 @@ do_uninstall() {
     case "$agent" in
       claude)
         uninstall_claude
+        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
+          uninstall_rsi "$TARGET_ROOT/${DIR_CLAUDE}"
+        fi
         ;;
       pi)
         uninstall_pi
+        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
+          uninstall_rsi "$TARGET_ROOT/${DIR_PI}"
+        fi
         ;;
       *) log_warn "Unknown agent '$agent' — skipping"; ;;
     esac
@@ -898,6 +920,86 @@ install_sop() {
   log_ok "sop installed: $sop_dst (per-file symlinks into $sop_src)"
 }
 
+# ---------- RSI installer (US-016) ----------
+# Deploys .agents/skills/sop-evolver/ to the agent root (via symlinks)
+# and initializes ~/.tree-monstor/ directory structure for cross-project
+# observation aggregation.
+install_rsi() {
+  local agent_root="$1"
+  local rsi_skill_src="$SOURCE_DIR/.agents/skills/sop-evolver"
+  local rsi_skill_dst="$agent_root/skills/sop-evolver"
+  local homedir="${HOME}"
+  local tree_monstor_root="$homedir/.tree-monstor"
+  local obs_root="$tree_monstor_root/observations"
+  local projects_root="$tree_monstor_root/projects"
+
+  # 1. Deploy sop-evolver skill (symlink)
+  if [[ ! -d "$rsi_skill_src" ]]; then
+    log_dry "skip: source has no .agents/skills/sop-evolver (RSI skill not available)"
+    return 0
+  fi
+
+  if [[ $DRY_RUN -eq 1 ]]; then
+    log_dry "RSI skill symlinks: $rsi_skill_src/* -> $rsi_skill_dst/"
+    log_dry "RSI init: mkdir $tree_monstor_root/{observations,projects}"
+  else
+    # Create skills dir if missing
+    [[ -d "$agent_root/skills" ]] || run mkdir -p "$agent_root/skills"
+    # Create sop-evolver skill dir if missing (prevent ln failure)
+    [[ -d "$rsi_skill_dst" ]] || run mkdir -p "$rsi_skill_dst"
+    # Per-file symlinks for live updates
+    local f name
+    for f in "$rsi_skill_src"/*; do
+      [[ -e "$f" ]] || continue
+      name="$(basename "$f")"
+      run ln -sfn "$f" "$rsi_skill_dst/$name"
+    done
+    log_ok "RSI sop-evolver skill installed: $rsi_skill_dst"
+
+    # Initialize ~/.tree-monstor/ directory structure
+    run mkdir -p "$obs_root" "$projects_root"
+    log_ok "RSI observation root initialized: $obs_root"
+    log_ok "RSI projects registry initialized: $projects_root"
+  fi
+}
+
+uninstall_rsi() {
+  local agent_root="$1"
+  local rsi_skill_dst="$agent_root/skills/sop-evolver"
+  local homedir="${HOME}"
+  local tree_monstor_root="$homedir/.tree-monstor"
+
+  # Remove sop-evolver symlink
+  if [[ -L "$rsi_skill_dst" || -d "$rsi_skill_dst" ]]; then
+    if [[ $DRY_RUN -eq 1 ]]; then
+      log_dry "RSI uninstall: rm -rf $rsi_skill_dst"
+    else
+      run rm -rf "$rsi_skill_dst"
+      log_ok "RSI sop-evolver skill removed: $rsi_skill_dst"
+    fi
+  fi
+
+  # Prompt for ~/.tree-monstor/ removal
+  if [[ -d "$tree_monstor_root" ]]; then
+    if [[ $YES -eq 1 ]]; then
+      log_warn "RSI data directory preserved (--yes set): $tree_monstor_root"
+      return 0
+    fi
+    local confirm
+    read -rp "Remove RSI data directory $tree_monstor_root? This deletes all cross-project observations. [y/N] " confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+      if [[ $DRY_RUN -eq 1 ]]; then
+        log_dry "RSI uninstall: rm -rf $tree_monstor_root"
+      else
+        run rm -rf "$tree_monstor_root"
+        log_ok "RSI data directory removed: $tree_monstor_root"
+      fi
+    else
+      log_warn "RSI data directory preserved: $tree_monstor_root"
+    fi
+  fi
+}
+
 # ---------- Exclusion rules ----------
 # Anything matching these name patterns is skipped during copy.
 # Used for the .agents/ snapshot (we never symlink that — it's a real copy).
@@ -973,10 +1075,20 @@ main() {
       claude)
         install_claude
         install_sop "$TARGET_ROOT/${DIR_CLAUDE}"
+        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
+          install_rsi "$TARGET_ROOT/${DIR_CLAUDE}"
+        else
+          log_info "RSI: --disable-rsi set, skipping sop-evolver install for Claude"
+        fi
         ;;
       pi)
         install_pi
         install_sop "$TARGET_ROOT/${DIR_PI}"
+        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
+          install_rsi "$TARGET_ROOT/${DIR_PI}"
+        else
+          log_info "RSI: --disable-rsi set, skipping sop-evolver install for Pi"
+        fi
         ;;
       *)      log_warn "Unknown agent '$agent' — skipping"; ;;
     esac

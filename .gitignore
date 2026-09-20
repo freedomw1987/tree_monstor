@@ -14,3 +14,5 @@ __pycache__/
 .agents/
 .claude/
 .pi/
+# BUT sop-evolver skill source files are part of the source repo (committed)
+!.agents/skills/sop-evolver/

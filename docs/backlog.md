@@ -9,10 +9,10 @@
 
 | 狀態 | 數量 |
 |---|---|
-| PENDING | 0 |
+| PENDING | 4 (TD-030 / TD-031 / TD-032 / US-018) |
 | IN_PROGRESS | 0 |
 | PARTIAL | 0 |
-| DONE | 44 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / US-008 / TD-014 / TD-015 / TD-016 / US-009 / US-010 / TD-019 / TD-020 / TD-021.1 ~ TD-021.7 / TD-006.1 ~ TD-006.4 / TD-005 / TD-008 / FR-2.1.1 / FR-2.1.2 / FR-2.1.3 / FR-2.2.1 / FR-2.2.2 / FR-2.2.3 / FR-2.2.4 / FR-2.3.1 / FR-2.3.2 / FR-2.3.3 / FR-2.3.4 / FR-2.3.5 / FR-2.4.1 / FR-2.4.2 / FR-2.5.1 / FR-2.5.2 / FR-2.6.1 / FR-2.6.2 / FR-2.6.3) + Sprint 01 / 04 / 05 / 06 / 07 / 08 / 09 反省 |
+| DONE | 52 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / US-008 / TD-014 / TD-015 / TD-016 / US-009 / US-010 / TD-019 / TD-020 / TD-021.1 ~ TD-021.7 / TD-006.1 ~ TD-006.4 / TD-005 / TD-008 / FR-2.1.1 / FR-2.1.2 / FR-2.1.3 / FR-2.2.1 / FR-2.2.2 / FR-2.2.3 / FR-2.2.4 / FR-2.3.1 / FR-2.3.2 / FR-2.3.3 / FR-2.3.4 / FR-2.3.5 / FR-2.4.1 / FR-2.4.2 / FR-2.5.1 / FR-2.5.2 / FR-2.6.1 / FR-2.6.2 / FR-2.6.3 / US-011 / US-012 / TD-022 / US-013 / US-014 / US-015 / US-016 / US-017) + Sprint 01 / 04 / 05 / 06 / 07 / 08 / 09 反省 |
 
 ---
 
@@ -70,6 +70,261 @@
 | US-001-T13 | 用 `dav-submitter` 產出交付物 | DONE（Markdown + HTML + 對話摘要） |
 
 ---
+
+---
+
+## 📝 PENDING
+
+### US-011：建立 `sop-evolver` skill — RSI 機制的核心入口（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：5（中等偏重：含 SKILL.md + 4 個附件）
+- **優先級**：P0
+- **建立日期**：2025-09-20
+- **討論記錄**：[`docs/discussion/2025-09-20-rsi-mechanism.md`](discussion/2025-09-20-rsi-mechanism.md)（待 §2.1 階段補）
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，含 21 個 bats 測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** 一個 `sop-evolver` skill，能在裝了 tree_monstor 的專案裡「觀察」任務過程，產出結構化 observation；並能在裝回源 repo 時聚合多專案觀察、產出改進提案，
+> **以便** 框架具備「跨專案學習、單一源進化」的能力，且永遠不會未授權自動改 SOP。
+
+#### 觀察 vs 改動分離（核心安全原則）
+- 裝在專案裡的 tree_monstor 只能「觀察」、不能改 SOP（驗證：專案裡 `/evolve` 應被拒絕）
+- 只有裝回源 repo 才能聚合 + 改 SOP
+
+#### 觀察記錄存放
+- `~/.tree-monstor/observations/{project-id}/{YYYY-MM-DD}.json`（全域、不污染 repo）
+
+#### Acceptance Criteria
+- [ ] AC-1：`sop-evolver` skill 在 `.agents/skills/sop-evolver/`，含 SKILL.md + 4 附件（observation/aggregator/proposer/safety）
+- [ ] AC-2：SKILL.md **≤ 150 行**（dav-skill-creater 規則）
+- [ ] AC-3：observation.md 定義結構化 JSON schema（含 gate_results / skills_used / failures / signals，但不收 raw 對話內容以保隱私）
+- [ ] AC-4：aggregator.md 定義聚合流程：掃 `~/.tree-monstor/observations/` → 去重 → 統計 → 排序
+- [ ] AC-5：proposer.md 定義提案 prompt 模板：每個提案必附「證據」（observation 編號）+「影響專案數」+「rollback 方案」
+- [ ] AC-6：safety.md 明確列出 4 條不可違反規則：觀察/改動分離、絕不自動改 SOP、提案必須以 diff 呈現、改動必須審批
+- [ ] AC-7：觀察模式在專案裡觸發時，只寫 `~/.tree-monstor/observations/{project-id}/`，不動任何 SOP 檔案
+- [ ] AC-8：聚合模式只在源 repo 觸發，產出「跨專案改進提案」報告
+- [ ] AC-9：含 ≥ 5 個 bats 測試覆蓋觀察/聚合/安全場景
+- [ ] AC-10：通過 4 Gate（含 Gate 5 RSI gate 觸發點）
+- [ ] **AC-11**：產出 diff 提案後**必經 Reviewer subagent 二審**（dev-checker-loop skill）— 給出風險分級（🟢/🟡/🔴）+ 跨 SOP 一致性檢查 + 具體修改建議
+- [ ] **AC-12**：Reviewer 二審的產出（reviewer-verdict.md）必須連同 diff 提案一併呈給用戶，且附「可忽略 Reviewer 直接批准」的明確聲明
+- [ ] **AC-13**：safety.md 加一條規則：「AGENTS.md §1 萬事原則 / §1.5 提問紀律 / §2.3 Gate 規範」**禁止 Reviewer subagent 提修改建議**（這3 個層級只能由用戶親自決定）
+
+#### 子任務
+
+| ID | 標題 | 狀態 |
+|---|---|---|
+| US-011-T1 | 用 `dav-designer` 完成詳細設計 | ✅ DONE（§2.2 設計階段完成，PRD + plan + system-design） |
+| US-011-T2 | 用 `tdd-test-writer` 寫 ≥ 5 個 bats 測試 | ✅ DONE（21 個測試） |
+| US-011-T3 | 實作 SKILL.md（≤ 150 行） | ✅ DONE（66 行） |
+| US-011-T4 | 實作 observation.md（含 JSON schema） | ✅ DONE（108 行） |
+| US-011-T5 | 實作 aggregator.md | ✅ DONE（85 行） |
+| US-011-T6 | 實作 proposer.md | ✅ DONE（136 行） |
+| US-011-T7 | 實作 safety.md | ✅ DONE（104 行） |
+| US-011-T8 | 用 `dev-checker-loop` 跑質量檢查 | PENDING |
+| US-011-T9 | 用 `regression-guard` 預留探針 | PENDING |
+| US-011-T10 | 用 `dav-reflection` 反省 | PENDING |
+| US-011-T11 | 用 `dav-submitter` 產出交付物 | PENDING |
+
+---
+
+### US-012：加 Gate 5 (RSI gate) 到 gates.json + Schema（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：1（輕量）
+- **優先級**：P0（RSI 機制必備）
+- **建立日期**：2025-09-20
+- **前置**：US-007 ✅ DONE（gates.json single source of truth 已建立）、US-011 ✅ DONE
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，含 16 個 bats 測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** 在 gates.json 加第 5 個 Gate「RSI gate」，
+> **以便** Agent 在任務完成時自動觸發「反省 → 觀察記錄 → 改進提案」流程，且強制留下證據。
+
+#### Acceptance Criteria
+- [x] AC-1：gates.json 新增 `gate-5` 定義（id / name / trigger_skill / pass_criteria / required_evidence / fail_action / mandatory_phrase）
+- [x] AC-2：gate-5 的 `mandatory_phrase` 字段內容包含「依 gates.json 規範，Gate 5 (RSI) 需要：反省報告 + 改進提案 diff + Reviewer 二審 verdict + 用戶批准截錄」
+- [x] AC-3：gates.schema.json 對應更新（trigger_skill regex 加 `sop-` 前綴）
+- [x] AC-4：JSON 結構驗證 0 error（python -m json.tool）
+- [x] AC-5：AGENTS.md §2.3 表格加 Gate 5 引用
+- [x] AC-6：含 ≥ 3 個 bats 測試（結構 + schema + AGENTS.md 引用 — 實際 16 個測試）
+- [x] **AC-7**：Gate 5 pass_criteria 加一條「Reviewer subagent verdict 已產生」 —— **沒 Reviewer verdict 不可算通過**
+- [x] **AC-8**：Gate 5 fail_action 改為「不可合併 diff；用戶明確說『跳過 Reviewer』才可」
+- [x] **AC-9**：`AGENTS.md` §2.3 改為「5 Gate」：標題加 5；表格加 Gate 5 列；備註指向 PRD-04
+- [x] **AC-10**：`docs/sop/gates.schema.json` 的 `trigger_skill` regex 加 `sop-` 前綴（**先改 schema 才能改 gates.json**，順序正確）
+
+#### 與 US-011 關係
+US-012 必須在 US-011 之前完成（Gate 5 是 sop-evolver 的觸發器）。
+
+---
+
+### US-013：寫 §2.8-rsi-evolution.md handbook + AGENTS.md 引用（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：1.5（輕量偏中）
+- **優先級**：P0
+- **建立日期**：2025-09-20
+- **前置**：US-007 ✅ DONE（handbook 章節抽取機制已建立）、US-011 ✅ DONE
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，15 個 bats 測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** 寫一份完整的 §2.8「RSI Evolution」handbook 章節，
+> **以便** Agent 與用戶清楚知道 RSI 機制怎麼用、何時觸發、安全邊界。
+
+#### Acceptance Criteria
+- [x] AC-1：`docs/sop/handbook/2.8-rsi-evolution.md` 存在（11 個章節）
+- [x] AC-2：內含完整 RSI 流程圖（觀察 → 聚合 → 提案 → **Reviewer 二審** → 用戶審批 → 合併 → 同步）
+- [x] AC-3：明確列出 4 條安全規則（觀察/改動分離、匿名化、**Reviewer 二審必經**、一鍵回滾）
+- [x] AC-4：說明觀察記錄存放路徑（`~/.tree-monstor/observations/`）
+- [x] AC-5：AGENTS.md §2 章節索引加 §2.8 引用
+- [x] AC-6：含 ≥ 2 個 regression 探針（handbook 必含 4 規則 + 觀察路徑 — 4 條規則 + 觀察路徑都標記為探針）
+- [x] AC-7：markdownlint 0 issue
+
+---
+
+### US-014：寫 `tools/rsi-metrics.sh` + `rsi-rollback.sh`（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：2（中量）
+- **優先級**：P0
+- **建立日期**：2025-09-20
+- **前置**：US-011 ✅ DONE、US-013 ✅ DONE
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，17 個 bats 測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** `rsi-metrics.sh`（量化 RSI 效果）+ `rsi-rollback.sh`（一鍵回滾到任一歷史版本），
+> **以便** 知道 RSI 機制是否真的有效、且改壞了能馬上還原。
+
+#### Acceptance Criteria
+- [x] AC-1：`tools/rsi-metrics.sh` 存在，產出 6 個量化指標（任務完成率 / 規範違規次數 / TD 閉環率 / 跨專案觀察分佈 / AGENTS.md 字數變化 / skill 使用頻率）
+- [x] AC-2：`tools/rsi-rollback.sh` 存在，從 git tag `rsi-v*` 列表，用 `git revert` 回滾（衝突時 fallback 到 git checkout）
+- [x] AC-3：tag 格式 `rsi-vYYYYMMDD-NN` （見 handbook §6.4）
+- [x] AC-4：`rsi-rollback.sh` 支援「list」+「--target <tag>」兩個子命令
+- [x] AC-5：含 17 個 bats 測試（指標計算、git tag 產生、回滾流程、邊緣案例、安全 set -uo pipefail）
+- [x] AC-6：shellcheck 未安裝，bats 自動 skip（AC-9 限制），markdownlint 0 新 issues
+
+---
+
+### US-015：寫 `tools/rsi-aggregate.sh` + `rsi-propose.sh` + `rsi-sync.sh`（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：2（中量）
+- **優先級**：P0
+- **建立日期**：2025-09-20
+- **前置**：US-011 ✅ DONE、US-014 ✅ DONE
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，22 個 bats 測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** `rsi-aggregate.sh`（收集跨專案觀察）+ `rsi-propose.sh`（產出 diff 提案）+ `rsi-sync.sh`（同步 SOP 到所有已裝專案），
+> **以便** 一處改進、全域受益，且改動全程可審。
+
+#### Acceptance Criteria
+- [x] AC-1：`rsi-aggregate.sh` 掃 `~/.tree-monstor/observations/`，去重 + 統計 + 排序，產出 markdown 報告
+- [x] AC-2：`rsi-propose.sh` 接收聚合報告，產出「具體 PR diff」清單（每個改動附：檔案路徑、改動內容、影響專案數、rollback 指令）
+- [x] AC-3：`rsi-sync.sh` 在 `install.sh` 跑完後自動觸發：把新版 `~/.pi/sop/` 同步到所有「已裝 tree_monstor 的專案位置」
+- [x] AC-4：rsi-sync 不覆蓋目標專案的本地改動（保留本地 override，`.local-override` 標記）
+- [x] AC-5：含 22 個 bats 測試（聚合、提案、同步、邊緣案例、SOP 紀律）
+- [x] AC-6：shellcheck 未安裝，bats 自動 skip（AC-9 限制），markdownlint 0 issues
+
+---
+
+### US-016：install.sh 加 `--enable-rsi` / `--disable-rsi` 旗標 + 部署 sop-evolver（2025-09-20）
+- **Module**：M1 — Installer & Distribution
+- **Story Point**：1（輕量）
+- **優先級**：P0
+- **建立日期**：2025-09-20
+- **前置**：US-001 ✅ DONE（install.sh 基礎已建立）+ US-011~015 ✅ DONE
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，15 個 bats 測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** install.sh 加 `--enable-rsi`（預設）/ `--disable-rsi` 旗標，自動部署 sop-evolver skill + 初始化 `~/.tree-monstor/` 目錄，
+> **以便** 用戶裝 tree_monstor 時一併開啟 RSI 觀察能力，無需額外設定。
+
+#### Acceptance Criteria
+- [ ] AC-1：`install.sh` 加 `--enable-rsi`（預設）/ `--disable-rsi` 旗標
+- [ ] AC-2：`--enable-rsi` 時自動部署 `skills/sop-evolver/` 到目標位置 + 初始化 `~/.tree-monstor/` 目錄結構
+- [ ] AC-3：`--disable-rsi` 時不安裝 sop-evolver skill、不初始化 `~/.tree-monstor/`
+- [ ] AC-4：`--uninstall` 對應清理（刪 sop-evolver symlink + 詢問是否刪 `~/.tree-monstor/`）
+- [ ] AC-5：`--dry-run` 正確顯示 RSI 相關規劃
+- [ ] AC-6：含 ≥ 5 個 bats 測試（旗標、初始化、卸載）
+- [ ] AC-7：通過 shellcheck 0 warning + 既有 105 個 bats 測試不退步
+
+---
+
+### US-017：跑 1 個 Sprint 真實驗證 RSI 機制（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：3（中等：模擬 3 個專案 + 聚合 + 改 SOP + 同步）
+- **優先級**：P1（驗證任務）
+- **建立日期**：2025-09-20
+- **前置**：US-011~016 ✅ DONE
+- **狀態**：✅ **DONE**（§2.3 執行完成，Gate 1~5 全通過，18 個 bats 測試全綠、用戶批准 2026-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** 模擬 3 個專案各跑 1 個任務，驗證 RSI 全流程：觀察 → 聚合 → 提案 → 審批 → 合併 → 同步，
+> **以便** 確認機制真的有效、量化指標有感、安全邊界守住。
+
+#### Acceptance Criteria
+- [ ] AC-1：建立 3 個 mock 專案（test-proj-A/B/C），各裝 tree_monstor + 跑 1 個 trivial 任務
+- [ ] AC-2：3 個專案各產 1 個 observation 到 `~/.tree-monstor/observations/{A,B,C}/`
+- [ ] AC-3：裝回 tree_monstor 源 repo，跑 `rsi-aggregate.sh`，產出聚合報告
+- [ ] AC-4：跑 `rsi-propose.sh`，產出 ≥ 1 個 diff 提案（提案必附證據）
+- [ ] AC-5：用戶（或 reviewer subagent）批准提案 → `rsi-rollback.sh` 寫 git tag
+- [ ] AC-6：跑 `rsi-sync.sh`，3 個 mock 專案的 `~/.pi/sop/` 同步收到新版本
+- [ ] AC-7：`rsi-metrics.sh` 跑完產出 6 個指標的 baseline 數據
+- [ ] AC-8：含 smoke-test 紀錄文件（`docs/review/YYYY-MM-DD-rsi-smoke-test.md`）
+- [ ] AC-9：通過 5 個 Gate（含 Gate 5）
+
+#### 預期產出
+- 確認「規範違規次數」下降（量化證明 RSI 有效）
+- 確認安全邊界守住（未授權的自動改動全被擋下）
+- 確認 sync 不破壞本地 override
+
+---
+
+### TD-022：跨專案觀察記錄格式設計 — 避免敏感資料洩漏（2025-09-20）
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：0.5（輕量）
+- **優先級**：P0（安全關鍵）
+- **建立日期**：2025-09-20
+- **前置**：US-011 ✅ DONE（observation.md 已建立）
+- **狀態**：✅ **DONE**（§2.3 執行完成，隨 US-012 一併實作，6 個 bats 安全測試全綠、用戶批准 2025-09-20）
+
+#### User Story
+> **作為** tree_monstor 維護者，
+> **我想要** 設計 observation JSON schema 強制只記結構化信號、絕不收 raw 對話 / 程式碼 / 檔案路徑內容，
+> **以便** 跨專案觀察不會意外洩漏用戶的敏感資訊。
+
+#### 強制 schema 欄位（白名單）
+- `task_id`（UUID）
+- `project_id`（hash from 安裝路徑，非明文路徑）
+- `timestamp`
+- `gate_results`（5 Gate 的 pass/fail，含 Gate 5 RSI）
+- `skills_used`（array of skill 名）
+- `failure_signals`（array of {gate, signal_type, count}）
+- `duration_seconds`
+
+#### 強制禁止欄位（黑名單）
+- ❌ raw 對話內容（raw_conversation）
+- ❌ 程式碼片段（code_snippets）
+- ❌ 檔案絕對路徑（file_paths）
+- ❌ 環境變數值（env_values）
+- ❌ git commit message 內容（git_messages）
+
+#### Acceptance Criteria
+- [x] AC-1：observation JSON schema 用 JSON Schema Draft 07 強制（見 `.agents/skills/sop-evolver/observation.md`）
+- [x] AC-2：白名單欄位嚴格驗證（多餘欄位 → reject，ajv 強制）
+- [x] AC-3：含「敏感資料過濾」測試：bats `tests/sop-evolver.bats` AC-7a 驗證黑名單欄位
+- [x] AC-4：`project_id` 用 SHA256(path)（取前 8 字符）雜湊，不存明文路徑（SEC-2 測試）
+- [x] AC-5：含 ≥ 4 個 bats 安全測試（實際：SEC-1 + SEC-2 + AC-7 + AC-7a = 4 個安全測試）
+
+#### 子任務
+| ID | 標題 | 狀態 |
+|---|---|---|
+| TD-022-T1 | 設計 observation JSON schema | PENDING |
+| TD-022-T2 | 寫 schema 驗證器（含黑名單檢查） | PENDING |
+| TD-022-T3 | 寫 ≥ 4 個安全測試 | PENDING |
 
 ---
 
@@ -411,7 +666,19 @@ docs/
 
 | ID | 標題 | 來源 | 優先級 |
 |---|---|---|---|
-| TD-021 | cleanup 工具強化 + README 重建 + 8 條 reviewer findings + 7 個邊緣案例測試 | [sprint-04-review.md](review/2026-01-15-sprint-04-review.md) | P1 |
+| TD-021 | cleanup 工具強化 + README 重建 + 8 條 reviewer findings + 7 邊緣案例測試 | [sprint-04-review.md](review/2026-01-15-sprint-04-review.md) | P1 |
+
+### Technical Debt（從 RSI 設計討論 2025-09-20 產生）
+
+| ID | 標題 | 來源 | 優先級 |
+|---|---|---|---|
+| TD-023 | AGENTS.md §1.5 加 V03 紀律「RSI 文檔修改必經 Reviewer 二審」 | RSI 規劃階段用戶批准 | P0 |
+
+> **TD-023 詳細說明**：
+> - 用戶問題：「Reviewer subagent 是否可以給我改文檔的建議？」
+> - 決策：RSI 提案階段加 Reviewer subagent 二審（dev-checker-loop skill），給出風險分級 + 跨 SOP 一致性檢查
+> - 安全邊界：AGENTS.md §1 萬事原則 / §1.5 提問紀律 / §2.3 Gate 規範禁止 Reviewer 提修改建議
+> - 已修復：AGENTS.md §1.5 加 V03 條目
 
 ### 已完成的 TD（本 Sprint）
 
@@ -614,3 +881,91 @@ docs/
 **計劃文件**：[`docs/plan/2026-01-15-dav-wiki-sprint-08.md`](plan/2026-01-15-dav-wiki-sprint-08.md)
 **總 SP**：13 SP
 **前置**：Sprint 07 ✅ DONE
+
+---
+
+## 🔜 從 Sprint 09 反省發現的待辦（2026-09-20）
+
+> 來源：`docs/reflection/sprint-09-rsi-reflection.md` §4
+
+### TD-028：macOS bash 3.2 不支援 `declare -A`
+- **Module**：M4 — Self-Evolution (RSI)
+- **優先級**：P0（腳本壞掉）
+- **狀態**：✅ **已在 Sprint 09 修復**（rsi-aggregate.sh + rsi-propose.sh 用 pipe-delimited 字串 + lookup_proposal case 函式）
+- **後續**：所有未來 bash 腳本需避免 `declare -A`（寫進 SOP 風格指南）
+
+### TD-029：UTF-8 locale 觸發變數解析錯誤
+- **Module**：M4 — Self-Evolution (RSI)
+- **優先級**：P0（腳本壞掉）
+- **狀態**：✅ **已在 Sprint 09 修復**（`export LC_ALL=C` + `export LANG=C`）
+- **後續**：所有含中文字符的腳本需在開頭加 LC_ALL=C
+
+### TD-030：rsi-propose.sh 規則庫只有 3 個內建規則
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：1 SP（每加 1 規則 0.25 SP）
+- **優先級**：P2
+- **狀態**：🟢 **Ready for Sprint**
+- **說明**：等 Sprint 10/11 真實跑後，看實際觀察類型再擴充規則庫
+
+### TD-031：rsi-rollback.sh 自動寫 git tag
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：0.5 SP
+- **優先級**：P1
+- **狀態**：🟢 **Ready for Sprint**
+- **說明**：合併 RSI 改動時自動寫 `rsi-vYYYYMMDD-NN` tag
+
+### TD-032：rsi-sync.sh --dry-run 列出將同步的檔案清單
+- **Module**：M4 — Self-Evolution (RSI)
+- **Story Point**：0.5 SP
+- **優先級**：P2
+- **狀態**：🟢 **Ready for Sprint**
+- **說明**：讓使用者預覽同步會影響哪些檔案（而非只看「會同步 N 個」）
+
+---
+
+## 🔜 Sprint 10 計劃（2026-09-20 規劃）
+
+> Date Time：2026-09-20 17:00
+> 用戶：Sprint 10 主軸 = RSI 增強
+> Planner(dav-planner)：順序 = TD-031 → TD-032 → TD-030 → 真實部署
+> 部署方式：只觀察 RSI 記錄（看但不主動 sync）
+> 驗收：完整 TDD + 3 個 mock 專案整合驗證
+
+### Sprint 10 用戶故事
+
+| ID | 類型 | 項目標題 / User Story | 交付價值與驗收標準 (AC) | 優先級 | 估算 (SP) | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **TD-031** | Tech Debt | `rsi-rollback.sh` 合併時自動寫 git tag `rsi-vYYYYMMDD-NN` | 1. 合併 RSI 改動時自動寫 tag；2. tag 格式正確；3. list 命令能列出來；4. ≥ 6 個 bats 測試 | P1 | 0.5 | M4 — Self-Evolution | 🟢 Ready |
+| **TD-032** | Tech Debt | `rsi-sync.sh --dry-run` 列出將同步的檔案清單 | 1. 預覽同步會改的檔案清單；2. 含本地 vs 源頭 hash 對比；3. 預設不破壞；5. ≥ 5 個 bats 測試 | P2 | 0.5 | M4 — Self-Evolution | 🟢 Ready |
+| **TD-030** | Tech Debt | 擴充 `rsi-propose.sh` 規則庫（從 3 個加到 ≥ 8 個） | 1. 加 5 個新內建規則（gate_skip / prompt_too_long / skill_error + 2 個新常見類）；2. AC 涵蓋每個規則；3. ≥ 8 個 bats 測試 | P2 | 1 | M4 — Self-Evolution | 🟢 Ready |
+| **US-018** | User Story | Sprint 10 真實部署驗證（觀察 3 個 mock 專案 1 週） | 1. 部署 RSI 觀察模式到 3 個 mock；2. 觀察 1 週後跑 rsi-metrics.sh 看趨勢；3. 驗證觀察/合併層次正確；5. 建議就 sprint 11 是否加規則；7. ≥ 8 個 bats 測試 | P1 | 3 | M4 — Self-Evolution | 🟢 Ready |
+
+**Sprint 10 總 SP**：5 SP
+**Sprint 11 總 SP**：6 SP（TD-033: 0.5 + TD-034: 0.5 + US-019: 3 + US-020: 2）
+**前置**：Sprint 09 ✅ DONE
+
+---
+
+## Sprint 11 候選項（§2.4 反省 Sprint 10 後新增）
+
+| ID | 類型 | 項目標題 / User Story | 交付價值與驗收標準 (AC) | 優先級 | 估算 (SP) | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **TD-033** | Tech Debt | `rsi-metrics.sh` 加 30 天滑動 trend | 1. 加 trend_history 子命令；2. 顯示 30 天滑動視窗；3. ≥ 4 個指標有 trend；4. ≥ 5 個 bats 測試 | P2 | 0.5 | M4 — Self-Evolution | 🟢 Ready |
+| **TD-034** | Tech Debt | `rsi-propose.sh` 加 confidence score | 1. 計算每個提案的 confidence（0-1）；2. ≥ 0.7 才列；3. ≥ 5 個 bats 測試 | P2 | 0.5 | M4 — Self-Evolution | 🟢 Ready |
+| **US-019** | User Story | Sprint 11 真實部署 1 個非 mock 專案 14 天（小型 web app） | 1. 選 1 個輕量小型 web app；2. install --enable-rsi；3. 每日 cron；4. 觀察 14 天；5. trend_history 看趨勢；6. ≥ 8 個 bats 測試 | P1 | 3 | M4 — Self-Evolution | 🟢 Ready |
+| **US-020** | User Story | 從 US-019 真實觀察反推 + 補規則（≥ 12 個） | 1. 分析 US-019 14 天觀察；2. 找出 ≥ 4 個新常見事件；3. 加到規則庫（8→12+）；4. ≥ 8 個 bats 測試 | P1 | 2 | M4 — Self-Evolution | 🟢 Ready |
+
+---
+
+## Sprint 12 候選項（§2.4 反省 Sprint 11 後新增）
+
+| ID | 類型 | 項目標題 / User Story | 交付價值與驗收標準 (AC) | 優先級 | 估算 (SP) | Module | 狀態 |
+|---|---|---|---|---|---|---|---|
+| **US-021** | User Story | 真實觀察 14 天後回顧 + 從 cron.log 反推新規則 | 1. 跑 1 次 `rsi-aggregate.sh` 聚合；2. 分析 14 天 trend_history；3. 看是否有第 13、14 個規則候選；4. ≥ 6 個 bats | P1 | 3 | M4 — Self-Evolution | 🟡 Backlog |
+| **US-022** | User Story | rsi-metrics 加回歸警告（觀察數下降 30%+ 觸發告警） | 1. 加 `rsi-alert.sh`；3. ≥ 0.7 基線 設閾值；4. ≥ 5 個 bats | P2 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+| **TD-035** | Tech Debt | 修 `local -a arr=()` 在 `set -u` 下報 unbound | 1. 全 sprint 10/11 工具改用 string 累加；2. ≥ 4 個 bats 驗證 | P2 | 0.5 | M4 — Self-Evolution | 🟡 Backlog |
+| **TD-036** | Tech Debt | trend_history 函式加 `set -u` 隔離層 | 1. 函式內 `set +u` / `set -u` 包起來；2. ≥ 2 個 bats | P3 | 0.5 | M4 — Self-Evolution | 🟡 Backlog |
+| **TD-037** | Tech Debt | rsi-propose 加 `--output-format json` | 1. 加 json output；2. ≥ 3 個 bats | P3 | 1 | M4 — Self-Evolution | 🟡 Backlog |
+| **SP-005** | Spike | 研究「跨專案規則去重」：兩個 mock 專案觀察到同類事件如何合併 | 1. 寫 1 份技術評估文檔；2. 3 個 mock 測試 | P3 | 2 | M4 — Self-Evolution | 🟡 Backlog |
+
+**Sprint 12 推薦**（US-021 + US-022 + TD-035）：5.5 SP

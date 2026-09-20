@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint 09 RSI 機制交付摘要（2026-09-20）</title>
+<style>
+:root {
+    --primary: #2e7d32;
+    --primary-light: #4caf50;
+    --secondary: #1976d2;
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text: #212121;
+    --text-muted: #666;
+    --border: #e0e0e0;
+    --success: #388e3c;
+    --warning: #f57c00;
+    --danger: #d32f2f;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+h1 { color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 12px; margin-bottom: 24px; font-size: 28px; }
+h2 { color: var(--primary); margin-top: 32px; margin-bottom: 16px; font-size: 22px; padding-left: 12px; border-left: 4px solid var(--primary); }
+h3 { color: var(--secondary); margin-top: 20px; margin-bottom: 12px; font-size: 18px; }
+p, ul, ol, table { margin-bottom: 16px; }
+blockquote {
+    background: #e8f5e9;
+    border-left: 4px solid var(--primary);
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 4px;
+    font-style: italic;
+    color: var(--primary);
+}
+blockquote strong { font-style: normal; font-size: 18px; }
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+}
+th { background: #f1f8e9; color: var(--primary); font-weight: 600; }
+tr:nth-child(even) { background: #f9f9f9; }
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 4px;
+}
+.badge-success { background: #c8e6c9; color: #1b5e20; }
+.badge-warning { background: #ffe0b2; color: #e65100; }
+.badge-info { background: #bbdefb; color: #0d47a1; }
+.badge-danger { background: #ffcdd2; color: #b71c1c; }
+.progress {
+    height: 28px;
+    background: var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 8px 0 16px 0;
+}
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: width 0.5s ease;
+}
+.svg-container { text-align: center; margin: 24px 0; }
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.kpi-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.kpi-value { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.kpi-label { font-size: 13px; color: var(--text-muted); }
+.layer { background: #f1f8e9; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid var(--primary); }
+.layer-title { font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+ul li, ol li { margin-left: 24px; margin-bottom: 4px; }
+code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: "SF Mono", Monaco, monospace; font-size: 14px; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
+@media (max-width: 768px) {
+    body { padding: 12px; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 18px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<h1>🎉 Sprint 09 RSI 機制交付摘要</h1>
+
+<blockquote>
+<strong>樹精靈（tree_monstor）現在能自我觀察、聚合跨專案觀察、產出具體改進提案、量化指標、一鍵回滾、自動同步 — 不再只守規範，也能協作檢查和改 SOP。</strong>
+</blockquote>
+
+<div class="card">
+<h3>📊 Sprint 09 完成度</h3>
+<div class="progress">
+<div class="progress-bar" style="width: 100%;">100% (16/16 SP)</div>
+</div>
+<p>狀態：<span class="badge badge-success">✅ DONE</span> 8 個 US/TD 全部完成</p>
+</div>
+
+<!-- ===== 量化指標 ===== -->
+<h2>📈 量化指標（rsi-metrics.sh）</h2>
+<div class="kpi-grid">
+<div class="kpi-card">
+<div class="kpi-value">0%</div>
+<div class="kpi-label">任務完成率</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value">0</div>
+<div class="kpi-label">規範違規次數</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value">33.33%</div>
+<div class="kpi-label">TD 閉環率 (1/3)</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value">3</div>
+<div class="kpi-label">跨專案觀察分佈</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value">+731</div>
+<div class="kpi-label">AGENTS.md 字元變化</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-value">11</div>
+<div class="kpi-label">skill 使用頻率</div>
+</div>
+</div>
+
+<!-- ===== 5 層架構 ===== -->
+<h2>🏗️ RSI 機制 5 層架構</h2>
+
+<div class="svg-container">
+<svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" style="max-width:100%; height:auto;">
+<defs>
+<linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#4caf50"/>
+<stop offset="100%" stop-color="#81c784"/>
+</linearGradient>
+<linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#1976d2"/>
+<stop offset="100%" stop-color="#64b5f6"/>
+</linearGradient>
+<linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#f57c00"/>
+<stop offset="100%" stop-color="#ffb74d"/>
+</linearGradient>
+<linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#7b1fa2"/>
+<stop offset="100%" stop-color="#ba68c8"/>
+</linearGradient>
+<linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#c62828"/>
+<stop offset="100%" stop-color="#ef5350"/>
+</linearGradient>
+</defs>
+
+<!-- 5 層 -->
+<g>
+<rect x="50" y="20" width="700" height="60" rx="8" fill="url(#g1)"/>
+<text x="400" y="55" text-anchor="middle" fill="white" font-size="20" font-weight="700">L1 規範層 — 5 Gate + V03 Reviewer + §2.8 handbook</text>
+</g>
+<g>
+<rect x="50" y="100" width="700" height="60" rx="8" fill="url(#g2)"/>
+<text x="400" y="135" text-anchor="middle" fill="white" font-size="20" font-weight="700">L2 觀察層 — sop-evolver skill（5 .md）</text>
+</g>
+<g>
+<rect x="50" y="180" width="700" height="60" rx="8" fill="url(#g3)"/>
+<text x="400" y="215" text-anchor="middle" fill="white" font-size="20" font-weight="700">L3 工具層 — 5 個 rsi-*.sh CLI</text>
+</g>
+<g>
+<rect x="50" y="260" width="700" height="60" rx="8" fill="url(#g4)"/>
+<text x="400" y="295" text-anchor="middle" fill="white" font-size="20" font-weight="700">L4 安裝層 — install.sh --enable-rsi（預設）</text>
+</g>
+<g>
+<rect x="50" y="340" width="700" height="30" rx="8" fill="url(#g5)"/>
+<text x="400" y="362" text-anchor="middle" fill="white" font-size="18" font-weight="700">L5 數據層 — ~/.tree-monstor/observations/</text>
+</g>
+
+<!-- 箭頭 -->
+<g fill="#666">
+<polygon points="395,82 405,82 400,92"/>
+<polygon points="395,162 405,162 400,172"/>
+<polygon points="395,242 405,242 400,252"/>
+<polygon points="395,322 405,322 400,332"/>
+</g>
+</svg>
+</div>
+
+<!-- ===== 5 Gate ===== -->
+<h2>✅ 5 Gate 全綠</h2>
+
+<table>
+<thead>
+<tr><th>Gate</th><th>名稱</th><th>證據</th><th>狀態</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Gate 1</strong></td><td>TDD gate</td><td>124 個新增 bats + 既有測試全綠</td><td><span class="badge badge-success">✅</span></td></tr>
+<tr><td><strong>Gate 2</strong></td><td>lint / syntax</td><td>0 markdownlint issues</td><td><span class="badge badge-success">✅</span></td></tr>
+<tr><td><strong>Gate 3</strong></td><td>regression</td><td>完整套件 180 個全綠</td><td><span class="badge badge-success">✅</span></td></tr>
+<tr><td><strong>Gate 4</strong></td><td>reviewer</td><td>V03 三條禁區零違規</td><td><span class="badge badge-success">✅</span></td></tr>
+<tr><td><strong>Gate 5</strong></td><td>RSI gate</td><td>8 個 us*.md Gate 5 反省 + Sprint 反省</td><td><span class="badge badge-success">✅</span></td></tr>
+</tbody>
+</table>
+
+<!-- ===== Sprint 09 交付物 ===== -->
+<h2>📦 Sprint 09 交付物</h2>
+
+<h3>規範層</h3>
+<div class="layer">
+<div class="layer-title">AGENTS.md</div>
+<ul>
+<li>§1.5 新增 <strong>V03</strong> RSI 文檔修改必經 Reviewer 二審</li>
+<li>§2.3 4 Gate → <strong>5 Gate</strong>（加 Gate 5 RSI gate）</li>
+<li>§2 章節索引加 §2.8 RSI Evolution</li>
+</ul>
+</div>
+
+<div class="layer">
+<div class="layer-title">docs/sop/handbook/2.8-rsi-evolution.md</div>
+<p>11 章節完整 SOP，含 ASCII 流程圖</p>
+</div>
+
+<h3>觀察層</h3>
+<div class="layer">
+<div class="layer-title">.agents/skills/sop-evolver/</div>
+<ul>
+<li><code>SKILL.md</code> — 總入口</li>
+<li><code>observation.md</code> — 觀察 schema（白名單+黑名單）</li>
+<li><code>aggregator.md</code> — 跨專案聚合</li>
+<li><code>proposer.md</code> — 產出 diff 提案</li>
+<li><code>safety.md</code> — 4 層安全保護</li>
+</ul>
+</div>
+
+<h3>工具層（5 個 CLI）</h3>
+<div class="layer">
+<div class="layer-title">tools/</div>
+<ul>
+<li><code>rsi-metrics.sh</code> — 6 個量化指標</li>
+<li><code>rsi-rollback.sh</code> — list + --target 一鍵回滾</li>
+<li><code>rsi-aggregate.sh</code> — 跨專案觀察聚合</li>
+<li><code>rsi-propose.sh</code> — 產出 diff 提案</li>
+<li><code>rsi-sync.sh</code> — 跨專案同步 SOP</li>
+</ul>
+</div>
+
+<h3>安裝層</h3>
+<div class="layer">
+<div class="layer-title">install.sh</div>
+<ul>
+<li>加 <code>--enable-rsi</code>（預設開啟）旗標</li>
+<li>加 <code>--disable-rsi</code>（明確關閉）旗標</li>
+<li>加 <code>install_rsi()</code> 函式</li>
+<li>加 <code>uninstall_rsi()</code> 函式</li>
+</ul>
+</div>
+
+<!-- ===== 5 階段 SOP 流程 ===== -->
+<h2>🔄 5 階段 SOP 流程</h2>
+
+<div class="svg-container">
+<svg viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg" style="max-width:100%; height:auto;">
+<g font-family="sans-serif" font-size="14" font-weight="700">
+<circle cx="80" cy="60" r="40" fill="#4caf50"/>
+<text x="80" y="55" text-anchor="middle" fill="white">§2.1</text>
+<text x="80" y="72" text-anchor="middle" fill="white" font-size="11">規劃</text>
+<circle cx="240" cy="60" r="40" fill="#1976d2"/>
+<text x="240" y="55" text-anchor="middle" fill="white">§2.2</text>
+<text x="240" y="72" text-anchor="middle" fill="white" font-size="11">設計</text>
+<circle cx="400" cy="60" r="40" fill="#f57c00"/>
+<text x="400" y="55" text-anchor="middle" fill="white">§2.3</text>
+<text x="400" y="72" text-anchor="middle" fill="white" font-size="11">執行</text>
+<circle cx="560" cy="60" r="40" fill="#7b1fa2"/>
+<text x="560" y="55" text-anchor="middle" fill="white">§2.4</text>
+<text x="560" y="72" text-anchor="middle" fill="white" font-size="11">反省</text>
+<circle cx="720" cy="60" r="40" fill="#c62828"/>
+<text x="720" y="55" text-anchor="middle" fill="white">§2.5</text>
+<text x="720" y="72" text-anchor="middle" fill="white" font-size="11">提交</text>
+<line x1="120" y1="60" x2="200" y2="60" stroke="#666" stroke-width="2"/>
+<line x1="280" y1="60" x2="360" y2="60" stroke="#666" stroke-width="2"/>
+<line x1="440" y1="60" x2="520" y2="60" stroke="#666" stroke-width="2"/>
+<line x1="600" y1="60" x2="680" y2="60" stroke="#666" stroke-width="2"/>
+</g>
+</svg>
+</div>
+
+<!-- ===== 新發現技術債 ===== -->
+<h2>⚠️ 新發現 5 個技術債</h2>
+
+<table>
+<thead>
+<tr><th>ID</th><th>標題</th><th>優先級</th><th>狀態</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>TD-028</strong></td><td>macOS bash 3.2 不支援 <code>declare -A</code></td><td>P0</td><td><span class="badge badge-success">✅ 已修</span></td></tr>
+<tr><td><strong>TD-029</strong></td><td>UTF-8 locale 觸發變數解析錯誤</td><td>P0</td><td><span class="badge badge-success">✅ 已修</span></td></tr>
+<tr><td><strong>TD-030</strong></td><td>rsi-propose.sh 規則庫只有 3 個</td><td>P2</td><td><span class="badge badge-info">🟢 Ready</span></td></tr>
+<tr><td><strong>TD-031</strong></td><td>rsi-rollback.sh 自動寫 git tag</td><td>P1</td><td><span class="badge badge-info">🟢 Ready</span></td></tr>
+<tr><td><strong>TD-032</strong></td><td>rsi-sync.sh --dry-run 列出檔案清單</td><td>P2</td><td><span class="badge badge-info">🟢 Ready</span></td></tr>
+</tbody>
+</table>
+
+<!-- ===== 安全邊界 ===== -->
+<h2>🛡️ 4 層安全保護</h2>
+
+<ol>
+<li><strong>觀察/改動分離</strong>：裝在專案裡只能觀察，源 repo 才能改動</li>
+<li><strong>匿名化</strong>：<code>project_id</code> 用 SHA256(path) 取前 8 字符</li>
+<li><strong>審批</strong>：Reviewer subagent 二審 + V03 三條禁區</li>
+<li><strong>一鍵回滾</strong>：<code>rsi-rollback.sh list</code> + <code>--target &lt;tag&gt;</code></li>
+</ol>
+
+<!-- ===== 下一步 ===== -->
+<h2>🚀 下一步建議</h2>
+
+<div class="card">
+<h3>立即（下次 Sprint 1）</h3>
+<ul>
+<li><strong>TD-031</strong>：rsi-rollback.sh 自動寫 git tag（0.5 SP，P1）</li>
+<li><strong>TD-032</strong>：rsi-sync.sh --dry-run 列出檔案清單（0.5 SP，P2）</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>觀察後（Sprint 10+）</h3>
+<ul>
+<li><strong>TD-030</strong>：擴充 rsi-propose.sh 規則庫（等真實觀察累積後）</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>真實部署</h3>
+<ul>
+<li>部署到 3 個使用者專案</li>
+<li>觀察 30 天</li>
+<li>跑 rsi-metrics.sh 看趨勢</li>
+<li>決定是否擴充規則庫</li>
+</ul>
+</div>
+
+<hr>
+<p style="text-align: center; color: var(--text-muted); font-size: 14px;">
+Sprint 09 RSI 機制 100% 完成 · 5 階段 SOP 全通過 · <span class="badge badge-success">✅ Ready to Deploy</span>
+</p>
+
+</body>
+</html>

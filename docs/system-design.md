@@ -28,7 +28,8 @@
 tree_monstor/
 ├── M1 — Installer & Distribution     [✅ Sprint 01-02]
 ├── M2 — SOP Infrastructure          [✅ Sprint 02]
-└── M3 — Knowledge Management        [🟡 PENDING — US-009]
+├── M3 — Knowledge Management        [✅ Sprint 03]
+└── M4 — Self-Evolution (RSI)        [🟢 Ready for Sprint — US-011~017]
 ```
 
 ### 2.2 模組職責矩陣
@@ -38,12 +39,17 @@ tree_monstor/
 | **M1** Installer | 安裝 / 卸載 / 路徑處理 | 不管 SOP 內容 | 全域 / 專案安裝 |
 | **M2** SOP Infra | SOP 規範 / Gate 規則 | 不管業務邏輯 | AGENTS.md / gates.json / skill 定義 |
 | **M3** Knowledge | 知識提取 / 概念演進 / 交叉引用 | 不管 agent runtime | docs/wiki / docs/concepts |
+| **M4** Self-Evolution | RSI 觀察 / 聚合 / 提案 / 審批 / 合併 / 同步 | 不改業務邏輯，只改 SOP | AGENTS.md / gates.json / skills/ / docs/ |
 
 ### 2.3 模組介面契約
 
 **M1 ↔ M2**：install.sh 部署 SOP 檔（複製 / symlink），不解析 SOP 內容
 **M2 ↔ M3**：skill 透過 `name` / `description` frontmatter 自我描述，不互相 import
 **M3 → M1**：M3 產物（docs/wiki, docs/concepts）由 M1 deploy 到全域（未來擴充）
+**M1 ↔ M4**：install.sh 部署 `sop-evolver` skill（symlink）+ 初始化 `~/.tree-monstor/observations/`；卸載時對應清理
+**M2 ↔ M4**：M2 的 gates.json 加 Gate 5 (RSI gate)；M2 的 AGENTS.md 加 §2.8 handbook + V03 紀律
+**M4 ↔ M1↔M2**：M4 走 `rsi-sync.sh` 把新版 SOP 同步到所有已裝專案的 `~/.pi/sop/`（**不覆蓋本地 override**，保留用戶自訂）
+**M4 ↔ 跨專案**：M4 觀察模式只在已裝 tree_monstor 的專案觸發，**只寫 observation JSON，不動 SOP 檔**
 
 ---
 
@@ -212,7 +218,146 @@ dav-trust skill 接管
 
 ---
 
-## 4. 技術決策記錄（Architecture Decision Records）
+## 4. M4 — Self-Evolution (RSI) 詳細設計（US-011~017）
+
+### 4.1 設計目標
+
+讓 tree_monstor 具備「跨專案學習、單一源進化」能力：裝在專案裡的 tree_monstor **只觀察不動 SOP**；裝回源 repo 才聚合 + 提案 + 改 SOP；改完一次同步給所有已裝專案。
+
+### 4.2 系統組成部件
+
+```
+M4 — Self-Evolution
+├── skills/sop-evolver/                # 核心入口 skill
+│   ├── SKILL.md                       # ≤150 行
+│   ├── observation.md                 # 觀察模式規範 + JSON schema
+│   ├── aggregator.md                  # 聚合模式規範
+│   ├── proposer.md                    # 提案 prompt 模板
+│   └── safety.md                      # 4 條不可違反規則
+│
+├── tools/                             # RSI 工具腳本
+│   ├── rsi-aggregate.sh               # 收集觀察 + 聚合
+│   ├── rsi-propose.sh                 # 產出 diff 提案
+│   ├── rsi-metrics.sh                 # 量化指標（6 個）
+│   ├── rsi-rollback.sh                # 一鍵回滾 + git tag
+│   └── rsi-sync.sh                    # 同步 SOP 到已裝專案
+│
+├── docs/sop/                          # M2 產出被 M4 修改
+│   ├── gates.json                     # + Gate 5 (RSI gate)
+│   ├── handbook/2.8-rsi-evolution.md  # RSI 完整 SOP
+│   └── rsi-log.md                     # 自我改進日誌
+│
+└── docs/prd/04-self-evolution.md      # 本模組 PRD
+```
+
+### 4.3 完整 RSI 流程圖
+
+```
+┌───────────────────────────┐    ┌───────────────────────────┐
+│ 專案 A（裝了 tree_monstor）│    │  專案 B（裝了 tree_monstor） │
+│  skills/sop-evolver      │    │  skills/sop-evolver      │
+└─────────────┬─────────────┘    └─────────────┬─────────────┘
+              │                                │
+        任務完成                               │
+              ▼                                ▼
+        [觀察模式]                          [觀察模式]
+              │                                │
+              ▼                                ▼
+┌───────────────────────────────────────────────────────────────────┐
+│  ~/.tree-monstor/observations/                                  │
+│   ├── project-A/2025-09-21.json                                │
+│   ├── project-A/2025-09-22.json                                │
+│   ├── project-B/2025-09-21.json                                │
+│   └── ...                                                    │
+└───────────────────────────────────────────────────────────────────┘
+                                │
+                                │ 用戶：cd 回源 repo + 打 /reflect
+                                ▼
+┌───────────────────────────────────────────────────────────────────┐
+│  tree_monstor 源 repo  （Sprint 09+ 執行）                            │
+│                                                                   │
+│  [1] 聚合  rsi-aggregate.sh                                       │
+│       │                          │
+│       ├─ 去重 + 統計 + 排序                              │
+│       └─ 產出 docs/rsi-aggregated-report.md                       │
+│                │                                                  │
+│                ▼                                                  │
+│  [2] 提案  sop-evolver proposer.md                               │
+│       │                          │
+│       ├─ 讀聚合報告                              │
+│       ├─ 映射成具體 PR diff                             │
+│       └─ 每個 diff 附「證據」+「影響專案數」+「rollback 指令」              │
+│                │                                                  │
+│                ▼                                                  │
+│  [3] Reviewer 二審  dev-checker-loop  ← V03 紀律要求                 │
+│       │                          │
+│       ├─ 風險分級 🟢/🟡/🔴                                    │
+│       ├─ 跨 SOP 一致性檢查                                       │
+│       └─ 產出 reviewer-verdict.md                                │
+│                │                                                  │
+│                ▼                                                  │
+│  [4] 用戶批准  ← 必經人手                                          │
+│       │                          │
+│       ├─ 批准 / 退回 / 跳過 Reviewer 直接批                            │
+│       └─ git commit + tag rsi-vYYYYMMDD-NN                       │
+│                │                                                  │
+│                ▼                                                  │
+│  [5] 合併  rsi-rollback.sh 寫 rsi-log.md                            │
+│                │                                                  │
+│                ▼                                                  │
+│  [6] 同步  rsi-sync.sh （install.sh 跑完後自動觸發）                        │
+│       │                          │
+│       └─ 把新版 ~/.pi/sop/ 同步到所有已裝專案                          │
+│             （不覆蓋本地 override）                                      │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### 4.4 觀察記錄 Schema（白名單 + 黑名單雙重保護）
+
+觀察記錄只允許白名單欄位，多餘欄位自動 reject（嚴格驗證）；
+黑名單欄位也自動 reject（防漏網）。裝在以下位置：
+
+```json
+{
+  "task_id": "uuid-v4",
+  "project_id": "a3f7b2c1",          // SHA256(安装路徑)[:8]，不存明文路徑
+  "timestamp": "2025-09-21T14:30:00Z",
+  "gate_results": {
+    "gate-1-tdd": "pass",
+    "gate-2-lint": "pass",
+    "gate-3-regression": "fail",
+    "gate-4-reviewer": "pass"
+  },
+  "skills_used": ["dav-planner", "tdd-test-writer"],
+  "failure_signals": [
+    {"gate": "gate-3-regression", "type": "test_timeout", "count": 2}
+  ],
+  "duration_seconds": 145
+}
+```
+
+黑名單（被拒絕的欄位）：`raw_conversation` / `code_snippets` / `file_paths` / `env_values` / `git_messages`。
+
+### 4.5 安全規則（不可違反，4 條）
+
+1. **觀察/改動分離**：裝在專案裡的 tree_monstor **只能觀察**，不能改 SOP。驗證：專案裡打 `/evolve` 應被拒絕。
+2. **匿名化**：observation 只記結構化信號，不收 raw 對話、code、路徑。
+3. **Reviewer 二審必經**：所有 SOP 改動提案都走 dev-checker-loop 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律）。
+4. **一鍵回滾**：每次合併自動寫 git tag (`rsi-vYYYYMMDD-NN`)，`rsi-rollback.sh` 從 rsi-log.md 找 diff 還原。
+
+### 4.6 量化指標（6 個）
+
+`tools/rsi-metrics.sh` 統計：
+1. **任務完成率**（過 4 Gates / 啟動任務）
+2. **規範違規次數**（未引用 mandatory_phrase）
+3. **TD 閉環率**（產出 TD / 解決 TD）
+4. **跨專案觀察分佈**（哪些專案最容易出問題）
+5. **AGENTS.md 字數變化**（SOP 熵增追蹤）
+6. **skill 使用頻率**（哪些 skill 被低度使用）
+
+---
+
+## 5. 技術決策記錄（Architecture Decision Records）
 
 ### ADR-001：用 JSON 而非 YAML 作為索引格式
 - **理由**：JSON 在所有 agent runtime 都能解析，YAML 需要依賴
@@ -242,11 +387,42 @@ dav-trust skill 接管
 - **理由**：QA 是另一個 use case（訓練資料生成），不在知識管理範圍
 - **影響**：未來可派生獨立 skill `dav-qa-generator`（如需要）
 
+### ADR-008：RSI 探用「主動跨專案升級」策略
+- **理由**：跨專案學習 + 單一源進化，平衡「學習價值」與「避免版本碎片化」；只允許源 repo 改 SOP，避免多個 SOP 版本不一致
+- **影響**：裝在專案裡的 tree_monstor **只能觀察不動 SOP**；源 repo 才能聚合 + 提案 + 改
+
+### ADR-009：觀察記錄探 JSON Schema 白名單 + 黑名單
+- **理由**：跨專案觀察最怕意外洩漏敏感資料；白名單強制結構化、黑名單明文拒絕
+- **影響**：多餘欄位自動 reject；`project_id` 用 SHA256 雜湊不存明文路徑
+
+### ADR-010：所有 SOP 改動必走 Reviewer subagent 二審（V03）
+- **理由**：agent 自己提案自己改易形成自我強化偏見；Reviewer subagent 提供跨 SOP 一致性檢查與風險分級
+- **影響**：用戶收到「diff + reviewer verdict」兩者並呈；可明確說「跳過 Reviewer」直接批
+
+### ADR-011：rsi-sync 不覆蓋本地 override
+- **理由**：用戶可能在已裝專案上調 SOP；如果 sync 強制覆蓋會造成無謂損失
+- **影響**：sync 規則為「來源比目標新時才更新；只比來源檔，不動本地手動改動」；使用者可以手動 merge
+
+### ADR-012：rsi-rollback.sh 合併自動寫 git tag `rsi-vYYYYMMDD-NN`（Sprint 10, TD-031）
+- **理由**：手動 git tag 易遺漏；每次合併自動寫便於一鍵回滾
+- **影響**：`rsi-rollback.sh tag --message "<msg>"` 子命令 → 計算當天最大序號 + 1；`list` 命令能列出所有 `rsi-v*` tag
+- **實作**：grep `rsi-v$(date +%Y-%m-%d)-*` 找現有最大序號
+
+### ADR-013：rsi-sync.sh --dry-run 列出將同步檔案清單（Sprint 10, TD-032）
+- **理由**：使用者要在 sync 前看到會改哪些檔案（path + 動作 + hash 對比），不只是「N 個」
+- **影響**：`rsi-sync.sh --dry-run --output <md-file>` 產出 markdown table；預設不破壞（dry-run 模式）
+- **實作**：md5 hash 對比 + 表格式輸出
+
+### ADR-014：rsi-propose.sh 規則庫 ≥ 8 個內建規則（Sprint 10, TD-030）
+- **理由**：Sprint 09 只有 3 個內建規則，新觀察類型都 fallback 到「待人工分析」；累積後要擴充
+- **影響**：`lookup_proposal()` 加 5 個新 case：`markdownlint_error` / `bash_error` / `test_fail` / `bats_unknown` / `v02_violated`
+- **實作**：每個規則對應 1 個修改提案 + ≥ 1 個 bats 測試
+
 ---
 
-## 5. 部署架構（Deployment Architecture）
+## 6. 部署架構（Deployment Architecture）
 
-### 5.1 本地開發
+### 6.1 本地開發
 
 ```
 /Users/<user>/www/tree_monstor/
@@ -274,9 +450,9 @@ dav-trust skill 接管
 
 ---
 
-## 6. 測試策略
+## 7. 測試策略
 
-### 6.1 測試層級
+### 7.1 測試層級
 
 | 層級 | 工具 | 範圍 |
 | --- | --- | --- |
@@ -285,7 +461,7 @@ dav-trust skill 接管
 | **回歸** | regression-guard | 跨 skill 一致性（frontmatter schema、命名規範） |
 | **審查** | reviewer (subagent) | 文件品質、AC 達成度 |
 
-### 6.2 關鍵測試案例（US-009-T2）
+### 7.2 關鍵測試案例（US-009-T2）
 
 | 案例 | 輸入 | 預期 |
 | --- | --- | --- |
@@ -299,7 +475,7 @@ dav-trust skill 接管
 
 ---
 
-## 7. 已知技術債（登記到 backlog TD）
+## 8. 已知技術債（登記到 backlog TD）
 
 | ID | 描述 | 來源 |
 | --- | --- | --- |
@@ -310,9 +486,54 @@ dav-trust skill 接管
 
 ---
 
-## 8. 參考資料
+## 9. 參考資料
 
 - [AGENTS.md §2 SOP](../AGENTS.md) — 5 階段流程
 - [Google Stitch DESIGN.md](https://stitch.withgoogle.com/docs/design-md/specification/) — frontmatter 格式
 - [Obsidian Wiki Links](https://help.obsidian.md/Linking/Internal+links) — `[[xxx]]` 語法
 - [JSON Schema Draft 07](https://json-schema.org/draft-07/json-schema-release-notes.html) — Schema 規範
+
+---
+
+## ADR-015：rsi-metrics.sh 加 30 天滑動 trend（Sprint 11）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：當前 metrics 只能看「當下快照」，沒有歷史趨勢
+- **決定**：
+  - 加 `trend_history` 子命令
+  - 從 `~/.tree-monstor/observations/` 抓最近 30 天 daily metrics
+  - 用 sparkline（`▁▂▃▄▅▆▇█` 8 級字符）顯示趨勢
+- **影響**：
+  - 用戶能看 30 天變化趨勢而非單點
+  - 對 Sprint 11 US-019 的 14 天觀察是必要工具
+  - 5 個新 bats 測試
+
+## ADR-016：rsi-propose.sh 加 confidence score（Sprint 11）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：當前 propose 沒有「信心分數」，容易把噪音當提案
+- **決定**：
+  - 計算每個提案的 confidence（0~1）
+  - 公式：`min(1.0, freq × 0.3 + projects × 0.2 + 1)`
+  - ≥ 0.7 列為主要提案
+  - < 0.7 列為「需人工確認」
+- **影響**：
+  - 過濾低信心提案
+  - 對 Sprint 11 US-020 的「從觀察反推規則」是必要工具
+  - 5 個新 bats 測試
+
+## ADR-017：Sprint 11 真實部署策略（Sprint 11）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：Sprint 09/10 都用 mock，沒有真實跨專案訊號
+- **決定**：
+  - 選 1 個輕量小型 web app（Express.js / Flask / Sinatra）
+  - 用 `install.sh --enable-rsi` 裝觀察模式
+  - 每日 cron 跑 `rsi-metrics.sh`
+  - 觀察 14 天
+  - 結束後跑 `trend_history` 看趨勢
+  - 觀察/改動分離守住
+- **影響**：
+  - 第一次真實跨專案訊號
+  - 為 Sprint 11 US-020 提供觀察資料
+  - 8 個新 bats 測試

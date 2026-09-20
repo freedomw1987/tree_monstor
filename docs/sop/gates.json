@@ -86,6 +86,29 @@
         "strategy": "ask_user",
         "description": "reviewer 已是 subagent 給建議；最終決策（接受 / 退回 / 改架構）由用戶決定，agent 不自動修。"
       }
+    },
+    {
+      "id": "gate-5",
+      "name": "RSI gate",
+      "trigger_skill": "sop-evolver",
+      "pass_criteria": [
+        "觀察記錄已寫入（含 task_id / project_id / gate_results）",
+        "Reviewer subagent verdict 已產生（風險分級 🟢/🟡/🔴 + 跨 SOP 一致性檢查）",
+        "用戶已批准或明確說『跳過 Reviewer』（兩者並呈）"
+      ],
+      "required_evidence": [
+        "反省報告路徑（docs/sop/rsi-reflection-{date}-{task}.md）",
+        "改進提案 diff（proposer.md §4 範本）",
+        "Reviewer verdict 路徑（docs/sop/rsi-reviewer-verdict-{date}.md）",
+        "用戶批准訊息截錄（對話 verbatim 拷貝）"
+      ],
+      "fail_action": "不可合併 diff；用戶明確說『跳過 Reviewer』才可",
+      "mandatory_phrase": "依 gates.json 規範，Gate 5 (RSI) 需要：反省報告 + 改進提案 diff + Reviewer 二審 verdict + 用戶批准截錄",
+      "notes": "RSI 是高風險決策，不可自動修錯（如拒絕需求）；用戶明確說「跳過 Reviewer」是可接受的明示豁免。V03 紀律生效於 AGENTS.md §1.5。",
+      "remediation": {
+        "strategy": "ask_user",
+        "description": "RSI 涉及 SOP 改動，誤修成本高（破壞多專案）；agent 停下來問用戶，不自動合併或修改 diff。"
+      }
     }
   ]
 }
