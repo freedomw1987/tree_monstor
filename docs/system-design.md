@@ -582,3 +582,59 @@ M4 — Self-Evolution
   - 修正後所有 sprint 10/11 工具都能在 macOS bash 3.2 + set -u 穩定跑
   - 4 個新 bats 測試
   - 避免後續 sprint 重複遇到
+
+## ADR-021：Sprint 13 rsi-propose JSON output（TD-037，Sprint 13）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：rsi-propose 目前只能輸出 text，Agent 無法解析、cron 無法套用
+- **決定**：
+  - 加 `--output-format json` 旗標
+  - 輸出結構化 JSON（含 rules + confidence + evidence + source）
+  - 既有 `text` 格式保留為預設
+  - JSON schema 對齊 `rsi-aggregate.sh` 輸出（觀察/聚合/反推一脈相承）
+- **影響**：
+  - rsi-propose 輸出可被 Agent 解析
+  - cron 可讀取 JSON 並自動套用提案
+  - 3 個新 bats 測試
+
+## ADR-022：Sprint 13 rsi-deploy.sh 1 鍵部署（US-023，Sprint 13）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：Sprint 11 部署指南完成，但部署仍是手動 30 分鐘、易跳步
+- **決定**：
+  - 建新工具 `tools/rsi-deploy.sh`
+  - 支援小型 web app（Node.js / Python 任一，--target 旗標選語言）
+  - 自動裝 install.sh --enable-rsi
+  - 自動加 cron（每日 metrics + alert）
+  - 自動跑 rsi-aggregate.sh 驗證部署成功
+  - 部署報告輸出 JSON + markdown
+- **影響**：
+  - 部署時間 30 分鐘 → 5 分鐘
+  - 手動跳步風險降至 0
+  - 4 個新 bats 測試
+
+## ADR-023：Sprint 13 rsi-rollback dry-run（US-024，Sprint 13）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：rsi-rollback 是破壊性操作（git reset + tag delete），誤滾風險高
+- **決定**：
+  - 加 `--dry-run` 旗標
+  - 列出將被回滾的變更（檔案清單 + commit hash + tag 列表）
+  - 不實際執行 git reset / tag delete
+  - 預設仍是實際執行（向下相容）
+- **影響**：
+  - 「先看再滾」避免誤滾
+  - 3 個新 bats 測試
+
+## ADR-024：Sprint 13 跨專案規則去重（SP-005，Sprint 13）
+
+- **狀態**：Accepted（2026-09-20）
+- **背景**：隨著觀察專案數增加，可能同類事件在多個專案重複出現
+- **決定**：
+  - 寫技術評估文檔 `docs/research/2026-09-20-cross-project-rule-dedup.md`
+  - 3 個 mock 測試（同類事件在 2 個專案都出現）
+  - 評估：合併 / 分別保留 / 共享 fingerprint
+- **影響**：
+  - 規則庫不爆
+  - 為 Sprint 14+ 提供規則庫結構決策
+  - 3 個新 bats 測試

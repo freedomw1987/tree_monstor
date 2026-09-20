@@ -453,3 +453,76 @@ Sprint 12 把 RSI 從「被動觀察」進化到「主動監控」。
 2. **14 天回顧原則**（新增）：cron.log 跑滿 14 天必有人類回顧，產出反思
 3. **基線設定原則**（新增）：告警閾值用歷史 ≥ 0.7 confidence 平均值，避免靜默設定
 4. **技術債必清原則**（強化）：Sprint 11 留下的 TD-035 必在 Sprint 12 開頭清掉，避免後續 sprint 受影響
+
+### 11.6 Sprint 13 增量 PRD（2026-09-20）
+
+#### 11.6.1 背景
+
+Sprint 09-12 讓 RSI 達到「觀察 → 聚合 → 趨勢 → 回顧 → 警告 → 反推 → 改動」完整閉環。但有兩個實作缺口：
+
+1. **rsi-propose 只能輸出 text** — Agent 無法解析、cron 無法套用
+2. **部署是手動** — 手動部署 30 分鐘、容易跳步
+
+Sprint 13 補上「JSON 化」+「1 鍵部署」+「dry-run 預覽」三個能力。
+
+#### 11.6.2 用戶故事（3 個 + 1 spike，6 SP）
+
+| ID | 類型 | 標題 | 優先級 | SP | 對應 FR |
+|---|---|---|---|---|---|
+| TD-037 | TD | rsi-propose 加 `--output-format json` | P3 | 1 | FR-4.21 |
+| US-023 | US | rsi-deploy.sh 自動部署小型工具 | P3 | 2 | FR-4.22 |
+| US-024 | US | rsi-rollback 加 dry-run | P3 | 1 | FR-4.23 |
+| SP-005 | SP | 跨專案規則去重研究 | P3 | 2 | FR-4.24 |
+| **小計** | | | | **6** | |
+
+#### 11.6.3 詳細 AC
+
+**TD-037（1 SP）**：
+
+- [ ] 加 `--output-format json` 旗標
+- [ ] 輸出結構化 JSON（含 rules + confidence + evidence）
+- [ ] 既有 `text` 格式保留
+- [ ] ≥ 3 個 bats 驗證
+- [ ] markdownlint 0 issues
+
+**US-023（2 SP）**：
+
+- [ ] 建新工具 `tools/rsi-deploy.sh`
+- [ ] 1 鍵部署小型 web app（含 Node.js / Python 任一）
+- [ ] 自動加 cron（每日 metrics + alert）
+- [ ] 自動跑 `rsi-aggregate.sh` 驗證部署
+- [ ] ≥ 4 個 bats
+- [ ] markdownlint 0 issues
+
+**US-024（1 SP）**：
+
+- [ ] 加 `--dry-run` 旗標到 rsi-rollback.sh
+- [ ] 列出將被回滾的變更（檔案清單 + commit hash）
+- [ ] 不實際執行 git reset / tag delete
+- [ ] ≥ 3 個 bats
+- [ ] markdownlint 0 issues
+
+**SP-005（2 SP）**：
+
+- [ ] 寫 `docs/research/2026-09-20-cross-project-rule-dedup.md`
+- [ ] 3 個 mock 測試（同類事件在 2 個專案都出現）
+- [ ] 結論：是否要合併、如何合併、合併後的規則庫結構
+- [ ] ≥ 3 個 bats
+
+#### 11.6.4 Sprint 13 FR 拆分表
+
+| Sprint | US/TD | SP |
+|---|---|---|
+| Sprint 09 | US-011~017 + TD-022 | 16 |
+| Sprint 10 | TD-031/032/030 + US-018 | 5 |
+| Sprint 11 | TD-033/034 + US-019/020 | 6 |
+| Sprint 12 | US-021/022 + TD-035 | 5.5 |
+| **Sprint 13** | **TD-037 + US-023/024 + SP-005** | **6** |
+| **總計** | — | **38.5** |
+
+#### 11.6.5 Sprint 13 設計原則
+
+1. **JSON 標準化原則**（新增）：所有產出類工具應有 text + json 兩種輸出格式，讓 Agent / cron 可解析
+2. **1 鍵部署原則**（新增）：重複性高、易出錯的手動步驟必有 1 鍵部署工具
+3. **dry-run 預覽原則**（新增）：所有破壞性操作必有 dry-run，先看再動
+4. **跨專案去重原則**（新增）：同類事件在多個專案出現時，必須評估是否合併（規則庫不爆）

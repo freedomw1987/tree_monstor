@@ -4,12 +4,16 @@
 # 對應 Backlog US-014
 
 set -uo pipefail
+# 避免 UTF-8 locale 變量中文字符問題
+export LC_ALL=C
+export LANG=C
 
 # === 預設值 ===
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 TARGET="$REPO_ROOT"
 LOG_FILE="$TARGET/docs/sop/rsi-log.md"
 ASSUME_YES=false
+DRY_RUN=false  # Sprint 13 US-024
 TAG=""
 MESSAGE=""
 CMD=""
@@ -31,6 +35,7 @@ Options:
   --target <path>            指定 repo 根目錄（預設當前 git repo）
   --message <msg> / -m <msg>  tag commit 訊息
   --yes / -y                 跳過互動確認
+  --dry-run                   預覽回滾動作，不實際執行（Sprint 13 US-024）
 
 機制：
   - 每次 SOP 改動合併時自動寫 git tag：rsi-vYYYYMMDD-NN
@@ -114,6 +119,12 @@ cmd_rollback() {
     echo "  Commit: $(git -C "$target_repo" rev-parse --short "$target_tag")"
     echo "  Message: $(git -C "$target_repo" log -1 --format='%s' "$target_tag")"
     echo ""
+
+    # Sprint 13 US-024：dry-run 預覽模式
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        cmd_dry_run "$target_repo" "$target_tag"
+        return 0
+    fi
 
     if [[ "$ASSUME_YES" != "true" ]]; then
         read -rp "確認回滾？[y/N] " confirm
@@ -205,6 +216,70 @@ cmd_tag() {
     fi
 }
 
+# === 子命令：dry-run 預覽（Sprint 13 US-024）===
+cmd_dry_run() {
+    # Sprint 12 TD-035 隔離層：整個函式用 set +u 包起來
+    set +u
+
+    local target_repo="$1"
+    local target_tag="$2"
+
+    [[ -z "$target_repo" ]] && { set -u; echo "❌ 內部錯誤：target_repo 未傳入" >&2; return 1; }
+    [[ -z "$target_tag" ]] && { set -u; echo "❌ 內部錯誤：target_tag 未傳入" >&2; return 1; }
+
+    echo "=== Dry-run 模式（不實際執行回滾）==="
+    echo ""
+    echo "Repo:   $target_repo"
+    echo "Tag:    $target_tag"
+    echo "Commit: $(git -C "$target_repo" rev-parse --short "$target_tag")"
+    echo "Message: $(git -C "$target_repo" log -1 --format='%s' "$target_tag")"
+    echo ""
+
+    # 計算將被回滾的檔案
+    echo "=== 將被回滾的檔案清單 ==="
+    echo ""
+
+    # 列出 tag 跟 HEAD 之間的所有 commit
+    local commits
+    commits="$(git -C "$target_repo" log --format='%H %s' "$target_tag..HEAD" 2>/dev/null)"
+
+    if [[ -z "$commits" ]]; then
+        echo "（無將被回滾的 commit）"
+        echo ""
+        echo "目前 HEAD 已在 tag $target_tag，無需回滾"
+        return 0
+    fi
+
+    echo "Commits to revert (tag → HEAD):"
+    local n=0
+    while IFS=' ' read -r commit_hash rest; do
+        [[ -z "$commit_hash" ]] && continue
+        n=$((n + 1))
+        echo "  $n. $commit_hash $rest"
+    done <<EOF
+$commits
+EOF
+
+    echo ""
+    echo "Affected files (across all commits):"
+    git -C "$target_repo" diff --name-only "$target_tag..HEAD" 2>/dev/null | while IFS= read -r f; do
+        [[ -z "$f" ]] && continue
+        echo "  - $f"
+    done
+
+    echo ""
+    echo "=== 模擬回滾動作 ==="
+    echo "1. git revert --no-edit $target_tag  ← 會產生新 revert commit"
+    echo "2. 若衝突：git checkout $target_tag -- .  ← 強制 reset"
+    echo ""
+    echo "✅ Dry-run 完成。實際未執行任何 git 操作。"
+    echo ""
+    echo "執行真的回滾：移除 --dry-run 旗標"
+
+    # TD-035 隔離層還原
+    set -u
+}
+
 # === 主程式：參數解析 ===
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -231,6 +306,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --yes|-y)
             ASSUME_YES=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
             shift
             ;;
         --help|-h)

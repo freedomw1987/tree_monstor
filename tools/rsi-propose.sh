@@ -14,6 +14,7 @@ OUTPUT=""
 MIN_FREQUENCES="2"
 LIMIT="10"
 CONFIDENCE_THRESHOLD=""
+OUTPUT_FORMAT="text"  # text | json（Sprint 13 TD-037 新增）
 
 # === 旗標解析 ===
 usage() {
@@ -28,6 +29,7 @@ Options:
   --min-freq <N>           只考慮出現 ≥ N 次的觀察（預設 2）
   --limit <N>              最多產出 N 個提案（預設 10）
   --confidence <0~1>       confidence score 門檻（如 0.7）。未達則列為「需人工確認」
+  --output-format <fmt>    輸出格式：text（預設）| json（Sprint 13 TD-037）
   --help / -h              顯示說明
 
 confidence 公式：min(1.0, freq × 0.3 + projects × 0.2 + 1)
@@ -65,6 +67,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --confidence)
             CONFIDENCE_THRESHOLD="$2"
+            shift 2
+            ;;
+        --output-format)
+            OUTPUT_FORMAT="$2"
+            if [[ "$OUTPUT_FORMAT" != "text" && "$OUTPUT_FORMAT" != "json" ]]; then
+                echo "❌ 錯誤：--output-format 必須是 text 或 json" >&2
+                exit 1
+            fi
             shift 2
             ;;
         --help|-h)
@@ -308,6 +318,73 @@ EOF
 # 寫輸出
 write_report() {
     local header
+
+# === Sprint 13 TD-037：JSON output 構造 ===
+build_json_output() {
+    local report="$1"
+    local min_freq="$2"
+    local limit="$3"
+    local projects="$4"
+    local total="$5"
+    local events="$6"
+    local conf_thr="$7"
+
+    local proposals_json="["
+    local n=0
+    while IFS='|' read -r event_type count; do
+        [[ -z "$event_type" ]] && continue
+        [[ -z "$count" ]] && continue
+        [[ "$count" -lt "$min_freq" ]] && continue
+        n=$((n + 1))
+        [[ $n -gt $limit ]] && break
+
+        local file diff desc confidence
+        file="$(lookup_proposal "$event_type" file)"
+        diff="$(lookup_proposal "$event_type" diff)"
+        desc="$(lookup_proposal "$event_type" desc)"
+        confidence="$(awk -v c="$count" -v p="$projects" 'BEGIN { v = c * 0.3 + p * 0.2 + 1; if (v > 1) v = 1; printf "%.2f", v }')"
+
+        # JSON escape (保留 UTF-8，不用 ensure_ascii=True)
+        local safe_event safe_file safe_desc
+        safe_event="$(printf '%s' "$event_type" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read().rstrip(), ensure_ascii=False)[1:-1])')"
+        safe_file="$(printf '%s' "$file" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read().rstrip(), ensure_ascii=False)[1:-1])')"
+        safe_desc="$(printf '%s' "$desc" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read().rstrip(), ensure_ascii=False)[1:-1])')"
+
+        if [[ $n -gt 1 ]]; then
+            proposals_json+=","
+        fi
+        proposals_json+="
+  {
+    \"id\": $n,
+    \"event_type\": \"$safe_event\",
+    \"count\": $count,
+    \"confidence\": $confidence,
+    \"file\": \"$safe_file\",
+    \"description\": \"$safe_desc\",
+    \"diff_preview\": \"$(printf '%s' "$diff" | head -1 | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read().rstrip(), ensure_ascii=False)[1:-1])')\"
+  }"
+    done <<EOF
+$events
+EOF
+
+    proposals_json+="
+]"
+
+    cat <<JSON
+{
+  "schema_version": "rsi-propose/1.0",
+  "generated_at": "$(date '+%Y-%m-%dT%H:%M:%S')",
+  "source_report": "$report",
+  "min_frequency": $min_freq,
+  "limit": $limit,
+  "projects_affected": $projects,
+  "total_proposals": $total,
+  "confidence_threshold": $([ -n "$conf_thr" ] && echo ""$conf_thr"" || echo "null"),
+  "proposals": $proposals_json
+}
+JSON
+}
+
     header="# RSI 提案清單
 
 **產生時間**：$(date '+%Y-%m-%d %H:%M:%S')
@@ -349,6 +426,11 @@ EOF
 "
 
     local full="$header$summary_table$PROPOSALS$footer"
+
+    # Sprint 13 TD-037：--output-format json 分支
+    if [[ "$OUTPUT_FORMAT" == "json" ]]; then
+        full="$(build_json_output "$REPORT" "$MIN_FREQUENCES" "$LIMIT" "$PROJECTS" "$PROPOSAL_COUNT" "$EVENTS" "$CONFIDENCE_THRESHOLD")"
+    fi
 
     if [[ -n "$OUTPUT" ]]; then
         mkdir -p "$(dirname "$OUTPUT")"
