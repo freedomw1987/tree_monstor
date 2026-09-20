@@ -5,14 +5,33 @@
 
 ---
 
-## 📊 狀態總覽
+## 📊 狀態總覽（2026-09-20 更新）
 
 | 狀態 | 數量 |
 |---|---|
-| PENDING | 4 (TD-030 / TD-031 / TD-032 / US-018) |
+| PENDING | 0 |
 | IN_PROGRESS | 0 |
 | PARTIAL | 0 |
-| DONE | 52 (US-001 / DE-001 / DE-002 / DE-003 / US-007 / US-008 / TD-014 / TD-015 / TD-016 / US-009 / US-010 / TD-019 / TD-020 / TD-021.1 ~ TD-021.7 / TD-006.1 ~ TD-006.4 / TD-005 / TD-008 / FR-2.1.1 / FR-2.1.2 / FR-2.1.3 / FR-2.2.1 / FR-2.2.2 / FR-2.2.3 / FR-2.2.4 / FR-2.3.1 / FR-2.3.2 / FR-2.3.3 / FR-2.3.4 / FR-2.3.5 / FR-2.4.1 / FR-2.4.2 / FR-2.5.1 / FR-2.5.2 / FR-2.6.1 / FR-2.6.2 / FR-2.6.3 / US-011 / US-012 / TD-022 / US-013 / US-014 / US-015 / US-016 / US-017) + Sprint 01 / 04 / 05 / 06 / 07 / 08 / 09 反省 |
+| **DONE** | **68** — Sprint 01/04/05/06/07/08/09/10/11/12 全部完成 |
+| Ready（下一個 Sprint 候選）| 4 — TD-037 / US-023 / US-024 / SP-005（Sprint 13） |
+
+### 完整 DONE 列表（按 Sprint 組織）
+
+| Sprint | 已完成 |
+|---|---|
+| Sprint 01 (2025-08-16) | US-001（install.sh 雛型）|
+| Sprint 04 (2025-08-21) | DE-001/002/003 + US-007/008 + TD-014/015/016 |
+| Sprint 05 (2025-08-21) | US-009（dav-wiki）+ TD-019/020/021.1~7 |
+| Sprint 06 (2025-08-22) | TD-006.1~4 + TD-005 + TD-008 |
+| Sprint 07 (2026-01-15) | FR-2.1.1~3 / FR-2.2.1~4 / FR-2.3.1~5 / FR-2.4.1~2 / FR-2.5.1~2 / FR-2.6.1~3 |
+| Sprint 08 | (no new items, refactoring only) |
+| Sprint 09 (2025-09-20) | US-011~017 + TD-022（RSI 機制建立，16 SP）|
+| Sprint 10 (2026-09-20) | TD-030/031/032 + US-018 + US-030/031/032（RSI 增強，5 SP）|
+| Sprint 11 (2026-09-20) | TD-033/034 + US-019/020 + US-033/034（RSI 真實部署，6 SP）|
+| Sprint 12 (2026-09-20) | TD-035/036 + US-021/022（RSI 回顧 + 告警，5.5 SP）|
+| **累計** | **32.5 SP**（Sprint 09-12 RSI）|
+
+> **修正說明**（2026-09-20）：原本 PENDING 計數「4 (TD-030 / TD-031 / TD-032 / US-018)」是 Sprint 10 開始前的快照。Sprint 10 已於 2026-09-20 完成，這 4 個項目現在都是 ✅ DONE。本檔「狀態總覽」當時沒更新，造成 backlog 內部不一致。
 
 ---
 
@@ -73,7 +92,9 @@
 
 ---
 
-## 📝 PENDING
+## ✅ DONE — Sprint 09 RSI 機制建立（2025-09-20 完成）
+
+> **注**：原本此章節標題為「📝 PENDING」，但 Sprint 09 已於 2025-09-20 完成，所有項目都標 ✅ DONE / 🟢 DONE。
 
 ### US-011：建立 `sop-evolver` skill — RSI 機制的核心入口（2025-09-20）
 - **Module**：M4 — Self-Evolution (RSI)
@@ -121,10 +142,10 @@
 | US-011-T5 | 實作 aggregator.md | ✅ DONE（85 行） |
 | US-011-T6 | 實作 proposer.md | ✅ DONE（136 行） |
 | US-011-T7 | 實作 safety.md | ✅ DONE（104 行） |
-| US-011-T8 | 用 `dev-checker-loop` 跑質量檢查 | PENDING |
-| US-011-T9 | 用 `regression-guard` 預留探針 | PENDING |
-| US-011-T10 | 用 `dav-reflection` 反省 | PENDING |
-| US-011-T11 | 用 `dav-submitter` 產出交付物 | PENDING |
+| US-011-T8 | 用 `dev-checker-loop` 跑質量檢查 | ✅ DONE |
+| US-011-T9 | 用 `regression-guard` 預留探針 | ✅ DONE |
+| US-011-T10 | 用 `dav-reflection` 反省 | ✅ DONE |
+| US-011-T11 | 用 `dav-submitter` 產出交付物 | ✅ DONE |
 
 ---
 
@@ -322,13 +343,15 @@ US-012 必須在 US-011 之前完成（Gate 5 是 sop-evolver 的觸發器）。
 #### 子任務
 | ID | 標題 | 狀態 |
 |---|---|---|
-| TD-022-T1 | 設計 observation JSON schema | PENDING |
-| TD-022-T2 | 寫 schema 驗證器（含黑名單檢查） | PENDING |
-| TD-022-T3 | 寫 ≥ 4 個安全測試 | PENDING |
+| TD-022-T1 | 設計 observation JSON schema | ✅ DONE |
+| TD-022-T2 | 寫 schema 驗證器（含黑名單檢查） | ✅ DONE |
+| TD-022-T3 | 寫 ≥ 4 個安全測試 | ✅ DONE |
 
 ---
 
-## 📝 PENDING
+## ✅ DONE — Sprint 04 Installer DE 修復（2025-08-21 完成）
+
+> **注**：原本此章節標題為「📝 PENDING」，但 DE-001 已於 Sprint 04 完成。
 
 ### DE-001：installer 拒絕在 `~/.claude/skills` 已存在的環境中安裝（2025-08-16）
 - **Module**：M1 — Installer & Distribution
@@ -367,7 +390,9 @@ US-012 必須在 US-011 之前完成（Gate 5 是 sop-evolver 的觸發器）。
 
 ---
 
-## 📝 PENDING
+## ✅ DONE — Sprint 04/05 DE + US-007/008/009（2025-08-21~2026-01-15 完成）
+
+> **注**：原本此章節標題為「📝 PENDING」，但這些項目都已完成。
 
 ### DE-002：AGENTS.md 缺「pi 不會讀 SOUL.md」marker 導致 agents-md.bats SOUL-3/SOUL-4 失敗（2025-08-21）
 - **Module**：M2 — SOP Infrastructure
