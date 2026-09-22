@@ -10,7 +10,7 @@
 
 setup() {
   REPO_ROOT="$(git rev-parse --show-toplevel)"
-  SKILL_DIR="$REPO_ROOT/.agents/skills/dav-wiki"
+  SKILL_DIR="$REPO_ROOT/skills/dav-wiki"
 }
 
 # ---------- AC-1: skill folder structure ----------
