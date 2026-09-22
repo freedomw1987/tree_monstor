@@ -16,14 +16,14 @@
 
 - **V01 — 一次一個問題**：每輪對話**最多問 1 個問題**（同一主題）
 - **V02 — 方案必標推薦**：給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：...」
-- **V03 — RSI 文檔修改必經 Reviewer 二審（2025-09-20 新增）**：agent 產出 SOP / AGENTS.md / gates.json / handbook / skill 修改提案時，
+- **V03 — SOP 文檔修改必經 Reviewer 二審（2025-09-20 新增）**：agent 產出 SOP / AGENTS.md / gates.json / handbook / skill 修改提案時，
   **必先經** dev-checker-loop (Reviewer subagent) 二審，附風險分級 + 跨 SOP 一致性檢查；用戶收到「diff + verdict」兩者並呈，可明確說「跳過 Reviewer」直接批准
 
 詳見 [`docs/sop/handbook/changelog.md`](docs/sop/handbook/changelog.md) 對應的 V01/V02/V03 條目。
 
 ## 2. SOP
 
-> **版本**：v1.2（最後更新 2025-08-22，含 §2.1-§2.8 + §3 章節抽出重構，詳見 [CHANGELOG](docs/sop/handbook/changelog.md)）
+> **版本**：v1.3（最後更新 2026-09-22，移除 §2.8 RSI Evolution，詳見 [CHANGELOG](docs/sop/handbook/changelog.md)）
 
 ### 2.0 SOP 適用範圍
 
@@ -36,7 +36,7 @@
 
 灰色地帶判斷表詳見 [§2.6](docs/sop/handbook/2.6-general-task.md)。
 
-### 2.3 執行（核心 — 5 Gate 速查表）
+### 2.3 執行（核心 — 4 Gate 速查表）
 
 完整 Gate 定義（含每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action` / `mandatory_phrase`）見
 [`docs/sop/gates.json`](docs/sop/gates.json)（single source of truth）。
@@ -47,9 +47,6 @@
 | **Gate 2** | lint / syntax gate | 語言對應工具 |
 | **Gate 3** | regression gate | `/skill:regression-guard` |
 | **Gate 4** | reviewer gate | `/skill:dev-checker-loop` + **playwright-cli**（UI 任務必跑） |
-| **Gate 5** | RSI gate（RSI 機制遞歸自我改進） | `/skill:sop-evolver`（2025-09-20 新增） |
-
-備註：Gate 5 適用於 RSI 機制；完整設計見 [`docs/prd/04-self-evolution.md`](docs/prd/04-self-evolution.md)。
 
 > **⚠️ Agent 必須做的動作**（TD-016）：進到每個 Gate 時，必須在對話中明確引用該 Gate 的 `mandatory_phrase`（在 `gates.json` 內，例如「依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出 測試執行指令 + 失敗輸出 + 通過輸出」）。**不引用 = 視為 gate 未觸發**（偽裝通過 SOP §2.7 違規）。
 
@@ -70,7 +67,6 @@
 | §2.5 提交 | [2.5-submission.md](docs/sop/handbook/2.5-submission.md) | Submit Gate（dav-submitter）|
 | §2.6 一般任務 | [2.6-general-task.md](docs/sop/handbook/2.6-general-task.md) | 輕量 SOP 流程 |
 | §2.7 違規回報 | [2.7-violations.md](docs/sop/handbook/2.7-violations.md) | §2.7 fail-fast 防線機制 |
-| §2.8 RSI Evolution | [2.8-rsi-evolution.md](docs/sop/handbook/2.8-rsi-evolution.md) | RSI 遞歸自我改進 SOP（2025-09-20 新增）|
 | §3 CHANGELOG | [changelog.md](docs/sop/handbook/changelog.md) | SOP 異動歷史 |
 
 **安裝後**（執行 `./install.sh --global` 後，AGENTS.md 是 symlink 指向本檔）：

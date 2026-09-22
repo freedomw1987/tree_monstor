@@ -29,7 +29,7 @@ tree_monstor/
 ├── M1 — Installer & Distribution     [✅ Sprint 01-02]
 ├── M2 — SOP Infrastructure          [✅ Sprint 02]
 ├── M3 — Knowledge Management        [✅ Sprint 03]
-└── M4 — Self-Evolution (RSI)        [🟢 Ready for Sprint — US-011~017]
+└── M4 — Self-Evolution (RSI)        [🚨 **已歸檔移除 2026-09-22**]
 ```
 
 ### 2.2 模組職責矩陣
@@ -39,17 +39,17 @@ tree_monstor/
 | **M1** Installer | 安裝 / 卸載 / 路徑處理 | 不管 SOP 內容 | 全域 / 專案安裝 |
 | **M2** SOP Infra | SOP 規範 / Gate 規則 | 不管業務邏輯 | AGENTS.md / gates.json / skill 定義 |
 | **M3** Knowledge | 知識提取 / 概念演進 / 交叉引用 | 不管 agent runtime | docs/wiki / docs/concepts |
-| **M4** Self-Evolution | RSI 觀察 / 聚合 / 提案 / 審批 / 合併 / 同步 | 不改業務邏輯，只改 SOP | AGENTS.md / gates.json / skills/ / docs/ |
+| **M4** Self-Evolution | 🚨 **已歸檔移除 2026-09-22** — RSI 觀察 / 聚合 / 提案 / 審批 / 合併 / 同步 | （已移除）| （已移除） |
 
 ### 2.3 模組介面契約
 
 **M1 ↔ M2**：install.sh 部署 SOP 檔（複製 / symlink），不解析 SOP 內容
 **M2 ↔ M3**：skill 透過 `name` / `description` frontmatter 自我描述，不互相 import
 **M3 → M1**：M3 產物（docs/wiki, docs/concepts）由 M1 deploy 到全域（未來擴充）
-**M1 ↔ M4**：install.sh 部署 `sop-evolver` skill（symlink）+ 初始化 `~/.tree-monstor/observations/`；卸載時對應清理
-**M2 ↔ M4**：M2 的 gates.json 加 Gate 5 (RSI gate)；M2 的 AGENTS.md 加 §2.8 handbook + V03 紀律
-**M4 ↔ M1↔M2**：M4 走 `rsi-sync.sh` 把新版 SOP 同步到所有已裝專案的 `~/.pi/sop/`（**不覆蓋本地 override**，保留用戶自訂）
-**M4 ↔ 跨專案**：M4 觀察模式只在已裝 tree_monstor 的專案觸發，**只寫 observation JSON，不動 SOP 檔**
+**M1 ↔ M4**：🚨 **已歸檔移除 2026-09-22** — 原 M1 安裝 `sop-evolver` skill + 初始化 `~/.tree-monstor/observations/`；卸載時對應清理
+**M2 ↔ M4**：🚨 **已歸檔移除 2026-09-22** — 原 M2 的 gates.json 加 Gate 5 (RSI gate)；M2 的 AGENTS.md 加 §2.8 handbook + V03 紀律
+**M4 ↔ M1↔M2**：🚨 **已歸檔移除 2026-09-22** — 原 M4 走 `rsi-sync.sh` 把新版 SOP 同步到所有已裝專案
+**M4 ↔ 跨專案**：🚨 **已歸檔移除 2026-09-22** — 原 M4 觀察模式只在已裝 tree_monstor 的專案觸發
 
 ---
 
@@ -218,7 +218,9 @@ dav-trust skill 接管
 
 ---
 
-## 4. M4 — Self-Evolution (RSI) 詳細設計（US-011~017）
+## 🚨 4. M4 — Self-Evolution (RSI) 詳細設計（**已歸檔移除 2026-09-22**）
+
+> **🚨 公告 2026-09-22**：RSI 整套機制（`sop-evolver` skill、Gate 5、`tools/rsi-*.sh`、`extensions/auto-observe.ts`、觀察記錄系統、跨專案學習等）已全部移除。RSI 從未真正運作（8KB 觀察資料/2 個專案/270 commits），對個人/小團隊改 SOP 成本不適用。本章節保留為歷史設計記錄。
 
 ### 4.1 設計目標
 
@@ -387,9 +389,10 @@ M4 — Self-Evolution
 - **理由**：QA 是另一個 use case（訓練資料生成），不在知識管理範圍
 - **影響**：未來可派生獨立 skill `dav-qa-generator`（如需要）
 
-### ADR-008：RSI 探用「主動跨專案升級」策略
+### ADR-008：🚨 **已歸檔移除 2026-09-22** — RSI 探用「主動跨專案升級」策略
 - **理由**：跨專案學習 + 單一源進化，平衡「學習價值」與「避免版本碎片化」；只允許源 repo 改 SOP，避免多個 SOP 版本不一致
 - **影響**：裝在專案裡的 tree_monstor **只能觀察不動 SOP**；源 repo 才能聚合 + 提案 + 改
+- **🚨 移除原因**：RSI 從未真正運作（8KB 觀察資料/2 個專案/270 commits），對個人/小團隊改 SOP 成本不適用。詳見 commit `ef2fd4e`。
 
 ### ADR-009：觀察記錄探 JSON Schema 白名單 + 黑名單
 - **理由**：跨專案觀察最怕意外洩漏敏感資料；白名單強制結構化、黑名單明文拒絕
@@ -554,9 +557,9 @@ M4 — Self-Evolution
   - 為 Sprint 13 提供「規則庫反應快慢」的量化指標
   - 6 個新 bats 測試
 
-## ADR-019：Sprint 12 RSI 主動監控（US-022，Sprint 12）
+## ADR-019：🚨 **已歸檔移除 2026-09-22** — Sprint 12 RSI 主動監控（US-022，Sprint 12）
 
-- **狀態**：Accepted（2026-09-20）
+- **狀態**：🚨 **Archived 2026-09-22**（原本 Accepted 2026-09-20）
 - **背景**：當前 RSI 是「事後看」，沒有「觀察數下降」告警
 - **決定**：
   - 建新工具 `tools/rsi-alert.sh`
@@ -568,6 +571,7 @@ M4 — Self-Evolution
   - RSI 從「被動」變「主動」
   - 避免「裝了但壞了」的靜默失效
   - 5 個新 bats 測試
+- **🚨 移除原因**：RSI 整套機制已歸檔移除，告警功能隨之失去意義。
 
 ## ADR-020：Sprint 12 修 macOS bash 3.2 set -u 相容性（TD-035，Sprint 12）
 
