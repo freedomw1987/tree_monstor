@@ -398,6 +398,18 @@ ensure_merged_skills_into() {
   local skill_path skill_name merged=0 skipped=0
   for skill_path in "$src_skills"/*; do
     skill_name="$(basename "$skill_path")"
+    # sop-evolver is a special case: its source of truth is
+    # $SOURCE_DIR/.agents/skills/sop-evolver/ (regular files), and
+    # $SOURCE_DIR/skills/sop-evolver/ is also regular files (committed
+    # to git). Do NOT symlink-deploy it from $src_skills — that would
+    # overwrite the user's regular files with an absolute-path symlink,
+    # breaking cross-machine clones. install_rsi() handles the deploy
+    # to ~/.pi/agent/skills/sop-evolver/ using .agents/ as the source.
+    if [[ "$skill_name" == "sop-evolver" ]]; then
+      log_info "merge: sop-evolver handled by install_rsi (skipping from $src_skills)"
+      skipped=$((skipped + 1))
+      continue
+    fi
     if [[ -e "$dst_skills/$skill_name" ]] && [[ ! -L "$dst_skills/$skill_name" ]]; then
       log_warn "merge: skipping non-symlink conflict: $dst_skills/$skill_name"
       skipped=$((skipped + 1))
@@ -1085,7 +1097,10 @@ main() {
         install_pi
         install_sop "$TARGET_ROOT/${DIR_PI}"
         if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-          install_rsi "$TARGET_ROOT/${DIR_PI}"
+          # pi agent skills live under ~/.pi/agent/skills/, not ~/.pi/skills/.
+          # install_rsi() builds paths as $agent_root/skills/sop-evolver, so
+          # pass the pi agent root (one level deeper than $TARGET_ROOT/${DIR_PI}).
+          install_rsi "$TARGET_ROOT/${DIR_PI}/agent"
         else
           log_info "RSI: --disable-rsi set, skipping sop-evolver install for Pi"
         fi
