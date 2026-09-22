@@ -957,6 +957,15 @@ install_rsi() {
   else
     # Create skills dir if missing
     [[ -d "$agent_root/skills" ]] || run mkdir -p "$agent_root/skills"
+    # If $rsi_skill_dst is itself a symlink (e.g. a legacy `sop-evolver ->
+    # $SOURCE_DIR/skills/sop-evolver`), macOS `ln -sfn SRC DST/file` would
+    # traverse the symlink and write symlinks back into $SOURCE_DIR,
+    # silently corrupting the git-tracked `skills/sop-evolver/`. Replace
+    # the symlink with a real directory first.
+    if [[ -L "$rsi_skill_dst" ]]; then
+      log_warn "RSI dst was a symlink (target: $(readlink "$rsi_skill_dst")); removing to install as real directory"
+      run rm "$rsi_skill_dst"
+    fi
     # Create sop-evolver skill dir if missing (prevent ln failure)
     [[ -d "$rsi_skill_dst" ]] || run mkdir -p "$rsi_skill_dst"
     # Per-file symlinks for live updates
