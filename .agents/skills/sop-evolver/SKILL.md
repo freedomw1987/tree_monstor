@@ -50,13 +50,15 @@ description: RSI（Recursive Self-Improvement）機制專用 skill。裝在專�
 
 ```bash
 ./install.sh --enable-rsi
-# 預設 — 部署 sop-evolver skill + 建觀察目錄
+# 預設 — 部署 sop-evolver skill + Pi Extension auto-observe hook + 建觀察目錄
 ```
 
-裝完後，每次任務完成時 Gate 5 自動觸發：
+裝完後，每次任務完成時 Gate 5 自動觸發（**v1.1+ 不依賴 agent 自律**，Pi Extension 在 `TaskUpdate(status="completed")` 時自動呼叫 `observe-pi-task.sh` 寫 observation；失敗降噪、不阻塞）：
 
 1. 寫 observation JSON 到 `~/.tree-monstor/observations/{project-id}/{YYYY-MM-DD}.json`
 2. 觀察失敗不阻塞任務（log warning，跳過寫入）
+
+**Claude Code 不適用** Extension（無 Pi Extension 支援），必須透過 skill 手動觸發。詳見 `docs/sop/handbook/2.8-rsi-evolution.md` §7.4。
 
 ### 4.2 在「源 repo」（聚合模式）
 
@@ -110,6 +112,8 @@ git tag rsi-v{YYYYMMDD}-{NN}
 | `tools/rsi-metrics.sh` | 量化指標計算（completion_rate / violation / trend）|
 | `tools/rsi-sync.sh` | 源 repo SOP 同步到所有已裝專案 |
 | `tools/rsi-rollback.sh` | 自動 git tag + 一鍵回滾 |
+| `tools/observe-pi-task.sh` | **Pi Extension 內部呼叫**：讀 `.pi/tasks/*.json` → 寫 observation（v1.1+） |
+| `extensions/auto-observe.ts` | **Pi Extension**：hook `tool_call(TaskUpdate)` 自動觸發觀察（v1.1+） |
 
 ---
 
@@ -137,3 +141,4 @@ git tag rsi-v{YYYYMMDD}-{NN}
 
 - v1.0（2025-09-20）— 隨 Sprint 09 US-013 引入
 - v1.0-fix（2026-09-20）— Sprint 12 重建，源檔案修復 symlink 循環
+- v1.1（2026-09-22）— Sprint 13 加入 Pi Extension auto-observe hook，觀察觸發由 agent 自律變全自動。對應 V03 verdict：`docs/sop/rsi-reviewer-verdict-2026-09-22-auto-observe-v2.md`

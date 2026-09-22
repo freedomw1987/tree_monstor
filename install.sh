@@ -529,7 +529,8 @@ do_uninstall() {
       pi)
         uninstall_pi
         if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-          uninstall_rsi "$TARGET_ROOT/${DIR_PI}"
+          uninstall_rsi "$TARGET_ROOT/${DIR_PI}/agent"
+          uninstall_pi_observe_hook "$TARGET_ROOT/${DIR_PI}/agent"
         fi
         ;;
       *) log_warn "Unknown agent '$agent' — skipping"; ;;
@@ -984,6 +985,68 @@ install_rsi() {
   fi
 }
 
+# ---------- Pi auto-observe hook installer (RSI extension, US-016 extension) ----------
+# 對應 docs/sop/rsi-reviewer-verdict-2026-09-22-auto-observe-v2.md APPROVE_WITH_NITS
+# 對應 docs/sop/handbook/2.8-rsi-evolution.md §7.4
+#
+# 設計：
+#   - 部署 extensions/auto-observe.ts + tools/observe-pi-task.sh 到
+#     $agent_root/extensions/ （同目錄，Extension 透過 import.meta.url 找 Script）
+#   - 只對 pi agent 有效（Claude Code 無 Pi Extension 支援）
+#   - --disable-rsi 對應：跳過此函式呼叫
+#   - jiti 透過 file watcher 自動載入 .ts，無需 build
+#
+# REGRESSION-GUARD PROBE: pi-observe-hook-install
+install_pi_observe_hook() {
+  local agent_root="$1"
+  local ext_dst="$agent_root/extensions"
+  local ext_src="$SOURCE_DIR/extensions/auto-observe.ts"
+  local script_src="$SOURCE_DIR/tools/observe-pi-task.sh"
+
+  if [[ ! -f "$script_src" ]]; then
+    log_dry "skip: source has no tools/observe-pi-task.sh"
+    return 0
+  fi
+  if [[ ! -f "$ext_src" ]]; then
+    log_dry "skip: source has no extensions/auto-observe.ts"
+    return 0
+  fi
+
+  if [[ $DRY_RUN -eq 1 ]]; then
+    log_dry "auto-observe hook: cp $script_src -> $ext_dst/observe-pi-task.sh"
+    log_dry "auto-observe hook: cp $ext_src -> $ext_dst/auto-observe.ts"
+  else
+    [[ -d "$ext_dst" ]] || run mkdir -p "$ext_dst"
+    run cp "$script_src" "$ext_dst/observe-pi-task.sh"
+    run chmod +x "$ext_dst/observe-pi-task.sh"
+    log_ok "auto-observe hook script installed: $ext_dst/observe-pi-task.sh"
+    run cp "$ext_src" "$ext_dst/auto-observe.ts"
+    log_ok "auto-observe hook extension installed: $ext_dst/auto-observe.ts"
+  fi
+}
+
+# 對應 uninstall。
+# REGRESSION-GUARD PROBE: pi-observe-hook-uninstall
+uninstall_pi_observe_hook() {
+  local agent_root="$1"
+  local ext_dst="$agent_root/extensions"
+  local script_dst="$ext_dst/observe-pi-task.sh"
+  local ext_dst_file="$ext_dst/auto-observe.ts"
+
+  if [[ $DRY_RUN -eq 1 ]]; then
+    log_dry "auto-observe hook uninstall: rm $script_dst $ext_dst_file"
+    return 0
+  fi
+  if [[ -f "$script_dst" ]]; then
+    run rm "$script_dst"
+    log_ok "removed: $script_dst"
+  fi
+  if [[ -f "$ext_dst_file" ]]; then
+    run rm "$ext_dst_file"
+    log_ok "removed: $ext_dst_file"
+  fi
+}
+
 uninstall_rsi() {
   local agent_root="$1"
   local rsi_skill_dst="$agent_root/skills/sop-evolver"
@@ -1110,8 +1173,11 @@ main() {
           # install_rsi() builds paths as $agent_root/skills/sop-evolver, so
           # pass the pi agent root (one level deeper than $TARGET_ROOT/${DIR_PI}).
           install_rsi "$TARGET_ROOT/${DIR_PI}/agent"
+          # Auto-observe hook: Pi Extension 為主，sop-evolver skill 為備
+          # (對應 docs/sop/handbook/2.8-rsi-evolution.md §7.4)
+          install_pi_observe_hook "$TARGET_ROOT/${DIR_PI}/agent"
         else
-          log_info "RSI: --disable-rsi set, skipping sop-evolver install for Pi"
+          log_info "RSI: --disable-rsi set, skipping sop-evolver + auto-observe hook for Pi"
         fi
         ;;
       *)      log_warn "Unknown agent '$agent' — skipping"; ;;

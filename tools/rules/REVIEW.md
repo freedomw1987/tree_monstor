@@ -1,7 +1,7 @@
 # RSI 規則庫 Review
 
 > 自動產生 by `tools/rsi-rules-review.sh`（Sprint 14 TD-038）
-> 產生時間：2026-09-20 20:16:23
+> 產生時間：2026-09-22 14:07:08
 > 規則庫：`docs/sop/rsi-rules.md`
 
 ## 統計
