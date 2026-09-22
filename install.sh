@@ -23,7 +23,7 @@ DRY_RUN=0
 YES=0
 QUIET=0
 CLAUDE_SKILLS_MODE="merge"  # merge | replace | skip
-ENABLE_RSI=1            # 1 = enable (default), 0 = disable (US-016)
+
 
 # ---------- TD-008: Agent 路徑 / marker 常數集中 ----------
 # 改這些變數就能影響全部 install.sh / uninstall 邏輯
@@ -95,10 +95,6 @@ ${C_BOLD}Actions:${C_RESET}
   --uninstall         Remove what this script installed
   --dry-run           Print actions without executing
 
-${C_BOLD}RSI (Recursive Self-Improvement):${C_RESET}
-      --enable-rsi                  Enable RSI observation (default)
-      --disable-rsi                 Skip RSI: don't deploy sop-evolver, don't init ~/.tree-monstor/
-
 ${C_BOLD}UX:${C_RESET}
   -y, --yes                          Skip confirmation prompt
   -q, --quiet                        Suppress info/ok output
@@ -138,8 +134,6 @@ parse_args() {
       --source)   SOURCE_DIR="${2:-}"; [[ -z "$SOURCE_DIR" ]] && { log_err "--source requires a path"; exit 2; }; shift ;;
       --uninstall) UNINSTALL=1 ;;
       --dry-run)   DRY_RUN=1 ;;
-      --enable-rsi)  ENABLE_RSI=1 ;;
-      --disable-rsi) ENABLE_RSI=0 ;;
       -y|--yes)    YES=1 ;;
       -q|--quiet)  QUIET=1 ;;
       --claude-skills-mode)
@@ -267,15 +261,6 @@ print_plan() {
         ;;
     esac
   done
-  # US-016: RSI plan (only when --enable-rsi, the default)
-  if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-    log_plan "RSI: --enable-rsi (default)"
-    log_plan "  skills/sop-evolver/* -> per-file symlinks into .agents/skills/sop-evolver/"
-    log_plan "  ~/.tree-monstor/observations/ (init)"
-    log_plan "  ~/.tree-monstor/projects/ (init)"
-  else
-    log_plan "RSI: --disable-rsi (skip sop-evolver install + ~/.tree-monstor/ init)"
-  fi
   if [[ $INSTALL_AGENTS_DIR -eq 1 ]]; then
     log_plan "$TARGET_ROOT/.agents/tree_monstor/ (copy)"
   fi
@@ -398,18 +383,6 @@ ensure_merged_skills_into() {
   local skill_path skill_name merged=0 skipped=0
   for skill_path in "$src_skills"/*; do
     skill_name="$(basename "$skill_path")"
-    # sop-evolver is a special case: its source of truth is
-    # $SOURCE_DIR/.agents/skills/sop-evolver/ (regular files), and
-    # $SOURCE_DIR/skills/sop-evolver/ is also regular files (committed
-    # to git). Do NOT symlink-deploy it from $src_skills — that would
-    # overwrite the user's regular files with an absolute-path symlink,
-    # breaking cross-machine clones. install_rsi() handles the deploy
-    # to ~/.pi/agent/skills/sop-evolver/ using .agents/ as the source.
-    if [[ "$skill_name" == "sop-evolver" ]]; then
-      log_info "merge: sop-evolver handled by install_rsi (skipping from $src_skills)"
-      skipped=$((skipped + 1))
-      continue
-    fi
     if [[ -e "$dst_skills/$skill_name" ]] && [[ ! -L "$dst_skills/$skill_name" ]]; then
       log_warn "merge: skipping non-symlink conflict: $dst_skills/$skill_name"
       skipped=$((skipped + 1))
@@ -522,16 +495,9 @@ do_uninstall() {
     case "$agent" in
       claude)
         uninstall_claude
-        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-          uninstall_rsi "$TARGET_ROOT/${DIR_CLAUDE}"
-        fi
         ;;
       pi)
         uninstall_pi
-        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-          uninstall_rsi "$TARGET_ROOT/${DIR_PI}/agent"
-          uninstall_pi_observe_hook "$TARGET_ROOT/${DIR_PI}/agent"
-        fi
         ;;
       *) log_warn "Unknown agent '$agent' — skipping"; ;;
     esac
@@ -933,157 +899,6 @@ install_sop() {
   log_ok "sop installed: $sop_dst (per-file symlinks into $sop_src)"
 }
 
-# ---------- RSI installer (US-016) ----------
-# Deploys .agents/skills/sop-evolver/ to the agent root (via symlinks)
-# and initializes ~/.tree-monstor/ directory structure for cross-project
-# observation aggregation.
-install_rsi() {
-  local agent_root="$1"
-  local rsi_skill_src="$SOURCE_DIR/.agents/skills/sop-evolver"
-  local rsi_skill_dst="$agent_root/skills/sop-evolver"
-  local homedir="${HOME}"
-  local tree_monstor_root="$homedir/.tree-monstor"
-  local obs_root="$tree_monstor_root/observations"
-  local projects_root="$tree_monstor_root/projects"
-
-  # 1. Deploy sop-evolver skill (symlink)
-  if [[ ! -d "$rsi_skill_src" ]]; then
-    log_dry "skip: source has no .agents/skills/sop-evolver (RSI skill not available)"
-    return 0
-  fi
-
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "RSI skill symlinks: $rsi_skill_src/* -> $rsi_skill_dst/"
-    log_dry "RSI init: mkdir $tree_monstor_root/{observations,projects}"
-  else
-    # Create skills dir if missing
-    [[ -d "$agent_root/skills" ]] || run mkdir -p "$agent_root/skills"
-    # If $rsi_skill_dst is itself a symlink (e.g. a legacy `sop-evolver ->
-    # $SOURCE_DIR/skills/sop-evolver`), macOS `ln -sfn SRC DST/file` would
-    # traverse the symlink and write symlinks back into $SOURCE_DIR,
-    # silently corrupting the git-tracked `skills/sop-evolver/`. Replace
-    # the symlink with a real directory first.
-    if [[ -L "$rsi_skill_dst" ]]; then
-      log_warn "RSI dst was a symlink (target: $(readlink "$rsi_skill_dst")); removing to install as real directory"
-      run rm "$rsi_skill_dst"
-    fi
-    # Create sop-evolver skill dir if missing (prevent ln failure)
-    [[ -d "$rsi_skill_dst" ]] || run mkdir -p "$rsi_skill_dst"
-    # Per-file symlinks for live updates
-    local f name
-    for f in "$rsi_skill_src"/*; do
-      [[ -e "$f" ]] || continue
-      name="$(basename "$f")"
-      run ln -sfn "$f" "$rsi_skill_dst/$name"
-    done
-    log_ok "RSI sop-evolver skill installed: $rsi_skill_dst"
-
-    # Initialize ~/.tree-monstor/ directory structure
-    run mkdir -p "$obs_root" "$projects_root"
-    log_ok "RSI observation root initialized: $obs_root"
-    log_ok "RSI projects registry initialized: $projects_root"
-  fi
-}
-
-# ---------- Pi auto-observe hook installer (RSI extension, US-016 extension) ----------
-# 對應 docs/sop/rsi-reviewer-verdict-2026-09-22-auto-observe-v2.md APPROVE_WITH_NITS
-# 對應 docs/sop/handbook/2.8-rsi-evolution.md §7.4
-#
-# 設計：
-#   - 部署 extensions/auto-observe.ts + tools/observe-pi-task.sh 到
-#     $agent_root/extensions/ （同目錄，Extension 透過 import.meta.url 找 Script）
-#   - 只對 pi agent 有效（Claude Code 無 Pi Extension 支援）
-#   - --disable-rsi 對應：跳過此函式呼叫
-#   - jiti 透過 file watcher 自動載入 .ts，無需 build
-#
-# REGRESSION-GUARD PROBE: pi-observe-hook-install
-install_pi_observe_hook() {
-  local agent_root="$1"
-  local ext_dst="$agent_root/extensions"
-  local ext_src="$SOURCE_DIR/extensions/auto-observe.ts"
-  local script_src="$SOURCE_DIR/tools/observe-pi-task.sh"
-
-  if [[ ! -f "$script_src" ]]; then
-    log_dry "skip: source has no tools/observe-pi-task.sh"
-    return 0
-  fi
-  if [[ ! -f "$ext_src" ]]; then
-    log_dry "skip: source has no extensions/auto-observe.ts"
-    return 0
-  fi
-
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "auto-observe hook: cp $script_src -> $ext_dst/observe-pi-task.sh"
-    log_dry "auto-observe hook: cp $ext_src -> $ext_dst/auto-observe.ts"
-  else
-    [[ -d "$ext_dst" ]] || run mkdir -p "$ext_dst"
-    run cp "$script_src" "$ext_dst/observe-pi-task.sh"
-    run chmod +x "$ext_dst/observe-pi-task.sh"
-    log_ok "auto-observe hook script installed: $ext_dst/observe-pi-task.sh"
-    run cp "$ext_src" "$ext_dst/auto-observe.ts"
-    log_ok "auto-observe hook extension installed: $ext_dst/auto-observe.ts"
-  fi
-}
-
-# 對應 uninstall。
-# REGRESSION-GUARD PROBE: pi-observe-hook-uninstall
-uninstall_pi_observe_hook() {
-  local agent_root="$1"
-  local ext_dst="$agent_root/extensions"
-  local script_dst="$ext_dst/observe-pi-task.sh"
-  local ext_dst_file="$ext_dst/auto-observe.ts"
-
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "auto-observe hook uninstall: rm $script_dst $ext_dst_file"
-    return 0
-  fi
-  if [[ -f "$script_dst" ]]; then
-    run rm "$script_dst"
-    log_ok "removed: $script_dst"
-  fi
-  if [[ -f "$ext_dst_file" ]]; then
-    run rm "$ext_dst_file"
-    log_ok "removed: $ext_dst_file"
-  fi
-}
-
-uninstall_rsi() {
-  local agent_root="$1"
-  local rsi_skill_dst="$agent_root/skills/sop-evolver"
-  local homedir="${HOME}"
-  local tree_monstor_root="$homedir/.tree-monstor"
-
-  # Remove sop-evolver symlink
-  if [[ -L "$rsi_skill_dst" || -d "$rsi_skill_dst" ]]; then
-    if [[ $DRY_RUN -eq 1 ]]; then
-      log_dry "RSI uninstall: rm -rf $rsi_skill_dst"
-    else
-      run rm -rf "$rsi_skill_dst"
-      log_ok "RSI sop-evolver skill removed: $rsi_skill_dst"
-    fi
-  fi
-
-  # Prompt for ~/.tree-monstor/ removal
-  if [[ -d "$tree_monstor_root" ]]; then
-    if [[ $YES -eq 1 ]]; then
-      log_warn "RSI data directory preserved (--yes set): $tree_monstor_root"
-      return 0
-    fi
-    local confirm
-    read -rp "Remove RSI data directory $tree_monstor_root? This deletes all cross-project observations. [y/N] " confirm
-    if [[ "$confirm" =~ ^[Yy]$ ]]; then
-      if [[ $DRY_RUN -eq 1 ]]; then
-        log_dry "RSI uninstall: rm -rf $tree_monstor_root"
-      else
-        run rm -rf "$tree_monstor_root"
-        log_ok "RSI data directory removed: $tree_monstor_root"
-      fi
-    else
-      log_warn "RSI data directory preserved: $tree_monstor_root"
-    fi
-  fi
-}
-
 # ---------- Exclusion rules ----------
 # Anything matching these name patterns is skipped during copy.
 # Used for the .agents/ snapshot (we never symlink that — it's a real copy).
@@ -1159,26 +974,10 @@ main() {
       claude)
         install_claude
         install_sop "$TARGET_ROOT/${DIR_CLAUDE}"
-        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-          install_rsi "$TARGET_ROOT/${DIR_CLAUDE}"
-        else
-          log_info "RSI: --disable-rsi set, skipping sop-evolver install for Claude"
-        fi
         ;;
       pi)
         install_pi
         install_sop "$TARGET_ROOT/${DIR_PI}"
-        if [[ "${ENABLE_RSI:-1}" -eq 1 ]]; then
-          # pi agent skills live under ~/.pi/agent/skills/, not ~/.pi/skills/.
-          # install_rsi() builds paths as $agent_root/skills/sop-evolver, so
-          # pass the pi agent root (one level deeper than $TARGET_ROOT/${DIR_PI}).
-          install_rsi "$TARGET_ROOT/${DIR_PI}/agent"
-          # Auto-observe hook: Pi Extension 為主，sop-evolver skill 為備
-          # (對應 docs/sop/handbook/2.8-rsi-evolution.md §7.4)
-          install_pi_observe_hook "$TARGET_ROOT/${DIR_PI}/agent"
-        else
-          log_info "RSI: --disable-rsi set, skipping sop-evolver + auto-observe hook for Pi"
-        fi
         ;;
       *)      log_warn "Unknown agent '$agent' — skipping"; ;;
     esac
