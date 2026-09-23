@@ -1,7 +1,7 @@
 # tree_monstor install.sh
 
 [![CI](https://github.com/apple/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/apple/tree_monstor/actions/workflows/ci.yml)
-[![bats tests](https://img.shields.io/badge/bats-105%2F105-brightgreen)](tests/)
+[![bats tests](https://img.shields.io/badge/bats-209%2F209-brightgreen)](tests/)
 [![markdownlint](https://img.shields.io/badge/markdownlint-0%20issues-brightgreen)](.markdownlint.json)
 
 `install.sh` 幫你把 `tree_monstor` 的 `AGENTS.md`、`SOUL.md` 和 `skills/` 暴露給 AI coding agents（Claude Code、Pi Agent 等），讓它們在**全域**或**專案層**都能讀取到，且改源檔能即時生效。
