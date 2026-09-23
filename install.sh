@@ -6,8 +6,16 @@
 # .agents/ copy (official convention).
 #
 # Pure Bash. macOS (3.2+) and Linux (4+) compatible.
+#
+# Architecture: this script is the dispatch layer; helper functions live
+# in lib/install/*.sh (logging / paths / symlink / agents / sop / agents_dir).
+# This keeps the entry point short and the lib functions unit-testable.
 
 set -euo pipefail
+
+# Determine the project root (directory containing this install.sh).
+# Needed BEFORE we can source any lib/install/*.sh file.
+_PROJ_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 # ---------- Version ----------
 readonly VERSION="0.1.0"
@@ -38,38 +46,21 @@ readonly LOADER_END_MARKER="tree-monstor-loader:DO-NOT-EDIT-END"
 # 已知 agent 列表（驗證用）
 readonly KNOWN_AGENTS=("claude" "pi")
 
-# ---------- Color setup ----------
-# Respect NO_COLOR (https://no-color.org/) — only opt-out mechanism.
-# Default to colors so piped output (e.g. CI logs) is also visible.
-if [[ -n "${NO_COLOR:-}" ]]; then
-  C_RESET=""; C_RED=""; C_GREEN=""; C_YELLOW=""; C_BLUE=""; C_DIM=""; C_BOLD=""
-else
-  C_RESET=$'\033[0m'
-  C_RED=$'\033[31m'
-  C_GREEN=$'\033[32m'
-  C_YELLOW=$'\033[33m'
-  C_BLUE=$'\033[34m'
-  C_DIM=$'\033[2m'
-  C_BOLD=$'\033[1m'
-fi
-
-# ---------- Logging ----------
-# REGRESSION-GUARD PROBE: log-output
-log_info()  { [[ $QUIET -eq 1 ]] || printf "%b[i]%b %s\n" "$C_BLUE"   "$C_RESET" "$*"; }
-log_ok()    { [[ $QUIET -eq 1 ]] || printf "%b%b[✓]%b %s\n" "$C_BOLD" "$C_GREEN"  "$C_RESET" "$*"; }
-log_warn()  { printf "%b[!]%b %s\n" "$C_YELLOW" "$C_RESET" "$*" >&2; }
-log_err()   { printf "%b[✗]%b %s\n" "$C_RED"    "$C_RESET" "$*" >&2; }
-log_dry()   { printf "%b[~]%b %s (dry-run)\n" "$C_DIM" "$C_RESET" "$*"; }
-log_plan()  { printf "%b    →%b %s\n" "$C_DIM"   "$C_RESET" "$*"; }
-
-# Conditional side-effect: run a command now (or print it under --dry-run).
-run() {
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "$*"
-  else
-    "$@"
-  fi
-}
+# ---------- Source the lib/ helpers ----------
+# Order matters: logging first (others depend on it), then paths/symlink,
+# then agents/sop/agents_dir which call back into symlink.
+# shellcheck source=lib/install/logging.sh
+source "$_PROJ_ROOT/lib/install/logging.sh"
+# shellcheck source=lib/install/paths.sh
+source "$_PROJ_ROOT/lib/install/paths.sh"
+# shellcheck source=lib/install/symlink.sh
+source "$_PROJ_ROOT/lib/install/symlink.sh"
+# shellcheck source=lib/install/sop.sh
+source "$_PROJ_ROOT/lib/install/sop.sh"
+# shellcheck source=lib/install/agents.sh
+source "$_PROJ_ROOT/lib/install/agents.sh"
+# shellcheck source=lib/install/agents_dir.sh
+source "$_PROJ_ROOT/lib/install/agents_dir.sh"
 
 # ---------- Help ----------
 print_help() {
@@ -163,7 +154,8 @@ parse_args() {
   done
 }
 
-# ---------- Path resolution ----------
+# resolve_source() lives here (not in lib/install/paths.sh) because it
+# depends on $0 = install.sh, not BASH_SOURCE inside a sourced lib.
 resolve_source() {
   if [[ -z "$SOURCE_DIR" ]]; then
     # Default: directory containing this script.
@@ -212,7 +204,7 @@ confirm() {
   esac
 }
 
-# ---------- Dry-run preview (basic; richer version comes in Phase C/D) ----------
+# ---------- Dry-run preview ----------
 print_plan() {
   log_info "Plan:"
   log_plan "mode=$MODE  target=$TARGET_ROOT  source=$SOURCE_DIR"
@@ -264,226 +256,6 @@ print_plan() {
   if [[ $INSTALL_AGENTS_DIR -eq 1 ]]; then
     log_plan "$TARGET_ROOT/.agents/tree_monstor/ (copy)"
   fi
-}
-
-# ---------- Symlink helpers ----------
-# Resolve target -> absolute, normalized path (no trailing slash).
-abs_path() {
-  local p="$1"
-  if [[ -d "$p" ]]; then
-    (cd "$p" && pwd)
-  else
-    local d base
-    d="$(dirname -- "$p")"
-    base="$(basename -- "$p")"
-    (cd "$d" 2>/dev/null && printf "%s/%s\n" "$(pwd)" "$base") || printf "%s\n" "$p"
-  fi
-}
-
-# ensure_symlink <link_path> <target_path>
-# Idempotent: if link exists and points to target, skip; if broken/wrong, repair; else create.
-# REGRESSION-GUARD PROBE: symlink-idempotency
-ensure_symlink() {
-  local link="$1"
-  local target="$2"
-  local target_abs
-  target_abs="$(abs_path "$target")"
-
-  if [[ -L "$link" ]]; then
-    local current
-    current="$(readlink "$link")"
-    if [[ "$current" == "$target_abs" ]]; then
-      log_ok "symlink OK: $link -> $target_abs"
-      return 0
-    fi
-    log_warn "symlink wrong target, repairing: $link (was -> $current, want -> $target_abs)"
-    run rm "$link"
-  elif [[ -e "$link" ]]; then
-    log_err "Path exists but is not a symlink: $link"
-    log_err "Refusing to overwrite. Move it aside and re-run."
-    return 1
-  fi
-
-  # Ensure parent directory exists.
-  local parent
-  parent="$(dirname -- "$link")"
-  [[ -d "$parent" ]] || run mkdir -p "$parent"
-
-  run ln -s "$target_abs" "$link"
-  log_ok "symlink created: $link -> $target_abs"
-}
-
-# ensure_merged_skill <link_path> <target_path>
-# Place a per-skill symlink at <link_path> pointing to <target_path>.
-# Idempotent: existing symlink pointing to target is left alone; pointing
-# elsewhere is repaired; existing non-symlink (user-owned skill) is
-# preserved with a warning.
-# REGRESSION-GUARD PROBE: merged-skill
-ensure_merged_skill() {
-  local link="$1"
-  local target="$2"
-  local target_abs
-  target_abs="$(abs_path "$target")"
-
-  # Ensure parent dir exists.
-  local parent
-  parent="$(dirname -- "$link")"
-  [[ -d "$parent" ]] || run mkdir -p "$parent"
-
-  if [[ -L "$link" ]]; then
-    local current
-    current="$(readlink "$link")"
-    if [[ "$current" == "$target_abs" ]]; then
-      log_ok "merge OK: $link -> $target_abs"
-      return 0
-    fi
-    log_warn "merge: wrong-target symlink, repairing: $link ($current -> $target_abs)"
-    run rm "$link"
-    run ln -s "$target_abs" "$link"
-    log_ok "merged: $link -> $target_abs"
-    return 0
-  fi
-
-  if [[ -e "$link" ]]; then
-    log_warn "merge: target exists and is not a symlink, skipping: $link"
-    return 0
-  fi
-
-  run ln -s "$target_abs" "$link"
-  log_ok "merged: $link -> $target_abs"
-}
-
-# ensure_merged_skills_into <src_skills_dir> <dst_skills_dir>
-# Merge a tree_monstor skills directory into an existing real directory
-# at <dst_skills_dir>, by creating per-skill symlinks at the file level.
-# - If <dst_skills_dir> is a symlink: defer to ensure_symlink (whole-tree).
-# - If <dst_skills_dir> does not exist: defer to ensure_symlink (create).
-# - If <dst_skills_dir> is a regular file or block device: error out.
-# - If <dst_skills_dir> is a real directory: per-skill merge.
-# REGRESSION-GUARD PROBE: merged-skills-into
-ensure_merged_skills_into() {
-  local src_skills="$1"
-  local dst_skills="$2"
-
-  if [[ -L "$dst_skills" ]] || [[ ! -e "$dst_skills" ]]; then
-    # Already a symlink, or doesn't exist yet — use the standard tree-level
-    # symlink flow (re-uses all the existing idempotency logic).
-    ensure_symlink "$dst_skills" "$src_skills"
-    return 0
-  fi
-
-  if [[ ! -d "$dst_skills" ]]; then
-    log_err "merge: $dst_skills exists but is not a directory; cannot merge"
-    return 1
-  fi
-
-  log_info "merge: $dst_skills is a real directory; merging per-skill symlinks"
-
-  shopt -s nullglob
-  local skill_path skill_name merged=0 skipped=0
-  for skill_path in "$src_skills"/*; do
-    skill_name="$(basename "$skill_path")"
-    if [[ -e "$dst_skills/$skill_name" ]] && [[ ! -L "$dst_skills/$skill_name" ]]; then
-      log_warn "merge: skipping non-symlink conflict: $dst_skills/$skill_name"
-      skipped=$((skipped + 1))
-      continue
-    fi
-    # Capture pre/post state to count actually-new symlinks.
-    local existed=0
-    [[ -e "$dst_skills/$skill_name" ]] && existed=1
-    ensure_merged_skill "$dst_skills/$skill_name" "$skill_path"
-    [[ $existed -eq 0 ]] && merged=$((merged + 1))
-  done
-  shopt -u nullglob
-
-  log_info "merge: done — newly merged: $merged, skipped (conflicts): $skipped"
-}
-
-# ensure_file <path> <content>
-# Idempotent write of a regular file (e.g. the Claude wrapper).
-ensure_file() {
-  local path="$1"
-  local content="$2"
-
-  if [[ -f "$path" ]] && [[ ! -L "$path" ]]; then
-    if [[ "$(cat "$path")" == "$content" ]]; then
-      log_ok "file OK: $path"
-      return 0
-    fi
-    log_warn "file exists with different content, will overwrite: $path"
-  elif [[ -L "$path" ]]; then
-    log_warn "path is a symlink, removing: $path"
-    run rm "$path"
-  fi
-
-  local parent
-  parent="$(dirname -- "$path")"
-  [[ -d "$parent" ]] || run mkdir -p "$parent"
-
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "write file: $path (length=${#content})"
-  else
-    printf "%s" "$content" > "$path"
-    log_ok "file written: $path"
-  fi
-}
-
-# ---------- Agent installers ----------
-# REGRESSION-GUARD PROBE: claude-install
-install_claude() {
-  log_info "Installing for Claude Code..."
-
-  local claude_root="$TARGET_ROOT/${DIR_CLAUDE}"
-  local skills_link="$claude_root/skills"
-  local wrapper="$claude_root/CLAUDE.md"
-
-  # Resolve / create the wrapper directory.
-  [[ -d "$claude_root" ]] || run mkdir -p "$claude_root"
-
-  case "$CLAUDE_SKILLS_MODE" in
-    merge)
-      # Pre-create $skills_link as an empty real directory so
-      # ensure_merged_skills_into() takes the per-skill merge path
-      # (matching ~/.pi/agent/skills/ behavior). Falling back to a
-      # tree-level symlink here would silently shadow any other skills
-      # the user later drops into ~/.claude/skills/.
-      # Idempotent: skip if it already exists (file, symlink, or dir).
-      if [[ ! -e "$skills_link" ]] && [[ ! -L "$skills_link" ]]; then
-        run mkdir -p "$skills_link"
-      fi
-      ensure_merged_skills_into "$SOURCE_DIR/skills" "$skills_link"
-      ;;
-    replace)
-      if [[ -e "$skills_link" ]] && [[ ! -L "$skills_link" ]]; then
-        local stamp
-        stamp="$(date +%Y%m%d-%H%M%S)"
-        log_warn "replace: backing up $skills_link -> $skills_link.bak.$stamp"
-        run mv "$skills_link" "$skills_link.bak.$stamp"
-      fi
-      ensure_symlink "$skills_link" "$SOURCE_DIR/skills"
-      ;;
-    skip)
-      log_info "skipping Claude skills (--claude-skills-mode=skip)"
-      ;;
-  esac
-
-  # Wrapper content with marker comments so --uninstall can find it.
-  local content
-  content="$(cat <<EOF
-# tree-monstor-loader:DO-NOT-EDIT-START
-# Auto-generated by install.sh v${VERSION}. Safe to remove via:
-#   ./install.sh --uninstall
-#
-# Pulls AGENTS.md and SOUL.md from the tree_monstor source so any edit
-# there propagates immediately (this file is regenerated on each run).
-
-@${SOURCE_DIR}/AGENTS.md
-@${SOURCE_DIR}/SOUL.md
-# tree-monstor-loader:DO-NOT-EDIT-END
-EOF
-)"
-
-  ensure_file "$wrapper" "$content"
 }
 
 # ---------- Uninstall ----------
@@ -708,109 +480,6 @@ uninstall_pi() {
   uninstall_subagents
 }
 
-uninstall_agents_dir() {
-  remove_managed_path "$TARGET_ROOT/${DIR_AGENTS}/tree_monstor" tree
-}
-
-# ---------- Pi Agent installer ----------
-# REGRESSION-GUARD PROBE: pi-install
-install_pi() {
-  log_info "Installing for Pi Agent..."
-  local pi_root="$TARGET_ROOT/${DIR_PI}"
-
-  # Pi's documented global resource dir is ~/.pi/agent/ (see pi
-  # docs/usage.md:100 and docs/skills.md#locations). Earlier versions of
-  # this script installed to ~/.pi/ (e.g. ~/.pi/AGENTS.md,
-  # ~/.pi/skills), which pi silently ignores — AGENTS.md was never
-  # loaded at startup and skills were never discovered.
-  local agent_root="$pi_root/agent"
-  [[ -d "$agent_root" ]] || run mkdir -p "$agent_root"
-
-  # AGENTS.md: single symlink at the correct location.
-  ensure_symlink "$agent_root/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
-
-  # Skills: merge per-skill symlinks into ~/.pi/agent/skills/.
-  # Use a dedicated merge function so we never clobber other global skills
-  # the user may have placed there (e.g. ~/.pi/agent/skills/gsap-*).
-  # Pre-create the dir so ensure_merged_skills_into() takes the merge path
-  # instead of falling back to a tree-level symlink (which would shadow any
-  # skills the user adds later).
-  [[ -d "$agent_root/skills" ]] || [[ -L "$agent_root/skills" ]] || run mkdir -p "$agent_root/skills"
-  ensure_merged_skills_into "$SOURCE_DIR/skills" "$agent_root/skills"
-
-  # SOUL.md is NOT installed globally. See plan output above for rationale.
-
-  # Subagents: per-file symlinks into ~/.agents/<name>.md (user-scope).
-  # pi-subagents discovers them automatically and they take precedence
-  # over builtins but lose to project-scope agents.
-  install_subagents
-}
-
-# ---------- Subagent installer (pi-only) ----------
-# Installs tree_monstor's subagents to ~/.agents/<name>.md
-# (user-scope). pi-subagents discovers them automatically; they take
-# precedence over builtins but lose to project-scope agents.
-#
-# Layout:
-#   - Source: $SOURCE_DIR/agents/<name>.md
-#   - Target: $TARGET_ROOT/.agents/<name>.md  (symlink)
-#
-# Conflicts: if a non-symlink file already exists at the target, we skip
-# with a warning (preserves user-owned subagents, mirroring skill merge).
-# REGRESSION-GUARD PROBE: subagent-install
-install_subagents() {
-  local src_agents_dir="$SOURCE_DIR/agents"
-  if [[ ! -d "$src_agents_dir" ]]; then
-    return 0
-  fi
-
-  local dst_agents_dir="$TARGET_ROOT/${DIR_AGENTS}"
-  [[ -d "$dst_agents_dir" ]] || run mkdir -p "$dst_agents_dir"
-
-  shopt -s nullglob
-  local agent_path installed=0 updated=0 ok=0 skipped=0
-  for agent_path in "$src_agents_dir"/*.md; do
-    local name
-    name="$(basename "$agent_path")"
-    local link="$dst_agents_dir/$name"
-    local target_abs
-    target_abs="$(abs_path "$agent_path")"
-
-    if [[ -L "$link" ]]; then
-      # Existing symlink — check target matches our source.
-      local current
-      current="$(readlink "$link")"
-      if [[ "$current" == "$target_abs" ]]; then
-        log_ok "subagent OK: $link -> $target_abs"
-        ok=$((ok + 1))
-        continue
-      fi
-      # Wrong target — ensure_symlink() will repair it (logs "wrong target,
-      # repairing" + "symlink created").
-      ensure_symlink "$link" "$agent_path"
-      updated=$((updated + 1))
-      continue
-    fi
-
-    # Not a symlink — either missing (create) or regular file (skip).
-    if [[ -e "$link" ]]; then
-      log_warn "subagent: target exists and is not a symlink, skipping: $link"
-      skipped=$((skipped + 1))
-      continue
-    fi
-
-    # Missing — create new (ensure_symlink() logs "symlink created").
-    ensure_symlink "$link" "$agent_path"
-    installed=$((installed + 1))
-  done
-  shopt -u nullglob
-
-  local total=$((installed + updated + ok + skipped))
-  if (( total > 0 )); then
-    log_info "subagents: installed=$installed, updated=$updated, ok=$ok, skipped=$skipped"
-  fi
-}
-
 # uninstall_subagents: remove symlinks we created in ~/.agents/.
 # Only removes symlinks pointing into our SOURCE_DIR/agents/ (safe against
 # user-owned subagents, mirrors remove_merged_skills() pattern).
@@ -846,99 +515,8 @@ uninstall_subagents() {
   fi
 }
 
-# ---------- Local .agents/ copy installer ----------
-# REGRESSION-GUARD PROBE: agents-dir-copy
-install_agents_dir() {
-  log_info "Installing local .agents/ copy..."
-  ensure_copy_tree "$SOURCE_DIR" "$TARGET_ROOT/${DIR_AGENTS}/tree_monstor"
-}
-
-# ---------- sop/ directory installer (US-007, TD-018) ----------
-# Symlinks every .json file at top level AND every .md file under handbook/
-# in $SOURCE_DIR/docs/sop/ into <agent_root>/sop/. Each file becomes its own
-# symlink so that edits to the source files take effect immediately
-# (no need to re-run install).
-# REGRESSION-GUARD PROBE: sop-per-file-symlinks
-install_sop() {
-  local agent_root="$1"
-  local sop_src="$SOURCE_DIR/docs/sop"
-  local sop_dst="$agent_root/sop"
-
-  if [[ ! -d "$sop_src" ]]; then
-    log_dry "skip: source has no docs/sop/ (sop not required for this agent)"
-    return 0
-  fi
-
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "sop per-file symlinks: $sop_src/*.json -> $sop_dst/"
-    if [[ -d "$sop_src/handbook" ]]; then
-      log_dry "sop handbook per-file symlinks: $sop_src/handbook/*.md -> $sop_dst/handbook/"
-    fi
-    return 0
-  fi
-
-  [[ -d "$sop_dst" ]] || run mkdir -p "$sop_dst"
-  local f name
-  # Top-level *.json files (gates.json + gates.schema.json)
-  for f in "$sop_src"/*.json; do
-    [[ -e "$f" ]] || continue
-    name="$(basename "$f")"
-    run ln -sfn "$f" "$sop_dst/$name"
-  done
-  # handbook/*.md files (TD-018: required for AGENTS.md relative links)
-  if [[ -d "$sop_src/handbook" ]]; then
-    local hb_dst="$sop_dst/handbook"
-    [[ -d "$hb_dst" ]] || run mkdir -p "$hb_dst"
-    for f in "$sop_src/handbook"/*.md; do
-      [[ -e "$f" ]] || continue
-      name="$(basename "$f")"
-      run ln -sfn "$f" "$hb_dst/$name"
-    done
-    log_ok "sop handbook installed: $hb_dst (per-file symlinks into $sop_src/handbook)"
-  fi
-  log_ok "sop installed: $sop_dst (per-file symlinks into $sop_src)"
-}
-
-# ---------- Exclusion rules ----------
-# Anything matching these name patterns is skipped during copy.
-# Used for the .agents/ snapshot (we never symlink that — it's a real copy).
-should_exclude() {
-  local name="$1"
-  case "$name" in
-    .obsidian|.git|.DS_Store) return 0 ;;  # exact names
-    *) return 1 ;;
-  esac
-}
-
-# ensure_copy_tree <src_dir> <dst_dir>
-# Copies src_dir into dst_dir, skipping excluded names anywhere in the tree.
-# Idempotent: re-runs overwrite existing files but skip excluded ones.
-# REGRESSION-GUARD PROBE: copy-with-exclude
-ensure_copy_tree() {
-  local src="$1"
-  local dst="$2"
-
-  if [[ $DRY_RUN -eq 1 ]]; then
-    log_dry "cp -R (filtered) $src -> $dst"
-    return 0
-  fi
-
-  mkdir -p "$dst"
-
-  # Use rsync if available; fall back to cp+rm. rsync is faster and clearer.
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --prune-empty-dirs \
-      --exclude='.obsidian' --exclude='.obsidian/**' \
-      --exclude='.git'      --exclude='.git/**' \
-      --exclude='.DS_Store' --exclude='.DS_Store/**' \
-      "$src/" "$dst/"
-  else
-    # Fallback: copy everything then remove excluded from dst.
-    cp -R "$src/." "$dst/"
-    find "$dst" \( -name .obsidian -o -name .git -o -name .DS_Store \) -prune -exec rm -rf {} +
-  fi
-
-  log_ok "copied tree: $src -> $dst (excluding .obsidian, .git, .DS_Store)"
+uninstall_agents_dir() {
+  remove_managed_path "$TARGET_ROOT/${DIR_AGENTS}/tree_monstor" tree
 }
 
 # ---------- Main ----------
@@ -968,7 +546,6 @@ main() {
   print_plan
   confirm || { log_warn "Aborted."; exit 1; }
 
-  # Hooks for later phases (still no-op in Phase A).
   for agent in "${AGENTS[@]}"; do
     case "$agent" in
       claude)
