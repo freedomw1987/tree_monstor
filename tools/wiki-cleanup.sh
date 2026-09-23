@@ -4,6 +4,18 @@
 
 set -uo pipefail
 
+# Source shared logging helpers (lib/log.sh). Path resolves relative to
+# this script's location (../../lib/log.sh). Other tools/* scripts can
+# adopt the same pattern (see TODO note in tools/README-style docs).
+# NOTE: We keep set -uo pipefail (no -e) so pipe failures can be handled
+# per-command (e.g. `ffmpeg ... || true`, Python heredoc that may raise).
+# ERR trap is intentionally NOT set because internal Python heredocs in
+# this script raise expected errors (e.g. _purge mode skips creating
+# _deprecated/, so the DEPRECATED_INDEX Python block fails harmlessly).
+_LOG_LIB="$(cd "$(dirname "$0")/.." && pwd)/lib/log.sh"
+# shellcheck source=../lib/log.sh
+source "$_LOG_LIB"
+
 # === 預設值 ===
 TARGET="docs"
 OLDER_THAN=90
@@ -36,13 +48,13 @@ while [[ $# -gt 0 ]]; do
         --yes|-y) ASSUME_YES=true; shift;;
         --purge) PURGE=true; shift;;
         --help|-h) usage; exit 0;;
-        *) echo "[ERROR] 未知旗標: $1" >&2; usage; exit 2;;
+        *) log_err "未知旗標: $1"; usage; exit 2;;
     esac
 done
 
 # === 前置檢查 ===
 if [[ ! -d "$TARGET" ]]; then
-    echo "[ERROR] 目標目錄不存在: $TARGET" >&2
+    log_err "目標目錄不存在: $TARGET"
     exit 3
 fi
 
@@ -52,7 +64,7 @@ INDEX_FILE="$WIKI_DIR/_index.json"
 DEPRECATED_INDEX="$DEPRECATED_DIR/_index.json"
 
 if [[ ! -d "$WIKI_DIR" ]]; then
-    echo "[ERROR] wiki 目錄不存在: $WIKI_DIR" >&2
+    log_err "wiki 目錄不存在: $WIKI_DIR"
     exit 3
 fi
 
@@ -150,18 +162,18 @@ done < <(find "$WIKI_DIR" -type f -name "*.md" -print0)
 # === 顯示計畫 ===
 COUNT=${#TO_CLEAN[@]}
 if [[ "$COUNT" -eq 0 ]]; then
-    echo "[INFO] 沒有 deprecated 超過 ${OLDER_THAN} 天的檔案，nothing to do。"
+    log_info "沒有 deprecated 超過 ${OLDER_THAN} 天的檔案，nothing to do。"
     exit 0
 fi
 
-echo "[INFO] 找到 $COUNT 個 deprecated 超過 ${OLDER_THAN} 天的檔案："
+log_info "找到 $COUNT 個 deprecated 超過 ${OLDER_THAN} 天的檔案："
 for f in "${TO_CLEAN[@]}"; do
     dep_at=$(get_fm "$f" "deprecated_at")
-    echo "  - ${f#$WIKI_DIR/} (deprecated ${dep_at})"
+    log_plan "${f#$WIKI_DIR/} (deprecated ${dep_at})"
 done
 
 if $DRY_RUN; then
-    echo "[INFO] Dry-run：不實際移動，僅顯示計畫"
+    log_info "Dry-run：不實際移動，僅顯示計畫"
     exit 0
 fi
 
@@ -321,7 +333,7 @@ with open(index_file, "w") as f:
 PYEOF
 fi
 
-echo "[OK] 完成：移動 $moved、跳過 $skipped、失敗 $errors"
+log_ok "完成：移動 $moved、跳過 $skipped、失敗 $errors"
 
 # === step [9]：重建 docs/README.md ===
 # 使用 _index.json 「主刪前」的快照，但在 _index.json 已更新後重建。
