@@ -14,13 +14,3 @@ __pycache__/
 .agents/
 .claude/
 .pi/
-# BUT sop-evolver skill source files are part of the source repo (committed)
-# Important: .agents/skills must be a REAL directory (not symlink to ../skills),
-# otherwise sop-evolver skill 5 files would create infinite symlink loops.
-!.agents/skills/
-!.agents/skills/sop-evolver/
-!.agents/skills/sop-evolver/SKILL.md
-!.agents/skills/sop-evolver/observation.md
-!.agents/skills/sop-evolver/aggregator.md
-!.agents/skills/sop-evolver/proposer.md
-!.agents/skills/sop-evolver/safety.md
