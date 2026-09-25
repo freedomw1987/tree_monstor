@@ -43,12 +43,12 @@ jobs:
 
       - name: Verify bash syntax
         run: |
-          bash -n tools/wiki-cleanup.sh
-          bash -n tools/wiki-cross-ref.sh
+          bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
+          bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
 
       - name: Verify SKILL.md size (≤ 150 lines)
         run: |
-          LINES=$(wc -l < .agents/skills/dav-wiki/SKILL.md)
+          LINES=$(wc -l < skills/dav-wiki/SKILL.md)
           if [ "$LINES" -gt 150 ]; then
             echo "::error::SKILL.md too long: $LINES lines (max 150)"
             exit 1
@@ -58,9 +58,9 @@ jobs:
       - name: Verify Python heredoc syntax
         run: |
           # 抽出 wiki-cleanup.sh 的 Python heredoc 並驗證語法
-          python3 -c "import yaml; yaml.safe_load(open('tools/wiki-cleanup.sh'.replace('.sh','.yaml')))" 2>/dev/null || true
+          python3 -c "import yaml; yaml.safe_load(open('skills/dav-wiki/scripts/wiki-cleanup.sh'.replace('.sh','.yaml')))" 2>/dev/null || true
           # 簡單檢查 heredoc 開頭/結尾平衡
-          if grep -c "^PYEOF$" tools/wiki-cleanup.sh tools/wiki-cross-ref.sh | grep -v ":0$" | grep -v ":1$" | grep -v ":2$" >/dev/null; then
+          if grep -c "^PYEOF$" skills/dav-wiki/scripts/wiki-cleanup.sh skills/dav-wiki/scripts/wiki-cross-ref.sh | grep -v ":0$" | grep -v ":1$" | grep -v ":2$" >/dev/null; then
             echo "::warning::PYEOF marker count unexpected"
           fi
 

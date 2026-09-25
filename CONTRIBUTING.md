@@ -48,11 +48,11 @@ bats tests/wiki-cleanup.bats --filter "E1"
 markdownlint-cli2 "skills/dav-wiki/*.md" "docs/sop/handbook/dav-wiki-cleanup.md"
 
 # bash 語法
-bash -n tools/wiki-cleanup.sh
-bash -n tools/wiki-cross-ref.sh
+bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
+bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
 
 # SKILL.md 行數檢查（≤ 150）
-wc -l .agents/skills/dav-wiki/SKILL.md
+wc -l skills/dav-wiki/SKILL.md
 ```
 
 ## CI / GitHub Actions
@@ -77,15 +77,15 @@ CI badge：見 [README.md](README.md) 頂部。
 
 ## 程式碼風格
 
-- bash：使用 `while ... case ... shift` 旗標解析模式（見 `tools/wiki-cleanup.sh`）
+- bash：使用 `while ... case ... shift` 旗標解析模式（見 `skills/dav-wiki/scripts/wiki-cleanup.sh`）
 - markdown：遵守 `.markdownlint.json` 規則（MD013=120, MD022/MD032/MD040 等禁用）
 - YAML frontmatter：`docs/wiki/` 文件需含 `keywords` 欄位（3-5 個）
 - Skill 文件：SKILL.md ≤ 150 行，超出需在附件引用
 
 ## 工具
 
-- `tools/wiki-cleanup.sh`：清理 deprecated 文件
-- `tools/wiki-cross-ref.sh`：交叉引用演算法
+- `skills/dav-wiki/scripts/wiki-cleanup.sh`：清理 deprecated 文件
+- `skills/dav-wiki/scripts/wiki-cross-ref.sh`：交叉引用演算法
 - `tools/install.sh`：安裝 agent config
 
 ## Sprint / SOP

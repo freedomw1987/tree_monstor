@@ -92,7 +92,7 @@ teardown() {
 # === AC-MR1: index 工具產出含多模組索引 ===
 @test "AC-MR1: _index.json 加 images / videos / audios 索引" {
   cd "$WORK/docs/wiki"
-  run "$REPO_ROOT/tools/wiki-index.sh" --input-dir .
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input-dir .
   [ "$status" -eq 0 ]
 
   # _index.json 應含多模組索引欄位
@@ -105,7 +105,7 @@ teardown() {
 # === AC-MR2: index 從 frontmatter 讀多模組 ===
 @test "AC-MR2: index 從 frontmatter 讀多模組" {
   cd "$WORK/docs/wiki"
-  run "$REPO_ROOT/tools/wiki-index.sh" --input-dir .
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input-dir .
   [ "$status" -eq 0 ]
 
   # doc-a 含圖 → images 索引應有 a.png
@@ -119,7 +119,7 @@ teardown() {
 # === AC-MR3: --input 單個屬性 ===
 @test "AC-MR3: --input 單個 wiki 屬性也能產索引" {
   cd "$WORK"
-  run "$REPO_ROOT/tools/wiki-index.sh" --input "$WORK/docs/wiki/frontend/2026-01/doc-a.md"
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input "$WORK/docs/wiki/frontend/2026-01/doc-a.md"
   [ "$status" -eq 0 ]
   [ -f "$WORK/doc-a.index.json" ]
   grep -q "a.png" "$WORK/doc-a.index.json"
@@ -128,7 +128,7 @@ teardown() {
 # === AC-MR4: --input-dir 批次 ===
 @test "AC-MR4: --input-dir 批次掃描整個目錄" {
   cd "$WORK/docs/wiki"
-  run "$REPO_ROOT/tools/wiki-index.sh" --input-dir .
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input-dir .
   [ "$status" -eq 0 ]
   # 三個 doc 都應在 index
   grep -q "doc-a" _index.json
@@ -139,10 +139,10 @@ teardown() {
 # === AC-MR5: cross-ref 工具對多模組屬性產生交叉引用 ===
 @test "AC-MR5: cross-ref 對多模組屬性產生交叉引用" {
   cd "$WORK/docs/wiki"
-  "$REPO_ROOT/tools/wiki-index.sh" --input-dir . >/dev/null 2>&1
+  "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input-dir . >/dev/null 2>&1
 
   # 應讀 doc-a.md 的 frontmatter + index，產生 recommendations
-  run "$REPO_ROOT/tools/wiki-cross-ref.sh" --input "$WORK/docs/wiki/frontend/2026-01/doc-a.md"
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-cross-ref.sh" --input "$WORK/docs/wiki/frontend/2026-01/doc-a.md"
   [ "$status" -eq 0 ]
 
   # 輸出應為 JSON，含 recommendations 列表
@@ -180,9 +180,9 @@ images:
 EOF
 
   cd "$WORK/docs/wiki"
-  "$REPO_ROOT/tools/wiki-index.sh" --input-dir . >/dev/null 2>&1
+  "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input-dir . >/dev/null 2>&1
 
-  run "$REPO_ROOT/tools/wiki-cross-ref.sh" --input "$WORK/docs/wiki/frontend/2026-01/doc-d.md"
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-cross-ref.sh" --input "$WORK/docs/wiki/frontend/2026-01/doc-d.md"
   [ "$status" -eq 0 ]
 
   # doc-e 應在 doc-d 的 recommendations（共用 shared.png）
@@ -192,14 +192,14 @@ EOF
 
 # === AC-MR7: --help ===
 @test "AC-MR7: --help 顯示使用說明" {
-  run "$REPO_ROOT/tools/wiki-index.sh" --help
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]]
 }
 
 # === AC-MR8: 不存在的輸入 → 錯誤 ===
 @test "AC-MR8: 不存在的輸入 → exit 2" {
-  run "$REPO_ROOT/tools/wiki-index.sh" --input "/nonexistent/wiki.md"
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input "/nonexistent/wiki.md"
   [ "$status" -ne 0 ]
 }
 
@@ -207,13 +207,13 @@ EOF
 @test "AC-MR9: index 工具不修改源 wiki 屬性" {
   cd "$WORK/docs/wiki"
   before=$(shasum frontend/2026-01/doc-a.md | awk '{print $1}')
-  "$REPO_ROOT/tools/wiki-index.sh" --input-dir . >/dev/null 2>&1
+  "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input-dir . >/dev/null 2>&1
   after=$(shasum frontend/2026-01/doc-a.md | awk '{print $1}')
   [ "$before" = "$after" ]
 }
 
 # === AC-MR10: 沒給 --input ===
 @test "AC-MR10: 沒給 --input 或 --input-dir → exit 1" {
-  run "$REPO_ROOT/tools/wiki-index.sh"
+  run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh"
   [ "$status" -ne 0 ]
 }

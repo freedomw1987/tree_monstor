@@ -2,7 +2,7 @@
 #
 # tests/wiki-ocr.bats
 #
-# Black-box tests for tools/wiki-ocr.sh
+# Black-box tests for skills/dav-wiki/scripts/wiki-ocr.sh
 # Sprint 09: dav-wiki OCR 補強 (FR-2.2.3)
 #
 # Coverage:
@@ -22,7 +22,7 @@
 
 setup() {
   REPO_ROOT="$(git rev-parse --show-toplevel)"
-  TOOL="$REPO_ROOT/tools/wiki-ocr.sh"
+  TOOL="$REPO_ROOT/skills/dav-wiki/scripts/wiki-ocr.sh"
   WORK="$(mktemp -d -t wiki-ocr-test-XXXXXX)"
   export WORK
   # 預設 mock 模式

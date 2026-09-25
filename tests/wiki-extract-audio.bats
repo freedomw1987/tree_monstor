@@ -2,7 +2,7 @@
 #
 # tests/wiki-extract-audio.bats
 #
-# Black-box tests for tools/wiki-extract-audio.sh
+# Black-box tests for skills/dav-wiki/scripts/wiki-extract-audio.sh
 # Sprint 08: dav-wiki 多模組擴充 (FR-2.4)
 #
 # Coverage:
@@ -21,7 +21,7 @@
 
 setup() {
   REPO_ROOT="$(git rev-parse --show-toplevel)"
-  TOOL="$REPO_ROOT/tools/wiki-extract-audio.sh"
+  TOOL="$REPO_ROOT/skills/dav-wiki/scripts/wiki-extract-audio.sh"
   WORK="$(mktemp -d -t wiki-audio-test-XXXXXX)"
   export WORK
 }

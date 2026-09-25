@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# tools/wiki-cleanup.sh — TD-019 dav-wiki 軟刪除磁碟清理 CLI
+# skills/dav-wiki/scripts/wiki-cleanup.sh — TD-019 dav-wiki 軟刪除磁碟清理 CLI
 # 對應 docs/sop/handbook/dav-wiki-cleanup.md
 
 set -uo pipefail
 
 # Source shared logging helpers (lib/log.sh). Path resolves relative to
-# this script's location (../../lib/log.sh). Other tools/* scripts can
-# adopt the same pattern (see TODO note in tools/README-style docs).
+# this script's location (../../../lib/log.sh). Other scripts in
+# skills/dav-wiki/scripts/ can adopt the same pattern.
 # NOTE: We keep set -uo pipefail (no -e) so pipe failures can be handled
 # per-command (e.g. `ffmpeg ... || true`, Python heredoc that may raise).
 # ERR trap is intentionally NOT set because internal Python heredocs in
 # this script raise expected errors (e.g. _purge mode skips creating
 # _deprecated/, so the DEPRECATED_INDEX Python block fails harmlessly).
-_LOG_LIB="$(cd "$(dirname "$0")/.." && pwd)/lib/log.sh"
-# shellcheck source=../lib/log.sh
+_LOG_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/lib/log.sh"
+# shellcheck source=../../../lib/log.sh
 source "$_LOG_LIB"
 
 # === 預設值 ===

@@ -14,7 +14,7 @@ setup() {
 }
 
 # ---------- AC-1: skill folder structure ----------
-@test "AC-1: skill folder exists at .agents/skills/dav-wiki/" {
+@test "AC-1: skill folder exists at skills/dav-wiki/" {
   [ -d "$SKILL_DIR" ]
 }
 

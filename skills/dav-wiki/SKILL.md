@@ -26,7 +26,7 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 ### [1] 來源識別
 
 - 純文字 / .md → 直接讀
-- PDF / DOCX / PPTX → `tools/wiki-extract-media.sh` 提取文字 + 媒體
+- PDF / DOCX / PPTX → `skills/dav-wiki/scripts/wiki-extract-media.sh` 提取文字 + 媒體
 - URL → fetch_content
 - 圖片 → Vision 模型描述（FR-2.2）
 - 影片 / 音訊 → Whisper 轉字幕（FR-2.3 / FR-2.4）
@@ -114,7 +114,7 @@ docs/
 - 文件：`deprecated: true` 或 `superseded_by: "<path>"`
 - 概念：`deprecated: true` + `status: deprecated` + `superseded_by: "<slug>"` + 從 `_concepts.json` 移除
 
-**磁碟清理**：deprecated 超過 90 天的檔案可用 `tools/wiki-cleanup.sh` 移到 `docs/wiki/_deprecated/{YYYY-Qn}/`，
+**磁碟清理**：deprecated 超過 90 天的檔案可用 `skills/dav-wiki/scripts/wiki-cleanup.sh` 移到 `docs/wiki/_deprecated/{YYYY-Qn}/`，
 從主索引移除但保留可追溯。詳細見 [dav-wiki-cleanup hand book](../../../sop/handbook/dav-wiki-cleanup.md)。
 
 完整 schema 見 [[frontmatter-schema]]。

@@ -1,6 +1,6 @@
 # dav-wiki 清理手冊
 
-> 對應 SOP §X.X + TD-019 + `tools/wiki-cleanup.sh`
+> 對應 SOP §X.X + TD-019 + `skills/dav-wiki/scripts/wiki-cleanup.sh`
 
 ## 1. 為什麼要清理？
 
@@ -13,7 +13,7 @@
 
 ```
 原位置：docs/wiki/frontend/2026-01/old-doc.md（deprecated: true, date: 2025-09-01）
-  ↓ [wiki-cleanup.sh --older-than 90]
+  ↓ [skills/dav-wiki/scripts/wiki-cleanup.sh --older-than 90]
 新位置：docs/wiki/_deprecated/2025-Q3/old-doc.md（保留檔案 + 加 deprecated_moved_at）
 ```
 
@@ -45,7 +45,7 @@ docs/wiki/
 ### 3.1 互動模式（推薦首次使用）
 
 ```bash
-$ tools/wiki-cleanup.sh
+$ skills/dav-wiki/scripts/wiki-cleanup.sh
 [?] 找到 3 個 deprecated 檔案超過 90 天：
   - docs/wiki/frontend/2025-09/old-react-pattern.md (deprecated 2025-09-15)
   - docs/wiki/backend/2025-08/deprecated-api-design.md (deprecated 2025-08-30)
@@ -56,7 +56,7 @@ $ tools/wiki-cleanup.sh
 ### 3.2 Dry-run 模式
 
 ```bash
-$ tools/wiki-cleanup.sh --dry-run
+$ skills/dav-wiki/scripts/wiki-cleanup.sh --dry-run
 [INFO] Dry-run：不實際移動，僅顯示計畫
 [INFO] 會移動 3 個檔案到 _deprecated/2025-Q3/
   - frontend/2025-09/old-react-pattern.md
@@ -67,7 +67,7 @@ $ tools/wiki-cleanup.sh --dry-run
 ### 3.3 自動模式（CI / cron）
 
 ```bash
-$ tools/wiki-cleanup.sh --yes --older-than 90
+$ skills/dav-wiki/scripts/wiki-cleanup.sh --yes --older-than 90
 [INFO] --yes 模式：跳過互動確認
 [OK] 移動 3 個檔案
 [OK] 更新 _index.json（移除 3 筆）
@@ -141,7 +141,7 @@ $ mv docs/wiki/_deprecated/2025-Q3/old-react-pattern.md \
 $ # 然後手動更新 _index.json + _deprecated/_index.json
 ```
 
-未來可加 `tools/wiki-restore.sh` CLI（全自動反悔），但不在本 TD 範圍。
+未來可加 `skills/dav-wiki/scripts/wiki-restore.sh` CLI（全自動反悔），但不在本 TD 範圍。
 
 ## 8. 與其他章節的關係
 

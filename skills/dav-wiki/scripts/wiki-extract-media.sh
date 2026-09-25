@@ -267,11 +267,11 @@ echo "  - Manifest：$OUTPUT_DIR/manifest.json"
 
 # === Sprint 09 FR-2.2.3：OCR 補強（若已安裝 wiki-ocr.sh） ===
 if [[ "$img_count" -gt 0 ]]; then
-    REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-    if [[ -x "$REPO_ROOT/tools/wiki-ocr.sh" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ -x "$SCRIPT_DIR/wiki-ocr.sh" ]]; then
         echo ""
         echo "→ OCR 補強（FR-2.2.3）：對提取出的圖片跑 OCR"
-        if "$REPO_ROOT/tools/wiki-ocr.sh" --input-dir "$images_dir" --output-dir "$images_dir/ocr" 2>&1; then
+        if "$SCRIPT_DIR/wiki-ocr.sh" --input-dir "$images_dir" --output-dir "$images_dir/ocr" 2>&1; then
             echo "  ✓ OCR 完成 → $images_dir/ocr"
         else
             echo "  ⚠ OCR 失敗跳過 (FR-2.2.3 非阻塞)" >&2

@@ -9,7 +9,7 @@
 setup() {
     TEST_ROOT="$(mktemp -d)"
     cd "$TEST_ROOT"
-    CROSS_REF="$BATS_TEST_DIRNAME/../tools/wiki-cross-ref.sh"
+    CROSS_REF="$BATS_TEST_DIRNAME/../skills/dav-wiki/scripts/wiki-cross-ref.sh"
 
     # 建立 _index.json，含 4 個既有 doc
     cat > _index.json <<EOF

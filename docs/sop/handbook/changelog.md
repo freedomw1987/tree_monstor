@@ -4,6 +4,43 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v1.7 — 2026-09-25
+
+**本版異動**：dav-wiki 工具目錄重組（從 `tools/wiki-*.sh` → `skills/dav-wiki/scripts/wiki-*.sh`）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | -- |
+| **P1** | `skills/dav-wiki/scripts/` 新建 | 9 個 wiki-*.sh 從 `tools/` 搬入；dav-wiki skill 變 self-contained |
+| **P0** | `wiki-extract-media.sh` 內 OCR 呼叫改 sibling ref | 原用 `$REPO_ROOT/tools/wiki-ocr.sh` 會解析為 `skills/dav-wiki/`，名實不符且 OCR 會靜默失效；改為 `$SCRIPT_DIR/wiki-ocr.sh`（直接呼叫 sibling） |
+| **P1** | `wiki-cross-ref.sh` stderr 提示更新 | 提示用戶執行新路徑（避免誤指） |
+| **P1** | `tests/wiki-*.bats`（9 個）+ `wiki-cross-ref-multimodal.bats`（9 處）+ `wiki-merge-media.bats` 等共 10 個 bats 測試 | 路徑從 `tools/wiki-*.sh` 改為 `skills/dav-wiki/scripts/wiki-*.sh` |
+| **P1** | `tests/ci-linux.bats`（3 處） | 硬編 `/Users/apple/www/tree_monstor/...` 絕對路徑 → 改用 `$REPO_ROOT/...`（順手修硬編 bug） |
+| **P1** | `.github/workflows/ci.yml`（6 處） | `bash -n`、wc -l、PYEOF 檢查全部更新路徑 |
+| **順手修** | `.github/workflows/ci.yml:51` + `CONTRIBUTING.md:55` | 原讀取 `.agents/skills/dav-wiki/SKILL.md`（被 gitignore，CI fresh checkout 不存在）；改為 `skills/dav-wiki/SKILL.md`（順手修兩個檔） |
+| **P1** | `docs/sop/handbook/dav-wiki-cleanup.md`（5 處） | 指令範例 + 流程圖更新為新路徑 |
+| **P1** | `skills/dav-wiki/SKILL.md`（2 處） | `wiki-extract-media.sh`、`wiki-cleanup.sh` 引用更新 |
+| **P2** | `CONTRIBUTING.md`（4 處） | 路徑引用更新 |
+
+**決策翻轉依據**（為什麼當初 TMO-005 不拆 vs 現在拆）
+
+**當初（TMO-005，2026-09-23）**：判定不拆 `tools/wiki/` 子目錄，理由是「bats 引用絕對路徑會 breaking change」。
+
+**本次（v1.7）**：採拆 `skills/dav-wiki/scripts/`（不是 `tools/wiki/`，是搬到 skill 內）。
+
+**翻轉依據**：
+1. **當初問題已不存在**：v1.4 changelog 已為 bats 加了 `$REPO_ROOT` 標準化（`tests/helpers/test-env.bash`），絕對路徑依賴已消除
+2. **新需求觸發**：skill self-contained 是 dav-wiki install.sh 簡化部署的關鍵（`install.sh` 把整個 `skills/dav-wiki/` 一起 symlink 進 `~/.pi/skills/dav-wiki/` 時，scripts 也跟著安裝，UX 一致）
+3. **成本 vs 收益**：bats 10 個檔案機械式路徑替換 ≈ 30 分鐘；換來未來 install.sh 簡化 50%+、skill 真正 self-contained
+4. **不再破壞向後相容**：本次確認無外部用戶（無下游依賴 `tools/wiki-*`）；TMO-005 加註 superseded by v1.7
+
+**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03），驗證：
+- audit 補遺漏（`wiki-cross-ref-multimodal.bats` 9 處 + `wiki-video-audio.bats`）
+- `wiki-extract-media.sh` 內 OCR 呼叫改 sibling reference（避免解析錯誤）
+- 順手修 `.agents/skills/...` 路徑 bug（CI + CONTRIBUTING）
+- Reviewer verdict: PASS with Conditions（4 必改 + 用戶批准 2 順手修全部接受）
+
+---
+
 ## v1.6 — 2026-09-25
 
 **本版異動**：dav-planner skill 新增 SWOT 分析機制（關鍵決策點展開）

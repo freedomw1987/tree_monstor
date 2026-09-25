@@ -42,7 +42,7 @@ teardown() {
 }
 
 @test "ci-linux: wiki-cleanup 在 Linux 環境正常運作（GNU date）" {
-    run /Users/apple/www/tree_monstor/tools/wiki-cleanup.sh --target "$TEST_ROOT/docs" --yes --older-than 90
+    run $REPO_ROOT/skills/dav-wiki/scripts/wiki-cleanup.sh --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     # 應搬走
     [ -f "$TEST_ROOT/docs/wiki/_deprecated/2025-Q1/linux-test.md" ]
@@ -58,7 +58,7 @@ teardown() {
 }
 
 @test "ci-linux: README 重建在 Linux 環境可執行" {
-    /Users/apple/www/tree_monstor/tools/wiki-cleanup.sh --target "$TEST_ROOT/docs" --yes --older-than 90 >/dev/null 2>&1
+    $REPO_ROOT/skills/dav-wiki/scripts/wiki-cleanup.sh --target "$TEST_ROOT/docs" --yes --older-than 90 >/dev/null 2>&1
     # README 重建後存在
     [ -f "$TEST_ROOT/docs/README.md" ]
 }
@@ -67,6 +67,6 @@ teardown() {
     # 建立 LF 結尾檔案
     printf "title: test\ndeprecated: true\n" > "$TEST_ROOT/docs/wiki/frontend/2025-09/crlf-test.md"
     # 工具不應該 crash
-    run /Users/apple/www/tree_monstor/tools/wiki-cleanup.sh --target "$TEST_ROOT/docs" --yes --older-than 90 --dry-run
+    run $REPO_ROOT/skills/dav-wiki/scripts/wiki-cleanup.sh --target "$TEST_ROOT/docs" --yes --older-than 90 --dry-run
     [ "$status" -eq 0 ]
 }

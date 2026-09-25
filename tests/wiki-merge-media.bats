@@ -2,7 +2,7 @@
 #
 # tests/wiki-merge-media.bats
 #
-# Black-box tests for tools/wiki-merge-media.sh
+# Black-box tests for skills/dav-wiki/scripts/wiki-merge-media.sh
 # Sprint 08: dav-wiki 多模組擴充 (FR-2.2.4 + FR-2.5.1)
 #
 # Coverage:
@@ -22,7 +22,7 @@
 
 setup() {
   REPO_ROOT="$(git rev-parse --show-toplevel)"
-  TOOL="$REPO_ROOT/tools/wiki-merge-media.sh"
+  TOOL="$REPO_ROOT/skills/dav-wiki/scripts/wiki-merge-media.sh"
   WORK="$(mktemp -d -t wiki-merge-test-XXXXXX)"
   export WORK
 }

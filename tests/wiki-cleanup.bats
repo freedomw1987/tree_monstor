@@ -6,7 +6,7 @@ setup() {
     mkdir -p "$TEST_ROOT/docs/wiki/frontend/2025-09"
     mkdir -p "$TEST_ROOT/docs/concepts"
     cd "$TEST_ROOT"
-    WIKI_CLEANUP="$BATS_TEST_DIRNAME/../tools/wiki-cleanup.sh"
+    WIKI_CLEANUP="$BATS_TEST_DIRNAME/../skills/dav-wiki/scripts/wiki-cleanup.sh"
 
     # 建立一個超過 90 天的 deprecated 檔案
     cat > "$TEST_ROOT/docs/wiki/frontend/2025-09/old-react-pattern.md" <<EOF

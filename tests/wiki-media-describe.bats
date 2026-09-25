@@ -2,7 +2,7 @@
 #
 # tests/wiki-media-describe.bats
 #
-# Black-box tests for tools/wiki-media-describe.sh
+# Black-box tests for skills/dav-wiki/scripts/wiki-media-describe.sh
 # Sprint 08: dav-wiki 多模組擴充 (FR-2.6.2)
 #
 # Coverage:
@@ -24,7 +24,7 @@
 
 setup() {
   REPO_ROOT="$(git rev-parse --show-toplevel)"
-  TOOL="$REPO_ROOT/tools/wiki-media-describe.sh"
+  TOOL="$REPO_ROOT/skills/dav-wiki/scripts/wiki-media-describe.sh"
   WORK="$(mktemp -d -t wiki-describe-test-XXXXXX)"
   export WORK
   # 確保 mock 模式（測試環境不連真實 API）

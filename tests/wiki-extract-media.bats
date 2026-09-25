@@ -2,7 +2,7 @@
 #
 # tests/wiki-extract-media.bats
 #
-# Black-box tests for tools/wiki-extract-media.sh
+# Black-box tests for skills/dav-wiki/scripts/wiki-extract-media.sh
 # Sprint 08: dav-wiki 多模組擴充 (FR-2.6.1)
 #
 # Coverage:
@@ -22,7 +22,7 @@
 
 setup() {
   REPO_ROOT="$(git rev-parse --show-toplevel)"
-  TOOL="$REPO_ROOT/tools/wiki-extract-media.sh"
+  TOOL="$REPO_ROOT/skills/dav-wiki/scripts/wiki-extract-media.sh"
   WORK="$(mktemp -d -t wiki-extract-test-XXXXXX)"
   export WORK
 }

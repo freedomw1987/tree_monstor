@@ -109,7 +109,7 @@ if [[ "$INPUT_MODE" == true ]]; then
     fi
     if [[ ! -f "$INDEX_FILE" ]]; then
         echo "[ERROR] index file '$INDEX_FILE' does not exist" >&2
-        echo "  hint: run tools/wiki-index.sh --input-dir $INPUT_DIR first" >&2
+        echo "  hint: run skills/dav-wiki/scripts/wiki-index.sh --input-dir $INPUT_DIR first" >&2
         exit 3
     fi
 
