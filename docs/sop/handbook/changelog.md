@@ -4,6 +4,25 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v1.6 — 2026-09-25
+
+**本版異動**：dav-planner skill 新增 SWOT 分析機制（關鍵決策點展開）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | -- |
+| **P1** | `~/.pi/agent/skills/dav-planner/SKILL.md` §2.6 新增「關鍵決策點 SWOT」 | 4 個觸發條件（不可逆變更 / 高成本 / 用戶糾結 / 戰略級影響）+ SWOT 標準格式 + V01 相容的逐項追問節奏 + V02 復用條款 + 自我檢查清單 + 情境 A/B 對照範例 |
+| **P1** | `dav-planner/SKILL.md` §4.3.1 新增「SWOT 落版規則」 | 只記最終選項的 SWOT、加在 AC 欄（不新增 column）、純文字前綴（`<br>` 分行，**不用 `>` blockquote**，因 markdown 表格 cell 渲染不一致） |
+| **P1** | `2.1-planning.md` Plan Gate 通過聲明加「SWOT 落版（如有）」選填欄 | 對應 §2.6 與 §4.3.1；如有展開 SWOT 才填 |
+| **同步** | `tree_monstor/skills/dav-planner/SKILL.md`（如為獨立檔案，非 hardlink） | 與 `~/.pi/agent/skills/dav-planner/SKILL.md` 同步 |
+
+**目的**：讓 dav-planner 在「關鍵決策點」不只是給一句話效果說明，而是展開策略性 SWOT（Strengths/Weaknesses/Opportunities/Threats），協助用戶做更完整的策略性決策；同時保留 §2.2 的輕量路徑，避免認知過載（不每個選項都做 SWOT）。
+
+**觸發條件**：用戶提出 dav-planner skill 優化需求，2026-09-25 確認方向（只在關鍵決策點用 / Agent 草案+用戶驗證 / 對話+落版備註）。
+
+**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03 SOP 修改規則），驗證跨 SOP 一致性 + Markdown 表格渲染風險。Reviewer verdict: PASS with Conditions，已接受全部 10 項修訂（4 必改 + 3 強烈建議 + 3 可選）。
+
+---
+
 ## v1.5 — 2026-09-23
 
 **本版異動**：修正 §2.0 表格與 §2.6 之間的立場矛盾（從「角色混淆」重新定位為「自動升級規則不一致」）
