@@ -4,6 +4,81 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v1.7.1 — 2026-09-25
+
+**本版異動**：v1.7 後續技術債清理（UTF-8 bug + `.agents/` 歷史殘留 + TMO-005 關閉 + 順手修 latent bug）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | -- |
+| **P1** | 5 個 bats 中文 test name 改為英文 | `dav-wiki.bats`、`ci-linux.bats`、`wiki-cleanup.bats`、`wiki-cross-ref.bats`、`wiki-cross-ref-multimodal.bats` 共 ~47 個 test 改為純 ASCII 名（移除中文括號內容 / 中文描述）；功能保留（test 內 `grep -iE "英文\|中文"` 仍同時驗中英文） |
+| **P0** | 順手修 `skills/dav-wiki/scripts/wiki-cleanup.sh:336` | 中文 log message 與 `$var` 未加 `${}` 包裹，`set -uo pipefail` 下拋 `unbound variable`（v1.7 之前已存在，被 homebrew bats UTF-8 bug 掩蓋）；修為「完成：移動 ${moved}、跳過 ${skipped}、失敗 ${errors}」 |
+| **P1** | 順手修 `tests/ci-linux.bats` setup | 補上 `REPO_ROOT="$(git rev-parse --show-toplevel)"`（原本 setup 沒設 `$REPO_ROOT`，導致 `$REPO_ROOT/skills/...` 變 `/skills/...`，run 指令找不到腳本） |
+| **P1** | `docs/system-design.md:195` | `docs/.agents/skills/dav-wiki/concept-evolution.md` → `../skills/dav-wiki/concept-evolution.md`（Reviewer 補遺：需加 `../` 前綴才不會斷 link） |
+| **P1** | `docs/system-design.md:432` | `.agents/skills/dav-wiki/` → `skills/dav-wiki/`（檔案結構樹） |
+| **P1** | `docs/system-design.md:450` | `tree_monstor/.agents/skills/dav-wiki/` → `tree_monstor/skills/dav-wiki/`（install.sh 對應說明） |
+| **P1** | `docs/DESIGN.md:249` | `../.agents/skills/dav-skill-creater/SKILL.md` → `../skills/dav-skill-creater/SKILL.md`（Reviewer 補遺） |
+| **P1** | `CONTRIBUTING.md:100` | `各 .agents/skills/*/SKILL.md` → `各 skills/*/SKILL.md`（Reviewer 補遺） |
+| **P2** | `docs/backlog.md` TMO-005 關閉 | status `pending` → `done`；加說明 v1.7 翻轉 + v1.7.1 順手修 |
+
+**為什麼現在才暴露 wiki-cleanup.sh:336 bug**：
+- v1.7 之前此 bug 已存在（git show HEAD~1:tools/wiki-cleanup.sh line 336 一模一樣）
+- 但被 homebrew bats UTF-8 bug **掩蓋**：19 個 wiki-cleanup test 全部中文，bats 跳過 → `unbound variable` 未被觸發
+- v1.7.1 改中文 test name 後，bats 開始跑 test → bug 浮現（14 個 fail）
+- CI workflow 只做 `bash -n` + `markdownlint`（不跑 bats），所以這個 bug 在 CI 永遠抓不到
+
+**為什麼這次不改 TMO-005 原始目標「tools/ 統一 logging」**：
+- TMO-005 原始內容是「tools/ 統一 logging（修正版：trap + 共用 log_*）」
+- v1.7 已將 wiki 工具搬離 `tools/`，目標位置變更
+- 統一 logging 在 dav-wiki 已是 `lib/log.sh` 共享（每個 wiki-*.sh source 同一個）
+- TMO-005 範圍已通過 v1.7 + v1.7.1 完成，無未盡事項
+
+**Audit 發現**：
+- homebrew bats UTF-8 處理 bug 為環境問題，需升級 bats 版本或 patch homebrew formula，**不在本次 scope**
+
+**最終 audit（Reviewer 二審 + 重審後修正）**：
+
+| 檔案 | 中文 test name 數 / 總數 | 處理 |
+| --- | --- | --- |
+| `tests/dav-wiki.bats` | 4 / 20 | ✅ 改英文 |
+| `tests/ci-linux.bats` | 5 / 5 | ✅ 改英文 |
+| `tests/wiki-cleanup.bats` | 19 / 19 | ✅ 改英文 |
+| `tests/wiki-cross-ref.bats` | 10 / 10 | ✅ 改英文 |
+| `tests/wiki-cross-ref-multimodal.bats` | 10 / 10 | ✅ 改英文 |
+| `tests/wiki-extract-audio.bats` | 10 / 10 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/wiki-extract-media.bats` | 20 / 20 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/wiki-extract-video.bats` | 11 / 11 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/wiki-media-describe.bats` | 16 / 16 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/wiki-merge-media.bats` | 12 / 12 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/wiki-ocr.bats` | 10 / 10 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/wiki-video-audio.bats` | 10 / 10 | ✅ 改英文（Reviewer 二審補遺） |
+| `tests/agents-md.bats` | 0 / 10 | ⏭️ 無需改 |
+| `tests/install.bats` | 0 / 41 | ⏭️ 無需改 |
+| `tests/regression-guard-watch-mode.bats` | 0 / 5 | ⏭️ 無需改 |
+| **合計** | **137 / 209** | **15 個 bats 全改完** |
+
+**為什麼 Reviewer 二審補遺必要**：初版 audit 誤判「其他 7 個 wiki-*.bats 無中文」，違背 AGENTS.md §1 「誠實和用戶溝通」。Reviewer 獨立 audit 抓出實際遺漏 7 個 bats / 89 個 test。採方案 A（順手改完）保證 macOS 本地全綠。
+
+**順手修 latent bugs**（utf-8 改中文 test name 後浮現）：
+
+| 檔案 | 行號 | 問題 | 修法 |
+| --- | --- | --- | --- |
+| `skills/dav-wiki/scripts/wiki-cleanup.sh` | 336 | `set -uo pipefail` 下中文 log message 與 `$var` 解析冲突（$moved 被吃掉） | 加 `${}` 包裹 |
+| `skills/dav-wiki/scripts/wiki-extract-media.sh` | 233 | 同上（$TYPE 被吃掉） | 加 `${}` 包裹 |
+| `skills/dav-wiki/scripts/wiki-extract-media.sh` | 264 | 同上（$images_dir 被吃掉） | 加 `${}` 包裹 |
+| `tests/ci-linux.bats` | setup | 原本 setup 沒設 `$REPO_ROOT`，导致 `$REPO_ROOT/skills/...` 變 `/skills/...` | 加 `REPO_ROOT="$(git rev-parse --show-toplevel)"` |
+
+**驗證證據**：
+- Gate 1：15 個 bats / 209 個 tests 全部執行 + 全綠（v1.7 之前為 0 tests executed）
+- Gate 2：9 個 wiki-*.sh pass `bash -n`
+- Gate 3：regression == Gate 1
+
+**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03）兩次：
+- 首次審查：FAIL（4 P0 blockers：选 6 個 bats 事實錯誤、漏 wiki-cross-ref 系列、system-design.md:195 缺 `../` 前綴、漏 DESIGN.md + CONTRIBUTING.md 殘留）
+- 重審：FAIL（1 P0 blocker：漏 7 個未改的 wiki-*.bats，含 89 個中文 test name）
+- 最終審查（包含上進全部修正後）：仍待續審
+
+---
+
 ## v1.7 — 2026-09-25
 
 **本版異動**：dav-wiki 工具目錄重組（從 `tools/wiki-*.sh` → `skills/dav-wiki/scripts/wiki-*.sh`）

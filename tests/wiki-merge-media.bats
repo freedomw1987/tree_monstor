@@ -49,7 +49,7 @@ EOF
 }
 
 # === AC-M1: 合併 media 進 frontmatter ===
-@test "AC-M1: 把圖片 manifest 合併進 frontmatter" {
+@test "AC-M1: merge images manifest into frontmatter" {
   create_wiki
 
   cat > "$WORK/media.json" <<'EOF'
@@ -69,7 +69,7 @@ EOF
 }
 
 # === AC-M2: 圖片加入 images 陣列 ===
-@test "AC-M2: images 陣列含 caption / alt_text / source" {
+@test "AC-M2: images caption / alt_text / source" {
   create_wiki
 
   cat > "$WORK/media.json" <<'EOF'
@@ -90,7 +90,7 @@ EOF
 }
 
 # === AC-M3: 影片加入 videos 陣列 ===
-@test "AC-M3: 影片 manifest → videos 陣列" {
+@test "AC-M3: manifest adds videos" {
   create_wiki
 
   cat > "$WORK/media.json" <<'EOF'
@@ -110,7 +110,7 @@ EOF
 }
 
 # === AC-M4: 音訊加入 audios 陣列 ===
-@test "AC-M4: 音訊 manifest → audios 陣列" {
+@test "AC-M4: manifest adds audios" {
   create_wiki
 
   cat > "$WORK/media.json" <<'EOF'
@@ -130,7 +130,7 @@ EOF
 }
 
 # === AC-M5: 不破壞既有欄位 ===
-@test "AC-M5: 既有 frontmatter 欄位保留" {
+@test "AC-M5: frontmatter" {
   create_wiki
 
   cat > "$WORK/media.json" <<'EOF'
@@ -150,7 +150,7 @@ EOF
 }
 
 # === AC-M6: 不破壞 markdown 內容 ===
-@test "AC-M6: markdown body 保留" {
+@test "AC-M6: markdown body" {
   create_wiki
 
   cat > "$WORK/media.json" <<'EOF'
@@ -170,7 +170,7 @@ EOF
 }
 
 # === AC-M7: --dry-run ===
-@test "AC-M7: --dry-run 不修改檔案" {
+@test "AC-M7: --dry-run no changes" {
   create_wiki
   cp "$WORK/wiki.md" "$WORK/wiki.md.bak"
 
@@ -190,33 +190,33 @@ EOF
 }
 
 # === AC-M8: 沒給 wiki ===
-@test "AC-M8: 沒給 --wiki → exit 1" {
+@test "AC-M8: missing --wiki → exit 1" {
   run "$TOOL" --media "$WORK/media.json" --media-type image
   [ "$status" -ne 0 ]
 }
 
 # === AC-M9: 不存在的 wiki ===
-@test "AC-M9: 不存在的 wiki 檔 → exit 2" {
+@test "AC-M9: nonexistent wiki → exit 2" {
   run "$TOOL" --wiki "/nonexistent/wiki.md" --media "$WORK/media.json" --media-type image
   [ "$status" -ne 0 ]
 }
 
 # === AC-M10: 沒給 media ===
-@test "AC-M10: 沒給 --media → exit 1" {
+@test "AC-M10: missing --media → exit 1" {
   create_wiki
   run "$TOOL" --wiki "$WORK/wiki.md" --media-type image
   [ "$status" -ne 0 ]
 }
 
 # === AC-M11: --help ===
-@test "AC-M11: --help 顯示使用說明" {
+@test "AC-M11: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]]
 }
 
 # === AC-M12: 多個媒體依序合併 ===
-@test "AC-M12: 多次合併累加（圖片 1 → 圖片 2 → 影片 1）" {
+@test "AC-M12: idempotent merge on re-run" {
   create_wiki
 
   # 第一次：圖片 1

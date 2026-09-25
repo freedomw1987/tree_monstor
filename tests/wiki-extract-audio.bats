@@ -31,7 +31,7 @@ teardown() {
 }
 
 # === AC-A1: metadata 提取 ===
-@test "AC-A1: 音訊 metadata 提取（時長 / codec）" {
+@test "AC-A1: metadata extraction (duration/codec)" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=2" \
          "$WORK/test.wav" -y 2>/dev/null
   run "$TOOL" --input "$WORK/test.wav" --output-dir "$WORK/out"
@@ -42,7 +42,7 @@ teardown() {
 }
 
 # === AC-A2: 音訊標準化（WAV 16kHz mono） ===
-@test "AC-A2: 音訊標準化 → WAV 16kHz mono" {
+@test "AC-A2: audio normalization to WAV 16kHz mono" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=2" \
          -ar 44100 -ac 2 \
          "$WORK/test_stereo.wav" -y 2>/dev/null
@@ -57,7 +57,7 @@ teardown() {
 }
 
 # === AC-A3: 音訊分段 ===
-@test "AC-A3: 長音訊分段（每 30 秒一段）" {
+@test "AC-A3: audio segmentation by duration" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=5" \
          "$WORK/long.wav" -y 2>/dev/null
   run "$TOOL" --input "$WORK/long.wav" --output-dir "$WORK/out" \
@@ -69,7 +69,7 @@ teardown() {
 }
 
 # === AC-A4: --no-normalize ===
-@test "AC-A4: --no-normalize 跳過標準化" {
+@test "AC-A4: --no-normalize skips normalization" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
          "$WORK/test.wav" -y 2>/dev/null
   run "$TOOL" --input "$WORK/test.wav" --output-dir "$WORK/out" --no-normalize
@@ -79,20 +79,20 @@ teardown() {
 }
 
 # === AC-A5: 不存在檔案 ===
-@test "AC-A5: 不存在的音訊 → exit 2" {
+@test "AC-A5: missing-input-file exit 2" {
   run "$TOOL" --input "/nonexistent/audio.wav" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
 
 # === AC-A6: --help ===
-@test "AC-A6: --help 顯示使用說明" {
+@test "AC-A6: --help" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]]
 }
 
 # === AC-A7: manifest.json 產出 ===
-@test "AC-A7: manifest.json 含必要欄位" {
+@test "AC-A7: manifest.json has expected fields" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=2" \
          "$WORK/test.wav" -y 2>/dev/null
   run "$TOOL" --input "$WORK/test.wav" --output-dir "$WORK/out"
@@ -105,13 +105,13 @@ teardown() {
 }
 
 # === AC-A8: 沒給 --input ===
-@test "AC-A8: 沒給 --input → exit 1" {
+@test "AC-A8: missing --input → exit 1" {
   run "$TOOL" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
 
 # === AC-A9: 不支援的格式 ===
-@test "AC-A9: 不支援的副檔名 → 警告但不中斷（輸出 manifest）" {
+@test "AC-A9: input dir → manifest aggregation" {
   echo "fake" > "$WORK/fake.xyz"
   run "$TOOL" --input "$WORK/fake.xyz" --output-dir "$WORK/out"
   # 接受 0 或非 0，不要 crash
@@ -120,7 +120,7 @@ teardown() {
 }
 
 # === AC-A10: 段落檔案命名規律 ===
-@test "AC-A10: 段落檔案命名 segment-NNN.wav" {
+@test "AC-A10: segments named segment-NNN.wav" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=4" \
          "$WORK/long.wav" -y 2>/dev/null
   run "$TOOL" --input "$WORK/long.wav" --output-dir "$WORK/out" \

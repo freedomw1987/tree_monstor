@@ -13,7 +13,7 @@
 | TMO-002 | install.sh 拆 lib/install/*.sh 子模組 | P1 | 5 | pending | TMO-001 |
 | TMO-003 | 補缺 wiki bats + 修 README badge 數字 | P2 | 3 | pending | TMO-002 |
 | TMO-004 | AGENTS.md §2.0/§2.6 重構 + Reviewer 二審 | P0 | 5 | pending | TMO-001 |
-| TMO-005 | tools/ 統一 logging（修正版：trap + 共用 log_*） | P2 | 3 | pending | TMO-001 | ~~TMO-005「不拆 tools/wiki/ 子目錄」決策已被 v1.7 changelog 翻轉（搬到 `skills/dav-wiki/scripts/`），參見 [changelog v1.7](./sop/handbook/changelog.md#v17--2026-09-25)。~~ |
+| TMO-005 | tools/ 統一 logging（修正版：trap + 共用 log_*） | P2 | 3 | done | TMO-001 | ✅ 2026-09-25 完成（v1.7 翻轉決策拆 `skills/dav-wiki/scripts/`；v1.7.1 順手修 wiki-cleanup.sh 中文 log 變數解析 bug）。原始決策紀錄保留（trust-log 2026-09-23 + v1.7 changelog）。 |
 
 ---
 

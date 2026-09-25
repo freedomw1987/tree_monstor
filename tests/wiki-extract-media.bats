@@ -32,7 +32,7 @@ teardown() {
 }
 
 # ---------- AC-E1: PDF 圖片提取 ----------
-@test "AC-E1: PDF 圖片提取到指定目錄" {
+@test "AC-E1: PDF image extraction to output dir" {
   [ -x "$TOOL" ]
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
@@ -45,7 +45,7 @@ teardown() {
 }
 
 # ---------- AC-E2: PDF 文字提取 ----------
-@test "AC-E2: PDF 文字提取（pdftotext）" {
+@test "AC-E2: PDF text extraction via pdftotext" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
               --type pdf
@@ -56,7 +56,7 @@ teardown() {
 }
 
 # ---------- AC-E3: DOCX 媒體提取 ----------
-@test "AC-E3: DOCX 媒體提取到 images/" {
+@test "AC-E3: DOCX image extraction" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/docx-multimodal/mixed.docx" \
               --output-dir "$WORK/out" \
               --type docx
@@ -67,7 +67,7 @@ teardown() {
 }
 
 # ---------- AC-E4: DOCX 文字提取 ----------
-@test "AC-E4: DOCX 文字提取（pandoc）" {
+@test "AC-E4: DOCX text extraction via pandoc" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/docx-multimodal/mixed.docx" \
               --output-dir "$WORK/out" \
               --type docx
@@ -77,7 +77,7 @@ teardown() {
 }
 
 # ---------- AC-E5: PPTX 媒體提取 ----------
-@test "AC-E5: PPTX 媒體提取（python-pptx）" {
+@test "AC-E5: PPTX extraction via python-pptx" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pptx-multimodal/mixed.pptx" \
               --output-dir "$WORK/out" \
               --type pptx
@@ -88,7 +88,7 @@ teardown() {
 }
 
 # ---------- AC-E6: PPTX 文字提取 ----------
-@test "AC-E6: PPTX 文字提取（pandoc）" {
+@test "AC-E6: PPTX text via pandoc" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pptx-multimodal/mixed.pptx" \
               --output-dir "$WORK/out" \
               --type pptx
@@ -98,7 +98,7 @@ teardown() {
 }
 
 # ---------- AC-E7: 邊緣案例 - 不存在的檔案 ----------
-@test "AC-E7: 不存在的檔案 → exit 2 + 錯誤訊息" {
+@test "AC-E7: missing input → exit 2 + error" {
   run "$TOOL" --input "/nonexistent/file.pdf" \
               --output-dir "$WORK/out" \
               --type pdf
@@ -107,7 +107,7 @@ teardown() {
 }
 
 # ---------- AC-E8: 邊緣案例 - 不支援的格式 ----------
-@test "AC-E8: 不支援的格式 → exit 3 + 錯誤訊息" {
+@test "AC-E8: invalid format → exit 3 + error" {
   echo "fake content" > "$WORK/fake.xyz"
   run "$TOOL" --input "$WORK/fake.xyz" \
               --output-dir "$WORK/out" \
@@ -116,7 +116,7 @@ teardown() {
 }
 
 # ---------- AC-E9: --output-dir 預設值（無旗標）----------
-@test "AC-E9: 沒給 --output-dir 也能跑（預設 ./out）" {
+@test "AC-E9: --output-dir ./out" {
   cd "$WORK"
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" --type pdf
   [ "$status" -eq 0 ]
@@ -124,7 +124,7 @@ teardown() {
 }
 
 # ---------- AC-E10: --no-images 旗標 ----------
-@test "AC-E10: --no-images 跳過圖片提取" {
+@test "AC-E10: --no-images" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
               --type pdf \
@@ -135,7 +135,7 @@ teardown() {
 }
 
 # ---------- AC-E11: --no-text 旗標 ----------
-@test "AC-E11: --no-text 跳過文字提取" {
+@test "AC-E11: --no-text" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
               --type pdf \
@@ -146,7 +146,7 @@ teardown() {
 }
 
 # ---------- AC-E12: --type 自動偵測（從副檔名）----------
-@test "AC-E12: 不給 --type 時自動從副檔名偵測" {
+@test "AC-E12: --type" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out"
   [ "$status" -eq 0 ]
@@ -155,20 +155,20 @@ teardown() {
 }
 
 # ---------- AC-E13: --help 旗標 ----------
-@test "AC-E13: --help 顯示使用說明" {
+@test "AC-E13: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]] || [[ "$output" =~ "Usage" ]]
 }
 
 # ---------- AC-E14: 沒給必填 --input ----------
-@test "AC-E14: 沒給 --input → 錯誤訊息" {
+@test "AC-E14: missing --input → error" {
   run "$TOOL" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
 
 # ---------- AC-E15: manifest.json 產出 ----------
-@test "AC-E15: 產出 manifest.json 記錄 metadata" {
+@test "AC-E15: manifest.json metadata fields" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
               --type pdf
@@ -180,7 +180,7 @@ teardown() {
 }
 
 # ---------- AC-E16: 純文字 PDF（無圖）不應該報錯 ----------
-@test "AC-E16: 純文字 PDF（無圖）不報錯，images/ 為空" {
+@test "AC-E16: PDF images/ dir created" {
   # 用 pdftotext 產生純文字 PDF（透過 markdown -> pandoc pdf）
   # 跳過：這需要 LaTeX。我們測試一個能產出空圖目錄的場景
   # 用 sample.pdf （圖在但都是白底）測試 extract 成功
@@ -191,7 +191,7 @@ teardown() {
 }
 
 # ---------- AC-E17: --type 與副檔名不一致時優先 --type ----------
-@test "AC-E17: --type 強制覆蓋副檔名" {
+@test "AC-E17: --type filters output" {
   cp "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" "$WORK/renamed.txt"
   run "$TOOL" --input "$WORK/renamed.txt" \
               --output-dir "$WORK/out" \
@@ -201,7 +201,7 @@ teardown() {
 }
 
 # ---------- AC-E18: 旗標解析容錯（未知旗標）----------
-@test "AC-E18: 未知旗標 → 錯誤訊息 + exit 1" {
+@test "AC-E18: unsupported → + exit 1" {
   run "$TOOL" --unknown-flag foo \
               --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf"
   [ "$status" -eq 1 ]
@@ -209,7 +209,7 @@ teardown() {
 }
 
 # ---------- AC-E19: 相對路徑輸入 ----------
-@test "AC-E19: 相對路徑輸入也能跑" {
+@test "AC-E19: --output-dir default ./out" {
   cd "$REPO_ROOT"
   run "$TOOL" --input "tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
@@ -219,7 +219,7 @@ teardown() {
 }
 
 # ---------- AC-E20: image_count 在 manifest 正確 ----------
-@test "AC-E20: manifest 的 image_count 等於實際圖片數" {
+@test "AC-E20: manifest has image_count" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf" \
               --output-dir "$WORK/out" \
               --type pdf

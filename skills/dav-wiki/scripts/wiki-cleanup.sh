@@ -333,7 +333,7 @@ with open(index_file, "w") as f:
 PYEOF
 fi
 
-log_ok "完成：移動 $moved、跳過 $skipped、失敗 $errors"
+log_ok "完成：移動 ${moved}、跳過 ${skipped}、失敗 ${errors}"
 
 # === step [9]：重建 docs/README.md ===
 # 使用 _index.json 「主刪前」的快照，但在 _index.json 已更新後重建。

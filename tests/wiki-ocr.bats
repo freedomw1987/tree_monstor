@@ -34,7 +34,7 @@ teardown() {
 }
 
 # === AC-O1: tesseract OCR 一張 PNG ===
-@test "AC-O1: tesseract OCR 一張 PNG（mock 降級時也能跑）" {
+@test "AC-O1: tesseract OCR a PNG" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/ocr.json"
   [ "$status" -eq 0 ]
@@ -43,7 +43,7 @@ teardown() {
 }
 
 # === AC-O2: --input-dir 批次 OCR ===
-@test "AC-O2: --input-dir 批次 OCR" {
+@test "AC-O2: --input-dir batch OCR" {
   mkdir -p "$WORK/batch"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch/"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/blue.png" "$WORK/batch/"
@@ -53,7 +53,7 @@ teardown() {
 }
 
 # === AC-O3: 沒裝 tesseract → mock 降級（不崩潰）===
-@test "AC-O3: 沒裝 tesseract → mock 降級，不崩潰" {
+@test "AC-O3: tesseract missing → mock fallback" {
   # 我們不真的移除 tesseract，而是測試 --force-mock 旗標
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/ocr.json" \
@@ -65,26 +65,26 @@ teardown() {
 }
 
 # === AC-O4: 不存在的輸入 ===
-@test "AC-O4: 不存在的輸入 → exit 2" {
+@test "AC-O4: missing input → exit 2" {
   run "$TOOL" --input "/nonexistent/foo.png" --output-json "$WORK/ocr.json"
   [ "$status" -ne 0 ]
 }
 
 # === AC-O5: --help ===
-@test "AC-O5: --help 顯示使用說明" {
+@test "AC-O5: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]]
 }
 
 # === AC-O6: 沒給 --input ===
-@test "AC-O6: 沒給 --input → exit 1" {
+@test "AC-O6: missing --input → exit 1" {
   run "$TOOL" --output-json "$WORK/ocr.json"
   [ "$status" -ne 0 ]
 }
 
 # === AC-O7: 輸出 JSON 結構 ===
-@test "AC-O7: 輸出 JSON 含 text / confidence / source / engine" {
+@test "AC-O7: manifest JSON has text/confidence/source/engine" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/ocr.json" \
               --force-mock
@@ -96,7 +96,7 @@ teardown() {
 }
 
 # === AC-O8: --language 旗標 ===
-@test "AC-O8: --language eng / chi_tra 被接受" {
+@test "AC-O8: --language eng / chi_tra" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/ocr.json" \
               --force-mock \
@@ -107,7 +107,7 @@ teardown() {
 }
 
 # === AC-O9: manifest.json（批次模式）===
-@test "AC-O9: 批次模式產出 manifest.json" {
+@test "AC-O9: manifest.json created" {
   mkdir -p "$WORK/batch"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch/"
   run "$TOOL" --input-dir "$WORK/batch" --output-dir "$WORK/out" --force-mock
@@ -117,7 +117,7 @@ teardown() {
 }
 
 # === AC-O10: 對純白圖（無文字）不報錯 ===
-@test "AC-O10: 純白圖（無文字）不報錯" {
+@test "AC-O10: --language eng accepted" {
   # 用 ffmpeg 生一張純白 PNG
   ffmpeg -f lavfi -i "color=white:size=320x240:duration=0.04" \
          -frames:v 1 "$WORK/white.png" -y 2>/dev/null

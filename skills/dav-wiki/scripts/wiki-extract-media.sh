@@ -230,8 +230,8 @@ esac
 mkdir -p "$OUTPUT_DIR"
 
 # === 執行提取 ===
-echo "→ 提取 $TYPE：$INPUT"
-echo "→ 輸出目錄：$OUTPUT_DIR"
+echo "→ 提取 ${TYPE}：${INPUT}"
+echo "→ 輸出目錄：${OUTPUT_DIR}"
 
 img_count=0
 text_file=""
@@ -261,9 +261,9 @@ write_manifest "$TYPE" "$img_count" "$text_file" "$images_dir"
 
 echo ""
 echo "✅ 完成！"
-echo "  - 圖片：$img_count 張（$images_dir）"
-echo "  - 文字：$text_file"
-echo "  - Manifest：$OUTPUT_DIR/manifest.json"
+echo "  - 圖片：${img_count} 張（${images_dir}）"
+echo "  - 文字：${text_file}"
+echo "  - Manifest：${OUTPUT_DIR}/manifest.json"
 
 # === Sprint 09 FR-2.2.3：OCR 補強（若已安裝 wiki-ocr.sh） ===
 if [[ "$img_count" -gt 0 ]]; then

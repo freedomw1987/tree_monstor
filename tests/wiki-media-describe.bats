@@ -36,7 +36,7 @@ teardown() {
 }
 
 # ---------- AC-D1: mock 模式圖片描述 ----------
-@test "AC-D1: --mode describe --input <png> --mock 產出 JSON" {
+@test "AC-D1: --mode describe --input <png> --mock JSON" {
   run "$TOOL" --mode describe \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/desc.json" \
@@ -49,7 +49,7 @@ teardown() {
 }
 
 # ---------- AC-D2: mock 模式音訊轉錄 ----------
-@test "AC-D2: --mode transcript --input <audio> --mock 產出 transcript" {
+@test "AC-D2: --mode transcript --input <audio> --mock transcript" {
   # 先生成一個測試音檔
   ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
          -ar 16000 -ac 1 "$WORK/sine.wav" -y 2>/dev/null
@@ -64,7 +64,7 @@ teardown() {
 }
 
 # ---------- AC-D3: --input-dir 批次 ----------
-@test "AC-D3: --input-dir 批次處理目錄內所有圖片" {
+@test "AC-D3: --input-dir batch processing" {
   mkdir -p "$WORK/batch"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch/"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/blue.png" "$WORK/batch/"
@@ -78,13 +78,13 @@ teardown() {
 }
 
 # ---------- AC-D4: 缺 --mode ----------
-@test "AC-D4: 沒給 --mode → exit 1" {
+@test "AC-D4: invalid --mode → exit 1" {
   run "$TOOL" --input "foo.png" --mock
   [ "$status" -ne 0 ]
 }
 
 # ---------- AC-D5: 不存在的輸入 ----------
-@test "AC-D5: 不存在的檔案 → exit 2" {
+@test "AC-D5: missing --input → exit 2" {
   run "$TOOL" --mode describe \
               --input "/nonexistent/foo.png" \
               --mock
@@ -92,7 +92,7 @@ teardown() {
 }
 
 # ---------- AC-D6: 不支援的 mode ----------
-@test "AC-D6: 不支援的 mode → exit 3" {
+@test "AC-D6: bad mode value → exit 3" {
   run "$TOOL" --mode foo-bar \
               --input "foo.png" \
               --mock
@@ -100,7 +100,7 @@ teardown() {
 }
 
 # ---------- AC-D7: --dry-run ----------
-@test "AC-D7: --dry-run 不實際執行，只印計畫" {
+@test "AC-D7: --dry-run" {
   run "$TOOL" --mode describe \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/desc.json" \
@@ -112,14 +112,14 @@ teardown() {
 }
 
 # ---------- AC-D8: --help ----------
-@test "AC-D8: --help 顯示使用說明" {
+@test "AC-D8: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]]
 }
 
 # ---------- AC-D9: describe 對非圖片副檔名 ----------
-@test "AC-D9: describe 對 .txt 副檔名 → 警告但不中斷" {
+@test "AC-D9: describe rejects .txt" {
   echo "fake" > "$WORK/fake.txt"
   run "$TOOL" --mode describe \
               --input "$WORK/fake.txt" \
@@ -132,7 +132,7 @@ teardown() {
 }
 
 # ---------- AC-D10: transcript 對 .png 副檔名 ----------
-@test "AC-D10: transcript 對 .png 副檔名 → 警告但不中斷" {
+@test "AC-D10: transcript rejects .png" {
   run "$TOOL" --mode transcript \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/transcript.json" \
@@ -143,7 +143,7 @@ teardown() {
 }
 
 # ---------- AC-D11: --max-concurrency 旗標 ----------
-@test "AC-D11: --max-concurrency 接受正整數" {
+@test "AC-D11: --max-concurrency" {
   run "$TOOL" --mode describe \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/desc.json" \
@@ -153,7 +153,7 @@ teardown() {
 }
 
 # ---------- AC-D12: --api-key 從命令列 ----------
-@test "AC-D12: --api-key sk-test-xxx 被接受（不實際連 API）" {
+@test "AC-D12: --api-key sk-test-xxx API" {
   run "$TOOL" --mode describe \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/desc.json" \
@@ -163,7 +163,7 @@ teardown() {
 }
 
 # ---------- AC-D13: manifest 含時間戳 ----------
-@test "AC-D13: JSON 產出含 ISO 8601 時間戳" {
+@test "AC-D13: manifest JSON has ISO 8601 timestamps" {
   run "$TOOL" --mode describe \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/desc.json" \
@@ -173,7 +173,7 @@ teardown() {
 }
 
 # ---------- AC-D14: manifest 含 mode 欄位 ----------
-@test "AC-D14: JSON 產出含 mode 欄位" {
+@test "AC-D14: manifest JSON includes mode field" {
   run "$TOOL" --mode describe \
               --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/desc.json" \
@@ -184,7 +184,7 @@ teardown() {
 }
 
 # ---------- AC-D15: input-dir 不存在 ----------
-@test "AC-D15: --input-dir 不存在 → exit 2" {
+@test "AC-D15: missing --input-dir → exit 2" {
   run "$TOOL" --mode describe \
               --input-dir "/nonexistent/dir" \
               --mock
@@ -192,7 +192,7 @@ teardown() {
 }
 
 # ---------- AC-D16: --language 旗標 ----------
-@test "AC-D16: --language zh 被接受" {
+@test "AC-D16: --language zh accepted" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
          -ar 16000 -ac 1 "$WORK/sine.wav" -y 2>/dev/null
   run "$TOOL" --mode transcript \

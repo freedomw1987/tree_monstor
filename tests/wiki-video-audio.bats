@@ -27,7 +27,7 @@ teardown() {
 }
 
 # === AC-V1: ffmpeg 抽 frame ===
-@test "AC-V1: ffmpeg 從影片抽 frame" {
+@test "AC-V1: ffmpeg frame extraction" {
   # 先生成測試影片（3 秒鐘）
   ffmpeg -f lavfi -i "color=red:size=320x240:duration=3" \
          -f lavfi -i "sine=frequency=440:duration=3" \
@@ -45,7 +45,7 @@ teardown() {
 }
 
 # === AC-V2: ffprobe 取得影片時長 ===
-@test "AC-V2: ffprobe 取得影片時長（秒）" {
+@test "AC-V2: ffprobe metadata extraction" {
   ffmpeg -f lavfi -i "color=blue:size=160x120:duration=2" \
          "$WORK/short.mp4" -y 2>/dev/null
   duration=$(ffprobe -v error -show_entries format=duration \
@@ -55,7 +55,7 @@ teardown() {
 }
 
 # === AC-V3: ffmpeg 抽音軌 ===
-@test "AC-V3: ffmpeg 從影片抽音訊" {
+@test "AC-V3: ffmpeg audio extraction" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=2" \
          -f lavfi -i "sine=frequency=440:duration=2" \
          -c:v libx264 -c:a aac \
@@ -68,7 +68,7 @@ teardown() {
 }
 
 # === AC-V4: 場景偵測（scene detection） ===
-@test "AC-V4: ffmpeg scene 偵測（不同顏色切換）" {
+@test "AC-V4: ffmpeg scene detection" {
   # 生成 2 段不同顏色的影片（紅→藍）
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1.5" \
          -f lavfi -i "color=blue:size=160x120:duration=1.5" \
@@ -90,7 +90,7 @@ teardown() {
 }
 
 # === AC-V5: 純音訊時長 ===
-@test "AC-V5: 純音訊時長正確" {
+@test "AC-V5: --help shows usage" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=2" \
          -ar 16000 -ac 1 \
          "$WORK/audio.wav" -y 2>/dev/null
@@ -101,14 +101,14 @@ teardown() {
 }
 
 # === AC-V6: 不存在的影片 ===
-@test "AC-V6: 不存在的影片檔 → ffprobe 失敗" {
+@test "AC-V6: error → ffprobe diagnostics" {
   run ffprobe -v error -show_entries format=duration \
               -of csv=p=0 "/nonexistent/video.mp4"
   [ "$status" -ne 0 ]
 }
 
 # === AC-V7: 從影片抽 thumbnail ===
-@test "AC-V7: 從影片抽 thumbnail（1 張代表圖）" {
+@test "AC-V7: thumbnail1.jpg generated" {
   ffmpeg -f lavfi -i "color=green:size=320x240:duration=2" \
          "$WORK/clip.mp4" -y 2>/dev/null
   # 抽第 1 秒當 thumbnail
@@ -120,7 +120,7 @@ teardown() {
 }
 
 # === AC-V8: 影片 codec 偵測 ===
-@test "AC-V8: ffprobe 偵測影片 codec" {
+@test "AC-V8: ffprobe reports video codec" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1" \
          -c:v libx264 \
          "$WORK/codec.mp4" -y 2>/dev/null
@@ -131,7 +131,7 @@ teardown() {
 }
 
 # === AC-V9: 音訊 codec 偵測 ===
-@test "AC-V9: ffprobe 偵測音訊 codec" {
+@test "AC-V9: ffprobe reports audio codec" {
   ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
          -c:a aac "$WORK/audio.m4a" -y 2>/dev/null
   codec=$(ffprobe -v error -select_streams a:0 \
@@ -141,7 +141,7 @@ teardown() {
 }
 
 # === AC-V10: 大檔案 ffprobe 不卡住 ===
-@test "AC-V10: ffprobe 對 5 秒影片 < 2 秒完成" {
+@test "AC-V10: ffprobe 5+ durations within tolerance" {
   ffmpeg -f lavfi -i "color=red:size=320x240:duration=5" \
          -c:v libx264 -preset ultrafast \
          "$WORK/large.mp4" -y 2>/dev/null

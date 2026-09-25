@@ -97,4 +97,4 @@ CI badge：見 [README.md](README.md) 頂部。
 4. **反省** (dav-reflection)
 5. **提交** (dav-submitter)
 
-詳見 `AGENTS.md` §2 與各 `.agents/skills/*/SKILL.md`。
+詳見 `AGENTS.md` §2 與各 `skills/*/SKILL.md`。

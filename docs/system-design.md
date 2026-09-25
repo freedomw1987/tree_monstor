@@ -192,7 +192,7 @@ dav-wiki skill (M3)
 | **merge（合併）** | 兩個概念重疊 | 保留一個，另一個標 `superseded_by` |
 | **deprecate（棄用）** | 概念被新概念取代 | 標 `deprecated: true`，從 `_concepts.json` 移除（但檔案保留） |
 
-完整規則見 [`docs/.agents/skills/dav-wiki/concept-evolution.md`](.agents/skills/dav-wiki/concept-evolution.md)。
+完整規則見 [`skills/dav-wiki/concept-evolution.md`](../skills/dav-wiki/concept-evolution.md)。
 
 ### 3.5 Trust 整合
 
@@ -429,7 +429,7 @@ M4 — Self-Evolution
 
 ```
 /Users/<user>/www/tree_monstor/
-├── .agents/skills/dav-wiki/        # skill 源碼
+├── skills/dav-wiki/        # skill 源碼
 ├── docs/                            # 知識庫產物（git tracked）
 │   ├── README.md
 │   ├── wiki/
@@ -447,7 +447,7 @@ M4 — Self-Evolution
 ```
 
 ### 5.3 Skill 安裝路徑
-跟 M1 install.sh 一致：symlink `tree_monstor/.agents/skills/dav-wiki/` → `~/.pi/skills/dav-wiki/`
+跟 M1 install.sh 一致：symlink `tree_monstor/skills/dav-wiki/` → `~/.pi/skills/dav-wiki/`
 
 無需修改 install.sh（M1 的 per-skill symlink 機制已覆蓋）。
 

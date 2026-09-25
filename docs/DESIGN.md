@@ -246,4 +246,4 @@ error_template:
 
 - [Google Stitch DESIGN.md spec](https://stitch.withgoogle.com/docs/design-md/specification/)
 - [tree_monstor SOP §1.5](../sop/handbook/changelog.md) — V01 / V02 提問與建議紀律
-- [dav-skill-creater](../.agents/skills/dav-skill-creater/SKILL.md) — skill 命名與結構規範
+- [dav-skill-creater](../skills/dav-skill-creater/SKILL.md) — skill 命名與結構規範

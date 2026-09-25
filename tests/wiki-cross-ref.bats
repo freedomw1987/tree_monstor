@@ -45,7 +45,7 @@ teardown() {
     rm -rf "$TEST_ROOT"
 }
 
-@test "cross-ref: 新 doc tag 重疊 100% 且 keyword 重疊 → 推薦" {
+@test "cross-ref: doc tag 100% keyword →" {
     cat > new-doc.json <<EOF
 {
   "tags": ["react", "ssr", "performance"],
@@ -58,7 +58,7 @@ EOF
     [[ "$output" =~ "doc-a" ]]
 }
 
-@test "cross-ref: tag 重疊 0% → 不推薦（python vs react）" {
+@test "cross-ref: tag 0% → python vs react" {
     cat > new-doc.json <<EOF
 {
   "tags": ["python", "django", "orm"],
@@ -83,7 +83,7 @@ EOF
     ! [[ "$output" =~ "doc-c" ]]
 }
 
-@test "cross-ref: tag 重疊 100% 但 keyword 無重疊 → 不推薦" {
+@test "cross-ref: tag 100% keyword →" {
     cat > new-doc.json <<EOF
 {
   "tags": ["react", "ssr"],
@@ -108,7 +108,7 @@ EOF
     ! [[ "$output" =~ "doc-b" ]]
 }
 
-@test "cross-ref: tag 重疊 50% + keyword 重疊 → 推薦" {
+@test "cross-ref: tag 50% + keyword →" {
     # new doc: react, ssr, performance (3 tags)
     # doc-d: react, performance (2 tags) → 重疊 2/3 = 67% ≥ 50% ✓
     # doc-d keywords: streaming, ssr → 與 new doc 完全相同 → 推薦
@@ -123,7 +123,7 @@ EOF
     [[ "$output" =~ "doc-d" ]]
 }
 
-@test "cross-ref: tag 重疊 33% (< 50%) → 不推薦" {
+@test "cross-ref: tag 33% (< 50%) →" {
     # new doc: react, ssr, performance, rendering, state (5 tags)
     # doc-d: react, performance → 重疊 2/5 = 40% < 50% ✗
     cat > new-doc.json <<EOF
@@ -139,7 +139,7 @@ EOF
     ! [[ "$output" =~ "doc-d" ]]
 }
 
-@test "cross-ref: 最多推薦 5 篇" {
+@test "cross-ref: max 5 recommendations" {
     # 建 8 個全 tag 重疊 + 全 keyword 重疊的文件
     cat > _index.json <<EOF
 {
@@ -169,7 +169,7 @@ EOF
     [ "$count" -le 5 ]
 }
 
-@test "cross-ref: --help 顯示說明" {
+@test "cross-ref: --help" {
     run "$CROSS_REF" --help
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Usage:" ]]
@@ -177,7 +177,7 @@ EOF
 
 # === 邊緣案例（E5-E7） ===
 
-@test "E5 cross-ref: new-doc.tags=[] 應回 0 推薦" {
+@test "E5 cross-ref: new-doc.tags=[] 0" {
     cat > new-doc.json <<EOF
 {
   "tags": [],
@@ -189,7 +189,7 @@ EOF
     [ -z "$output" ]
 }
 
-@test "E6 cross-ref: self-match 排除（新 doc 已在 _index.json 中）" {
+@test "E6 cross-ref: self-match doc _index.json" {
     # new-doc 是 _index.json 中的 doc-a 本身
     cat > new-doc.json <<EOF
 {
@@ -204,7 +204,7 @@ EOF
     ! [[ "$output" =~ "doc-a" ]]
 }
 
-@test "E7 cross-ref: tie 排序 deterministic（同分 doc 依 id 順序）" {
+@test "E7 cross-ref: tie deterministic doc id" {
     # 建立 3 個全 tag 重疊 + 全 keyword 重疊的文件，同分
     cat > _index.json <<EOF
 {

@@ -74,7 +74,7 @@ teardown() {
 
 # === 基本功能 ===
 
-@test "wiki-cleanup: --help 顯示使用說明" {
+@test "wiki-cleanup: --help" {
     run "$WIKI_CLEANUP" --help
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Usage:" ]]
@@ -82,7 +82,7 @@ teardown() {
     [[ "$output" =~ "--dry-run" ]]
 }
 
-@test "wiki-cleanup: --dry-run 不實際移動檔案" {
+@test "wiki-cleanup: --dry-run" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --dry-run --older-than 90
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Dry-run" ]] || [[ "$output" =~ "dry-run" ]] || [[ "$output" =~ "[INFO]" ]]
@@ -92,7 +92,7 @@ teardown() {
     [ ! -d "$TEST_ROOT/docs/wiki/_deprecated" ]
 }
 
-@test "wiki-cleanup: --yes 模式移動超過 90 天的 deprecated 檔案" {
+@test "wiki-cleanup: --yes 90 deprecated" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     # 原檔案已移到 _deprecated/
@@ -101,14 +101,14 @@ teardown() {
     [ -f "$TEST_ROOT/docs/wiki/_deprecated/2025-Q3/old-react-pattern.md" ]
 }
 
-@test "wiki-cleanup: 不移動 < 90 天的 deprecated 檔案" {
+@test "wiki-cleanup: < 90 deprecated" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     # recent-deprecated 還在原位置（才 deprecate 幾天）
     [ -f "$TEST_ROOT/docs/wiki/frontend/2025-09/recent-deprecated.md" ]
 }
 
-@test "wiki-cleanup: 不移動 active 檔案" {
+@test "wiki-cleanup: active" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     [ -f "$TEST_ROOT/docs/wiki/frontend/2025-09/active-doc.md" ]
@@ -116,7 +116,7 @@ teardown() {
 
 # === 索引同步 ===
 
-@test "wiki-cleanup: 移動後 _index.json 移除該檔" {
+@test "wiki-cleanup: _index.json" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     # _index.json 不應再含 old-react-pattern
@@ -126,7 +126,7 @@ teardown() {
     grep -q "active-doc" "$TEST_ROOT/docs/wiki/_index.json"
 }
 
-@test "wiki-cleanup: 移動後 _deprecated/_index.json 新增反向記錄" {
+@test "wiki-cleanup: _deprecated/_index.json" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     [ -f "$TEST_ROOT/docs/wiki/_deprecated/_index.json" ]
@@ -136,7 +136,7 @@ teardown() {
 
 # === Frontmatter 補欄位 ===
 
-@test "wiki-cleanup: 搬走的檔案 frontmatter 加 deprecated_moved_at" {
+@test "wiki-cleanup: frontmatter deprecated_moved_at" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     grep -q "deprecated_moved_at" "$TEST_ROOT/docs/wiki/_deprecated/2025-Q3/old-react-pattern.md"
@@ -144,7 +144,7 @@ teardown() {
 
 # === 邊緣案例 ===
 
-@test "wiki-cleanup: 沒有 deprecated 檔案時正常結束" {
+@test "wiki-cleanup: deprecated" {
     rm -f "$TEST_ROOT/docs/wiki/frontend/2025-09/old-react-pattern.md"
     rm -f "$TEST_ROOT/docs/wiki/frontend/2025-09/recent-deprecated.md"
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
@@ -152,26 +152,26 @@ teardown() {
     [[ "$output" =~ "0" ]] || [[ "$output" =~ "no deprecated" ]] || [[ "$output" =~ "nothing" ]]
 }
 
-@test "wiki-cleanup: 目標目錄不存在時報錯" {
+@test "wiki-cleanup: missing-target-dir errors" {
     run "$WIKI_CLEANUP" --target "/tmp/nonexistent-xyz-123" --yes --older-than 90
     [ "$status" -ne 0 ]
 }
 
-@test "wiki-cleanup: 沒有 --yes 且互動輸入 n 時不移動" {
+@test "wiki-cleanup: --yes n" {
     run bash -c "echo 'n' | '$WIKI_CLEANUP' --target '$TEST_ROOT/docs' --older-than 90"
     [ "$status" -eq 0 ]
     # 檔案還在原位置
     [ -f "$TEST_ROOT/docs/wiki/frontend/2025-09/old-react-pattern.md" ]
 }
 
-@test "wiki-cleanup: --older-than 0 等同全部 deprecated 都被清" {
+@test "wiki-cleanup: --older-than 0 deprecated" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 0
     [ "$status" -eq 0 ]
     # recent-deprecated 也被清了（因為 < 1 天算過 0 天）
     [ ! -f "$TEST_ROOT/docs/wiki/frontend/2025-09/recent-deprecated.md" ]
 }
 
-@test "wiki-cleanup: 同名檔已存在於 _deprecated/ 時不覆蓋" {
+@test "wiki-cleanup: _deprecated/" {
     mkdir -p "$TEST_ROOT/docs/wiki/_deprecated/2025-Q3"
     echo "HISTORICAL" > "$TEST_ROOT/docs/wiki/_deprecated/2025-Q3/old-react-pattern.md"
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
@@ -182,7 +182,7 @@ teardown() {
 
 # === 邊緣案例（E1-E4） ===
 
-@test "E1 wiki-cleanup: --purge 模式真刪除（危險動作）" {
+@test "E1 wiki-cleanup: --purge" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90 --purge
     [ "$status" -eq 0 ]
     # 檔案不存在
@@ -191,7 +191,7 @@ teardown() {
     [ ! -d "$TEST_ROOT/docs/wiki/_deprecated" ]
 }
 
-@test "E2 wiki-cleanup: 季度分類正確性（deprecated_at=2026-02 → 2026-Q1）" {
+@test "E2 wiki-cleanup: deprecated_at=2026-02 → 2026-Q1" {
     # 重建 fixture 用 2026 年 Q1 / Q3 日期（Q4 在 11 月，避免被 age 過濾）
     mkdir -p "$TEST_ROOT/docs/wiki/frontend/2026-02" "$TEST_ROOT/docs/wiki/frontend/2026-08"
     cat > "$TEST_ROOT/docs/wiki/frontend/2026-02/test-q1.md" <<EOF
@@ -220,7 +220,7 @@ EOF
     [ -f "$TEST_ROOT/docs/wiki/_deprecated/2026-Q3/test-q3.md" ]
 }
 
-@test "E3 wiki-cleanup: 無效 deprecated_at 時用 mtime fallback 或跳過不 crash" {
+@test "E3 wiki-cleanup: deprecated_at mtime fallback crash" {
     # 建立 deprecated 但無 deprecated_at 的檔案
     cat > "$TEST_ROOT/docs/wiki/frontend/2025-09/no-date.md" <<EOF
 ---
@@ -235,7 +235,7 @@ EOF
     [ "$status" -eq 0 ]
 }
 
-@test "E4 wiki-cleanup: 重複執行需等會等位置（冪等性）" {
+@test "E4 wiki-cleanup: idempotent re-run" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90
     [ "$status" -eq 0 ]
     # 第一次：撽走 1 個 (old-react-pattern)
@@ -247,7 +247,7 @@ EOF
 
 # === TD-021.1：README 重建測試 ===
 
-@test "TD-021 wiki-cleanup: README 重建（統計 categories / tags）" {
+@test "TD-021 wiki-cleanup: README categories / tags" {
     # 改 _index.json 加上 active doc
     cat > "$TEST_ROOT/docs/wiki/_index.json" <<EOF
 {
@@ -272,7 +272,7 @@ EOF
     grep -q "Tags：2" "$TEST_ROOT/docs/README.md"
 }
 
-@test "TD-021 wiki-cleanup: --purge 模式不重建 README" {
+@test "TD-021 wiki-cleanup: --purge README" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --yes --older-than 90 --purge
     [ "$status" -eq 0 ]
     # --purge 不該重建 README

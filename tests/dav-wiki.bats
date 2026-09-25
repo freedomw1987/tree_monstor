@@ -83,25 +83,25 @@ setup() {
 }
 
 # ---------- AC-6: concept-evolution.md has 4 evolution actions ----------
-@test "AC-6a: concept-evolution.md documents 'derive' (衍生)" {
+@test "AC-6a: concept-evolution.md documents 'derive'" {
   [ -f "$SKILL_DIR/concept-evolution.md" ]
   run grep -iE "derive|衍生" "$SKILL_DIR/concept-evolution.md"
   [ "$status" -eq 0 ]
 }
 
-@test "AC-6b: concept-evolution.md documents 'revise' (修正)" {
+@test "AC-6b: concept-evolution.md documents 'revise'" {
   [ -f "$SKILL_DIR/concept-evolution.md" ]
   run grep -iE "revise|修正" "$SKILL_DIR/concept-evolution.md"
   [ "$status" -eq 0 ]
 }
 
-@test "AC-6c: concept-evolution.md documents 'merge' (合併)" {
+@test "AC-6c: concept-evolution.md documents 'merge'" {
   [ -f "$SKILL_DIR/concept-evolution.md" ]
   run grep -iE "merge|合併" "$SKILL_DIR/concept-evolution.md"
   [ "$status" -eq 0 ]
 }
 
-@test "AC-6d: concept-evolution.md documents 'deprecate' (棄用)" {
+@test "AC-6d: concept-evolution.md documents 'deprecate'" {
   [ -f "$SKILL_DIR/concept-evolution.md" ]
   run grep -iE "deprecate|棄用|superseded" "$SKILL_DIR/concept-evolution.md"
   [ "$status" -eq 0 ]

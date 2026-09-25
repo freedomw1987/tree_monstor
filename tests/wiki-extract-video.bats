@@ -32,7 +32,7 @@ teardown() {
 }
 
 # === AC-W1: 完整影片提取 ===
-@test "AC-W1: 影片提取 → frames/ + audio.wav + thumb.jpg + chapters.json" {
+@test "AC-W1: ffmpeg extracts frames + audio + thumb + chapters" {
   ffmpeg -f lavfi -i "color=red:size=320x240:duration=2" \
          -f lavfi -i "sine=frequency=440:duration=2" \
          -c:v libx264 -c:a aac \
@@ -46,7 +46,7 @@ teardown() {
 }
 
 # === AC-W2: 影片時長 metadata ===
-@test "AC-W2: manifest 包含正確的影片時長" {
+@test "AC-W2: manifest.json written" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=3" \
          -c:v libx264 -preset ultrafast \
          "$WORK/test.mp4" -y 2>/dev/null
@@ -58,7 +58,7 @@ teardown() {
 }
 
 # === AC-W3: 章節切分 ===
-@test "AC-W3: chapters.json 結構正確" {
+@test "AC-W3: chapters.json from chapter markers" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1.5" \
          -f lavfi -i "color=blue:size=160x120:duration=1.5" \
          -filter_complex "[0:v][1:v]concat=n=2:v=1:a=0[outv]" \
@@ -73,7 +73,7 @@ teardown() {
 }
 
 # === AC-W4: --no-frames ===
-@test "AC-W4: --no-frames 跳過 frame 提取" {
+@test "AC-W4: --no-frames skips frame extraction" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1" \
          -f lavfi -i "sine=frequency=440:duration=1" \
          -c:v libx264 -c:a aac \
@@ -85,7 +85,7 @@ teardown() {
 }
 
 # === AC-W5: --no-audio ===
-@test "AC-W5: --no-audio 跳過音訊提取" {
+@test "AC-W5: --no-audio skips audio extraction" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1" \
          -f lavfi -i "sine=frequency=440:duration=1" \
          -c:v libx264 -c:a aac \
@@ -97,26 +97,26 @@ teardown() {
 }
 
 # === AC-W6: 不存在影片 ===
-@test "AC-W6: 不存在的影片 → exit 2" {
+@test "AC-W6: missing input → exit 2" {
   run "$TOOL" --input "/nonexistent/video.mp4" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
 
 # === AC-W7: --help ===
-@test "AC-W7: --help 顯示使用說明" {
+@test "AC-W7: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage" ]]
 }
 
 # === AC-W8: 沒給 --input ===
-@test "AC-W8: 沒給 --input → exit 1" {
+@test "AC-W8: missing --input → exit 1" {
   run "$TOOL" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
 
 # === AC-W9: manifest.json ===
-@test "AC-W9: manifest.json 含 frames / audio / thumb / chapters 路徑" {
+@test "AC-W9: manifest.json frames / audio / thumb / chapters" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1" \
          -f lavfi -i "sine=frequency=440:duration=1" \
          -c:v libx264 -c:a aac \
@@ -130,7 +130,7 @@ teardown() {
 }
 
 # === AC-W10: --no-chapters ===
-@test "AC-W10: --no-chapters 跳過章節切分" {
+@test "AC-W10: --no-chapters skips chapter extraction" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1" \
          "$WORK/test.mp4" -y 2>/dev/null
   run "$TOOL" --input "$WORK/test.mp4" --output-dir "$WORK/out" --no-chapters
@@ -139,7 +139,7 @@ teardown() {
 }
 
 # === AC-W11: --scene-threshold 邊界值 ===
-@test "AC-W11: --scene-threshold 0 仍能跑（無場景偵測）" {
+@test "AC-W11: --scene-threshold 0 disables scene detection" {
   ffmpeg -f lavfi -i "color=red:size=160x120:duration=1" \
          "$WORK/test.mp4" -y 2>/dev/null
   run "$TOOL" --input "$WORK/test.mp4" --output-dir "$WORK/out" --scene-threshold 0
