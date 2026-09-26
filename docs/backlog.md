@@ -18,6 +18,7 @@
 | TMO-007 | dav-planner 用戶背景收集機制（§2.7） | P1 | 8 | done | TMO-006 |
 | TMO-008 | 減法：文件產出物精簡（v2.0） | P1 | 5 | done | TMO-007 |
 | TMO-009 | 重結構：9 skill + AGENTS.md 任務導航 + 純文字引用 | P1 | 25 | done | TMO-008 |
+| TMO-010 | docs/ 批量減法：5 檔、53KB（孤立檔 + 存量 HTML + 存量反思）| P1 | 3 | done (2026-09-26) | — |
 
 ---
 

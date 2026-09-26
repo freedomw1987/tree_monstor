@@ -4,6 +4,34 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.4 — 2026-09-26
+
+**本版異動**：docs/ 批量減法（TMO-010）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P1** | 刪 `docs/sop/handbook/dav-wiki-cleanup.md` | 孤立檔（0 引用、9KB），內容已重複在 `skills/dav-wiki/SKILL.md` |
+| **P1** | 刪 `docs/deliverable/2026-09-26-dav-planner-ac-templates.html` | v1.8 存量 HTML（14KB），v2.0 起禁止產出 |
+| **P1** | 刪 `docs/deliverable/2026-09-26-dav-planner-user-background.html` | v1.9 存量 HTML（14KB），v2.0 起禁止產出 |
+| **P1** | 刪 `docs/reflection/v1.8-dav-planner-ac-templates-reflection.md` | v1.8 存量獨立反思檔（7KB），TMO-006 deliverable 未含反思末段 |
+| **P1** | 刪 `docs/reflection/v1.9-dav-planner-user-background-reflection.md` | v1.9 存量獨立反思檔（6KB），TMO-007 deliverable 未含反思末段 |
+
+**合計**：刪 5 檔、減 53KB。
+
+**決策紀錄（重要）**：
+- **打破 v2.0「存量完全不動」原則**：這次批量減法明確破壊存量保留規則，是用戶決策 C 的明確批准
+- **僅限本次 sprint**：未來 sprint 預設仍遵守 v2.0 存量規則；需批量減需另提新 Sprint + Reviewer 二審
+- **保留的存量**：trust-mode 反思（2.5KB）、v1.7.1 反思（4KB）、TMO-005~009 的 deliverable.md 全保留
+- **不變更 audit trail**：trust-log.md + 各 deliverable.md 內容完全保留、依舊可追溯
+
+**範圍邊界**：
+- ✅ 在 scope：v1.8 / v1.9 反思、v1.8 / v1.9 deliverable HTML、孤立 handbook
+- ❌ 不在 scope：trust-mode 反思（跨越 v2.0 規則設計重點）、v1.7.1 反思（技術債清理、跨多個 sprint）、DESIGN.md / system-design.md（兩個不同職責不同 sprint 使用）、TMO-005~009 的 deliverable.md（v2.0 後的對應檔，保留 audit）
+
+**探針**：`tests/docs-reduction.bats` 6 探針守護已減狀態不退化。
+
+---
+
 ## v2.3 — 2026-09-26
 
 **本版異動**：dav-skill-creator 對「修改既有 skill」亦生效（TMO-009 階段 11c）
