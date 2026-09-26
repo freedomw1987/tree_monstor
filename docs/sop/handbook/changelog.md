@@ -4,6 +4,39 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v1.8 — 2026-09-25
+
+**本版異動**：dav-planner skill AC 範本獨立化 + HTML 版本（TMO-006）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `dav-planner/SKILL.md` §4.3.2 新增「AC 欄位精簡規則」 | backlog.md 表格 AC 欄位精簡為「AC 摘要（≤ 30 字 + 連結）」；完整 Given-When-Then + DoD 寫到 `docs/ac/<US-ID>.md` |
+| **P0** | `dav-planner/SKILL.md` §4.6 新增「AC 範本生成 SOP」 | Agent 生成新 US 時必做 3 動作（同一 turn）：(1) 寫 `docs/ac/<US-ID>.md` (2) 生成 `docs/ac/<US-ID>.html` (3) 更新 backlog.md AC 欄位為新格式 |
+| **P0** | `docs/ac/` 目錄新建 | 含 `README.md`（命名規範）+ `US-101.md` + `US-101.html`（範例檔）|
+| **P0** | `docs/ac/README.md` | 說明目錄用途、命名規範、生成規則、範本結構、變更歷史 |
+| **P0** | `docs/ac/US-101.md` + `docs/ac/US-101.html` | 範例檔（含真實 AC 內容 + 列印友好 CSS）|
+| **P0** | `docs/prd/01-dav-planner-ac-templates.md` 新建 | 本次變更 PRD（含檔案結構 + SOP 改動 + 範本 + Story Point 8 + 風險 + DoD）|
+| **P1** | `tests/dav-planner-ac-templates.bats` 新建 | 9 個探針守護 SKILL.md 章節（§4.3.2 / §4.6）/ PRD / docs/ac/ 範本 / changelog v1.8 / cross-consistency 不被靜默移除 |
+| **P2** | `docs/backlog.md` 新增 TMO-006 | 記錄本次變更 + Story Point 8 + 完成標準 |
+
+**目的**：解決用戶痛點「AC 塞在 backlog.md 表格 cell 內，閱讀體驗差、不利校對 / 分享 / 列印」— 根本原因是 markdown 表格 cell 對長內容渲染差，無論用 `<br>` 或 blockquote 都難用。修法是把 AC 抽出到獨立檔案（.md 給開發者、.html 給利害關係人），backlog.md 仍為 single source of truth。
+
+**決策紀錄**：
+- **AC 架構**：A 方案「兩者並存」（backlog.md 精簡為摘要+連結，docs/ac/ 為完整 AC）
+- **HTML 生成時機**：A 方案「Agent 寫 .md 同時生成 .html」（同一 turn）
+- **既有 backlog**：A 方案「不動既有 US」（過渡期兩格式共存，用戶可手動遷移）
+- **AC 範本內容範圍**：A 方案「只含 AC」（不重複 US 標題 / Persona / Non-goals）
+- **Reviewer**：A 方案「走 dev-checker-loop 二審」
+
+**Markdown 表格 cell 渲染決策**：
+- v1.6 SWOT 用純文字前綴 + `<br>` 分行（不用 blockquote）
+- 本次 AC 摘要同樣用純文字前綴 + `<br>`（與 v1.6 慣例一致）
+- 完整 AC 不再塞 cell（徹底避開 markdown 表格渲染不一致問題）
+
+**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03 SOP 修改規則），驗證跨 SOP 一致性（dav-planner ↔ docs/prd ↔ docs/ac ↔ changelog）。Reviewer verdict 詳見對話記錄。
+
+---
+
 ## v1.7.1 — 2026-09-25
 
 **本版異動**：v1.7 後續技術債清理（UTF-8 bug + `.agents/` 歷史殘留 + TMO-005 關閉 + 順手修 latent bug）

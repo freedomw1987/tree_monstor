@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>US-101 信用卡快速結帳 — AC 範本</title>
+  <style>
+    /* 列印友好 CSS：黑白、單欄、checklist 加大 */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 0 1.5em;
+      line-height: 1.7;
+      color: #222;
+      background: #fff;
+    }
+    h1 {
+      border-bottom: 2px solid #333;
+      padding-bottom: 0.3em;
+      margin-top: 1.5em;
+    }
+    h2 {
+      color: #2c5282;
+      margin-top: 2em;
+      border-left: 4px solid #4299e1;
+      padding-left: 0.5em;
+    }
+    blockquote {
+      color: #666;
+      font-style: italic;
+      border-left: 4px solid #ccc;
+      padding-left: 1em;
+      margin: 1em 0;
+    }
+    .ac-item {
+      background: #f7fafc;
+      padding: 1em 1.2em;
+      margin: 1em 0;
+      border-left: 4px solid #4299e1;
+      border-radius: 0 4px 4px 0;
+    }
+    .ac-item strong {
+      color: #2c5282;
+      margin-right: 0.3em;
+    }
+    .dod-item {
+      padding: 0.4em 0;
+      font-size: 1.05em;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 0.6em 0.8em;
+      text-align: left;
+    }
+    table th {
+      background: #edf2f7;
+      font-weight: bold;
+    }
+    a {
+      color: #2c5282;
+      text-decoration: none;
+      border-bottom: 1px dotted #4299e1;
+    }
+    a:hover {
+      border-bottom-style: solid;
+    }
+    @media print {
+      body {
+        font-size: 11pt;
+        max-width: 100%;
+        margin: 0;
+        padding: 0.5cm;
+      }
+      h1, h2 {
+        page-break-after: avoid;
+      }
+      .ac-item, table, blockquote {
+        page-break-inside: avoid;
+      }
+      a {
+        color: #000;
+        border-bottom: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>US-101 信用卡快速結帳 — AC 範本</h1>
+
+  <blockquote>
+    對應 Backlog: <a href="../backlog.md">US-101 in docs/backlog.md</a><br>
+    最後更新: 2026-09-25
+  </blockquote>
+
+  <h2>背景</h2>
+  <p>本 AC 對應 US-101「信用卡快速結帳」。作為顧客，我想使用信用卡快速結帳，以便迅速完成購買。</p>
+
+  <h2>Given / When / Then</h2>
+
+  <div class="ac-item">
+    <strong>Given</strong> 用戶已登入且購物車有商品<br>
+    <strong>When</strong> 用戶點「結帳」按鈕<br>
+    <strong>Then</strong> 系統在 3 秒內導向付款頁<br>
+    <strong>And</strong> 付款頁支援 Visa / MasterCard
+  </div>
+
+  <div class="ac-item">
+    <strong>Given</strong> 用戶在付款頁輸入卡號<br>
+    <strong>When</strong> 輸入的卡號格式錯誤（如少一位數）<br>
+    <strong>Then</strong> 系統在 1 秒內顯示紅字錯誤訊息「卡號格式錯誤，請重新輸入」
+  </div>
+
+  <div class="ac-item">
+    <strong>Given</strong> 用戶完成付款且交易成功<br>
+    <strong>When</strong> 系統收到金流回傳 success<br>
+    <strong>Then</strong> 系統在 3 秒內發送 Email 通知給用戶（含訂單編號、金額、預計出貨日）
+  </div>
+
+  <div class="ac-item">
+    <strong>Given</strong> 用戶完成付款且交易失敗（金流回傳 error）<br>
+    <strong>When</strong> 系統偵測到付款失敗<br>
+    <strong>Then</strong> 系統顯示明確的錯誤訊息（不可為空白）<br>
+    <strong>And</strong> 購物車內商品不消失（用戶可重試）
+  </div>
+
+  <h2>DoD（Definition of Done）</h2>
+  <ul>
+    <li class="dod-item">☐ 程式碼有單元測試（覆蓋率 ≥ 80%）</li>
+    <li class="dod-item">☐ 通過 CI lint / type check</li>
+    <li class="dod-item">☐ 文件已更新（README / API doc / changelog）</li>
+    <li class="dod-item">☐ 已在 staging 環境驗證</li>
+    <li class="dod-item">☐ 金流串接有錯誤處理與 retry 機制</li>
+    <li class="dod-item">☐ Email 通知模板已通過 PO 校對</li>
+  </ul>
+
+  <h2>變更歷史</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>日期</th>
+        <th>版本</th>
+        <th>變更</th>
+        <th>作者</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2026-09-25</td>
+        <td>v1.0</td>
+        <td>初版建立（dav-planner v1.8 範例檔）</td>
+        <td>Agent</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr>
+  <p style="text-align: center; color: #999; font-size: 0.9em;">
+    本文件由 dav-planner v1.8 自動產生 ｜ 對應 docs/ac/US-101.md
+  </p>
+</body>
+</html>

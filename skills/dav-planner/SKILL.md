@@ -293,6 +293,40 @@ Backlog 範例（以「電商平台」為例）：
 - 格式用 `**決策前依據 (SWOT)**：<br>S=...<br>W=...<br>O=...<br>T=...`（純文字前綴，**不用 `>` blockquote**——markdown 表格 cell 對 blockquote 渲染不一致，會在 GitHub / Obsidian / VS Code 顯示不一致）
 - SWOT 4 象限各 1 行，內容同 §2.6（每象限 ≤ 20 字）
 
+### 4.3.2 AC 欄位精簡規則（v1.8 新增）
+
+從 v1.8 起，**backlog.md 表格 AC 欄位精簡為「AC 摘要 + 連結」**，完整 AC 範本寫在 `docs/ac/<US-ID>.md` 與 `.html`。
+
+#### 4.3.2.1 為什麼要精簡
+
+舊格式把 Given-When-Then × 3-5 條 + DoD × 4-6 項全部塞在 markdown 表格 cell 內（用 `<br>` 分行），問題：
+
+1. **閱讀體驗差**：cell 內容擠、難 scan
+2. **不易分享**：利害關係人（QA / PO）要單獨校對 AC，必須整份 backlog 一起給
+3. **不易列印**：表格 cell 內的 `<br>` 在 PDF / 列印時排版破
+4. **難搜尋**：AC 內容跟其他欄位混在一起，無法快速找「所有提到『結帳』的 AC」
+
+#### 4.3.2.2 新格式（backlog.md AC 欄位）
+
+```markdown
+| **US-101** | User Story | 作為顧客，我想使用信用卡快速結帳... | **AC 摘要**：3 秒內到付款頁；填錯卡號顯紅字；成功後發 Email<br>完整 AC：[../../docs/ac/US-101.md](../../docs/ac/US-101.md) / [HTML 版](../../docs/ac/US-101.html) | P0 | 5 | ... |
+```
+
+**規則**：
+- **AC 摘要 ≤ 30 字 / 2 行**（重點條列，不展開 Given-When-Then）
+- **必含完整 AC 連結**（.md 給開發者、.html 給利害關係人）
+- 既有 backlog 的 US 不重寫（過渡期共存）
+
+#### 4.3.2.3 AC 範本內容範圍
+
+`docs/ac/<US-ID>.md` 與 `.html` 只含 AC 本身（Given-When-Then + DoD），**不重複 User Story 標題、Persona、Non-goals**（這些仍在 backlog.md）。原因：AC 文件職責單一，校對 AC 時不用讀全 US。
+
+#### 4.3.2.4 命名規範
+
+- `docs/ac/<US-ID>.md` — 與 backlog.md 的 US ID 完全對應（如 `US-101.md`）
+- `docs/ac/<US-ID>.html` — 與 .md 同名，僅副檔名不同
+- 大小寫：建議全大寫以匹配 backlog 慣例
+
 ### 4.4. Backlog 類型混合管理：
 一份健康的 Backlog 不應只有新功能，應該有多類型混合管理，應包含 ：
 - **User Story（新功能）**
@@ -308,6 +342,78 @@ Backlog 範例（以「電商平台」為例）：
 
 - 每一個項目目錄只有並唯一有一份 docs/backlog.md，目的是為了用戶一看docs/backlog.md 就知道項目進度；
 - 每次完成用戶詢問之後，可能會有多個Backlog item，請新填到Backlog 表格的最下方就可以了，但不用估算、Sprint、Module及狀態(默認是PENDING)，等用戶或其他Agent 去做計劃時，讓他們去更改
+
+### 4.6. AC 範本生成 SOP（含 HTML 生成 SOP，v1.8 新增）
+
+從 v1.8 起，dav-planner Agent 在生成新 User Story 時，**必須**依下列順序產生 3 個檔案（同一 turn 內完成）：
+
+#### 4.6.1 生成時機
+
+- 用戶明確確認新 US 內容（完成 §2.6 SWOT 驗證 / 沒觸發 SWOT 的普通 US 也算）
+- Agent 即將把 US 寫進 `docs/backlog.md` 之前
+
+#### 4.6.2 生成順序（同一次 turn 內完成）
+
+1. **寫 `docs/ac/<US-ID>.md`** — AC 範本 Markdown 版本（含 Given-When-Then + DoD）。範例：`docs/ac/US-XXX.md`、`docs/ac/US-101.md`
+2. **生成 `docs/ac/<US-ID>.html`** — 對應 HTML 版本（含列印友好 CSS）。範例：`docs/ac/US-XXX.html`、`docs/ac/US-101.html`
+3. **更新 `docs/backlog.md`** — 加入 US 列，AC 欄位用 §4.3.2 新格式（AC 摘要 + 連結）
+
+**檔案命名範例**：`docs/ac/US-XXX.md`（Markdown 版）+ `docs/ac/US-XXX.html`（HTML 版）。`<US-ID>` 對應 backlog 中的 US ID。
+
+**為什麼要同一次 turn 完成**：避免 .md 與 .html 不同步，避免 backlog.md 連結指向不存在的檔案。
+
+#### 4.6.3 AC 範本 .md 模板
+
+```markdown
+# <US-ID> AC 範本
+
+> 對應 Backlog: [<US-ID> in docs/backlog.md](../../docs/backlog.md)
+> 最後更新: <YYYY-MM-DD>
+
+## 背景
+
+（一句話描述：本 AC 對應 <US-ID>「<標題>」）
+
+## Given / When / Then
+
+- **Given** <前置條件>
+  **When** <動作>
+  **Then** <結果>
+
+## DoD（Definition of Done）
+
+- [ ] <驗收 1>
+- [ ] <驗收 2>
+- [ ] <驗收 3>
+
+## 變更歷史
+
+| 日期 | 版本 | 變更 | 作者 |
+|------|------|------|------|
+| <YYYY-MM-DD> | v1.0 | 初版建立 | Agent |
+```
+
+#### 4.6.4 AC 範本 .html 生成規則
+
+- 用「列印友好 CSS」：黑白、單欄、checklist 加大
+- 結構同 .md（背景 / Given-When-Then / DoD / 變更歷史）
+- 內嵌 CSS（不依賴外部檔案，方便分享）
+- 含 `@media print` 媒體查詢
+- 範例請見 `docs/ac/US-101.html`
+
+#### 4.6.5 過渡期規則（既有 US）
+
+- **既有 US（§4.3.2 之前的 backlog）不主動生成 AC 範本**
+- 用戶可隨時手動遷移（從 backlog.md 抽出 AC 內容到 docs/ac/）
+- 新生成的 US 走新 SOP
+
+#### 4.6.6 自我檢查清單（Agent 完成後跑一次）
+
+- [ ] `docs/ac/<US-ID>.md` 已建立
+- [ ] `docs/ac/<US-ID>.html` 已建立（與 .md 同 turn）
+- [ ] `docs/backlog.md` AC 欄位用新格式（摘要 + 連結）
+- [ ] 連結路徑正確（`docs/ac/<US-ID>.md` 相對於 `docs/backlog.md`）
+- [ ] HTML 有 `<style>` 區塊 + `@media print` 媒體查詢
 
 ## 5. 需求成熟度評估（寫 Backlog 前必跑）
 
