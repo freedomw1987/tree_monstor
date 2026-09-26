@@ -201,3 +201,41 @@ TMO-009 期間遇到的 4 個探針 bug（寫給後人避免重蹈覆轍）：
 - **不要加跨 dir markdown / Obsidian 連結** — 探針 11/12 會 fail
 - **每個新 skill 必含 5 段結構**（依 dav-skill-creater v2.1 規則）
 - **每個新 skill 純文字引用**（跨 dir 連結全改純文字）
+
+---
+
+## v2.2 補充（2026-09-26，TMO-009 階段 11b）
+
+依用戶決策：skill 必須可獨立搬動 → **跨目錄讀檔引用零容忍**。
+
+### 新規則（v2.2 嚴格版）
+
+| 類型 | 允許 | 不允許 |
+|------|------|--------|
+| skill 寫到 docs/（產出目的地）| ✅ 「寫入 `<docs_path>`」 | — |
+| skill 讀 docs/ 內檔 | — | ❌「讀 docs/xxx」、「見 docs/xxx」 |
+| skill 跨 skill 引用 | ✅「見同套 other-skill（需同套安裝）」 | ❌「見 skills/other-skill/SKILL.md」 |
+| Obsidian `[[xxx]]` 教學 | ✅ 必加 `<教學範例>` 標記 | ❌ 不加標記 |
+
+### 為什麼分得更細
+
+- **產出目的地**：「寫到 docs/wiki/{slug}.md」不破壞獨立性（LLM 仍可決定寫入路徑）
+- **讀檔引用**：「讀 docs/wiki/{slug}.md」破壞獨立性（LLM 找不到檔）
+- **跨 skill 引用**：「見 skills/other-skill/SKILL.md」依賴其他 skill 結構
+- **同套安裝**：skill 可表達「需同套安裝 other-skill」，但不能指路徑
+
+### 累計探針
+
+- v2.1：114 探針（11 檔）
+- v2.2：+6 探針（1 檔）→ 總 120 探針、12 檔
+
+### Regression 最終狀態
+
+- v2.1：339/352
+- v2.2：345/358（13 pre-existing AC-E1~E20 環境缺失不阻擋）
+
+### 給未來 sprint 的提醒（v2.2 新增）
+
+- **不要寫「讀 docs/xxx」、「見 docs/xxx」、「見 skills/other-skill/SKILL.md」** — 探針 1-3 會 fail
+- **Obsidian 教學一定要加 `<教學範例>` 標記** — 探針 6 會 fail
+- **dav-skill-creater 的規則段用自然語言描述反例** — 不要直接寫出會被探針誤抓的字串
