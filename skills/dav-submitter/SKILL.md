@@ -86,12 +86,12 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 2：LLM 注意力優化 |
 | v2.0 | 2026-09-26 | 三層→兩層（取消 HTML）| TMO-008 減法：MD 足夠協作 |
 | v2.0 | 2026-09-26 | 反思併進 Markdown 末段 | TMO-008 減法：取消獨立反思檔 |
-| v1.x | — | （舊版三層 + ASCII 流程圖）| 詳見 `docs/sop/handbook/changelog.md` v1.x |
+| v1.x | — | （舊版三層 + ASCII 流程圖）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用**：
-- SOP §2.5 詳細內容 → 見 `docs/sop/handbook/2.5-submission.md`
-- Markdown 詳錄模板（含 `## 反思` 段）→ 見 `skills/dav-submitter/template.md`
-- 反思觸發 → 見 `skills/dav-reflection/SKILL.md`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
+- SOP §2.5 詳細內容 → 見 monorepo 對應的提交指南文件（路徑由 monorepo 約定）
+- Markdown 詳錄模板（含 `## 反思` 段）→ 見同套本 skill 子檔（`./template.md`）
+- 反思觸發 → 見同套 dav-reflection skill（需同套安裝）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

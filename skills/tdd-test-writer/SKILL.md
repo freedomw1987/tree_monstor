@@ -33,14 +33,14 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 
 ### Step 1：定位 backlog
 
-- **動作**：讀 `docs/backlog.md`，找到目標任務（PENDING 或 in_progress 中要寫測試的）
+- **動作**：讀 monorepo 對應的 backlog 檔（路徑由 monorepo 約定），找到目標任務（PENDING 或 in_progress 中要寫測試的）
 - **為什麼**：測試必對應 backlog item，避免「不知道測什麼」
 - **產出**：識別目標 US / DE / TECH ID
 - **證據**：對話中有「目標 = X」
 
 ### Step 2：分析 AC
 
-- **動作**：讀取每個任務的 AC（含 `docs/ac/<US-ID>.md` 完整 AC 範本）
+- **動作**：讀取每個任務的 AC（含 monorepo 對應的 AC 範本檔，路徑由 monorepo 約定）
 - **為什麼**：AC 是「驗收標準」，測試必對應 AC
 - **產出**：AC 清單（含 Given / When / Then）
 - **證據**：每個 AC 都有對應測試用例
@@ -138,10 +138,10 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 |------|------|------|------|
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 8：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-| v1.x | — | （舊版含 ASCII 流程圖）| 詳見 `docs/sop/handbook/changelog.md` |
+| v1.x | — | （舊版含 ASCII 流程圖）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用（純文字）**：
-- 測試結構示例 → 見 `skills/tdd-test-writer/examples.md`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
+- 測試結構示例 → 同套本 skill 子檔（`./examples.md`）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

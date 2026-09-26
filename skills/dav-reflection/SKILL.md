@@ -84,11 +84,11 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 |------|------|------|------|
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段（TL;DR / 觸發 / 流程 / 規則 / 變動歷史）| TMO-009 階段 1 PoC：LLM 注意力優化 |
 | v2.0 | 2026-09-26 | 反思併進 deliverable.md 末段（v2.0 規則）| TMO-008 減法：取消獨立反思檔 |
-| v1.x | — | （舊版 6 維度流程 + 獨立反思檔）| 詳見 `docs/sop/handbook/changelog.md` v1.x |
+| v1.x | — | （舊版 6 維度流程 + 獨立反思檔）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用**：
-- SOP §2.4 詳細內容 → 見 `docs/sop/handbook/2.4-reflection.md`
-- 交付物模板（含 `## 反思` 段）→ 見 `skills/dav-submitter/template.md` `## 8. 反思`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
+- SOP §2.4 詳細內容 → 見 monorepo 對應的反省指南文件（路徑由 monorepo 約定）
+- 交付物模板（含 `## 反思` 段）→ 見同套 dav-submitter 的子檔（需同套安裝）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

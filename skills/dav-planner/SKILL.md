@@ -235,11 +235,11 @@ description: 在 SOP「規劃」階段使用。透過多輪提問把用戶真實
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 3：LLM 注意力優化 |
 | v1.9 | 2026-09-26 | +§2.7 用戶背景收集 | TMO-007：用戶決策 |
 | v1.8 | 2026-09-26 | AC 範本獨立化 + HTML 版本 | TMO-006：可讀性 / 列印友好 |
-| v1.x | — | （舊版 7 維度 + SWOT + INVEST + Given-When-Then）| 詳見 `docs/sop/handbook/changelog.md` v1.x |
+| v1.x | — | （舊版 7 維度 + SWOT + INVEST + Given-When-Then）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用**：
-- SOP §2.1 詳細內容 → 見 `docs/sop/handbook/2.1-planning.md`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
-- AC 範本格式範例 → `docs/ac/README.md`
+- SOP §2.1 詳細內容 → 見 monorepo 對應的規劃文件（路徑由 monorepo 約定）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
+- AC 範本格式範例 → 見 monorepo 對應的 AC 範本文件（路徑由 monorepo 約定）

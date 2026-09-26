@@ -4,6 +4,36 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.2 — 2026-09-26
+
+**本版異動**：跨目錄讀檔引用零容忍（TMO-009 階段 11b）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | skill 內跨目錄讀檔引用零容忍 | 禁止「讀 docs/xxx」、「見 docs/xxx」、「見 skills/other-skill/SKILL.md」這類「去讀別的 dir 檔案」的引用 |
+| **P0** | 9 個 SKILL.md 全清跨目錄讀檔引用 | dav-planner / dav-reflection / dav-submitter / dav-trust / dav-skill-creater / dav-wiki / regression-guard / tdd-test-writer / dev-checker-loop 全部改為抽象詞 |
+| **P0** | Obsidian `[[xxx]]` 教學加標記 | dav-wiki 等教學用 Obsidian 雙向連結時，必加「`<教學範例>`」標記，避免讀者誤判為跨檔連結 |
+| **P0** | 刪除 `docs/plan/` + `docs/review/` 空殼目錄 | 兩目錄只有 `.gitkeep`、零內容；實際內容在 commit e2f71af 已刪 |
+| **P1** | `skills/dav-skill-creater/SKILL.md` 加 v2.2 規則 | 未來新 skill 必遵守「跨目錄讀檔引用零容忍」 |
+| **P1** | `tests/restruct-zero-cross-read.bats` 新建 | 6 個探針守護跨目錄讀檔零容忍規則 |
+
+**決策紀錄**：
+- **產出目的地可保留**：docs/ 是 project 約定，「寫到 docs/xxx」仍允許（不破壞獨立性）
+- **讀檔引用零容忍**：「讀 docs/xxx」、「見 docs/xxx」禁絕（破壞 skill 獨立搬動）
+- **skill 子檔仍可用 markdown 連結**：因同 dir、可獨立搬動
+- **AGENTS.md 全域索引仍保留**：handbook / gates.json 連結屬全域索引層
+
+**未來 sprint 規則（v2.2 新增）**：
+
+| 規則 | 允許 | 不允許 |
+|------|------|--------|
+| skill 寫到 docs/ | ✅ 「寫入 `<docs_path>`」 | ❌ — |
+| skill 讀 docs/ 內檔 | — | ❌ 禁止任何「讀 docs/xxx」、「見 docs/xxx」 |
+| skill 跨 skill 引用 | ✅ 「見同套 other-skill（需同套安裝）」 | ❌ 禁止「見 skills/other-skill/SKILL.md」 |
+| Obsidian `[[xxx]]` 教學 | ✅ 必加 `<教學範例>` 標記 | ❌ 不加標記 |
+
+---
+
 ## v2.1 — 2026-09-26
 
 **本版異動**：重結構 — 9 skill + AGENTS.md 改為「任務導航」5 段 + 純文字引用（TMO-009）

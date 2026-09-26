@@ -106,11 +106,11 @@ description: 信任模式。用戶給「大目標 + deadline」後 Agent 自主�
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 4：LLM 注意力優化 |
-| v1.x | — | （舊版 9 章節含 §5.5 / §9 結束邊界）| 詳見 `docs/sop/handbook/changelog.md` v1.x |
+| v1.x | — | （舊版 9 章節含 §5.5 / §9 結束邊界）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用**：
-- Trust Log 完整範例 → [`skills/dav-trust/examples.md`](./examples.md)
-- SOP 完整 5 階段 → 見 `docs/sop/handbook/2.1-planning.md` ~ §2.5
+- Trust Log 完整範例 → 同套本 skill 子檔（`./examples.md`）
+- SOP 完整 5 階段 → 見 monorepo 對應的規劃 ~ 提交文件（路徑由 monorepo 約定）
 - 結束後行為 → 同上 examples.md

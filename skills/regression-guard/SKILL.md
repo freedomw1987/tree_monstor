@@ -193,13 +193,13 @@ CI=1 npm test
 |------|------|------|------|
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-| v1.x | — | （舊版含 ASCII 流程圖）| 詳見 `docs/sop/handbook/changelog.md` |
+| v1.x | — | （舊版含 ASCII 流程圖）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用（純文字）**：
-- 多語言實現範例 → 見 `skills/regression-guard/examples.md`
-- 測試方法指南 → 見 `skills/regression-guard/testing-methods.md`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
+- 多語言實現範例 → 同套本 skill 子檔（`./examples.md`）
+- 測試方法指南 → 同套本 skill 子檔（`./testing-methods.md`）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
 
 **核心精神**：語言可以換，框架可以變，但 Regression Guard 的原則永存。

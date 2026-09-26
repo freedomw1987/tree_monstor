@@ -11,7 +11,7 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 2. **何時觸發**：大型項目、嚴格品質要求、V03 SOP 修改提案、用戶指定 dev-checker-loop。
 3. **預設 SOP 路徑**：§2.3 Gate 4 reviewer gate（在 Gate 1/2/3 後）。
 4. **關鍵紀律**：
-   - **dev 必含探針**：保留 regression-guard 探針（見 `skills/regression-guard/SKILL.md`）
+   - **dev 必含探針**：保留 regression-guard 探針（見同套 regression-guard skill，需同套安裝）
    - **問題必記錄**：checker 發現的問題必寫進對話 / log，不口頭講
    - **20 次循環上限**：任一問題超過 20 次循環未解即中斷
    - **純文字引用**：skill 內不放跨檔 markdown 連結
@@ -97,11 +97,11 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 |------|------|------|------|
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 9：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-| v1.x | — | （舊版含 ASCII 流程圖）| 詳見 `docs/sop/handbook/changelog.md` |
+| v1.x | — | （舊版含 ASCII 流程圖）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用（純文字）**：
-- 工作流程詳解 → 見 `skills/dev-checker-loop/workflow.md`
-- regression-guard 探針規則 → 見 `skills/regression-guard/SKILL.md`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
+- 工作流程詳解 → 同套本 skill 子檔（`./workflow.md`）
+- regression-guard 探針規則 → 見同套 regression-guard skill（需同套安裝）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

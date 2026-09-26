@@ -7,7 +7,7 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 ## TL;DR
 
-1. **做什麼**：把任何來源的資料（純文字、Office 文件、網頁、OCR、字幕）統一轉成 Markdown 知識庫，存進 `docs/wiki/`；自動提取概念到 `docs/concepts/`；可透過 Obsidian 雙向連結 `[[xxx]]` 交叉引用。
+1. **做什麼**：把任何來源的資料（純文字、Office 文件、網頁、OCR、字幕）統一轉成 Markdown 知識庫，存進 `docs/wiki/`；自動提取概念到 `docs/concepts/`；可透過 Obsidian 雙向連結 `<教學範例>[[xxx]]</教學範例>` 交叉引用。
 2. **何時觸發**：用戶給文件要轉 wiki / 給網址要收錄 / 批次處理多份文件 / 更新既有 wiki。
 3. **預設 SOP 路徑**：§2.3 執行（無單獨 SOP Gate，由 dav-planner 啟動後調用）。
 4. **關鍵紀律**：
@@ -64,8 +64,8 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
   - keywords 重疊 ≥ 1 個才算真正相關
   - 最多 5 篇、最少 0 篇
 - **為什麼**：自動建立知識網絡，但避免 index 傾斜（舊 doc 不自動反向更新）
-- **產出**：markdown 內 `[[xxx]]` 標記
-- **證據**：frontmatter related 欄位 + 內文 `[[xxx]]` 數量
+- **產出**：教學範例：markdown 內 `<教學範例>[[xxx]]</教學範例>` 標記 — 實際 wiki 內的 Obsidian 雙向連結由 dav-wiki 產生
+- **證據**：frontmatter related 欄位 + 內文 `<教學範例>[[xxx]]</教學範例>` 數量（讀者不要誤判為跨檔連結）
 
 ### Step 6：概念提取
 
@@ -135,15 +135,15 @@ docs/
 |------|------|------|------|
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 6：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-| v1.x | — | （舊版 7 步流程 + FR-2 多模組 + Obsidian 雙向連結）| 詳見 `docs/sop/handbook/changelog.md` |
+| v1.x | — | （舊版 7 步流程 + FR-2 多模組 + Obsidian 雙向連結）| 詳見全域 SOP 變動歷史 v1.x |
 
 ---
 
 **交叉引用（純文字）**：
-- 操作範例 → 見 `skills/dav-wiki/examples.md`
-- frontmatter schema → 見 `skills/dav-wiki/frontmatter-schema.md`
-- 概念演進規則 → 見 `skills/dav-wiki/concept-evolution.md`
-- 互動設計系統 → 見 `docs/DESIGN.md`
-- 技術架構 → 見 `docs/system-design.md`
-- PRD → 見 `docs/prd/03-knowledge-extraction.md`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
+- 操作範例 → 同套本 skill 子檔（`./examples.md`）
+- frontmatter schema → 同套本 skill 子檔（`./frontmatter-schema.md`）
+- 概念演進規則 → 同套本 skill 子檔（`./concept-evolution.md`）
+- 互動設計系統 → 見 monorepo 對應的 design 文件（路徑由 monorepo 約定）
+- 技術架構 → 見 monorepo 對應的 system-design 文件（路徑由 monorepo 約定）
+- PRD → 見 monorepo 對應的 PRD 文件（路徑由 monorepo 約定）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

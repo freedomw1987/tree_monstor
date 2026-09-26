@@ -107,31 +107,49 @@ description: 從用戶對話或操作中提煉可重複應用的概念，產出�
 | 不明步驟（只有標題） | 每步 4 元素（動作 / 為什麼 / 產出 / 證據）|
 | 沒 frontmatter | 必含 `name` + `description` |
 | `description` 太長（> 200 字）| 一句話聚焦 + 何時用 + 何時不用 |
-| 跨 dir 連結（相對路徑指 docs/ 或 Obsidian wiki link 指其他 dir）| 純文字「見 docs/prd/03-knowledge-extraction.md」|
+| 跨 dir 連結（相對路徑指 docs/ 或 Obsidian wiki link 指其他 dir）| 純文字「見 monorepo 對應的 PRD 文件」|
 
-### 純文字引用規範（v2.1）
+### 純文字引用規範（v2.1 + v2.2）
 
+**v2.1 — markdown 跨 dir 連結零容忍**：
 - **不放 markdown 跨 dir 連結**：禁止任何用相對路徑指向 SKILL.md 所在 dir 之外的 markdown 連結
 - **不放 Obsidian 跨 dir 連結**：禁止用 Obsidian wiki link 指向其他 dir 的檔案
 - **skill 子檔可用 markdown**：因為子檔和 SKILL.md 在同 dir，可正常使用相對連結
-- **替代寫法**：純文字「見 `docs/prd/03-knowledge-extraction.md`」或「詳見 `skills/dav-wiki/SKILL.md`」
 
-**例外**（仍可用 markdown 連結）：
+**v2.2 — 跨目錄讀檔引用零容忍**（更嚴格）：
+- **不放跨目錄讀檔引用**：禁止任何「讀 + path」「見 + path」「詳見 + path」這類指向 skill 自己目錄以外檔案的引用（自然語言描述）
+- **不放跨 skill 引用**：禁止任何指向其他 skill 頂層 SKILL.md 的引用
+- **不放指向 docs/ 內具體檔案**：禁止任何指名 docs/ 子目錄內具體檔案的引用
+- **替代寫法**：抽象詞「見 monorepo 對應的 PRD 文件」、「見 SOP 全域變動歷史」、「見同套 other-skill 子檔」（由 monorepo 約定或同套安裝關係取得）
+
+**為什麼更嚴**：
+- skill 搬動到任何位置仍可運作，不依賴 monorepo 內的 docs/ 或其他 skill 結構
+- 產出目的地（寫到 docs/）仍保留 — docs/ 是 project 約定、屬於「寫到哪」語意
+- 讀檔引用（從 docs/ 讀）破壞獨立性、寫到 docs/ 不破壞獨立性（LLM 仍可決定寫入路徑）
+
+**Obsidian `[[xxx]]` 教學標記（v2.2）**：
+- dav-wiki 等 skill 提到 Obsidian 雙向連結教學時，必加「`<教學範例>`」標記
+- 例如：「產出：教學範例：markdown 內 `[[xxx]]` 標記 — 實際 wiki 產出由 dav-wiki 處理」
+- 避免讀者誤判 `[[xxx]]` 為跨檔連結
+
+**例外**（仍可用 markdown 連結 / 路徑引用）：
 - skill 自己的 `CHANGELOG.md` 內的版本歷史連結
 - `AGENTS.md`（全域索引、非 skill）內的 handbook / gates.json 連結
+- skill 寫到 docs/（project 約定的寫入目的地）
 
 ## 變動歷史
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-09-26 | 加「跨目錄讀檔引用零容忍」+ Obsidian 教學標記 | TMO-009 階段 11b：skill 完全獨立搬動 |
 | v2.1 | 2026-09-26 | 加「任務導航」5 段 + LLM 注意力準則 + 純文字引用 | TMO-009 階段 10：新 skill 編寫準則統一 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-| v1.x | — | （舊版 150 行 + Wiki link 規則）| 詳見 `docs/sop/handbook/changelog.md` |
+| v1.x | — | （舊版 150 行 + Wiki link 規則）| 詳見全域 SOP 變動歷史 |
 
 ---
 
 **交叉引用（純文字）**：
-- 規劃技巧（V01/V02 提問紀律）→ 見 `skills/dav-planner/SKILL.md`
-- SOP 完整流程（§2.1-§2.5）→ 見 `docs/sop/handbook/`
-- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
-- TMO-009 設計依據（5 段結構理由）→ 見 `docs/prd/04-restructure-skills-llm-friendly.md`
+- 規劃技巧（V01/V02 提問紀律）→ 見同套 dav-planner skill（需同套安裝）
+- SOP 完整流程（§2.1-§2.5）→ 見 monorepo 對應的 handbook 目錄（路徑由 monorepo 約定）
+- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
+- TMO-009 設計依據（5 段結構理由）→ 見 monorepo 對應的 PRD 文件（路徑由 monorepo 約定）
