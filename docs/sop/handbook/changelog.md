@@ -4,6 +4,34 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.3 — 2026-09-26
+
+**本版異動**：dav-skill-creator 對「修改既有 skill」亦生效（TMO-009 階段 11c）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `skills/dav-skill-creater/SKILL.md` 觸發時機表加「修改既有 skill」 | 任何 `skills/<name>/SKILL.md` 被修改都必走修改流程 |
+| **P0** | `skills/dav-skill-creater/SKILL.md` 新增「修改既有 skill」流程 | M-Step 1（讀舊版 + 評估規範偏差）/ M-Step 2（套用變更 + 清偏差）/ M-Step 3（自驗收 + 探針驗證）|
+| **P0** | `skills/dav-skill-creater/SKILL.md` 規則表加「修改必走 v2.3 流程」 | 純錯字除外；修改 ≧ 3 行必走 M-Step 1-3 |
+| **P1** | `skills/dav-skill-creater/SKILL.md` description 更新含「修改」 | 描述明確含「修改既有 skill」適用範圍 |
+| **P1** | `tests/restruct-skill-creator-modify.bats` 新建 | 6 個探針守護「修改流程」規則 |
+
+**決策紀錄**：
+- **v2.2 規範自動套用**：TMO-009 重結構後所有 skill（9 個）已合規 v2.2；v2.3 規範在本次同時生效
+- **修改流程獨立於新建流程**：新建 5 步 / 修改 3 步，避免修改時誤走新建流程（從 0 重新建立浪費）
+- **規範偏差修正強制**：修改時必同時清存量偏差、不允許「修 A 留 B」累积技術債
+- **修改後必跑既有探針**：`bats tests/restruct-<name>.bats` 退探即視為修改失敗
+
+**未來 sprint 規則（v2.3 新增）**：
+
+| 規則 | 適用 | 不適用 |
+|------|------|--------|
+| 修改 ≧ 3 行必走 M-Step 1-3 | ✅ | ❌ 純錯字 |
+| 修改同時清規範偏差 | ✅ | ❌ 用戶明確只修 A |
+| 修改後跑既有探針 | ✅ | ❌ — |
+
+---
+
 ## v2.2 — 2026-09-26
 
 **本版異動**：跨目錄讀檔引用零容忍（TMO-009 階段 11b）
