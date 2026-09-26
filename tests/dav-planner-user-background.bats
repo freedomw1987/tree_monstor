@@ -16,7 +16,8 @@ load 'helpers/test-env'
 
 @test "SKILL: dav-planner documents user background collection (section 2.7)" {
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
-  assert_file_contains "$skill" "## 2.7"
+  # v2.0 restructured: header may be "## §2.7 用戶背景收集（v1.9 新增）"
+  assert_file_contains "$skill" "§2.7"
   assert_file_contains "$skill" "用戶背景收集"
 }
 
@@ -30,7 +31,8 @@ load 'helpers/test-env'
 
 @test "SKILL: dav-planner section 2.7 documents the skip rule (2.7.1)" {
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
-  assert_file_contains "$skill" "### 2.7.1"
+  # v2.0 restructured: header may be "### §2.7.1 何時跳過角色題"
+  assert_file_contains "$skill" "§2.7.1"
   # Must mention "skip" behavior so future maintainers don't remove the rule
   grep -qiF "跳過" "$skill" || {
     echo "FAIL: §2.7.1 must mention the skip rule (跳過)" >&2
@@ -40,7 +42,8 @@ load 'helpers/test-env'
 
 @test "SKILL: dav-planner section 2.7.2 distinguishes from §3 Persona" {
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
-  assert_file_contains "$skill" "### 2.7.2"
+  # v2.0 restructured: header may be "### §2.7.2 與 §3 Persona 補充維度區分"
+  assert_file_contains "$skill" "§2.7.2"
   assert_file_contains "$skill" "Persona"
 }
 

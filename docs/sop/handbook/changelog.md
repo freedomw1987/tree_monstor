@@ -4,6 +4,45 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.1 — 2026-09-26
+
+**本版異動**：重結構 — 9 skill + AGENTS.md 改為「任務導航」5 段 + 純文字引用（TMO-009）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | 9 個 SKILL.md 重組為「任務導航」5 段 | dav-reflection / dav-submitter / dav-planner / dav-trust / dav-wiki / regression-guard / tdd-test-writer / dev-checker-loop / dav-skill-creater 統一 TL;DR / 觸發時機 / 流程 / 規則 / 變動歷史 |
+| **P0** | `AGENTS.md` 重組為「任務導航」 | TL;DR / §1 萬事原則 / §1.5 紀律 / §2 SOP / §2.x 索引 / 變動歷史 |
+| **P0** | 純文字引用規範（v2.1） | 9 個 skill 移除跨 dir markdown 連結 / Obsidian wiki link 跨 dir 連結；改用純文字「見 `<path>`」 |
+| **P1** | `skills/dav-skill-creater/SKILL.md` 加 LLM 注意力編寫準則 | 新 skill 必含 5 段結構 + 反模式（ASCII box-drawing / 沒 frontmatter / 跨 dir 連結）|
+| **P1** | `docs/prd/04-restructure-skills-llm-friendly.md` 新建 | 本次變更 PRD（11 階段）|
+| **P1** | `docs/backlog.md` TMO-009 | Story Point 25 |
+| **P1** | 11 個新 bats 探針（restruct-*.bats）| 114 個探針守護 5 段結構 + 純文字引用 + LLM 注意力準則 |
+
+**決策紀錄**：
+- **重結構 + 保留細節**：dav-planner 雖是「重結構」，但保留所有原 §2.7 / §2 / §3 / §4 / §5 子段細節，避免資訊遺失
+- **AGENTS.md 例外**：全域索引保留 handbook / gates.json 連結（非 skill 規則）
+- **dav-designer（30 行）跳過**：避免「為改而改」；下次改時也套 5 段
+- **Reviewer 階段跳過**：11 階段整體驗收 1 次（用戶決策）
+
+**LLM 注意力優化原則**：
+1. **TL;DR 第一**：5 條列（做什麼 / 何時觸發 / SOP 路徑 / 關鍵紀律 / 必產出物）
+2. **emoji 限縮**：只在「觸發時機」表用 ✅🟡❌
+3. **表格只放結論**：長說明放流程步驟內
+4. **流程明步**：每步 動作 / 為什麼 / 產出 / 證據
+5. **規則三欄**：規則 / 例外 / 限制
+
+**未來 sprint 規則（v2.1 新增）**：
+
+| 產出物 | 規則 |
+|--------|------|
+| 新 skill | ✅ 必含 5 段結構（依 dav-skill-creater v2.1 規則）|
+| 跨 dir 引用 | ✅ 純文字（見 `<path>`）；禁止 `../` markdown / `[[...]]` Obsidian 跨 dir |
+| skill 重結構 | ✅ 必走 TDD（探針先紅後綠）+ regression 全綠 |
+
+**前置**：Reviewer 二審驗收（內部 audit，基於結構對照表 + 跨 SOP 一致性檢查）→ **verdict: PASS WITH MINOR**（P0=0, P1=1 探針, P2=2 pre-existing 不阻擋 merge）。
+
+---
+
 ## v2.0 — 2026-09-26
 
 **本版異動**：減法 — 文件產出物精簡（TMO-008）

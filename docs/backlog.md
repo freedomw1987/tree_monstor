@@ -17,6 +17,7 @@
 | TMO-006 | dav-planner AC 範本獨立化 + HTML 版本 | P1 | 8 | done | TMO-001 |
 | TMO-007 | dav-planner 用戶背景收集機制（§2.7） | P1 | 8 | done | TMO-006 |
 | TMO-008 | 減法：文件產出物精簡（v2.0） | P1 | 5 | done | TMO-007 |
+| TMO-009 | 重結構：9 skill + AGENTS.md 任務導航 + 純文字引用 | P1 | 25 | done | TMO-008 |
 
 ---
 

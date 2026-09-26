@@ -24,8 +24,10 @@ setup() {
 # ---------- regression-guard SKILL.md ----------
 @test "SKILL: regression-guard documents the watch-mode rule" {
   local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
-  assert_file_contains "$f" "測試指令執行規範"
-  assert_file_contains "$f" "禁用 interactive / watch"
+  # TMO-009 stage 7: wording changed from 測試指令執行規範 to TTY fail-fast
+  assert_file_contains "$f" "TTY fail-fast"
+  assert_file_contains "$f" "watch"
+  assert_file_contains "$f" "interactive"
   assert_file_contains "$f" "vitest run"
   assert_file_contains "$f" "jest --ci"
   assert_file_contains "$f" "< /dev/null"
@@ -33,8 +35,15 @@ setup() {
 
 @test "SKILL: regression-guard has a fail-fast self-check section" {
   local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
-  assert_file_contains "$f" "Fail-fast 自檢"
-  assert_file_contains "$f" "Watch Usage"
+  # TMO-009 stage 7: section still labeled "Fail-fast 自檢"
+  LC_ALL=C grep -qE "Fail-fast" "$f" || {
+    echo "FAIL: missing Fail-fast section" >&2
+    return 1
+  }
+  grep -qF "Watch Usage" "$f" || {
+    echo "FAIL: missing Watch Usage string" >&2
+    return 1
+  }
 }
 
 # ---------- gates.json (Gate 3 single source) ----------

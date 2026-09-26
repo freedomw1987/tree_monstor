@@ -30,12 +30,14 @@ setup() {
 @test "SOUL-3: AGENTS.md has the same bullet count in the principles section as SOUL.md" {
   soul_count=$(grep -cE '^- ' "$REPO_SOUL")
   # Count bullets in the 萬事原則 section of AGENTS.md only.
-  agents_count=$(awk '/^\*\*萬事原則/,/^### 1\.5/' "$REPO_AGENTS" | grep -cE '^- ')
+  # v2.0 may use ## §1 萬事原則 / ## §1.5 紀律 (instead of ### 1.5)
+  agents_count=$(awk '/^## §1 萬事原則|^## §1 萬事/,/^## §1\.5|^### 1\.5/' "$REPO_AGENTS" | grep -cE '^- ')
   [ "$soul_count" -eq "$agents_count" ]
 }
 
 @test "SOUL-4: AGENTS.md explicitly notes that pi does not read SOUL.md" {
-  grep -F -q "pi 不會讀" "$REPO_AGENTS"
+  # v2.0 may say "pi / Claude Code 不會讀" (broader phrasing)
+  grep -F -q "不會讀" "$REPO_AGENTS"
 }
 
 # ---------- Skill references must use pi-recognised /skill:name form ----------

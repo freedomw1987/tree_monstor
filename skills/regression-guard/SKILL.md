@@ -1,60 +1,104 @@
 ---
 name: regression-guard
-description: 在開發過程中埋入探針，透過 REGRESSION_MODE 自動運行驗證，失敗時提供建議讓 Agent 自動修正。
+description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變量自動運行驗證，失敗時提供建議讓 Agent 自動修正。涵蓋 TTY/watch mode fail-fast 防線機制。
 ---
-# Regression Guard Skill
 
-## 核心原則
+# Regression Guard
 
-在開發過程中埋入探針，目的是為了系統的代碼是可以對之後的測試和排錯工作友好，測試和排錯checker agent 可以根據開發項目中探針的報錯和測試記錄進行驗證；
+## TL;DR
 
+1. **做什麼**：在開發時埋入探針（probe / assert / describe），透過 `REGRESSION_MODE=true` 自動運行；失敗時提供 `suggestion` 讓 Agent 自動修正。
+2. **何時觸發**：每個 sprint 的 Gate 3 regression gate；任何會「跑 test runner」的場景。
+3. **預設 SOP 路徑**：§2.3 Gate 3 regression gate（在 Gate 1 TDD 後、Gate 4 Reviewer 前）。
+4. **關鍵紀律**：
+   - **TTY fail-fast**：測試指令禁用 interactive / watch 模式；shell 卡住 > 30 秒 = Gate 3 失敗
+   - **探針命名具體**：避免 `test1`，必含描述（如 `user-login-returns-correct-data`）
+   - **粒度適中**：每個邏輯斷言一個探針（不過粗、不過細）
+   - **純文字引用**：skill 內不放跨檔 markdown 連結
+5. **必產出物**：探針程式碼（probe/assert/describe）+ 報告（文本 + JSON）+ 失敗時 `suggestion`
 
-| 原則          | 說明                       |
-| ----------- | ------------------------ |
-| **1. 預留探針** | 在關鍵代碼位置埋入測試點             |
-| **2. 環境控制** | `REGRESSION_MODE` 控制探針開關 |
-| **3. 自動運行** | 開關開啟時執行所有探針              |
-| **4. 自我修正** | Agent 閱讀結果，有問題就自動修正      |
+## 觸發時機
 
+| 情境 | 觸發 |
+|------|------|
+| 開發過程埋探針 | ✅ 必須 |
+| Gate 3 regression baseline / 修改後驗證 | ✅ 必須 |
+| 跑 test runner（vitest / jest / pytest / bats / playwright / cargo / go）| ✅ 必套 TTY fail-fast |
+| 純提問 / 不跑測試 | ❌ 不觸發 |
+| 用戶主動 watch 模式（如開發者本地手動 watch）| ⚠️ 允許但不視為 Gate 3 |
 
-## 環境變量
+## 流程（5 步）
 
-```
-REGRESSION_MODE=true          # 開關探針
-REGRESSION_OUTPUT=both        # 輸出格式: json | text | both
-REGRESSION_STRICT=true        # 遇錯即停
-REGRESSION_REPORT_PATH=./report.json  # 報告路徑
-```
+### Step 1：開發時埋入探針
 
-## 測試指令執行規範（fail-fast）
+- **動作**：在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)` 埋入測試點
+- **為什麼**：探針讓後續測試 / 排錯 checker agent 能根據報錯和測試記錄驗證
+- **產出**：源代碼內含探針
+- **證據**：探針命名具體（避免 `test1`）
 
-> **為什麼有這節**：agent shell 在 TTY 偵測上是模糊的（watch mode 通常依賴 isatty()），若 runner 進入 watch / interactive，shell 會卡住等 stdin，整個 session 凍結（截圖症狀：`Waiting for task (esc to give additional instructions)`）。
+### Step 2：環境變量配置
 
-**強制規則**：執行 Gate 3 baseline / 修改後 output 時，**測試指令必須禁用 interactive / watch 模式**。不可使用會預設進入 watch 的指令。
+- **動作**：設定 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` / `REGRESSION_REPORT_PATH=./report.json`
+- **為什麼**：環境變量控制探針開關 + 輸出格式 + 失敗處理
+- **產出**：shell 環境變量或 .env 檔
+- **證據**：`echo $REGRESSION_MODE` 顯示正確值
 
-### 主流 runner 前綴對照表
+### Step 3：自動運行（禁用 watch / interactive）⭐
+
+- **動作**：執行測試指令，但**禁用 watch / interactive 模式**（見下方規則表）
+- **為什麼**：agent shell 在 TTY 偵測上是模糊的；watch mode 會卡住等 stdin，整個 session 凍結
+- **產出**：測試輸出（文本 + JSON 報告）
+- **證據**：測試一次性跑完退出，不卡住
+
+### Step 4：失敗時 Agent 自動修正
+
+- **動作**：讀取 `suggestion` 欄位 → 分析 → 修代碼 → 重跑
+- **為什麼**：自動化修正循環、避免人為介入延遲
+- **產出**：修正後代碼 + 重跑結果
+- **證據**：第二輪跑全部通過
+
+### Step 5：通過驗證
+
+- **動作**：確認所有探針通過、報告寫入 `REGRESSION_REPORT_PATH`
+- **為什麼**：留下 audit trail、供 Gate 4 Reviewer 讀
+- **產出**：report.json / report.txt
+- **證據**：report 檔存在 + summary 顯示 0 failed
+
+## 規則 / 例外 / 限制
+
+| 規則 | 例外 | 限制 |
+|------|------|------|
+| TTY fail-fast（禁用 watch）| 用戶手動 watch | Gate 3 不接受 watch 結果 |
+| 探針命名具體（必含描述）| N/A | 不可 `test1` / `probe1` |
+| 粒度適中（每個邏輯斷言 1 個探針）| N/A | 不過粗（功能級）/ 不過細（每行級）|
+| 預期值存 `fixtures/` 目錄 | 簡單值可 inline | 複雜 JSON / YAML 必抽檔 |
+| 失敗時提供 `suggestion` | N/A | Agent 必須能照做 |
+| 純文字引用（v2.1）| skill 子檔可用 markdown | 不寫 `../` 或 `docs/` 跨檔連結 |
+| 探針必在 `REGRESSION_MODE=true` 才跑 | 開發 hot reload 例外 | 預設開啟 |
+
+## 主流 runner TTY fail-fast 對照表
 
 | Runner | ❌ 禁用（會卡） | ✅ 使用（一次性跑完） |
 |---|---|---|
 | **vitest** | `vitest` / `npx vitest` | `vitest run` / `npx vitest --run` |
-| **jest** | `jest` / `npm test`（若 script 帶 watch） | `jest --ci` / `CI=1 npm test -- --watchAll=false` |
-| **npm test** | 視 package.json 設定 | 加 `CI=1` 前綴，並顯式傳 `--watchAll=false`（jest）或 `--run`（vitest） |
-| **bats** | — | `bats tests/`（無 watch，預設 OK）|
-| **pytest** | `pytest --watch` | `pytest` / `pytest -x`（預設非 watch）|
-| **playwright** | `playwright test --ui` | `playwright test`（預設 headless、非 watch）|
-| **cargo test** | — | `cargo test`（無 watch）|
-| **go test** | — | `go test ./...`（無 watch）|
+| **jest** | `jest` / `npm test`（若 script 帶 watch）| `jest --ci` / `CI=1 npm test -- --watchAll=false` |
+| **npm test** | 視 package.json 設定 | 加 `CI=1` 前綴 + 顯式 `--watchAll=false` 或 `--run` |
+| **bats** | — | `bats tests/`（預設 OK）|
+| **pytest** | `pytest --watch` | `pytest` / `pytest -x` |
+| **playwright** | `playwright test --ui` | `playwright test`（預設 headless）|
+| **cargo test** | — | `cargo test` |
+| **go test** | — | `go test ./...` |
 
 ### 通用保險：TTY 強制關閉
 
-若不確定 runner 行為，**一律在指令後加 `< /dev/null`** 強制關閉 stdin：
+若不確定 runner 行為，**一律在指令後加 `< /dev/null`**：
 
 ```bash
 npm test < /dev/null
-npx vitest < /dev/null     # 即使忘記加 --run，也會立刻退出 watch
+npx vitest < /dev/null
 ```
 
-或設定環境變量 `CI=1`（多數 runner 會自動關 watch）：
+或設定 `CI=1`（多數 runner 自動關 watch）：
 
 ```bash
 CI=1 npm test
@@ -62,8 +106,7 @@ CI=1 npm test
 
 ### Fail-fast 自檢
 
-執行後若出現以下任一情況，視為 **Gate 3 失敗**，不可聲稱「做完了」：
-
+執行後若出現以下任一情況 = **Gate 3 失敗**：
 - shell 卡住 > 30 秒無輸出
 - 輸出末端出現 `Watch Usage` / `press h to show help` / `Waiting for file changes`
 - 進程未退出、`Ctrl+C` 才能結束
@@ -72,36 +115,24 @@ CI=1 npm test
 
 ## API 合約
 
-### probe(name, actual, expected)
+### `probe(name, actual, expected)`
 
-比對實際值與預期值。
+- **name**（string）：探針名稱（描述性）
+- **actual**（any）：實際值
+- **expected**（any）：預期值
+- **return**：通過時 ✅，失敗時 ❌ + suggestion
 
-```
-參數:
-  name     - 探針名稱（描述性）
-  actual   - 實際值
-  expected - 預期值
-```
+### `assert(condition, message)`
 
-### assert(condition, message)
+- **condition**（bool）：布林條件
+- **message**（string）：描述文字
+- **return**：通過時 ✅，失敗時 ❌
 
-斷言條件為真。
+### `describe(name, fn)`
 
-```
-參數:
-  condition - 布林條件
-  message   - 描述文字
-```
-
-### describe(name, fn)
-
-分組管理探針。
-
-```
-參數:
-  name - 套件名稱
-  fn   - 包含探針的函數/區塊
-```
+- **name**（string）：套件名稱
+- **fn**（function）：包含探針的函數 / 區塊
+- **return**：分組結果
 
 ## 輸出格式
 
@@ -131,74 +162,44 @@ CI=1 npm test
 }
 ```
 
-## Agent 工作流程
+## 環境變量
 
-```
-┌────────────────────────────────────────────┐
-│  1. 開發時：嵌入探針                         │
-│     probe("login", result, expectedUser)   │
-├────────────────────────────────────────────┤
-│  2. 環境 REGRESSION_MODE=true              │
-├────────────────────────────────────────────┤
-│  3. 自動運行 → 印出結果                     │
-│     失敗 → Agent 讀取報告                   │
-├────────────────────────────────────────────┤
-│  4. Agent 分析 suggestion                  │
-│     自動修正代碼                            │
-├────────────────────────────────────────────┤
-│  5. 再次運行驗證 → 全部通過                │
-└────────────────────────────────────────────┘
-```
+| 變量 | 預設值 | 說明 |
+|------|--------|------|
+| `REGRESSION_MODE` | `false` | 開關探針 |
+| `REGRESSION_OUTPUT` | `both` | 輸出格式：`json` / `text` / `both` |
+| `REGRESSION_STRICT` | `true` | 遇錯即停 |
+| `REGRESSION_REPORT_PATH` | `./report.json` | 報告路徑 |
 
-## 多語言實現示例
+## 探針命名最佳實踐
 
-詳細可以參考 [[examples]]
+| ✅ 好的命名 | ❌ 不好的命名 |
+|------------|--------------|
+| `user-login-returns-correct-data` | `test1` |
+| `api-v1-users-[id]-returns-404` | `probe1` |
+| `payment-validation-rejects-empty-cart` | `test_payment` |
 
-## 測試方法參考
+## 粒度控制
 
-日常開發常用的測試方法指南，可以參考 [[testing-methods]]
+| 粒度 | 說明 | 範例 |
+|------|------|------|
+| ❌ 太粗 | 一個功能一個探針 | `user-management-works` |
+| ❌ 太細 | 每一行都探針 | `line-42-returns-true` |
+| ✅ 適中 | 每個邏輯斷言一個探針 | `user-login-returns-correct-data` |
 
-## 最佳實踐
+## 變動歷史
 
-### 探針命名
-
-```
-✅ 'user-login-returns-correct-data'
-✅ 'api-v1-users-[id]-returns-404'
-❌ 'test1'
-```
-
-### 預期值管理
-
-將預期值存放在 `fixtures/` 目錄：
-
-```
-fixtures/
-├── user.json
-├── config.yaml
-└── expected-output.json
-```
-
-### 粒度控制
-
-
-| 粒度  | 說明         |
-| --- | ---------- |
-| 太粗  | 一個功能一個探針   |
-| 太細  | 每一行都探針     |
-| 適中  | 每個邏輯斷言一個探針 |
-
-
-## 關鍵實現要求
-
-- ✅ 支援 `probe()` 值比對
-- ✅ 支援 `assert()` 斷言
-- ✅ 支援 `describe()` 套件分組
-- ✅ 讀取環境變量配置
-- ✅ 輸出文本 + JSON 雙軌
-- ✅ 提供 `suggestion` 建議
-- ✅ 失敗時 Agent 可自動修正
+| 版本 | 日期 | 變動 | 為什麼 |
+|------|------|------|------|
+| v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
+| v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
+| v1.x | — | （舊版含 ASCII 流程圖）| 詳見 `docs/sop/handbook/changelog.md` |
 
 ---
+
+**交叉引用（純文字）**：
+- 多語言實現範例 → 見 `skills/regression-guard/examples.md`
+- 測試方法指南 → 見 `skills/regression-guard/testing-methods.md`
+- 全域 SOP 變動歷史 → 見 `docs/sop/handbook/changelog.md`
 
 **核心精神**：語言可以換，框架可以變，但 Regression Guard 的原則永存。
