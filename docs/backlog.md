@@ -9,10 +9,10 @@
 
 | ID | 主題 | 優先級 | 點數 | 狀態 | 依賴 |
 |----|------|--------|------|------|------|
-| TMO-001 | 清 .gitignore RSI 殘留 + 刪 .agents/tree_monstor/ 髒副本 | P0 | 1 | pending | — |
-| TMO-002 | install.sh 拆 lib/install/*.sh 子模組 | P1 | 5 | pending | TMO-001 |
-| TMO-003 | 補缺 wiki bats + 修 README badge 數字 | P2 | 3 | pending | TMO-002 |
-| TMO-004 | AGENTS.md §2.0/§2.6 重構 + Reviewer 二審 | P0 | 5 | pending | TMO-001 |
+| TMO-001 | 清 .gitignore RSI 殘留 + 刪 .agents/tree_monstor/ 髒副本 | P0 | 1 | done (2026-09-23) | — |
+| TMO-002 | install.sh 拆 lib/install/*.sh 子模組 | P1 | 5 | done (2026-09-23) | TMO-001 |
+| TMO-003 | 補缺 wiki bats + 修 README badge 數字 | P2 | 3 | done (2026-09-23) | TMO-002 |
+| TMO-004 | AGENTS.md §2.0/§2.6 重構 + Reviewer 二審 | P0 | 5 | done (2026-09-23) | TMO-001 |
 | TMO-005 | tools/ 統一 logging（修正版：trap + 共用 log_*） | P2 | 3 | done | TMO-001 |
 | TMO-006 | dav-planner AC 範本獨立化 + HTML 版本 | P1 | 8 | done | TMO-001 |
 | TMO-007 | dav-planner 用戶背景收集機制（§2.7） | P1 | 8 | done | TMO-006 |
@@ -22,6 +22,8 @@
 ---
 
 ## TMO-001 詳細
+
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:08 — `.gitignore` 28→17 行、刪 `.agents/tree_monstor/` 132 檔。狀態完成但 backlog 欄漏改、2026-09-26 補上。
 
 **問題**：
 1. `.gitignore` 還殘留 5 行 sop-evolver RSI 規則（commit 5db8c2e 移除 RSI 但 .gitignore 漏改）
@@ -37,6 +39,8 @@
 
 ## TMO-002 詳細
 
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:25 — install.sh 993→569 行、抽出 19 個函數到 6 個 lib 檔。狀態完成但 backlog 欄漏改、2026-09-26 補上。
+
 **問題**：993 行 install.sh 拆成主程式 + lib 子模組
 
 **完成標準**：
@@ -48,6 +52,8 @@
 ---
 
 ## TMO-003 詳細
+
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:38 — 範圍縮小為「只修 README badge 數字 105→209」，不另建新 bats、不合併 cross-ref。狀態完成但 backlog 欄漏改、2026-09-26 補上。
 
 **問題**：
 1. 補上缺 bats 的工具（wiki-index / wiki-media-describe / wiki-extract-audio）
@@ -62,6 +68,8 @@
 ---
 
 ## TMO-004 詳細
+
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:55 — §2.0 表格改為「以 §2.6 為準」+ §2.6 加升級觸發器 + AGENTS.md 頂版本 v1.3→v1.5 + Reviewer APPROVE。狀態完成但 backlog 欄漏改、2026-09-26 補上。
 
 **問題**：AGENTS.md §2.0 與 §2.6 角色混淆，新人不知走哪條
 
