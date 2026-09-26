@@ -16,6 +16,7 @@
 | TMO-005 | tools/ 統一 logging（修正版：trap + 共用 log_*） | P2 | 3 | done | TMO-001 |
 | TMO-006 | dav-planner AC 範本獨立化 + HTML 版本 | P1 | 8 | done | TMO-001 |
 | TMO-007 | dav-planner 用戶背景收集機制（§2.7） | P1 | 8 | done | TMO-006 |
+| TMO-008 | 減法：文件產出物精簡（v2.0） | P1 | 5 | done | TMO-007 |
 
 ---
 
@@ -216,3 +217,36 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 | bats 守護（7 探針）| 2 |
 | 測試 + Reviewer + 反省 + 提交 | 2 |
 | **合計** | **8** |
+
+## TMO-008 詳細（減法：文件產出物精簡 v2.0）
+
+**背景**：v1.8 / v1.9 連續 2 個 sprint，每次都寫 6+ 個檔（changelog / PRD / reflection / deliverable.md / deliverable.html / tests）。文件產出物快速膨脹。
+
+**目標**：未來 sprint 從「必寫 6 個檔」精簡為「必寫 2 個檔」。存量完全不動。
+
+**範圍**：
+- **In Scope**：AGENTS.md §2.4/§2.5 + dav-submitter SKILL/template + §2.4/§2.5 handbook + changelog v2.0 + TMO-008 + 6 探針
+- **Non-goals**：v1.7.1/v1.8/v1.9 存量檔全部保留
+
+**決策**：
+1. 必寫：changelog + deliverable.md（含反思末段）
+2. 不寫：deliverable.html、獨立 reflection.md、小任務 PRD
+3. 視情境：PRD.md（架構/結構變才寫）、bats 探針（必要守護才加）
+4. 範圍：只動未來 sprint 規則，不動存量
+5. SOP 路徑：完整 §2.1-§2.5（V03 紀律）
+
+**Story Point 5**（AGENTS.md §2.4/§2.5 精簡 1 + dav-submitter 三層→兩層 1 + changelog v2.0 條目 1 + tests 探針 1 + 測試 + Reviewer + 提交 1）
+
+**完成標準（DoD）**：
+- [x] changelog v2.0 條目
+- [x] dav-submitter SKILL.md 三層→兩層 + 反思併進
+- [x] §2.5-submission.md 移除 HTML 強制 + 新增反思 self-check
+- [x] §2.4-reflection.md 反思併進 deliverable + 模板更新
+- [x] dav-submitter/template.md 新增 `## 反思` 段
+- [x] dav-reflection skill 改為「併進 deliverable.md」
+- [x] PRD-03 In Scope #6 + DoD 改為 6 個探針
+- [x] tests/v2-reduce-deliverables.bats 6/6 PASS
+- [x] Reviewer verdict: PASS（修正 2 P0 + 2 P1 後）
+- [x] TMO-008 → done
+
+**Reviewer 二審結果**：首次 FAIL（2 P0）+ 順手修 2 P1 → PASS

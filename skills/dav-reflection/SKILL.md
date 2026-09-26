@@ -33,9 +33,9 @@ description: 在自我反省階段使用，分層級（User Story / Sprint / Mod
 │   參考 [[checklist]] 的詳細檢查清單                     │
 │   每個維度標記：✅ 通過 / ⚠️ 有風險 / ❌ 不通過           │
 ├──────────────────────────────────────────────────────┤
-│                   3. 產出反省報告                       │
-│   輸出到 docs/reflection/<name>-reflection.md          │
-│   報告模板請參考 [[template]]                          │
+│                   3. 產出反省報告（v2.0：併進 deliverable） │
+│   反思**段落**併入 docs/deliverable/<YYYY-MM-DD>-<task-slug>.md 末段「## 反思」│
+│   報告模板請參考 [[template]]（v2.0 為併入式模板）         │
 ├──────────────────────────────────────────────────────┤
 │                   4. 轉化為 Backlog item               │
 │   - 技術債問題 → Technical Debt 類型                   │
@@ -63,13 +63,17 @@ description: 在自我反省階段使用，分層級（User Story / Sprint / Mod
 
 每個維度的詳細檢查問題請參考 [[checklist]]。
 
-## 反省報告產出位置
+## 反省報告產出位置（v2.0：併進 dav-submitter 交付物）
 
-| 級別 | 反省報告路徑 |
+> **v2.0 變動**：反思不再寫獨立檔，併進 `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md` 末段「## 反思」段落（依 `dav-submitter` §2.5 模板）。
+
+| 級別 | 反思併入位置 |
 |------|-------------|
-| User Story | `docs/reflection/us-<us-id>-reflection.md` |
-| Sprint | `docs/reflection/sprint-<number>-reflection.md` |
-| Module | `docs/reflection/module-<module-name>-reflection.md` |
+| User Story | 併入對應 US 的 `docs/deliverable/<...>.md` 末段「## 反思」 |
+| Sprint | 併入該 Sprint 最末一份 `docs/deliverable/<...>.md` 末段「## 反思」；若 Sprint 無 deliverable，先寫收尾 deliverable 再反思 |
+| Module | 併入 Module 收尾的 `docs/deliverable/<...>.md` 末段「## 反思」 |
+
+**存量特例**：v1.7.1 / v1.8 / v1.9 既有 `docs/reflection/*.md` 為歷史 audit，未來不再生成。
 
 ## Backlog 更新規則
 

@@ -4,6 +4,37 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.0 — 2026-09-26
+
+**本版異動**：減法 — 文件產出物精簡（TMO-008）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `skills/dav-submitter/SKILL.md`「三層產出物」→「兩層產出物」 | 未來 sprint 不再生成 `docs/deliverable/<...>.html`；對話摘要 + Markdown 詳錄（反思併進末段）即可 |
+| **P0** | `docs/sop/handbook/2.5-submission.md` 取消 HTML 強制 | Self-Check 清單移除「HTML 版存在且可開啟」項 |
+| **P0** | `docs/sop/handbook/2.4-reflection.md` 反思併進 deliverable | 未來 sprint 反思不再寫獨立 `docs/reflection/<name>-reflection.md`，併進 `docs/deliverable/<...>.md` 末段「## 反思」 |
+| **P1** | `docs/prd/03-reduce-deliverables.md` 新建 | 本次變更 PRD |
+| **P1** | `docs/backlog.md` TMO-008 | Story Point 5 |
+
+**決策紀錄**：
+- **不動存量**：v1.7.1 / v1.8 / v1.9 的 PRD / reflection / deliverable / html 全部保留（audit trail 不能動）
+- **視情境產出 PRD**：只有「架構 / 結構變更」才寫 PRD；純文字修改 / 簡單 bug fix / 規則調整不寫
+- **視情境產出探針**：只有「需要守護變動」才加；避免「為證明工作而加」的探針
+- **走完整 SOP（V03 紀律）**：SOP 修改必經 Reviewer 二審
+
+**未來 sprint 產出物規則（v2.0 精簡後）**：
+
+| 產出物 | 規則 |
+|--------|------|
+| changelog | ✅ 必寫 |
+| deliverable.md（含反思末段）| ✅ 必寫 |
+| PRD.md | 🟡 架構/結構變更才寫 |
+| bats 探針 | 🟡 必要守護才加 |
+| deliverable.html | ❌ 不寫 |
+| 獨立 reflection.md | ❌ 不寫（併進 deliverable）|
+
+**配套測試**：`tests/v2-reduce-deliverables.bats` 6 個探針守護 v2.0 規則不被逆轉
+
 ## v1.9 — 2026-09-26
 
 **本版異動**：dav-planner skill 新增「用戶背景收集」機制（TMO-007）

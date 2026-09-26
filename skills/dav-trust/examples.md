@@ -56,10 +56,11 @@
 
 ## 2026-01-15 15:55 — 提交階段
 
-**問題**：HTML 交付摘要要用什麼風格？
+**問題**：Markdown 交付摘要要用什麼風格？
 **決策**：跟 docs/deliverable/ 既有模板一致
 **理由**：保持一致性
 **可推翻**：❌（屬於 dav-submitter 既有規範）
+**v2.0 補充**：dav-submitter v2.0 起僅生成 Markdown（HTML 版已取消）
 
 ---
 
@@ -108,7 +109,7 @@ Agent 在 trust 模式下，最常遇到需要「代答」的問題類別：
 
 從現在開始，我不會打擾你。
 完成後我會：
-  1. 提交交付摘要（Markdown + HTML）
+  1. 提交交付摘要（Markdown）
   2. 列出所有「我替你做的決定」在 docs/trust-log.md
   3. 標記哪些 Backlog 沒完成（誠實不偽裝）
 
@@ -129,8 +130,7 @@ Agent 走完整流程，不呼叫 `ask_user_question`。
 ✅ 信任模式完成（或 ⏸️ 部分完成）
 
 📊 完成度: 4/5 Backlog (80%)
-📄 交付摘要: docs/deliverable/2026-01-15-crm-mvp.md
-🌐 HTML 版:  docs/deliverable/2026-01-15-crm-mvp.html
+📄 交付摘要: docs/deliverable/2026-01-15-crm-mvp.md （含反思末段，v2.0）
 📋 Trust Log: docs/trust-log.md  （共 12 個代答決定，請逐一檢視）
 
 🚦 待你驗收：
@@ -243,8 +243,7 @@ Agent: 我幫你直接 push 到 master 了 🚀
 🏁 Trust Mode 已結束
 
 📊 完成度: 5/5 (100%)
-📄 docs/deliverable/2026-01-15-crm.md
-🌐 docs/deliverable/2026-01-15-crm.html
+📄 docs/deliverable/2026-01-15-crm.md （含反思末段，v2.0）
 📋 docs/trust-log.md (共 12 條代答決定，請檢視)
 
 驗收後告訴我要：
