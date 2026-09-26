@@ -15,6 +15,7 @@
 | TMO-004 | AGENTS.md §2.0/§2.6 重構 + Reviewer 二審 | P0 | 5 | pending | TMO-001 |
 | TMO-005 | tools/ 統一 logging（修正版：trap + 共用 log_*） | P2 | 3 | done | TMO-001 |
 | TMO-006 | dav-planner AC 範本獨立化 + HTML 版本 | P1 | 8 | done | TMO-001 |
+| TMO-007 | dav-planner 用戶背景收集機制（§2.7） | P1 | 8 | done | TMO-006 |
 
 ---
 
@@ -154,4 +155,64 @@ backlog.md 表格 AC 欄位精簡為「AC 摘要 + 連結到獨立 AC 範本」�
 | SKILL.md §4.6 改動（HTML 生成 SOP）| 1 |
 | bats 守護測試 | 2 |
 | changelog v1.8 | 1 |
+| **合計** | **8** |
+
+---
+
+## TMO-007 詳細（dav-planner 用戶背景收集機制）
+
+### 背景
+
+dav-planner skill 在 §2 提問技巧與 §3 思考維度中，目前**完全沒問過用戶自身的背景**（角色、經驗、技術棧），導致：
+
+- Agent 對 PM 和開發者問同一句「你想要什麼效果？」，深度無差別
+- Agent 不知道哪些維度對用戶有意義（給設計師問「目標市場」是浪費）
+- 利害關係人首次使用時，缺乏破冰機制
+
+### 目標
+
+dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題「用戶角色」，並依角色動態選擇下一題追問（PM → 目標用戶/規模、Dev → 技術棧/團隊、Designer → 品牌規範、業務 → 目標市場/付款物流）。
+
+### 範圍
+
+#### In Scope（要做）
+
+- SKILL.md §2.7「用戶背景收集」章節（含對應表 + §2.7.1 跳過規則 + §2.7.2 與 §3 Persona 區分）
+- 5 個角色：PM/PO、開發者、設計師、業務/客戶、其他
+- bats 守護（7 個探針）
+- changelog v1.9 條目
+
+#### Non-goals（不做）
+
+- **不持久化**：純對話詢問、不寫任何檔
+- **不混 §3 Persona**：§2.7 是對話用戶角色，§3 Persona 是產品目標用戶，兩者職責分開
+
+### 決策紀錄
+
+| 決策 | 選擇 | 理由 |
+|------|------|------|
+| 範圍 | 只問 1 個起步題 | 最低干擾 |
+| 儲存 | 純對話詢問 | 不需維護元檔 |
+| 對應表 | SKILL.md 內嵌 | 與 §2.6 SWOT 表風格一致、可被 bats 守護 |
+| 整合位置 | §2.7（§2 末 §3 前）| 語意清楚、避免混 §3 Persona |
+
+### 完成標準
+
+- [x] SKILL.md 新增 §2.7 + §2.7.1 + §2.7.2
+- [x] changelog v1.9 條目
+- [x] docs/backlog.md TMO-007 (Story Point 8)
+- [x] PRD-02 建立
+- [x] tests/dav-planner-user-background.bats 7 探針全綠
+- [x] Reviewer verdict: PASS
+- [x] TMO-007 → done
+
+### Story Point 估算（8）
+
+| 工作項 | 點數 |
+|-------|------|
+| SKILL.md §2.7 章節（對應表 + 規則 + 對照表）| 2 |
+| changelog v1.9 條目 | 1 |
+| docs/backlog.md TMO-007 + 詳細段 | 1 |
+| bats 守護（7 探針）| 2 |
+| 測試 + Reviewer + 反省 + 提交 | 2 |
 | **合計** | **8** |

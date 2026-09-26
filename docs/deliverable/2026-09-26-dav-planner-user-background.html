@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dav-planner 用戶背景收集機制 — 交付摘要</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      max-width: 900px;
+      margin: 2em auto;
+      padding: 0 1.5em;
+      line-height: 1.7;
+      color: #222;
+      background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+    }
+    .container {
+      background: #fff;
+      padding: 2em 2.5em;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    h1 {
+      color: #2c5282;
+      border-bottom: 3px solid #4299e1;
+      padding-bottom: 0.4em;
+    }
+    h2 {
+      color: #2c5282;
+      margin-top: 1.8em;
+      padding: 0.3em 0.6em;
+      background: #ebf8ff;
+      border-left: 4px solid #4299e1;
+      border-radius: 0 4px 4px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2em 0.8em;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: bold;
+      margin-right: 0.5em;
+    }
+    .badge-ok { background: #c6f6d5; color: #22543d; }
+    .badge-info { background: #bee3f8; color: #2a4365; }
+    .badge-warn { background: #fefcbf; color: #744210; }
+    .summary-card {
+      background: #f7fafc;
+      padding: 1.2em;
+      border-radius: 8px;
+      margin: 1em 0;
+      border-left: 4px solid #4299e1;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+    }
+    table th, table td {
+      border: 1px solid #cbd5e0;
+      padding: 0.6em 0.9em;
+      text-align: left;
+    }
+    table th {
+      background: #edf2f7;
+      color: #2d3748;
+      font-weight: bold;
+    }
+    table tr:nth-child(even) { background: #f7fafc; }
+    .emoji { font-size: 1.4em; margin-right: 0.3em; }
+    .file-list { list-style: none; padding-left: 0; }
+    .file-list li {
+      padding: 0.4em 0.8em;
+      margin: 0.3em 0;
+      background: #f7fafc;
+      border-radius: 4px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.95em;
+    }
+    .file-new { border-left: 4px solid #38a169; }
+    .file-mod { border-left: 4px solid #3182ce; }
+    blockquote {
+      color: #4a5568;
+      border-left: 4px solid #cbd5e0;
+      padding-left: 1em;
+      margin: 1em 0;
+      font-style: italic;
+    }
+    .next-steps {
+      background: #fffaf0;
+      border: 2px solid #ed8936;
+      border-radius: 8px;
+      padding: 1em 1.5em;
+      margin: 1.5em 0;
+    }
+    .next-steps h3 { color: #c05621; margin-top: 0; }
+    svg { display: block; margin: 1.5em auto; }
+    code {
+      background: #edf2f7;
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.9em;
+      color: #2d3748;
+    }
+    @media print {
+      body { background: #fff; max-width: 100%; padding: 0; margin: 0; }
+      .container { box-shadow: none; padding: 1em; }
+      h1, h2 { page-break-after: avoid; }
+      table, .summary-card, .next-steps { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1><span class="emoji">👤</span>dav-planner 用戶背景收集機制</h1>
+
+    <p>
+      <span class="badge badge-ok">✅ Reviewer PASS</span>
+      <span class="badge badge-info">v1.9</span>
+      <span class="badge badge-info">TMO-007</span>
+      <span class="badge badge-info">Story Point 8</span>
+    </p>
+
+    <p><strong>日期</strong>：2026-09-26 ｜ <strong>變更檔案</strong>：5 個 ｜ <strong>新探針</strong>：7 個</p>
+
+    <h2><span class="emoji">🎯</span>4 Gate 全部通過</h2>
+    <svg viewBox="0 0 800 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L9,3 z" fill="#a0aec0"/>
+        </marker>
+      </defs>
+      <g>
+        <circle cx="80" cy="50" r="35" fill="#48bb78" opacity="0.2"/>
+        <circle cx="80" cy="50" r="30" fill="#48bb78"/>
+        <text x="80" y="40" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">Gate 1</text>
+        <text x="80" y="58" text-anchor="middle" fill="#fff" font-size="11">TDD</text>
+        <text x="80" y="92" text-anchor="middle" fill="#22543d" font-size="11">7/7 ✓</text>
+      </g>
+      <path d="M 120 50 L 150 50" stroke="#a0aec0" stroke-width="2" marker-end="url(#arrow)"/>
+      <g>
+        <circle cx="200" cy="50" r="35" fill="#48bb78" opacity="0.2"/>
+        <circle cx="200" cy="50" r="30" fill="#48bb78"/>
+        <text x="200" y="40" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">Gate 2</text>
+        <text x="200" y="58" text-anchor="middle" fill="#fff" font-size="11">lint</text>
+        <text x="200" y="92" text-anchor="middle" fill="#22543d" font-size="11">PASS ✓</text>
+      </g>
+      <path d="M 240 50 L 270 50" stroke="#a0aec0" stroke-width="2" marker-end="url(#arrow)"/>
+      <g>
+        <circle cx="320" cy="50" r="35" fill="#48bb78" opacity="0.2"/>
+        <circle cx="320" cy="50" r="30" fill="#48bb78"/>
+        <text x="320" y="40" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">Gate 3</text>
+        <text x="320" y="58" text-anchor="middle" fill="#fff" font-size="11">regression</text>
+        <text x="320" y="92" text-anchor="middle" fill="#22543d" font-size="11">213/226 ✓</text>
+      </g>
+      <path d="M 360 50 L 390 50" stroke="#a0aec0" stroke-width="2" marker-end="url(#arrow)"/>
+      <g>
+        <circle cx="440" cy="50" r="35" fill="#48bb78" opacity="0.2"/>
+        <circle cx="440" cy="50" r="30" fill="#48bb78"/>
+        <text x="440" y="40" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">Gate 4</text>
+        <text x="440" y="58" text-anchor="middle" fill="#fff" font-size="11">reviewer</text>
+        <text x="440" y="92" text-anchor="middle" fill="#22543d" font-size="11">PASS ✓</text>
+      </g>
+      <text x="560" y="40" fill="#2d3748" font-size="14" font-weight="bold">V03 紀律</text>
+      <text x="560" y="58" fill="#2d3748" font-size="11">Reviewer 抓 2 P1</text>
+      <text x="560" y="72" fill="#2d3748" font-size="11">修正後 PASS</text>
+      <text x="560" y="92" fill="#744210" font-size="10">⚠️ 首次 OK w/ P1</text>
+    </svg>
+
+    <h2><span class="emoji">👥</span>用戶體驗改變</h2>
+    <div class="summary-card">
+      <p><strong>原本</strong>：dav-planner 對 PM 和開發者問同一句「你想要什麼效果？」— 深度無差別</p>
+      <p><strong>現在</strong>：先問角色，再依角色動態追問</p>
+      <p><strong>效果</strong>：PM 不問技術棧、開發者不問品牌規範、利害關係人首次使用有破冰</p>
+    </div>
+
+    <h2><span class="emoji">📋</span>角色 → 下一題對應表</h2>
+    <table>
+      <thead>
+        <tr><th>用戶選</th><th>Agent 下一題</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>PM/PO</strong></td><td>這項目的目標用戶是誰？規模（DAU/MAU）？</td></tr>
+        <tr><td><strong>開發者</strong></td><td>你熟悉的技術棧是？團隊規模？</td></tr>
+        <tr><td><strong>設計師</strong></td><td>有品牌規範/色票/字型嗎？視覺風格偏好？</td></tr>
+        <tr><td><strong>業務/客戶</strong></td><td>目標市場是？付款/物流偏好？</td></tr>
+        <tr><td><strong>其他</strong></td><td>請簡單描述你在這項目的角色</td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="emoji">📂</span>變更檔案（5 個）</h2>
+
+    <h3>🆕 新建（2 個）</h3>
+    <ul class="file-list">
+      <li class="file-new">docs/prd/02-dav-planner-user-background.md</li>
+      <li class="file-new">tests/dav-planner-user-background.bats</li>
+    </ul>
+
+    <h3>✏️ 修改（3 個）</h3>
+    <ul class="file-list">
+      <li class="file-mod">skills/dav-planner/SKILL.md <span style="color:#3182ce;">+60 行</span>（§2.7 三子章節 + line 69 修正）</li>
+      <li class="file-mod">docs/sop/handbook/changelog.md <span style="color:#3182ce;">+12 行</span>（v1.9 條目）</li>
+      <li class="file-mod">docs/backlog.md <span style="color:#3182ce;">+60 行</span>（TMO-007 + 詳細段）</li>
+    </ul>
+
+    <h2><span class="emoji">📊</span>對應 AC（TMO-007 完成標準）</h2>
+    <table>
+      <thead><tr><th>標準</th><th>狀態</th></tr></thead>
+      <tbody>
+        <tr><td>SKILL.md §2.7 + §2.7.1 + §2.7.2</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>5 個角色（PM/Dev/Designer/業務/其他）</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>changelog v1.9</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>TMO-007 詳細段</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>PRD-02</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>bats 7 探針</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>Reviewer verdict: PASS</td><td><span class="badge badge-ok">✅</span></td></tr>
+        <tr><td>TMO-007 → done</td><td><span class="badge badge-warn">🟡 待驗收</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="emoji">⚠️</span>V03 紀律 — Reviewer 抓到 2 個 P1</h2>
+    <blockquote>
+      Reviewer subagent 首次 verdict = <strong>OK with P1 notes</strong>，抓到 2 個 P1：跨檔 §2.7 編號語意衝突、backlog 缺詳細段。<br>
+      修正後 verdict = <strong>PASS</strong>。<strong>證明 V03 強制二審是必要的</strong>（連續 2 個 sprint 都驗證這點）。
+    </blockquote>
+    <table>
+      <thead><tr><th>P1</th><th>位置</th><th>修正</th></tr></thead>
+      <tbody>
+        <tr><td>跨檔 §2.7 語意衝突</td><td>SKILL.md line 69</td><td>改為「AGENTS.md §2.7 違規，見 docs/sop/handbook/2.7-violations.md」</td></tr>
+        <tr><td>缺 TMO-007 詳細段</td><td>backlog.md</td><td>從 PRD 搬過來，含背景/目標/範圍/決策/DoD/Story Point</td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="emoji">🚀</span>下一步建議</h2>
+    <div class="next-steps">
+      <h3>三個選項（依 V02，第一個最推薦）</h3>
+      <p><strong>⭐ A. 用戶驗收本次交付 → commit + push</strong></p>
+      <p>建議：用戶下次對話觀察 §2.7 背景題實際體驗；git add + commit。</p>
+
+      <p><strong>B. 先不 commit，等下次新對話體驗 §2.7</strong></p>
+      <p>下次 dav-planner 啟動時驗證 §2.7 是否順暢。Commit 延後。</p>
+
+      <p><strong>C. 順手修 P2 nice-to-have</strong></p>
+      <p>5 個 P2 都被記錄，包含：bats 探針 substring grep 粒度（下次 Sprint 加「bats probe 寫作指南」處理）、§2.7 標題尾點、V02 範例、跳過主觀性、換角色情境。</p>
+    </div>
+
+    <h2><span class="emoji">🔭</span>對未來的想法（Think Big）</h2>
+    <ul>
+      <li><strong>下次 dav-planner 啟動</strong>：用戶會看到新的 §2.7 背景題 — 確認體驗</li>
+      <li><strong>bats probe 寫作指南</strong>（下次 Sprint）：明文規範 substring grep 必須加範圍限縮</li>
+      <li><strong>backlog hygiene 自動化</strong>（下次 Sprint）：加探針驗證「每個 TMO-XXX row 都有對應詳細段」</li>
+      <li><strong>§ 引用前綴規範</strong>（下次 Sprint）：明文規範跨檔引用要加來源前綴（避免 P1-1 跨檔語意衝突）</li>
+      <li><strong>Audit 探針</strong>（下次 Sprint）：統計 §2.7.1 跳過率</li>
+    </ul>
+
+    <hr>
+    <p style="text-align: center; color: #718096; font-size: 0.85em;">
+      本文件由 dav-submitter 自動產生 ｜ 對應 <code>docs/deliverable/2026-09-26-dav-planner-user-background.md</code>
+    </p>
+  </div>
+</body>
+</html>

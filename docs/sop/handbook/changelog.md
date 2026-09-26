@@ -4,6 +4,25 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v1.9 — 2026-09-26
+
+**本版異動**：dav-planner skill 新增「用戶背景收集」機制（TMO-007）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `dav-planner/SKILL.md` §2.7 新增「用戶背景收集」 | dav-planner 啟動後第一題，先問用戶角色（PM/開發者/設計師/業務/其他），依角色動態選擇追問（PM→目標用戶/規模、Dev→技術棧/團隊、設計師→品牌規範、業務→目標市場） |
+| **P0** | `dav-planner/SKILL.md` §2.7.1 新增「跳過規則」 | 同專案後續對話或用戶明確說「直接問需求」時可跳過角色題，但 Agent 必須明示「我跳過角色題」 |
+| **P0** | `dav-planner/SKILL.md` §2.7.2 新增「與 §3 Persona 區分」對照表 | 避免 Agent 把「產品的目標用戶」與「對話的用戶角色」混為一談 |
+| **P1** | `docs/backlog.md` 新增 TMO-007 | Story Point 8 |
+| **P1** | `docs/prd/02-dav-planner-user-background.md` 新建 | 本次變更 PRD |
+
+**決策紀錄**：
+- **不持久化**：用戶選 A 方案（純對話詢問、不寫 `docs/user-profile.md` 等檔） — 理由：最低干擾、不需維護元檔
+- **不混進 §3 Persona**：用戶選 D 方案（新增 §2.7 在 §2 末 §3 前） — 理由：語意清楚、§3 Persona 原意是產品用戶，§2.7 是對話用戶
+- **走完整 SOP（V03 紀律）**：SOP 修改必經 Reviewer 二審
+
+**配套測試**：`tests/dav-planner-user-background.bats` 7 個探針守護 §2.7 章節不被靜默移除
+
 ## v1.8 — 2026-09-25
 
 **本版異動**：dav-planner skill AC 範本獨立化 + HTML 版本（TMO-006）
