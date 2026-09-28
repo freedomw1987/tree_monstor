@@ -23,6 +23,10 @@ PoC/
 ├─ jev_oracle.py          # 核心：Jev HTTP 呼叫 + 回應解析 + cache
 ├─ ac_schema.py          # 解析 docs/ac/US-XXX.md → 結構化 AC 條目
 ├─ example_run.py        # 示範：US-101 真實 AC + 4 個 mock 觀察 → 跑 oracle
+├─ journey_generator.py  # 讀 AC → 走 Jev complexity + action plan → 產 Journey spec
+├─ journey_gen.py        # CLI: journey_generator 的命令列 entry
+├─ journeys/
+│  └─ US-101.yaml        # 產出的人類可讀 journey spec（要進 git）
 ├─ cache/
 │  ├─ fixture_helper.py  # 預塞假 Jev 回應（沒 key 時 demo 用）
 │  └─ *.json             # 自動 cache（gitignored）
@@ -35,35 +39,37 @@ PoC/
 ```bash
 cd skills/regression-guard/PoC
 
-# 1. 建 venv 裝 httpx
-uv venv && uv pip install httpx
+# 1. 建 venv 裝 httpx + pyyaml
+uv venv && uv pip install httpx pyyaml
 
 # 2. seed 預塞假 Jev 回應
 .venv/bin/python cache/fixture_helper.py
 
-# 3. 跑 demo（4 條 AC、4 種 verdict）
+# 3. 跑 oracle demo（4 條 AC、4 種 verdict）
 .venv/bin/python example_run.py
 ```
 
 會看到：
 
 ```
-▶ US-101-AC01  verdict=pass
-▶ US-101-AC02  verdict=fail  severity=1.45/3
-▶ US-101-AC03  verdict=flaky  severity=2.10/3  confidence=0.42
-▶ US-101-AC04  verdict=over_assertion
+▶ US-101-AC01  verdict=pass    confidence=0.97
+▶ US-101-AC02  verdict=fail    confidence=0.99  is_real_bug=0.74
+▶ US-101-AC03  verdict=flaky   confidence=0.60  is_real_bug=0.64
+▶ US-101-AC04  verdict=fail    confidence=0.67  is_real_bug=0.65
 ```
 
 ## 怎麼跑（真 API）
 
 ```bash
-cp .env.example .env
-# 編輯 .env：OPENROUTER_API_KEY=<your_key>
+# .env 三個地方可以放，自動找到：
+#   1. PoC/.env
+#   2. ~/.claude/skills/regression-guard/PoC/.env
+#   3. export OPENROUTER_API_KEY=...
 
-# 刪 cache 重新打
-rm cache/*.json
-.venv/bin/python example_run.py   # 第一次會 hit 真實 API
-.venv/bin/python example_run.py   # 第二次會 hit cache
+.venv/bin/python example_run.py           # 走 oracle，cache hit 就 hit
+.venv/bin/python journey_gen.py \
+    ../../../docs/ac/US-101.md           # 產 journey YAML
+.venv/bin/python example_run.py --no-cache  # 強制 live
 ```
 
 ## M1 完成的證據
@@ -76,7 +82,20 @@ rm cache/*.json
 | Cache 機制（含 cache key 雜湊、save / load）| ✅ |
 | Confidence + severity + verdict probabilities 完整呈現 | ✅ |
 | End-of-run summary（count by verdict + avg severity）| ✅ |
-| 真 API 打接（要 OPENROUTER_API_KEY）| ⏳ 待 key |
+| 真 API 打接 + 介面正確（/api/alpha/decisions）| ✅ |
+| 三層 API key 自動讀取（env / PoC/.env / ~/.claude/.../PoC/.env）| ✅ |
+
+## M2 完成的證據
+
+| 項 | 狀態 |
+|---|---|
+| `journey_generator.py`：讀 AC → 兩階段 Jev call（complexity score + action plan choice）| ✅ |
+| `journey_gen.py` CLI entry | ✅ |
+| 產 human-readable YAML 到 `journeys/<story_id>.yaml` | ✅ |
+| 自動拆步（依 complexity 0-3 → 1~4 步 / AC）| ✅ |
+| Step 之間 depends_on chain（跨 AC 串連）| ✅ |
+| Cache 機制（同一個 AC 不會重 call Jev）| ✅ |
+| US-101 4 條 AC → 9 步（2.25 步 / AC），8 個 Jev call，3.4s | ✅ |
 
 ## M2 接續（下一步）
 
@@ -113,7 +132,8 @@ steps:
 | 版本 | 日期 | 變動 | 為什麼 |
 |---|---|---|---|
 | M0 | 2026-09-28 | 環境探勘：看 docs/backlog.md、docs/ac/US-101.md、regression-guard skill 子檔 | 先理解現實再動工 |
-| M1 | 2026-09-28 | 4 檔 PoC：oracle + AC parser + example runner + cache fixture | 證明「讀 AC → Jev → verdict」流程跑得起來 |
+| M1 | 2026-09-28 | oracle + AC parser + example runner + cache fixture；介面改 /api/alpha/decisions；加三層 key loader；真 API 驗證 | 證明「讀 AC → Jev → verdict」流程跑得起來 |
+| M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call（complexity score + action plan choice）；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
 
 ---
 
