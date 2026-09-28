@@ -25,6 +25,8 @@ PoC/
 ├─ example_run.py        # 示範：US-101 真實 AC + 4 個 mock 觀察 → 跑 oracle
 ├─ journey_generator.py  # 讀 AC → 走 Jev complexity + action plan → 產 Journey spec
 ├─ journey_gen.py        # CLI: journey_generator 的命令列 entry
+├─ journey_runner.py     # Dry-run loop: observe→Jev→verdict→recheck→stale detection
+├─ run_journey.py        # CLI: 跑 journey_runner（支援 --stale-test 證邏輯）
 ├─ journeys/
 │  └─ US-101.yaml        # 產出的人類可讀 journey spec（要進 git）
 ├─ cache/
@@ -97,6 +99,18 @@ uv venv && uv pip install httpx pyyaml
 | Cache 機制（同一個 AC 不會重 call Jev）| ✅ |
 | US-101 4 條 AC → 9 步（2.25 步 / AC），8 個 Jev call，3.4s | ✅ |
 
+## M3 完成的證據（dry-run loop）
+
+| 項 | 狀態 |
+|---|---|
+| `journey_runner.py`：observe → Jev → verdict → recheck 迴路 | ✅ |
+| `run_journey.py` CLI 兩種模式：ac-aware（預設）+ stale-test | ✅ |
+| AC-aware mock 觀察器（用 fixture 對應 AC Then）| ✅ |
+| Stale detection：連續 3 步同 state + fail → block | ✅ |
+| US-101 預設模式：3 pass / 6 fail / 0 block / 2ms 全 cache | ✅ |
+| US-101 stale-test 模式：7 fail + 2 BLOCKED（驗證 block 邏輯）| ✅ |
+| 每步 verdict + confidence + severity + is_real_bug 全印出 | ✅ |
+
 ## M2 接續（下一步）
 
 **Journey 生成器**：用 Jev 從 AC 自動生 user journey 規格（YAML）。預期 target：把 US-101.md 變成：
@@ -121,9 +135,7 @@ steps:
 
 ## M3 接續
 
-**Journey runner**：Chrome + DOM snapshot driver（dry-run loop 先、不接 Chrome；接 Chrome 留 M3.1）。每步用 oracle 評估 + recheck freshness。
-
-## M4 接續
+**Journey runner**：Chrome + DOM snapshot driver（dry-run loop 先、不接 Chrome；接 Chrome 留 M3.1）。每步用 oracle 評估 + recheck freshness。## M4 接續
 
 **End-of-run report**：batch call 出 overall_health / fix_priority / flaky_likelihood，寫進 `REGRESSION_REPORT_PATH`。
 
@@ -134,6 +146,7 @@ steps:
 | M0 | 2026-09-28 | 環境探勘：看 docs/backlog.md、docs/ac/US-101.md、regression-guard skill 子檔 | 先理解現實再動工 |
 | M1 | 2026-09-28 | oracle + AC parser + example runner + cache fixture；介面改 /api/alpha/decisions；加三層 key loader；真 API 驗證 | 證明「讀 AC → Jev → verdict」流程跑得起來 |
 | M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call（complexity score + action plan choice）；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
+| M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection（--stale-test 驗證）| 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
 
 ---
 
