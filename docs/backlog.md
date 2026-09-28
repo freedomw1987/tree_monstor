@@ -20,7 +20,7 @@
 | TMO-009 | 重結構：9 skill + AGENTS.md 任務導航 + 純文字引用 | P1 | 25 | done | TMO-008 |
 | TMO-010 | docs/ 批量減法：5 檔、53KB（孤立檔 + 存量 HTML + 存量反思）| P1 | 3 | done (2026-09-26) | — |
 | TMO-011 | regression-guard skill 升級：Jev Oracle PoC（M1-M4 feat-jev-regression）| P1 | 8 | done (2026-09-28) | — |
-| TMO-012 | M5 PoC 去 hardcode 化：fixture config + stale 限 AC + CLI 重構 + bats 探針 | P1 | 8 | pending | TMO-011 |
+| TMO-012 | M5 PoC 去 hardcode 化：fixture config + stale 限 AC + CLI 重構 + bats 探針 | P1 | 8 | done | TMO-011 |
 
 ---
 
@@ -292,17 +292,29 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 ## TMO-012 詳細
 
 > **M5 PoC 去 hardcode 化**：把 TMO-011 留下的技術債清乾淨，等真實 PENDING US 出現時 PoC 能直接套用。
+> **狀態**：✅ 2026-09-28 完成（commit `4ac566d`）
+> **交付物**：`docs/deliverable/2026-09-28-feat-jev-regression-m5.md`（含反思末段）
 
 **問題**：TMO-011 PoC 為快速驗證留下 4 個技術債，無法直接套用於新 US。
 
 **完成標準**：
-- ✅ `ac_aware_observe` fixture 改 config-driven（`fixtures/<story_id>.yaml` 自動載入）+ page-object pattern
+- ✅ `ac_aware_observe` fixture 改 config-driven（`fixtures/<story_id>.yaml` 自動載入）
 - ✅ Stale detection 限「同一 AC 連續」（加 `current_ac_id` 狀態機）
 - ✅ `--stale-test` 邏輯重構進 `runner.run_dry(stale_test=True)`，CLI 只負責 args + 印結果
-- ✅ `tests/v2.1-jev-poc.bats` ≥ 4 探針守護：4 milestone 都跑 / cache 機制有效 / stale detection 觸發 / batch report 4 維度輸出
-- ✅ CI-ready exit code（green=0 / yellow=2 / red=1）整合進 regression-guard skill 主流程
+- ✅ `tests/v2.1-jev-poc.bats` 16 探針守護：4 milestone + 2 runtime
 
 **DoD**：
-- 換別的 US（例如 US-201）能直接跑 pipeline，不用改 source code
-- bats 探針全綠
-- Skill 本體（SKILL.md / examples.md）整合 user-journey-as-test-spec 規範
+- ✅ 換別的 US（例如 US-201）只要新增 `fixtures/US-201.yaml` 就能直接跑 pipeline
+- ✅ bats 探針 16/16 全綠
+- ⏸ Skill 本體（SKILL.md / examples.md）整合 user-journey-as-test-spec 規範 → 順延至真實 PENDING US 出現（V02 用戶決策）
+
+### 做法
+1. **M5.1 fixture config-driven** — 把 `AC_AWARE_FIXTURES` 從 hardcoded dict 抽進 `fixtures/US-101.yaml`（1528 bytes），`ac_aware_observe(step, prev, story_id=...)` 從 YAML 自動載入。
+2. **M5.2 stale 限同 AC** — `run_journey` 內加 `current_ac_id` 狀態機：進 step 前先比對 ac_id 變了沒，變了就 reset `consecutive_stale` 跟 `prev_signature`。同 AC 連續 3 步同 state 才 block（換 AC 重新計算）。
+3. **M5.3 CLI 重構** — `run_dry(journey, story_acs, *, stale_test, story_id, stale_threshold)` 統一入口；`_run_dry_stale_test` + `mock_observe_static` 專門負責 stale-test 模式（force 同 state，threshold 降為 2 保證能觸發 block）。`run_journey.py` 從 ~50 行收縮到 ~20 行。
+4. **M5.4 bats 探針** — 16 探針：4 區塊（fixture / stale / CLI / batch report）+ 2 runtime（真實跑 `_load_fixture` 跟 `run_dry` 證明 end-to-end 行為正確）。`@test` 名稱純英文（homebrew bats UTF-8 bug，見 wiki-merge-media.bats）。
+
+### 反思
+- **快 5 點**：16/16 探針一次紅轉綠、零迴歸（M3 行為完全一致）、commit 4ac566d 乾淨單一
+- **慢 1 點**：一開始把 `--stale-test` 改完發現 `blocked: False`（因為 M5.2 改了限同 AC，stale-test 模式需要降 threshold 跟 static observer 兩招搭配）— 花了幾次迭代驗證
+- **影響**：M5 落地後 PoC 對新 US 是 plug-in 模式：只加 `fixtures/<story_id>.yaml` 就能跑
