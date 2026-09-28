@@ -211,14 +211,35 @@ bats tests/v2.1-jev-poc.bats
 # → 1..16, all ok
 ```
 
+## CI 整合（GitHub Actions）
+
+`.github/workflows/regression-guard-jev-poc.yml` 跑 2 個 job：
+
+| Job | 用途 | 不需 / 需 API key |
+|---|---|---|
+| `bats` | 跑 25 個探針 | 不需 |
+| `pipeline` | 跑 `run_pipeline.sh` | 需（走 `secrets.OPENROUTER_API_KEY`）|
+
+**Return code gate**：
+- `0` (green) — 通過
+- `2` (yellow) — warning（不擋 merge）
+- `1` (red) — error，擋 merge
+
+詳細 branch protection + secrets 設定見 [`docs/ci/regression-guard-jev-poc.md`](../../../docs/ci/regression-guard-jev-poc.md)。
+
 ---
 
 **核心精神**：regression-guard 不只記錄「test 是 pass 還是 fail」，而是「這個 fail 是真 bug、flaky、還是 AC 本身寫得不好」。Jev oracle 把這層語意判定帶進來，用 confidence gating 確保不誤導修正循環。
 
-**M5 之後的 next step（已超出 PoC 範圍）**：
-- **M3.1**：接 Playwright Chrome driver，observer 改 DOM snapshot，不再用 mock fixture
-- **M6（future）**：把「修正循環」接進 regression-guard skill — Jev verdict → 自動產 fix proposal → 跑回 validate
-- **PR 階段**：把所有 5 個 milestone 整合回 SKILL.md / examples.md，變成正式規範
+**本 sprint 已完成**：
+- ✅ **M3.1**：Playwright Chrome driver + dispatcher（`OBSERVER_BACKEND=playwright` 切換）
+- ✅ **M6**：Jev fix proposal CLI（`fix_proposal.py`）+ SKILL Step 4 整合
+- ✅ **CI**：GitHub Actions workflow + return code gate + branch protection SOP
+
+**Out of scope（順延到真實 PENDING US 觸發時）**：
+- M3.2 真實 driver 跑 example.com
+- CI 進 GH Actions 啟用 + branch protection 實際開設
+- 多 story_id matrix pipeline
 
 ## M5 化解決的 TMO-011 反思問題
 

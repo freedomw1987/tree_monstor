@@ -80,8 +80,21 @@ echo
 
 # ── Step 3: M4 — batch report ──
 echo "▶ M4  end-of-run batch report…"
-.venv/bin/python run_report.py "$RUN_JSON" "${REPORT_PATH%.*}"
+# M4 return code 是 verdict (0=green / 2=yellow / 1=red)，原本設計；
+# pipeline 不讓 set -e 拿走 (M4 後面還有 M6)，用 `|| true` 接住
+M4_RC=0
+.venv/bin/python run_report.py "$RUN_JSON" "${REPORT_PATH%.*}" || M4_RC=$?
+echo "   (M4 return code: $M4_RC — 0=green / 2=yellow / 1=red)"
 echo
+
+# ── Step 4: M6 — Jev fix proposal (opt-in) ──
+if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
+    echo "▶ M6  Jev fix proposal…"
+    FIX_OUT="${REPORT_PATH%.*}-fix-proposal.md"
+    .venv/bin/python fix_proposal.py "$RUN_JSON" "$FIX_OUT" || \
+        echo "   (M6 failed but pipeline continues)"
+    echo
+fi
 
 echo "═══════════════════════════════════════════════"
 echo "  ✨ Pipeline 完成"
@@ -90,3 +103,6 @@ echo "  Journey YAML:    $SCRIPT_DIR/journeys/${STORY_ID}.yaml"
 echo "  Run JSON:        $RUN_JSON"
 echo "  Batch report:    ${REPORT_PATH}.json"
 echo "  Markdown report: ${REPORT_PATH}.md"
+if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
+    echo "  Fix proposal:    ${REPORT_PATH%.*}-fix-proposal.md"
+fi

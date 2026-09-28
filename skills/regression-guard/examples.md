@@ -471,3 +471,41 @@ OBSERVER_BACKEND=playwright .venv/bin/python run_journey.py journeys/US-101.yaml
 
 完整 milestone 記錄、程式碼、探針守護見 `PoC/README.md`。
 詳細 SKILL 整合見 `SKILL.md` 章節「Jev Oracle 補充（進階）」。
+
+### Fix proposal 範例（M6）
+
+跑出 `real_bug` verdict 後，自動產出信心度報告：
+
+```bash
+JEV_FIX_PROPOSAL=1 REGRESSION_REPORT_PATH=/tmp/report ./run_pipeline.sh US-101
+```
+
+產出 `/tmp/report-fix-proposal.md`：
+
+```markdown
+# Fix Proposal — US-101
+
+> **M6 Jev 信心度報告**（3 題 noul batch call）— PoC 階段，需人工接手寫 fix 細節。
+
+**整體信心度**：0.41 (🟠 低信心)
+
+## 信心度評估
+
+| 維度 | 信心度 | 評級 | 備註 |
+|---|---|---|---|
+| 問題摘要 | 0.44 | 🟠 低信心 | Jev 認為能寫出 1 句話明確總結 |
+| 建議修正 | 0.35 | 🟠 低信心 | Jev 認為能指向特定 component |
+| 驗證步驟 | 0.44 | 🟠 低信心 | Jev 認為步驟能在 <5min CI-runnable |
+
+## 原始失敗走跡（reviewer 接手起點）
+
+  [US-101-AC04-s1] setup_state → FAIL conf=0.99 sev=2.76 bug=0.56
+    url:    https://example.com/checkout/payment?order=A123
+    status: 500
+    body:   [setup for US-101-AC04] 服務暫時無法使用，請稍後重試
+```
+
+**Reviewer workflow**：
+1. 看「整體信心度」— ≥0.5 直接接手；<0.5 先加 observer context
+2. 找「評估表」最低那一維 — 通常是「建議修正」維度低，需要更多 code reading
+3. 對「原始失敗走跡」找 status 500 步 → 定位 component

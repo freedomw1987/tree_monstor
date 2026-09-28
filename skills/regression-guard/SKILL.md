@@ -249,10 +249,65 @@ JEV-US-101-AC04-confirmed-200-not-500
 
 跟傳統 `US-101-AC01` 並行、不重疊，CI 可選只跑哪一類。
 
+### 修正循環補充（M6 自動 fix proposal）
+
+適用情境：M3 runner 跑出 `real_bug` verdict 後，手動看 batch report 太慢，**先讓 Jev 給出信心度報告**幫 reviewer 加速。
+
+作法（PoC 階段，3 題 noul batch call）：
+
+```bash
+# 1. 跑完整 pipeline（觸發 M6）
+JEV_FIX_PROPOSAL=1 .venv/bin/python fix_proposal.py /tmp/<STORY>-run.json
+# → /tmp/<STORY>-fix-proposal.md
+
+# 2. 或一鍵
+JEV_FIX_PROPOSAL=1 ./run_pipeline.sh US-101
+```
+
+`fix_proposal.py` 會產出：
+
+| 區塊 | 內容 |
+|---|---|
+| **整體信心度** | 3 題平均 noul 概率 (0–1) + 評級 (高/中/低/不可判定) |
+| **信心度評估表** | 問題摘要 / 建議修正 / 驗證步驟 三維度各自的信心度 |
+| **原始失敗走跡** | 失敗步的 URL / status / body 截錄 200 字 |
+| **上下文** | Journey ID / verdict counts / blocked 狀態 |
+
+**重要限制**（v1 範圍）：
+
+- Jev v1.13 **不支援 free_response** 題型，只有 `choice` / `score` / `noul` 三種
+- 所以 M6 階段的 fix proposal 是 **「信心度報告 + 失敗走跡」**，不是自動寫出 fix 文字
+- Reviewer 接手起點：**看信心度表格 → 找最低那一維 → 對應走跡去定位 component**
+- 0.5 為 gating 門檻：≥0.5 自動接手；<0.5 先加 observer context 再跑
+
+**升級路徑**（M6.1+，需另起 sprint）：
+
+- 接 Claude / GPT 生成實際 fix 文字，Jev 信心度作為 gating（低信心不送 LLM）
+- 接 patch + re-validate 自動迴圈（playwright driver 拿到 fix 文字 → 跑回 validate）
+- 詳見 [`examples.md`](./examples.md) 「Jev Oracle 範例」章節的 fix proposal 範例
+
+### CI 整合補充
+
+workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
+
+| Job | 用途 | 觸發 | 需 API key |
+|---|---|---|---|
+| `bats` | 跑 25 個探針 | push / PR / dispatch | ❌ |
+| `pipeline` | 跑 `run_pipeline.sh <STORY>` | push / PR / dispatch | ✅ (secret) |
+
+**Return code gate**（擋 merge）：
+
+- `0` (green) — 通過
+- `2` (yellow) — warning，不擋 merge
+- `1` (red) — error，**擋 merge**
+
+詳細 branch protection + secrets 設定見 [`docs/ci/regression-guard-jev-poc.md`](../../docs/ci/regression-guard-jev-poc.md)。
+
 ## 變動歷史
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.3 | 2026-09-28 | 新增「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節；changelog 升 v2.3 | TMO-015 / TMO-016：CI + M6 收尾 |
 | v2.2 | 2026-09-28 | 新增「Jev Oracle 補充（進階）」章節 + M3.1 Playwright observer 參考 | TMO-013 / TMO-014：整合 PoC M1-M5 進 skill 本體 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |

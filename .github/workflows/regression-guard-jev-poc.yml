@@ -1,0 +1,149 @@
+name: regression-guard Jev PoC
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'skills/regression-guard/**'
+      - 'docs/ac/**'
+      - '.github/workflows/regression-guard-jev-poc.yml'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'skills/regression-guard/**'
+      - 'docs/ac/**'
+      - '.github/workflows/regression-guard-jev-poc.yml'
+  workflow_dispatch:
+    inputs:
+      story_id:
+        description: 'User Story ID to run (e.g. US-101)'
+        required: true
+        default: 'US-101'
+      use_stale_test:
+        description: 'Use stale-test mode (debugging only)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # Job 1: 跑 bats 探針（不靠 API）
+  # ───────────────────────────────────────────────────────────────────
+  bats:
+    name: Bats probes (no API)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Install bats (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bats-core
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install Python deps
+        working-directory: skills/regression-guard/PoC
+        run: |
+          uv venv .venv
+          uv pip install --python .venv/bin/python pyyaml httpx python-dotenv
+
+      - name: Run v2.1-jev-poc.bats
+        run: bats tests/v2.1-jev-poc.bats
+
+  # ───────────────────────────────────────────────────────────────────
+  # Job 2: 跑完整 pipeline（真 API）
+  # ───────────────────────────────────────────────────────────────────
+  pipeline:
+    name: Pipeline (${{ inputs.story_id || 'US-101' }})
+    needs: bats
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install Python deps
+        working-directory: skills/regression-guard/PoC
+        run: |
+          uv venv .venv
+          uv pip install --python .venv/bin/python pyyaml httpx python-dotenv
+
+      - name: Run regression-guard pipeline
+        id: pipeline
+        working-directory: skills/regression-guard/PoC
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          REGRESSION_REPORT_PATH: ${{ github.workspace }}/reports/${{ inputs.story_id || 'US-101' }}
+        run: |
+          STORY="${{ inputs.story_id || 'US-101' }}"
+          set +e
+          if [ "${{ inputs.use_stale_test }}" = "true" ]; then
+            ./run_pipeline.sh "$STORY" --stale
+          else
+            ./run_pipeline.sh "$STORY"
+          fi
+          PIPELINE_RC=$?
+          set -e
+          echo "pipeline_rc=$PIPELINE_RC" >> "$GITHUB_OUTPUT"
+          # CI gate: red (exit 1) blocks merge; yellow (exit 2) warn only
+          if [ "$PIPELINE_RC" -eq 1 ]; then
+            echo "::error::regression-guard batch report is RED — blocks merge"
+            exit 1
+          fi
+          if [ "$PIPELINE_RC" -eq 2 ]; then
+            echo "::warning::regression-guard batch report is YELLOW — review needed"
+          fi
+          echo "::notice::regression-guard batch report is GREEN"
+
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-report-${{ inputs.story_id || 'US-101' }}
+          path: |
+            reports/**/*.json
+            reports/**/*.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Post report to PR
+        if: always() && github.event_name == 'pull_request'
+        working-directory: skills/regression-guard/PoC
+        run: |
+          STORY="${{ inputs.story_id || 'US-101' }}"
+          {
+            echo "## regression-guard Report — \`${STORY}\`"
+            echo ""
+            if [ -f "reports/${STORY}.md" ]; then
+              cat "reports/${STORY}.md"
+            else
+              echo "⚠️ Report not generated (pipeline may have failed before M4)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

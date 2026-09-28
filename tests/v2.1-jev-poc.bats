@@ -315,3 +315,134 @@ print('OK: module imports, _is_playwright_available=False')
   assert_file_contains "$f" "v2.2"
   assert_file_contains "$f" "TMO-013"
 }
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 8: CI 整合 (TMO-015)
+# ────────────────────────────────────────────────────────────────────
+
+@test "CI-a: GitHub Actions workflow exists with 2 jobs" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  assert_path_is_file "$f"
+  local content
+  content=$(cat "$f")
+  [[ "$content" == *"jobs:"* ]] || { echo "FAIL: no jobs:" >&2; return 1; }
+  [[ "$content" == *"bats:"* ]] || { echo "FAIL: no bats: job" >&2; return 1; }
+  [[ "$content" == *"pipeline:"* ]] || { echo "FAIL: no pipeline: job" >&2; return 1; }
+  [[ "$content" == *"needs: bats"* ]] || { echo "FAIL: pipeline should need bats" >&2; return 1; }
+}
+
+@test "CI-b: workflow has 3 triggers (push/PR/dispatch)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  for trigger in push pull_request workflow_dispatch; do
+    assert_file_contains "$f" "$trigger" || {
+      echo "FAIL: missing trigger: $trigger" >&2
+      return 1
+    }
+  done
+}
+
+@test "CI-c: workflow uses OPENROUTER_API_KEY secret" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  assert_file_contains "$f" "secrets.OPENROUTER_API_KEY"
+}
+
+@test "CI-d: workflow handles return code 0/1/2 (red blocks merge)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  for rc_text in "PIPELINE_RC" "exit 1" "exit 2" "blocks merge"; do
+    assert_file_contains "$f" "$rc_text" || {
+      echo "FAIL: missing $rc_text" >&2
+      return 1
+    }
+  done
+}
+
+@test "CI-e: CI SOP exists at docs/ci/regression-guard-jev-poc.md" {
+  local f="$REPO_ROOT/docs/ci/regression-guard-jev-poc.md"
+  assert_path_is_file "$f"
+  for content in "## " "branch protection" "gh secret set"; do
+    assert_file_contains "$f" "$content" || {
+      echo "FAIL: CI SOP missing $content" >&2
+      return 1
+    }
+  done
+}
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 9: M6 fix proposal (TMO-016)
+# ────────────────────────────────────────────────────────────────────
+
+@test "M6-a: fix_proposal.py exists with 3 questions schema" {
+  local f="$POC_DIR/fix_proposal.py"
+  assert_path_is_file "$f"
+  for q in problem_summary proposed_fix verification_steps; do
+    assert_file_contains "$f" "$q" || {
+      echo "FAIL: fix_proposal.py missing $q" >&2
+      return 1
+    }
+  done
+}
+
+@test "M6-b: fix_proposal.py can import & has FixProposal dataclass" {
+  cd "$POC_DIR"
+  "$PY" -c "
+import sys
+sys.path.insert(0, '.')
+import fix_proposal
+assert hasattr(fix_proposal, 'FixProposal')
+assert hasattr(fix_proposal, 'generate_fix_proposal')
+assert hasattr(fix_proposal, 'PROPOSAL_QUESTIONS')
+assert set(fix_proposal.PROPOSAL_QUESTIONS.keys()) == {'problem_summary', 'proposed_fix', 'verification_steps'}
+# Check 3 conf fields
+fields = {f.name for f in fix_proposal.FixProposal.__dataclass_fields__.values()}
+assert 'problem_summary_conf' in fields
+assert 'proposed_fix_conf' in fields
+assert 'verification_steps_conf' in fields
+print('OK: FixProposal has 3 conf fields')
+" || {
+    echo "FAIL: fix_proposal structure check" >&2
+    return 1
+  }
+}
+
+@test "M6-c: run_pipeline.sh supports JEV_FIX_PROPOSAL=1" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "JEV_FIX_PROPOSAL"
+  assert_file_contains "$f" "fix_proposal.py"
+}
+
+@test "M6-d: run_pipeline.sh captures M4 return code (does not let set -e break M6)" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "M4_RC=0"
+  assert_file_contains "$f" "|| M4_RC="
+}
+
+@test "M6-e: SKILL.md has M6 fix-loop section" {
+  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  assert_file_contains "$f" "修正循環補充"
+  assert_file_contains "$f" "JEV_FIX_PROPOSAL"
+  assert_file_contains "$f" "TMO-016"
+}
+
+@test "M6-f: examples.md has fix proposal example" {
+  local f="$REPO_ROOT/skills/regression-guard/examples.md"
+  assert_file_contains "$f" "Fix proposal"
+  assert_file_contains "$f" "JEV_FIX_PROPOSAL"
+}
+
+@test "M6-g: end-to-end fix_proposal.py on /tmp/US-101-run.json" {
+  cd "$POC_DIR"
+  # 用 JEV_FIX_PROPOSAL=1 跑 pipeline，產出 fix_proposal.md
+  if [ ! -f /tmp/US-101-run.json ]; then
+    skip "US-101-run.json not found, run pipeline first"
+  fi
+  "$PY" fix_proposal.py /tmp/US-101-run.json /tmp/test-fix.md >/dev/null 2>&1 || {
+    echo "FAIL: fix_proposal.py CLI failed" >&2
+    return 1
+  }
+  assert_path_is_file /tmp/test-fix.md
+  # 確認內容是信心度報告格式
+  grep -q "整體信心度" /tmp/test-fix.md || {
+    echo "FAIL: fix_proposal.md missing 整體信心度" >&2
+    return 1
+  }
+}
