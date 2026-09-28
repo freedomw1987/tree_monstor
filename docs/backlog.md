@@ -23,6 +23,8 @@
 | TMO-012 | M5 PoC 去 hardcode 化：fixture config + stale 限 AC + CLI 重構 + bats 探針 | P1 | 8 | done | TMO-011 |
 | TMO-013 | M3.1 Playwright Chrome driver 整合 | P2 | 5 | done | TMO-012 |
 | TMO-014 | SKILL.md 整合：user-journey-as-test-spec 規範 | P1 | 3 | done | TMO-013 |
+| TMO-015 | CI 整合：GitHub Actions + return code gate + branch protection SOP | P1 | 5 | done | TMO-013 |
+| TMO-016 | M6 修正循環：Jev fix proposal CLI + SKILL.md Step 4 整合 | P1 | 3 | done | TMO-015 |
 
 ---
 
@@ -363,3 +365,59 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - **快**：1 個 sprint 內 M3.1 + SKILL.md 整合 一起完成、25/25 探針、SKILL.md +63 行 + examples.md +111 行都是加法不破壞
 - **慢 1 點**：bats 探針名稱含中文引號 `'` 被 homebrew bats UTF-8 bug 拒絕（unknown test name）— 改為不帶引號的探針名（跟 wiki-merge-media.bats 一樣純英文 workaround）
 - **影響**：regression-guard skill 從「Steps 1-4 規範」升級為「Steps 1-4 規範 + 可選進階 Jev Oracle 章節」；要採用 Jev 的項目能直接看 SKILL + examples 評估實作成本
+
+---
+
+## TMO-015 詳細
+
+> CI 整合：把 bats + run_pipeline.sh 接進 GitHub Actions，加 return code gate + branch protection SOP。
+> **狀態**：✅ 2026-09-28 完成（commit `f0f6543`）
+
+### 做法
+1. **`.github/workflows/regression-guard-jev-poc.yml`** 149 行：2 個 jobs（bats + pipeline）、3 個 triggers（push / PR / dispatch）、paths filter 限 `skills/regression-guard/**` + `docs/ac/**`、workflow_dispatch 帶 `story_id` + `use_stale_test` 參數。
+2. **Return code gate**：`set +e` + `PIPELINE_RC` capture → 0=green pass / 2=yellow warn / 1=red error blocks merge（`::error::` 標記）。
+3. **Artifact upload**：`regression-report-<STORY>` JSON + MD 30 天保留。
+4. **PR comment**：`$GITHUB_STEP_SUMMARY` 貼 markdown 報告。
+5. **Secrets**：`secrets.OPENROUTER_API_KEY` 走 repo secret（不 hardcode）。
+6. **`docs/ci/regression-guard-jev-poc.md`** 155 行：branch protection `gh api` 指令 + UI 步驟 + secrets 設定 + 本機 debug + 已知限制。
+
+### DoD
+- ✅ workflow YAML 語法正確（2 jobs / 14 steps / 3 triggers）
+- ✅ bats 跑不靠 API（探針 25 → 37）
+- ✅ pipeline 用真 API（OPENROUTER_API_KEY secret）
+- ✅ Return code 0/1/2 對應 green/yellow/red 行為有寫進 workflow
+- ✅ Branch protection 設定 SOP 完整（gh API + UI 雙路徑）
+- ⏸ **實際在 GH 上啟用**（需 repo admin 手動設 branch protection；PoC 文件化但未實際接入）
+
+### 反思
+- **快**：一開始以為 GHA 不能透傳 python exit code，後來用 `set +e` + `PIPELINE_RC=$?` capture 解掉（pattern 跟 M4 學的）
+- **慢 1 點**：`env.RETURN_CODE_RED` 寫錯（GitHub Actions 不能像 shell 一樣把 python exit code 自動變 env），改成手動 capture 變數
+- **影響**：regression-guard 從「local-only PoC」升級為「CI-ready PoC」；開 branch protection 後 PR 自動被 real_bug verdict 擋下
+
+---
+
+## TMO-016 詳細
+
+> M6 修正循環：把 Jev verdict 自動接上 fix proposal 產出（信心度報告 + 失敗走跡），SKILL.md Step 4 整合。
+> **狀態**：✅ 2026-09-28 完成（commit `f0f6543`）
+
+### 做法
+1. **`fix_proposal.py` 311 行**：3 題 noul batch call（problem_summary / proposed_fix / verification_steps），跟 batch_report.py 同 cache-first pattern。**因 Jev v1.13 不支援 free_response 題型**（只有 choice / score / noul），改成「信心度報告」 — 3 維度 noul 概率 + 整體信心度 + 失敗走跡截錄 200 字。
+2. **`FixProposal` dataclass**：3 conf 字段 + `overall_confidence` property + `_conf_label()` 評級（高/中/低/不可判定）+ `to_markdown()` 產人讀報告。
+3. **`run_pipeline.sh` M6 步驟**：`JEV_FIX_PROPOSAL=1` 開啟；`M4_RC=0` + `|| M4_RC=$?` capture M4 return code（不然 M4 紅色時 set -e 會中斷 pipeline）。
+4. **SKILL.md v2.3**：「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節（+55 行）。明確標 Jev v1.13 限制 + 0.5 信心度 gating 門檻 + M6.1 升級路徑。
+5. **examples.md**：fix proposal 範例 markdown + reviewer workflow 3 步驟。
+6. **探針守護**：7 個 M6 探針（schema / dataclass / JEV_FIX_PROPOSAL env / M4_RC / SKILL section / examples example / end-to-end CLI）。
+
+### DoD
+- ✅ JEV_FIX_PROPOSAL=1 一鍵跑完整 pipeline + 產出 fix_proposal.md
+- ✅ fix_proposal.md 包含「整體信心度 / 信心度評估表 / 原始失敗走跡 / 上下文 / 下一步」5 區塊
+- ✅ M4 紅色不會中斷 pipeline（M4_RC capture + 0.5 信心度 gating 雙保險）
+- ✅ SKILL.md v2.3 + examples.md 給 reviewer 完整接手起點
+- ⏸ **自動接 LLM 寫 fix 文字**（M6.1+ 升級路徑，需另起 sprint；Jev 信心度作為 gating）
+
+### 反思
+- **快**：3 題 noul schema 一次 OK、bats 探針一次 36/36、SKILL.md v2.3 +55 行純加法
+- **慢 1 點**：一開始預期 Jev 給文字回應，結果只給 noul 概率（schema 不支援 free_response）；改為「信心度報告」模式意外更務實（reviewer 接手起點明確、不需 LLM 接力）
+- **影響**：M6 落實「reviewer 接手 → Jev 給信心度 + 走跡 → reviewer 寫 fix」3-step 流程，PoC 不依賴 GPT/Claude；升級到 LLM 接力是 M6.1+ 顯而易見的下一步
+- **踩坑**：`set -euo pipefail` 在 M4 red 時會提前中斷 pipeline → 學到「return code 設計的 step 要用 `||` 接住再用 $? capture」（pattern 通用）
