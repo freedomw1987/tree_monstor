@@ -856,3 +856,326 @@ json.dump(a, open('$after', 'w'))
     return 1
   fi
 }
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 13: M6.3 互動式 sandbox (TMO-020)
+# ────────────────────────────────────────────────────────────────────
+
+@test "M6.3-a: sandbox_runner.py exists with SandboxResult + run_sandbox" {
+  local f="$POC_DIR/sandbox_runner.py"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "SandboxResult"
+  assert_file_contains "$f" "run_sandbox"
+  assert_file_contains "$f" "_cleanup"
+  assert_file_contains "$f" "render_sandbox_report"
+}
+
+@test "M6.3-b: sandbox dry-run creates sandbox dir but does not modify source" {
+  cd "$POC_DIR"
+  local sample="$POC_DIR/fixtures/US-M63-dryrun-test.py"
+  cat > "$sample" <<'EOF'
+def hello():
+    return "world"
+EOF
+  run "$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "$sample" \
+    --old 'return "world"' \
+    --new 'return "planet"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --sandbox-dry-run
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: dry-run should return 0, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "dry_run" || {
+    echo "FAIL: should classify as dry_run" >&2
+    return 1
+  }
+  # 原檔未改
+  grep -q "world" "$sample" || {
+    echo "FAIL: dry-run should not modify source" >&2
+    return 1
+  }
+}
+
+@test "M6.3-c: sandbox apply + re-validate produces no_change (patch is unrelated)" {
+  cd "$POC_DIR"
+  local sample="$POC_DIR/fixtures/US-M63-apply-test.py"
+  cat > "$sample" <<'EOF'
+def hello():
+    return "unrelated-text-for-no-change-test"
+EOF
+  run "$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "$sample" \
+    --old 'return "unrelated-text-for-no-change-test"' \
+    --new 'return "different-unrelated-text"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: no_change should return 0, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "no_change" || {
+    echo "FAIL: should classify as no_change (unrelated patch)" >&2
+    return 1
+  }
+}
+
+@test "M6.3-d: sandbox aborts on ambiguous old_text (safety propagation)" {
+  cd "$POC_DIR"
+  local sample="$POC_DIR/fixtures/US-M63-ambiguous-test.py"
+  cat > "$sample" <<'EOF'
+foo = "x"
+foo = "x"
+foo = "x"
+EOF
+  run "$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "$sample" \
+    --old 'foo = "x"' \
+    --new 'foo = "y"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md"
+  # error=1（sandbox classification=error）
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: ambiguous should return 1 (error), got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "error" || {
+    echo "FAIL: should classify as error" >&2
+    return 1
+  }
+  echo "$output" | grep -q "refusing to silently" || {
+    echo "FAIL: error message should mention refusing to silently patch" >&2
+    return 1
+  }
+}
+
+@test "M6.3-e: sandbox cleanup removes sandbox dir after run" {
+  cd "$POC_DIR"
+  local sample="$POC_DIR/fixtures/US-M63-cleanup-test.py"
+  cat > "$sample" <<'EOF'
+def hello():
+    return "x"
+EOF
+  local before_count
+  before_count=$(ls "$REPO_ROOT/tmp/" | grep -c "^\.sandbox-US-M63" || echo 0)
+  "$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "$sample" \
+    --old 'return "x"' \
+    --new 'return "y"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md" >/dev/null 2>&1
+  local after_count
+  after_count=$(ls "$REPO_ROOT/tmp/" | grep -c "^\.sandbox-US-M63" || echo 0)
+  if [ "$after_count" -gt "$before_count" ]; then
+    echo "FAIL: sandbox dir not cleaned up (before=$before_count after=$after_count)" >&2
+    return 1
+  fi
+}
+
+@test "M6.3-f: sandbox JSON output has required fields" {
+  cd "$POC_DIR"
+  local sample="$POC_DIR/fixtures/US-M63-json-test.py"
+  cat > "$sample" <<'EOF'
+def hello():
+    return "x"
+EOF
+  local out
+  out=$("$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "$sample" \
+    --old 'return "x"' \
+    --new 'return "y"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --json 2>&1) || true
+  echo "$out" | "$PY" -c "
+import json, sys
+d = json.loads(sys.stdin.read())
+for key in ['sandbox_dir', 'steps', 'classification', 'verdict_before', 'verdict_after', 'cleanup_ok']:
+    assert key in d, f'missing key: {key}'
+print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"]}')
+" || {
+    echo "FAIL: --json output missing required fields" >&2
+    return 1
+  }
+}
+
+@test "M6.3-g: run_pipeline.sh supports JEV_SANDBOX_RUN=1 (M6.3 step)" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "JEV_SANDBOX_RUN"
+  assert_file_contains "$f" "sandbox_runner"
+}
+
+@test "M6.3-h: US-M63 AC file exists with 4 ACs" {
+  local f="$REPO_ROOT/docs/ac/US-M63.md"
+  assert_path_is_file "$f"
+  for ac in "AC01" "AC02" "AC03" "AC04"; do
+    assert_file_contains "$f" "$ac" || {
+      echo "FAIL: US-M63.md missing $ac" >&2
+      return 1
+    }
+  done
+}
+
+@test "M6.3-i: M6.3 step in pipeline comes after M6.2 step" {
+  local f="$POC_DIR/run_pipeline.sh"
+  local m62_line m63_line
+  m62_line=$(grep -n "▶ M6.2" "$f" | head -1 | cut -d: -f1)
+  m63_line=$(grep -n "▶ M6.3" "$f" | head -1 | cut -d: -f1)
+  if [ -z "$m62_line" ] || [ -z "$m63_line" ]; then
+    echo "FAIL: M6.2 or M6.3 not found in pipeline" >&2
+    return 1
+  fi
+  if [ "$m62_line" -ge "$m63_line" ]; then
+    echo "FAIL: M6.3 should come after M6.2" >&2
+    return 1
+  fi
+}
+
+@test "M6.3-j: sandbox_runner handles missing before.json gracefully" {
+  cd "$POC_DIR"
+  local sample="$POC_DIR/fixtures/US-M63-missing-test.py"
+  echo 'def x(): return "x"' > "$sample"
+  run "$PY" sandbox_runner.py \
+    --before /tmp/nonexistent-before.json \
+    --file "$sample" \
+    --old 'return "x"' \
+    --new 'return "y"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md"
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: missing before.json should return 1, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "檔案不存在" || {
+    echo "FAIL: should mention '檔案不存在'" >&2
+    return 1
+  }
+}
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 14: Flaky 驗證 (TMO-020)
+# ────────────────────────────────────────────────────────────────────
+
+@test "flaky-a: flaky_check.py exists with FlakyReport + analyze_runs" {
+  local f="$POC_DIR/flaky_check.py"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "FlakyReport"
+  assert_file_contains "$f" "analyze_runs"
+  assert_file_contains "$f" "flaky_likelihood"
+  assert_file_contains "$f" "render_flaky_report"
+}
+
+@test "flaky-b: flaky_check.py analyze_runs correctly classifies stable" {
+  cd "$POC_DIR"
+  local script="
+import sys
+sys.path.insert(0, '.')
+from flaky_check import analyze_runs, RunRecord
+runs = [
+    RunRecord('r1', {'pass': 0, 'fail': 12, 'blocked': 1}, 13, True, 1000),
+    RunRecord('r2', {'pass': 0, 'fail': 12, 'blocked': 1}, 13, True, 1000),
+    RunRecord('r3', {'pass': 0, 'fail': 12, 'blocked': 1}, 13, True, 1000),
+]
+r = analyze_runs(runs)
+assert r.classification == 'stable', f'expected stable, got {r.classification}'
+assert r.flaky_likelihood == 0.0, f'expected 0.0, got {r.flaky_likelihood}'
+print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
+"
+  run "$PY" -c "$script"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: analyze_runs stable test" >&2
+    return 1
+  }
+  echo "$output" | grep -q "classification=stable" || {
+    echo "FAIL: should classify as stable" >&2
+    return 1
+  }
+}
+
+@test "flaky-c: flaky_check.py analyze_runs correctly classifies highly_flaky" {
+  cd "$POC_DIR"
+  local script="
+import sys
+sys.path.insert(0, '.')
+from flaky_check import analyze_runs, RunRecord
+# 5 次跑，verdict 完全不穩定
+runs = [
+    RunRecord('r1', {'pass': 13, 'fail': 0, 'blocked': 0}, 13, False, 1000),
+    RunRecord('r2', {'pass': 0, 'fail': 13, 'blocked': 0}, 13, False, 1000),
+    RunRecord('r3', {'pass': 5, 'fail': 8, 'blocked': 0}, 13, False, 1000),
+    RunRecord('r4', {'pass': 10, 'fail': 3, 'blocked': 0}, 13, False, 1000),
+    RunRecord('r5', {'pass': 2, 'fail': 11, 'blocked': 0}, 13, False, 1000),
+]
+r = analyze_runs(runs)
+assert r.classification == 'highly_flaky', f'expected highly_flaky, got {r.classification}'
+assert r.flaky_likelihood > 0.5, f'expected >0.5, got {r.flaky_likelihood}'
+print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
+"
+  run "$PY" -c "$script"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: analyze_runs highly_flaky test" >&2
+    return 1
+  }
+  echo "$output" | grep -q "highly_flaky" || {
+    echo "FAIL: should classify as highly_flaky" >&2
+    return 1
+  }
+}
+
+@test "flaky-d: flaky_check.py with US-62 3 runs produces stable output" {
+  cd "$POC_DIR"
+  "$PY" flaky_check.py "$POC_DIR/journeys/US-M62.yaml" \
+    --source "$REPO_ROOT/docs/ac/US-M62.md" \
+    --story-id US-M62-flaky-test --runs 3 \
+    --output /tmp/flaky-test.md >/dev/null 2>&1 || true
+  assert_path_is_file "/tmp/flaky-test.md"
+  assert_file_contains "/tmp/flaky-test.md" "分類"
+  assert_file_contains "/tmp/flaky-test.md" "Per-Run Detail"
+}
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 15: cleanup-scan 進 CI 定期 (TMO-020)
+# ────────────────────────────────────────────────────────────────────
+
+@test "CLEAN-CI-a: workflow has schedule trigger (weekly cron)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "schedule:"
+  assert_file_contains "$f" "cron:"
+}
+
+@test "CLEAN-CI-b: workflow has cleanup-scan job" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  assert_file_contains "$f" "cleanup-scan:"
+  assert_file_contains "$f" "docs/cleanup/cleanup-scan.py"
+  assert_file_contains "$f" "DELETE"
+  assert_file_contains "$f" "REVIEW"
+}
+
+@test "CLEAN-CI-c: cleanup-scan only runs on schedule or workflow_dispatch (not on push/PR)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  # cleanup-scan job 必須有 if: github.event_name == 'schedule' || 'workflow_dispatch'
+  local job_block
+  job_block=$(awk '/cleanup-scan:/,/steps:/' "$f")
+  echo "$job_block" | grep -q "schedule" || {
+    echo "FAIL: cleanup-scan job missing schedule guard" >&2
+    return 1
+  }
+  echo "$job_block" | grep -q "workflow_dispatch" || {
+    echo "FAIL: cleanup-scan job missing workflow_dispatch guard" >&2
+    return 1
+  }
+}

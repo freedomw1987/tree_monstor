@@ -633,3 +633,123 @@ cat /tmp/r-patches.json | jq '.patches[] | {file, format, confidence}'
 - sandbox 限制：CI 環境不能無人工 commit
 - LLM 接力文字可能錯，需人工 review
 - M6.2 pipeline 階段只「產 patch 素材」，apply / re-validate 在 sandbox 手動跑
+
+### M6.3 互動式 sandbox 範例
+
+```bash
+# 一鍵跑 M2→M3→M4→M6→M6.1→M6.2→M6.3
+JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  JEV_PATCH_AND_REVALIDATE=1 JEV_SANDBOX_RUN=1 \
+  ./run_pipeline.sh US-M63
+# → 建 tmp/.sandbox-US-M63-<ts>/ 隔離工作目錄
+# → apply patch in sandbox（不動主 repo）
+# → 重跑 journey 產 after.json
+# → 自動 re-validate
+# → 若 regression：自動 rollback
+# → 產出 sandbox_report.md
+# → cleanup sandbox 目錄
+
+# Sandbox 模組獨立使用
+.venv/bin/python sandbox_runner.py \
+  --before /tmp/US-M63-before.json \
+  --file fixtures/US-M63-sample.py \
+  --old 'return "before-patch"' \
+  --new 'return "after-patch"' \
+  --journey journeys/US-M63.yaml \
+  --story-id US-M63 \
+  --source docs/ac/US-M63.md \
+  --sandbox-dry-run
+# → 👀 建 sandbox + 備份，不 apply
+```
+
+**6 步流程**：
+
+| 步驟 | 動作 | 輸出 |
+|---|---|---|
+| 1. 建立 sandbox | mkdir + copy + 備份 | sandbox 已建 |
+| 2. apply patch | playwright_patcher.py in sandbox | file 已改（sandbox 內）|
+| 3. 重跑 journey | run_journey.py 產 after.json | verdict_after |
+| 4. re-validate | re_validate.py 比對 | classification |
+| 5. auto rollback | 若 regression：從 .pre-patch/ 還原 | file 回 baseline |
+| 6. cleanup | shutil.rmtree(sandbox) | 隔離目錄已刪 |
+
+**為什麼叫「互動式」**：
+- sandbox 內 apply + re-validate + rollback 全自動
+- 「要不要把 sandbox 的 patch 拿回主 repo + commit」仍人工決定
+
+### Flaky 驗證範例
+
+```bash
+.venv/bin/python flaky_check.py journeys/US-M62.yaml \
+  --source docs/ac/US-M62.md \
+  --story-id US-M62 --runs 5 \
+  --output /tmp/flaky-usm62.md
+
+# → 跑 5 次同一 journey
+# → 聚合 verdict 分布
+# → 計算 flaky_likelihood = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
+# → 產出 flaky_report.md
+```
+
+**實測結果**（US-M62 5 次跑）：
+
+| Run | fail | blocked | pass | wall time |
+|-----|------|---------|------|-----------|
+| #1  | 12   | 1       | 0    | 73335ms   |
+| #2  | 12   | 1       | 0    | 70651ms   |
+| #3  | 12   | 1       | 0    | 45058ms   |
+| #4  | 12   | 1       | 0    | 29698ms   |
+| #5  | 12   | 1       | 0    | 57041ms   |
+
+→ verdict 完全一致 → 🟢 **stable** (flaky_likelihood=0.0)
+
+**3 種分類**：
+
+| flaky_likelihood | 分類 | 建議 |
+|---|---|---|
+| < 0.05 | 🟢 stable | 結果可信 |
+| 0.05 ~ 0.20 | 🟡 mildly_flaky | 加 Jev observer context 重跑 |
+| ≥ 0.20 | 🔴 highly_flaky | 檢查 observer 實作 / AC 定義 |
+
+### Cleanup 進 CI 定期範例
+
+```yaml
+# .github/workflows/regression-guard-jev-poc.yml
+on:
+  schedule:
+    - cron: '0 0 * * 1'   # 每周一 00:00 UTC
+
+jobs:
+  cleanup-scan:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Run cleanup-scan
+        run: python docs/cleanup/cleanup-scan.py --json > /tmp/scan.json
+      - name: Post summary
+        if: always()
+        run: |
+          {
+            echo "## docs/cleanup-scan 定期檢查"
+            echo "**DELETE**: $DELETE_COUNT"
+            if [ "$DELETE_COUNT" -gt 0 ]; then
+              echo "⚠️ 發現 $DELETE_COUNT 個建議刪除文件，請手動 review"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+```
+
+**4 類分類**：
+
+| 類別 | 標準 | 動作 |
+|---|---|---|
+| KEEP | ≥2 cross-link 或 protected pattern | 保留 |
+| REVIEW | 1 cross-link | 人工 review |
+| DELETE | 0 cross-link | ⚠️ 警告（不自動刪）|
+| MERGE | TODO | 預留 hook（v2.0 規則禁止改存量，未實作）|
+
+**為什麼是 weekly 不是 daily**：
+- 文件分類變化不快
+- daily 太頻繁，CI minutes 浪費
+- 每周一次夠 cover 「主動堆積」

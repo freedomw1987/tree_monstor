@@ -1,0 +1,235 @@
+journey_id: US-M63
+title: AC 範本 — regression-guard M6.3 互動式 sandbox
+source: ../../../docs/ac/US-M63.md
+generated_by: typesafe/jev-1.13
+generated_at: '2026-09-28T15:53:28+00:00'
+total_steps: 15
+steps:
+- id: US-M63-AC01-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC01
+  verifying_then: 建立 `tmp/.sandbox-<ts>/` 隔離工作目錄（copy fixture + journey + source file）
+  depends_on: []
+- id: US-M63-AC01-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC01
+  verifying_then: 建立 `tmp/.sandbox-<ts>/` 隔離工作目錄（copy fixture + journey + source file）
+  depends_on:
+  - US-M63-AC01-s1
+- id: US-M63-AC01-s3
+  action: multi_step
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC01
+  verifying_then: 建立 `tmp/.sandbox-<ts>/` 隔離工作目錄（copy fixture + journey + source file）
+  depends_on:
+  - US-M63-AC01-s2
+- id: US-M63-AC02-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC02
+  verifying_then: 用 playwright_patcher.py 在 sandbox 內 apply（不動主 repo）
+  depends_on:
+  - US-M63-AC01-s3
+- id: US-M63-AC02-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC02
+  verifying_then: 用 playwright_patcher.py 在 sandbox 內 apply（不動主 repo）
+  depends_on:
+  - US-M63-AC02-s1
+- id: US-M63-AC02-s3
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC02
+  verifying_then: 用 playwright_patcher.py 在 sandbox 內 apply（不動主 repo）
+  depends_on:
+  - US-M63-AC02-s2
+- id: US-M63-AC02-s4
+  action: multi_step
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC02
+  verifying_then: 用 playwright_patcher.py 在 sandbox 內 apply（不動主 repo）
+  depends_on:
+  - US-M63-AC02-s3
+- id: US-M63-AC03-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC03
+  verifying_then: 自動從 `.pre-patch/` 還原 sandbox 內所有被改的檔案
+  depends_on:
+  - US-M63-AC02-s4
+- id: US-M63-AC03-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC03
+  verifying_then: 自動從 `.pre-patch/` 還原 sandbox 內所有被改的檔案
+  depends_on:
+  - US-M63-AC03-s1
+- id: US-M63-AC03-s3
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC03
+  verifying_then: 自動從 `.pre-patch/` 還原 sandbox 內所有被改的檔案
+  depends_on:
+  - US-M63-AC03-s2
+- id: US-M63-AC03-s4
+  action: multi_step
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC03
+  verifying_then: 自動從 `.pre-patch/` 還原 sandbox 內所有被改的檔案
+  depends_on:
+  - US-M63-AC03-s3
+- id: US-M63-AC04-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC04
+  verifying_then: 8 個 M6.3 探針全綠（sandbox 建立 / apply / re-validate / rollback / 報告 /
+    pipeline 整合）
+  depends_on:
+  - US-M63-AC03-s4
+- id: US-M63-AC04-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC04
+  verifying_then: 8 個 M6.3 探針全綠（sandbox 建立 / apply / re-validate / rollback / 報告 /
+    pipeline 整合）
+  depends_on:
+  - US-M63-AC04-s1
+- id: US-M63-AC04-s3
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC04
+  verifying_then: 8 個 M6.3 探針全綠（sandbox 建立 / apply / re-validate / rollback / 報告 /
+    pipeline 整合）
+  depends_on:
+  - US-M63-AC04-s2
+- id: US-M63-AC04-s4
+  action: multi_step
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M63-AC04
+  verifying_then: 8 個 M6.3 探針全綠（sandbox 建立 / apply / re-validate / rollback / 報告 /
+    pipeline 整合）
+  depends_on:
+  - US-M63-AC04-s3
+meta:
+  story_id: US-M63
+  title: AC 範本 — regression-guard M6.3 互動式 sandbox
+  ac_count: 4
+  calls:
+  - ac_id: US-M63-AC01
+    phase: complexity
+    latency_ms: 14101
+    cached: false
+    score: 2.36
+  - ac_id: US-M63-AC01
+    phase: action_plan
+    latency_ms: 291
+    cached: false
+    choice: multi_step
+  - ac_id: US-M63-AC02
+    phase: complexity
+    latency_ms: 12140
+    cached: false
+    score: 2.98
+  - ac_id: US-M63-AC02
+    phase: action_plan
+    latency_ms: 287
+    cached: false
+    choice: multi_step
+  - ac_id: US-M63-AC03
+    phase: complexity
+    latency_ms: 8985
+    cached: false
+    score: 2.8
+  - ac_id: US-M63-AC03
+    phase: action_plan
+    latency_ms: 278
+    cached: false
+    choice: multi_step
+  - ac_id: US-M63-AC04
+    phase: complexity
+    latency_ms: 279
+    cached: false
+    score: 2.91
+  - ac_id: US-M63-AC04
+    phase: action_plan
+    latency_ms: 7072
+    cached: false
+    choice: multi_step

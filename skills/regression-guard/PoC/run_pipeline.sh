@@ -112,6 +112,22 @@ if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
                 echo "   patches: $(.venv/bin/python -c "import json; d=json.load(open('$PATCH_OUT')); print(len(d.get('patches', [])))" 2>/dev/null) extracted"
                 echo "   → apply: .venv/bin/python playwright_patcher.py <FILE> --old ... --new ... --apply"
                 echo "   → re-validate: .venv/bin/python re_validate.py <before.json> <after.json>"
+                # M6.3 sandbox 自動版（opt-in）
+                if [ "${JEV_SANDBOX_RUN:-0}" = "1" ]; then
+                    echo "▶ M6.3  sandbox 自動 apply + re-validate + rollback…"
+                    SANDBOX_OUT="${REPORT_PATH%.*}-sandbox.md"
+                    .venv/bin/python sandbox_runner.py \
+                        --before "$RUN_JSON" \
+                        --file fixtures/${STORY_ID}-sample.py \
+                        --old 'return "before-patch"' \
+                        --new 'return "after-patch"' \
+                        --journey journeys/${STORY_ID}.yaml \
+                        --story-id "${STORY_ID}" \
+                        --source "${AC_FILE:-$REPO_ROOT/docs/ac/${STORY_ID}.md}" \
+                        --output "$SANDBOX_OUT" 2>&1 | tail -15 || \
+                        echo "   (M6.3 sandbox failed but pipeline continues)"
+                    echo
+                fi
             fi
             echo "   ⚠️  apply / re-validate 需人工 (sandbox 限制)；pipeline 只產素材"
             echo

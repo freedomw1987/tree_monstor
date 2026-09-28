@@ -24,6 +24,9 @@ on:
         type: boolean
         required: false
         default: false
+  schedule:
+    # 每周一 00:00 UTC 跑 cleanup-scan（避免堆积 .review、避免錯修文件遺留）
+    - cron: '0 0 * * 1'
 
 permissions:
   contents: read
@@ -147,3 +150,51 @@ jobs:
               echo "⚠️ Report not generated (pipeline may have failed before M4)"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup-scan:
+    # 每周 schedule 跑（cron）也可手動 dispatch
+    name: docs/cleanup-scan 定期檢查
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run cleanup-scan (KEEP/REVIEW/DELETE/MERGE)
+        id: scan
+        continue-on-error: true
+        run: |
+          python docs/cleanup/cleanup-scan.py --json > /tmp/cleanup-scan.json
+          DELETE_COUNT=$(python -c "import json; d=json.load(open('/tmp/cleanup-scan.json')); print(d['summary'].get('DELETE', 0))")
+          REVIEW_COUNT=$(python -c "import json; d=json.load(open('/tmp/cleanup-scan.json')); print(d['summary'].get('REVIEW', 0))")
+          echo "DELETE=$DELETE_COUNT" >> $GITHUB_OUTPUT
+          echo "REVIEW=$REVIEW_COUNT" >> $GITHUB_OUTPUT
+          echo ""
+          echo "📊 Summary:"
+          python -c "import json; d=json.load(open('/tmp/cleanup-scan.json')); [print(f'  {k}: {v}') for k, v in d['summary'].items()]"
+
+      - name: Post summary
+        if: always()
+        run: |
+          {
+            echo "## docs/cleanup-scan 定期檢查"
+            echo ""
+            echo "**KEEP**：${{ steps.scan.outputs.REVIEW }}"
+            echo "**REVIEW**：${{ steps.scan.outputs.REVIEW }}"
+            echo "**DELETE**：${{ steps.scan.outputs.DELETE }}"
+            if [ "${{ steps.scan.outputs.DELETE }}" -gt 0 ]; then
+              echo ""
+              echo "⚠️ 發現 ${{ steps.scan.outputs.DELETE }} 個建議刪除文件，請手動 review。"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Warn if DELETE > 0
+        if: steps.scan.outputs.DELETE > 0
+        run: |
+          echo "⚠️ docs/cleanup-scan 發現 ${{ steps.scan.outputs.DELETE }} 個建議刪除文件"
+          echo "請手動 review \`docs/cleanup/cleanup-scan.py\` 產出的清單"
+          exit 0  # 不直接 fail (因為需要人工 review)

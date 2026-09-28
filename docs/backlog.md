@@ -28,6 +28,49 @@
 | TMO-017 | M6.1 LLM Relay：skill 本身 LLM 接力寫 fix 文字 | P1 | 5 | done | TMO-016 |
 | TMO-018 | docs/cleanup 盤點腳本 + 套用减法 | P1 | 3 | done | TMO-017 |
 | TMO-019 | M6.2 patch + re-validate 自動閉環 | P1 | 8 | done (2026-09-28) | TMO-017 |
+| TMO-020 | M6.3 互動式 sandbox + flaky 驗證 + cleanup CI 定期 | P1 | 13 | done (2026-09-28) | TMO-019 |
+
+---
+
+## TMO-020 詳細
+
+> 3 個收尾選項一次到位：互動式 sandbox (M6.3) + flaky 驗證 + cleanup 進 CI 定期。
+> **狀態**：✅ 2026-09-28 完成（commit 下一個）
+
+### 做法
+1. **docs/ac/US-M63.md** + **docs/ac/US-M63.html**：M6.3 PENDING US，4 條 AC（sandbox 建立 / apply + re-validate / rollback / 探針守護）
+2. **skills/regression-guard/PoC/sandbox_runner.py** 12.8KB / 379 行：
+   - 6 步流程：建 sandbox → apply → 重跑 → re-validate → 自動 rollback（if regression）→ cleanup
+   - safety 規則繼承 M6.2（ambiguous / not-found → abort + cleanup）
+   - 主 repo 永遠不被改；只在 tmp/.sandbox-<ts>/ 隔離目錄
+3. **skills/regression-guard/PoC/flaky_check.py** 6.4KB / 187 行：
+   - 跑 N 次同一 journey，聚合 verdict 分布
+   - 計算 flaky_likelihood = Σ range / (Σ max + 1)
+   - 分類：stable / mildly_flaky / highly_flaky
+4. **.github/workflows/regression-guard-jev-poc.yml**：
+   - 加 schedule trigger (每周一 00:00 UTC)
+   - 加 cleanup-scan job（條件：schedule 或 workflow_dispatch）
+   - DELETE > 0 時發警告到 GITHUB_STEP_SUMMARY
+5. **run_pipeline.sh**：加 M6.3 步驟 + JEV_SANDBOX_RUN=1 環境變數 + AC_FILE fallback
+6. **SKILL.md v2.6**：M6.3 / Flaky / Cleanup-CI 3 小節 + 公式 + 3 種 flaky 分類表
+7. **examples.md**：M6.3 範例 + flaky 實測 5 次跑表 + cleanup CI workflow 範例
+8. **探針守護**：80 探針全綠（63 → 80，加 10 M6.3 + 4 flaky + 3 cleanup-CI）
+
+### DoD
+- ✅ AC01 / AC02 / AC03 / AC04 4 條全綠
+- ✅ `JEV_SANDBOX_RUN=1 ./run_pipeline.sh US-M63` 一鍵跑通 M2→M6.3
+- ✅ `bats tests/v2.1-jev-poc.bats` 80/80 探針全綠
+- ✅ flaky_check US-M62 5 次跑 → stable (flaky_likelihood=0.0)
+- ✅ workflow schedule trigger + cleanup-scan job 配好
+- ✅ deliverable + 反思 + backlog 標 TMO-020 done
+
+### 反思
+- **快**：3 個收尾選項一次到位（sandbox / flaky / cleanup-CI），80 探針全綠
+- **慢 1 點**：sandbox_runner 第一次在 pipeline 跑時因 AC_FILE unbound variable 中斷；用 `${AC_FILE:-$REPO_ROOT/docs/ac/${STORY_ID}.md}` fallback 解
+- **影響**：regression-guard 從「完整閉環」升級為「**完整閉環 + 自動 sandbox + 穩定性量測 + 文件自動審查**」四合一
+- **M6.3 的價值**：把 M6.2 的 3 步手動封裝成 1 步自動；reviewer 只需人工「把 sandbox 的 patch 拿回主 repo + commit」
+- **flaky 的價值**：用 5 次實跑證明 M6.2 結果穩定（不 flaky），CI 訊號可信
+- **cleanup-CI 的價值**：weekly 自動跑 cleanup-scan，DELETE > 0 時警告；不自動刪，仍需人工 review
 
 ---
 

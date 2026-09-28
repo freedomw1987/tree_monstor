@@ -409,6 +409,137 @@ JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
 - **safety**：rollback 機制 100% 可靠，但「LLM 接力文字可能錯」這點沒人為把關不行
 - **scope 控制**：M6.2 不做「自動 commit」；patch 驗證通過後只留報告，由 reviewer 決定
 
+### M6.3 修正循環補充：互動式 sandbox（M6.2 自動版）
+
+**適用情境**：M6.2 還需手動 3 步（apply → 重跑 → re-validate）；M6.3 把這 3 步封裝成一個 sandbox 流程。
+
+**怎麼用**（sandbox 環境，一鍵）：
+
+```bash
+# 一鍵跑 M2→M3→M4→M6→M6.1→M6.2→M6.3
+JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  JEV_PATCH_AND_REVALIDATE=1 JEV_SANDBOX_RUN=1 \
+  ./run_pipeline.sh US-M63
+# → 建 tmp/.sandbox-US-M63-<ts>/ 隔離工作目錄
+# → copy fixture + journey + source file
+# → apply patch in sandbox（不動主 repo）
+# → 重跑 journey_runner.py 產 after.json
+# → 自動 re_validate.py 比對 verdict
+# → 若 regression：自動從 .pre-patch/ 還原
+# → 產出 sandbox_report.md
+# → 不論結果都 cleanup sandbox 目錄
+```
+
+**sandbox_runner.py 模組**（在 `PoC/`）：
+
+| 步驟 | 動作 | 輸出 |
+|---|---|---|
+| 1. 建立 sandbox | mkdir + copy fixture + 備份到 `.pre-patch/` | sandbox 目錄已建 |
+| 2. apply patch | playwright_patcher.py in sandbox | file 已改（sandbox 內）|
+| 3. 重跑 journey | run_journey.py 產 after.json | verdict_after |
+| 4. re-validate | re_validate.py 比對 | classification: improvement / regression / no_change |
+| 5. auto rollback | 若 regression：從 .pre-patch/ 還原 | file 回到 baseline |
+| 6. cleanup | shutil.rmtree(sandbox) | 隔離目錄已刪 |
+
+**為什麼叫「互動式」**：
+- apply in sandbox + re-validate + rollback 都**自動**
+- 「要不要把 sandbox 的 patch 拿回主 repo + commit」仍**人工**
+
+**safety 規則**（繼承 M6.2）：
+- ambiguous old → 整個 sandbox abort，cleanup 仍跑
+- not-found old → 同上
+- sandbox 目錄不論結果都刪，不留垃圾
+- 主 repo 永遠不被改
+
+**return code**：error=1, regression=2, improvement/no_change=0
+
+### Flaky 驗證：跑 N 次同一 journey 識别穩定性
+
+**適用情境**：懷疑某個 journey 結果不穩定（同一 source 多次跑 verdict 分布不一樣）。
+
+**怎麼用**：
+
+```bash
+.venv/bin/python flaky_check.py journeys/US-M62.yaml \
+  --source docs/ac/US-M62.md \
+  --story-id US-M62 --runs 5 \
+  --output /tmp/flaky-usm62.md
+# → 跑 5 次同一 journey
+# → 聚合 verdict 分布
+# → 計算 flaky_likelihood = total_range / (total_max + 1)
+# → 分類：stable (<0.05) / mildly_flaky (<0.20) / highly_flaky (≥0.20)
+# → 產出 flaky_report.md
+```
+
+**flaky_likelihood 公式**：
+
+```
+flaky_likelihood = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
+```
+
+- `0.0`：每次都一模一樣（完全穩定）
+- `接近 1.0`：每次 verdict 都大幅波動（完全 flaky）
+
+**實測結果**（US-M62 5 次跑）：
+- fail=12, blocked=1, pass=0 每次都一致
+- flaky_likelihood = 0.0 → 🟢 **stable**
+
+**flaky_check.py 模組**（在 `PoC/`）：
+
+| 函數 | 用途 |
+|---|---|
+| `RunRecord` | 一次跑的 verdict 計數 + blocked + wall time |
+| `analyze_runs(runs)` | 聚合 + 計算 flaky_likelihood + 分類 |
+| `render_flaky_report(report)` | 渲染 flaky_report.md |
+
+**為什麼 flaky_likelihood 重要**：
+- **CI 訊號穩定**：穩定的 journey 結果可以信，flaky 的 journey 結果需謹慎解讀
+- **regression 報告加值**：在 batch report 加上「這次跑是否 flaky」標記，避免被 flaky 結果誤導
+- **debug 線索**：flaky 高的 journey 多半是 Jev cache 命中、observer 不穩、AC 定義模糊
+
+### CI 定期檢查：docs/cleanup-scan 排程
+
+**適用情境**：repo 文件會隨時間累積（PRD、reflection、audit trail）；定期自動掃描找出「建議刪除」的文件。
+
+**怎麼用**（已配在現有 workflow）：
+
+```yaml
+# .github/workflows/regression-guard-jev-poc.yml
+on:
+  schedule:
+    - cron: '0 0 * * 1'   # 每周一 00:00 UTC
+
+jobs:
+  cleanup-scan:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - run: python docs/cleanup/cleanup-scan.py --json
+      - run: |
+          DELETE=$(...)
+          [ $DELETE -gt 0 ] && echo "⚠️ $DELETE 個建議刪除文件請 review" || true
+```
+
+**cleanup-scan.py 4 類**：
+
+| 類別 | 標準 | 動作 |
+|---|---|---|
+| KEEP | ≥2 cross-link 或 protected pattern | 保留 |
+| REVIEW | 1 cross-link | 人工 review（考慮是否 merge / 補連結 / 刪）|
+| DELETE | 0 cross-link | ⚠️ 警告：考慮刪除（仍需人工 `--apply`）|
+| MERGE | TODO | 預留 hook（v2.0 規則禁止改存量，未實作）|
+
+**為什麼不自動刪 DELETE**：
+- 可能是 audit trail（reflection、PRD-04、testing-methods.md 等都有保留價值）
+- 可能是重要文件但缺交叉引用（單一來源）
+- 可能是 contributor 故意留下的 work-in-progress
+
+**為什麼是 weekly 不是 daily**：
+- 文件分類變化不快（PRD、reflection 一次寫就不動）
+- daily 太頻繁，CI minutes 浪費
+- 每周一次夠 cover 「主動堆積」
+
+**手動觸發**：`gh workflow run regression-guard-jev-poc.yml` 選 workflow_dispatch 即可。
+
 ### CI 整合補充
 
 workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
@@ -433,6 +564,7 @@ workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
 | v2.3 | 2026-09-28 | 新增「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節；changelog 升 v2.3 | TMO-015 / TMO-016：CI + M6 收尾 |
 | v2.4 | 2026-09-28 | 新增「M6.1 修正循環補充：LLM Relay（v2 接力）」小節 + prompt template 位置 + 信心度 gating 表 | TMO-017：M6.1 LLM relay 啟用 |
 | v2.5 | 2026-09-28 | 新增「M6.2 patch + re-validate 閉環」小節 + 三模組腳本 + safety 規則 + pipeline 整合 | TMO-019：M6.2 自動修正閉環 |
+| v2.6 | 2026-09-28 | 新增「M6.3 互動式 sandbox」+「Flaky 驗證」+「CI 定期 cleanup」3 小節 + sandbox_runner / flaky_check 模組 | TMO-020：M6.3 + flaky + cleanup CI |
 | v2.2 | 2026-09-28 | 新增「Jev Oracle 補充（進階）」章節 + M3.1 Playwright observer 參考 | TMO-013 / TMO-014：整合 PoC M1-M5 進 skill 本體 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
