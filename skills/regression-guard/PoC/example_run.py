@@ -90,11 +90,15 @@ def main() -> int:
     print("=" * 70)
 
     # 檢查 API key
-    use_cache = not bool(os.environ.get("OPENROUTER_API_KEY"))
-    if use_cache:
-        print("ℹ️  OPENROUTER_API_KEY 未設定 → 全程用本地 cache（首次跑會 fail，"
-              "需 cp .env.example .env 並補 key）")
-        print()
+    from jev_oracle import _load_api_key
+    api_key = _load_api_key()
+    use_cache = "--no-cache" not in sys.argv
+    if not api_key:
+        print("ℹ️  OPENROUTER_API_KEY 找不到 → 全程用本地 cache（首次跑會 fail，"
+              "需 cp .env.example .env 並補 key 或 set env）")
+    else:
+        print(f"ℹ️  API key loaded, mode={'cache' if use_cache else 'force live'}")
+    print()
 
     results: list[OracleResult] = []
     for ac in story.acs:
@@ -113,7 +117,7 @@ def main() -> int:
             **fixture,
         )
 
-        print(f"\n▶ {ac.ac_id}  →  Jev oracle ({'cache' if use_cache else 'live'})")
+        print(f"\n▶ {ac.ac_id}  →  Jev oracle")
         try:
             r = evaluate_ac(ctx, use_cache=use_cache)
         except Exception as e:
@@ -125,9 +129,8 @@ def main() -> int:
             f"{k}={v:.2f}" for k, v in r.verdict_probs.items()
         )
         print(f"  verdict={r.verdict} ({verdict_str})")
-        print(f"  severity={r.severity:.2f}/3")
-        print(f"  confidence={r.confidence:.2f}")
-        print(f"  model={r.model}  latency={r.latency_ms}ms  cached={r.cached}")
+        print(f"  severity={r.severity:.2f}/3  confidence={r.confidence:.2f}  is_real_bug={r.is_real_bug:.2f}")
+        print(f"  model={r.model}  latency={r.latency_ms}ms  cost=${r.cost_usd:.6f}  cached={r.cached}")
 
     # End-of-run batch summary
     print("\n" + "=" * 70)
@@ -138,7 +141,13 @@ def main() -> int:
     for v, n in cnt.most_common():
         print(f"  {v:15s} {n} 條")
     avg_sev = sum(r.severity for r in results) / max(1, len(results))
-    print(f"  avg severity: {avg_sev:.2f}/3")
+    total_cost = sum(r.cost_usd for r in results)
+    total_lat = sum(r.latency_ms for r in results)
+    n_real_bugs = sum(1 for r in results if r.verdict != "pass" and r.is_real_bug > 0.5)
+    print(f"  avg severity:       {avg_sev:.2f}/3")
+    print(f"  real bugs flagged:  {n_real_bugs}/{len(results)}")
+    print(f"  total cost:         ${total_cost:.6f}")
+    print(f"  total latency:      {total_lat}ms")
 
     return 0
 

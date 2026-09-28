@@ -1,9 +1,11 @@
 """
-Jev Oracle — typed decision model 把 AC 文字轉成 verdict。
+Jev Oracle — 把 AC 文字 + 觀察結果送給 Jev 跑 typed decision。
 
 模型: typesafe/jev-1.13 (透過 OpenRouter)
-介面: OpenAI-compatible /chat/completions (tools= 沒有 special 對 Jev 有意義，因 Jev
-     output 是 typed decision，不是 function call)
+介面: POST https://openrouter.ai/api/alpha/decisions
+      (不是 /chat/completions！Jev 是 decisions model，不是 chat model)
+
+回應 schema: {"answers": {<qid>: {type, choice/score/noul, probabilities, confidence}}}
 """
 
 from __future__ import annotations
@@ -14,11 +16,10 @@ import time
 import hashlib
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any
 
 import httpx
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_URL = "https://openrouter.ai/api/alpha/decisions"
 DEFAULT_MODEL = "typesafe/jev-1.13"
 CACHE_DIR = Path(__file__).parent / "cache"
 
@@ -34,7 +35,6 @@ class ACContext:
     when: str
     then: str
     additional_and: list[str] = field(default_factory=list)
-    # 觀察到的實際結果
     observed_url: str = ""
     observed_status: int = 0
     observed_body_excerpt: str = ""
@@ -42,37 +42,44 @@ class ACContext:
     elapsed_ms: int = 0
     history: list[dict] = field(default_factory=list)
 
-    def to_state_json(self) -> str:
-        """Jev 的 state 接受 string / object / array；用 string 結構最簡。"""
-        return json.dumps(asdict(self), ensure_ascii=False, indent=2)
-
-
-@dataclass
-class JevAnswer:
-    """單題答案（Choice / Noul / Score 都包這形狀）。"""
-    qid: str
-    raw: dict
-
 
 @dataclass
 class OracleResult:
-    """一個 AC 跑完 oracle 後的最終評估。"""
     ac_id: str
-    verdict: str
+    verdict: str                       # pass / fail / flaky / over_assertion
     verdict_probs: dict[str, float]
-    severity: float
+    severity: float                    # 0~3
     severity_legend: dict[str, str]
     severity_probs: dict[str, float]
-    confidence: float
+    is_real_bug: float                 # 0~1 (Noul)
+    is_real_bug_confidence: float
+    confidence: float                  # 主信心（用 verdict 的）
     model: str
     latency_ms: int
+    cost_usd: float = 0.0
     cached: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
 
 
-# ─── HTTP / cache 層 ───────────────────────────────────────────────────────
+# ─── HTTP / cache / key loader ────────────────────────────────────────────
+
+def _load_api_key() -> str:
+    """順序：env > PoC/.env > ~/.claude/skills/regression-guard/PoC/.env"""
+    if k := os.environ.get("OPENROUTER_API_KEY"):
+        return k
+    candidates = [
+        Path(__file__).parent / ".env",
+        Path.home() / ".claude" / "skills" / "regression-guard" / "PoC" / ".env",
+    ]
+    for p in candidates:
+        if p.exists():
+            for line in p.read_text().splitlines():
+                if line.startswith("OPENROUTER_API_KEY="):
+                    return line.split("=", 1)[1].strip()
+    return ""
+
 
 def _cache_key(body: dict) -> str:
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()[:16]
@@ -107,99 +114,84 @@ def _post_with_retry(url: str, body: dict, headers: dict, *, retries: int = 3) -
     raise RuntimeError(f"OpenRouter 連線失敗（{retries} 次重試）：{last_err}")
 
 
-# ─── Jev 呼叫核心 ─────────────────────────────────────────────────────────
+# ─── Jev schema：三題一次 batch ──────────────────────────────────────────
 
-# 三題一次 batch call（parallel_questions cookbook 模式）
 QUESTIONS_SCHEMA = {
     "verdict": {
         "type": "choice",
+        "instructions": (
+            "Given the AC (Given/When/Then) and the observed state, decide the verdict."
+        ),
         "criteria": {
-            "pass": "The observed action cleanly satisfies every clause of the AC `Then`.",
-            "fail": "The observed action does NOT satisfy one or more clauses of `Then`.",
-            "flaky": "Result depends on timing/network/order; rerun may produce different outcome.",
+            "pass":           "The observed action cleanly satisfies every clause of the AC `Then`.",
+            "fail":           "The observed action does NOT satisfy one or more clauses of `Then`.",
+            "flaky":          "Result depends on timing/network/order; rerun may produce different outcome.",
             "over_assertion": "AC `Then` itself is ambiguous or impossible to verify from observation.",
         },
     },
     "severity": {
         "type": "score",
+        "instructions": (
+            "If the verdict is 'pass', severity should be 0. Otherwise assess impact:"
+        ),
         "criteria": [
-            "Cosmetic: wording, spacing, color",
-            "Minor: one extra step needed but reach goal",
-            "Major: blocks a happy-path user flow",
-            "Critical: data loss, payment error, security",
+            "Cosmetic: wording, spacing, color, copy — user can still complete the flow",
+            "Minor: one extra step needed but user can still reach goal",
+            "Major: blocks a happy-path user flow; user gives up or calls support",
+            "Critical: data loss, payment error, security breach, account lockout",
         ],
     },
     "is_real_bug": {
         "type": "noul",
+        "instructions": (
+            "Does this observed failure indicate a real underlying bug in the application, "
+            "independent of test environment, fixtures, or test ordering? true = real bug, false = artifact."
+        ),
         "criteria": {
-            "yes": "There's a real underlying bug independent of test conditions.",
-            "no":  "Outcome is fully explained by environment, fixture, or test order.",
+            "true":  "There's a real underlying bug in the application code.",
+            "false": "Outcome is fully explained by environment, fixture, or test order.",
         },
     },
 }
 
 
+def _state_text(context: ACContext) -> str:
+    """把 ACContext 變成 Jev state string。"""
+    lines = [
+        f"=== AC ({context.ac_id} of {context.story_id}) ===",
+        f"Given: {context.given}",
+        f"When:  {context.when}",
+        f"Then:  {context.then}",
+    ]
+    if context.additional_and:
+        lines.append("And:   " + "\nAnd:   ".join(context.additional_and))
+    lines.append("")
+    lines.append("=== Observed state ===")
+    lines.append(f"URL:                {context.observed_url}")
+    lines.append(f"Status:             {context.observed_status}")
+    lines.append(f"Body excerpt:       {context.observed_body_excerpt[:300]}")
+    lines.append(f"User-facing msg:    {context.observed_user_message[:300]}")
+    lines.append(f"Elapsed:            {context.elapsed_ms} ms")
+    if context.history:
+        lines.append(f"History (last 5):   {json.dumps(context.history[-5:], ensure_ascii=False)}")
+    return "\n".join(lines)
+
+
 def _build_payload(context: ACContext, *, model: str) -> dict:
     return {
         "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a senior QA engineer. Given an acceptance criterion (AC) "
-                    "and the observed system state from a user-journey step, decide "
-                    "whether the AC was satisfied. Answer three questions at once: "
-                    "(1) verdict, (2) severity if it failed, (3) is it a real bug."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    "Evaluate the following AC against the observed state.\n\n"
-                    f"=== AC ({context.ac_id} of {context.story_id}) ===\n"
-                    f"Given: {context.given}\n"
-                    f"When:  {context.when}\n"
-                    f"Then:  {context.then}\n"
-                    + ("And:   " + "\nAnd:   ".join(context.additional_and) + "\n" if context.additional_and else "")
-                    + "\n"
-                    f"=== Observed state ===\n"
-                    f"URL:        {context.observed_url}\n"
-                    f"Status:     {context.observed_status}\n"
-                    f"Body (excerpt): {context.observed_body_excerpt[:300]}\n"
-                    f"User-facing message: {context.observed_user_message[:300]}\n"
-                    f"Elapsed:    {context.elapsed_ms} ms\n"
-                    f"History (last 5): {json.dumps(context.history[-5:], ensure_ascii=False)}\n"
-                ),
-            },
-        ],
-        "response_format": {"type": "json_object"},
-        "max_tokens": 1024,
+        "state": _state_text(context),
+        "questions": QUESTIONS_SCHEMA,
     }
 
 
-def _parse_jev_response(raw: dict) -> tuple[OracleResult | None, dict]:
-    """
-    從 raw response 抽出三題答案。
-    Jev 經由 OpenRouter 走 OpenAI 相容介面時，傾向把 structured decision 收進
-    message.content 為一段 JSON 字串（不是 tool_calls，因我們沒下 tools=）。
-    """
-    content = raw["choices"][0]["message"]["content"].strip()
-    try:
-        parsed = json.loads(content)
-    except json.JSONDecodeError:
-        return None, raw
-
-    # Jev 標準 schema：{"answers": {qid: {...}}}
-    if "answers" in parsed:
-        ans = parsed["answers"]
-    elif all(k in parsed for k in ("verdict", "severity", "is_real_bug")):
-        ans = parsed
-    else:
-        return None, raw
-
-    verdict = ans.get("verdict", {})
-    severity = ans.get("severity", {})
-    is_bug = ans.get("is_real_bug", {})
+def _parse_jev_response(raw: dict) -> OracleResult:
+    """從 raw response 抽出三題答案，組出 OracleResult。"""
+    answers = raw.get("answers", {})
+    verdict = answers.get("verdict", {})
+    severity = answers.get("severity", {})
+    is_bug = answers.get("is_real_bug", {})
+    usage = raw.get("usage", {})
 
     return OracleResult(
         ac_id="",
@@ -208,10 +200,13 @@ def _parse_jev_response(raw: dict) -> tuple[OracleResult | None, dict]:
         severity=float(severity.get("score", 0)),
         severity_legend=severity.get("legend", {}),
         severity_probs=severity.get("probabilities", {}),
-        confidence=float(verdict.get("confidence", severity.get("confidence", 0))),
+        is_real_bug=float(is_bug.get("noul", 0)),
+        is_real_bug_confidence=float(is_bug.get("confidence", 0)),
+        confidence=float(verdict.get("confidence", 0)),
         model=raw.get("model", "?"),
         latency_ms=0,
-    ), raw
+        cost_usd=float(usage.get("cost", 0)),
+    )
 
 
 # ─── Public API ────────────────────────────────────────────────────────────
@@ -224,20 +219,22 @@ def evaluate_ac(context: ACContext, *, model: str = DEFAULT_MODEL,
     if use_cache:
         c = _load_cache(key)
         if c is not None:
-            result, _ = _parse_jev_response(c["raw_response"])
-            if result is not None:
-                result.ac_id = context.ac_id
-                result.cached = True
-                return result
+            result = _parse_jev_response(c["raw_response"])
+            result.ac_id = context.ac_id
+            result.cached = True
+            return result
 
-    if not os.environ.get("OPENROUTER_API_KEY"):
+    api_key = _load_api_key()
+    if not api_key:
         raise RuntimeError(
-            "Cache miss 且 OPENROUTER_API_KEY 未設定。\n"
-            "請 cp .env.example .env 並補 key，或確保 cache/ 內已有 hit。"
+            "Cache miss 且 OPENROUTER_API_KEY 找不到。請：\n"
+            "  1. cp PoC/.env.example PoC/.env && 編輯補 key\n"
+            "  或 2. set OPENROUTER_API_KEY env\n"
+            "  或 3. 放 ~/.claude/skills/regression-guard/PoC/.env"
         )
 
     headers = {
-        "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://github.com/browser-use/jev-ultrafast",
         "X-Title": "regression-guard-jev-oracle",
@@ -247,12 +244,7 @@ def evaluate_ac(context: ACContext, *, model: str = DEFAULT_MODEL,
     latency_ms = int((time.perf_counter() - started) * 1000)
 
     _save_cache(key, {"raw_response": raw, "context": asdict(context)})
-    result, _ = _parse_jev_response(raw)
-    if result is None:
-        raise RuntimeError(
-            "Jev 回傳的格式不是預期 JSON decisions；請看 raw response debug。\n"
-            f"raw={json.dumps(raw, ensure_ascii=False)[:800]}"
-        )
+    result = _parse_jev_response(raw)
     result.ac_id = context.ac_id
     result.latency_ms = latency_ms
     return result
