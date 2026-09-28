@@ -25,6 +25,8 @@
 | TMO-014 | SKILL.md 整合：user-journey-as-test-spec 規範 | P1 | 3 | done | TMO-013 |
 | TMO-015 | CI 整合：GitHub Actions + return code gate + branch protection SOP | P1 | 5 | done | TMO-013 |
 | TMO-016 | M6 修正循環：Jev fix proposal CLI + SKILL.md Step 4 整合 | P1 | 3 | done | TMO-015 |
+| TMO-017 | M6.1 LLM Relay：skill 本身 LLM 接力寫 fix 文字 | P1 | 5 | done | TMO-016 |
+| TMO-018 | docs/cleanup 盤點腳本 + 套用减法 | P1 | 3 | done | TMO-017 |
 
 ---
 
@@ -421,3 +423,62 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - **慢 1 點**：一開始預期 Jev 給文字回應，結果只給 noul 概率（schema 不支援 free_response）；改為「信心度報告」模式意外更務實（reviewer 接手起點明確、不需 LLM 接力）
 - **影響**：M6 落實「reviewer 接手 → Jev 給信心度 + 走跡 → reviewer 寫 fix」3-step 流程，PoC 不依賴 GPT/Claude；升級到 LLM 接力是 M6.1+ 顯而易見的下一步
 - **踩坑**：`set -euo pipefail` 在 M4 red 時會提前中斷 pipeline → 學到「return code 設計的 step 要用 `||` 接住再用 $? capture」（pattern 通用）
+
+---
+
+## TMO-017 詳細
+
+> M6.1 LLM Relay：讓 regression-guard skill 召喚時的 LLM（subagent / pi 本身）接力寫 fix 文字，不接外部 Claude/GPT。
+> **狀態**：✅ 2026-09-28 完成（commit `224297c`）
+
+### 做法
+1. **prompts/fix_relay.md** 95 行：檔案型 prompt template（角色 / 輸入 / 產出 / 約束 / 範例 / gating），取代 hardcoded 字串。
+2. **fix_proposal_v2.py 260 行**：v1 + LLM relay 素材打包。
+   - `LLMRelayBundle` dataclass + `write_prompt_bundle()` 產 `.relay/prompt.md`
+   - `build_final_report()` 拼裝 v1 信心度 + LLM 接力 + 走跡對照
+   - `RELAY_GATING_THRESHOLD=0.5`：≥0.5 召喚、<0.5 跳過
+3. **run_pipeline.sh**：`JEV_FIX_PROPOSAL_V2=1` 開啟 M6.1 步驟。
+4. **SKILL.md v2.4**：M6.1 修正循環補充小節 + prompt template 位置 + gating 表 + 為什麼是 skill 本身 LLM 說明。
+5. **examples.md**：fix proposal v2 範例 + 「為什麼是 skill 本身 LLM」說明 + gating 表。
+6. **探針守護**：6 個 M6.1 探針。
+
+### DoD
+- ✅ JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 一鍵跑完整 pipeline + 產出 fix_proposal_v2.md
+- ✅ 信心度≥0.5 時產 prompt bundle 到 .relay/prompt.md
+- ✅ 信心度<0.5 時走「跳過 LLM relay」路徑，final report 標「reviewer 接手」
+- ✅ Prompt template 是檔案可版本化、可由 skill 維護者迭代
+- ⏸ CI 自動召喚 subagent（需 repo admin 設 gh action / 外部觸發）
+
+### 反思
+- **快**：prompt template 一次到位、fix_proposal_v2 純 import fix_proposal 模組化、bats 50 探針一次綠
+- **慢 1 點**：一開始想用 `Path.match('**/.venv/**')` 排除 .venv，但 `**` 只匹配一個目錄層；改為 `/'.venv' in rel` 簡單避開
+- **影響**：M6 從「產信心度報告 + 走跡」升級為「信心度達標時召喚 LLM 接力寫 fix 文字」；不再依賴外部 Claude/GPT / OpenAI API key；prompt 邏輯統一在 skill 內
+- **為什麼是 skill 本身 LLM**：這才是 skill 精神的正確路 — 「skill 被召喚時」本身就是有 LLM 的（pi 本身 / subagent），讓它接力；不需另外維護一份 prompt 邏輯雙重來源
+
+---
+
+## TMO-018 詳細
+
+> docs/cleanup 盤點腳本：掃描 docs/ + skills/ + tests/ 找孤立 .md，依 cross-link 數分類 KEEP / REVIEW / DELETE。
+> **狀態**：✅ 2026-09-28 完成（commit `224297c`）
+
+### 做法
+1. **docs/cleanup/cleanup-scan.py** 246 行：
+   - 4 類分類：KEEP（≥2 cross-link）/ REVIEW（1）/ DELETE（0）/ MERGE（待實作）
+   - 排除 `.venv/` / `__pycache__/` / `node_modules/` / `.relay/` / `journeys/` / `fixtures/` / `cache/`
+   - 保護所有 skill/ 目錄（dav-designer / dav-planner / ... / regression-guard）+ AGENTS.md / SKILL.md / handbook / ac/US-* / deliverable/ / backlog.md / ci/
+   - 支援 `--json` 輸出 + `--apply` 自動刪 DELETE 類（需手動確認）
+2. **本次掃描結果**：KEEP 63 / REVIEW 4 / DELETE 0
+   - 4 個 REVIEW 都在 v2.0 規則下「保留為 audit trail」（PRD-04 / 2 個反思歷史 / testing-methods.md）
+3. **探針守護**：7 個 CLEAN 探針（script 存在 / 4 分類 / .venv 排除 / skill 保護 / --json valid / 無 false positive / M6→M6.1 順序）。
+
+### DoD
+- ✅ 盤點腳本能跑 + 4 分類正確 + 無 .venv false positive
+- ✅ 4 個 REVIEW 都給出 cross-link 來源
+- ✅ --json 輸出可被 CI 讀（KEEP 63 / REVIEW 4 / DELETE 0）
+- ⏸ 套用 --apply 自動刪：本次無 DELETE 類，未執行
+
+### 反思
+- **快**：盤點結果乾淨（KEEP 63 / REVIEW 4 / DELETE 0），掃 < 1 秒
+- **慢 1 點**：`Path.match('**/.venv/**')` 不匹配 `.venv/lib/.../LICENSE.md`（** 只匹配一層），改為 `/'.venv' in rel` 簡單避開
+- **影響**：未來 sprint / PR 都可跑 `cleanup-scan.py` 觀察「孤立檔趨勢」；TMO-008 / TMO-010 v2.0 規則（保留存量 audit trail）由本盤點驗證無違反
