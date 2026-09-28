@@ -573,3 +573,63 @@ cat /tmp/US-101-run.relay/prompt.md
 - regression-guard 本身是個 skill → 召喚它時的 LLM（subagent / pi 本身）就是接力的 LLM
 - 不增加外部依賴、prompt template 是「檔案」可版本化
 - prompt template 位置：`PoC/prompts/fix_relay.md`
+
+### M6.2 patch + re-validate 閉環範例
+
+```bash
+# 1. 跑 pipeline 產 fix_proposal_v2.md + patches.json
+JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 JEV_PATCH_AND_REVALIDATE=1 \
+  REGRESSION_REPORT_PATH=/tmp/r \
+  ./run_pipeline.sh US-M62
+# → /tmp/r-fix-proposal-v2.md
+# → /tmp/r-patches.json  (patch_parser 抽出的結構化 patch 列表)
+
+# 2. 看 patch 列表
+cat /tmp/r-patches.json | jq '.patches[] | {file, format, confidence}'
+# → [{"file": "fix_proposal.py", "format": "describe_only", "confidence": 0.4}]
+
+# 3. Dry-run patch（看 diff 不改檔案）
+.venv/bin/python playwright_patcher.py fix_proposal.py \
+  --old '    result = ParseResult()' \
+  --new '    result = ParseResult()\n    return result'
+# → 👀 action: dry_run + unified diff + .bak 已建
+
+# 4. 真的 apply
+.venv/bin/python playwright_patcher.py fix_proposal.py \
+  --old '    result = ParseResult()' \
+  --new '    result = ParseResult()\n    return result' \
+  --apply
+
+# 5. 重跑 journey（patch 後）
+.venv/bin/python run_journey.py journeys/US-M62.yaml \
+  --json-output /tmp/US-M62-after.json
+
+# 6. 比較 verdict 變化
+.venv/bin/python re_validate.py /tmp/US-M62-before.json /tmp/US-M62-after.json
+# → # Re-validate Report — US-M62
+# → **分類**：🟢 improvement
+# → **建議**：keep patch
+```
+
+**safety 規則**：
+
+| 條件 | 動作 |
+|---|---|
+| `old_text` 不存在 | ❌ abort |
+| `old_text` 出現 > 1 次 | ❌ abort（拒絕靜默套用）|
+| `old_text` 出現 1 次 + dry-run | 👀 產 diff 報告 + 建 .bak，不改檔案 |
+| `old_text` 出現 1 次 + --apply | ✅ apply + .bak 已建 |
+| `--rollback` | ⏪ 從 .bak 還原 |
+
+**自動分類**：
+
+| fail delta | 分類 | 建議 |
+|---|---|---|
+| < 0 | 🟢 improvement | keep patch |
+| > 0 | 🔴 regression | rollback |
+| = 0 | 🟡 no_change | review |
+
+**為什麼 apply + re-validate 不全自動**：
+- sandbox 限制：CI 環境不能無人工 commit
+- LLM 接力文字可能錯，需人工 review
+- M6.2 pipeline 階段只「產 patch 素材」，apply / re-validate 在 sandbox 手動跑

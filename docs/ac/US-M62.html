@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>US-M62 regression-guard M6.2 — AC 範本</title>
+  <style>
+    /* 列印友好 CSS：黑白、單欄、checklist 加大 */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 0 1.5em;
+      line-height: 1.7;
+      color: #222;
+      background: #fff;
+    }
+    h1 {
+      border-bottom: 2px solid #333;
+      padding-bottom: 0.3em;
+      margin-top: 1.5em;
+    }
+    h2 {
+      color: #2c5282;
+      margin-top: 2em;
+      border-left: 4px solid #4299e1;
+      padding-left: 0.5em;
+    }
+    blockquote {
+      color: #666;
+      font-style: italic;
+      border-left: 4px solid #ccc;
+      padding-left: 1em;
+      margin: 1em 0;
+    }
+    .ac-item {
+      background: #f7fafc;
+      padding: 1em 1.2em;
+      margin: 1em 0;
+      border-left: 4px solid #4299e1;
+      border-radius: 0 4px 4px 0;
+    }
+    .ac-item strong {
+      color: #2c5282;
+      margin-right: 0.3em;
+    }
+    .dod-item {
+      padding: 0.4em 0;
+      font-size: 1.05em;
+    }
+    @media print {
+      body { max-width: 100%; margin: 0; padding: 1em; }
+      .ac-item { page-break-inside: avoid; background: transparent; }
+      a {
+        color: #000;
+        border-bottom: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>US-M62 regression-guard M6.2 patch + re-validate 閉環 — AC 範本</h1>
+
+  <blockquote>
+    對應 Backlog: <a href="../backlog.md">US-M62 in docs/backlog.md</a><br>
+    最後更新: 2026-09-28<br>
+    狀態: PENDING
+  </blockquote>
+
+  <h2>背景</h2>
+  <p>M6.1 LLM Relay（TMO-017）已經能產出「LLM 接力的 fix 文字」。但接力後仍需人手動開 editor 改 code、commit、重跑 pipeline 才能驗證 fix 是否真的修好。<strong>M6.2</strong> = 把這條「LLM 文字 → 真的 patch → 重跑驗證」串起來，讓 regression-guard skill 不只給建議，還能<strong>自我修正 + 自我驗證</strong>（在半 sandbox 環境內）。</p>
+
+  <h2>Given / When / Then</h2>
+
+  <div class="ac-item">
+    <strong>Given</strong> LLM Relay 產出的 fix_proposal_v2.md 包含 <code>### 建議修正</code> 段<br>
+    <strong>When</strong> <code>patch_parser.py</code> 解析該段<br>
+    <strong>Then</strong> 抽出 <code>(file_path, old_text, new_text)</code> 三元組，產出 structured JSON<br>
+    <strong>And</strong> 缺欄位 / 格式錯誤時回傳明確錯誤，不拋 exception
+  </div>
+
+  <div class="ac-item">
+    <strong>Given</strong> <code>(file, old, new)</code> 三元組<br>
+    <strong>When</strong> <code>playwright_patcher.py</code> 在 dry-run 模式 apply<br>
+    <strong>Then</strong> 不修改 source file，僅產出 diff 報告（unified diff 格式）<br>
+    <strong>And</strong> 自動備份原檔到 <code>.bak</code>（即使 dry-run 也要備份以便比對）
+  </div>
+
+  <div class="ac-item">
+    <strong>Given</strong> patch 已 apply 且 backup 在 <code>.bak</code><br>
+    <strong>When</strong> <code>re-validate</code> 重新跑 <code>journey_runner.py</code> 同一 journey<br>
+    <strong>Then</strong> 產出 <code>before.json</code> + <code>after.json</code>，diff verdict 分布<br>
+    <strong>And</strong> 若 verdict counts 的 <code>fail</code> 變少 → 標 <code>improvement</code><br>
+    <strong>And</strong> 若 <code>fail</code> 變多 → 自動 rollback + 標 <code>regression</code>
+  </div>
+
+  <div class="ac-item">
+    <strong>Given</strong> 4 個 AC 都實作<br>
+    <strong>When</strong> <code>bats tests/v2.1-jev-poc.bats</code> 跑<br>
+    <strong>Then</strong> 8 個 M6.2 探針全綠（parser / patcher / re-validate / pipeline 整合）<br>
+    <strong>And</strong> <code>JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62</code> 一鍵跑 M2→M3→M4→M6→M6.1→M6.2
+  </div>
+
+  <h2>DoD（Definition of Done）</h2>
+  <ul>
+    <li class="dod-item">☐ AC01 / AC02 / AC03 / AC04 4 條全綠</li>
+    <li class="dod-item">☐ <code>JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62</code> 一鍵跑通完整閉環</li>
+    <li class="dod-item">☐ <code>bats tests/v2.1-jev-poc.bats</code> 50 → 58 探針全綠</li>
+    <li class="dod-item">☐ <code>fix_proposal_v2.py --apply-patch --validate</code> CLI 介面可用</li>
+    <li class="dod-item">☐ deliverable.md 完成 + 反思 6 維度</li>
+    <li class="dod-item">☐ backlog 標 TMO-019 done</li>
+  </ul>
+
+  <h2>風險與限制</h2>
+  <ul>
+    <li><strong>sandbox 環境</strong>：M6.2 patch 只能在「受控環境」跑（fixture + 隔離工作樹），不能在 master 直接改</li>
+    <li><strong>patch safety</strong>：<code>old_text</code> 不存在 / 多處 match 時必須 abort，不可靜默套用</li>
+    <li><strong>LLM 接力文字不可信</strong>：LLM 給的 patch 可能是錯的；rollback 機制必須 100% 可靠</li>
+    <li><strong>scope 控制</strong>：M6.2 不做「自動 commit」；patch 驗證通過後只留報告，由 reviewer 決定要不要 commit</li>
+  </ul>
+
+  <h2>變更歷史</h2>
+  <table>
+    <thead>
+      <tr><th>版本</th><th>日期</th><th>變動</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>v1.0</td><td>2026-09-28</td><td>初版（M6.2 PENDING US）</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

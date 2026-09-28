@@ -342,6 +342,73 @@ JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
 - Prompt template 是 markdown 而非 jinja — 簡單可讀但不支援條件邏輯
 - Final report 中 LLM 接力段落沒有「versioning」— 改了 prompt template 跑出來的文字可能差很多，**需在 deliverable 中註明用的是哪一版 prompt**
 
+### M6.2 修正循環補充：patch + re-validate 閉環
+
+**適用情境**：M6.1 LLM Relay 產出的 fix 文字需要真的 apply 到 source file，並驗證是否真的修好。
+
+**怎麼用**（sandbox 環境，手動三步）：
+
+```bash
+# 1. 跑 pipeline 產出 fix_proposal_v2.md
+JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  JEV_PATCH_AND_REVALIDATE=1 \
+  REGRESSION_REPORT_PATH=/tmp/r \
+  ./run_pipeline.sh US-M62
+# → /tmp/r-fix-proposal-v2.md + /tmp/r-patches.json
+
+# 2. Dry-run patch（看 diff 不改檔案）
+.venv/bin/python playwright_patcher.py <FILE> --old "..." --new "..."
+# → unified diff 報告 + 自動備份 <FILE>.bak
+
+# 3. 真的 apply
+.venv/bin/python playwright_patcher.py <FILE> --old "..." --new "..." --apply
+
+# 4. 重跑 journey（patch 後）
+.venv/bin/python run_journey.py journeys/US-M62.yaml --json-output /tmp/US-M62-after.json
+
+# 5. 比較 verdict 變化
+.venv/bin/python re_validate.py /tmp/US-M62-before.json /tmp/US-M62-after.json
+# → classification: improvement | regression | no_change
+# → regression 時自動推薦 rollback：
+.venv/bin/python playwright_patcher.py <FILE> --rollback
+```
+
+**三個模組**（在 `PoC/`）：
+
+| 模組 | 角色 | 入口 |
+|---|---|---|
+| `patch_parser.py` | 從 fix_proposal_v2.md 抽 (file, old, new) | `parse_fix_proposal(md_text) → ParseResult` |
+| `playwright_patcher.py` | apply patch（dry-run / apply / rollback）| `apply_patch(file, old, new, dry_run=True)` |
+| `re_validate.py` | 比較 before/after verdict 分布 | `re_validate(before.json, after.json)` |
+
+**safety 規則**（`playwright_patcher.py`）：
+
+| 條件 | 動作 |
+|---|---|
+| `old_text` 不存在 | ❌ abort |
+| `old_text` 出現 > 1 次 | ❌ abort（拒絕靜默套用）|
+| `old_text` 出現 1 次 + dry-run | 👀 產 diff 報告 + 建 .bak，不改檔案 |
+| `old_text` 出現 1 次 + --apply | ✅ apply + .bak 已建 |
+| `--rollback` | ⏪ 從 .bak 還原 |
+
+**自動分類**（`re_validate.py`）：
+
+| fail delta | 分類 | 建議 |
+|---|---|---|
+| < 0 | 🟢 improvement | keep patch |
+| > 0 | 🔴 regression | rollback |
+| = 0 | 🟡 no_change | review |
+
+**Pipeline 整合**：
+
+`JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑 M2→M3→M4→M6→M6.1→M6.2。M6.2 步驟只「產 patch 素材」（`-patches.json`），apply / re-validate 仍需手動在 sandbox 跑（sandbox 限制：不能自動 commit / 不能無人工 apply）。
+
+**為什麼 apply + re-validate 不全自動**：
+
+- **sandbox 限制**：CI 環境不能無人工 commit；LLM 給的 patch 可能是錯的，需人工 review
+- **safety**：rollback 機制 100% 可靠，但「LLM 接力文字可能錯」這點沒人為把關不行
+- **scope 控制**：M6.2 不做「自動 commit」；patch 驗證通過後只留報告，由 reviewer 決定
+
 ### CI 整合補充
 
 workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
@@ -365,6 +432,7 @@ workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
 |------|------|------|------|
 | v2.3 | 2026-09-28 | 新增「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節；changelog 升 v2.3 | TMO-015 / TMO-016：CI + M6 收尾 |
 | v2.4 | 2026-09-28 | 新增「M6.1 修正循環補充：LLM Relay（v2 接力）」小節 + prompt template 位置 + 信心度 gating 表 | TMO-017：M6.1 LLM relay 啟用 |
+| v2.5 | 2026-09-28 | 新增「M6.2 patch + re-validate 閉環」小節 + 三模組腳本 + safety 規則 + pipeline 整合 | TMO-019：M6.2 自動修正閉環 |
 | v2.2 | 2026-09-28 | 新增「Jev Oracle 補充（進階）」章節 + M3.1 Playwright observer 參考 | TMO-013 / TMO-014：整合 PoC M1-M5 進 skill 本體 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |

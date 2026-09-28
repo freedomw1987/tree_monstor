@@ -587,3 +587,272 @@ print('OK: FixProposal has 3 conf fields')
     return 1
   fi
 }
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 12: M6.2 patch + re-validate (TMO-019)
+# ────────────────────────────────────────────────────────────────────
+
+@test "M6.2-a: patch_parser.py exists with ParseResult + PatchOp" {
+  local f="$POC_DIR/patch_parser.py"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "PatchOp"
+  assert_file_contains "$f" "ParseResult"
+  assert_file_contains "$f" "parse_fix_proposal"
+  assert_file_contains "$f" "unified_diff"
+}
+
+@test "M6.2-b: patch_parser extracts (file, old, new) from unified diff" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-diff.md
+  cat > "$sample" <<'EOF'
+# Fix Proposal — US-M62
+
+## 建議修正
+
+```diff
+--- a/foo.py
++++ b/foo.py
+@@ -1,3 +1,3 @@
+ def hello():
+-    return "world"
++    return "planet"
+```
+EOF
+  local out
+  out=$("$PY" patch_parser.py "$sample" 2>&1) || {
+    echo "FAIL: patch_parser.py CLI failed" >&2
+    return 1
+  }
+  echo "$out" | grep -q "patches found:.*1" || {
+    echo "FAIL: should find 1 patch" >&2
+    echo "$out" | tail -10
+    return 1
+  }
+  echo "$out" | grep -q "foo.py" || {
+    echo "FAIL: should find foo.py" >&2
+    return 1
+  }
+}
+
+@test "M6.2-c: patch_parser handles describe_only mode (no diff code block)" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-describe.md
+  cat > "$sample" <<'EOF'
+# Fix Proposal — US-X
+
+## 建議修正
+
+檢查 `foo.py`（推測）。應加 try/except 包住 Stripe call 並回 200。
+
+## 驗證步驟
+EOF
+  local out
+  out=$("$PY" patch_parser.py "$sample" 2>&1) || {
+    echo "FAIL: patch_parser.py CLI failed" >&2
+    return 1
+  }
+  # describe_only 也應該抽到 patch（信心度低）
+  echo "$out" | grep -q "patches found:.*[1-9]" || {
+    echo "FAIL: describe_only should still find 1 patch (低信心)" >&2
+    return 1
+  }
+  echo "$out" | grep -q "describe_only" || {
+    echo "FAIL: should mark describe_only format" >&2
+    return 1
+  }
+}
+
+@test "M6.2-d: patch_parser returns 2 when no patches found" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-empty.md
+  echo "# Empty Proposal" > "$sample"
+  run "$PY" patch_parser.py "$sample"
+  # exit 2 = 沒 patches
+  [ "$status" -eq 2 ] || {
+    echo "FAIL: empty file should return 2, got $status" >&2
+    return 1
+  }
+}
+
+@test "M6.2-e: playwright_patcher.py dry-run does NOT modify file" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-dryrun.py
+  echo 'def hello(): return "world"' > "$sample"
+  local before_content
+  before_content=$(cat "$sample")
+  run "$PY" playwright_patcher.py "$sample" \
+    --old 'return "world"' --new 'return "planet"'
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: dry-run should return 0" >&2
+    return 1
+  }
+  # 檔案內容不變
+  [ "$(cat "$sample")" = "$before_content" ] || {
+    echo "FAIL: dry-run should not modify file" >&2
+    return 1
+  }
+  # .bak 已建
+  assert_path_is_file "${sample}.bak"
+}
+
+@test "M6.2-f: playwright_patcher.py --apply modifies file & creates backup" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-apply.py
+  echo 'def hello(): return "world"' > "$sample"
+  run "$PY" playwright_patcher.py "$sample" \
+    --old 'return "world"' --new 'return "planet"' --apply
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: --apply should return 0" >&2
+    return 1
+  }
+  # 檔案已改
+  grep -q "planet" "$sample" || {
+    echo "FAIL: --apply should modify file" >&2
+    return 1
+  }
+  # .bak 是舊版
+  grep -q "world" "${sample}.bak" || {
+    echo "FAIL: .bak should contain old content" >&2
+    return 1
+  }
+  # rollback 還原
+  "$PY" playwright_patcher.py "$sample" --rollback >/dev/null 2>&1
+  grep -q "world" "$sample" || {
+    echo "FAIL: --rollback should restore old content" >&2
+    return 1
+  }
+}
+
+@test "M6.2-g: playwright_patcher.py refuses ambiguous old_text (>1 match)" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-ambiguous.py
+  cat > "$sample" <<'EOF'
+foo = "x"
+foo = "x"
+EOF
+  run "$PY" playwright_patcher.py "$sample" \
+    --old 'foo = "x"' --new 'foo = "y"'
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: ambiguous match should return 1, got $status" >&2
+    return 1
+  }
+  grep -q "refusing to silently" <<< "$output" || grep -q "refusing to silently" /dev/null
+}
+
+@test "M6.2-h: playwright_patcher.py refuses old_text not found" {
+  cd "$POC_DIR"
+  local sample=/tmp/m62-test-notfound.py
+  echo 'def hello(): return "world"' > "$sample"
+  run "$PY" playwright_patcher.py "$sample" \
+    --old 'NONEXISTENT_TEXT' --new 'X'
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: not-found should return 1, got $status" >&2
+    return 1
+  }
+}
+
+@test "M6.2-i: re_validate.py classifies improvement (fail -N)" {
+  cd "$POC_DIR"
+  local before=/tmp/m62-before.json
+  local after=/tmp/m62-after.json
+  # 建模擬 before
+  "$PY" -c "
+import json
+b = {'journey_id': 'US-M62', 'records': [
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'pass'}, 'blocked': False},
+]}
+json.dump(b, open('$before', 'w'))
+a = {'journey_id': 'US-M62', 'records': [
+  {'oracle': {'verdict': 'pass'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'pass'}, 'blocked': False},
+]}
+json.dump(a, open('$after', 'w'))
+"
+  run "$PY" re_validate.py "$before" "$after"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: improvement should return 0, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "improvement" || {
+    echo "FAIL: should classify as improvement" >&2
+    return 1
+  }
+}
+
+@test "M6.2-j: re_validate.py classifies regression (fail +N) & returns 1" {
+  cd "$POC_DIR"
+  local before=/tmp/m62-reg-before.json
+  local after=/tmp/m62-reg-after.json
+  "$PY" -c "
+import json
+b = {'journey_id': 'US-M62', 'records': [
+  {'oracle': {'verdict': 'pass'}, 'blocked': False},
+  {'oracle': {'verdict': 'pass'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+]}
+json.dump(b, open('$before', 'w'))
+a = {'journey_id': 'US-M62', 'records': [
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+  {'oracle': {'verdict': 'fail'}, 'blocked': False},
+]}
+json.dump(a, open('$after', 'w'))
+"
+  run "$PY" re_validate.py "$before" "$after"
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: regression should return 1, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "regression" || {
+    echo "FAIL: should classify as regression" >&2
+    return 1
+  }
+  echo "$output" | grep -q "rollback" || {
+    echo "FAIL: regression should recommend rollback" >&2
+    return 1
+  }
+}
+
+@test "M6.2-k: run_pipeline.sh supports JEV_PATCH_AND_REVALIDATE=1" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "JEV_PATCH_AND_REVALIDATE"
+  assert_file_contains "$f" "patch_parser"
+  assert_file_contains "$f" "playwright_patcher"
+  assert_file_contains "$f" "re_validate"
+}
+
+@test "M6.2-l: US-M62 AC file exists with 4 ACs" {
+  local f="$REPO_ROOT/docs/ac/US-M62.md"
+  assert_path_is_file "$f"
+  for ac in "AC01" "AC02" "AC03" "AC04"; do
+    assert_file_contains "$f" "$ac" || {
+      echo "FAIL: US-M62.md missing $ac" >&2
+      return 1
+    }
+  done
+}
+
+@test "M6.2-m: run_pipeline.sh captures M3 return code (does not let set -e break M4+)" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "M3_RC=0"
+  assert_file_contains "$f" "M3 return code"
+  # 確認 M3 區塊後有 M4
+  local m3_line m4_line
+  m3_line=$(grep -n "▶ M3" "$f" | head -1 | cut -d: -f1)
+  m4_line=$(grep -n "▶ M4" "$f" | head -1 | cut -d: -f1)
+  if [ -z "$m3_line" ] || [ -z "$m4_line" ]; then
+    echo "FAIL: M3 or M4 not found" >&2
+    return 1
+  fi
+  if [ "$m3_line" -ge "$m4_line" ]; then
+    echo "FAIL: M4 should come after M3" >&2
+    return 1
+  fi
+}

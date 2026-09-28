@@ -27,6 +27,47 @@
 | TMO-016 | M6 修正循環：Jev fix proposal CLI + SKILL.md Step 4 整合 | P1 | 3 | done | TMO-015 |
 | TMO-017 | M6.1 LLM Relay：skill 本身 LLM 接力寫 fix 文字 | P1 | 5 | done | TMO-016 |
 | TMO-018 | docs/cleanup 盤點腳本 + 套用减法 | P1 | 3 | done | TMO-017 |
+| TMO-019 | M6.2 patch + re-validate 自動閉環 | P1 | 8 | done (2026-09-28) | TMO-017 |
+
+---
+
+## TMO-019 詳細
+
+> M6.2 patch + re-validate：從 M6.1 LLM 接力文字 → 真的 patch → 重跑 journey 驗證。
+> **狀態**：✅ 2026-09-28 完成（commit 下一個）
+
+### 做法
+1. **docs/ac/US-M62.md** + **docs/ac/US-M62.html**：M6.2 PENDING US 範本，4 條 AC
+2. **skills/regression-guard/PoC/patch_parser.py** 8.2KB / 258 行：
+   - 抽 unified diff 抽 (file, old, new)
+   - fallback：describe_only 模式（描述型、無 diff code block）
+   - 缺欄位 / 格式錯誤回傳明確錯誤（不拋 exception）
+3. **playwright_patcher.py** 6.6KB / 213 行：
+   - 4 種 action：dry_run / applied / aborted / describe_only / rolled_back
+   - safety：old 不存在 / 多處 match → abort
+   - 自動備份 `<file>.bak`
+4. **re_validate.py** 6.2KB / 194 行：
+   - 比較 before/after verdict 分布
+   - 分類：improvement / regression / no_change
+   - regression 時建議 rollback
+5. **run_pipeline.sh**：M3_RC capture + JEV_PATCH_AND_REVALIDATE=1 開啟 M6.2
+6. **SKILL.md v2.5**：M6.2 修正循環補充小節 + 三模組腳本 + safety 規則 + pipeline 整合
+7. **examples.md**：M6.2 範例 + safety 表 + 為什麼不全自動說明
+8. **探針守護**：13 個 M6.2 探針
+
+### DoD
+- ✅ AC01 / AC02 / AC03 / AC04 4 條全綠
+- ✅ `JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑通 M2→M3→M4→M6→M6.1→M6.2
+- ✅ `bats tests/v2.1-jev-poc.bats` 50 → 63 探針全綠
+- ✅ `patch_parser.py` / `playwright_patcher.py` / `re_validate.py` CLI 可獨立呼叫
+- ✅ deliverable.md 完成
+- ✅ backlog 標 TMO-019 done
+
+### 反思
+- **快**：三模組 + 13 探針一次到位、完整 pipeline 一鍵跑通
+- **慢 1 點**：M3 在 US-M62 blocked=True → 原本會中斷 pipeline（set -e），加 M3_RC capture 解
+- **影響**：regression-guard skill 從「給建議」升級為「**建議 → 真的 patch → 自動驗證**」完整閉環；雖仍 sandbox 內 apply，但 reviewer 只需人工 sandbox 內 3 步就能完成修正
+- **為什麼不全自動 apply**：CI 環境不能無人工 commit；LLM 接力文字可能錯，需人工 review
 
 ---
 

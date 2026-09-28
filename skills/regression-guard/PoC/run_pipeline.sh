@@ -75,7 +75,9 @@ STALE_FLAG=""
 if [ -n "$USE_STALE" ]; then
     STALE_FLAG="--stale-test"
 fi
-.venv/bin/python run_journey.py "journeys/${STORY_ID}.yaml" $STALE_FLAG --json-output "$RUN_JSON"
+M3_RC=0
+.venv/bin/python run_journey.py "journeys/${STORY_ID}.yaml" $STALE_FLAG --json-output "$RUN_JSON" || M3_RC=$?
+echo "   (M3 return code: $M3_RC — 0=normal / 2=stale blocked)"
 echo
 
 # ── Step 3: M4 — batch report ──
@@ -100,6 +102,20 @@ if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
         .venv/bin/python fix_proposal_v2.py "$RUN_JSON" "$FIX_OUT_V2" || \
             echo "   (M6.1 failed but pipeline continues)"
         echo
+        if [ "${JEV_PATCH_AND_REVALIDATE:-0}" = "1" ]; then
+            echo "▶ M6.2  patch + re-validate 閉環…"
+            PATCH_OUT="${REPORT_PATH%.*}-patches.json"
+            .venv/bin/python patch_parser.py "$FIX_OUT_V2" --json > "$PATCH_OUT" 2>&1 || \
+                echo "   (M6.2 patch_parser failed but pipeline continues)"
+            # Re-validate 也需要 playwright_patcher + re_validate 模組（可在 sandbox 外手動跑）
+            if [ -s "$PATCH_OUT" ]; then
+                echo "   patches: $(.venv/bin/python -c "import json; d=json.load(open('$PATCH_OUT')); print(len(d.get('patches', [])))" 2>/dev/null) extracted"
+                echo "   → apply: .venv/bin/python playwright_patcher.py <FILE> --old ... --new ... --apply"
+                echo "   → re-validate: .venv/bin/python re_validate.py <before.json> <after.json>"
+            fi
+            echo "   ⚠️  apply / re-validate 需人工 (sandbox 限制)；pipeline 只產素材"
+            echo
+        fi
     fi
 fi
 
