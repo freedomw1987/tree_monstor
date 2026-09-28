@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>US-M71 regression-guard M7 — AC 範本</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1.5em; line-height: 1.7; color: #222; background: #fff; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 0.3em; margin-top: 1.5em; }
+    h2 { color: #2c5282; margin-top: 2em; border-left: 4px solid #4299e1; padding-left: 0.5em; }
+    blockquote { color: #666; font-style: italic; border-left: 4px solid #ccc; padding-left: 1em; margin: 1em 0; }
+    .ac-item { background: #f7fafc; padding: 1em 1.2em; margin: 1em 0; border-left: 4px solid #4299e1; border-radius: 0 4px 4px 0; }
+    .ac-item strong { color: #2c5282; margin-right: 0.3em; }
+    .dod-item { padding: 0.4em 0; font-size: 1.05em; }
+    @media print { body { max-width: 100%; margin: 0; padding: 1em; } .ac-item { page-break-inside: avoid; background: transparent; } a { color: #000; border-bottom: none; } }
+  </style>
+</head>
+<body>
+  <h1>US-M71 regression-guard M7 flaky 整合 + gh pr comment — AC 範本</h1>
+  <blockquote>對應 Backlog: TMO-021 | 最後更新: 2026-09-28 | 狀態: PENDING</blockquote>
+
+  <h2>背景</h2>
+  <p>TMO-020 已建 <code>flaky_check.py</code> 能量測 journey 穩定性，但「跑多次」很貴、且結果沒自動整合進 batch_report。本 US 做兩件事：<strong>flaky 整合進 batch_report</strong>（跑 1 次 pipeline 的同時，額外跑 2 次算 flaky_likelihood 併入 overall_health 維度）<strong>gh pr comment</strong>（CI 在 PR 上自動推 fix_proposal + 信心度報告 + 建議）。</p>
+
+  <h2>Given / When / Then</h2>
+  <div class="ac-item"><strong>Given</strong> M3 跑 1 次 + flaky 需 ≥ 3 次樣本<br><strong>When</strong> <code>flaky_integration.py</code> 跑<br><strong>Then</strong> batch_report JSON 含 <code>overall_health.flaky_likelihood</code><br><strong>And</strong> 標記 stable / mildly_flaky / highly_flaky<br><strong>And</strong> 高度 flaky 時 overall_health 加 ⚠️</div>
+  <div class="ac-item"><strong>Given</strong> fix_proposal_v2.md + batch_report.md 已產出<br><strong>When</strong> <code>gh_pr_comment.py</code> 跑<br><strong>Then</strong> 構造 PR comment 4 段：journey 標題 / 信心度 gating / fix proposal 摘要 / sandbox 建議<br><strong>And</strong> 透過 <code>gh pr comment</code> 推到當前 PR<br><strong>And</strong> comment 失敗不中斷 pipeline</div>
+  <div class="ac-item"><strong>Given</strong> AC01/02 模組已實作<br><strong>When</strong> <code>JEV_GH_PR_COMMENT=1 ./run_pipeline.sh &lt;STORY&gt;</code> 跑<br><strong>Then</strong> 自動跑 M3 + flaky 額外 2 次 + 整合 batch_report<br><strong>And</strong> 自動 gh pr comment 推 PR</div>
+  <div class="ac-item"><strong>Given</strong> 4 個 AC 都實作<br><strong>When</strong> <code>bats tests/v2.1-jev-poc.bats</code> 跑<br><strong>Then</strong> 12 個 M7 探針全綠（80 → 92）</div>
+
+  <h2>DoD</h2>
+  <ul>
+    <li class="dod-item">☐ AC01 / AC02 / AC03 / AC04 全綠</li>
+    <li class="dod-item">☐ <code>flaky_integration.py</code> + <code>gh_pr_comment.py</code> CLI 可獨立呼叫</li>
+    <li class="dod-item">☐ 12 個 M7 探針全綠</li>
+    <li class="dod-item">☐ pipeline 一鍵跑 M2→M3→flaky→M6→M6.1→M6.2→gh-pr-comment</li>
+    <li class="dod-item">☐ deliverable + 反思 + backlog 標 TMO-021 done</li>
+  </ul>
+
+  <h2>風險</h2>
+  <ul>
+    <li>CI minutes 增 3x（1 journey ~10s，flaky ~30s）</li>
+    <li>gh pr comment 需 GITHUB_TOKEN（actions 預設有）</li>
+    <li>flaky 整合改 batch_report schema：向後相容，新增欄位不破壞既有</li>
+  </ul>
+</body>
+</html>

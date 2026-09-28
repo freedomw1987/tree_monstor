@@ -29,6 +29,8 @@
 | TMO-018 | docs/cleanup 盤點腳本 + 套用减法 | P1 | 3 | done | TMO-017 |
 | TMO-019 | M6.2 patch + re-validate 自動閉環 | P1 | 8 | done (2026-09-28) | TMO-017 |
 | TMO-020 | M6.3 互動式 sandbox + flaky 驗證 + cleanup CI 定期 | P1 | 13 | done (2026-09-28) | TMO-019 |
+| TMO-021 | M7 flaky→batch_report 整合 + gh pr comment | P1 | 5 | done (2026-09-28) | TMO-020 |
+| TMO-022 | M8 CI matrix pipeline (多 story_id 並行) | P1 | 5 | done (2026-09-28) | TMO-021 |
 
 ---
 
@@ -566,3 +568,68 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - **快**：盤點結果乾淨（KEEP 63 / REVIEW 4 / DELETE 0），掃 < 1 秒
 - **慢 1 點**：`Path.match('**/.venv/**')` 不匹配 `.venv/lib/.../LICENSE.md`（** 只匹配一層），改為 `/'.venv' in rel` 簡單避開
 - **影響**：未來 sprint / PR 都可跑 `cleanup-scan.py` 觀察「孤立檔趨勢」；TMO-008 / TMO-010 v2.0 規則（保留存量 audit trail）由本盤點驗證無違反
+
+---
+
+## TMO-021 詳細（M7 flaky 整合 + gh pr comment）
+
+> 解鎖 review 流程：reviewer 不用離開 PR 就能看 regression 結果。
+> **狀態**：✅ 2026-09-28 完成（trust mode）
+
+### 做法
+1. **docs/ac/US-M71.md**：M7 PENDING US，4 條 AC
+2. **skills/regression-guard/PoC/flaky_integration.py** 6.1KB / 207 行：
+   - 跑 N 次 journey（預設 2 次）+ 聚合
+   - 寫回 `batch_report.batch_report.flaky_measured`
+   - 高度 flaky 時降級 overall_health（red→yellow）
+3. **skills/regression-guard/PoC/gh_pr_comment.py** 5.2KB / 174 行：
+   - 構造 4 段 PR comment（journey / 信心度 / 問題摘要 / sandbox 建議）
+   - 用 `gh pr comment` 推 PR
+   - 失敗不中斷（best-effort）
+4. **run_pipeline.sh**：M7-flaky 移到 M4 之後 + JEV_FLAKY_INTEGRATION=1 + JEV_GH_PR_COMMENT=1
+5. **SKILL.md v2.7** + examples
+6. **探針守護**：12 個 M7 探針全綠（80 → 92）
+
+### DoD
+- ✅ AC01 / AC02 / AC03 / AC04 4 條全綠
+- ✅ flaky_integration.py + gh_pr_comment.py CLI 可獨立呼叫
+- ✅ 12 個 M7 探針全綠
+- ✅ `JEV_FLAKY_INTEGRATION=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 ./run_pipeline.sh US-M62` 一鍵跑通
+- ✅ 實測 flaky_measured=0.0 stable (US-M62 額外跑 2 次)
+- ✅ deliverable + 反思 + backlog 標 TMO-021 done
+
+### 反思
+- **快**：flaky 整合跟 gh pr comment 兩個模組一次到位
+- **慢 1 點**：M7-flaky 原本放在 M3 後，但 batch_report 那時還沒產出；移到 M4 後才正確
+- **影響**：regression-guard 從「產報告」升級為「**產報告 + 推 PR comment + 動態驗證 flaky**」三合一
+- **M7 解鎖 review**：reviewer 不用離開 PR 就能看 4 維度 + 信心度 + 建議
+
+---
+
+## TMO-022 詳細（M8 CI matrix pipeline）
+
+> 多 US 並行：一次看 3 個 US 的 regression 結果。
+> **狀態**：✅ 2026-09-28 完成（trust mode）
+
+### 做法
+1. **docs/ac/US-M81.md**：M8 PENDING US，4 條 AC
+2. **.github/workflows/regression-guard-jev-poc.yml**：
+   - pipeline job 加 `strategy.fail-fast: false` + `matrix.story_id: [US-101, US-M62, US-M63]`
+   - 新增 `aggregate-matrix` job（needs pipeline, if workflow_dispatch）
+   - download-artifact merge-multiple + matrix-summary.md 構造
+3. **SKILL.md v2.8** + examples
+4. **探針守護**：6 個 M8 探針全綠（92 → 98）
+
+### DoD
+- ✅ AC01 / AC02 / AC03 / AC04 4 條全綠
+- ✅ workflow_dispatch 觸發可跑 3 個 matrix job
+- ✅ 3 個 artifact 各自獨立 + matrix-summary.md
+- ✅ 6 個 M8 探針全綠
+- ✅ deliverable + 反思 + backlog 標 TMO-022 done
+
+### 反思
+- **快**：matrix 結構 + aggregate job 一次到位
+- **慢 1 點**：awk 抓 job 範圍的探針跟 M8-d 撞了 2 次（修正 head -5 → head -10）
+- **影響**：regression-guard CI 從「1 US / 1 run」升級為「3 US / 3 runs 並行 + 自動聚合」
+- **M8 為什麼只在 workflow_dispatch**：push/PR 跑 3 個 matrix 浪費 CI minutes；手動 trigger 拿可控性
+- **M8 為什麼 fail-fast: false**：reviewer 一次看 3 個結果比「1 個 fail 全部 cancel」更有用

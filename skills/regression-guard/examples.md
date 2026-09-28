@@ -753,3 +753,109 @@ jobs:
 - 文件分類變化不快
 - daily 太頻繁，CI minutes 浪費
 - 每周一次夠 cover 「主動堆積」
+
+### M7 flaky 整合 + gh pr comment 範例
+
+```bash
+# flaky 整合
+JEV_FLAKY_INTEGRATION=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  REGRESSION_REPORT_PATH=/tmp/r \
+  ./run_pipeline.sh US-M62
+# → M4 後額外跑 2 次 journey
+# → 寫回 batch_report.batch_report.flaky_measured
+# → 實測結果：flaky_measured=0.0 stable
+
+# gh pr comment
+.venv/bin/python gh_pr_comment.py \
+  --batch-report /tmp/US-M62-batch.json \
+  --fix-proposal /tmp/US-M62-fix-proposal-v2.md \
+  --pr-number 42
+# → 構造 4 段 comment + 推 PR
+
+# Pipeline 整合
+JEV_GH_PR_COMMENT=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  GITHUB_PR_NUMBER=42 \
+  ./run_pipeline.sh US-M62
+# → 自動 gh pr comment 推 PR
+```
+
+**4 段 comment**：
+
+| 段 | 內容 |
+|---|---|
+| 1. Journey 標題 | story_id + title + 4 維度表 |
+| 2. Fix Proposal | 信心度 + gating 決定 |
+| 3. 問題分析摘要 | 從 fix_proposal 抓前 300 字 |
+| 4. Sandbox 建議 | 一鍵 pipeline 指令 |
+
+**batch_report schema 新欄位**：
+
+```json
+{
+  "batch_report": {
+    "flaky_likelihood": 0.24,           // Jev 算的
+    "flaky_measured": {                  // M7 新增
+      "likelihood": 0.0,
+      "classification": "stable",
+      "warning": false,
+      "sample_count": 2
+    }
+  }
+}
+```
+
+### M8 CI matrix 範例
+
+```yaml
+# .github/workflows/regression-guard-jev-poc.yml
+jobs:
+  pipeline:
+    strategy:
+      fail-fast: false
+      matrix:
+        story_id: [US-101, US-M62, US-M63]
+    steps:
+      - run: ./run_pipeline.sh "${{ matrix.story_id }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: regression-report-${{ matrix.story_id }}
+          path: reports/
+
+  aggregate-matrix:
+    needs: pipeline
+    if: always() && github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: regression-report-*
+          merge-multiple: true
+      - run: |
+          # 合併 batch_report 成 matrix-summary.md
+          {
+            echo "| Story | Health | Fix Priority | Flaky |"
+            echo "|-------|--------|--------------|-------|"
+            for f in *.json; do
+              # ...
+            done
+          } > matrix-summary.md
+```
+
+**Matrix summary 輸出**：
+
+```markdown
+# regression-guard Matrix Summary
+
+| Story | Health | Fix Priority | Flaky | Type |
+|-------|--------|--------------|-------|------|
+| `US-101` | 🟢 green | 0.50 | 0.00 | stable |
+| `US-M62` | 🔴 red | 2.97 | 0.00 | real_bug |
+| `US-M63` | 🟡 yellow | 1.80 | 0.20 | flaky |
+```
+
+**3 個關鍵設計**：
+
+| 設計 | 原因 |
+|---|---|
+| `fail-fast: false` | 一個 fail 不 cancel 其他 |
+| `workflow_dispatch` 才跑 | push/PR 跑 3 個太慢 |
+| `merge-multiple: true` | 一次下載全部 artifact |

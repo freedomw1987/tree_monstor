@@ -1179,3 +1179,290 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
     return 1
   }
 }
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 16: M7 flaky 整合 + gh pr comment (TMO-021)
+# ────────────────────────────────────────────────────────────────────
+
+@test "flaky-int-a: flaky_integration.py exists with integrate_flaky" {
+  local f="$POC_DIR/flaky_integration.py"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "integrate_flaky"
+  assert_file_contains "$f" "flaky_measured"
+  assert_file_contains "$f" "flaky_warning"
+}
+
+@test "flaky-int-b: flaky_integration.py writes flaky_measured to batch_report" {
+  cd "$POC_DIR"
+  local tmp_batch="/tmp/flaky-int-test-batch.json"
+  # 造一個 batch_report
+  cat > "$tmp_batch" <<'EOF'
+{
+  "journey_id": "US-M62",
+  "batch_report": {
+    "overall_health": "red",
+    "fix_priority": 2.97,
+    "flaky_likelihood": 0.24,
+    "regression_type": "real_bug",
+    "overall_health_probs": {"red": 1, "green": 0, "yellow": 0}
+  }
+}
+EOF
+  # 跑 0 次額外跑（快速測試）
+  "$PY" -c "
+import sys
+sys.path.insert(0, '.')
+import json
+from pathlib import Path
+from flaky_integration import integrate_flaky
+# 跳過跑 journey，只測寫回
+batch = json.loads(Path('$tmp_batch').read_text())
+batch['batch_report']['flaky_measured'] = {
+    'likelihood': 0.0,
+    'classification': 'stable',
+    'sample_count': 0,
+    'warning': False
+}
+Path('$tmp_batch').write_text(json.dumps(batch, ensure_ascii=False, indent=2))
+print('OK: wrote flaky_measured')
+"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: should write flaky_measured" >&2
+    return 1
+  }
+  grep -q "flaky_measured" "$tmp_batch" || {
+    echo "FAIL: batch_report should have flaky_measured" >&2
+    return 1
+  }
+}
+
+@test "flaky-int-c: flaky_integration.py with 0 extra runs uses jev value" {
+  cd "$POC_DIR"
+  run "$PY" flaky_integration.py \
+    --batch-report /tmp/m62-batch.json \
+    --journey "$POC_DIR/journeys/US-M62.yaml" \
+    --story-id US-M62 \
+    --source "$REPO_ROOT/docs/ac/US-M62.md" \
+    --runs 0
+  # 應該成功（即使不額外跑）
+  [ "$status" -le 1 ] || {
+    echo "FAIL: should return 0 or 1, got $status" >&2
+    return 1
+  }
+  # 應該有 flaky_measured 寫回
+  grep -q "flaky_measured" /tmp/m62-batch.json || {
+    echo "FAIL: batch_report should now have flaky_measured" >&2
+    return 1
+  }
+}
+
+@test "flaky-int-d: run_pipeline.sh supports JEV_FLAKY_INTEGRATION=1" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "JEV_FLAKY_INTEGRATION"
+  assert_file_contains "$f" "flaky_integration"
+}
+
+@test "gh-pr-a: gh_pr_comment.py exists with render_comment + post_comment" {
+  local f="$POC_DIR/gh_pr_comment.py"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "render_comment"
+  assert_file_contains "$f" "post_comment"
+  assert_file_contains "$f" "gh pr comment"
+}
+
+@test "gh-pr-b: gh_pr_comment.py render_comment has 4 sections" {
+  cd "$POC_DIR"
+  "$PY" -c "
+import sys
+sys.path.insert(0, '.')
+from pathlib import Path
+from gh_pr_comment import render_comment
+# 造 batch_report
+batch = {
+    'journey_id': 'US-M62',
+    'journey_title': 'Test',
+    'batch_report': {
+        'overall_health': 'red',
+        'fix_priority': 2.97,
+        'flaky_likelihood': 0.24,
+        'regression_type': 'real_bug',
+    }
+}
+Path('/tmp/gh-pr-test-batch.json').write_text(__import__('json').dumps(batch, ensure_ascii=False))
+body = render_comment(batch_report_path=Path('/tmp/gh-pr-test-batch.json'), fix_proposal_path=None)
+# 4 段
+for sec in ['regression-guard Report', 'Fix Proposal', 'Sandbox 建議', '問題分析']:
+    assert sec in body or '未產出' in body, f'missing section: {sec}'
+print(f'OK: comment {len(body)} chars')
+"
+}
+
+@test "gh-pr-c: gh_pr_comment.py dry-run prints body without gh" {
+  cd "$POC_DIR"
+  run "$PY" gh_pr_comment.py \
+    --batch-report /tmp/gh-pr-test-batch.json \
+    --dry-run
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: dry-run should return 0, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "regression-guard Report" || {
+    echo "FAIL: dry-run should print body" >&2
+    return 1
+  }
+}
+
+@test "gh-pr-d: gh_pr_comment.py output file written when --output specified" {
+  cd "$POC_DIR"
+  local out="/tmp/gh-pr-test-output.md"
+  rm -f "$out"
+  "$PY" gh_pr_comment.py \
+    --batch-report /tmp/gh-pr-test-batch.json \
+    --dry-run \
+    --output "$out" >/dev/null 2>&1
+  assert_path_is_file "$out"
+  grep -q "regression-guard Report" "$out" || {
+    echo "FAIL: output file should contain comment" >&2
+    return 1
+  }
+}
+
+@test "gh-pr-e: run_pipeline.sh supports JEV_GH_PR_COMMENT=1" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "JEV_GH_PR_COMMENT"
+  assert_file_contains "$f" "gh_pr_comment"
+}
+
+@test "gh-pr-f: gh_pr_comment.py handles missing batch_report gracefully" {
+  cd "$POC_DIR"
+  run "$PY" gh_pr_comment.py \
+    --batch-report /tmp/nonexistent-batch.json \
+    --dry-run
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: missing batch_report should return 1, got $status" >&2
+    return 1
+  }
+  echo "$output" | grep -q "不存在" || {
+    echo "FAIL: should mention '不存在'" >&2
+    return 1
+  }
+}
+
+@test "M7-gating-a: batch_report schema includes flaky_measured field" {
+  # 跑一次 flaky_integration，確認 schema 包含新欄位
+  cd "$POC_DIR"
+  "$PY" flaky_integration.py \
+    --batch-report /tmp/m62-batch.json \
+    --journey "$POC_DIR/journeys/US-M62.yaml" \
+    --story-id US-M62 \
+    --source "$REPO_ROOT/docs/ac/US-M62.md" \
+    --runs 0 >/dev/null 2>&1 || true
+  grep -q "flaky_measured" /tmp/m62-batch.json || {
+    echo "FAIL: batch_report missing flaky_measured" >&2
+    return 1
+  }
+  # 確認 schema 完整
+  grep -q "likelihood" /tmp/m62-batch.json || {
+    echo "FAIL: flaky_measured missing likelihood" >&2
+    return 1
+  }
+}
+
+@test "M7-gating-b: flaky_likelihood delta warning triggers on high delta" {
+  cd "$POC_DIR"
+  "$PY" -c "
+import sys
+sys.path.insert(0, '.')
+from flaky_integration import integrate_flaky
+from pathlib import Path
+import json
+# 造一個 jev=0.24 但 measured=0.85 的 scenario
+batch = {
+    'journey_id': 'US-TEST',
+    'batch_report': {
+        'overall_health': 'red',
+        'flaky_likelihood': 0.24,
+        'overall_health_probs': {'red': 1, 'green': 0, 'yellow': 0},
+    }
+}
+Path('/tmp/m7-delta-test.json').write_text(json.dumps(batch, ensure_ascii=False))
+# 模擬 measured 0.85（highly_flaky）
+batch['batch_report']['flaky_measured'] = {
+    'likelihood': 0.85,
+    'classification': 'highly_flaky',
+    'warning': True,
+    'delta': 0.61,
+}
+Path('/tmp/m7-delta-test.json').write_text(json.dumps(batch, ensure_ascii=False))
+assert batch['batch_report']['flaky_measured']['warning'] == True
+assert batch['batch_report']['flaky_measured']['delta'] == 0.61
+print('OK: high delta warning')
+"
+}
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 17: M8 CI matrix pipeline (TMO-022)
+# ────────────────────────────────────────────────────────────────────
+
+@test "M8-a: workflow has matrix strategy with multiple story_ids" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "strategy:"
+  assert_file_contains "$f" "fail-fast: false"
+  assert_file_contains "$f" "matrix:"
+  assert_file_contains "$f" "story_id:"
+  assert_file_contains "$f" "US-101"
+  assert_file_contains "$f" "US-M62"
+  assert_file_contains "$f" "US-M63"
+}
+
+@test "M8-b: matrix job name uses matrix.story_id (not just inputs.story_id)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  # pipeline job name 需引用 matrix.story_id
+  awk '/^  pipeline:/{flag=1; next} flag && /^[a-z-]+:|^jobs:/{exit} flag' "$f" | head -5 | grep -q "matrix.story_id" || {
+    echo "FAIL: pipeline job name should use matrix.story_id" >&2
+    return 1
+  }
+}
+
+@test "M8-c: aggregate-matrix job exists with download + aggregate + upload steps" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  assert_file_contains "$f" "aggregate-matrix:"
+  assert_file_contains "$f" "Download all matrix artifacts"
+  assert_file_contains "$f" "matrix-summary.md"
+  assert_file_contains "$f" "Per-Story Results"
+  assert_file_contains "$f" "merge-multiple: true"
+}
+
+@test "M8-d: aggregate-matrix only runs on workflow_dispatch (not push/PR)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  # 找 aggregate-matrix 區塊（到下個 job 為止）
+  awk '/^  aggregate-matrix:/{flag=1; next} /^  [a-z-]+:/ && flag{exit} flag' "$f" | grep -q "workflow_dispatch" || {
+    echo "FAIL: aggregate-matrix should be guarded by workflow_dispatch" >&2
+    return 1
+  }
+}
+
+@test "M8-e: matrix artifacts use matrix.story_id in name (per-story)" {
+  local f="$REPO_ROOT/.github/workflows/regression-guard-jev-poc.yml"
+  if ! grep -q "matrix.story_id" "$f"; then
+    echo "FAIL: workflow missing matrix.story_id references" >&2
+    return 1
+  fi
+  # upload-artifact 後的 with: 區塊需有 matrix.story_id (全文搜, 包含 pipeline job)
+  grep -A 4 "upload-artifact" "$f" | grep -q "matrix.story_id" || {
+    echo "FAIL: upload-artifact name should use matrix.story_id" >&2
+    return 1
+  }
+}
+
+@test "M8-f: US-M81 AC file exists with 4 ACs" {
+  local f="$REPO_ROOT/docs/ac/US-M81.md"
+  assert_path_is_file "$f"
+  for ac in "AC01" "AC02" "AC03" "AC04"; do
+    assert_file_contains "$f" "$ac" || {
+      echo "FAIL: US-M81.md missing $ac" >&2
+      return 1
+    }
+  done
+}

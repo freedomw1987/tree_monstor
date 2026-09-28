@@ -540,6 +540,142 @@ jobs:
 
 **手動觸發**：`gh workflow run regression-guard-jev-poc.yml` 選 workflow_dispatch 即可。
 
+### M7 修正循環補充：flaky 整合 + gh pr comment
+
+**適用情境**：TMO-020 的 flaky_check.py 能量測，但「跑多次」貴且結果沒自動整合。本 M7 做兩件事：
+
+1. **flaky 整合進 batch_report** — 跑 pipeline 同時額外跑 2 次算 flaky_likelihood
+2. **gh pr comment** — CI 自動推 fix_proposal + 信心度報告到 PR
+
+**flaky 整合**（`PoC/flaky_integration.py`）：
+
+```bash
+# 一鍵跑 M2→M3→M4→M7-flaky→M6→M6.1→M6.2
+JEV_FLAKY_INTEGRATION=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  REGRESSION_REPORT_PATH=/tmp/r \
+  ./run_pipeline.sh US-M62
+# → M4 後額外跑 2 次 journey
+# → 寫回 batch_report.batch_report.flaky_measured
+# → 對比 jev 算的 flaky_likelihood，delta 大時降級 overall_health
+```
+
+**batch_report schema 新欄位**：
+
+```json
+{
+  "batch_report": {
+    "flaky_likelihood": 0.24,           // Jev 算的
+    "flaky_measured": {                  // M7 新增：動態算的
+      "likelihood": 0.0,                 // 3 次跑聚合
+      "classification": "stable",
+      "jev_flaky_likelihood": 0.24,
+      "delta": 0.24,
+      "warning": false,
+      "sample_count": 2
+    }
+  }
+}
+```
+
+**降級邏輯**：`flaky_measured.classification == highly_flaky` → `overall_health` red 降為 yellow
+
+**gh pr comment**（`PoC/gh_pr_comment.py`）：
+
+```bash
+# 推 PR comment（需 GITHUB_TOKEN）
+.venv/bin/python gh_pr_comment.py \
+  --batch-report /tmp/US-M62-batch.json \
+  --fix-proposal /tmp/US-M62-fix-proposal-v2.md \
+  --pr-number 42
+# → 構造 4 段 comment + 推 PR
+```
+
+**4 段 comment 結構**：
+
+| 段 | 內容 |
+|---|---|
+| 1. Journey 標題 | story_id + title + 4 維度表 |
+| 2. Fix Proposal | 信心度 + gating 決定 |
+| 3. 問題分析摘要 | 從 fix_proposal 抓前 300 字 |
+| 4. Sandbox 建議 | 一鍵 pipeline 指令 |
+
+**Pipeline 整合**：
+
+```bash
+JEV_GH_PR_COMMENT=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  GITHUB_PR_NUMBER=42 \
+  ./run_pipeline.sh US-M62
+# → 自動 gh pr comment 推 PR
+# → 失敗不中斷（best-effort）
+```
+
+**為什麼 M7 解鎖 review 流程**：
+- reviewer 不用離開 PR 就能看 regression 結果
+- flaky_likelihood 動態驗證 → 對結果信心度提高
+- comment 失敗不中斷 → CI 不會因 gh token 問題 block
+
+### M8 修正循環補充：CI matrix pipeline
+
+**適用情境**：多個 US 同時變更時，需要一次看多個 regression 結果。
+
+**Matrix 結構**：
+
+```yaml
+# .github/workflows/regression-guard-jev-poc.yml
+jobs:
+  pipeline:
+    strategy:
+      fail-fast: false
+      matrix:
+        story_id: [US-101, US-M62, US-M63]
+    steps:
+      - run: ./run_pipeline.sh "${{ matrix.story_id }}"
+
+  aggregate-matrix:
+    needs: pipeline
+    if: always() && github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: regression-report-*
+          merge-multiple: true
+      - run: |
+          # 合併 3 個 batch_report 成 matrix-summary.md
+```
+
+**3 個關鍵設計**：
+
+| 設計 | 原因 |
+|---|---|
+| `fail-fast: false` | 一個 fail 不 cancel 其他；reviewer 一次看 3 個結果 |
+| `workflow_dispatch` 才跑 matrix | push/PR 跑 3 個太慢；只在手動 trigger 跑 |
+| `merge-multiple: true` | 下載時把多個 artifact merge 到同一目錄 |
+
+**Aggregate output**（`matrix-summary.md`）：
+
+```markdown
+# regression-guard Matrix Summary
+
+| Story | Health | Fix Priority | Flaky | Type |
+|-------|--------|--------------|-------|------|
+| `US-101` | 🟢 green | 0.50 | 0.00 | stable |
+| `US-M62` | 🔴 red | 2.97 | 0.00 | real_bug |
+| `US-M63` | 🟡 yellow | 1.80 | 0.20 | flaky |
+```
+
+**workflow_dispatch vs push/PR**：
+
+| 觸發 | 行為 |
+|---|---|
+| `push` 到 master | 只跑 bats 探針 + 單一 story_id pipeline（matrix 預設 3 個但只跑 1）|
+| `pull_request` | 同上 + post report to PR comment |
+| `workflow_dispatch` | 跑完整 matrix（3 個 story_id）+ aggregate-matrix |
+
+**為什麼 workflow_dispatch 跑 matrix**：
+- 多 US 變更需要一次看多結果
+- 自動 trigger 跑 matrix 太慢（3x CI minutes）
+- 人工 trigger 拿可控性
+
 ### CI 整合補充
 
 workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
@@ -565,6 +701,8 @@ workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
 | v2.4 | 2026-09-28 | 新增「M6.1 修正循環補充：LLM Relay（v2 接力）」小節 + prompt template 位置 + 信心度 gating 表 | TMO-017：M6.1 LLM relay 啟用 |
 | v2.5 | 2026-09-28 | 新增「M6.2 patch + re-validate 閉環」小節 + 三模組腳本 + safety 規則 + pipeline 整合 | TMO-019：M6.2 自動修正閉環 |
 | v2.6 | 2026-09-28 | 新增「M6.3 互動式 sandbox」+「Flaky 驗證」+「CI 定期 cleanup」3 小節 + sandbox_runner / flaky_check 模組 | TMO-020：M6.3 + flaky + cleanup CI |
+| v2.7 | 2026-09-28 | 新增「M7 flaky 整合」+「gh pr comment」小節 + flaky_integration / gh_pr_comment 模組 | TMO-021：M7 整合 + review 解鎖 |
+| v2.8 | 2026-09-28 | 新增「M8 CI matrix」小節 + workflow strategy matrix + aggregate-matrix job | TMO-022：M8 CI matrix pipeline |
 | v2.2 | 2026-09-28 | 新增「Jev Oracle 補充（進階）」章節 + M3.1 Playwright observer 參考 | TMO-013 / TMO-014：整合 PoC M1-M5 進 skill 本體 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |

@@ -89,6 +89,18 @@ M4_RC=0
 echo "   (M4 return code: $M4_RC — 0=green / 2=yellow / 1=red)"
 echo
 
+# M7-flaky 整合：M4 後額外跑 2 次算 flaky_likelihood
+if [ "${JEV_FLAKY_INTEGRATION:-0}" = "1" ]; then
+    echo "▶ M7-flaky  額外跑 2 次算 flaky_likelihood…"
+    .venv/bin/python flaky_integration.py \
+        --batch-report "${REPORT_PATH%.*}.json" \
+        --journey "journeys/${STORY_ID}.yaml" \
+        --story-id "${STORY_ID}" \
+        --source "${AC_FILE:-$REPO_ROOT/docs/ac/${STORY_ID}.md}" \
+        --runs 2 || echo "   (M7-flaky failed but pipeline continues)"
+    echo
+fi
+
 # ── Step 4: M6 — Jev fix proposal (opt-in) ──
 if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
     echo "▶ M6  Jev fix proposal (v1)…"
@@ -112,6 +124,18 @@ if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
                 echo "   patches: $(.venv/bin/python -c "import json; d=json.load(open('$PATCH_OUT')); print(len(d.get('patches', [])))" 2>/dev/null) extracted"
                 echo "   → apply: .venv/bin/python playwright_patcher.py <FILE> --old ... --new ... --apply"
                 echo "   → re-validate: .venv/bin/python re_validate.py <before.json> <after.json>"
+                # M7 gh pr comment（opt-in，CI 環境需 GITHUB_TOKEN）
+                if [ "${JEV_GH_PR_COMMENT:-0}" = "1" ]; then
+                    echo "▶ M7-gh-pr-comment  推 PR comment…"
+                    PR_COMMENT_OUT="${REPORT_PATH%.*}-pr-comment.md"
+                    .venv/bin/python gh_pr_comment.py \
+                        --batch-report "${REPORT_PATH%.*}.json" \
+                        --fix-proposal "${REPORT_PATH%.*}-fix-proposal-v2.md" \
+                        --pr-number "${GITHUB_PR_NUMBER:-}" \
+                        --output "$PR_COMMENT_OUT" 2>&1 | tail -5 || \
+                        echo "   (M7-gh-pr-comment failed but pipeline continues)"
+                    echo
+                fi
                 # M6.3 sandbox 自動版（opt-in）
                 if [ "${JEV_SANDBOX_RUN:-0}" = "1" ]; then
                     echo "▶ M6.3  sandbox 自動 apply + re-validate + rollback…"
