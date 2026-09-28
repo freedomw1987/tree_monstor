@@ -7,6 +7,7 @@ Journey Runner CLI — 讀 YAML → 跑 dry-run loop → 印結果。
 
 from __future__ import annotations
 
+import json
 import sys
 import time
 from pathlib import Path
@@ -42,6 +43,14 @@ def main(argv: list[str]) -> int:
         return 1
 
     use_stale_test = "--stale-test" in argv
+    json_output = None
+    if "--json-output" in argv:
+        idx = argv.index("--json-output")
+        if idx + 1 < len(argv):
+            json_output = Path(argv[idx + 1])
+        else:
+            print("❌ --json-output 需要接檔名")
+            return 1
 
     # source 預設從 YAML 的 source 欄位推
     journey = _load_journey(journey_path)
@@ -145,6 +154,52 @@ def main(argv: list[str]) -> int:
     print(f"   total cost:         ${summary['total_cost_usd']:.6f}")
     print(f"   cache hits:         {summary['cache_hits']}/{summary['total_steps']}")
     print(f"   wall time:          {elapsed}ms")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "journey_id": journey.journey_id,
+            "journey_title": journey.title,
+            "journey_source": str(src_path),
+            "total_steps": summary["total_steps"],
+            "blocked": summary["blocked"],
+            "block_reason": summary["block_reason"],
+            "verdict_counts": summary["verdict_counts"],
+            "total_latency_ms": summary["total_latency_ms"],
+            "total_cost_usd": summary["total_cost_usd"],
+            "cache_hits": summary["cache_hits"],
+            "wall_time_ms": elapsed,
+            "records": [
+                {
+                    "step_id": r.step_id,
+                    "action": r.action,
+                    "verifying_ac": r.verifying_ac,
+                    "observed": {
+                        "url": r.observed.url,
+                        "status": r.observed.status,
+                        "body_excerpt": r.observed.body_excerpt[:200],
+                        "elapsed_ms": r.observed.elapsed_ms,
+                    } if r.observed else None,
+                    "oracle": {
+                        "verdict": r.oracle.verdict,
+                        "confidence": r.oracle.confidence,
+                        "verdict_probs": r.oracle.verdict_probs,
+                        "severity": r.oracle.severity,
+                        "severity_probs": r.oracle.severity_probs,
+                        "is_real_bug": r.oracle.is_real_bug,
+                        "is_real_bug_confidence": r.oracle.is_real_bug_confidence,
+                        "latency_ms": r.oracle.latency_ms,
+                        "cost_usd": r.oracle.cost_usd,
+                        "cached": r.oracle.cached,
+                    } if r.oracle else None,
+                    "blocked": r.blocked,
+                    "block_reason": r.block_reason,
+                }
+                for r in records
+            ],
+        }
+        json_output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"\n📝 Wrote run records → {json_output}  ({json_output.stat().st_size} bytes)")
 
     return 0 if not summary["blocked"] else 2
 

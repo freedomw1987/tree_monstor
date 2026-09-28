@@ -1,8 +1,8 @@
 journey_id: US-101
 title: AC 範本
-source: ../../../docs/ac/US-101.md
+source: /Users/davidchu/Sites/localhost/tree_monstor/docs/ac/US-101.md
 generated_by: typesafe/jev-1.13
-generated_at: '2026-09-28T14:12:05+00:00'
+generated_at: '2026-09-28T14:33:19+00:00'
 total_steps: 9
 steps:
 - id: US-101-AC01-s1
@@ -119,41 +119,41 @@ meta:
   calls:
   - ac_id: US-101-AC01
     phase: complexity
-    latency_ms: 456
-    cached: false
-    score: 1.93
+    latency_ms: 366
+    cached: true
+    score: 1.87
   - ac_id: US-101-AC01
     phase: action_plan
-    latency_ms: 414
-    cached: false
+    latency_ms: 314
+    cached: true
     choice: click
   - ac_id: US-101-AC02
     phase: complexity
-    latency_ms: 380
-    cached: false
-    score: 1.42
+    latency_ms: 479
+    cached: true
+    score: 1.43
   - ac_id: US-101-AC02
     phase: action_plan
-    latency_ms: 667
-    cached: false
+    latency_ms: 386
+    cached: true
     choice: type
   - ac_id: US-101-AC03
     phase: complexity
-    latency_ms: 411
-    cached: false
-    score: 1.03
+    latency_ms: 333
+    cached: true
+    score: 1.11
   - ac_id: US-101-AC03
     phase: action_plan
-    latency_ms: 426
-    cached: false
+    latency_ms: 377
+    cached: true
     choice: wait
   - ac_id: US-101-AC04
     phase: complexity
-    latency_ms: 322
-    cached: false
-    score: 1.47
+    latency_ms: 334
+    cached: true
+    score: 1.48
   - ac_id: US-101-AC04
     phase: action_plan
-    latency_ms: 280
-    cached: false
+    latency_ms: 533
+    cached: true
     choice: observe

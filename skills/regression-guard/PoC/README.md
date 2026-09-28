@@ -26,7 +26,10 @@ PoC/
 ├─ journey_generator.py  # 讀 AC → 走 Jev complexity + action plan → 產 Journey spec
 ├─ journey_gen.py        # CLI: journey_generator 的命令列 entry
 ├─ journey_runner.py     # Dry-run loop: observe→Jev→verdict→recheck→stale detection
-├─ run_journey.py        # CLI: 跑 journey_runner（支援 --stale-test 證邏輯）
+├─ run_journey.py        # CLI: 跑 journey_runner（支援 --stale-test 證邏輯 + --json-output）
+├─ batch_report.py       # M4 核心：4 題 batch call 出 overall_health / fix_priority / flaky_likelihood / regression_type
+├─ run_report.py         # CLI: batch_report 的入口
+├─ run_pipeline.sh       # 🚀 一鍵跑 M2 → M3 → M4
 ├─ journeys/
 │  └─ US-101.yaml        # 產出的人類可讀 journey spec（要進 git）
 ├─ cache/
@@ -74,6 +77,30 @@ uv venv && uv pip install httpx pyyaml
 .venv/bin/python example_run.py --no-cache  # 強制 live
 ```
 
+## 🚀 一鍵 pipeline（M2 → M3 → M4）
+
+```bash
+# 走完全流程（generate journey → run → batch report）
+./run_pipeline.sh US-101
+
+# 換輸出位置（預設 ./report）
+REGRESSION_REPORT_PATH=./out/US-101-report ./run_pipeline.sh US-101
+
+# 用 --stale 驗證 stale detection 邏輯
+./run_pipeline.sh US-101 --stale
+
+# 強制重跑 M2（產新 YAML，預設讀 cache）
+REGEN_JOURNEY=1 ./run_pipeline.sh US-101
+```
+
+會產出：
+```
+journeys/US-101.yaml     ← human-readable journey spec（git tracked）
+/tmp/US-101-run.json     ← M3 run 結果（給 M4 讀）
+report.json              ← batch report 機器版
+report.md                ← batch report 人讀版（emoji + 表格 + 每步結果）
+```
+
 ## M1 完成的證據
 
 | 項 | 狀態 |
@@ -107,9 +134,22 @@ uv venv && uv pip install httpx pyyaml
 | `run_journey.py` CLI 兩種模式：ac-aware（預設）+ stale-test | ✅ |
 | AC-aware mock 觀察器（用 fixture 對應 AC Then）| ✅ |
 | Stale detection：連續 3 步同 state + fail → block | ✅ |
+| `--json-output` 選項：把 run 結果落盤成可被 M4 讀的 JSON | ✅ |
 | US-101 預設模式：3 pass / 6 fail / 0 block / 2ms 全 cache | ✅ |
 | US-101 stale-test 模式：7 fail + 2 BLOCKED（驗證 block 邏輯）| ✅ |
 | 每步 verdict + confidence + severity + is_real_bug 全印出 | ✅ |
+
+## M4 完成的證據（end-of-run batch report）
+
+| 項 | 狀態 |
+|---|---|
+| `batch_report.py`：4 題 batch call（overall_health / fix_priority / flaky_likelihood / regression_type）| ✅ |
+| `run_report.py` CLI：讀 run JSON → Jev batch → 寫 report.json + .md | ✅ |
+| 支援 `REGRESSION_REPORT_PATH` env（指定輸出 basename）| ✅ |
+| Markdown 報表：emoji + 表格 + 每步結果 + 信心分布 | ✅ |
+| `run_pipeline.sh` 一鍵跑完 M2 → M3 → M4 | ✅ |
+| US-101 batch report：🔴 red / fix_priority 2.93 / flaky 0.22 / real_bug | ✅ |
+| Cost $0.000070 / latency 628ms（單次 Jev call）/ cache 重跑免費 | ✅ |
 
 ## M2 接續（下一步）
 
@@ -137,7 +177,7 @@ steps:
 
 **Journey runner**：Chrome + DOM snapshot driver（dry-run loop 先、不接 Chrome；接 Chrome 留 M3.1）。每步用 oracle 評估 + recheck freshness。## M4 接續
 
-**End-of-run report**：batch call 出 overall_health / fix_priority / flaky_likelihood，寫進 `REGRESSION_REPORT_PATH`。
+**End-of-run report**：batch call 出 overall_health / fix_priority / flaky_likelihood，寫進 `REGRESSION_REPORT_PATH`。✅ 完成
 
 ## 變動歷史
 
@@ -146,8 +186,14 @@ steps:
 | M0 | 2026-09-28 | 環境探勘：看 docs/backlog.md、docs/ac/US-101.md、regression-guard skill 子檔 | 先理解現實再動工 |
 | M1 | 2026-09-28 | oracle + AC parser + example runner + cache fixture；介面改 /api/alpha/decisions；加三層 key loader；真 API 驗證 | 證明「讀 AC → Jev → verdict」流程跑得起來 |
 | M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call（complexity score + action plan choice）；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
-| M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection（--stale-test 驗證）| 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
+| M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection（--stale-test 驗證）；加 --json-output | 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
+| M4 | 2026-09-28 | batch_report.py + run_report.py CLI；4 題 batch call；report.json + .md 雙輸出；run_pipeline.sh 一鍵串接 M2→M3→M4 | 證明 end-of-run 4 維度綜合判定跑得起來（overall_health / fix_priority / flaky_likelihood / regression_type）|
 
 ---
 
 **核心精神**：regression-guard 不只記錄「test 是 pass 還是 fail」，而是「這個 fail 是真 bug、flaky、還是 AC 本身寫得不好」。Jev oracle 把這層語意判定帶進來，用 confidence gating 確保不誤導修正循環。
+
+**M4 之後的 next step（已超出 PoC 範圍）**：
+- **M3.1**：接 Playwright Chrome driver，observer 改 DOM snapshot，不再用 mock fixture
+- **M5**：把「修正循環」接進 regression-guard skill — Jev verdict → 自動產 fix proposal → 跑回 validate
+- **PR 階段**：把所有 5 個 milestone 整合回 SKILL.md / examples.md，變成正式規範
