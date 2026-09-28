@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>US-M81 regression-guard M8 — AC 範本</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1.5em; line-height: 1.7; color: #222; background: #fff; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 0.3em; }
+    h2 { color: #2c5282; border-left: 4px solid #4299e1; padding-left: 0.5em; }
+    blockquote { color: #666; font-style: italic; border-left: 4px solid #ccc; padding-left: 1em; }
+    .ac-item { background: #f7fafc; padding: 1em 1.2em; margin: 1em 0; border-left: 4px solid #4299e1; border-radius: 0 4px 4px 0; }
+    .ac-item strong { color: #2c5282; margin-right: 0.3em; }
+    .dod-item { padding: 0.4em 0; }
+    @media print { body { max-width: 100%; margin: 0; padding: 1em; } .ac-item { page-break-inside: avoid; background: transparent; } }
+  </style>
+</head>
+<body>
+  <h1>US-M81 regression-guard M8 CI matrix pipeline — AC 範本</h1>
+  <blockquote>對應 Backlog: TMO-022 | 最後更新: 2026-09-28 | 狀態: PENDING</blockquote>
+
+  <h2>背景</h2>
+  <p>TMO-021 (M7) 完整閉環已完成，但 CI workflow 每次只能跑 1 個 story_id。本 US 加 matrix 策略：同時跑 US-101 / US-M62 / US-M63 3 個 journey；每個產獨立 report + artifact；結果聚合到 <code>aggregate-matrix-reports</code> step。</p>
+
+  <h2>Given / When / Then</h2>
+  <div class="ac-item"><strong>Given</strong> workflow 需支援多 story_id 並行<br><strong>When</strong> workflow_dispatch 觸發<br><strong>Then</strong> 用 <code>matrix.story_id: [US-101, US-M62, US-M63]</code> 3 個並行<br><strong>And</strong> <code>fail-fast: false</code> 避免一個 fail 全部 cancel</div>
+  <div class="ac-item"><strong>Given</strong> matrix 跑 3 個 story_id<br><strong>When</strong> 每個 job 完成<br><strong>Then</strong> 產 <code>report-${story_id}.md</code> + <code>batch-${story_id}.json</code><br><strong>And</strong> artifact 30-day retention</div>
+  <div class="ac-item"><strong>Given</strong> 3 個 matrix job 跑完<br><strong>When</strong> <code>aggregate-matrix-reports</code> step 跑<br><strong>Then</strong> 合併成 <code>matrix-summary.md</code> 表格<br><strong>And</strong> 標記整體 health + 個別 health</div>
+  <div class="ac-item"><strong>Given</strong> 4 個 AC 都實作<br><strong>When</strong> <code>bats tests/v2.1-jev-poc.bats</code> 跑<br><strong>Then</strong> 6 個 M8 探針全綠（92 → 98）</div>
+
+  <h2>DoD</h2>
+  <ul>
+    <li class="dod-item">☐ AC01/02/03/04 全綠</li>
+    <li class="dod-item">☐ workflow_dispatch 觸發可跑 3 個 matrix job</li>
+    <li class="dod-item">☐ 3 個 artifact 各自獨立 + matrix-summary.md</li>
+    <li class="dod-item">☐ 6 個 M8 探針全綠</li>
+    <li class="dod-item">☐ deliverable + 反思 + backlog 標 TMO-022 done</li>
+  </ul>
+</body>
+</html>

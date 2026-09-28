@@ -77,10 +77,18 @@ jobs:
   # Job 2: 跑完整 pipeline（真 API）
   # ───────────────────────────────────────────────────────────────────
   pipeline:
-    name: Pipeline (${{ inputs.story_id || 'US-101' }})
+    name: Pipeline (${{ matrix.story_id || inputs.story_id || 'US-101' }})
     needs: bats
     runs-on: ubuntu-latest
-
+    if: github.event_name != 'pull_request' || !contains(github.event.pull_request.changed_files, 'docs/ac/US-M81.md')
+    strategy:
+      fail-fast: false
+      matrix:
+        # workflow_dispatch 可指定單一 story_id；否則跑 3 個預設
+        story_id:
+          - US-101
+          - US-M62
+          - US-M63
     steps:
       - uses: actions/checkout@v4
 
@@ -103,9 +111,14 @@ jobs:
         working-directory: skills/regression-guard/PoC
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          REGRESSION_REPORT_PATH: ${{ github.workspace }}/reports/${{ inputs.story_id || 'US-101' }}
+          REGRESSION_REPORT_PATH: ${{ github.workspace }}/reports/${{ matrix.story_id || inputs.story_id || 'US-101' }}
         run: |
-          STORY="${{ inputs.story_id || 'US-101' }}"
+          # workflow_dispatch 可指定單一 story_id；否則用 matrix
+          if [ -n "${{ inputs.story_id }}" ]; then
+            STORY="${{ inputs.story_id }}"
+          else
+            STORY="${{ matrix.story_id }}"
+          fi
           set +e
           if [ "${{ inputs.use_stale_test }}" = "true" ]; then
             ./run_pipeline.sh "$STORY" --stale
@@ -129,7 +142,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: regression-report-${{ inputs.story_id || 'US-101' }}
+          name: regression-report-${{ matrix.story_id || inputs.story_id || 'US-101' }}
           path: |
             reports/**/*.json
             reports/**/*.md
@@ -140,7 +153,7 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         working-directory: skills/regression-guard/PoC
         run: |
-          STORY="${{ inputs.story_id || 'US-101' }}"
+          STORY="${{ matrix.story_id || inputs.story_id || 'US-101' }}"
           {
             echo "## regression-guard Report — \`${STORY}\`"
             echo ""
@@ -149,6 +162,66 @@ jobs:
             else
               echo "⚠️ Report not generated (pipeline may have failed before M4)"
             fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  aggregate-matrix:
+    name: Aggregate Matrix Reports
+    needs: pipeline
+    if: always() && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all matrix artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: matrix-reports
+          pattern: regression-report-*
+          merge-multiple: true
+
+      - name: Aggregate to matrix-summary.md
+        working-directory: matrix-reports
+        run: |
+          {
+            echo "# regression-guard Matrix Summary"
+            echo ""
+            echo "**Generated**: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo ""
+            echo "## Per-Story Results"
+            echo ""
+            echo "| Story | Health | Fix Priority | Flaky | Type |"
+            echo "|-------|--------|--------------|-------|------|"
+            for f in *.json; do
+              STORY=$(basename "$f" .json | sed 's/^US-//' | tr '[:lower:]' '[:upper:]')
+              if [ -f "$f" ]; then
+                HEALTH=$(python -c "import json; d=json.load(open('$f')); print(d.get('batch_report',{}).get('overall_health','?'))" 2>/dev/null || echo '?')
+                FP=$(python -c "import json; d=json.load(open('$f')); print(f\"{d.get('batch_report',{}).get('fix_priority',0):.2f}\")" 2>/dev/null || echo '?')
+                FLAKY=$(python -c "import json; d=json.load(open('$f')); fm=d.get('batch_report',{}).get('flaky_measured',{}); print(f'{fm.get(\"likelihood\",0):.2f}')" 2>/dev/null || echo '?')
+                TYPE=$(python -c "import json; d=json.load(open('$f')); print(d.get('batch_report',{}).get('regression_type','?'))" 2>/dev/null || echo '?')
+                EMOJI=$([ "$HEALTH" = "green" ] && echo "🟢" || ([ "$HEALTH" = "yellow" ] && echo "🟡" || echo "🔴"))
+                echo "| \`$STORY\` | $EMOJI $HEALTH | $FP | $FLAKY | $TYPE |"
+              fi
+            done
+            echo ""
+            echo "---"
+            echo "_Aggregated from 3 matrix jobs_"
+          } > matrix-summary.md
+          cat matrix-summary.md
+
+      - name: Upload matrix summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-summary
+          path: matrix-reports/matrix-summary.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Post matrix summary to step summary
+        if: always()
+        working-directory: matrix-reports
+        run: |
+          {
+            echo "## 📊 Matrix Summary"
+            echo ""
+            cat matrix-summary.md
           } >> "$GITHUB_STEP_SUMMARY"
 
   cleanup-scan:
