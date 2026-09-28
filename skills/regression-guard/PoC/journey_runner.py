@@ -10,6 +10,7 @@ Journey Runner (Dry-Run) — 跑 journey YAML → 每步 mock observe → Jev or
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from dataclasses import dataclass, field, asdict
@@ -37,7 +38,7 @@ class ObservedState:
     history: list[dict] = field(default_factory=list)
 
 
-def mock_observe(step: Step, prev: ObservedState | None) -> ObservedState:
+def mock_observe(step: Step, prev: ObservedState | None, story_id: str = "") -> ObservedState:
     """
     乾跑模擬：根據 step.action 回一個假的觀察。
     真實版（M3.1+）會用 Chrome remote debug 或 Playwright 取代這個。
@@ -130,6 +131,30 @@ def _get_fixture_for_ac(fixtures: dict, ac_id: str) -> dict:
     return fixtures.get(ac_id, {})
 
 
+# ─── Observer backend dispatcher（M3.1） ──────────────────────────────
+
+# 環境變量：OBSERVER_BACKEND
+#   - "ac_aware"（預設）：用 fixture 模擬
+#   - "mock"：原始 mock_observe（所有 step 順利通過、無 body_excerpt 邏輯）
+#   - "playwright"：起 headless Chrome 真實 driver（要裝 playwright）
+def _select_observer():
+    """根據 OBSERVER_BACKEND 選 observer。預設 ac_aware。"""
+    backend = os.environ.get("OBSERVER_BACKEND", "ac_aware").lower()
+    if backend == "mock":
+        return mock_observe, "mock"
+    if backend == "playwright":
+        # Lazy import 避免沒有 playwright 套件時 crash
+        try:
+            from playwright_observer import playwright_observe
+        except ImportError as e:
+            raise RuntimeError(
+                f"OBSERVER_BACKEND=playwright 但 playwright_observer 不可用: {e}"
+            ) from e
+        return playwright_observe, "playwright"
+    # 預設 ac_aware
+    return ac_aware_observe, "ac_aware"
+
+
 def ac_aware_observe(step: Step, prev: ObservedState | None, story_id: str = "") -> ObservedState:
     """比 mock_observe 聰明：用 AC-aware fixture 模擬「對應 AC 通過時」應該看到的 state。
     M5：fixture 從 fixtures/<story_id>.yaml 讀（config-driven）。"""
@@ -137,6 +162,7 @@ def ac_aware_observe(step: Step, prev: ObservedState | None, story_id: str = "")
     elapsed = 500 + (hash(step.id) % 1500)
     fixtures = _load_fixture(story_id) if story_id else {}
     fixture = _get_fixture_for_ac(fixtures, step.verifying_ac)
+
 
     if step.action == "setup_state":
         return ObservedState(
@@ -268,9 +294,10 @@ def run_journey(journey: Journey, story_acs: list, *,
             ))
             continue
 
-        # 1. Observe（用 AC-aware fixture 模擬）
+        # 1. Observe（根據 OBSERVER_BACKEND env dispatch: ac_aware / mock / playwright）
         prev_observed = records[-1].observed if records and records[-1].observed else None
-        observed = ac_aware_observe(step, prev_observed, story_id=story_id)
+        observer, _observer_name = _select_observer()
+        observed = observer(step, prev_observed, story_id=story_id)
         sig = _state_signature_strict(observed)
 
         # 2. Stale detection（只在 ac 是 fail 時介入，正常過就不卡）

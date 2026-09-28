@@ -187,10 +187,73 @@ CI=1 npm test
 | ❌ 太細 | 每一行都探針 | `line-42-returns-true` |
 | ✅ 適中 | 每個邏輯斷言一個探針 | `user-login-returns-correct-data` |
 
+## Jev Oracle 補充（進階）
+
+> 這章是**可選章節**。預設 regression-guard 流程（Steps 1-4 + 上述全部規則）對多数項目已足夠。
+> 只有在下列**特殊場景**下，才需要用 Jev oracle 加一層語意判定。
+
+### 適用場景
+
+1. **AC 驗收容易誤判的「柔性」条件**：「紅字提示」」「友好錯誤」」「流暢體驗」這類主觀描述，Jev 能解讀「鬆 / 緊」口徑。
+2. **同個 fail 背後多種原因**：「真 bug」「flaky」「AC 寫得不好」這 3 種原因，傳統 pass/fail 沒分，後續修正循環會浪費時間。
+3. **Confidence-gated 自動行動**：CI 看到 `severity >= 2.5` 才開 issue；`flaky_likelihood > 0.7` 自動重跑；避免每一次 transient fail 都打閿開發者。
+
+### 不適用的場景
+
+- **純語法 / 類型 / CRUD 測試**：傳統斷言快又準，Jev 反而慢 + 貴。
+- **高頻跑數千例的微探針**：Jev API 有 cost / latency，量起來傷荷包。
+- **Determinism 要求 100% 的場景**（如金融交易）：Jev 每次 verdict 可能微跳（ac 是語意判定不是 bool）。
+
+### 怎麼試
+
+Jev PoC 已在 `skills/regression-guard/PoC/` 跑出 M1-M5 完整 milestone，**以 `US-101` 付款頁為範例**，4 個產出物可參考：
+
+| 產出物 | 用途 |
+|---|---|
+| `PoC/README.md` | Milestone 紀錄 + 快用範例 |
+| `PoC/journey_runner.py` | observe→Jev→verdict→recheck 迴路 |
+| `PoC/batch_report.py` | 4 維度 end-of-run 報告 |
+| `PoC/run_pipeline.sh` | M2→M3→M4 一鍵串接 |
+
+**3 種 observer backend 選用**：
+
+```bash
+# 預設：ac_aware（從 fixtures/<story_id>.yaml 讀）
+.venv/bin/python run_journey.py journeys/US-101.yaml
+
+# 純 mock（不接 fixture）
+OBSERVER_BACKEND=mock .venv/bin/python run_journey.py journeys/US-101.yaml
+
+# 真 Chrome driver（要 uv pip install playwright + playwright install chromium）
+OBSERVER_BACKEND=playwright .venv/bin/python run_journey.py journeys/US-101.yaml
+```
+
+### 實作成本預估
+
+| 階段 | 預估 | 重點 |
+|---|---|---|
+| PoC 評估 | 1 sprint | 以一個 PENDING US 跑 M1-M5 驗證 4 維度判定是否準確 |
+| 整合進主流程 | 1 sprint | 把 Jev 該在的 Gate 調進 Steps 1-4；不是取代是補充 |
+| 換 driver | 1 sprint | 從 fixture 轉 Playwright Chrome / Chrome DevTools Protocol |
+| CI 接 batch report | 半天 | batch report JSON 進 issue tracker / Slack |
+
+### 探針選名參考
+
+如果決定採用，探針名稱可加 `JEV-` prefix 區分：
+
+```
+JEV-US-101-AC01-red-error-message
+JEV-US-101-AC02-friend-checkout-flow
+JEV-US-101-AC04-confirmed-200-not-500
+```
+
+跟傳統 `US-101-AC01` 並行、不重疊，CI 可選只跑哪一類。
+
 ## 變動歷史
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-09-28 | 新增「Jev Oracle 補充（進階）」章節 + M3.1 Playwright observer 參考 | TMO-013 / TMO-014：整合 PoC M1-M5 進 skill 本體 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
 | v1.x | — | （舊版含 ASCII 流程圖）| 詳見全域 SOP 變動歷史 v1.x |

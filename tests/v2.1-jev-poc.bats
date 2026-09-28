@@ -211,3 +211,107 @@ assert 'stale' in summary.get('block_reason', '').lower()
 print(f'OK blocked={summary[\"blocked\"]} reason={summary[\"block_reason\"]}')
 "
 }
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 6: M3.1 Playwright observer + dispatcher (TMO-013)
+# ────────────────────────────────────────────────────────────────────
+
+@test "M3.1-a: playwright_observer.py exists & has 6 actions" {
+  local f="$POC_DIR/playwright_observer.py"
+  assert_path_is_file "$f"
+  for action in navigate click type wait observe setup_state; do
+    assert_file_contains "$f" "_do_${action}" || {
+      echo "FAIL: playwright_observer should have _do_${action}" >&2
+      return 1
+    }
+  done
+}
+
+@test "M3.1-b: journey_runner has _select_observer dispatcher (OBSERVER_BACKEND env)" {
+  local f="$POC_DIR/journey_runner.py"
+  assert_file_contains "$f" "_select_observer"
+  assert_file_contains "$f" "OBSERVER_BACKEND"
+}
+
+@test "M3.1-c: playwright_observer module imports OK without playwright installed" {
+  cd "$POC_DIR"
+  "$PY" -c "
+import sys
+sys.path.insert(0, '.')
+import playwright_observer as po
+assert hasattr(po, 'playwright_observe')
+assert hasattr(po, '_is_playwright_available')
+assert hasattr(po, 'close_session')
+assert po._is_playwright_available() is False, 'playwright not installed, should be False'
+print('OK: module imports, _is_playwright_available=False')
+" || {
+    echo "FAIL: playwright_observer should import without playwright installed" >&2
+    return 1
+  }
+}
+
+@test "M3.1-d: backend=playwright raises RuntimeError when playwright missing" {
+  cd "$POC_DIR"
+  set +e
+  OBSERVER_BACKEND=playwright "$PY" run_journey.py journeys/US-101.yaml >/dev/null 2>&1
+  local rc=$?
+  set -e
+  if [ "$rc" -eq 0 ]; then
+    echo "FAIL: backend=playwright should fail (no playwright) but exit 0" >&2
+    return 1
+  fi
+  # exit 1 (driver error) or 2 (block) 都算 graceful fail
+  if [ "$rc" -ne 1 ] && [ "$rc" -ne 2 ]; then
+    echo "FAIL: unexpected exit code $rc" >&2
+    return 1
+  fi
+}
+
+@test "M3.1-e: backend=mock signature compatible (story_id kwarg)" {
+  cd "$POC_DIR"
+  set +e
+  OBSERVER_BACKEND=mock "$PY" run_journey.py journeys/US-101.yaml >/dev/null 2>&1
+  local rc=$?
+  set -e
+  # exit 0 (沒 block) 或 2 (block) 都算 pass
+  if [ "$rc" -ne 0 ] && [ "$rc" -ne 2 ]; then
+    echo "FAIL: backend=mock exit code $rc (expected 0/2)" >&2
+    return 1
+  fi
+}
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 7: SKILL.md 整合 (TMO-014)
+# ────────────────────────────────────────────────────────────────────
+
+@test "SKILL-a: SKILL.md has Jev Oracle chapter" {
+  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  assert_file_contains "$f" "## Jev Oracle 補充"
+}
+
+@test "SKILL-b: SKILL.md chapter mentions 3 backends (ac_aware/mock/playwright)" {
+  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  for backend in ac_aware mock playwright; do
+    assert_file_contains "$f" "$backend" || {
+      echo "FAIL: SKILL.md Jev chapter should mention $backend" >&2
+      return 1
+    }
+  done
+}
+
+@test "SKILL-c: examples.md has Jev Oracle chapter with 4 example types" {
+  local f="$REPO_ROOT/skills/regression-guard/examples.md"
+  assert_file_contains "$f" "## 🧠 Jev Oracle 範例"
+  for example in "journey YAML" "dry-run" "batch report" "JSON 報告"; do
+    assert_file_contains "$f" "$example" || {
+      echo "FAIL: examples.md should have example: $example" >&2
+      return 1
+    }
+  done
+}
+
+@test "SKILL-d: SKILL.md v2.2 changelog entry exists" {
+  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  assert_file_contains "$f" "v2.2"
+  assert_file_contains "$f" "TMO-013"
+}

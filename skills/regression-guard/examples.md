@@ -360,3 +360,114 @@ queue:publish:order-created
   ]
 }
 ```
+
+---
+
+## 🧠 Jev Oracle 範例（進階）
+
+> 這章是**可選章節**。主流程（上面所有 JSON / bash 範例）對多数項目已足夠。
+> 以下是 skill PoC `skills/regression-guard/PoC/` 跑出 M1-M5 的範例輸出，給決定要採用 Jev oracle 的项目參考。
+
+### 範例 User Story：US-101 付款頁
+
+來源：`docs/ac/US-101.md`（4 條 AC：付款頁、錯誤卡、訂單成立、500 錯誤）
+
+#### 範例 1：journey YAML（M2 產出）
+
+```yaml
+# journeys/US-101.yaml — 自動生成（M2 Jev 評估出 9 步、2.25/AC 複雜度）
+journey_id: US-101
+title: AC 範本
+source: ../../docs/ac/US-101.md
+generated_by: typesafe/jev-1.13
+generated_at: '2026-09-28T14:33:19+00:00'
+total_steps: 9
+steps:
+  - id: US-101-AC01-s1
+    action: setup_state
+    verifying_ac: US-101-AC01
+  - id: US-101-AC01-s2
+    action: setup_state
+    verifying_ac: US-101-AC01
+  - id: US-101-AC01-s3
+    action: click
+    target_text: 結帳
+    verifying_ac: US-101-AC01
+  # ... 以此類推
+```
+
+#### 範例 2：dry-run 主迴路輸出（M3）
+
+```
+  US-101-AC01-s1           setup_state   verdict=pass           conf=0.96 sev=0.08 bug=0.10
+  US-101-AC01-s2           setup_state   verdict=pass           conf=0.94 sev=0.09 bug=0.12
+  US-101-AC01-s3           click         verdict=pass           conf=0.98 sev=0.05 bug=0.08
+  US-101-AC02-s1           setup_state   verdict=fail           conf=0.99 sev=1.60 bug=0.43
+  US-101-AC02-s2           type          verdict=fail           conf=0.99 sev=1.62 bug=0.50
+  US-101-AC03-s1           setup_state   verdict=fail           conf=0.92 sev=1.75 bug=0.45
+  US-101-AC03-s2           wait          verdict=fail           conf=0.59 sev=1.18 bug=0.40
+  US-101-AC04-s1           setup_state   verdict=fail           conf=0.99 sev=2.76 bug=0.56
+  US-101-AC04-s2           observe       verdict=fail           conf=0.99 sev=2.77 bug=0.67
+
+📊 Summary:
+   total_steps:        9
+   verdict counts:     {'pass': 3, 'fail': 6}
+   blocked:            False ()
+   total latency:      0ms
+   total cost:         $0.000320
+   cache hits:         9/9
+```
+
+#### 範例 3：end-of-run batch report（M4）
+
+Markdown 報告（`report.md`）：
+
+```markdown
+# Regression Report — US-101
+
+**整體健康度**：🔴 red
+**修復優先級**：2.96 / 3
+**Flaky 可能性**：0.25
+**Regression 類型**：real_bug
+
+## 各步 verdict 摘要
+
+| 步驟 | 動作 | 判定 | 信心 | 嚴重度 | 真 bug 機率 |
+|------|------|------|------|--------|-------------|
+| US-101-AC01-s1 | setup_state | pass | 0.96 | 0.08 | 0.10 |
+| US-101-AC04-s2 | observe | fail | 0.99 | 2.77 | 0.67 |
+```
+
+#### 範例 4：JSON 報告（CI 用，`report.json`）
+
+```json
+{
+  "journey_id": "US-101",
+  "overall_health": "red",
+  "fix_priority": 2.96,
+  "flaky_likelihood": 0.25,
+  "regression_type": "real_bug",
+  "return_code": 1,
+  "verdict_counts": {"pass": 3, "fail": 6}
+}
+```
+
+> **CI 整合提示**：`return_code` 是 `green=0 / yellow=2 / red=1`，可直接讀進 pipeline 決定是否阻擋部署。
+
+### 三種 observer backend 切換
+
+```bash
+# 預設 ac_aware（從 fixtures/<story_id>.yaml 讀）
+.venv/bin/python run_journey.py journeys/US-101.yaml
+
+# 純 mock（不接 fixture，oracle 會看到空 body 全判 fail）
+OBSERVER_BACKEND=mock .venv/bin/python run_journey.py journeys/US-101.yaml
+
+# 真 Chrome driver（M3.1+；要 uv pip install playwright + playwright install chromium）
+OBSERVER_BACKEND=playwright .venv/bin/python run_journey.py journeys/US-101.yaml
+```
+
+### PoC 詳情
+
+完整 milestone 記錄、程式碼、探針守護見 `PoC/README.md`。
+詳細 SKILL 整合見 `SKILL.md` 章節「Jev Oracle 補充（進階）」。
