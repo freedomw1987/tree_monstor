@@ -89,11 +89,18 @@ echo
 
 # ── Step 4: M6 — Jev fix proposal (opt-in) ──
 if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
-    echo "▶ M6  Jev fix proposal…"
+    echo "▶ M6  Jev fix proposal (v1)…"
     FIX_OUT="${REPORT_PATH%.*}-fix-proposal.md"
     .venv/bin/python fix_proposal.py "$RUN_JSON" "$FIX_OUT" || \
-        echo "   (M6 failed but pipeline continues)"
+        echo "   (M6 v1 failed but pipeline continues)"
     echo
+    if [ "${JEV_FIX_PROPOSAL_V2:-0}" = "1" ]; then
+        echo "▶ M6.1  Jev fix proposal v2 (LLM relay)…"
+        FIX_OUT_V2="${REPORT_PATH%.*}-fix-proposal-v2.md"
+        .venv/bin/python fix_proposal_v2.py "$RUN_JSON" "$FIX_OUT_V2" || \
+            echo "   (M6.1 failed but pipeline continues)"
+        echo
+    fi
 fi
 
 echo "═══════════════════════════════════════════════"
@@ -105,4 +112,8 @@ echo "  Batch report:    ${REPORT_PATH}.json"
 echo "  Markdown report: ${REPORT_PATH}.md"
 if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
     echo "  Fix proposal:    ${REPORT_PATH%.*}-fix-proposal.md"
+    if [ "${JEV_FIX_PROPOSAL_V2:-0}" = "1" ]; then
+        echo "  Fix proposal v2: ${REPORT_PATH%.*}-fix-proposal-v2.md"
+        echo "  Relay bundle:    ${RUN_JSON%.*}.relay/"
+    fi
 fi

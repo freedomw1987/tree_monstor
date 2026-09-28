@@ -509,3 +509,67 @@ JEV_FIX_PROPOSAL=1 REGRESSION_REPORT_PATH=/tmp/report ./run_pipeline.sh US-101
 1. 看「整體信心度」— ≥0.5 直接接手；<0.5 先加 observer context
 2. 找「評估表」最低那一維 — 通常是「建議修正」維度低，需要更多 code reading
 3. 對「原始失敗走跡」找 status 500 步 → 定位 component
+
+### Fix proposal v2 範例（M6.1 LLM Relay）
+
+整體信心度 ≥ 0.5 時，召喚當下對話的 LLM agent 接力寫 fix 文字：
+
+```bash
+# 1. 跑 pipeline 產 v1 + v2 prompt bundle
+JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  REGRESSION_REPORT_PATH=/tmp/r \
+  ./run_pipeline.sh US-101
+
+# 2. 看 prompt bundle
+cat /tmp/US-101-run.relay/prompt.md
+# → 含 Jev 信心度報告 + 原始失敗走跡 + template
+
+# 3. 在對話中：讀 prompt.md → 寫 fix → 存到 answer.md
+#    （由 subagent / pi 本身根據 prompt template 的「產出」段寫）
+
+# 4. 拼 final report
+.venv/bin/python fix_proposal_v2.py /tmp/US-101-run.json \
+  /tmp/r-final.md --answer-from /tmp/US-101-run.relay/answer.md
+```
+
+產出 `/tmp/r-final.md`（LLM 接力成功時）：
+
+```markdown
+# Fix Proposal — US-101
+
+（... Jev 信心度報告 ...）
+
+---
+
+## LLM Relay Fix Proposal（M6.1）
+
+**問題分析**：信心度 0.81（高）佐證 — 從走跡看，`/checkout/payment` 在 AC04 連續 2 步
+回 500 + 「服務暫時無法使用」訊息，這是真 bug 的典型特徵...
+
+**建議修正**：檢查 `/api/payment` route 的 exception handling（推測）...
+應加 try/except 包住 Stripe call 並回 200 + 友善錯誤頁。
+
+**驗證步驟**：
+1. `JEV_FIX_PROPOSAL=1 ./run_pipeline.sh US-101` — 預期 9 pass / 0 fail
+2. 手動：在 /checkout/payment 用測試卡 4242 4242 4242 4242
+
+**AC 建議**：無
+
+### 信心度佐證對照
+
+- 整體信心度：0.81（門檻 0.5）
+- Gating：✅ 通過
+- 走跡筆數：6
+```
+
+**gating 規則**：
+
+| 整體信心度 | 行為 | final report 內容 |
+|---|---|---|
+| ≥ 0.5 | 召喚 LLM relay，產 prompt bundle | 信心度報告 + LLM 接力文字 + 走跡對照 |
+| < 0.5 | 跳過 LLM relay | 信心度報告 + 走跡，標「reviewer 接手」|
+
+**為什麼是 skill 本身 LLM（不接外部 Claude/GPT）**：
+- regression-guard 本身是個 skill → 召喚它時的 LLM（subagent / pi 本身）就是接力的 LLM
+- 不增加外部依賴、prompt template 是「檔案」可版本化
+- prompt template 位置：`PoC/prompts/fix_relay.md`

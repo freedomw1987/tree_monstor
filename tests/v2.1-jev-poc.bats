@@ -446,3 +446,144 @@ print('OK: FixProposal has 3 conf fields')
     return 1
   }
 }
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 10: M6.1 LLM Relay (TMO-017)
+# ────────────────────────────────────────────────────────────────────
+
+@test "M6.1-a: prompts/fix_relay.md exists with 4 sections" {
+  local f="$POC_DIR/prompts/fix_relay.md"
+  assert_path_is_file "$f"
+  for section in "角色" "輸入" "產出" "約束"; do
+    assert_file_contains "$f" "$section" || {
+      echo "FAIL: prompts/fix_relay.md missing section: $section" >&2
+      return 1
+    }
+  done
+}
+
+@test "M6.1-b: fix_proposal_v2.py exists with LLMRelayBundle + RELAY_GATING_THRESHOLD" {
+  local f="$POC_DIR/fix_proposal_v2.py"
+  assert_path_is_file "$f"
+  assert_file_contains "$f" "LLMRelayBundle"
+  assert_file_contains "$f" "RELAY_GATING_THRESHOLD"
+  assert_file_contains "$f" "build_final_report"
+}
+
+@test "M6.1-c: fix_proposal_v2.py gating < 0.5 skips LLM relay (end-to-end)" {
+  cd "$POC_DIR"
+  if [ ! -f /tmp/US-101-run.json ]; then
+    skip "US-101-run.json not found, run pipeline first"
+  fi
+  "$PY" fix_proposal_v2.py /tmp/US-101-run.json /tmp/test-v2.md >/dev/null 2>&1 || {
+    echo "FAIL: fix_proposal_v2.py CLI failed" >&2
+    return 1
+  }
+  assert_path_is_file /tmp/test-v2.md
+  # 0.41 < 0.5 → 應該出現 "LLM Relay 跳過"
+  grep -q "LLM Relay 跳過" /tmp/test-v2.md || {
+    echo "FAIL: test-v2.md should have LLM Relay 跳過 (0.41 < 0.5)" >&2
+    return 1
+  }
+}
+
+@test "M6.1-d: run_pipeline.sh supports JEV_FIX_PROPOSAL_V2=1" {
+  local f="$POC_DIR/run_pipeline.sh"
+  assert_file_contains "$f" "JEV_FIX_PROPOSAL_V2"
+  assert_file_contains "$f" "fix_proposal_v2.py"
+}
+
+@test "M6.1-e: SKILL.md v2.4 has LLM Relay section" {
+  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  assert_file_contains "$f" "M6.1 修正循環補充"
+  assert_file_contains "$f" "LLM Relay"
+  assert_file_contains "$f" "TMO-017"
+}
+
+@test "M6.1-f: examples.md has v2 LLM relay example" {
+  local f="$REPO_ROOT/skills/regression-guard/examples.md"
+  assert_file_contains "$f" "Fix proposal v2"
+  assert_file_contains "$f" "JEV_FIX_PROPOSAL_V2"
+  assert_file_contains "$f" "skill 本身 LLM"
+}
+
+# ────────────────────────────────────────────────────────────────────
+# Probe 11: Cleanup 盤點 (TMO-018)
+# ────────────────────────────────────────────────────────────────────
+
+@test "CLEAN-a: docs/cleanup/cleanup-scan.py exists & runs OK" {
+  local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
+  assert_path_is_file "$f"
+  "$PY" "$f" >/dev/null 2>&1 || {
+    echo "FAIL: cleanup-scan.py errored" >&2
+    return 1
+  }
+}
+
+@test "CLEAN-b: cleanup-scan.py classifies 4 categories" {
+  local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
+  for cat in "KEEP" "REVIEW" "DELETE" "MERGE"; do
+    assert_file_contains "$f" "$cat" || {
+      echo "FAIL: cleanup-scan.py missing category: $cat" >&2
+      return 1
+    }
+  done
+}
+
+@test "CLEAN-c: cleanup-scan.py excludes .venv/ files" {
+  local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
+  assert_file_contains "$f" "is_excluded"
+  assert_file_contains "$f" ".venv"
+}
+
+@test "CLEAN-d: cleanup-scan.py protects skill directories" {
+  local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
+  for skill in dav-designer dav-planner dav-reflection regression-guard; do
+    assert_file_contains "$f" "$skill" || {
+      echo "FAIL: cleanup-scan.py should protect $skill/**" >&2
+      return 1
+    }
+  done
+}
+
+@test "CLEAN-e: cleanup-scan.py --json output is valid JSON" {
+  local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
+  local output
+  output=$("$PY" "$f" --json 2>&1) || {
+    echo "FAIL: cleanup-scan.py --json errored" >&2
+    return 1
+  }
+  echo "$output" | "$PY" -c "import json, sys; data = json.loads(sys.stdin.read()); assert len(data) > 0; cats = {r['category'] for r in data}; assert 'KEEP' in cats; print(f'OK: {len(data)} files, categories: {cats}')" || {
+    echo "FAIL: --json output not valid JSON" >&2
+    return 1
+  }
+}
+
+@test "CLEAN-f: scan output shows no .venv/ false positives" {
+  local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
+  local output
+  output=$("$PY" "$f" 2>&1) || {
+    echo "FAIL: cleanup-scan.py errored" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "site-packages"; then
+    echo "FAIL: cleanup-scan.py should exclude .venv/ but found site-packages" >&2
+    return 1
+  fi
+}
+
+@test "CLEAN-g: run_pipeline.sh forwards JEV_FIX_PROPOSAL_V2 to M6.1 step" {
+  local f="$POC_DIR/run_pipeline.sh"
+  # 確認 M6 區塊後接 M6.1 區塊
+  local m6_line m61_line
+  m6_line=$(grep -n "M6 " "$f" | head -1 | cut -d: -f1)
+  m61_line=$(grep -n "M6.1" "$f" | head -1 | cut -d: -f1)
+  if [ -z "$m6_line" ] || [ -z "$m61_line" ]; then
+    echo "FAIL: M6 or M6.1 not found in run_pipeline.sh" >&2
+    return 1
+  fi
+  if [ "$m6_line" -ge "$m61_line" ]; then
+    echo "FAIL: M6.1 should come after M6" >&2
+    return 1
+  fi
+}

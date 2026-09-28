@@ -286,6 +286,62 @@ JEV_FIX_PROPOSAL=1 ./run_pipeline.sh US-101
 - 接 patch + re-validate 自動迴圈（playwright driver 拿到 fix 文字 → 跑回 validate）
 - 詳見 [`examples.md`](./examples.md) 「Jev Oracle 範例」章節的 fix proposal 範例
 
+### M6.1 修正循環補充：LLM Relay（v2 接力）
+
+**適用情境**：v1 M6 fix proposal 跑出整體信心度 **≥ 0.5** 時，由「當下對話的 LLM agent」接力寫 fix 文字。
+
+**為什麼是 skill 本身 LLM（不接外部 Claude/GPT）**：
+
+- regression-guard 本身是個 skill → 召喚它時的 LLM（subagent / pi 本身）就是「接力的 LLM」
+- 不增加外部依賴、不增加 API cost、不增加 prompt 邏輯雙重來源
+- prompt template 是「檔案」而非 hardcoded 字串 → 可由 skill 維護者迭代、不需改 code
+
+**怎麼用**：
+
+```bash
+# 1. pipeline 產 v1 + v2 + prompt bundle
+JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
+  REGRESSION_REPORT_PATH=/tmp/r \
+  ./run_pipeline.sh US-101
+# → /tmp/r-fix-proposal-v2.md
+# → /tmp/US-101-run.relay/prompt.md
+
+# 2. 手動召喚 subagent 接力（讀 prompt.md，寫 answer.md）
+#    這個步驟在對話中進行：
+#    - 讀 /tmp/US-101-run.relay/prompt.md
+#    - 按 template 「產出」段寫 fix
+#    - 寫到 /tmp/US-101-run.relay/answer.md
+
+# 3. 拼 final report
+.venv/bin/python fix_proposal_v2.py /tmp/US-101-run.json \
+  /tmp/r-final.md --answer-from /tmp/US-101-run.relay/answer.md
+# → /tmp/r-final.md 含 Jev 信心度 + LLM relay 文字 + 走跡對照
+```
+
+**信心度 gating 規則**（[`fix_proposal_v2.py`](../../skills/regression-guard/PoC/fix_proposal_v2.py) `RELAY_GATING_THRESHOLD`）：
+
+| 整體信心度 | 動作 | final report 內容 |
+|---|---|---|
+| ≥ 0.5 | ✅ 召喚 LLM relay，產 prompt bundle | 信心度報告 + LLM 接力文字 + 走跡對照 |
+| 0.25–0.49 | ❌ 跳過 LLM relay | 信心度報告 + 走跡，標「reviewer 接手」|
+| < 0.25 | ❌ 跳過，明確標「需先加 observer context」| 同上 + 警告 |
+
+**Prompt template 位置**：[`PoC/prompts/fix_relay.md`](./PoC/prompts/fix_relay.md)
+
+模板涵蓋：
+- 角色（regression-guard skill 的 LLM 接力 agent）
+- 輸入（Jev 信心度 + 失敗走跡）
+- 產出（3 段：問題分析 / 建議修正 / 驗證步驟，≤ 500 字）
+- 約束（不重複數字、不虛構 code 路徑、不建議改 AC）
+- 範例（輸入 / 產出對照）
+- Gating 規則
+
+**已知限制**（v2 範圍）：
+
+- 接力 LLM 必須是「當下對話的 agent」 — CI 環境需特別設定（手動觸發 subagent 或加 `gh pr comment` step）
+- Prompt template 是 markdown 而非 jinja — 簡單可讀但不支援條件邏輯
+- Final report 中 LLM 接力段落沒有「versioning」— 改了 prompt template 跑出來的文字可能差很多，**需在 deliverable 中註明用的是哪一版 prompt**
+
 ### CI 整合補充
 
 workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
@@ -308,6 +364,7 @@ workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
 | v2.3 | 2026-09-28 | 新增「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節；changelog 升 v2.3 | TMO-015 / TMO-016：CI + M6 收尾 |
+| v2.4 | 2026-09-28 | 新增「M6.1 修正循環補充：LLM Relay（v2 接力）」小節 + prompt template 位置 + 信心度 gating 表 | TMO-017：M6.1 LLM relay 啟用 |
 | v2.2 | 2026-09-28 | 新增「Jev Oracle 補充（進階）」章節 + M3.1 Playwright observer 參考 | TMO-013 / TMO-014：整合 PoC M1-M5 進 skill 本體 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 7：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
