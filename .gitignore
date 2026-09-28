@@ -14,3 +14,8 @@ __pycache__/
 .agents/
 .claude/
 .pi/
+# regression-guard PoC test fixtures (created by bats probes, don't commit)
+skills/regression-guard/PoC/fixtures/US-M63-*-test.py
+skills/regression-guard/PoC/fixtures/US-M63-ambiguous.py
+skills/regression-guard/PoC/journeys/US-M62.yaml
+skills/regression-guard/PoC/tmp/
