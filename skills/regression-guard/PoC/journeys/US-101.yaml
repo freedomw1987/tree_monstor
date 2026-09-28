@@ -1,0 +1,159 @@
+journey_id: US-101
+title: AC 範本
+source: /Users/davidchu/Sites/localhost/tree_monstor/docs/ac/US-101.md
+generated_by: typesafe/jev-1.13
+generated_at: '2026-09-28T14:33:19+00:00'
+total_steps: 9
+steps:
+- id: US-101-AC01-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC01
+  verifying_then: 系統在 3 秒內導向付款頁
+  depends_on: []
+- id: US-101-AC01-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC01
+  verifying_then: 系統在 3 秒內導向付款頁
+  depends_on:
+  - US-101-AC01-s1
+- id: US-101-AC01-s3
+  action: click
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC01
+  verifying_then: 系統在 3 秒內導向付款頁
+  depends_on:
+  - US-101-AC01-s2
+- id: US-101-AC02-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC02
+  verifying_then: 系統在 1 秒內顯示紅字錯誤訊息「卡號格式錯誤，請重新輸入」
+  depends_on:
+  - US-101-AC01-s3
+- id: US-101-AC02-s2
+  action: type
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC02
+  verifying_then: 系統在 1 秒內顯示紅字錯誤訊息「卡號格式錯誤，請重新輸入」
+  depends_on:
+  - US-101-AC02-s1
+- id: US-101-AC03-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC03
+  verifying_then: 系統在 3 秒內發送 Email 通知給用戶（含訂單編號、金額、預計出貨日）
+  depends_on:
+  - US-101-AC02-s2
+- id: US-101-AC03-s2
+  action: wait
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC03
+  verifying_then: 系統在 3 秒內發送 Email 通知給用戶（含訂單編號、金額、預計出貨日）
+  depends_on:
+  - US-101-AC03-s1
+- id: US-101-AC04-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC04
+  verifying_then: 系統顯示明確的錯誤訊息（不可為空白）
+  depends_on:
+  - US-101-AC03-s2
+- id: US-101-AC04-s2
+  action: observe
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-101-AC04
+  verifying_then: 系統顯示明確的錯誤訊息（不可為空白）
+  depends_on:
+  - US-101-AC04-s1
+meta:
+  story_id: US-101
+  title: AC 範本
+  ac_count: 4
+  calls:
+  - ac_id: US-101-AC01
+    phase: complexity
+    latency_ms: 366
+    cached: true
+    score: 1.87
+  - ac_id: US-101-AC01
+    phase: action_plan
+    latency_ms: 314
+    cached: true
+    choice: click
+  - ac_id: US-101-AC02
+    phase: complexity
+    latency_ms: 479
+    cached: true
+    score: 1.43
+  - ac_id: US-101-AC02
+    phase: action_plan
+    latency_ms: 386
+    cached: true
+    choice: type
+  - ac_id: US-101-AC03
+    phase: complexity
+    latency_ms: 333
+    cached: true
+    score: 1.11
+  - ac_id: US-101-AC03
+    phase: action_plan
+    latency_ms: 377
+    cached: true
+    choice: wait
+  - ac_id: US-101-AC04
+    phase: complexity
+    latency_ms: 334
+    cached: true
+    score: 1.48
+  - ac_id: US-101-AC04
+    phase: action_plan
+    latency_ms: 533
+    cached: true
+    choice: observe

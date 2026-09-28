@@ -19,6 +19,8 @@
 | TMO-008 | 減法：文件產出物精簡（v2.0） | P1 | 5 | done | TMO-007 |
 | TMO-009 | 重結構：9 skill + AGENTS.md 任務導航 + 純文字引用 | P1 | 25 | done | TMO-008 |
 | TMO-010 | docs/ 批量減法：5 檔、53KB（孤立檔 + 存量 HTML + 存量反思）| P1 | 3 | done (2026-09-26) | — |
+| TMO-011 | regression-guard skill 升級：Jev Oracle PoC（M1-M4 feat-jev-regression）| P1 | 8 | done (2026-09-28) | — |
+| TMO-012 | M5 PoC 去 hardcode 化：fixture config + stale 限 AC + CLI 重構 + bats 探針 | P1 | 8 | pending | TMO-011 |
 
 ---
 
@@ -260,3 +262,47 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - [x] TMO-008 → done
 
 **Reviewer 二審結果**：首次 FAIL（2 P0）+ 順手修 2 P1 → PASS
+
+
+## TMO-011 詳細
+
+> **完成記錄**（2026-09-28）：branch `feat-jev-regression` 已 push origin，5 個 commit，2,148 行新增。詳見 `docs/deliverable/2026-09-28-feat-jev-regression-poc.md` 含「反思」末段。
+
+**問題**：原 `regression-guard` skill 是「字串比對 pass/fail」，抓不到語意 regression（結果對了語意錯、flaky、AC 寫得模糊）。
+
+**完成標準**：
+- 用 OpenRouter `typesafe/jev-1.13` decisions model 當 oracle
+- 4 個 milestone 跑通：Oracle → Journey Gen → Dry-Run Loop → Batch Report
+- 一鍵 pipeline (`run_pipeline.sh`) 串接 M2→M3→M4
+- Skill 本體零改動（不污染生產規範）
+- 真 Jev API 驗證（US-101 4 條 AC）
+- 完整 pipeline cost < $0.001（實測 $0.000390 live / $0 cache）
+- `.gitignore` 確保 cache/ .env .venv/ report.* 不進 commit
+- 5 個 commit 全部只動 `skills/regression-guard/PoC/`（已驗證 ✓）
+
+**產出**：
+- 11 個 source code 檔（核心 4 件 + 7 件輔助）
+- 1 個 YAML spec（journeys/US-101.yaml）
+- 1 個 pipeline shell
+- 1 個完整 deliverable + 反思
+- PR description 草稿（/tmp/pr-draft-feat-jev-regression.md）
+
+---
+
+## TMO-012 詳細
+
+> **M5 PoC 去 hardcode 化**：把 TMO-011 留下的技術債清乾淨，等真實 PENDING US 出現時 PoC 能直接套用。
+
+**問題**：TMO-011 PoC 為快速驗證留下 4 個技術債，無法直接套用於新 US。
+
+**完成標準**：
+- ✅ `ac_aware_observe` fixture 改 config-driven（`fixtures/<story_id>.yaml` 自動載入）+ page-object pattern
+- ✅ Stale detection 限「同一 AC 連續」（加 `current_ac_id` 狀態機）
+- ✅ `--stale-test` 邏輯重構進 `runner.run_dry(stale_test=True)`，CLI 只負責 args + 印結果
+- ✅ `tests/v2.1-jev-poc.bats` ≥ 4 探針守護：4 milestone 都跑 / cache 機制有效 / stale detection 觸發 / batch report 4 維度輸出
+- ✅ CI-ready exit code（green=0 / yellow=2 / red=1）整合進 regression-guard skill 主流程
+
+**DoD**：
+- 換別的 US（例如 US-201）能直接跑 pipeline，不用改 source code
+- bats 探針全綠
+- Skill 本體（SKILL.md / examples.md）整合 user-journey-as-test-spec 規範

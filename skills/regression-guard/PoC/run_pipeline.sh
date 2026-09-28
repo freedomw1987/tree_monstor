@@ -1,0 +1,92 @@
+#!/bin/bash
+# run_pipeline.sh — M1 → M2 → M3 → M4 一鍵跑完
+#
+# 用法:
+#   ./run_pipeline.sh <story_id>           # 例如 ./run_pipeline.sh US-101
+#   ./run_pipeline.sh <story_id> --stale   # 用 stale-test 模式證邏輯
+#
+# 環境變數：
+#   REGRESSION_REPORT_PATH   報告輸出位置（預設 ./report）
+
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+    echo "用法: $0 <story_id> [--stale] [--source path/to/US.md]"
+    echo ""
+    echo "範例:"
+    echo "  $0 US-101"
+    echo "  REGRESSION_REPORT_PATH=./out/US-101-report $0 US-101"
+    exit 1
+fi
+
+STORY_ID="$1"
+shift
+
+USE_STALE=""
+SOURCE_ARG=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --stale) USE_STALE="--stale-test" ;;
+        --source) SOURCE_ARG="--source $2"; shift ;;
+    esac
+    shift
+done
+
+# 找 AC 檔（支援兩種位置）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+if [ -n "$SOURCE_ARG" ]; then
+    AC_PATH="${SOURCE_ARG#--source }"
+elif [ -f "$REPO_ROOT/docs/ac/${STORY_ID}.md" ]; then
+    AC_PATH="$REPO_ROOT/docs/ac/${STORY_ID}.md"
+else
+    echo "❌ 找不到 AC 檔：$REPO_ROOT/docs/ac/${STORY_ID}.md"
+    echo "   用 --source 指定"
+    exit 1
+fi
+
+# 報告位置
+REPORT_PATH="${REGRESSION_REPORT_PATH:-$SCRIPT_DIR/report}"
+
+echo "═══════════════════════════════════════════════"
+echo "  regression-guard PoC pipeline — ${STORY_ID}"
+echo "═══════════════════════════════════════════════"
+echo "  AC:        $AC_PATH"
+echo "  Report:    $REPORT_PATH (.json + .md)"
+echo "═══════════════════════════════════════════════"
+echo
+
+cd "$SCRIPT_DIR"
+
+# ── Step 1: M2 — generate journey YAML ──
+echo "▶ M2  生成 journey YAML…"
+if [ ! -f "journeys/${STORY_ID}.yaml" ] || [ "${REGEN_JOURNEY:-0}" = "1" ]; then
+    .venv/bin/python journey_gen.py "$AC_PATH"
+else
+    echo "   (跳過：journeys/${STORY_ID}.yaml 已存在；REGEN_JOURNEY=1 可強制重跑)"
+fi
+echo
+
+# ── Step 2: M3 — run journey (dry-run loop) ──
+echo "▶ M3  跑 dry-run loop…"
+RUN_JSON="/tmp/${STORY_ID}-run.json"
+STALE_FLAG=""
+if [ -n "$USE_STALE" ]; then
+    STALE_FLAG="--stale-test"
+fi
+.venv/bin/python run_journey.py "journeys/${STORY_ID}.yaml" $STALE_FLAG --json-output "$RUN_JSON"
+echo
+
+# ── Step 3: M4 — batch report ──
+echo "▶ M4  end-of-run batch report…"
+.venv/bin/python run_report.py "$RUN_JSON" "${REPORT_PATH%.*}"
+echo
+
+echo "═══════════════════════════════════════════════"
+echo "  ✨ Pipeline 完成"
+echo "═══════════════════════════════════════════════"
+echo "  Journey YAML:    $SCRIPT_DIR/journeys/${STORY_ID}.yaml"
+echo "  Run JSON:        $RUN_JSON"
+echo "  Batch report:    ${REPORT_PATH}.json"
+echo "  Markdown report: ${REPORT_PATH}.md"
