@@ -1,0 +1,56 @@
+# Fixture for US-101 — AC-aware mock observer config
+#
+# Schema:
+#   ac_id:
+#     url:        觀察的 URL（mock 會設這個）
+#     status:     HTTP status code
+#     body_excerpt:  body 前 300 字（oracle 會看這個）
+#     user_message:  對使用者顯示的訊息
+#     elapsed_ms:    假裝花多久
+#     history_seed:  預塞 history（給 wait action 用）
+#
+# 注意：Jev oracle 會根據 fixture 跟 AC Then 比對：
+#   - 對得上 → 判 pass
+#   - 對不上 → 判 fail
+# 因此 fixture 寫的 body_excerpt 必須「故意對得上」對應 AC 的 Then 條款
+# （除了 AC04 — 故意寫 500 來證 oracle 會抓出 regression）
+
+US-101-AC01:
+  url: "https://example.com/checkout/payment?order=A123"
+  status: 200
+  body_excerpt: "付款頁面，支援 Visa, MasterCard, JCB"
+  user_message: ""
+  elapsed_ms: 1200
+  history_seed: []
+
+US-101-AC02:
+  # 因為 click 完進入付款頁，按 AC02 的 then 期望「輸入錯誤卡號顯示紅字」
+  # 這裡 setup_state 步直接模擬「已進入付款頁」
+  url: "https://example.com/checkout/payment?order=A123"
+  status: 200
+  body_excerpt: "付款頁：卡號欄位、Visa/MasterCard 標誌、提交按鈕"
+  user_message: ""
+  elapsed_ms: 900
+  history_seed: []
+
+US-101-AC03:
+  url: "https://example.com/order/A123/done"
+  status: 200
+  body_excerpt: "訂單成立，感謝您的購買"
+  user_message: ""
+  elapsed_ms: 4500
+  history_seed:
+    - { step: 1, email_sent: true }
+    - { step: 2, email_sent: true }
+    - { step: 3, email_sent: false }
+    - { step: 4, email_sent: true }
+    - { step: 5, email_sent: true }
+
+US-101-AC04:
+  # 故意維持 500 錯誤（讓 oracle 判 fail + is_real_bug=true）
+  url: "https://example.com/checkout/payment?order=A123"
+  status: 500
+  body_excerpt: "服務暫時無法使用，請稍後重試"
+  user_message: "服務暫時無法使用，請稍後重試"
+  elapsed_ms: 3000
+  history_seed: []

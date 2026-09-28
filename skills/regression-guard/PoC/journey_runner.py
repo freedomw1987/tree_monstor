@@ -41,6 +41,7 @@ def mock_observe(step: Step, prev: ObservedState | None) -> ObservedState:
     """
     乾跑模擬：根據 step.action 回一個假的觀察。
     真實版（M3.1+）會用 Chrome remote debug 或 Playwright 取代這個。
+    注意：sig 會隨 action 變（點擊 / 跳轉都改 URL）— stale-test 另用 mock_observe_static。
     """
     base_url = prev.url if prev else "https://example.com"
     elapsed = 500 + (hash(step.id) % 1500)
@@ -97,59 +98,45 @@ def mock_observe(step: Step, prev: ObservedState | None) -> ObservedState:
     return ObservedState(url=base_url, status=200, elapsed_ms=elapsed)
 
 
-# ─── AC-aware fixture（讓 mock 觀察結果跟 AC Then 對得上） ─────────────────
-
-# 這些是從 M1 example_run.py 拿來的、跟每條 AC 對應的「假裝成功後」觀察結果
-AC_AWARE_FIXTURES = {
-    "US-101-AC01": {
-        "url": "https://example.com/checkout/payment?order=A123",
-        "status": 200,
-        "body_excerpt": "付款頁面，支援 Visa, MasterCard, JCB",
-        "user_message": "",
-        "elapsed_ms": 1200,
-        "history_seed": [],
-    },
-    "US-101-AC02": {
-        # 因為 click 完進入付款頁，按 AC02 的 then 期望「輸入錯誤卡號顯示紅字」
-        # 這裡 setup_state 步直接模擬「已進入付款頁」
-        "url": "https://example.com/checkout/payment?order=A123",
-        "status": 200,
-        "body_excerpt": "付款頁：卡號欄位、Visa/MasterCard 標誌、提交按鈕",
-        "user_message": "",
-        "elapsed_ms": 900,
-        "history_seed": [],
-    },
-    "US-101-AC03": {
-        "url": "https://example.com/order/A123/done",
-        "status": 200,
-        "body_excerpt": "訂單成立，感謝您的購買",
-        "user_message": "",
-        "elapsed_ms": 4500,
-        "history_seed": [
-            {"step": 1, "email_sent": True},
-            {"step": 2, "email_sent": True},
-            {"step": 3, "email_sent": False},
-            {"step": 4, "email_sent": True},
-            {"step": 5, "email_sent": True},
-        ],
-    },
-    "US-101-AC04": {
-        # 故意維持 500 錯誤（跟 M1 一樣）
-        "url": "https://example.com/checkout/payment?order=A123",
-        "status": 500,
-        "body_excerpt": "服務暫時無法使用，請稍後重試",
-        "user_message": "服務暫時無法使用，請稍後重試",
-        "elapsed_ms": 3000,
-        "history_seed": [],
-    },
-}
+def mock_observe_static(step: Step, prev: ObservedState | None) -> ObservedState:
+    """stale-test 專用：不論 step 為何都回相同 ObservedState（force 觸發 stale detection）。
+    M5 後因為 stale 限「同一 AC」+ AC 內可能只有 2 步，static observer 是唯一保證
+    stale_test 一定會觸發 block 的方式。
+    """
+    return ObservedState(
+        url="https://example.com/frozen",
+        status=500,
+        body_excerpt="[stale-test] 全步同 state 為驗證 stale detection",
+        elapsed_ms=1000,
+        history=(prev.history if prev else []) + [{"step": step.id, "static": True}],
+    )
 
 
-def ac_aware_observe(step: Step, prev: ObservedState | None) -> ObservedState:
-    """比 mock_observe 聰明：用 AC-aware fixture 模擬「對應 AC 通過時」應該看到的 state。"""
+# ─── AC-aware fixture loader（config-driven, M5 重構） ────────────────────
+
+def _load_fixture(story_id: str) -> dict[str, dict]:
+    """從 fixtures/<story_id>.yaml 讀 AC-aware fixture。
+    找不到就 fallback 到內建 minimal defaults（所有 AC 回 200 頁）。
+    """
+    fixture_path = THIS_DIR / "fixtures" / f"{story_id}.yaml"
+    if fixture_path.exists():
+        return yaml.safe_load(fixture_path.read_text(encoding="utf-8")) or {}
+    # fallback: 所有 AC 回 200 頁（oracle 會看 body_excerpt 判 fail）
+    return {}
+
+
+def _get_fixture_for_ac(fixtures: dict, ac_id: str) -> dict:
+    """抓對應 AC 的 fixture；fallback 空 dict（observe 會用 base_url）。"""
+    return fixtures.get(ac_id, {})
+
+
+def ac_aware_observe(step: Step, prev: ObservedState | None, story_id: str = "") -> ObservedState:
+    """比 mock_observe 聰明：用 AC-aware fixture 模擬「對應 AC 通過時」應該看到的 state。
+    M5：fixture 從 fixtures/<story_id>.yaml 讀（config-driven）。"""
     base_url = prev.url if prev else "https://example.com"
     elapsed = 500 + (hash(step.id) % 1500)
-    fixture = AC_AWARE_FIXTURES.get(step.verifying_ac, {})
+    fixtures = _load_fixture(story_id) if story_id else {}
+    fixture = _get_fixture_for_ac(fixtures, step.verifying_ac)
 
     if step.action == "setup_state":
         return ObservedState(
@@ -255,11 +242,12 @@ class StepRecord:
 # ─── 主迴路 ──────────────────────────────────────────────────────────────
 
 def run_journey(journey: Journey, story_acs: list, *,
-                stale_threshold: int = 3) -> tuple[list[StepRecord], dict]:
+                stale_threshold: int = 3, story_id: str = "") -> tuple[list[StepRecord], dict]:
     """
     跑整個 journey。
     - story_acs: 從 parse_story_file 拿來的 AC 列表（用 ac_id 查詢）
     - stale_threshold: 連續幾次同 state 視為 block
+    - story_id: M5 新增，傳給 ac_aware_observe 用來載 fixture YAML
     """
     ac_by_id = {ac.ac_id: ac for ac in story_acs}
 
@@ -268,6 +256,7 @@ def run_journey(journey: Journey, story_acs: list, *,
     consecutive_stale = 0
     blocked = False
     block_reason = ""
+    current_ac_id: str | None = None  # M5：限 stale 計數於同一 AC
 
     for step in journey.steps:
         if blocked:
@@ -281,7 +270,7 @@ def run_journey(journey: Journey, story_acs: list, *,
 
         # 1. Observe（用 AC-aware fixture 模擬）
         prev_observed = records[-1].observed if records and records[-1].observed else None
-        observed = ac_aware_observe(step, prev_observed)
+        observed = ac_aware_observe(step, prev_observed, story_id=story_id)
         sig = _state_signature_strict(observed)
 
         # 2. Stale detection（只在 ac 是 fail 時介入，正常過就不卡）
@@ -310,23 +299,141 @@ def run_journey(journey: Journey, story_acs: list, *,
             block_reason = f"oracle call failed: {e}"
             continue
 
-        # 4. Stale check（如果 verdict=fail 且連續 3 步 state 指紋一樣 → block）
+        # 4. Stale check（M5：限「同一 AC」連續 fail）
+        # 邏輯：進 step 前先看 ac_id 有沒有換；換了就 reset counter
+        same_ac = (current_ac_id == step.verifying_ac)
+        current_ac_id = step.verifying_ac
+        if not same_ac:
+            consecutive_stale = 0  # 換 AC，counter 重設
+            prev_signature = None
+
         if oracle_result.verdict == "fail" and sig == prev_signature:
             consecutive_stale += 1
             if consecutive_stale >= stale_threshold:
                 records.append(StepRecord(
                     step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
                     observed=observed, oracle=oracle_result, blocked=True,
-                    block_reason=f"consecutive_stale={consecutive_stale} ≥ {stale_threshold}",
+                    block_reason=f"consecutive_stale={consecutive_stale} ≥ {stale_threshold} (ac={step.verifying_ac})",
                 ))
                 blocked = True
-                block_reason = f"consecutive stale state for {consecutive_stale} steps"
+                block_reason = f"consecutive stale state for {consecutive_stale} steps (ac={step.verifying_ac})"
                 continue
         else:
             consecutive_stale = 0
 
         prev_signature = sig
 
+        records.append(StepRecord(
+            step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
+            observed=observed, oracle=oracle_result,
+        ))
+
+    summary = {
+        "total_steps": len(records),
+        "blocked": blocked,
+        "block_reason": block_reason,
+        "verdict_counts": _count_verdicts(records),
+        "total_latency_ms": sum(r.oracle.latency_ms for r in records if r.oracle),
+        "total_cost_usd": sum(r.oracle.cost_usd for r in records if r.oracle),
+        "cache_hits": sum(1 for r in records if r.oracle and r.oracle.cached),
+    }
+    return records, summary
+
+
+# ─── run_dry：stale-test 與 default test 的統一入口（M5 重構） ────────────
+
+def run_dry(journey: Journey, story_acs: list, *, stale_test: bool = False,
+            story_id: str = "", stale_threshold: int = 3) -> tuple[list[StepRecord], dict]:
+    """
+    統一 dry-run 入口。
+
+    - stale_test=False（預設）：用 AC-aware fixture（從 fixtures/<story_id>.yaml 讀）
+    - stale_test=True：用粗糙 mock_observe（同 state）來驗證 stale detection 邏輯。
+                    因為 M5 後 stale 限「同一 AC」（單一 AC 通常只有 2 步），
+                    stale-test 模式自動把 threshold 降為 2。
+
+    兩種模式都共用 stale detection 機制、AC-aware 限定（M5）。
+    """
+    if stale_test:
+        # stale-test 下 threshold 強制 2（保證能觸發 block 以驗證邏輯）
+        effective_threshold = min(stale_threshold, 2)
+        records, summary = _run_dry_stale_test(journey, story_acs, stale_threshold=effective_threshold)
+    else:
+        records, summary = run_journey(journey, story_acs, story_id=story_id, stale_threshold=stale_threshold)
+    return records, summary
+
+
+def _run_dry_stale_test(journey: Journey, story_acs: list, *,
+                        stale_threshold: int = 3) -> tuple[list[StepRecord], dict]:
+    """
+    Stale-test 模式：用 mock_observe（所有 step 同 state）證 stale detection 邏輯。
+    重點：跨 AC 不誤判（M5 — consecutive_stale 只計同 AC）。
+    """
+    from jev_oracle import evaluate_ac
+
+    ac_by_id = {ac.ac_id: ac for ac in story_acs}
+    records: list[StepRecord] = []
+    prev_signature: str | None = None
+    consecutive_stale = 0
+    blocked = False
+    block_reason = ""
+    current_ac_id: str | None = None  # M5：限 stale 計數於同一 AC
+
+    for step in journey.steps:
+        if blocked:
+            records.append(StepRecord(
+                step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
+                observed=mock_observe_static(step, None), oracle=None, blocked=True,
+                block_reason="blocked earlier",
+            ))
+            continue
+
+        observed = mock_observe_static(step, None)
+        sig = _state_signature_strict(observed)
+        ac = ac_by_id.get(step.verifying_ac)
+        if ac is None:
+            records.append(StepRecord(
+                step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
+                observed=observed, oracle=None, blocked=True, block_reason="AC not found",
+            ))
+            blocked = True
+            continue
+
+        # M5：換 AC 就 reset counter
+        same_ac = (current_ac_id == step.verifying_ac)
+        current_ac_id = step.verifying_ac
+        if not same_ac:
+            consecutive_stale = 0
+            prev_signature = None
+
+        ctx = mock_observed_to_ac_context(ac, step, observed)
+        try:
+            oracle_result = evaluate_ac(ctx, use_cache=True)
+        except Exception as e:
+            records.append(StepRecord(
+                step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
+                observed=observed, oracle=None, blocked=True,
+                block_reason=f"oracle failed: {e}",
+            ))
+            blocked = True
+            block_reason = f"oracle call failed: {e}"
+            continue
+
+        if oracle_result.verdict == "fail" and sig == prev_signature:
+            consecutive_stale += 1
+            if consecutive_stale >= stale_threshold:
+                records.append(StepRecord(
+                    step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
+                    observed=observed, oracle=oracle_result, blocked=True,
+                    block_reason=f"stale={consecutive_stale} (ac={step.verifying_ac})",
+                ))
+                blocked = True
+                block_reason = f"stale {consecutive_stale}"
+                continue
+        else:
+            consecutive_stale = 0
+
+        prev_signature = sig
         records.append(StepRecord(
             step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
             observed=observed, oracle=oracle_result,

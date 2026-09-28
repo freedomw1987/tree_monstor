@@ -71,61 +71,11 @@ def main(argv: list[str]) -> int:
     print()
 
     started = time.perf_counter()
+    from journey_runner import run_dry
+    records, summary = run_dry(journey, story.acs, stale_test=use_stale_test,
+                                 story_id=journey.journey_id)
     if use_stale_test:
-        # 用粗製 mock_observe（所有 step 同 state）來證 stale detection 邏輯
-        from journey_runner import mock_observe, mock_observed_to_ac_context, _state_signature_strict, StepRecord
-        from jev_oracle import evaluate_ac
-
         print("⚙️  stale-test mode: 所有 step 強制回相同 ObservedState")
-        records = []
-        blocked = False
-        block_reason = ""
-        prev_signature = None
-        consecutive_stale = 0
-        ac_by_id = {ac.ac_id: ac for ac in story.acs}
-        for step in journey.steps:
-            if blocked:
-                records.append(StepRecord(step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
-                                            observed=mock_observe(step, None), oracle=None, blocked=True,
-                                            block_reason="blocked earlier"))
-                continue
-            observed = mock_observe(step, None)
-            sig = _state_signature_strict(observed)
-            ac = ac_by_id.get(step.verifying_ac)
-            if not ac:
-                records.append(StepRecord(step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
-                                            observed=observed, oracle=None, blocked=True,
-                                            block_reason="AC not found"))
-                blocked = True
-                continue
-            ctx = mock_observed_to_ac_context(ac, step, observed)
-            oracle_result = evaluate_ac(ctx, use_cache=True)
-            if oracle_result.verdict == "fail" and sig == prev_signature:
-                consecutive_stale += 1
-                if consecutive_stale >= 3:
-                    records.append(StepRecord(step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
-                                                observed=observed, oracle=oracle_result, blocked=True,
-                                                block_reason=f"stale={consecutive_stale}"))
-                    blocked = True
-                    block_reason = f"stale {consecutive_stale}"
-                    continue
-            else:
-                consecutive_stale = 0
-            prev_signature = sig
-            records.append(StepRecord(step_id=step.id, action=step.action, verifying_ac=step.verifying_ac,
-                                        observed=observed, oracle=oracle_result))
-        from collections import Counter
-        summary = {
-            "total_steps": len(records),
-            "blocked": blocked,
-            "block_reason": block_reason,
-            "verdict_counts": dict(Counter(r.oracle.verdict for r in records if r.oracle)),
-            "total_latency_ms": sum(r.oracle.latency_ms for r in records if r.oracle),
-            "total_cost_usd": sum(r.oracle.cost_usd for r in records if r.oracle),
-            "cache_hits": sum(1 for r in records if r.oracle and r.oracle.cached),
-        }
-    else:
-        records, summary = run_journey(journey, story.acs)
     elapsed = int((time.perf_counter() - started) * 1000)
 
     # 印每步

@@ -188,12 +188,43 @@ steps:
 | M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call（complexity score + action plan choice）；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
 | M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection（--stale-test 驗證）；加 --json-output | 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
 | M4 | 2026-09-28 | batch_report.py + run_report.py CLI；4 題 batch call；report.json + .md 雙輸出；run_pipeline.sh 一鍵串接 M2→M3→M4 | 證明 end-of-run 4 維度綜合判定跑得起來（overall_health / fix_priority / flaky_likelihood / regression_type）|
+| M5 | 2026-09-28 | (a) fixtures/US-101.yaml + `_load_fixture()`（脫離 hardcoded fixture）；(b) stale 限「同一 AC」+ `mock_observe_static`；(c) `run_dry()` 統一入口；(d) `tests/v2.1-jev-poc.bats` 16 探針 | 16/16 bats 探針過；M3 行為完全向後相容（3 pass / 6 fail）|
+
+---
+
+## M5 完成的證據（去 hardcode + 重構 + 探針覆蓋）
+
+| 項 | 狀態 |
+|---|---|
+| `fixtures/US-101.yaml` config-driven（脫離 hardcoded `AC_AWARE_FIXTURES` dict）| ✅ |
+| `ac_aware_observe(step, prev, story_id=...)` 從 YAML 自動載入 | ✅ |
+| Stale detection 限「同一 AC」連續（`current_ac_id` 狀態機，換 AC reset counter）| ✅ |
+| `mock_observe_static` 強制同 state（讓 stale-test 仍能 trigger block，門檻降為 2）| ✅ |
+| `run_dry(journey, story_acs, stale_test=...)` 統一入口（CLI 不再 inline 邏輯）| ✅ |
+| `run_journey.py` 從 ~50 行收縮到 ~20 行；`run_dry()` 一行 dispatch | ✅ |
+| `tests/v2.1-jev-poc.bats` 16 探針：4 區塊 + 2 runtime | ✅ 16/16 |
+| 向後相容：M3 預設模式仍 3 pass / 6 fail（無迴歸）| ✅ |
+
+```bash
+# 跑探針
+bats tests/v2.1-jev-poc.bats
+# → 1..16, all ok
+```
 
 ---
 
 **核心精神**：regression-guard 不只記錄「test 是 pass 還是 fail」，而是「這個 fail 是真 bug、flaky、還是 AC 本身寫得不好」。Jev oracle 把這層語意判定帶進來，用 confidence gating 確保不誤導修正循環。
 
-**M4 之後的 next step（已超出 PoC 範圍）**：
+**M5 之後的 next step（已超出 PoC 範圍）**：
 - **M3.1**：接 Playwright Chrome driver，observer 改 DOM snapshot，不再用 mock fixture
-- **M5**：把「修正循環」接進 regression-guard skill — Jev verdict → 自動產 fix proposal → 跑回 validate
+- **M6（future）**：把「修正循環」接進 regression-guard skill — Jev verdict → 自動產 fix proposal → 跑回 validate
 - **PR 階段**：把所有 5 個 milestone 整合回 SKILL.md / examples.md，變成正式規範
+
+## M5 化解決的 TMO-011 反思問題
+
+| 反思項 | M5 解決方式 |
+|---|---|
+| `ac_aware_observe` hardcoded | → `fixtures/<story_id>.yaml` config-driven |
+| Stale 跨 AC 誤判 | → `current_ac_id` 狀態機 + `same_ac` reset |
+| `--stale-test` 散在 CLI | → 抽進 `runner.run_dry(stale_test=True)` |
+| 無 bats 探針 | → 16 探針（4 區塊 + 2 runtime）|
