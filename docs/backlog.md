@@ -21,6 +21,8 @@
 | TMO-010 | docs/ 批量減法：5 檔、53KB（孤立檔 + 存量 HTML + 存量反思）| P1 | 3 | done (2026-09-26) | — |
 | TMO-011 | regression-guard skill 升級：Jev Oracle PoC（M1-M4 feat-jev-regression）| P1 | 8 | done (2026-09-28) | — |
 | TMO-012 | M5 PoC 去 hardcode 化：fixture config + stale 限 AC + CLI 重構 + bats 探針 | P1 | 8 | done | TMO-011 |
+| TMO-013 | M3.1 Playwright Chrome driver 整合 | P2 | 5 | done | TMO-012 |
+| TMO-014 | SKILL.md 整合：user-journey-as-test-spec 規範 | P1 | 3 | done | TMO-013 |
 
 ---
 
@@ -318,3 +320,46 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - **快 5 點**：16/16 探針一次紅轉綠、零迴歸（M3 行為完全一致）、commit 4ac566d 乾淨單一
 - **慢 1 點**：一開始把 `--stale-test` 改完發現 `blocked: False`（因為 M5.2 改了限同 AC，stale-test 模式需要降 threshold 跟 static observer 兩招搭配）— 花了幾次迭代驗證
 - **影響**：M5 落地後 PoC 對新 US 是 plug-in 模式：只加 `fixtures/<story_id>.yaml` 就能跑
+
+---
+
+## TMO-013 詳細
+
+> 從 TMO-011 / TMO-012 一直延的下一個 milestone：M3.1 = PoC 換真的 Chrome driver。
+> **狀態**：✅ 2026-09-28 完成（commit `83336eb`）
+> **交付物**：`docs/deliverable/2026-09-28-feat-jev-regression-m31-skill.md`（同 TMO-014 合併）
+
+### 做法
+1. **playwright_observer.py 294 行**：lazy import playwright（不裝不 crash）、6 個 action handler（navigate / click / type / wait / observe / setup_state）、page session 共用（全域 `_session`）、DOM snapshot 摘要（main / article 文字 + 互動元素清單）
+2. **journey_runner.py dispatcher**：`_select_observer()` 根據 `OBSERVER_BACKEND` env 選 `ac_aware` (預設) / `mock` / `playwright`；`mock_observe` 加 `story_id` kwarg 對齊介面
+3. **graceful fail**：playwright 沒裝時 raise `RuntimeError`，runner dispatcher 不 crash
+4. **探針守護**：5 個 M3.1 探針（file exists & 6 actions / dispatcher / import OK / playwright fail graceful / mock 簽名）
+
+### DoD
+- ✅ 換 `OBSERVER_BACKEND=playwright` 就能切 driver
+- ✅ 不裝 playwright 整個 PoC 仍能跑（lazy import）
+- ⏸ 真實 driver 跑 example.com（順延到「真實 PENDING US 出現時」）
+
+---
+
+## TMO-014 詳細
+
+> SKILL.md 整合：把 M1-M5 的 PoC 成果提升為正式 skill 規範。
+> **狀態**：✅ 2026-09-28 完成（commit `83336eb`）
+> **交付物**：`docs/deliverable/2026-09-28-feat-jev-regression-m31-skill.md`（同 TMO-013 合併）
+
+### 做法
+1. **SKILL.md v2.2**：新增「Jev Oracle 補充（進階）」章節（+62 行），原 Steps 1-4 不動。章節內容：適用場景 / 不適用 / 怎麼試 / 3 種 observer backend / 實作成本預估 / 探針選名參考。
+2. **examples.md**：新增「🧠 Jev Oracle 範例（進階）」章節（+111 行），4 個範例：journey YAML / dry-run / batch report / JSON 報告。
+3. **changelog v2.2 entry**：標註 TMO-013 / TMO-014 整合。
+4. **探針守護**：4 個 SKILL 探針（SKILL.md Jev 章節 / 3 backends / examples.md 4 範例 / v2.2 entry）
+
+### DoD
+- ✅ 閱讀 SKILL.md 的人能從「Jev Oracle 補充」章節找到 PoC 入口
+- ✅ 閱讀 examples.md 的人能直接看到 4 個範例輸出（不需跑 PoC）
+- ✅ Steps 1-4 結構不變（保證向後相容）
+
+### 反思
+- **快**：1 個 sprint 內 M3.1 + SKILL.md 整合 一起完成、25/25 探針、SKILL.md +63 行 + examples.md +111 行都是加法不破壞
+- **慢 1 點**：bats 探針名稱含中文引號 `'` 被 homebrew bats UTF-8 bug 拒絕（unknown test name）— 改為不帶引號的探針名（跟 wiki-merge-media.bats 一樣純英文 workaround）
+- **影響**：regression-guard skill 從「Steps 1-4 規範」升級為「Steps 1-4 規範 + 可選進階 Jev Oracle 章節」；要採用 Jev 的項目能直接看 SKILL + examples 評估實作成本
