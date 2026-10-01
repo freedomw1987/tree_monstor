@@ -28,6 +28,7 @@
 | **V01 — 一次一個問題** | 每輪對話最多問 1 個問題（同一主題） |
 | **V02 — 方案必標推薦** | 給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：...」 |
 | **V03 — SOP 文檔修改必經 Reviewer 二審（2025-09-20 新增）** | agent 產出 SOP / AGENTS.md / gates.json / handbook / skill 修改提案時，**必先經** dev-checker-loop (Reviewer subagent) 二審，附風險分級 + 跨 SOP 一致性檢查；用戶收到「diff + verdict」兩者並呈，可明確說「跳過 Reviewer」直接批准 |
+| **V03.5 — V03 SOP 修改前必跑主檔行數預檢（見 `dav-skill-creater/editor-guide.md`「主檔行數預檢規範」）** | 避免主檔逼近 150 上限、屆時被動瘦身；規範剛上路時主動出擊 | 純文字修正（typo / link / 註解）不需預檢 |
 
 詳見 [`docs/sop/handbook/changelog.md`](docs/sop/handbook/changelog.md) 對應的 V01/V02/V03 條目。
 

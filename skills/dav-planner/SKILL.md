@@ -122,7 +122,7 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
-| v2.6 | 2026-09-26 | +Step 1.5「來源抽取（複雜任務可選）」：位於 Step 1 後 Step 2 前；觸發條件 + 推薦調用 dav-wiki + 何時跳過 + dav-wiki 未裝 fallback | 用戶決策：複雜任務需求會多次更新、需要回原始來源；dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝 |
+| v2.6 | 2026-09-26 | +Step 1.5「來源抽取（複雜任務可選）」：位於 Step 1 後 Step 2 前；觸發條件 + 推薦調用 dav-wiki + 何時跳過 + dav-wiki 未裝 fallback | 用戶決策：複雜任務需求會多次更新、需要回原始來源；dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝<br>**後續維護提醒**：dav-wiki 大改後需跑「dav-planner 引用同步檢查」（防止 Step 1.5 引用過時） |
 | v2.5 | 2026-09-26 | 自包含化：搬入 `examples/backlog.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/backlog.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
 
