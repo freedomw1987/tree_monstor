@@ -6,6 +6,8 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.5 | 2026-09-26 | 本次自包含化：搬入 `examples/system-design.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/system-design.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
+| v2.4 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 拆檔：主檔瘦身到 ~75 行，Step 1-5 全剖細節 → `workflow.md` | 達 150 行上限；與 dav-planner v2.2 拆檔哲學一致 |
 | v2.3 | 2026-09-26 | +Module 目的與切割原則（Step 1）+ Module 邊界即測試邊界（Step 3）| 用戶決策：Module 為「可獨立開發 / 增減 / 測試」的功能單位 |
 | v2.2 | 2026-09-26 | +DoD 彈性化（DoD-Lite 預設 / DoD-Full 選用）+ Step 1 一次詢問 | Jevons 反思：避免 DoD 過重變成技術債 |

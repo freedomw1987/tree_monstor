@@ -87,10 +87,9 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.5 | 2026-09-26 | 自包含化：搬入 `examples/backlog.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/backlog.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
+| v2.4 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
 | v2.3 | 2026-09-26 | +§4.3.1 Module 欄位範本 + §4.3.2 Module 級 sprint；backlog 表格欄位加 Module | v2.8 dav-designer / dev-checker-loop / regression-guard 鋪好 Module 基礎，本 skill 補完「backlog.md 怎麼寫」讓 Module 欄位到位 |
-| v2.2 | 2026-09-26 | 拆檔：主檔瘦身到 ~95 行，§2/§3/§5 → `reference.md`，§4 → `backlog-rules.md`；v1.9 加註「（已廢棄）」 | 達 150 行上限；P2 同名混淆加註解 |
-| v2.1 | 2026-09-26 | -§2.7 用戶背景收集整套（角色詢問）；定位收斂為「任務的背景 / 最終目的 / 驗收標準」 | 用戶決策：對話用戶角色對後續開發無實質幫助，反引導用戶進入「搞不清自己要什麼」的狀態 |
-| v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 3：LLM 注意力優化 |
 
 ---
 ---
@@ -101,4 +100,4 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 - SOP §2.1 詳細內容 → 見 monorepo 對應的規劃文件（路徑由 monorepo 約定）
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
 - AC 範本格式範例 → 見 monorepo 對應的 AC 範本文件（路徑由 monorepo 約定）
-- Module 完整生命週期範例 → 見 monorepo `examples/module-lifecycle/docs/backlog.md`
+- Module 完整生命週期範例 → 見本 skill 的 `examples/backlog.md`

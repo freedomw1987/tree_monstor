@@ -6,6 +6,8 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.11 | 2026-09-26 | 本次自包含化：搬入 `examples/probes/`（3 個 .ts，原 monorepo 範例總目錄內的 probes 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/probes/」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
+| v2.10 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
 | v2.10 | 2026-09-26 | Module 感知邏輯：探針必含 Module prefix；`REGRESSION_MODULE` 環境變量限定 Module 範圍；規則表加 3 條 Module 規則；dev-checker-loop v2.2 對齊 | 用戶決策：Module = 一組檔案；v2.6 dav-designer 鋪路、v2.2 dev-checker-loop 實作，本 skill 補完「探針 → Module」綁定 |
 | v2.9 | 2026-09-26 | 拆檔：主檔 714 → 120 行；Jev Oracle（506 行）+ CI 整合→ `jev-oracle.md`；runner 對照表 → `runner-cheatsheet.md`；API+env → `api-contract.md`；輸出 → `output-format.md`；命名+粒度 → `probe-naming.md` | 達 150 行上限；Jev Oracle 屬「進階 / 可選」，拆出避免稀釋主檔注意力 |
 | v2.8 | 2026-09-28 | 新增「M8 CI matrix」小節 + workflow strategy matrix + aggregate-matrix job | TMO-022：M8 CI matrix pipeline |

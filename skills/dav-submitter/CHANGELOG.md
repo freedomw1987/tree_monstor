@@ -6,6 +6,8 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.4 | 2026-09-26 | 本次自包含化：搬入 `examples/deliverable-sample.md`（原 monorepo 範例總目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/deliverable-sample.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過。主檔以 v2.4 合併條目紀錄（詳見 SKILL.md 主檔），避免主檔變 5 條 |
+| v2.3 | 2026-09-26 | 清「Module 完整生命週期範例的具體 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
 | v2.2 | 2026-09-26 | +Module 級交付：觸發時機 + 命名規則（`<module>-<slug>`）+ §9 Module 級總結 + 拆 `module-delivery.md` 子檔 | 用戶選 4 個後續任務之一；v2.8 dev-checker-loop / regression-guard 鋪好 Module 基礎，本 skill 補完 Module 級交付語法 |
 | v2.1 | 2026-09-26 | 每次交付必含「為什麼」獨立段：主檔 Step 2-3 + 規則表加 1 條；template.md §1.2「為什麼做這個改動」+ §2.4「改動背後的理由」+ §6.1「為什麼這個優先」 | 用戶要求交付時也要溝通「為什麼」會做這樣的修改，不只「做了什麼」 |
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 2：LLM 注意力優化 |

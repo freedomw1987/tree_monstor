@@ -91,9 +91,9 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.5 | 2026-09-26 | 自包含化：搬入 `examples/system-design.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/system-design.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 拆檔：主檔瘦身到 ~75 行，Step 1-5 全剖細節 → `workflow.md` | 達 150 行上限；與 dav-planner v2.2 拆檔哲學一致 |
 | v2.3 | 2026-09-26 | +Module 目的與切割原則（Step 1）+ Module 邊界即測試邊界（Step 3）| 用戶決策：Module 為「可獨立開發 / 增減 / 測試」的功能單位 |
-| v2.2 | 2026-09-26 | +DoD 彈性化（DoD-Lite 預設 / DoD-Full 選用）+ Step 1 一次詢問 | Jevons 反思：避免 DoD 過重變成技術債 |
 
 ---
 ---
@@ -102,6 +102,6 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
 - Step 1-5 流程細節（含 Module / 原型規範二表）→ 同套 `workflow.md`
 - 互動原型品質細節（DoD 5 狀態 / 自審 5 維度 / 矩陣模板）→ 同 skill 子檔 `prototype-quality.md`
 - 規劃技巧（多輪提問 / INVEST AC / DoD）→ 見同套 dav-planner skill（需同套安裝，§2.1 規劃階段）
-- Module 完整生命週期範例 → 見 monorepo `examples/module-lifecycle/`（含 system-design.md / backlog.md / probes/ / checklist.md / deliverable-sample.md）
+- Module 完整生命週期範例 → 見本 skill 的 `examples/system-design.md`
 - 完整 SOP §2.1-§2.5 → 見 monorepo 對應的 handbook 目錄（路徑由 monorepo 約定）
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

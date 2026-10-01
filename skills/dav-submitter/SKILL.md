@@ -108,10 +108,10 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.4 | 2026-09-26 | 合併 v2.3（清存量）+ 本次自包含化：合併理由 — 主檔 4 條已達 v2.4 規範上限，再加會違規；可追溯性由 CHANGELOG.md 補條目保證；V03 Reviewer 二審通過 | 一次性清掉路徑抽象詞（v2.3 動作）+ 搬入 `examples/deliverable-sample.md`（本次動作），避免主檔變 5 條 |
 | v2.2 | 2026-09-26 | +Module 級交付：觸發時機 + 命名規則（`<module>-<slug>`）+ §9 Module 級總結 + 拆 `module-delivery.md` 子檔 | 用戶選 4 個後續任務之一；v2.8 dev-checker-loop / regression-guard 鋪好 Module 基礎，本 skill 補完 Module 級交付語法 |
 | v2.1 | 2026-09-26 | 每次交付必含「為什麼」獨立段：主檔 Step 2-3 + 規則表加 1 條；template.md §1.2「為什麼做這個改動」+ §2.4「改動背後的理由」+ §6.1「為什麼這個優先」 | 用戶要求交付時也要溝通「為什麼」會做這樣的修改，不只「做了什麼」 |
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 2：LLM 注意力優化 |
-| v2.0 | 2026-09-26 | 三層→兩層（取消 HTML）| TMO-008 減法：MD 足夠協作 |
 
 ---
 ---
@@ -121,5 +121,5 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 - Markdown 詳錄模板（含 `## 反思` 段 + v2.1 為什麼必含）→ 見同套本 skill 子檔（`./template.md`）
 - Module 級交付細節 → 見同套本 skill 子檔（`./module-delivery.md`）
 - 反思觸發 → 見同套 dav-reflection skill（需同套安裝）
-- Module 完整生命週期範例（含 v2.2 Module 級交付樣本）→ 見 monorepo `examples/module-lifecycle/deliverable-sample.md`
+- Module 完整生命週期範例（含 v2.2 Module 級交付樣本）→ 見本 skill 的 `examples/deliverable-sample.md`
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
