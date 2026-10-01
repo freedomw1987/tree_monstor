@@ -4,6 +4,34 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.5 — 2026-09-26
+
+**本版異動**：`skills/dav-planner/` 重構（減法 + 職責收斂，雙提交 v2.1 + v2.2）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `~/.pi/agent/skills/dav-planner/SKILL.md` 刪除 §2.7 整套（用戶背景收集） | 拿掉「對話用戶角色詢問」（v1.9 功能）；dav-planner 定位收斂為「釐清任務的背景 / 最終目的 / 驗收標準」 |
+| **P0** | `~/.pi/agent/skills/dav-planner/SKILL.md` 流程 Step 1 移除 | 原「收集用戶背景」整步刪除，後續 4 步編號遞減不破壞引用 |
+| **P0** | `~/.pi/agent/skills/dav-planner/SKILL.md` frontmatter + 流程 quote block | description 改寫為「釐清背景/目的/標準 → 拆成 Backlog」+「不問對話用戶個人角色」 |
+| **P1** | `~/.pi/agent/skills/dav-planner/SKILL.md` 拆檔瘦身 | 主檔 212 → 102 行；§2/§3/§5 拆至 `reference.md`（85 行），§4 拆至 `backlog-rules.md`（46 行） |
+| **P2** | `~/.pi/agent/skills/dav-planner/SKILL.md` 變動歷史 v1.9 加註 | 加「（已廢棄）」與「（已被 v2.1 撤銷）」，避免與 SOP 全域 §2.7（違規回報）同名混淆 |
+
+**合計**：主檔 −110 行、子檔 +2 個、§2.7 章節 −1。
+
+**決策紀錄（重要）**：
+- **職責收斂**：dav-planner 從「對齊用戶（角色）+ 對齊任務（背景/目的/標準）」收斂為「只對齊任務」。下游 skill（dav-designer / tdd-test-writer / dav-submitter）吃的是 `docs/backlog.md` + `docs/ac/`，不需要對話用戶的角色資訊
+- **拆檔哲學**：呼應 SOP v2.0「LLM 注意力是稀缺資源」 — 主檔只留「流程怎麼走」，子檔是「Step 跑到的時候再去讀」。每個 Step 末尾新增 `**參考**：` 指向子檔
+- **撤銷的章節不抹去**：v1.9「用戶背景收集」保留在變動歷史，加註「（已廢棄）」讓未來讀者知道「為什麼這裡跳號」
+- **跨 SOP 一致性**：AGENTS.md / dav-designer / dav-trust / tdd-test-writer 等下游 skill 引用 dav-planner 為入口，不涉及 §2.7 細節，無連動修改
+
+**範圍邊界**：
+- ✅ 在 scope：`skills/dav-planner/` 整個 skill（主檔 + 兩個新子檔）
+- ❌ 不在 scope：下游 skill（dav-designer / dav-trust / tdd-test-writer） — 引用粒度只在「dav-planner 是規劃入口」，不受本次重構影響
+
+**前置**：本變更由用戶明確批准 + Agent 自跑校驗（行數 / 結構 / 跨檔引用），符合 V03 SOP 修改提案規範（diff + verdict 兩者並呈、用戶批准後生效）。
+
+---
+
 ## v2.4 — 2026-09-26
 
 **本版異動**：docs/ 批量減法（TMO-010）
