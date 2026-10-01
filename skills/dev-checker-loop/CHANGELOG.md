@@ -6,6 +6,7 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-09-26 | +Module 感知邏輯（派工綁 Module / 改檔不跨 Module / 探針 Module prefix / 校驗限 Module）+「Module 感知邏輯」章節拆分至 `module-rules.md` | 用戶決策：Module = 一組檔案；v2.6 dav-designer 鋪路，本 skill 把 Module 從設計變執行單位 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 9：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
 | v1.x | — | （舊版含 ASCII 流程圖）| 詳見全域 SOP 變動歷史 v1.x |

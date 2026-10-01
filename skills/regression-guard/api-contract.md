@@ -34,3 +34,4 @@
 | `REGRESSION_OUTPUT` | `both` | 輸出格式：`json` / `text` / `both` |
 | `REGRESSION_STRICT` | `true` | 遇錯即停 |
 | `REGRESSION_REPORT_PATH` | `./report.json` | 報告路徑 |
+| `REGRESSION_MODULE` | （未設定） | Module 範圍限定（v2.9 新增）：設為 `M01` 時只跑 `M01-*` prefix 的探針；未設定 = 跑全部。Module 代碼定義見 `docs/system-design.md`。 |

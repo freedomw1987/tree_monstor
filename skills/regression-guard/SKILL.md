@@ -15,6 +15,7 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
    - **探針命名具體**：避免 `test1`，必含描述（如 `user-login-returns-correct-data`）
    - **粒度適中**：每個邏輯斷言一個探針（不過粗、不過細）
    - **純文字引用**：skill 內不放跨檔 markdown 連結
+   - **探針綁 Module（v2.9）**：探針名稱必含 Module prefix（如 `M01-user-login-returns-correct-data`）；用 `REGRESSION_MODULE=M01` 限定只跑某 Module
 5. **必產出物**：探針程式碼（probe/assert/describe）+ 報告（文本 + JSON）+ 失敗時 `suggestion`
 
 ## 觸發時機
@@ -29,19 +30,19 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 ## 流程（5 步）
 
-### Step 1：開發時埋入探針
+### Step 1：開發時埋入探針（含 Module prefix）
 
-- **動作**：在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)` 埋入測試點
-- **為什麼**：探針讓後續測試 / 排錯 checker agent 能根據報錯和測試記錄驗證
-- **產出**：源代碼內含探針
-- **證據**：探針命名具體（避免 `test1`）
+- **動作**：在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)` 埋入測試點；**`name` 必含 Module prefix**（如 `M01-user-login-returns-correct-data`，其中 `M01` 為 system-design.md 定義的 Module 代碼）
+- **為什麼**：探針讓後續測試 / 排錯 checker agent 能根據報錯和測試記錄驗證；Module prefix 讓探針可按 Module 跑、CI 可選只跑某 Module
+- **產出**：源代碼內含探針（帶 Module prefix）
+- **證據**：探針命名具體（避免 `test1`） + 探針名稱含 Module 代碼
 
-### Step 2：環境變量配置
+### Step 2：環境變量配置（含 REGRESSION_MODULE）
 
-- **動作**：設定 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` / `REGRESSION_REPORT_PATH=./report.json`
-- **為什麼**：環境變量控制探針開關 + 輸出格式 + 失敗處理
+- **動作**：設定 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` / `REGRESSION_REPORT_PATH=./report.json` / **`REGRESSION_MODULE=M01`（可選，限定只跑某 Module）**
+- **為什麼**：環境變量控制探針開關 + 輸出格式 + 失敗處理 + Module 範圍
 - **產出**：shell 環境變量或 .env 檔
-- **證據**：`echo $REGRESSION_MODE` 顯示正確值
+- **證據**：`echo $REGRESSION_MODE` 顯示正確值 + `echo $REGRESSION_MODULE` 顯示 Module 代碼（若設定）
 
 ### Step 3：自動運行（禁用 watch / interactive）⭐
 
@@ -75,6 +76,9 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 | 失敗時提供 `suggestion` | N/A | Agent 必須能照做 |
 | 純文字引用（v2.1）| skill 子檔可用 markdown | 不寫 `../` 或 `docs/` 跨檔連結 |
 | 探針必在 `REGRESSION_MODE=true` 才跑 | 開發 hot reload 例外 | 預設開啟 |
+| **探針必含 Module prefix（v2.9 新增）** | Module 未定義（`M00` fallback）可省略 | `M01-user-login-returns-correct-data` 格式 |
+| **`REGRESSION_MODULE` 限定 Module 範圍（v2.9 新增）** | 未設定 = 跑全部 | 設定後只跑該 Module 探針 |
+| **探針不得跨 Module 檢查（v2.9 新增）** | integration test 例外（需標 `INT-` prefix） | 避免 Module 間隐含依賴 |
 
 ## 主流 runner TTY fail-fast 對照表
 
@@ -105,9 +109,9 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.10 | 2026-09-26 | Module 感知邏輯：探針必含 Module prefix；`REGRESSION_MODULE` 環境變量限定 Module 範圍；規則表加 3 條 Module 規則；dev-checker-loop v2.2 對齊 | 用戶決策：Module = 一組檔案；v2.6 dav-designer 鋪路、v2.2 dev-checker-loop 實作，本 skill 補完「探針 → Module」綁定 |
 | v2.9 | 2026-09-26 | 拆檔：主檔 714 → 120 行；Jev Oracle（506 行）+ CI 整合→ `jev-oracle.md`；runner 對照表 → `runner-cheatsheet.md`；API+env → `api-contract.md`；輸出 → `output-format.md`；命名+粒度 → `probe-naming.md` | 達 150 行上限；Jev Oracle 屬「進階 / 可選」，拆出避免稀釋主檔注意力 |
 | v2.8 | 2026-09-28 | 新增「M8 CI matrix」小節 + workflow strategy matrix + aggregate-matrix job | TMO-022：M8 CI matrix pipeline |
-| v2.7 | 2026-09-28 | 新增「M7 flaky 整合」+「gh pr comment」小節 + flaky_integration / gh_pr_comment 模組 | TMO-021：M7 整合 + review 解鎖 |
 
 ---
 ---

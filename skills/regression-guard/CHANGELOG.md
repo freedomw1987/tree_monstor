@@ -6,6 +6,7 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.10 | 2026-09-26 | Module 感知邏輯：探針必含 Module prefix；`REGRESSION_MODULE` 環境變量限定 Module 範圍；規則表加 3 條 Module 規則；dev-checker-loop v2.2 對齊 | 用戶決策：Module = 一組檔案；v2.6 dav-designer 鋪路、v2.2 dev-checker-loop 實作，本 skill 補完「探針 → Module」綁定 |
 | v2.9 | 2026-09-26 | 拆檔：主檔 714 → 120 行；Jev Oracle（506 行）+ CI 整合→ `jev-oracle.md`；runner 對照表 → `runner-cheatsheet.md`；API+env → `api-contract.md`；輸出 → `output-format.md`；命名+粒度 → `probe-naming.md` | 達 150 行上限；Jev Oracle 屬「進階 / 可選」，拆出避免稀釋主檔注意力 |
 | v2.8 | 2026-09-28 | 新增「M8 CI matrix」小節 + workflow strategy matrix + aggregate-matrix job | TMO-022：M8 CI matrix pipeline |
 | v2.7 | 2026-09-28 | 新增「M7 flaky 整合」+「gh pr comment」小節 + flaky_integration / gh_pr_comment 模組 | TMO-021：M7 整合 + review 解鎖 |
