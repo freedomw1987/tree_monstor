@@ -28,10 +28,11 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 | 用戶列出待辦項目 | ✅ 必須 |
 | 用戶要求任務拆分 | ✅ 必須 |
 | 任務已執行（要交付）| ❌ 走 dav-submitter |
+| **複雜開發任務（多文件 / 多來源 / 未來多次更新）** | **⚡ 建議 Step 1.5 來源抽取 → 調用 dav-wiki（需同套安裝）** |
 | 純粹閱讀 / 查資料 | ❌ 不觸發 |
 | 純粹提問（沒要做）| ❌ 不觸發 |
 
-## 流程（4 階段）
+## 流程（Step 1-5 + Step 1.5 可選）
 
 > **dav-planner 的核心定位**：釐清「任務的背景、最終目的、驗收標準」。**不問對話用戶的個人角色**（PM / 開發者 / 設計師 / 客戶），那是 §3 Persona（產品目標用戶）的事。
 
@@ -67,6 +68,39 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 - **證據**：成熟度評估表 + 3 檔都建立
 - **參考**：`reference.md` §5 + `backlog-rules.md` §4
 
+### Step 1.5：來源抽取（複雜開發任務可選）
+
+> **位置**：Step 1.5 在 Step 1（背景收集）之後、Step 2（最終目的）之前觸發
+
+**觸發條件**（以下任一即符合「複雜任務」）：
+- 既有文件分散在 monorepo `docs/` 多份檔案（需求、決策、設變記錄）
+- 來源檔案格式非 Markdown（PDF / DOCX / PPTX / 網頁 URL）
+- 需求來源跨多個工具（Obsidian / Notion / Confluence / GitHub Issues）
+- 你預期未來會**多次更新需求**（每次都要回到來源重新對照）
+- 既有 dav-wiki 知識庫已收錄相關概念（先 grep `docs/concepts/` + `docs/wiki/_index.json`，命中 ≥ 1 條 → 直接讀、不需重新抽取）
+
+**動作**：
+1. 列出來源候選清單（檔案路徑 / URL / Obsidian Vault 位置）
+2. 調用 **dav-wiki** skill（需同套安裝）：
+   - 統一文件資料提取與 Markdown 化
+   - 自動轉成結構化 Markdown 知識庫（含 frontmatter / tag / 概念 / 交叉引用）
+3. 抽取完成後，**回到 Step 1**，**附加** Step 1 來源清單（既有口述 + 結構化 Markdown 並存、不取代口述）
+
+**為什麼要這個步驟**：
+- 規劃階段直接讀 PDF / DOCX 易遺漏關鍵段落
+- dav-wiki 產出的結構化 Markdown 可被 dav-designer / dev-checker-loop / regression-guard 後續階段直接讀
+- **未來需求更新時**：重新調用 dav-wiki 對照 → 自動標記「哪幾個 US 受影響」
+
+**何時跳過**：
+- 用戶已提供結構化 Markdown 來源
+- 簡單單檔任務（單一 README.md / 單一 issue）
+- 探索性原型（PoC）
+
+**dav-wiki 未裝時的 fallback**：
+- 退回「用戶口述」模式（同 Step 1 原有行為）
+- 提示用戶「若本任務複雜、建議執行 install.sh 安裝 dav-wiki」
+- 不報錯、只警告（軟引用精神）
+
 ## 規則 / 例外 / 限制
 
 | 規則 | 例外 | 限制 |
@@ -80,6 +114,7 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 | 3 維度都 ≥ 2 分才寫 Backlog（§5）| 1 分項加 ⚠️ 註明 | 0 分項不可寫 |
 | 每個 US 都產 .md + .html（同 turn）| 存量 US 不補 | 新 US 必走 |
 | AC 範本只含 AC（不重複 US 標題）| N/A | §4.3.2.3 規範 |
+| **複雜任務必走 Step 1.5（v2.6）** | **用戶已主動提供結構化 Markdown 來源** | **推薦 dav-wiki、避免手動抄 PDF；dav-wiki 未裝則退回用戶口述 + 提示安裝** |
 
 ## 變動歷史
 
@@ -87,9 +122,9 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.6 | 2026-09-26 | +Step 1.5「來源抽取（複雜任務可選）」：位於 Step 1 後 Step 2 前；觸發條件 + 推薦調用 dav-wiki + 何時跳過 + dav-wiki 未裝 fallback | 用戶決策：複雜任務需求會多次更新、需要回原始來源；dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝 |
 | v2.5 | 2026-09-26 | 自包含化：搬入 `examples/backlog.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/backlog.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
-| v2.3 | 2026-09-26 | +§4.3.1 Module 欄位範本 + §4.3.2 Module 級 sprint；backlog 表格欄位加 Module | v2.8 dav-designer / dev-checker-loop / regression-guard 鋪好 Module 基礎，本 skill 補完「backlog.md 怎麼寫」讓 Module 欄位到位 |
 
 ---
 ---
