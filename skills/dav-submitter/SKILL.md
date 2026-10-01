@@ -118,6 +118,8 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 **交叉引用**：
 - SOP §2.5 詳細內容 → 見 monorepo 對應的提交指南文件（路徑由 monorepo 約定）
-- Markdown 詳錄模板（含 `## 反思` 段）→ 見同套本 skill 子檔（`./template.md`）
+- Markdown 詳錄模板（含 `## 反思` 段 + v2.1 為什麼必含）→ 見同套本 skill 子檔（`./template.md`）
+- Module 級交付細節 → 見同套本 skill 子檔（`./module-delivery.md`）
 - 反思觸發 → 見同套 dav-reflection skill（需同套安裝）
+- Module 完整生命週期範例（含 v2.2 Module 級交付樣本）→ 見 monorepo `examples/module-lifecycle/deliverable-sample.md`
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

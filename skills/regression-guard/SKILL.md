@@ -119,6 +119,12 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 **交叉引用（純文字）**：
 - 多語言實現範例 → 同套本 skill 子檔（`./examples.md`）
 - 測試方法指南 → 同套本 skill 子檔（`./testing-methods.md`）
+- Runner cheatsheet → 同套本 skill 子檔（`./runner-cheatsheet.md`）
+- API contract + 環境變量 → 同套本 skill 子檔（`./api-contract.md`）
+- 輸出格式 → 同套本 skill 子檔（`./output-format.md`）
+- 探針命名 + 粒度 → 同套本 skill 子檔（`./probe-naming.md`）
+- Jev Oracle 補充（進階） → 同套本 skill 子檔（`./jev-oracle.md`）
+- Module 完整生命週期範例（含 Module prefix 探針）→ 見 monorepo `examples/module-lifecycle/probes/`
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
 
 **核心精神**：語言可以換，框架可以變，但 Regression Guard 的原則永存。

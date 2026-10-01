@@ -4,6 +4,50 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.9 — 2026-09-26
+
+**本版異動**：3 個 skill 補充 Module 細節 + 建 Module 範例專案（四 commit 進連環重構，補完 v2.8 的「Module 設計 → 交付」閉環）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `skills/dav-submitter/SKILL.md` v2.1 + `template.md` v2.1 | +「為什麼必含」+ §1.2「為什麼做這個改動」+ §2.4「改動背後的理由」+ §6.1「為什麼這個優先」 |
+| **P0** | `skills/dav-submitter/SKILL.md` v2.2 + `module-delivery.md` v2.2 | +Module 級交付語法：觸發時機 + 命名規則 + §9 Module 級總結 |
+| **P0** | `skills/dav-planner/backlog-rules.md` v2.3 | +§4.3.1 Module 欄位範本 + §4.3.2 Module 級 sprint 規劃 |
+| **P0** | `examples/module-lifecycle/` 新建 | Module 完整生命週期範例專案（8 檔 / 879 行，涵蓋 5 階段）|
+| **P1** | 5 個 skill 主檔變動歷史加 v2.9 條目 | dav-designer / dav-planner / dev-checker-loop / regression-guard / dav-submitter |
+
+**合計**：4 個 commit、5 個 skill 檔改動、+1 子檔（`module-delivery.md`）、+1 範例專案（8 檔）、合計約 +1400 行。
+
+**決策紀錄（重要）**：
+
+- **v2.8 → v2.9 的關係**：v2.8 鋪 Module 基礎（design / dev / regression 三個 skill），v2.9 補完「Module 從 backlog 到交付」的閉環（planner + submitter + 範例）
+- **為什麼要建範例**：5 個 skill 連環改的價值只在完整流程中顯現；範例讓抽象 skill 變具體可讀；可作未來 skill 修改的「驗證素材」
+- **範例放 monorepo 主干**（用戶選推薦）：隨主 repo 演進、不會過期；可隨時 checkout / grep / diff
+- **「為什麼必含」的價值**：v2.8 前交付物只講「做了什麼」、驗收只看結果；v2.9 起必含「為什麼」獨立段、用戶可驗收決策是否對（不只是結果對不對）
+- **5 skill 連環改 = 閉環**：
+  ```
+  dav-designer v2.6 → 定義 Module 切割
+       ↓
+  dav-planner v2.3 → backlog 表格加 Module 欄位
+       ↓
+  dev-checker-loop v2.2 → 派工綁 Module
+       ↓
+  regression-guard v2.10 → 探針含 Module prefix
+       ↓
+  dav-submitter v2.2 → Module 級交付語法
+       ↓
+  範例 (v2.9) → 完整 5 階段連環展示
+  ```
+
+**範圍邊界**：
+- ✅ 在 scope：`skills/dav-submitter` + `skills/dav-planner` + `examples/module-lifecycle/`
+- ❌ 不在 scope：`skills/orca-cli` + `skills/orchestration`（第三方 skill，仍未動）
+- ❌ 不在 scope：dav-reflection 雖屬 SOP 但本次沒改（dav-submitter 已含反思末段）
+
+**前置**：本變更由用戶明確批准 + Agent 自跑校驗（4 commit 分批 + 行數 / 跨 skill 引用鏈），符合 V03 SOP 修改提案規範。
+
+---
+
 ## v2.8 — 2026-09-26
 
 **本版異動**：3 個 skill 拆檔 + Module 感知邏輯實作（三 commit 進連環重構）

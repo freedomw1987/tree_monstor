@@ -121,5 +121,7 @@ dev-checker-loop v2.2 起支援 **Module 級派工**。Module 定義在 `docs/sy
 
 **交叉引用（純文字）**：
 - 工作流程詳解 → 同套本 skill 子檔（`./workflow.md`）
+- Module 感知邏輯細節 → 同套本 skill 子檔（`./module-rules.md`）
 - regression-guard 探針規則 → 見同套 regression-guard skill（需同套安裝）
+- Module 完整生命週期範例（含本 skill 校驗清單）→ 見 monorepo `examples/module-lifecycle/checklist.md`
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

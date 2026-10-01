@@ -97,7 +97,8 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 
 **交叉引用（純文字）**：
 - 提問技巧 / 7 維度 / 成熟度 → 同套 `reference.md`
-- Backlog 規則 → 同套 `backlog-rules.md`
+- Backlog 規則（含 Module 欄位範本 + Module 級 sprint）→ 同套 `backlog-rules.md`
 - SOP §2.1 詳細內容 → 見 monorepo 對應的規劃文件（路徑由 monorepo 約定）
 - 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
 - AC 範本格式範例 → 見 monorepo 對應的 AC 範本文件（路徑由 monorepo 約定）
+- Module 完整生命週期範例 → 見 monorepo `examples/module-lifecycle/docs/backlog.md`
