@@ -4,6 +4,35 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.7 — 2026-09-26
+
+**本版異動**：所有 skill 的「變動歷史外移」重構（跨 10 skill、dav-skill-creater 新增規範）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | 10 個 skill 新增 `CHANGELOG.md` | dav-planner / dav-designer / dav-wiki / dav-skill-creater / dav-submitter / dav-reflection / dev-checker-loop / dav-trust / tdd-test-writer / regression-guard 各自創建 CHANGELOG.md，搬遷完整變動歷史 |
+| **P0** | 10 個 skill 主檔變動歷史章節瘦身 | 主檔變動歷史表格 ≤ 3 條（最新版本）+ Markdown 連結引用 `CHANGELOG.md` |
+| **P0** | `skills/dav-skill-creater/SKILL.md` 新增「變動歷史外移規範」章節 | 規則：變動歷史 ≤ 3 條留主檔；> 3 條一律外移至 `<skill>/CHANGELOG.md`。附「為什麼外移」、「為什麼是 3 條不是 5 條」、「CHANGELOG.md 格式規範」 |
+| **P1** | `skills/dav-skill-creater/SKILL.md` 規則表新增 1 行 | 「變動歷史外移」列入正式規則（v2.4 新增） |
+
+**合計**：新建 10 個 CHANGELOG.md（總 ~135 行）、主檔瘦身 10 個、dav-skill-creater 加 ~30 行規範。
+
+**決策紀錄（重要）**：
+- **變動歷史對 LLM 的 5 大好處**（用戶決策起點）：錨定當前版本、理解「為什麼」而不只是「是什麼」、降低幻覺風險、支援增量更新、保留撤銷的決策避免重蹈覆辙
+- **為什麼是 3 條不是 5 條**：LLM 注意力門檻約 3-5 個項目，3 條足以表達「最近 3 次演進方向」又不分心；完整歷史隨時可從 CHANGELOG.md 取得
+- **為什麼 dav-skill-creater 自己也要拆**：dav-skill-creater 是 skill 編寫規範的權威，自己不遵守新規則 = 失去權威性（「吃自己狗糧」原則）
+- **未動 orca-cli / orchestration**：這兩個 skill 不在 dav-* 規範下、是第三方 skill，未走 v2.3 修改流程、不在本任務 scope
+- **dav-skill-creater 主檔超 150 行**：v2.4 加了「變動歷史外移規範」後 223 行，原已超標（變動歷史外移是新規範加加必要）。下次重構時可拆出 `editor-guide.md`
+
+**範圍邊界**：
+- ✅ 在 scope：`skills/dav-*` + `skills/dev-*` + `skills/regression-guard` + `skills/tdd-*`（10 個）
+- ❌ 不在 scope：`skills/orca-cli` + `skills/orchestration`（第三方 skill，不走 dav-skill-creater 規範）
+- ❌ 不在 scope：拆 dav-skill-creater 主檔為子檔（需要時可後續重構）
+
+**前置**：本變更由用戶明確批准 + Agent 自跑校驗（腳本批量處理 + 手動校驗 3 個邊角案例 + 主檔表格 ≤ 3 條驗證），符合 V03 SOP 修改提案規範。
+
+---
+
 ## v2.6 — 2026-09-26
 
 **本版異動**：`skills/dav-designer/` 重構（Module 定義 + 拆檔、雙提交 v2.3 + v2.4）
