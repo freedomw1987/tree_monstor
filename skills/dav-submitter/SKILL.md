@@ -31,14 +31,34 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 | Module 交付 | ❌ 屬於 dav-reflection 宏觀總結 |
 | 純提問、未執行任務 | ❌ 不觸發 |
 
+### v2.2 Module 級交付（新場景）
+
+> v2.2 起：dav-submitter 可交付單個 Module（不只是單個 US）。
+
+| 場景 | 交付單位 | 適合 skill |
+| --- | -------- | ----------- |
+| **單個 US 交付** | 1 個 AC 套件 | dav-submitter（本 skill）|
+| **單個 Module 交付** | Module 內所有 US 集合 | dav-submitter（本 skill）+ dav-reflection 微總結 |
+| **多個 Module 交付** | Module 集合 + cross-module integration | dav-reflection 宏觀總結 |
+| **整個 repo / sprint 結束** | 整個交付歷史 | dav-reflection 宏觀總結 |
+
+**Module 級交付的差異**：
+
+1. **Backlog ID 格式**：`<MODULE_CODE>-<US_ID>`（如 `M01-US-101`、`M02-US-203`）；多 US 同 Module 交付時在 §2.1-2.3 用 `M01 多 US 集合` 代表
+2. **Module 邊界即測試邊界**（v2.8 dev-checker-loop 規則）：探針必含 Module prefix；交付檔必明記 Module
+3. **deliverable.md 命名**：`docs/deliverable/<YYYY-MM-DD>-<module>-<slug>.md`（Module 級）或原本 `<YYYY-MM-DD>-<task-slug>.md`（US 級）
+4. **Module 交付有「第 9 段」**：§9 Module 級總結（包含多 US 間的關聯、跨 Module 遺留問題、Module 級技術債）
+
+詳見 `module-delivery.md` 子檔（v2.2 新增）。
+
 ## 流程（5 步）
 
 ### Step 1：確認交付範圍
 
 - **動作**：確認對應 Backlog item（US / DE / TECH / SPIKE ID）、對應 Sprint / Module、收集變更清單（檔案、測試、文檔）
-- **為什麼**：交付必對應 Backlog ID，避免「不知道交付什麼」
-- **產出**：對話中明示「對應 Backlog = X」
-- **證據**：對話有 Backlog ID 字樣
+- **為什麼**：交付必對應 Backlog ID + Module（v2.2 起），避免「不知道交付什麼、屬哪個 Module」
+- **產出**：對話中明示「對應 Backlog = X、Module = Y」
+- **證據**：對話有 Backlog ID + Module 代碼字樣
 
 ### Step 2：在對話中輸出簡單摘要（含「為什麼」獨立段）
 
@@ -80,6 +100,7 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 | 必誠實標註已知問題 | N/A | 不可「假完成」 |
 | 命名：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.md` | N/A | 日期用 ISO、slug 用 kebab-case |
 | **「為什麼」必含（v2.1 新增）** | 緊急修復可簡為一句話 | 對話摘要 + Markdown §1.2 + §2.4 都必含 |
+| **Module 級交付可觸發（v2.2 新增）** | 預設 US 級交付 | Module 級需在對話明示「Module 級交付」|
 
 ## 變動歷史
 
@@ -87,6 +108,7 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-09-26 | +Module 級交付：觸發時機 + 命名規則（`<module>-<slug>`）+ §9 Module 級總結 + 拆 `module-delivery.md` 子檔 | 用戶選 4 個後續任務之一；v2.8 dev-checker-loop / regression-guard 鋪好 Module 基礎，本 skill 補完 Module 級交付語法 |
 | v2.1 | 2026-09-26 | 每次交付必含「為什麼」獨立段：主檔 Step 2-3 + 規則表加 1 條；template.md §1.2「為什麼做這個改動」+ §2.4「改動背後的理由」+ §6.1「為什麼這個優先」 | 用戶要求交付時也要溝通「為什麼」會做這樣的修改，不只「做了什麼」 |
 | v2.0 | 2026-09-26 | 重結構為「任務導航」5 段 | TMO-009 階段 2：LLM 注意力優化 |
 | v2.0 | 2026-09-26 | 三層→兩層（取消 HTML）| TMO-008 減法：MD 足夠協作 |
