@@ -4,6 +4,39 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.8 — 2026-09-26
+
+**本版異動**：3 個 skill 拆檔 + Module 感知邏輯實作（三 commit 進連環重構）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `skills/dav-skill-creater/SKILL.md` 拆檔（v2.5） | 主檔 223 → 147 行；「SKILL.md 編寫準則」+「變動歷史外移規範」→ `editor-guide.md`（92 行）；主檔只留 3 條最高頻規則 |
+| **P0** | `skills/regression-guard/SKILL.md` 拆檔（v2.9） | 主檔 714 → 120 行；Jev Oracle 506 行 → `jev-oracle.md`；runner / API / output / naming 各拆一檔 |
+| **P0** | `skills/dev-checker-loop/SKILL.md` + `skills/regression-guard/SKILL.md` Module 感知邏輯（v2.2 + v2.10） | dev-checker-loop 加 Module 級派工 / Module 邊界；regression-guard 探針必含 Module prefix + `REGRESSION_MODULE` 環境變量 |
+| **P1** | `skills/dev-checker-loop/SKILL.md` 加「Module 感知邏輯」章節 + `module-rules.md` 子檔 | Module 定義 / 取得流程 / Fallback / 4 個互動點 |
+| **P1** | `skills/regression-guard/api-contract.md` + `probe-naming.md` 加 Module 規則 | `REGRESSION_MODULE` 環境變量說明；探針命名加 Module prefix；integration test 用 `INT-` prefix |
+| **P2** | 三 commit 分 3 次推送（用戶決策） | `dav-skill-creater` 拆檔 commit + `regression-guard` 拆檔 commit + Module 感知邏輯 commit |
+
+**合計**：3 個 commit、7 個 skill 檔改動、+3 子檔（`editor-guide.md` / 5 個 `regression-guard/*` / `module-rules.md`）、合計約 +1300 行 / −700 行。
+
+**決策紀錄（重要）**：
+- **3 commit 還是 1 commit**（用戶決策起點）：選 3 commit — 可隨時 checkout 某個 task，不會混在一起。中間不需 checkpoint = 不需要 1 commit
+- **Module 單元怎麼訂**（用戶決策起點）：Module = 一組檔案 — 適合中大型項目，dav-designer 的 system-design.md 是 Module 定義來源
+- **Module 改動深度**（用戶決策起點）：全面、含兩個 skill — dev-checker-loop 派工 + regression-guard 探針都要綁 Module，缺一不可
+- **拆檔哲學一脈相承**：v2.5（dav-planner）流程 vs 內容 / v2.6（dav-designer）流程 vs 品質 / v2.7（變動歷史外移）/ v2.8（拆檔 + Module 感知）— 都是「以子檔職責正交為拆檔粒度」
+- **v2.6 dav-designer 鋪路 + v2.8 實現**：v2.6 dav-designer 加 Module 定義時說「為下游鋪路」；v2.8 實作時才看到「鋪路」是 dev-checker-loop + regression-guard 兩個 skill
+- **連環改不是失誤是必要**：Module 感知需 3 個 skill 同步改，只改一個 = 設計與執行不一致。傳統「一個 task 一個 commit」會讓人誤以為這是 3 個獨立任務；本 SOP 用「拆 commit 但仍記在同一版本（v2.8）」表達「是多個連環動作」
+
+**範圍邊界**：
+- ✅ 在 scope：`skills/dav-skill-creater` + `skills/regression-guard` + `skills/dev-checker-loop` 三 skill
+- ❌ 不在 scope：`skills/orca-cli` + `skills/orchestration`（第三方 skill，仍未動）
+- ❌ 不在 scope：dev-checker-loop `workflow.md` 子檔（是另一次重構的產物、本次不重構）
+- ❌ 不在 scope：regression-guard `examples.md` + `testing-methods.md` + `PoC/` 子檔（子檔、職責正交、本次不動）
+
+**前置**：本變更由用戶明確批准 + Agent 自跑校驗（三 commit 分批 + 行數 / 結構 / 跨 skill 引用鏈），符合 V03 SOP 修改提案規範。
+
+---
+
 ## v2.7 — 2026-09-26
 
 **本版異動**：所有 skill 的「變動歷史外移」重構（跨 10 skill、dav-skill-creater 新增規範）
