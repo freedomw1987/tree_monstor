@@ -4,6 +4,34 @@
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 
+## v2.6 — 2026-09-26
+
+**本版異動**：`skills/dav-designer/` 重構（Module 定義 + 拆檔、雙提交 v2.3 + v2.4）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `~/.pi/agent/skills/dav-designer/SKILL.md` Step 1 加 Module 目的與切割原則 | Module 定義為「可獨立開發 / 增減 / 測試」的功能單位；附 5 條切割原則（功能內聚 / 低耦合 / 可獨立交付 / 可獨立測試 / 粒度適中）與反例 |
+| **P0** | `~/.pi/agent/skills/dav-designer/SKILL.md` Step 3 加 Module 邊界即測試邊界 | 明示 system-design.md 的 Module 邊界就是未來 dev-checker-loop / regression-guard 的執行邊界；探針不跨 Module 檢查 |
+| **P1** | `~/.pi/agent/skills/dav-designer/SKILL.md` 拆檔瘦身 | 主檔 167 → 110 行；Step 1-5 全剖細節拆至 `workflow.md`（106 行）；既有 `prototype-quality.md`（139 行）不動 |
+| **P2** | `~/.pi/agent/skills/dav-designer/SKILL.md` 流程章節改寫為「簡介 + 參考」 | 每個 Step 只留「產出 + 參考：workflow.md」，避免重複；變動歷史新增 v2.4 |
+
+**合計**：主檔 −57 行、子檔 +1 個（workflow.md）、Module 定義 +1 章節。
+
+**決策紀錄（重要）**：
+- **Module 設計為下游 Skill 鋪路**：dav-designer 的 Module 定義不是為了設計本身，是為了讓未來重構 dev-checker-loop / regression-guard 時有明確的「執行邊界」。本次不動這兩個 skill（保留彈性），但 Step 3 明文寫下「Module 邊界即測試邊界」，下次重構有據可依
+- **拆檔哲學差异化 dav-planner**：dav-planner v2.2 拆「流程層 vs 內容層」（reference.md + backlog-rules.md）；dav-designer v2.4 拆「流程層 vs 品質層」（workflow.md + prototype-quality.md）。拆法不是固定模板，而是看「子檔職責是否正交」
+- **dev-checker-loop / regression-guard 本次不動**：依用戶明確決策「只動 dav-designer」。下次重構這兩個 skill 時可實作「按 Module 派工 / 校驗 / 探針」邏輯
+- **跨 SOP 一致性**：dav-submitter 已使用「Module 級交付」術語（與本次定義一致）；AGENTS.md / 其他下游 skill 不受本次影響
+
+**範圍邊界**：
+- ✅ 在 scope：`skills/dav-designer/` 整個 skill（主檔 + 新子檔 workflow.md）
+- ❌ 不在 scope：`skills/dev-checker-loop/` + `skills/regression-guard/`（用戶決策延後重構，僅在 dav-designer 內部為未來鋪路）
+- ❌ 不在 scope：`skills/dav-designer/prototype-quality.md`（既有子檔，職責與本次 workflow.md 正交，不需動）
+
+**前置**：本變更由用戶明確批准 + Agent 自跑校驗（行數 / 結構 / 三檔職責不重疊 / prototype-quality.md 引用一致），符合 V03 SOP 修改提案規範（diff + verdict 兩者並呈、用戶批准後生效）。
+
+---
+
 ## v2.5 — 2026-09-26
 
 **本版異動**：`skills/dav-planner/` 重構（減法 + 職責收斂，雙提交 v2.1 + v2.2）
