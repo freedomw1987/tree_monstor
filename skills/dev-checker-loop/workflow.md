@@ -54,7 +54,9 @@
 |------|------|------|
 | 1.1 | 持續讀取 `docs/backlog.md` | 監控狀態變化 |
 | 1.2 | 篩選狀態為"等待校驗"的任務 | 找到待校驗任務 |
+| 1.2a（v2.4 新增）| 若 `JEV_AVAILABLE=true` 且 Module 檔案數 ≥5，用 `jev_judge` 批次評分可疑點（noul/choice/score 三類混合）聚焦高風險 | 校驗前快篩、節省主動校驗成本 |
 | 1.3 | 如有新任務則開始校驗 | 及時處理 |
+| 1.3a（v2.4 新增）| 若 `JEV_AVAILABLE=true`，校驗後用 `jev_judge`（noul）驗證結論；`escalate: true` 寫進「⚠️ jev escalate 待確認」段 | 避免自我感覺良好 |
 
 **目的：** 及時發現需要校驗的任務。
 
@@ -138,3 +140,61 @@ PENDING ──▶ 進行中 ──▶ 等待校驗
 | **Checker 客觀公正** | 嚴格按照標準檢查，不妥協 |
 | **循環有上限** | 避免無限修復，20 次上限保護 |
 | **記錄清晰** | 每個問題都有明確的描述和追蹤 |
+
+---
+
+## jev 整合細節（v2.4 新增）
+
+本節是 SKILL.md Step 0 / Step 3 / 規則表的「jev 整合」全文。主檔為了行數控制只留摘要、完整規則在此展開。
+
+### 可用性偵測（Step 0）
+
+```bash
+if which jev-use > /dev/null 2>&1; then
+  JEV_AVAILABLE=true
+else
+  JEV_AVAILABLE=false
+  echo "⚠️ jev-use 未安裝；本 skill 將跳過 jev 步驟、降級為純 LLM 工作流程。建議安裝：見 jev-use 安裝指南"
+fi
+```
+
+**為什麼**：避免 agent 在沒裝 jev 的機器上 fail-fast 卡住；保持 skill 向下相容。
+
+**內部失敗 fallback（S3）**：jev 內部失敗（API key 缺失 / 網路錯誤 / jev_judge 拋例外）→ 視同 `JEV_AVAILABLE=false`、走軟性降級、不 fail-fast。
+
+### 校驗前 jev 快篩（Step 3）
+
+**觸發條件**：限 `JEV_AVAILABLE=true` 且 Module 檔案數 ≥ 5（輕量路徑 S2：< 5 跳過以節省 jev API call 成本）。
+
+**動作**：校驗前用 `jev_judge` 對 Module 內可疑點批次評分（`noul / choice / score` 三類混合批次），找出高風險點優先查。
+
+**這只是輔助，不取代主動校驗**。
+
+### 校驗後 jev 驗證（Step 3）
+
+**觸發條件**：限 `JEV_AVAILABLE=true`。
+
+**動作**：校驗報告出來後用 `jev_judge`（`noul` 類型）驗證「這個校驗結論有沒有遺漏風險」。
+
+### escalate 處理（兩個 skill 共用）
+
+`escalate: true`（信心不足）時：
+
+1. 標記為 ⚠️ 待確認
+2. 寫進校驗報告「⚠️ jev escalate 待確認」段（dev-checker-loop 落點）/ deliverable.md `## 反思` 段（dav-reflection 落點）
+3. 不在對話中自己猜答案、等用戶最終確認
+
+### 術語說明（B2）
+
+本 skill 用 `noul / choice / score` 三類混合（聚焦不同風險類型）；dav-reflection 只用 `score`（6 維度單類打分）。兩者屬設計選擇、不是錯。
+
+### v2.4 6 條規則（主檔規則表完整版）
+
+| 規則 | 例外 | 限制 |
+|------|------|------|
+| **jev 軟性降級** | N/A | jev-use 未安裝時跳過 jev 步驟、繼續原本工作、不中斷流程 |
+| **jev escalate 降級為人類決策** | N/A | jev 信心不足時標 ⚠️ 待確認、寫進校驗報告「⚠️ jev escalate 待確認」段、不自己猜 |
+| **jev 不取代主動校驗** | N/A | jev 只能輔助；主動校驗仍必跑、不可省略 |
+| **小 Module 跳過校驗前 jev 快篩**（輕量路徑 S2）| 大 Module（≥5 檔）才觸發 | 避免小任務過度 jev API call 成本 |
+| **jev 內部失敗 fallback**（S3）| N/A | jev 內部錯誤（API key / 網路 / 拋例外）視同不可用、走軟性降級、不 fail-fast |
+| **M-Step 3 必跑探針**（B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/restruct-dev-checker-loop.bats` 全綠 |

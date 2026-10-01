@@ -29,6 +29,7 @@
 | **V02 — 方案必標推薦** | 給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：...」 |
 | **V03 — SOP 文檔修改必經 Reviewer 二審（2025-09-20 新增）** | agent 產出 SOP / AGENTS.md / gates.json / handbook / skill 修改提案時，**必先經** dev-checker-loop (Reviewer subagent) 二審，附風險分級 + 跨 SOP 一致性檢查；用戶收到「diff + verdict」兩者並呈，可明確說「跳過 Reviewer」直接批准 |
 | **V03.5 — V03 SOP 修改前必跑主檔行數預檢（見 `dav-skill-creater/editor-guide.md`「主檔行數預檢規範」）** | 避免主檔逼近 150 上限、屆時被動瘦身；規範剛上路時主動出擊 | 純文字修正（typo / link / 註解）不需預檢 |
+| **V03.6 — SOP 修改後探針修改亦觸發 V03（2026-09-26 新增）** | `tests/restruct-<name>.bats` 探針修改視同 SOP 修改（新增 / 刪除 / **條件放寬**），**必走 V03 Reviewer 二審**；純文字修正（typo / link / 註解 / 訊息文字微調）不觸發；探針修訂完成後、Reviewer 必附「`bats tests/restruct-<name>.bats` 跑動輸出」（修改前 fail / 修改後 pass 兩次輸出必貼） | 「條件放寬」明確定義：①讓原本會 fail 的情況改為 pass；②檢查門檻變低（如從「必須綠」改成「綠或黃」）；③ regex 從嚴變寬（如從 `must contain X` 改成 `must contain X or Y`）；上述任一即算放寬；嚴格化（`keep = pass → must pass`）屬規範強化、亦可走 V03 但非必走 |
 
 詳見 [`docs/sop/handbook/changelog.md`](docs/sop/handbook/changelog.md) 對應的 V01/V02/V03 條目。
 

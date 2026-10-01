@@ -41,13 +41,19 @@ load 'helpers/test-env'
   assert_file_contains "$skill" "## 規則"
 }
 
-@test "RESTRUCT-DAV-SKILL-CREATER: change history with v2.0 reference" {
+@test "RESTRUCT-DAV-SKILL-CREATER: change history (v2.4: outer pointer OR CHANGELOG reference)" {
   local skill="$REPO_ROOT/skills/dav-skill-creater/SKILL.md"
   assert_file_contains "$skill" "## 變動歷史"
-  awk '/^## 變動歷史/,EOF' "$skill" | grep -qE "v2\.0" || {
-    echo "FAIL: 變動歷史 should reference v2.0" >&2
-    return 1
-  }
+  # Since v2.4 the change history is outer-pointed to CHANGELOG.md.
+  # Accept either form: an explicit v2.x row in the master, OR a CHANGELOG pointer.
+  if awk '/^## 變動歷史/,EOF' "$skill" | grep -qE "v2\.[0-9]"; then
+    return 0
+  fi
+  if grep -qF "CHANGELOG.md" "$skill"; then
+    return 0
+  fi
+  echo "FAIL: 變動歷史 should reference v2.x OR point to CHANGELOG.md" >&2
+  return 1
 }
 
 @test "RESTRUCT-DAV-SKILL-CREATER: 150-line SKILL.md size limit preserved" {

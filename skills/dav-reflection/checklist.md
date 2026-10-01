@@ -169,3 +169,26 @@ Agent 在執行反省時，建議按以下流程：
 3. 對於 ⚠️ 和 ❌ 的項目，記錄具體問題和建議改善方案
 4. 將問題轉化為 Backlog item，更新到 `docs/backlog.md`
 5. 將完整結果輸出到反省報告（模板見 [[template]]）
+
+---
+
+## 7. jev_judge 對接表（v2.1 新增）
+
+本表把 6 個維度的檢查問題對應到 `jev_judge` 的問題模板，供 agent 在 `JEV_AVAILABLE=true` 時批次評分。
+
+| 維度 | jev_judge 問題模板（score 類型，三檔 ✅/⚠️/❌） | 信心低時 escalate 處理 |
+|------|------------------------------------------------|----------------------|
+| UX/UI 一致性 | 「這個交付物的 UX/UI 是否符合 docs/DESIGN.md 規範且無 scope creep？」 | ⚠️ 標待確認、列 **deliverable.md `## 反思` 段的「⚠️ jev escalate 待確認」清單**（不寫在本 checklist.md）|
+| RWD 響應式設計 | 「這個交付物在桌面/平板/手機三尺寸下是否都能正常使用？」 | ⚠️ 標待確認、列 deliverable.md `## 反思` 段 |
+| 技術債 | 「這個交付物是否有 4 項以上技術債（魔術數字 / DRY 違反 / 過時依賴 / 缺錯誤處理）？」 | ⚠️ 標待確認、列 deliverable.md `## 反思` 段 |
+| 可維護性 | 「這個交付物的代碼結構是否清晰、未來修改成本低？」 | ⚠️ 標待確認、列 deliverable.md `## 反思` 段 |
+| 測試覆蓋率 | 「這個交付物的測試覆蓋率是否 ≥80% 且每個 AC 都有對應測試？」 | ⚠️ 標待確認、列 deliverable.md `## 反思` 段 |
+| 需求對齊 | 「這個交付物是否真正解決用戶痛點、無遺漏、無過度？」 | ⚠️ 標待確認、列 deliverable.md `## 反思` 段 |
+
+**使用方式**：
+- agent 在 Step 2 對 6 個維度做 LLM 自評時，**同時**對每個維度跑一次 `jev_judge`（一個 batch call、score 類型）
+- US 級別輕量路徑（S2）：只打「需求對齊」+「測試覆蓋率」兩個關鍵維度
+- jev 結果與 LLM 自評比對，不一致時以 LLM 為準、但 jev 結果附在反思段備註
+- `escalate: true`（信心低）時，按上表處理：⚠️ 標待確認、列 deliverable.md，不在本 checklist.md
+
+**術語對齊說明（B2）**：本 skill 只用 `score` 類型；dev-checker-loop 用 `noul / choice / score` 三類混合（不同設計選擇）。

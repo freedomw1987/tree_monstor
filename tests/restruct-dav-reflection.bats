@@ -111,3 +111,110 @@ load 'helpers/test-env'
     return 1
   fi
 }
+
+# ---------------------------------------------------------------------------
+# v2.1 jev integration probes
+# ---------------------------------------------------------------------------
+
+@test "RESTRUCT-DAV-REFLECTION [B3-M-Step3]: Step 1 mentions v2.1 jev availability probe" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  assert_file_contains "$skill" "Step 1：確認反省範圍"
+  assert_file_contains "$skill" "v2.1 新增 — jev 可用性偵測"
+  assert_file_contains "$skill" "which jev-use"
+}
+
+@test "RESTRUCT-DAV-REFLECTION [B2-TermAlign]: Step 2 has jev per-dimension scoring (score type only)" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  assert_file_contains "$skill" "Step 2：檢查 6 維度"
+  assert_file_contains "$skill" "v2.1 新增 — jev 逐維度打分"
+  assert_file_contains "$skill" "僅 score 類型"
+}
+
+@test "RESTRUCT-DAV-REFLECTION [B3-M-Step3]: Step 2 has reflection-result jev verification (noul)" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  assert_file_contains "$skill" "v2.1 新增 — 反思結果驗證"
+  assert_file_contains "$skill" "noul"
+}
+
+@test "RESTRUCT-DAV-REFLECTION [S1-EscalateLanding]: escalate landing point is deliverable.md (NOT checklist.md)" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  # The rule text must point at deliverable.md `## 反思` 清單, not checklist.md
+  assert_file_contains "$skill" "deliverable.md"
+  assert_file_contains "$skill" "## 反思"
+  # And the rule must explicitly forbid writing escalate into checklist.md
+  grep -qF "不寫在 checklist.md" "$skill" || {
+    echo "FAIL: rule should forbid writing escalate into checklist.md" >&2
+    return 1
+  }
+}
+
+@test "RESTRUCT-DAV-REFLECTION [S2-LightPath]: US-level lightweight path (only 2 critical dimensions)" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  assert_file_contains "$skill" "US 級別 jev 只打 2 維度"
+  assert_file_contains "$skill" "需求對齊"
+  assert_file_contains "$skill" "測試覆蓋率"
+}
+
+@test "RESTRUCT-DAV-REFLECTION [S3-InternalFail]: jev internal failure fallback (S3)" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  assert_file_contains "$skill" "v2.1 內部失敗 fallback"
+  assert_file_contains "$skill" "不 fail-fast"
+}
+
+@test "RESTRUCT-DAV-REFLECTION [B3-M-Step3]: rules table includes all 6 v2.1 jev rules" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  for kw in "jev 軟性降級" "jev escalate 降級為人類決策" "jev 不取代 LLM 評分" "US 級別 jev 只打 2 維度" "jev 內部失敗 fallback" "M-Step 3 必跑探針"; do
+    awk '/^## 規則/,/^## [^規]/' "$skill" | grep -qF "$kw" || {
+      echo "FAIL: rules table missing v2.1 rule: $kw" >&2
+      return 1
+    }
+  done
+}
+
+@test "RESTRUCT-DAV-REFLECTION [B2-TermAlign]: checklist.md has jev-judge mapping table (section 7)" {
+  local checklist="$REPO_ROOT/skills/dav-reflection/checklist.md"
+  assert_file_contains "$checklist" "## 7. jev_judge 對接表"
+  assert_file_contains "$checklist" "score 類型"
+  # 6 dimensions should be present in the mapping table
+  for dim in "UX/UI 一致性" "RWD 響應式設計" "技術債" "可維護性" "測試覆蓋率" "需求對齊"; do
+    grep -qF "$dim" "$checklist" || {
+      echo "FAIL: jev mapping table missing dimension: $dim" >&2
+      return 1
+    }
+  done
+}
+
+@test "RESTRUCT-DAV-REFLECTION [B3-M-Step3]: CHANGELOG documents v2.1 jev integration" {
+  local changelog="$REPO_ROOT/skills/dav-reflection/CHANGELOG.md"
+  assert_file_contains "$changelog" "| v2.1 |"
+  assert_file_contains "$changelog" "可用性偵測"
+  assert_file_contains "$changelog" "score 類型"
+}
+
+@test "RESTRUCT-DAV-REFLECTION [frontmatter-mandatory]: SKILL.md has frontmatter name and description" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  local first_line
+  first_line=$(head -1 "$skill")
+  [ "$first_line" = "---" ] || {
+    echo "FAIL: SKILL.md must start with frontmatter delimiter" >&2
+    return 1
+  }
+  awk '/^---$/{n++; next} n==1' "$skill" | grep -qE "^name: dav-reflection" || {
+    echo "FAIL: missing frontmatter name in frontmatter block" >&2
+    return 1
+  }
+  awk '/^---$/{n++; next} n==1' "$skill" | grep -qE "^description:" || {
+    echo "FAIL: missing frontmatter description in frontmatter block" >&2
+    return 1
+  }
+}
+
+@test "RESTRUCT-DAV-REFLECTION [B1-LineGuard]: SKILL.md file size sanity (target < 150)" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  local lines
+  lines=$(wc -l < "$skill")
+  [ "$lines" -lt 150 ] || {
+    echo "FAIL: skill grew too large ($lines lines, target < 150)" >&2
+    return 1
+  }
+}
