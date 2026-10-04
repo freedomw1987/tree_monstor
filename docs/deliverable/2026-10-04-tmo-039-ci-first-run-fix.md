@@ -33,6 +33,7 @@
 | `tests/v2.1-jev-poc.bats` | `M5-runtime-b` 改注入 stub；`M6-g`/`M6.1-c` 改讀版控 fixture + 離線快取；新增 `M6.3-l`；移除已無用的 `make_us101_run` |
 | `tests/wiki-video-audio.bats` | `AC-V4` 改 `-fps_mode`；新增 `AC-V11`（產品腳本禁用已移除旗標）|
 | `tests/poc-clean-clone.bats` | 新增 `CLEAN-POC-f`（oracle 探針離線可跑）、`CLEAN-POC-g`（CI glob 語法檢查）；`CLEAN-POC-b` 補防空過、`CLEAN-POC-c` regex 修正假陽性 |
+| `tests/wiki-cleanup.bats` | **二審 P2-3**：靜態鎖補 3 項防空過（檔案存在／≥50 行／含 `deprecated`），否則改名或搬走後它會永久綠 |
 | `CONTRIBUTING.md` | 加「本機綠 ≠ CI 綠」的 oracle 段落、CI 等價指令、ffmpeg 8 註記 |
 | `docs/backlog.md` | TMO-039 第二輪詳細、狀態定義補 `doing`/`blocked`、新增 TMO-042 / TMO-043 |
 
@@ -77,6 +78,10 @@ Gate 2 lint 語法／Gate 3 regression／Gate 4 reviewer 原文回傳）。
 - V03.6 判定（本輪）：`M6.3-l`、`AC-V11`、`CLEAN-POC-f`、`CLEAN-POC-g` = **新增探針（嚴格化）**；
   `CLEAN-POC-c` regex 修正 = **條件放寬**（消除假陽性，已明示並附前後輸出）→ 需 reviewer 二審。
 - Reviewer 判決與真實 CI run 結果：§下一步建議 前的補記（原文回傳，未經我改寫）。
+- **真實 CI（第三輪，commit `2437914`）**：run `37218446930` → **conclusion: success**；
+  `Test on ubuntu-latest` ✓、`Test on macos-latest` ✓（macos log 可見 `ok 510 AC-V4` = ffmpeg 8 修好）、
+  `Markdown lint` ✗ 但 job 級 `continue-on-error: true`（TMO-037）。
+- **clean clone（從 commit `2437914` clone 到 `/tmp/cc4`）**：**517 ok / 0 not ok**。
 
 ## 已知問題
 
@@ -84,7 +89,8 @@ Gate 2 lint 語法／Gate 3 regression／Gate 4 reviewer 原文回傳）。
 - **TMO-041**：bash 5.x 變體未自動化（本輪仍以 `brew bash` 手動跑）、`bats` 未釘版、其他狀態依賴未掃完。
 - **TMO-042**（新）：ffmpeg 版本漂移（apt 6.x vs brew 8.x）——下一批移除無法預期。
 - **TMO-043**（新）：`wiki-extract-video.sh:67 probe_metadata()` 死碼（SC2329），本輪未動以免擴大範圍。
-- **reviewer P2-3 部分保留**：`wiki-cleanup.bats` 的靜態鎖仍只擋 `${#arr[@]}` 形狀（行為面已有 20 條測試覆蓋）。
+- **reviewer P2-3 已收尾**：`wiki-cleanup.bats` 靜態鎖補防空過（附「指向不存在檔案／空殼檔／真的把 bug 種回去」三種紅燈證據）；
+  仍只擋 `${#arr[@]}` 形狀（行為面由同檔 20 條測試覆蓋）。
 - 本機無 ubuntu 容器（docker daemon 未啟動）→ clean clone + bash 5.3 + 拔掉 oracle 是最接近的等價。
 
 ## 下一步建議

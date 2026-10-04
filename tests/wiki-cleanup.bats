@@ -283,6 +283,21 @@ EOF
     # TMO-039 實證：macOS 預設 bash 3.2 對「已宣告但為空的陣列」做長度展開不會報錯，
     # 但 Ubuntu CI 的 bash 5.2 在 set -u 下會報 `TO_CLEAN: unbound variable`
     # → 「本機全綠、CI 紅」的經典假綠。空清單路徑（無 deprecated 檔）尤須守住。
+    # 防空過（二審 P2-3）：擋的是「檔案被改名/搬走」時這條靜態鎖變成永久綠。
+    [ -f "$WIKI_CLEANUP" ] || {
+        echo "FAIL: 找不到 $WIKI_CLEANUP（靜態鎖會空過）" >&2
+        return 1
+    }
+    local lines
+    lines=$(wc -l < "$WIKI_CLEANUP" | tr -d ' ')
+    [ "$lines" -ge 50 ] || {
+        echo "FAIL: $WIKI_CLEANUP 只有 $lines 行，內容不像本體（靜態鎖會空過）" >&2
+        return 1
+    }
+    grep -qF 'deprecated' "$WIKI_CLEANUP" || {
+        echo "FAIL: $WIKI_CLEANUP 不含 deprecated，可能不是 wiki-cleanup（靜態鎖會空過）" >&2
+        return 1
+    }
     ! grep -qE '\$\{#[A-Za-z_]+\[@\]\}' "$WIKI_CLEANUP" || {
         echo "FAIL: wiki-cleanup.sh 使用陣列長度展開（bash 5.2+ 遇空陣列會 unbound）" >&2
         false
