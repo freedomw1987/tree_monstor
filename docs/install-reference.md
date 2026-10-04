@@ -259,7 +259,7 @@ SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`529 ok / 44 not ok`，@ `6ca7cfb`；529 + 44 = 573 條）：
+> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`529 ok / 44 not ok`，@ `d301ff7`；529 + 44 = 573 條；`6ca7cfb` 首次量測同值）：
 > - `v2.1-jev-poc.bats` 40 + `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
 > - `poc-bootstrap.bats` 1（TMO-038 的 CI 契約語意斷言，PyYAML 解 workflow）
 > - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）。
