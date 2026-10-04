@@ -41,7 +41,7 @@
 | TMO-030 | 廢除麵包屑補齊：`docs/prd/02` + `docs/prd/03:104` + backlog TMO-007 詳細段加「已廢棄」註 | P2 | 2 | done (2026-10-05) | TMO-027 |
 | TMO-031 | `skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」→ 現行 Step 1/2）| P2 | 1 | done (2026-10-05) | TMO-027 |
 | TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | done (2026-10-05) | TMO-027 |
-| TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | todo | TMO-028 |
+| TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | done (2026-10-05) | TMO-028 |
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | done (2026-10-05) | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`＋清單硬編 9 檔（漏 `ask-me`，新增 skill 靜默漏掃）| P2 | 2 | done (2026-10-05) | TMO-028 |
@@ -981,6 +981,9 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 
 - TMO-033 子檔內容錨點、TMO-034 四處同源死引用、TMO-035 `SKILL.md:94-95` 降級條款 vs `require_tool()` 硬 `exit 4`
   （首次立票；觀察早已在 `:771` 卻無票）、TMO-036 跨目錄探針動詞表缺口
+  （**2026-10-05 結案**：`restruct-dav-wiki.bats` 加「子檔內容錨點」—（①）通用鎖：每個被指到的子檔
+  non-blank ≥ 8 行（掏空即紅）；（②）關鍵內容鎖：7 個獨立詞錨點（前後非 `[A-Za-z0-9_-]`，
+  否則 `--purge-x` 會誤過——這是首版用 `grep -F` 子字串比對的自身破口，已由突變 M2 抓到並修正）
   （**2026-10-05 結案**：動詞表補 `grep`/`讀取`/`查`/`搜`/`掃`；清單改**自動列舉** `skills/**/SKILL.md`
   （11 檔，修前只掃 9 檔＝漏 `ask-me`）＋「禁空過」抽取器自我測試；例外改為**就地標記「專案端」**
   ＋「標記濫用」反向鎖；`ask-me`/`dav-planner` 3 行加標記，`dev-checker-loop` 舊折行刪減已還原）
