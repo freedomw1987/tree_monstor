@@ -1,3 +1,4 @@
+# shellcheck shell=bash  # 被 source 的函式庫（無 shebang），明確告知 shellcheck 目標 shell
 # lib/install/symlink.sh — Symlink and idempotent file helpers.
 #
 # Source this from install.sh. Defines:

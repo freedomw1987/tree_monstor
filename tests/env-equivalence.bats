@@ -585,3 +585,42 @@ printf "%s\n" "${a[@]}"'
   }
   echo "OK: $n 個 .bats 全部落在 CI 執行路徑（tests/ 或 skills/*/tests/）" >&2
 }
+
+# ENV-EQ-13（L5 擴量）：Gate 2 的 shellcheck 掃描面必須是「自我列舉」且真的涵蓋全部 shell 檔。
+# 起因：原指令只列 lib/log.sh + skills/dav-wiki/scripts/*.sh + scripts/ci/*.sh，
+# 漏掉 install.sh、lib/install/*.sh（6 支，實測有 8 個 SC2148 error）、PoC 腳本等，
+# 於是「本機 Gate 2 全綠」對這些檔毫無意義。本條鎖兩件事：
+#   (1) 每個被追蹤的 *.sh / *.bash 都在前 5 行宣告自己的 shell（shebang 或 `# shellcheck shell=`）
+#       ——這是 SC2148 那一類「無 shebang 被 source 的函式庫」的靜態等價鎖，不需要 shellcheck 執行檔。
+#   (2) CONTRIBUTING.md 的 Gate 2 指令必須用 `git ls-files '*.sh' '*.bash'` 自我列舉
+#       ——避免又回到硬編清單而漏檔。
+@test "ENV-EQ-13: every tracked shell file declares its shell and Gate 2 enumerates them all" {
+  local files f missing="" n=0
+  files=$(cd "$REPO_ROOT" && git ls-files '*.sh' '*.bash' | sort)
+  [ -n "$files" ] || { echo "FAIL: 找不到任何被追蹤的 shell 檔（repo root 指錯？）" >&2; return 1; }
+  for f in $files; do
+    n=$((n + 1))
+    if head -5 "$REPO_ROOT/$f" | grep -qE '^#!|^# shellcheck shell='; then
+      continue
+    fi
+    missing="$missing $f"
+  done
+  [ "$n" -ge 20 ] || { echo "FAIL: 只列舉到 $n 個 shell 檔（<20）→ 列舉器壞了" >&2; return 1; }
+  [ -z "$missing" ] || {
+    echo "FAIL: 下列 shell 檔沒宣告 shell（缺 shebang 或 '# shellcheck shell='）：$missing" >&2
+    echo "修法：檔頭加 '# shellcheck shell=bash  # 被 source 的函式庫' 或補 shebang（否則 shellcheck SC2148）" >&2
+    return 1
+  }
+
+  local doc="$REPO_ROOT/CONTRIBUTING.md" cmd
+  cmd=$(grep -E "^shellcheck .*git ls-files" "$doc" || true)
+  [ -n "$cmd" ] || {
+    echo "FAIL: CONTRIBUTING.md 的 Gate 2 shellcheck 指令不是自我列舉（找不到 'shellcheck ... git ls-files'）→ 硬編清單會漏檔" >&2
+    return 1
+  }
+  echo "$cmd" | grep -qF "*.sh" && echo "$cmd" | grep -qF "*.bash" || {
+    echo "FAIL: Gate 2 指令未同時涵蓋 '*.sh' 與 '*.bash'：$cmd" >&2
+    return 1
+  }
+  echo "OK: $n 個 shell 檔都宣告 shell，Gate 2 指令自我列舉" >&2
+}

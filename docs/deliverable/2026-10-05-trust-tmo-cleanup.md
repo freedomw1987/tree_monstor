@@ -3,7 +3,7 @@
 - **日期**：2026-10-05（trust session 01:21 → 08:00 CST，用戶指定 deadline）
 - **Backlog ID**：TMO-043、TMO-044、TMO-045、TMO-042、TMO-037
 - **作者**：pi（david 的 agent，**trust mode 自主執行**）
-- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**569 ok / 0 not ok**，ENV-EQ-12 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
+- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**570 ok / 0 not ok**，ENV-EQ-13 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
   `approve-with-comments`（0 P0 / 1 P1 / 5 P2，P1 與 P2 全數修完）；round B（TMO-042 / TMO-037 + 文件）=
   `1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**，「可交付用戶驗收？yes」；round C（TMO-030/031/032/034 + round-B 修正）=
   `e776fe77`：**approve-with-comments（0 P0 / 1 P1 / 6 P2）**，「可交付用戶驗收？yes」
@@ -59,6 +59,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （TMO-046） | TMO-046 `tdd-test-writer/SKILL.md` 瘦身 | 06:06:53* | 149 → 105 行（流程／觸發壓表、去重）；規則面零刪減，13 條回歸全綠 |
 | （round I 修正） | reviewer round I 修正（P2-1＋P3-1..9） | 06:27:50* | `ENV-EQ-11` 補 fail-closed 鎖（空 root 必紅）＋文件數字／措辭對帳；M29 咬 ✓ |
 | （ENV-EQ-12） | ENV-EQ-12 追加（L4） | 06:30:52* | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 與 `skills/*/tests/`）；列舉下限 ≥40；M30–M32 全咬 ✓ |
+| （ENV-EQ-13） | ENV-EQ-13 追加（L5）＋Gate 2 掃描面補洞 | 06:34:56* | 每個 shell 檔須宣告 shell；Gate 2 改自我列舉（23 檔 rc=0）；M33–M35 全咬 ✓ |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -329,6 +330,37 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 全部只存在於記憶體、沒有落地，但我在 commit message 與 round G 章節都聲稱「已修」。
 **根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
 **對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
+
+## ENV-EQ-13 追加（L5 擴量，trust 期間）— Gate 2 掃描面的洞
+
+**量測**：Gate 2 的 shellcheck 指令原本是硬編清單 `shellcheck -x -S style lib/log.sh skills/dav-wiki/scripts/*.sh scripts/ci/*.sh`
+（14 檔），漏掉 `install.sh`、`lib/install/*.sh`（6 檔）、`skills/regression-guard/PoC/*.sh`、`tests/helpers/*.bash`。
+也就是說**安裝器核心從未被 lint**。實測漏掉的檔案有：
+
+| 檔 | 問題 |
+| --- | --- |
+| `lib/install/{agents,agents_dir,logging,paths,sop,symlink}.sh` | **8 個 SC2148 error**（被 source 的函式庫無 shebang，shellcheck 不知道目標 shell） |
+| `install.sh` | 2 個 SC2034 warning（`LOADER_END_MARKER`、`KNOWN_AGENTS` 宣告後未使用） |
+| `skills/regression-guard/PoC/run_pipeline.sh` | 2 個 SC2086 info（未加引號的變數展開） |
+
+**修法**：
+1. 6 支 `lib/install/*.sh` 檔頭補 `# shellcheck shell=bash`（與 `lib/log.sh` 既有慣例一致）。
+2. `install.sh` 兩個未用常數加 `# shellcheck disable=SC2034` ＋ 理由（保留為 loader 格式／agent 白名單的單一來源）。
+3. `run_pipeline.sh` 兩處變數展開補引號。
+4. Gate 2 指令改為**自我列舉**：`shellcheck -x -S style $(git ls-files '*.sh' '*.bash')` → **23 檔、rc=0**。
+5. `CONTRIBUTING.md` 同步換成自我列舉指令（新增 `.sh`／`.bash` 不會漏掃）。
+6. 新增 **`ENV-EQ-13`**：①每個被追蹤的 `*.sh`／`*.bash` 前 5 行必須宣告 shell（shebang 或 `# shellcheck shell=`）
+   ——SC2148 那類的靜態等價鎖，**不需要 shellcheck 執行檔**；②`CONTRIBUTING.md` 的 Gate 2 指令必須自我列舉
+   （`shellcheck ... git ls-files`）且同時含 `*.sh` 與 `*.bash`；③列舉下限 `>= 20` 防列舉器壞掉。
+
+| 突變 | 內容 | 結果 |
+| --- | --- | --- |
+| M33 | 拔掉 `lib/install/paths.sh` 的 shell 宣告 | 紅 ✓（點名該檔） |
+| M34 | `CONTRIBUTING.md` 的 Gate 2 指令退回硬編清單 | 紅 ✓ |
+| M35 | 指令漏 `*.bash` | 紅 ✓ |
+
+**Gate 2（修正後）**：lint 128 檔 0 issue、**shellcheck 23 檔 rc=0（新範圍）**、heredoc 9 檔 OK、SKILL 11 檔 OK。
+**Gate 3（修正後）**：`bats tests/` = **570 ok / 0 not ok**（`/tmp/t47-gate3-l5.txt`）；`tests/install.bats` 41 條全綠（安裝器改動的迴歸）。
 
 ## ENV-EQ-12 追加（L4 擴量，trust 期間）
 

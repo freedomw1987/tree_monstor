@@ -86,8 +86,9 @@ bats tests/wiki-cleanup.bats --filter "E1"
 # markdownlint（與 CI 同一組 glob；本機先 `npm install -g markdownlint-cli2`）
 markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"
 
-# shellcheck（Gate 2；-x 讓它跟隨 source 進 lib/log.sh；全嚴重度需歸零）
-shellcheck -x -S style lib/log.sh skills/dav-wiki/scripts/*.sh scripts/ci/*.sh
+# shellcheck（Gate 2；-x 讓它跟隨 source；全嚴重度 -S style 需歸零）
+# 自我列舉：新增任何 .sh / .bash 都會自動納入，不會漏掃（ENV-EQ-13 鎖住這個性質）
+shellcheck -x -S style $(git ls-files '*.sh' '*.bash')
 
 # bash 語法（CI 用 glob 掃全部 9 支）
 bash -n skills/dav-wiki/scripts/wiki-cleanup.sh

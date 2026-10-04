@@ -142,10 +142,10 @@ if [ "${JEV_FIX_PROPOSAL:-0}" = "1" ]; then
                     SANDBOX_OUT="${REPORT_PATH%.*}-sandbox.md"
                     .venv/bin/python sandbox_runner.py \
                         --before "$RUN_JSON" \
-                        --file fixtures/${STORY_ID}-sample.py \
+                        --file "fixtures/${STORY_ID}-sample.py" \
                         --old 'return "before-patch"' \
                         --new 'return "after-patch"' \
-                        --journey journeys/${STORY_ID}.yaml \
+                        --journey "journeys/${STORY_ID}.yaml" \
                         --story-id "${STORY_ID}" \
                         --source "${AC_FILE:-$REPO_ROOT/docs/ac/${STORY_ID}.md}" \
                         --output "$SANDBOX_OUT" 2>&1 | tail -15 || \
