@@ -544,6 +544,20 @@ skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
 
 ## 下一步建議
 
+### 待用戶裁決的 ticket（本輪**只建檔不實作**，因為都會動 CI 或 SOP 且無法本機驗證 CI 結果）
+
+| Ticket | 內容 | 為什麼不逕行實作 |
+| --- | --- | --- |
+| **TMO-049** | CI 完全沒跑 shellcheck（Gate 2 只在開發者本機跑） | 改 CI 需 push 才能看結果；信任模式禁 push。且 macOS runner 是否預裝 shellcheck 未能本機驗證 |
+| **TMO-051** | docs 相對連結無鎖（真壞僅 3 條） | 其中 `docs/sop/handbook/2.3-execution.md` 一條屬 **handbook 修改 → 必走 V03**，未經二審不逕改 |
+| **TMO-052** | CI 的 `Verify bash syntax` 只 glob `skills/dav-wiki/scripts/*.sh`（硬編子集） | 同 TMO-049，需 push 才驗；可與 TMO-049 合併由 shellcheck 取代 |
+| **TMO-040 / TMO-035** | （本輪之前已存在的待決 ticket） | 需用戶決策 |
+
+### 其他建議（未建 ticket）
+
+- reviewer round J 的 **P3-5**（`ENV-EQ-14` 的 py/json 兩段 Python heredoc 逐字重複）為 report-only，可下次順手參數化。
+- `tests/env-equivalence.bats` 已達 16 條，檔案漸長；若續增可考慮按主題拆檔（但注意 CI 只跑 `tests/` 頂層，拆檔後仍須落在頂層）。
+
 1. **push + 真實 CI 驗證**（需用戶同意）：`git push origin trust/2026-10-05-tmo-cleanup`，
    確認 `Markdown lint` job 由「假綠」變「真擋且綠」、TMO-042 的 ffmpeg step 兩平台通過。
 2. **輪替 `OPENROUTER_API_KEY`**（NYH-1）。
