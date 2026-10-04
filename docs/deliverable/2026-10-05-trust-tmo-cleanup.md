@@ -56,6 +56,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `a2d65fe` | reviewer round G 修正 | 05:42 | F1（`ENV-EQ-9` 註解敘述更正＋子目錄反向鎖，突變 M24）／F2-F5 文件不實敘述更正＋凍結快照約定／F6 刪死碼 `allow` 變數 |
 | `807d707` | reviewer round H 修正 | 05:53 | P2-1（F2/F4/F5 真正落地＋措辭對齊）／P3-1..7（含 `ENV-EQ-9` 反向鎖 `find` 失敗改大聲紅）／審查迴圈收斂宣告 |
 | （TMO-047） | TMO-047 skill-local 探針入 CI | 06:0x | 兩支探針加 `SKILLS_DIR_OVERRIDE`＋fail-closed；`ci.yml` 加一步；新增 `ENV-EQ-11`；M25–M28 突變 |
+| （TMO-046） | TMO-046 `tdd-test-writer/SKILL.md` 瘦身 | 06:1x | 149 → 105 行（流程／觸發壓表、去重、補檔尾換行）；規則面零刪減，13 條回歸全綠 |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -263,6 +264,20 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 
 **本輪（＝受審範圍 `c686dd4..4ffd3de`）無新增探針**（reviewer 已確認：diff 無任何新 `@test`），兩處 regex 變動皆為**嚴格化**、無未申報放寬
 （reviewer 另建議：V03.6 表可補一句「本輪 regex 變動均為嚴格化、非放寬」）。
+
+## TMO-046 追加（L3 擴量，trust 期間）
+
+`skills/tdd-test-writer/SKILL.md` 原本 **149/150 行**（餘 1 行，下一次修改極可能撞上限）。本次瘦身 **149 → 105 行**：
+
+| 手法 | 內容 |
+| --- | --- |
+| 壓成表格 | 「流程（6 步）」的 6 個 動作／為什麼／產出／證據 區塊（約 42 行）→ 1 張 6 列的表；「觸發時機」8 列 → 3 列 |
+| 去重 | 「測試結構模板」4 行 → 併入一行（Given-When-Then 仍在）；移除多餘 `---` 分隔線 |
+| 補齊 | 檔尾補換行（原缺，`MD047`）；`CHANGELOG.md` 補 v2.2 列 |
+
+**規則面零刪減**：`tests/restruct-tdd-test-writer.bats` 13 條（TL;DR／觸發時機＋❌／流程 4 anchors／規則／
+變更歷史 v2.0／無 ASCII 圖／backlog.md／框架／Given-When-Then／無跨目錄連結／大小）**全綠**。
+現行最長主檔改為 `dav-skill-creater/SKILL.md`（148 行，`check-skill-size.sh` 實測）。
 
 ## TMO-047 追加（L3 擴量，trust 期間）
 

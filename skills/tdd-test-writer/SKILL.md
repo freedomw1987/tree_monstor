@@ -22,56 +22,20 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 
 | 情境 | 觸發 |
 |------|------|
-| §2.3 執行階段開始 | ✅ 必須 |
-| dav-planner 完成後、實作代碼前 | ✅ 必須 |
-| 為新功能編寫測試先行 | ✅ 必須 |
-| 項目測試覆蓋率建立 | ✅ 必須 |
-| 純提問 / 不寫測試 | ❌ 不觸發 |
-| 已有完整測試 | ❌ 跳過（除非用戶要求補） |
+| §2.3 執行階段開始／dav-planner 完成後、實作代碼前 | ✅ 必須 |
+| 為新功能編寫測試先行／建立項目測試覆蓋率 | ✅ 必須 |
+| 純提問、不寫測試／已有完整測試（除非用戶要求補） | ❌ 不觸發 |
 
 ## 流程（6 步）
 
-### Step 1：定位 backlog
-
-- **動作**：讀 monorepo 對應的 backlog 檔（路徑由 monorepo 約定），找到目標任務（PENDING 或 in_progress 中要寫測試的）
-- **為什麼**：測試必對應 backlog item，避免「不知道測什麼」
-- **產出**：識別目標 US / DE / TECH ID
-- **證據**：對話中有「目標 = X」
-
-### Step 2：分析 AC
-
-- **動作**：讀取每個任務的 AC（含 monorepo 對應的 AC 範本檔，路徑由 monorepo 約定）
-- **為什麼**：AC 是「驗收標準」，測試必對應 AC
-- **產出**：AC 清單（含 Given / When / Then）
-- **證據**：每個 AC 都有對應測試用例
-
-### Step 3：識別測試點
-
-- **動作**：從 AC 提取可測試的功能點（每個 AC 至少 1 個測試）
-- **為什麼**：避免「測試過粗」或「測試漏 AC」
-- **產出**：測試點清單（每個 AC 對應 1+ 個）
-- **證據**：AC 數 = 測試點數（最低）
-
-### Step 4：選擇測試框架
-
-- **動作**：Agent 自動判斷項目類型（Frontend / Backend / Full-stack）並選對應框架
-- **為什麼**：不同類型有最佳框架；硬編碼會誤導
-- **產出**：選定框架清單（單元 / 集成 / E2E）
-- **證據**：對話有「項目類型 = X / 框架 = Y」
-
-### Step 5：編寫測試
-
-- **動作**：創建測試文件，遵循 Given-When-Then 結構
-- **為什麼**：結構化測試易讀、易維護
-- **產出**：測試文件（*.test.* / *_test.* / *.spec.*）
-- **證據**：測試檔可獨立運行
-
-### Step 6：放置文件 + 更新 backlog
-
-- **動作**：按項目類型放對應目錄（見下方約定）；`docs/backlog.md` 標記「測試已編寫」
-- **為什麼**：保持測試目錄約定、留下 audit trail
-- **產出**：測試文件到位 + backlog 標記
-- **證據**：`docs/backlog.md` 對應 row 標記
+| Step | 動作 | 為什麼 | 產出 | 證據 |
+|------|------|--------|------|------|
+| 1 定位 backlog | 讀 monorepo 對應的 backlog 檔（路徑由 monorepo 約定），找目標任務（PENDING／in_progress） | 測試必對應 backlog item，避免「不知道測什麼」 | 目標 US／DE／TECH ID | 對話有「目標 = X」 |
+| 2 分析 AC | 讀每個任務的 AC（含 monorepo 對應的 AC 範本檔） | AC 是驗收標準，測試必對應 AC | AC 清單（含 Given／When／Then） | 每個 AC 都有對應測試用例 |
+| 3 識別測試點 | 從 AC 提取可測試的功能點 | 避免測試過粗或漏 AC | 測試點清單（每個 AC ≥ 1） | AC 數 ≤ 測試點數 |
+| 4 選擇框架 | Agent 判斷項目類型（Frontend／Backend／Full-stack）並選對應框架 | 不同類型有最佳框架；硬編碼會誤導 | 選定框架清單（單元／集成／E2E） | 對話有「項目類型 = X／框架 = Y」 |
+| 5 編寫測試 | 建測試檔，遵循 Given-When-Then | 結構化測試易讀、易維護 | 測試檔（`*.test.*`／`*_test.*`／`*.spec.*`） | 測試檔可獨立運行 |
+| 6 放置＋更新 backlog | 按項目類型放對應目錄（見下方約定）；`docs/backlog.md` 標記「測試已編寫」 | 保持測試目錄約定、留下 audit trail | 測試檔到位 + backlog 標記 | backlog 對應 row 已標記 |
 
 ## 規則 / 例外 / 限制
 
@@ -84,6 +48,8 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 | 單元 + 集成 + E2E 三層考慮 | 純 util 可只有單元 | E2E 不可少於 AC 數的 20% |
 | 測試必能獨立運行 | 共用 fixture 例外 | 不可有全局狀態依賴 |
 | 純文字引用（v2.1） | skill 子檔可用 markdown | 不寫 `../` 或 `docs/` 跨檔連結 |
+
+**測試結構模板**：每個測試含 Describing（測試目標）／Given（前置條件）／When（執行操作）／Then（預期結果）。
 
 ## 識別項目類型
 
@@ -118,14 +84,6 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 | PHP | PHPUnit, Pest | Laravel Dusk | Playwright |
 | C#/.NET | xUnit, NUnit | WebApplicationFactory | Playwright |
 
-## 測試結構模板
-
-每個測試應包含：
-1. **Describing** — 測試目標
-2. **Given** — 測試前置條件
-3. **When** — 執行操作
-4. **Then** — 預期結果
-
 ## 與其他技能協作
 
 - **dav-planner** → 提供 backlog 與 AC
@@ -134,15 +92,13 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 
 ## 變動歷史
 
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
+完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 8：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-
----
----
+| v2.2 | 2026-10-05 | 流程 6 步／觸發時機壓成表格、移除重複段（149 → 104 行） | TMO-046：主檔行數預檢（150 上限） |
 
 **交叉引用（純文字）**：
 - 測試結構示例 → 同套本 skill 子檔（`./examples.md`）
