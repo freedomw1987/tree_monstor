@@ -99,13 +99,17 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 
 依 gates.json 規範，Gate 2 (lint / syntax) 需要：對應語言的 linter 0 error / 0 warning，並在對話貼出 linter 完整 output。
 
-指令與結果（本機實跑，shellcheck 0.11.0）：
+指令與結果（本機實跑，shellcheck 0.11.0）。**注意：指令已於 L5（ENV-EQ-13）改為自我列舉**——
+原本是硬編清單 `lib/log.sh skills/dav-wiki/scripts/*.sh scripts/ci/*.sh`，漏掉 `install.sh`、`lib/install/*.sh`
+（6 支，實測有 8 個 SC2148 error）等檔，等於「本機 Gate 2 全綠」對 installer 核心毫無意義：
 
 ```bash
-shellcheck -x -S style lib/log.sh skills/dav-wiki/scripts/*.sh scripts/ci/*.sh   # rc=0（全嚴重度，含 info）
-for f in lib/*.sh skills/dav-wiki/scripts/*.sh scripts/ci/*.sh; do bash -n "$f"; done   # 全過
-markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 issues / 127 files
+shellcheck -x -S style $(git ls-files '*.sh' '*.bash')   # rc=0（全嚴重度；23 檔）
+markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 issues / 128 files
 ```
+
+（`.bats` 不吃 `bash -n`，其語法驗證＝bats 能 parse 並執行，見 Gate 3。ENV-EQ-13 另以靜態鎖要求每個
+被追蹤 shell 檔在前 5 行宣告自己的 shell，此鎖跑在 CI 內、不需 shellcheck 執行檔。）
 
 - TMO-043 把 9 支腳本從「有 warning」修到 `-S warning` 歸零；TMO-037 再清掉最後 3 筆 info 級
   （SC1091 動態 source、SC2015 `A && B || C`、SC2094 讀寫同檔誤判），並把範圍擴到 `lib/log.sh`
@@ -160,6 +164,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | **`refute_file_contains` → `refute_file_body_contains`（負向斷言改掃 body、排除變動歷史）** | **放寬①（條件式；V03.6 定義①）** | round C 點名補報：原本會 fail 的「變動歷史列提到已廢除名稱」改為 pass。理由＝SOP 政策合法（`changelog` v2.5「撤銷的章節不抹去」）；補償＝+4 同義詞 needle、M-A/M-B/M-C/M-D 突變全咬。round C P2-2 再把排除面從「全檔 `\| v` 列」收窄為「`## 變動歷史` 章節」（**回歸嚴格化**） |
 | **`CLEAN-POC-f` 把 `env-equivalence.bats` 排除在「oracle 相關探針檔」之外（TMO-041）** | **放寬②（條件式；V03.6 定義①）** | 原本會 fail 的「新 harness 檔也被當成 oracle 依賴檔」改為 pass。理由＝`env-equivalence.bats` 的紅燈來源是**固定 `/tmp` 殘檔與 bats 版本漂移**，不是缺 key／缺暖快取；保留它反而讓 CLEAN-POC-f 的語意（離線可跑）失真。補償＝ENV-EQ-5（固定 `/tmp` 殘檔鎖）＋CI 兩平台釘 bats `v1.14.0`＋`poc-clean-clone.bats` 加 `excluded -eq 1` 計數鎖（放寬面被鎖成「只能有 1 條」） |
 | **TMO-036 `專案端` 行內標記：跨目錄引用若標記即豁免（`tests/restruct-zero-cross-read.bats`）** | **放寬③（條件式；V03.6 定義①）** | 原本會 fail 的「runtime 產物路徑引用」改為 pass。理由＝探針產物（如 `docs/ac/`）在專案端才存在，屬合法引用而非麵包屑腐化。補償＝①標記必須與引用**同一行**；②反向鎖禁止「沒有引用卻掛標記」；③round E P2-7 再加反向測試（`docs/sop\|prd\|backlog.md\|deliverable\|reflection` 這些 repo 自有路徑**不得**用標記豁免） |
+| **`ENV-EQ-12` 的 orphan 列舉由「純 `find`」改為「`find` ＋ `git check-ignore` 逐檔排除 gitignored 項」（round J P2-1 → round K 改良）** | **放寬④（條件式；V03.6 定義①）** | 原本會 fail 的「gitignored 未追蹤副本樹裡的 `.bats`（跑過 `./install.sh` 的開發者本機才有）被列為 orphan」改為 pass。理由＝那些路徑不是 repo 內容、不可能被 commit，鎖的意圖（被 commit 的 orphan 不會被 CI 跑到）未被削弱；且 round J reviewer 明示建議此修法。**關鍵：排除是依 gitignore 事實而非硬編清單，且 `git check-ignore` 預設看 index → 被追蹤檔永不排除**（M53 實證：`git add -f .agents/.../x.bats` 後仍紅）。補償＝①`[ -n "$all" ]` ＋ 下限 ≥40（排除過頭會紅，不靜默綠）；②M31（未追蹤 `scripts/orphan.bats`）仍紅；③M49（gitignored 副本）綠；④M53 紅；⑤CI 內等價於原版（checkout 只有被追蹤檔，check-ignore 成 no-op）。**此為本輪唯一放寬。** |
 | markdownlint：折行 / 轉義 / 改寫 | **不改規則** | 未動 `MD013` 上限（仍 120）、未縮 glob、未加 ignore；MLG-3/4/5/8 反過來把「縮小 glob / 調大上限」鎖死 |
 
 ## reviewer 修正（round B）
@@ -501,6 +506,19 @@ TMO-047 探針改動無新假綠（test body 亦有 guard，不依賴 `setup()` 
 **Gate 2（修正後）**：lint 128 檔 0 issue、shellcheck `rc=0`、heredoc 9 檔 OK、SKILL 11 檔 OK。
 **Gate 3（修正後）**：`bats tests/` = **568 ok / 0 not ok**（`/tmp/ri-gate3-fix.txt`）；
 skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
+
+## 最終狀態（trust 結束時的實測值）
+
+| 項目 | 值 | 證據 |
+| --- | --- | --- |
+| 分支 / 是否 push | `trust/2026-10-05-tmo-cleanup`／**未 push**（trust 底線規則 #1） | `git status`／`git log` |
+| 本機 `bats tests/` | **573 ok / 0 not ok** | `/tmp/rk-gate3-l13.txt` |
+| skill-local 探針 | **3 ok / 0 not ok**（`SKILLS_DIR_OVERRIDE` 指向 repo） | 同上輪實跑 |
+| Gate 2 | markdownlint **0 issue / 128 檔**；shellcheck `-S style` **rc=0 / 23 檔** | `/tmp/rk-lint.txt`、`/tmp/rk-shellcheck.txt`（空） |
+| 其他 CI 等價檢查 | heredoc 9 OK、SKILL 主檔 11 檔（最長 148 ≤ 150） | `scripts/ci/*.sh` 實跑 |
+| clean clone（無 venv） | **529 ok / 44 not ok**（44＝需 PoC venv 的測試；CI 會先建 venv） | `/tmp/t53-clean.txt` @ `cd0a41c` |
+| 探針總數 | `tests/env-equivalence.bats` 16 條（ENV-EQ-1..16）；`tests/` 頂層 44 支 `.bats` | `install-reference.md` |
+| 開放的待決票 | TMO-049（CI 無 shellcheck）、TMO-051（handbook 壞連結需 V03）、TMO-052（CI `bash -n` 硬編子集）、TMO-040、TMO-035 | `docs/backlog.md`、`docs/need-you-help.md` NYH-3/4/5/6/7 |
 
 ## 已知問題
 
