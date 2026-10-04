@@ -55,10 +55,17 @@ bats tests/wiki-cleanup.bats --filter "E1"
 > 會呼叫 Jev oracle 的 CLI（`fix_proposal*.py`）必須離線可跑：
 > 用版控的 `PoC/fixtures/US-101-run.json` + `PoC/cache-fixtures/` +
 > `JEV_CACHE_DIR=<dir>`（詳見 `PoC/cache-fixtures/README.md`）；
-> `tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會用「無 key／無暖快取」重跑那幾條探針來鎖住。
+> 探針內也要加 `JEV_ENV_FILE=/dev/null`（TMO-045），否則本機 `PoC/.env` 會在
+> cache miss 時拿真 key 去打 API，把「fixture 不够用」掩蓋成假綠。
 >
-> 本機想驗 CI 等價：`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome bats tests/`
-> （本機有 key 會讓依賴 oracle 的探針假綠）。
+> `tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
+> （目前即 `tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
+> CI 等價環境下**整檔**重跑，任何一條回頭依賴真 API 或本機快取都會紅；
+> `CLEAN-POC-h` 另鎖「`PoC/.env` 與 `PoC/cache/` 不得被 git 追蹤」，
+> `CLEAN-POC-i` 則反向驗證 `JEV_ENV_FILE` seam 真的封得住兩個 .env 來源。
+>
+> 本機想驗 CI 等價：`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome JEV_ENV_FILE=/dev/null bats tests/`
+> （本機有 key 或 `.env` 會讓依賴 oracle 的探針假綠）。
 
 ## Lint
 

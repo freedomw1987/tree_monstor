@@ -516,8 +516,11 @@ print('OK: FixProposal has 3 conf fields')
   cd "$POC_DIR"
   # TMO-039：改用版控 run json fixture + 離線快取 fixture。
   # 原本現場跑 pipeline（已移除的 make_us101_run helper）需要真 Jev API key → CI 必紅。
+  # TMO-045：外加 JEV_ENV_FILE=/dev/null，連本機 PoC/.env 也要擋
+  # （否則 client 端 cache miss 時會拿本機 key 去打真 API，fixture 缺口被掩蓋仍綠）。
   cp "$POC_DIR/fixtures/US-101-run.json" /tmp/US-101-run.json
   env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+      JEV_ENV_FILE=/dev/null \
       JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
       "$PY" fix_proposal.py /tmp/US-101-run.json /tmp/test-fix.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal.py CLI failed" >&2
@@ -558,8 +561,10 @@ print('OK: FixProposal has 3 conf fields')
   need_poc_venv
   cd "$POC_DIR"
   # TMO-039：同上（版控 fixture + 離線快取），不依賴真 API key
+  # TMO-045：同上加 JEV_ENV_FILE=/dev/null（擋本機 PoC/.env）
   cp "$POC_DIR/fixtures/US-101-run.json" /tmp/US-101-run.json
   env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+      JEV_ENV_FILE=/dev/null \
       JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
       "$PY" fix_proposal_v2.py /tmp/US-101-run.json /tmp/test-v2.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal_v2.py CLI failed" >&2

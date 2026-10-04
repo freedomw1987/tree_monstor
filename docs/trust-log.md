@@ -84,3 +84,7 @@
 | 11 | 02:08 | TMO-044 探針 | ✅ H1-H5（含 3 突變：語法錯／未結束／只有註解假 heredoc）；H5 修前紅（ci.yml 未呼叫） |
 | 12 | 02:10 | TMO-044 決策 | 為何從 `wiki-cleanup.yaml` 檢查改為「抽 heredoc」：原檢查連目標檔都不存在；且只驗 5/9 個 heredoc；改 ast.parse 後語意真檢查且零額外依賴（stdlib） |
 | 13 | 02:12 | TMO-044 Gate 3 | ✅ 全量 526 ok / 0 not ok（+5） |
+| 14 | 02:35 | TMO-045 執行 | `JEV_ENV_FILE` seam（取代整份候選清單）＋ M6-g/M6.1-c 自身封 `.env`；CLEAN-POC-f 一般化為「動態挑檔 × 整檔離線重跑」（v2.1 全 100 條綠）；新增 CLEAN-POC-h / CLEAN-POC-i |
+| 15 | 02:41 | TMO-045 敏感度證明 | ✅ 清空 cache-fixtures → M6.1-c/M6-g 紅、外層 CLEAN-POC-f 紅（`diff -r` 還原一致）；`git add -f .env`+cache → CLEAN-POC-h 紅（`.env` sha256 前後一致）；「半套 seam」突變 → CLEAN-POC-i 紅 |
+| 16 | 02:44 | ⚠️ 事件：key 洩漏到 session log | 反向驗證時 CLEAN-POC-i 的 FAIL 訊息印出了本機真 `OPENROUTER_API_KEY`（前綴 sk-or-v1-7472…）。未進 repo（只在本地 session log），但**建議輪替該 key**；已記入 need-you-help.md |
+| 17 | 02:47 | TMO-045 Gate 3 | ✅ 全量 528 ok / 0 not ok（+2）；新改 .md markdownlint 0 issues |

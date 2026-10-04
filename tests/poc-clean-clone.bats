@@ -11,6 +11,10 @@
 #   3. CLEAN-POC-c — 測試引用到的 fixtures/journeys 必須被 git 追蹤（clean clone 才拿得到）
 #   4. CLEAN-POC-d — CI 兩個平台都必須安裝 ffmpeg（26 條媒體探針依賴）
 #   5. CLEAN-POC-e — CI python-version 必須釘版（不得為浮動 3.x）
+#   6. CLEAN-POC-f — 所有 oracle 相關探針檔都要能在 CI 等價環境（無 key／無暖快取／.env 已封）整檔跑綠
+#   7. CLEAN-POC-g — CI 的 bash -n 必須用 glob 覆蓋全部 dav-wiki 腳本
+#   8. CLEAN-POC-h — PoC/.env 與 PoC/cache/ 不得被 git 追蹤（真密鑰/本機快取外洩）
+#   9. CLEAN-POC-i — JEV_ENV_FILE seam 真的能封掉本機 .env（否則 f 是假隔離）
 #
 # 為什麼需要 a/c：`journeys/US-101.yaml` 曾寫死
 # `/Users/<作者>/…/docs/ac/US-101.md`，於是 5 條探針只在作者機器上過；
@@ -129,11 +133,16 @@ POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
   fi
 }
 
-@test "CLEAN-POC-f: oracle-dependent probes run offline (no API key, no warm cache)" {
+@test "CLEAN-POC-f: every oracle-dependent probe file runs offline (no key, no warm cache)" {
   # TMO-039 第二輪：M5-runtime-b / M6-g / M6.1-c 原本會呼叫真 Jev oracle，
   # 本機有 OPENROUTER_API_KEY + PoC/cache（8206 檔，未版控）所以全綠；
-  # CI 兩者皆無 → oracle 抛錯 → 3 條紅。這條探針是「本機也能抓到」的鎖：
-  # 把 env 清成 CI 一樣（no key、HOME 換掉、JEV_CACHE_DIR 指向空目錄），重跑那 3 條。
+  # CI 兩者皆無 → oracle 抛錯 → 3 條紅。
+  #
+  # TMO-045（reviewer P2-B/P2-D）把這道鎖從「點名 3 條」改成一般化：
+  #   ① 動態挑出所有提到 oracle 的測試檔（新檔自動納入，不是寫死名單）
+  #   ② 每檔「整檔」在 CI 等價環境下重跑（不再用 --filter 點名）
+  #   ③ 加 JEV_ENV_FILE=/dev/null → 連本機 PoC/.env 與 ~/.claude/.../.env 也擋掉，
+  #      否則本機 key 會把 fixture 缺口掩蓋成假綠
   cd "$REPO_ROOT"
   local run_json cache_dir n empty_cache
   run_json="skills/regression-guard/PoC/fixtures/US-101-run.json"
@@ -148,20 +157,126 @@ POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
     echo "FAIL: $cache_dir 內沒有被版控的 *.json → 離線快取 fixture 失效" >&2
     return 1
   }
-  empty_cache="$BATS_TEST_TMPDIR/empty-cache"
-  mkdir -p "$empty_cache"
-  run env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
-      JEV_CACHE_DIR="$empty_cache" \
-      bats "$REPO_ROOT/tests/v2.1-jev-poc.bats" --filter "M5-runtime-b|M6-g:|M6.1-c"
-  [ "$status" -eq 0 ] || {
-    echo "$output" >&2
-    echo "FAIL: oracle 相關探針在 CI 等價環境（無 key/無暖快取）紅了" >&2
+
+  # 動態挑檔：排除本檔（護欄自身也含這些關鍵字）
+  local files=() f
+  for f in tests/*.bats; do
+    [ "$f" = "tests/poc-clean-clone.bats" ] && continue
+    grep -qE 'jev_oracle|fix_proposal|JEV_CACHE_DIR|JEV_ENV_FILE' "$f" || continue
+    files+=("$f")
+  done
+  # 防空過：至少要挑到 1 檔
+  [ "${#files[@]}" -ge 1 ] || {
+    echo "FAIL: 沒挑到任何 oracle 相關測試檔 → 挑檔邏輯失效" >&2
     return 1
   }
-  # 防空過：bats 必須真的跑到 3 條
-  echo "$output" | grep -qE '^ok 3 ' || {
-    echo "FAIL: 只跑了不是 3 條，探針失效" >&2
-    echo "$output" >&2
+
+  empty_cache="$BATS_TEST_TMPDIR/empty-cache"
+  mkdir -p "$empty_cache"
+  local total_ok=0 total_notok=0 out
+  for f in ${files[@]+"${files[@]}"}; do
+    out=$(env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+          JEV_CACHE_DIR="$empty_cache" JEV_ENV_FILE=/dev/null \
+          bats "$f" 2>&1) || true
+    local ok_n notok_n
+    ok_n=$(printf '%s\n' "$out" | grep -c '^ok ' || true)
+    notok_n=$(printf '%s\n' "$out" | grep -c '^not ok ' || true)
+    total_ok=$((total_ok + ok_n))
+    total_notok=$((total_notok + notok_n))
+    if [ "$notok_n" -gt 0 ]; then
+      echo "FAIL: $f 在 CI 等價環境（無 key／無暖快取／.env 已封）紅了：" >&2
+      printf '%s\n' "$out" | grep -A5 '^not ok ' >&2
+      return 1
+    fi
+  done
+
+  # 防空過：真的跑過足夠的探針
+  [ "$total_ok" -ge 50 ] || {
+    echo "FAIL: 只在離線環境跑了 $total_ok 條（<50）→ 探針可能空過" >&2
+    return 1
+  }
+  [ "$total_notok" -eq 0 ] || return 1
+}
+
+@test "CLEAN-POC-h: no tracked secrets or cache under PoC (.env / cache/)" {
+  # TMO-045（reviewer P2-C）：沒有任何探針阻止有人 `git add -f PoC/.env`（真密鑰）
+  # 或 `git add -f PoC/cache/`（8206 個本機快取檔）——一旦進版控就是永久洩漏/帳單暴增。
+  # 本條把「不得被追蹤」寫成鎖。
+  cd "$REPO_ROOT"
+
+  # 正對照：確認檢查機制本身能用（避免「什麼都掃不到 → 空過」）
+  local tracked_total poc_tracked
+  tracked_total=$(git ls-files | wc -l | tr -d ' ')
+  [ "$tracked_total" -ge 200 ] || {
+    echo "FAIL: git ls-files 只有 $tracked_total 個檔 → 檢查機制失效" >&2
+    return 1
+  }
+  poc_tracked=$(git ls-files skills/regression-guard/PoC | wc -l | tr -d ' ')
+  [ "$poc_tracked" -ge 10 ] || {
+    echo "FAIL: PoC 只有 $poc_tracked 個檔案被追蹤（<10）→ 檢查機制失效" >&2
+    return 1
+  }
+  # 正錨點：.env.example 必須在版控
+  git ls-files --error-unmatch "skills/regression-guard/PoC/.env.example" >/dev/null 2>&1 || {
+    echo "FAIL: PoC/.env.example 未被追蹤（範本應該進版控）" >&2
+    return 1
+  }
+
+  local hit
+  hit=$(git ls-files | grep -E '^skills/regression-guard/PoC/(\.env|\.env\.local)$|^skills/regression-guard/PoC/cache/' || true)
+  if [ -n "$hit" ]; then
+    echo "FAIL: 以下機敏/本機檔案被 git 追蹤（必須 git rm --cached + 保留 .gitignore）：" >&2
+    printf '%s\n' "$hit" >&2
+    return 1
+  fi
+
+  # 第二道：.gitignore 必須真的擋著（免得下次被 `git add -A` 掃進去）
+  local gi="skills/regression-guard/PoC/.gitignore"
+  grep -qxF '.env' "$gi" || { echo "FAIL: $gi 少了 .env 規則" >&2; return 1; }
+  grep -qxF 'cache/' "$gi" || { echo "FAIL: $gi 少了 cache/ 規則" >&2; return 1; }
+}
+
+@test "CLEAN-POC-i: JEV_ENV_FILE seam actually neutralizes local .env" {
+  # TMO-045（reviewer P2-B）：CLEAN-POC-f 原有的清環境手段對 `.env` 無效——
+  # `_load_api_key()` 讀的是「檔案系統上固定位置」的 .env，不受 HOME/env -u 影響。
+  # 本條驗證新加的 JEV_ENV_FILE seam 真的有效：假 .env 預設讀得到、覆寫 /dev/null 就讀不到。
+  local py="$POC_DIR/.venv/bin/python"
+  if [ ! -x "$py" ]; then
+    echo "FAIL: 缺 PoC venv（$py）" >&2
+    echo "  修法：bash skills/regression-guard/PoC/setup-venv.sh" >&2
+    return 1
+  fi
+  local fake_env="$BATS_TEST_TMPDIR/fake.env"
+  printf 'OPENROUTER_API_KEY=sk-fake-for-seam-test\n' > "$fake_env"
+  cd "$POC_DIR"
+
+  run env -u OPENROUTER_API_KEY JEV_ENV_FILE="$fake_env" \
+      "$py" -c "import jev_oracle; print(jev_oracle._load_api_key())"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"sk-fake-for-seam-test"* ]] || {
+    echo "FAIL: JEV_ENV_FILE 指向假 .env 卻讀不到 key（seam 沒生效）" >&2
+    return 1
+  }
+
+  run env -u OPENROUTER_API_KEY JEV_ENV_FILE=/dev/null \
+      "$py" -c "import jev_oracle; print(repr(jev_oracle._load_api_key()))"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"''"* ]] || {
+    echo "FAIL: JEV_ENV_FILE=/dev/null 仍讀到 key（=$output）→ 本機 .env 會造成假綠" >&2
+    return 1
+  }
+
+  # 第二個來源（~/.claude/...）也要一起被蓋掉：seam 必須是「取代整份清單」，
+  # 不是只擋 PoC/.env（否則修改只做半套，本機仍可能拿到 key）
+  local fake_home="$BATS_TEST_TMPDIR/fakehome"
+  mkdir -p "$fake_home/.claude/skills/regression-guard/PoC"
+  printf 'OPENROUTER_API_KEY=sk-fake-home\n' \
+    > "$fake_home/.claude/skills/regression-guard/PoC/.env"
+  run env -u OPENROUTER_API_KEY HOME="$fake_home" JEV_ENV_FILE=/dev/null \
+      "$py" -c "import jev_oracle; print(repr(jev_oracle._load_api_key()))"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"''"* ]] || {
+    echo "FAIL: ~/.claude/... 來源未被 seam 蓋掉（=$output）" >&2
     return 1
   }
 }
