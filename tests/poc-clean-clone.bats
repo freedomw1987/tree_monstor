@@ -164,10 +164,12 @@ mask_secrets() {
     return 1
   }
 
-  # 動態挑檔：排除本檔（護欄自身也含這些關鍵字）
+  # 動態挑檔：排除本檔（護欄自身也含這些關鍵字）與 env-equivalence.bats
+  # （TMO-041：env-equivalence.bats 是「跑別人」的 harness，本身就會用 CI 等價環境
+  #   重跑 oracle 子集；巢狀重跑只會讓時間翻倍，其正確性由 ENV-EQ-7 直接驗。）
   local files=() f
   for f in tests/*.bats; do
-    [ "$f" = "tests/poc-clean-clone.bats" ] && continue
+    case "$f" in tests/poc-clean-clone.bats|tests/env-equivalence.bats) continue ;; esac
     grep -qE 'jev_oracle|fix_proposal|JEV_CACHE_DIR|JEV_ENV_FILE' "$f" || continue
     files+=("$f")
   done

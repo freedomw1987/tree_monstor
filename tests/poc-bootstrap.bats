@@ -326,7 +326,8 @@ PY
   # 壞值含「等價寫法」：`/tmp/` 與 `/tmp` 同義（Round-3 P1 的繞道）、`//` 與 `/` 同義、
   # `/tmp/..` 就是 `/`。
   local bad
-  for bad in "/" "/tmp/" "//" "/tmp" "/tmp/.." "/tmp/../x" "/tmp/./venv" "/tmp/." "relative/path"; do
+  # 以下全是「純字串壞值」資料（不會真的寫檔）→ 就地在該行標 TMP-OK 豁免鎖 1
+  for bad in "/" "/tmp/" "//" "/tmp" "/tmp/.." "/tmp/../x" "/tmp/./venv" "/tmp/." "relative/path"; do  # TMP-OK
     run env POC_VENV_DIR="$bad" bash "$sh"
     [ "$status" -eq 1 ] || {
       echo "FAIL: POC_VENV_DIR=${bad} 未被擋（rc=${status}）" >&2
@@ -442,8 +443,39 @@ for name, i, s in (("venv", venv_i, venv_s), ("bats", bats_i, bats_s)):
     assert not s.get("continue-on-error"), f"{name} 步驟掛了 continue-on-error（失敗不再擋）"
     assert "|| true" not in ((s.get("run") or "")), f"{name} 步驟用 || true 吞掉失敗"
     assert s.get("if") is None, f"{name} 步驟掛了 if: 條件（可被跳過）"
+# TMO-041 ②：bats-core 必須兩平台都固定同一個 tag（apt/brew 版本會漂移 →
+# 探針行為不保證等價），且 >= v1.14.0（本機版本，CI 對齊）。
+def dep_step(os_name):
+    for s in steps:
+        nm = ((s or {}).get("name") or "")
+        cond = ((s or {}).get("if") or "")
+        if "dependencies" in nm and os_name in cond:
+            return s
+    return None
+
+import re as _re
+
+tags = {}
+for os_name, key in (("Linux", "linux"), ("macOS", "macos")):
+    st = dep_step(os_name)
+    assert st is not None, f"找不到 {os_name} 的測試依賴安裝步驟"
+    run = st.get("run") or ""
+    m = _re.search(r"git clone --branch (\S+) --depth 1 "
+                   r"https://github\.com/bats-core/bats-core\.git", run)
+    assert m, f"{os_name} 步驟沒有固定版本的 bats-core clone：{run!r}"
+    assert "bats-core/install.sh" in run, f"{os_name} 步驟沒真的安裝 clone 下來的 bats-core"
+    tags[key] = m.group(1)
+    if key == "linux":
+        assert not _re.search(r"apt-get install[^\n]*\bbats\b(?!-core)", run), \
+            "Linux 步驟仍在 apt 裝 distro bats（版本不受控）"
+    else:
+        assert "brew install bats-core" not in run, "macOS 仍用未固定的 brew bats-core"
+assert tags["linux"] == tags["macos"], f"兩平台 bats 版本不同（等價性破裂）：{tags}"
+ver = tuple(int(x) for x in tags["linux"].lstrip("v").split("."))
+assert ver >= (1, 14, 0), f"bats 版本 {tags['linux']} 低於 v1.14.0（本機版本）"
 print(f"OK: PyYAML 語意斷言——trigger={sorted(trig)}、matrix.os={os}、"
-      f"venv(step {venv_i}) 早於 bats(step {bats_i})、皆無 continue-on-error/if/|| true")
+      f"venv(step {venv_i}) 早於 bats(step {bats_i})、皆無 continue-on-error/if/|| true、"
+      f"bats-core 兩平台皆 {tags['linux']}")
 PY
   run "$py" "$BATS_TEST_TMPDIR/ci-contract.py" "$CI_YML"
   [ "$status" -eq 0 ] || {

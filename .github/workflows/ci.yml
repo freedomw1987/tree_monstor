@@ -34,14 +34,21 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y bats poppler-utils pandoc tesseract-ocr ffmpeg
+          sudo apt-get install -y poppler-utils pandoc tesseract-ocr ffmpeg
           python3 -m pip install python-pptx
+          # bats-core 固定版本（TMO-041）：apt 的 bats 版本會隨 runner 映像漂移，
+          # 探針行為（陣列展開、輸出格式）就會跟著變 → 兩平台都裝同一個 tag。
+          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+          sudo ./bats-core/install.sh /usr/local
 
       - name: Install test dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install bats-core poppler pandoc tesseract ffmpeg
+          brew install poppler pandoc tesseract ffmpeg
           python3 -m pip install python-pptx
+          # bats-core 固定版本（TMO-041）＋與 Linux 同一個 tag（見上方說明）
+          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+          sudo ./bats-core/install.sh /usr/local
 
       - name: Verify ffmpeg version and flags
         # TMO-042：兩平台版本不同（apt ffmpeg 6.x / brew 8.x），ffmpeg 8 已移除 -vsync。

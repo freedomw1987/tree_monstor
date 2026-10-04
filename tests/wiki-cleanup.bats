@@ -153,7 +153,7 @@ teardown() {
 }
 
 @test "wiki-cleanup: missing-target-dir errors" {
-    run "$WIKI_CLEANUP" --target "/tmp/nonexistent-xyz-123" --yes --older-than 90
+    run "$WIKI_CLEANUP" --target "/tmp/nonexistent-xyz-123" --yes --older-than 90  # TMP-OK: 需不存在（純測試資料）
     [ "$status" -ne 0 ]
 }
 
