@@ -346,10 +346,10 @@ reviewer 確認：這批 delta **全部是探針新增或嚴格化、無任何�
 
 | 項 | 內容 | 修法 |
 | --- | --- | --- |
-| P2-1 | `ENV-EQ-12` 的 `find` **非 hermetic**：不讀 gitignore，若開發者跑過 `./install.sh`，`.agents/tree_monstor/tests/*.bats` 會被當 orphan → 偽紅 | `find` 追加排除 `./.agents/*`、`./.claude/*`、`./.pi/*`、`./tmp/*`、`./.venv/*`；**仍保留 `find`**（不用 `git ls-files`）才能抓到未追蹤的 orphan。實證：M31（未追蹤 `scripts/orphan.bats`）仍紅 ✓、M49（`.agents/tree_monstor/tests/x.bats`）不誤報 ✓ |
+| P2-1 | `ENV-EQ-12` 的 `find` **非 hermetic**：不讀 gitignore，若開發者跑過 `./install.sh`，`.agents/tree_monstor/tests/*.bats` 會被當 orphan → 偽紅 | 以 `git check-ignore -q` **逐檔**排除（依 gitignore 事實，非硬編清單；`git check-ignore` 預設看 index → 被追蹤檔永不排除）。**仍保留 `find`**（不用 `git ls-files`）才能抓到未追蹤的 orphan。**這是本輪唯一的放寬**（gitignored 未追蹤副本不再列為 orphan；CI 內等價於原版，因 checkout 只有被追蹤檔），且 fail-closed 兜底：`[ -n "$all" ]` ＋ 下限 ≥40 → 排除過頭會紅而非靜默綠。實證：M31（未追蹤 `scripts/orphan.bats`）紅 ✓、M49（gitignored 副本）綠 ✓、**M53（`git add -f .agents/tree_monstor/tests/x.bats` 使其被追蹤後）紅 ✓** |
 | P2-2 | `ENV-EQ-15` 文件措辭過寬（寫「任何空過斷言」，實作只咬 3 種字面） | 收斂 `docs/install-reference.md` 措辭並註明 `\|\| true` 等變體**不在鎖內**（實測 `.bats` 內有 **49 處** `\|\| true`，硬鎖會誤殺） |
 | P3-1 | `ENV-EQ-15` 的 `\| grep -v '#'` 是**死碼**（anchored pattern 不可能命中含 `#` 的行） | 改成 `sed 's/#.*$//'` 先剝行尾註解再比對 → **順帶嚴格化**：`true  # 待補` 現在也咬（M50 紅 ✓） |
-| P3-2 | binary fixture 數「6」與 M46「binary=8」矛盾 | 統一為 **8**（docx×2／png×2／pdf×2／pptx×2）；6 是「同時也缺檔尾換行」的數 |
+| P3-2 | binary fixture 數「6」與 M46「binary=8」矛盾 | 統一為 **NUL 嗅探命中 8**（docx×2／png×2／pdf×2／pptx×2）；6 是「同時也缺檔尾換行」的數。**（round K 再更正）** 真實 binary fixture 共 **9**：第 9 個 `tests/fixtures/pdf-mixed/sample.pdf` 前 8KB 無 NUL → 被當文字檔（它剛好以換行結尾故綠）；此為 NUL 嗅探的已知界限，且只會偏嚴 |
 | P3-3 | 「全 repo 46 支 .bats」 | 更正為 **44**（`git ls-files '*.bats'` 與 `find` 皆 44） |
 | P3-4 | trust-log rows 66–69 時間戳非單調、row 67 精確時間無 `*` | rows 66/68 估算值改 `~06:35`／`~06:40`，row 67 改 `~06:36`（`*` 只標 git log 實值） |
 
@@ -378,7 +378,9 @@ reviewer 確認：這批 delta **全部是探針新增或嚴格化、無任何�
 `>>` 直接黏在最後一行而靜默沒套上**（`[ true ]` 變成 `}    [ true ]`，不符 `^…$` 而未被鎖抓到）。
 
 已把 35 個文字檔補上檔尾換行（**逐檔等價驗證：去掉尾端換行後內容與原檔完全相同**）；
-8 個 binary fixture（docx×2、png×2、pdf×2、pptx×2）以 NUL 嗅探排除、不動；其中 6 個同時也缺檔尾換行。
+NUL 嗅探排除 8 個 binary（docx×2、png×2、pdf×2、pptx×2），其中 6 個同時也缺檔尾換行。
+真實 binary fixture 共 9 個：第 9 個 `tests/fixtures/pdf-mixed/sample.pdf` 前 8KB 無 NUL，被當文字檔
+（剛好以換行結尾故綠）——NUL 嗅探的已知界限，只會偏嚴（無 NUL 的 binary 若缺換行會偽紅，不會漏放）。
 
 新增 **`ENV-EQ-16`**：每個被追蹤的文字檔必須以換行結尾。
 

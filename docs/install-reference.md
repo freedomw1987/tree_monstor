@@ -259,7 +259,7 @@ SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`529 ok / 44 not ok`，@ `8f3639c`；529 + 44 = 573 條；`6ca7cfb`／`d301ff7` 量測同值）：
+> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`529 ok / 44 not ok`，@ `8f3639c`；529 + 44 = 573 條；`6ca7cfb` 首次量測同值）：
 > - `v2.1-jev-poc.bats` 40 + `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
 > - `poc-bootstrap.bats` 1（TMO-038 的 CI 契約語意斷言，PyYAML 解 workflow）
 > - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）。
@@ -284,10 +284,10 @@ CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起�
 | ENV-EQ-9 | `@test` 宣告數 == `bats --count`（防「宣告 N／實跑 N-3」；含 CJK 名稱 canary） | bats |
 | ENV-EQ-10 | 本機安裝文件必須教釘版 bats（只鎖 CI 一側＝本機仍漂移） | — |
 | ENV-EQ-11 | skill 自帶探針（`skills/*/tests/*.bats`，≥2 檔）存在且 CI 真跑：override 下逐檔實跑綠、不得 `skip`、每檔須認 override；空 root 必紅（防空過）；`ci.yml` 恰好一步 | bats |
-| ENV-EQ-12 | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 頂層與 `skills/*/tests/`；**精確 regex**，因 CI 的 `bats tests/` 非遞迴）＋列舉下限 ≥40。列舉用 `find`（才抓得到未追蹤檔）並排除 gitignored 樹（`.agents/ .claude/ .pi/ tmp/ .venv/`） | find + bash regex |
+| ENV-EQ-12 | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 頂層與 `skills/*/tests/`；**精確 regex**，因 CI 的 `bats tests/` 非遞迴）＋列舉下限 ≥40。列舉用 `find`（才抓得到未追蹤檔），再以 `git check-ignore -q` **逐檔**排除 gitignored 項（依 gitignore 事實，非硬編清單；`git check-ignore` 預設看 index → **被追蹤的檔永不排除**，故 gitignored 樹內若有被追蹤 `.bats` 仍會被檢查） | find + git check-ignore + bash regex |
 | ENV-EQ-13 | 每個 shell 檔須宣告 shell（shebang 或 `# shellcheck shell=`）＋ Gate 2 指令須自我列舉且含 `*.sh`／`*.bash`＋下限 ≥20 | git |
 | ENV-EQ-14 | 每個被追蹤 `.py` 須 `ast.parse` 通過、`.json` 須 `json.load` 通過（stdlib、不寫 `__pycache__`）＋下限 ≥25／≥5 | python3 |
-| ENV-EQ-15 | `.bats` 不得有**這三種字面**的空過斷言：`[ true ]`／`[[ true ]]`／單行 `true`／`:`（先剝行尾註解再比對）＋下限 ≥40。**注意**：`\|\| true`、`[[ 1 -eq 1 ]]` 等變體**不在鎖內**（實測 `.bats` 內有 49 處 `\|\| true`，硬鎖會誤殺） | grep + sed |
+| ENV-EQ-15 | `.bats` 不得有**下列字面**的空過斷言：`[ true ]`／`[[ true ]]`／單行 `true`／`:`（先剝行尾註解再比對）＋下限 ≥40。**注意**：`\|\| true`、`[[ 1 -eq 1 ]]` 等變體**不在鎖內**（實測 `.bats` 內有 49 處 `\|\| true`，硬鎖會誤殺） | grep + sed |
 | ENV-EQ-16 | 每個被追蹤文字檔須以換行結尾（binary 以 NUL 嗅探排除）＋下限 ≥100 | python3 |
 | （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
 

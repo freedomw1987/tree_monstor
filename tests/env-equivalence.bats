@@ -567,15 +567,18 @@ printf "%s\n" "${a[@]}"'
 @test "ENV-EQ-12: no orphan .bats outside the two CI execution paths" {
   local all orphan=""
   # 用 find（而非 git ls-files）才能抓到**未追蹤**的 orphan（例：scripts/orphan.bats）；
-  # 但 find 不讀 gitignore，跑過 ./install.sh 的開發者會在本機副本樹（.agents/ .claude/ .pi/ tmp/ .venv/）
-  # 看到偽紅（reviewer round J P2-1）。故改用 `git check-ignore` 逐檔判斷，而非硬編排除清單：
-  # git check-ignore **預設會看 index**，所以「被追蹤」的檔永遠不算 ignored →
-  # 就算未來有被追蹤的 .bats 落在那些目錄，也不會被誤排除（M53 實證）。
+  # 但 find 不讀 gitignore，跑過 ./install.sh 的開發者會在本機副本樹（例：`.agents/`、`tmp/`、
+  # PoC 的 `.venv/`）看到偽紅（reviewer round J P2-1）。故用 `git check-ignore` 逐檔判斷
+  #（依 gitignore 事實，非硬編排除清單）：git check-ignore **預設會看 index**，
+  # 所以「被追蹤」的檔永遠不算 ignored → 未來若有被追蹤 .bats 落在那些目錄也不會被誤排除（M53 實證）。
   all=$(cd "$REPO_ROOT" && find . -name '*.bats' -not -path './.git/*' | sed 's|^\./||' | sort \
     | while IFS= read -r f; do git check-ignore -q -- "$f" || printf '%s\n' "$f"; done)
   [ -n "$all" ] || { echo "FAIL: 找不到任何 .bats（repo root 指錯？）" >&2; return 1; }
   local f n=0
-  for f in $all; do
+  # 用 while-read（herestring，不開子 shell）而非 `for f in $all`：後者未加引號，
+  # 檔名含空白會被拆成兩個 token → 偽紅（reviewer round K P3-4）。
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
     n=$((n + 1))
     # 注意：case 的 `*` 會跨 `/`（`tests/*.bats` 也會匹配 `tests/sub/x.bats`），
     # 但 CI 的 `bats tests/` 是**非遞迴**的 → 必須用精確 regex 才不會漏放嵌套檔。
@@ -586,7 +589,7 @@ printf "%s\n" "${a[@]}"'
     else
       orphan="$orphan $f"
     fi
-  done
+  done <<< "$all"
   [ "$n" -ge 40 ] || { echo "FAIL: 只列舉到 $n 個 .bats（<40）→ 列舉器壞了或路徑漂移" >&2; return 1; }
   [ -z "$orphan" ] || {
     echo "FAIL: 下列 .bats 不在任何 CI 執行路徑（orphan → 改了不會擋）：$orphan" >&2
