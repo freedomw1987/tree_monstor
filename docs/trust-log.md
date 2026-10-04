@@ -47,8 +47,6 @@
 | 28 | 00:41 | M8 探針 | ✅ 6 個 M8 探針全綠 |
 | 29 | 00:42 | M8 探針 | ✅ 92 → 98 探針全綠 |
 | 30 | 00:43 | M8 文件 | ✅ SKILL v2.8 + examples + deliverable |
-| 31 | 00:44 | 提交 | ✅ git commit M7 + M8 + docs (3 commits) |
-| 32 | 00:45 | 退出 | ⏸️ 跟用戶確認 push |
 
 ---
 
@@ -69,7 +67,7 @@
 | 1 | 01:21 | 啟動 | Trust Mode 啟動：清 TMO-043 / 044 / 045 / 042 / 037 | 用戶「trust mode 清上面的 tmo」+ 指定 deadline 08:00 CST | — |
 | 2 | 01:21 | 啟動 | 執行順序 043 → 044 → 045 → 042 → 037 | 先小後大；**TMO-037（markdownlint 全面改行）必排最後**，否則前面票新增的長行會被重複改寫 | ✅ |
 | 3 | 01:21 | 啟動 | push 策略：不 push（底線規則 #1/#2）→ 開本機分支 `trust/2026-10-05-tmo-cleanup` | trust 禁止外部指令；代價：TMO-044（CI 語意）無法用真 CI 驗收 → 改用「CI 等價本機驗證 + 步驟可被探針直接執行」補償 | ✅ |
-| 4 | 01:25 | 規劃 | TMO-037 的 273 處是否全部硬改行？ | **先量測規則分佈再定**：表中/code block 的 MD013 由 `.markdownlint-cli2.jsonc` 豁免（tables:false / code_blocks:false）→ 只處理真違規；若某類豁免是「合理約定」則維持全域豁免並在文件說明，**不以關規則取代改文** | ✅ |
+| 4 | 01:25 | 規劃 | TMO-037 的 273 處是否全部硬改行？ | **先量測規則分佈再定**：表中/code block 的 MD013 由 `.markdownlint.json` 豁免（tables:false / code_blocks:false；`.markdownlint-cli2.jsonc` 只管 `ignores`）→ 只處理真違規；若某類豁免是「合理約定」則維持全域豁免並在文件說明，**不以關規則取代改文** | ✅ |
 | 5 | 01:25 | 規劃 | 5 張票的交付物策略 | 1 份合併 deliverable（`docs/deliverable/2026-10-05-trust-tmo-cleanup.md`）+ 5 個 commit（每票一個，含探針與文件） | ✅ |
 
 ## 2026-10-05 進度（執行中）
@@ -97,10 +95,17 @@
 | 21 | 02:08 | ⚠️ 自我糾錯：時間戳造假 | TMO-042 寫 trust-log 時我「憑感覺」填了不存在的時刻（02:35–03:38，實際當時才 02:05）；更糟的是我修補時用 `re.sub(count=1)` 誤改了 **2026-09-28 段落** 的第 6–20 列。已從 commit 取回乾淨版、限定 10-05 段落重做，並驗證 09-28 段落與 commit 版逐字一致。教訓：①時間戳一律取自 `git log`，不憑感覺 ②改歷史檔案要**限定段落**再套用，且改完要對 diff 驗證 |
 | 22 | ~02:12 | TMO-037 起點 | 實測 **270 錯 / 127 檔**（票面 273 是舊數字，交付前重量）；分佈：MD013 201、MD047 20、MD056 9、MD038 8、MD031 7、MD029 5、MD012 5、MD036 3、MD025 3、MD037 2、MD028 2、MD014 2、MD058 1、MD009 1、MD004 1 |
 | 23 | ~02:15 | TMO-037 機械修 | `markdownlint-cli2 --fix` → 218 錯（動的是末端換行與有序清單重編號，diff 已逐項看過）；備份 127 檔到 `/tmp/t37-bak`（不用 `git checkout`，遵守 round-3 紀律） |
-| 24 | ~02:20 | TMO-037 手改 17 處 | MD056×9（表格列內 `\|` 轉義；`AGENTS.md` 兩列 3 格併回 2 格）、MD036×3、MD025×3（第二個 H1→H2）、MD028×2（引用內空行補 `>`）→ 只剩 201 個 MD013 |
+| 24 | ~02:20 | TMO-037 手改 18 處 | MD056×9（表格列內 `\|` 轉義；`AGENTS.md` 兩列 3 格併回 2 格）、MD036×3、MD025×3（第二個 H1→H2）、MD028×2（引用內空行補 `>`）→ 只剩 201 個 MD013。**自我糾錯（reviewer round B P2-2）**：本列原寫「17 處」；依 `/tmp/t37-manual.py` 重算＝**14 檔、18 個 pattern 替換**（其中 `\|\| M4_RC=$?` 一次命中 2 處；MD025/MD036 各有一組 2 檔迴圈） |
 | 25 | ~02:25 | TMO-037 折行器 | 自寫 `/tmp/wrap_md.py`（保護 code span／連結／URL 不可切斷；表格/程式碼區塊/標題跳過）→ 折 247 行。**踩雷**：首版把續行折成 `+ …` 被當清單 → 31 個 MD004；加「危險續行開頭」懲罰後從備份重跑整條流程 |
 | 26 | ~02:30 | TMO-037 lint 歸零 | `markdownlint-cli2` = **0 issues / 127 files**；另做**內容完整性驗證**：63 個改過的 .md 正規化（去空白）後比對，非空白差異只剩「刻意改的」17 類（`\|`、`>`、`##`、`**` 去除） |
-| 27 | ~02:32 | TMO-037 探針回歸 | 折行一度把 `skills/dev-checker-loop/SKILL.md` 折到 130 行（撞 `<130` 上限）且拆斷 `v2.4 新增 jev 嵌入細節` grep anchor → 改寫 3 行精簡單行（內容不變）→ 539 ok / 0 not ok |
+| 27 | ~02:32 | TMO-037 探針回歸 | 折行一度把 `skills/dev-checker-loop/SKILL.md` 折到 130 行（撞 `<130` 上限）且拆斷 `v2.4 新增 jev 嵌入細節` grep anchor → 當時以「改寫 3 行精簡單行」收尾並記為「內容不變」。**⚠️ 這句是錯的（reviewer round B P1-1 抓到）**：實為**刪減內容**（Step 3 掉了「regression-guard 探針」與 jev 子步驟/區段指標）。已於 rows 31–33 逐字還原 |
 | 28 | ~02:36 | TMO-037 守門 | 新 `tests/markdownlint-guard.bats` MLG-1..8（TDD：MLG-2 先紅在 `83: continue-on-error: true`）＋ ci.yml 移除 `continue-on-error`（恢復阻擋）＋ CONTRIBUTING 補 markdownlint 政策與 shellcheck 指令 |
 | 29 | ~02:38 | TMO-037 順手清 shellcheck info | SC1091（動態 source：改 `-x` + `shellcheck shell=bash` 指示）、SC2015（`A && B \|\| C` 改顯式 if）、SC2094（basename 移出讀取迴圈）→ Gate 2 拉高到 `shellcheck -x -S style` **全嚴重度 rc=0** |
 | 30 | ~02:45 | TMO-037 Gate 3 | ✅ 全量 **547 ok / 0 not ok**（539 + MLG 8 條） |
+| 31 | 02:48* | L1 接力 | 指定 5 票全清後**不停下**（trust §Step 4）：backlog 45 列＝12 done / 10 todo（餘全 P2、22 SP）依賴皆滿足 → L1 順序 030 → 031 → 034 → 032 → 036 → 033 → 038 → 041 →（040/035 需決策 → 保守預設＋寫 `need-you-help.md`）|
+| 32 | 02:48* | TMO-030/031/034 | ①廢棄麵包屑（`docs/prd/02`、`docs/prd/03` 風險列、backlog TMO-007）②`dav-planner/SKILL.md:73` 舊步驟名 → Step 1（提問技巧）/ Step 2（決策點判斷）③清死引用（`wiki-cleanup.sh:3,39` → `skills/dav-wiki/soft-delete.md`）；commit `9d4cb6b`/`472c0cd`/`cbe8691` |
+| 33 | ~02:52 | TMO-034 探針 | 新 `DOCS-REDUCE-007`：活檔案不得指向不存在的 `docs/sop/handbook/*.md`（含正向錨定，防掃描器失效導致安靜地綠）→ Gate 1 先紅（`dav-wiki-cleanup.md`）→ 後綠 |
+| 34 | ~02:56 | TMO-032 完成 | ①`refute_file_contains` 加檔案存在檢查（根除「檔案不存在＝安靜地綠」整類假綠）②新增 `refute_file_body_contains`（排除 `^\| v` 變動歷史列，避免政策誤紅）③v1.9 改**列級錨定**④`BACKLOG-005` 大小寫不敏感⑤M11 同義詞 best-effort 加 4 詞；突變 M-A～M-E 全咬 |
+| 35 | ~03:02 | reviewer round B | run=`1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**「可交付用戶驗收？yes」。P1-1＝我先前折行**實質刪減** `dev-checker-loop/SKILL.md:10,46,51` 卻記為「內容不變」；P2-1 數字口徑、P2-2 手改數、P2-3 MLG 缺口、P2-4 新檔未入 lint 計數、P2-5 row 4 檔名 |
+| 36 | ~03:05 | P1-1 修復 | 3 行還原為 `5da880e` 原文只做折行：正規化後**逐字相同** ✓；127 → **129** 行；`v2.4 新增 jev 嵌入細節` 錨點未折斷；markdownlint 0。**揭露**：129 行餘裕僅 1 行，下次動本檔需先瘦身 |
+| 37 | ~03:08 | P2-* 修復 | P2-1 數字口徑、P2-2 row 24 改 18 處（14 檔）、P2-5 row 4 改 `.markdownlint.json`、P2-3 MLG 強化（MLG-2 改錨 job key＋去空白、MLG-8 regex 涵蓋所有 tests/fixtures ignore、新增 **MLG-9** lint job 不得有 `if:`）；M4b 首測不咬＝揭露探針自身盲點 → 改錨後咬 |

@@ -39,11 +39,14 @@ setup() {
     printf '%s\n' "$code" | grep -n 'continue-on-error' >&2
     return 1
   fi
-  # 抽 lint job 區塊（從 job 名到檔尾，lint 是 ------- 之後最後一個 job）
+  # 抽 lint job 區塊：以 job key `lint-only` 為錨，到下一個頂層 job 鍵為止
+  # （reviewer round B P2-3 + 本輪突變 M4b 修正：原版從 `name:` 起算，插在 name 之前
+  #  的 `if:` 會落在區塊外 → 盲點；原版又印到 EOF，後面新增 job 會被誤判）
   local block
-  block=$(printf '%s\n' "$code" | awk '/^    name: Markdown lint/{flag=1} flag{print}')
+  block=$(printf '%s\n' "$code" | awk '/^  lint-only:$/{flag=1; print; next} flag && /^  [A-Za-z0-9_-]+:$/{exit} flag{print}')
   [[ -n "$block" ]] || { echo "FAIL: 抽不到 lint job 區塊" >&2; return 1; }
-  if printf '%s' "$block" | grep -qE '\|\|[[:space:]]*true'; then
+  # 比對前去掉所有空白：`||true`（無空白）同樣是假綠
+  if printf '%s' "$block" | tr -d '[:space:]' | grep -q '||true'; then
     echo "FAIL: lint step 有 '|| true'（假綠）" >&2; return 1
   fi
 }
@@ -104,9 +107,11 @@ setup() {
   sample=$(find "$REPO_ROOT/tests/fixtures" -name '*.md' -print -quit)
   [[ -n "$sample" ]] || { echo "FAIL: fixture 無 .md" >&2; return 1; }
   local rel="${sample#"$REPO_ROOT"/}"
-  # cli2 ignore 清單若命中 fixture 路徑，glob 覆蓋就是假的
-  if grep -qE '^\s*"!?\*\*/tests/' "$MDLINT_CLI2"; then
-    echo "FAIL: .markdownlint-cli2.jsonc 有排除 tests/ 的規則（glob 覆蓋失效）" >&2
+  # cli2 ignore 清單若命中 fixture 路徑（任何提到 tests/fixtures 的 ignore 字串，
+  # 不論寫成 "!**/tests/**" / "tests/**" / "**/fixtures/**"）→ glob 覆蓋就是假的
+  # （reviewer round B P2-3：原 regex 只認以 **/tests/ 開頭的形式，可繞過）
+  if grep -qE '^[[:space:]]*"[^"]*(tests|fixtures)[^"]*"' "$MDLINT_CLI2"; then
+    echo "FAIL: .markdownlint-cli2.jsonc 有排除 tests/fixtures 的規則（glob 覆蓋失效）" >&2
     return 1
   fi
   command -v markdownlint-cli2 >/dev/null 2>&1 || \
@@ -115,4 +120,19 @@ setup() {
   run markdownlint-cli2 "$rel"
   [ "$status" -eq 0 ] || {
     echo "FAIL: fixture markdown 不乾淨: $rel" >&2; return 1; }
+}
+
+@test "MLG-9: lint job 不得被停用（不得有 if: 阻斷式條件）" {
+  # reviewer round B P2-3 缺口：job/step 掛 `if: false` 沒有任何一條會抓到。
+  # lint 是「文件債清零」的執行者，必須無條件跑；任何 if: 條件（含 ${{ … }} 條件式）
+  # 都讓阻擋性變成不保證 → 一律視為停用。
+  local code block
+  code=$(grep -vE '^[[:space:]]*#' "$CI_YML")
+  block=$(printf '%s\n' "$code" | awk '/^  lint-only:$/{flag=1; print; next} flag && /^  [A-Za-z0-9_-]+:$/{exit} flag{print}')
+  [[ -n "$block" ]] || { echo "FAIL: 抽不到 lint job 區塊" >&2; return 1; }
+  if printf '%s' "$block" | tr -d '[:space:]' | grep -q 'if:'; then
+    echo "FAIL: lint job 帶 if: 條件（可被跳過＝阻擋不保證）" >&2
+    printf '%s\n' "$block" | grep -n 'if:' >&2
+    return 1
+  fi
 }
