@@ -37,14 +37,18 @@
 | TMO-026 | 修 A 類 12 紅：探針 retarget 到 skill 拆檔後的新家（+3 條 CJK 靜默假綠探針復活）| P1 | 5 | done (2026-10-04) | TMO-025 |
 | TMO-027 | 廢棄守門：dav-planner §2.7 用戶背景收集（用戶已決策廢除）5 條探針轉負向斷言 | P2 | 3 | done (2026-10-04) | TMO-026 |
 | TMO-028 | `skills/dav-wiki/SKILL.md` 151 → **129 行**（V03.5 強制 ≤130）：輸出結構/軟刪除細節移子檔 + 指標存在探針 + 版本漂移鎖 | P2 | 3 | done (2026-10-04) | TMO-026 |
-| TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI + 探針「缺 venv 就大聲紅」| P1 | 3 | todo | TMO-026 |
+| TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI trigger `[main, master]` + 探針「缺 venv 就大聲紅、靜態測試不誤紅」；驗收=本機 506/506（CI 首跑全綠待 TMO-039）| P1 | 3 | done (2026-10-04) | TMO-026 |
 | TMO-030 | 廢除麵包屑補齊：`docs/prd/02` + `docs/prd/03:104` + backlog TMO-007 詳細段加「已廢棄」註 | P2 | 2 | todo | TMO-027 |
 | TMO-031 | `skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」→ 現行 Step 1/2）| P2 | 1 | todo | TMO-027 |
 | TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | todo | TMO-027 |
 | TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | todo | TMO-028 |
-| TMO-034 | 清 4 處同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`.github/workflows/ci.yml:50`、`CONTRIBUTING.md:48` | P2 | 1 | todo | TMO-028 |
+| TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | todo | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`，故 `dav-planner/SKILL.md:80`「先 grep `docs/concepts/`」實質跨目錄讀取抓不到 | P2 | 2 | todo | TMO-028 |
+| TMO-037 | 清 markdownlint 債（實測 246 錯：MD013×184、MD047×18、其餘 14 種；含 `docs/backlog.md` 45、deliverable 檔 ~75、`changelog.md` 18、`skills/**` ~21）——現以 `ci.yml` lint-only `continue-on-error: true` 暫時不阻擋，清完須移除該行 | P2 | 8 | todo | TMO-029 |
+| TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
+| TMO-039 | 首次真實 GitHub Actions 驗證：`ci.yml` 已加 `workflow_dispatch` 可手動觸發；需貼 run URL 確認（a）test job 全綠（b）runner 的 bats/python 版本假設（c）lint-only 紅燈以 annotation 呈現且不阻擋 | P1 | 2 | todo | TMO-029 |
+| TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | todo | TMO-029 |
 
 > **狀態定義**：`done (日期)` = 已交付；`todo` = TMO-026 之後新開的後續票（已描述、尚未開工，**非** trust mode 未結項）。
 > 注：`tests/backlog-trust-mode-completion.bats:48`（BACKLOG-005）禁止 trust mode 期間的票停在 `pending`；本表新票一律用 `todo`，不修改該探針。
@@ -921,3 +925,64 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 - **負向與空值都有假綠**：新探針 `found >= 4` 擋「擷取失效 → 0 筆」；漂移鎖 `[ -n "$v_skill" ]` 擋「兩側抽空 → `"" = ""`」。
 - **最安靜的債是缺鎖**：dav-wiki 是三個拆檔家族中最後一個補上版本漂移鎖的 skill。
 - **自傷當場說**：`git checkout` 誤還原整份瘦身（已重做）、`"v2\.0"` 誤打成 `"v\.0"`（已修回）—— 兩者皆未進最終 diff，仍主動揭露。
+
+## TMO-029 詳細（venv bootstrap：CI 真的會跑 + 一行建環境 + 缺環境大聲紅）
+
+### 背景（為什麼要做）
+
+`tests/v2.1-jev-poc.bats` 有 38 條測試依賴 PoC venv（httpx / PyYAML）。
+HEAD（`93ba04f`）狀態下：
+
+1. **CI 從未真正執行**：`ci.yml` 只寫 `branches: [main]`，但 repo 預設分支是 `master` → push 從不觸發；`test` job 也從未安裝 httpx / PyYAML。
+2. **clean clone 無法自己站起來**：repo 內沒有 requirements / setup 腳本，env 只在開發者腦中。
+3. **缺環境時不是大聲紅而是噪音**：38 條會以 `command not found`（127）各自失敗，看不出是「環境沒建」還是「程式壞了」。
+
+### 這一票做了什麼
+
+| 檔 | 改動 |
+| --- | --- |
+| `skills/regression-guard/PoC/requirements.txt` | **新增**：`httpx>=0.27,<1` + `PyYAML>=6.0`（上下界都鎖）＋範圍聲明註解（本票只涵蓋 column-0 import）|
+| `skills/regression-guard/PoC/setup-venv.sh` | **新增**（uv 優先、`python3 -m venv` + `ensurepip` 退路、`--force`、`POC_VENV_DIR` 測試縫、危險值護欄）|
+| `skills/regression-guard/PoC/.gitignore` | 加 `.venv/`（uv 建的 venv 自帶 `*`，`python3 -m venv` 建的沒有）|
+| `skills/regression-guard/PoC/README.md` | 安裝步驟改 `bash setup-venv.sh`；目錄樹補兩個新檔 |
+| `.github/workflows/ci.yml` | triggers 加 `workflow_dispatch`；`push`/`pull_request` 分支 `[main, master]`；test job 加 `Build PoC venv` 步驟（排在 `bats tests/` 前）；lint-only 加 `continue-on-error: true`（→ TMO-037）|
+| `.markdownlint-cli2.jsonc` | **新增**：ignores `**/.venv/**`、`**/node_modules/**`（venv 在 `skills/**` 內，site-packages 的 LICENSE.md 會被撈進來）|
+| `tests/poc-bootstrap.bats` | **新增 8 條探針**（見下）|
+| `tests/v2.1-jev-poc.bats` | 38 條 venv-dependent 測試加 `need_poc_venv()`（缺 venv → 一條清楚的紅＋修復指令，不再 38 條 127）；新增 `make_us101_run()` 讓 M6-g / M6.1-c 真的跑；flaky-d 先清 `/tmp` 殘檔 |
+| `README.md` | 移除數字 badge（bats `209/209`、markdownlint `0 issues` 皆無鎖且已失真）→ 只留 CI run badge |
+| `docs/install-reference.md` | 更正依賴說明：**38 / 98 條需 venv，其餘 60 條純靜態**（原誤寫「98 條全紅」）|
+
+### 探針設計（`tests/poc-bootstrap.bats`，8 條）
+
+| # | 鎖什麼 | 反空過設計 |
+| --- | --- | --- |
+| 1 | `requirements.txt` 涵蓋 PoC 腳本所有 column-0 非 stdlib import | `-ge 2` 防空過；範圍外（縮排／子目錄）明示 → TMO-038 |
+| 2 | `setup-venv.sh` 存在、可執行、且真的從 `requirements.txt` 安裝 | 指名檔案（改讀 deps.txt 即紅）|
+| 3 | uv 缺席時走 `python3 -m venv` 退路 | **真跑**：PATH 只放 shim、`POC_VENV_DIR` 導向暫存；斷言 `-m venv` 與 `-m pip install` 都在呼叫記錄內 |
+| 4 | 每條 venv-dependent 測試都有 `need_poc_venv` | 靜態不變式（用到 `$PY`／helper 的測試數 == 有守門的測試數）＋ 同檔 `skip` 數必須 0 |
+| 5 | `.venv` 被 gitignore | `git check-ignore` 行為驗證（非只看字串）|
+| 6 | 可疑 `POC_VENV_DIR` 必須拒絕 | 9 個壞值（含 `/tmp/`、`//`、`/tmp/..`、`/tmp/.` 等價寫法）＋ 深層路徑正向對照；刻意不帶 `--force` |
+| 7 | 護欄必須排在 `rm -rf` 之前 | 行號靜態比較（註解行已用 `^[^#]` 排除）|
+| 8 | CI 在 `master` 觸發、且用 `setup-venv.sh` 建 venv | PyYAML 語意斷言 → TMO-038 |
+
+### 驗收證據
+
+- Gate 1（紅→綠）：`FAIL: 缺 PoC venv`（127 噪音）→ 38 條各自一條清楚紅；新探針 8 條紅→綠；突變 M10–M27c 逐條咬（含 M14 不咬 → TMO-038、M26b 咬 `/tmp/` 繞道）
+- Gate 2：`shellcheck` rc=0、`bash -n` rc=0、`markdownlint` 改動檔 0 issue（`PoC/README.md` 3 issue 為既有，`git show HEAD:` 對照證明零新增）、PyYAML 解析 `ci.yml` 語意正確
+- Gate 3：`bats tests/` **0 not ok / 506 ok / 0 skip**；隱藏 venv → **38 not ok / 468 ok / 0 skip / 0 個 `command not found`**
+- Gate 4（V03.6 二審 **4 輪**）：R1 approve-with-comments（0 P0 / 1 P1 / 11 P2）→ R2（0/1/7）→ R3（0/2/4，抓出 `/tmp/` 繞過護欄）→ R4 **approve-with-comments / risk low / 0 P0 / 0 P1 / 3 P2**，並明示「可進入 §2.5」
+
+### 已知問題（已切票）
+
+- TMO-037 lint 債 246 處（lint-only 暫 `continue-on-error`，清完須移除）
+- TMO-038 探針①④⑤ 範圍與語意強化
+- TMO-039 首次真實 Actions 驗證（本機不可驗）
+- TMO-040 護欄設計邊界（合法深層絕對路徑 + `--force`）
+
+### 反思
+
+- **「測試很多」不等於「測試會跑」**：真正致命的是 CI 從未觸發（`branches: [main]` vs 預設分支 `master`）—— 一個字的設定讓 209 條測試整年沒跑。
+- **缺環境要大聲紅、不要噪音**：38 條 127 噪音會讓人以為「測試壞了」；改成每條一條清楚的紅＋修復指令，才指得動人。
+- **假綠有兩種**：`skip`（永遠不跑）與空過斷言（跑了但什麼都沒驗）。本票各抓到一批，並用「本檔 skip 數必須 0」與「不變式等號」把它們鎖住。
+- **護欄會寫錯，而且會錯在等價寫法**：`/tmp` 擋住了、`/tmp/` 卻繞過去（`case` 的 `*` 可跨 `/`）；是第 3 輪 reviewer 抓到的。教訓：**安全性檢查要拿「同義寫法矩陣」來測**，不是測一個代表值。
+- **自傷當場說**：M10 第一次是假突變（awk 語法錯把檔案清空）、M17 第一次沒命中卻意外揭露探針③只是字串形狀、探針③第一版誤紅、`$status（` 全形括號 bug、以及**用 `git checkout` 還原突變時誤刪未 commit 的整批編輯**（已重做並改用 `cp` 備份）——四件事全部寫進證據包，其中最後一件由 reviewer 反向查出兩處漏補。

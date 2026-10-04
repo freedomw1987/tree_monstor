@@ -17,11 +17,23 @@
 setup() {
   load 'helpers/test-env'
   POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
-  PY="$POC_DIR/.venv/bin/python"
+  # POC_PY 可覆寫：讓 tests/poc-bootstrap.bats 能驗證「缺 venv 時大聲紅」
+  PY="${POC_PY:-$POC_DIR/.venv/bin/python}"
+}
+
+# 缺 venv 必須「大聲紅」（TMO-029）：只守住真的會用 $PY 的測試。
+# 純靜態（grep 檔案）的測試不需要 venv，不能一起誤紅。
+# 修法一行：bash skills/regression-guard/PoC/setup-venv.sh
+need_poc_venv() {
+  [ -x "$PY" ] && return 0
+  echo "FAIL: 缺 PoC venv（${PY}）" >&2
+  echo "  修法：bash skills/regression-guard/PoC/setup-venv.sh" >&2
+  echo "  本測試需要 PoC 專用 venv（httpx + PyYAML）；缺它一律紅、不 skip。" >&2
+  return 1
 }
 
 # ────────────────────────────────────────────────────────────────────
-# 共用 fixture helpers（TMO-023）
+# 共用 fixture helpers（TMO-023 / TMO-029）
 #
 # M6.3 / M7 探針原本假設 /tmp/US-M63-before.json 與 /tmp/m62-batch.json 已存在，
 # 但測試檔內沒有任何步驟會產生它們 → 5+2 個探針永遠紅。
@@ -29,6 +41,8 @@ setup() {
 #   - make_us_m63_before：真跑一次 US-M63 journey 當 patch 前 baseline
 #     （patch 無關 → 重跑後 verdict 分布相同 → re_validate 判 no_change）
 #   - make_m62_batch_report：造 M7 flaky 整合所需的 batch_report 最小 fixture
+#   - make_us101_run：產 M6-g / M6.1-c 所需的 /tmp/US-101-run.json
+#     （原本兩條測試假設外部已跑 pipeline → CI 內永遠 skip = 假綠，TMO-029）
 # ────────────────────────────────────────────────────────────────────
 
 make_us_m63_before() {
@@ -39,6 +53,17 @@ make_us_m63_before() {
     --json-output /tmp/US-M63-before.json >/dev/null 2>&1 || true
   if [ ! -s /tmp/US-M63-before.json ]; then
     echo "FAIL: baseline fixture 未產出（/tmp/US-M63-before.json）" >&2
+    return 1
+  fi
+}
+
+make_us101_run() {
+  rm -f /tmp/US-101-run.json
+  # mock backend 即可（不需 API key）；rc=0 且 json 必須有內容
+  OBSERVER_BACKEND=mock "$PY" "$POC_DIR/run_journey.py" "$POC_DIR/journeys/US-101.yaml" \
+    --json-output /tmp/US-101-run.json >/dev/null 2>&1 || true
+  if [ ! -s /tmp/US-101-run.json ]; then
+    echo "FAIL: US-101 run fixture 未產出（/tmp/US-101-run.json）" >&2
     return 1
   fi
 }
@@ -114,6 +139,7 @@ json.dump({
 }
 
 @test "M5.2-c: stale-test CLI still runs (backward compat, exit code 0 or 2 both ok)" {
+  need_poc_venv
   set +e
   (cd "$POC_DIR" && "$PY" run_journey.py journeys/US-101.yaml --stale-test >/dev/null 2>&1)
   local rc=$?
@@ -210,6 +236,7 @@ json.dump({
 # ────────────────────────────────────────────────────────────────────
 
 @test "M5-runtime-a: _load_fixture returns 4 AC entries" {
+  need_poc_venv
   cd "$POC_DIR"
   "$PY" -c "
 import sys
@@ -224,6 +251,7 @@ print('OK: 4 fixtures, AC04=500')
 }
 
 @test "M5-runtime-b: stale-test blocks journey (mock_observe_static works)" {
+  need_poc_venv
   local us_md="$REPO_ROOT/docs/ac/US-101.md"
   cd "$POC_DIR"
   "$PY" -c "
@@ -272,6 +300,7 @@ print(f'OK blocked={summary[\"blocked\"]} reason={summary[\"block_reason\"]}')
 }
 
 @test "M3.1-c: playwright_observer module imports OK without playwright installed" {
+  need_poc_venv
   cd "$POC_DIR"
   "$PY" -c "
 import sys
@@ -289,6 +318,7 @@ print('OK: module imports, _is_playwright_available=False')
 }
 
 @test "M3.1-d: backend=playwright raises RuntimeError when playwright missing" {
+  need_poc_venv
   cd "$POC_DIR"
   set +e
   OBSERVER_BACKEND=playwright "$PY" run_journey.py journeys/US-101.yaml >/dev/null 2>&1
@@ -306,6 +336,7 @@ print('OK: module imports, _is_playwright_available=False')
 }
 
 @test "M3.1-e: backend=mock signature compatible (story_id kwarg)" {
+  need_poc_venv
   cd "$POC_DIR"
   set +e
   OBSERVER_BACKEND=mock "$PY" run_journey.py journeys/US-101.yaml >/dev/null 2>&1
@@ -425,6 +456,7 @@ print('OK: module imports, _is_playwright_available=False')
 }
 
 @test "M6-b: fix_proposal.py can import & has FixProposal dataclass" {
+  need_poc_venv
   cd "$POC_DIR"
   "$PY" -c "
 import sys
@@ -474,11 +506,10 @@ print('OK: FixProposal has 3 conf fields')
 }
 
 @test "M6-g: end-to-end fix_proposal.py on /tmp/US-101-run.json" {
+  need_poc_venv
   cd "$POC_DIR"
-  # 用 JEV_FIX_PROPOSAL=1 跑 pipeline，產出 fix_proposal.md
-  if [ ! -f /tmp/US-101-run.json ]; then
-    skip "US-101-run.json not found, run pipeline first"
-  fi
+  # fixture 自己產（TMO-029）：原本假設外部已跑 pipeline → CI 內永遠 skip = 假綠
+  make_us101_run || return 1
   "$PY" fix_proposal.py /tmp/US-101-run.json /tmp/test-fix.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal.py CLI failed" >&2
     return 1
@@ -515,10 +546,10 @@ print('OK: FixProposal has 3 conf fields')
 }
 
 @test "M6.1-c: fix_proposal_v2.py gating < 0.5 skips LLM relay (end-to-end)" {
+  need_poc_venv
   cd "$POC_DIR"
-  if [ ! -f /tmp/US-101-run.json ]; then
-    skip "US-101-run.json not found, run pipeline first"
-  fi
+  # fixture 自己產（TMO-029）：原本假設外部已跑 pipeline → CI 內永遠 skip = 假綠
+  make_us101_run || return 1
   "$PY" fix_proposal_v2.py /tmp/US-101-run.json /tmp/test-v2.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal_v2.py CLI failed" >&2
     return 1
@@ -558,6 +589,7 @@ print('OK: FixProposal has 3 conf fields')
 # ────────────────────────────────────────────────────────────────────
 
 @test "CLEAN-a: docs/cleanup/cleanup-scan.py exists & runs OK" {
+  need_poc_venv
   local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
   assert_path_is_file "$f"
   "$PY" "$f" >/dev/null 2>&1 || {
@@ -593,6 +625,7 @@ print('OK: FixProposal has 3 conf fields')
 }
 
 @test "CLEAN-e: cleanup-scan.py --json output is valid JSON" {
+  need_poc_venv
   local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
   local output
   output=$("$PY" "$f" --json 2>&1) || {
@@ -606,6 +639,7 @@ print('OK: FixProposal has 3 conf fields')
 }
 
 @test "CLEAN-f: scan output shows no .venv/ false positives" {
+  need_poc_venv
   local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
   local output
   output=$("$PY" "$f" 2>&1) || {
@@ -648,6 +682,7 @@ print('OK: FixProposal has 3 conf fields')
 }
 
 @test "M6.2-b: patch_parser extracts (file, old, new) from unified diff" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-diff.md
   cat > "$sample" <<'EOF'
@@ -681,6 +716,7 @@ EOF
 }
 
 @test "M6.2-c: patch_parser handles describe_only mode (no diff code block)" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-describe.md
   cat > "$sample" <<'EOF'
@@ -709,6 +745,7 @@ EOF
 }
 
 @test "M6.2-d: patch_parser returns 2 when no patches found" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-empty.md
   echo "# Empty Proposal" > "$sample"
@@ -721,6 +758,7 @@ EOF
 }
 
 @test "M6.2-e: playwright_patcher.py dry-run does NOT modify file" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-dryrun.py
   echo 'def hello(): return "world"' > "$sample"
@@ -742,6 +780,7 @@ EOF
 }
 
 @test "M6.2-f: playwright_patcher.py --apply modifies file & creates backup" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-apply.py
   echo 'def hello(): return "world"' > "$sample"
@@ -770,6 +809,7 @@ EOF
 }
 
 @test "M6.2-g: playwright_patcher.py refuses ambiguous old_text (>1 match)" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-ambiguous.py
   cat > "$sample" <<'EOF'
@@ -786,6 +826,7 @@ EOF
 }
 
 @test "M6.2-h: playwright_patcher.py refuses old_text not found" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample=/tmp/m62-test-notfound.py
   echo 'def hello(): return "world"' > "$sample"
@@ -798,6 +839,7 @@ EOF
 }
 
 @test "M6.2-i: re_validate.py classifies improvement (fail -N)" {
+  need_poc_venv
   cd "$POC_DIR"
   local before=/tmp/m62-before.json
   local after=/tmp/m62-after.json
@@ -833,6 +875,7 @@ json.dump(a, open('$after', 'w'))
 }
 
 @test "M6.2-j: re_validate.py classifies regression (fail +N) & returns 1" {
+  need_poc_venv
   cd "$POC_DIR"
   local before=/tmp/m62-reg-before.json
   local after=/tmp/m62-reg-after.json
@@ -917,6 +960,7 @@ json.dump(a, open('$after', 'w'))
 }
 
 @test "M6.3-b: sandbox dry-run creates sandbox dir but does not modify source" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-dryrun-test.py"
   cat > "$sample" <<'EOF'
@@ -949,6 +993,7 @@ EOF
 }
 
 @test "M6.3-c: sandbox apply + re-validate produces no_change (patch is unrelated)" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-apply-test.py"
   cat > "$sample" <<'EOF'
@@ -975,6 +1020,7 @@ EOF
 }
 
 @test "M6.3-d: sandbox aborts on ambiguous old_text (safety propagation)" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-ambiguous-test.py"
   cat > "$sample" <<'EOF'
@@ -1007,6 +1053,7 @@ EOF
 }
 
 @test "M6.3-e: sandbox cleanup removes sandbox dir after run" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-cleanup-test.py"
   cat > "$sample" <<'EOF'
@@ -1041,6 +1088,7 @@ EOF
 }
 
 @test "M6.3-f: sandbox JSON output has required fields" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-json-test.py"
   cat > "$sample" <<'EOF'
@@ -1103,6 +1151,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
 }
 
 @test "M6.3-j: sandbox_runner handles missing before.json gracefully" {
+  need_poc_venv
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-missing-test.py"
   echo 'def x(): return "x"' > "$sample"
@@ -1138,6 +1187,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
 }
 
 @test "flaky-b: flaky_check.py analyze_runs correctly classifies stable" {
+  need_poc_venv
   cd "$POC_DIR"
   local script="
 import sys
@@ -1165,6 +1215,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 }
 
 @test "flaky-c: flaky_check.py analyze_runs correctly classifies highly_flaky" {
+  need_poc_venv
   cd "$POC_DIR"
   local script="
 import sys
@@ -1195,7 +1246,10 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 }
 
 @test "flaky-d: flaky_check.py with US-62 3 runs produces stable output" {
+  need_poc_venv
   cd "$POC_DIR"
+  # 先清殘檔：否則上一次的 /tmp 檔會讓這條假綠（reviewer P2-4）
+  rm -f /tmp/flaky-test.md
   "$PY" flaky_check.py "$POC_DIR/journeys/US-M62.yaml" \
     --source "$REPO_ROOT/docs/ac/US-M62.md" \
     --story-id US-M62-flaky-test --runs 3 \
@@ -1252,6 +1306,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 }
 
 @test "flaky-int-b: flaky_integration.py writes flaky_measured to batch_report" {
+  need_poc_venv
   cd "$POC_DIR"
   local tmp_batch="/tmp/flaky-int-test-batch.json"
   # 造一個 batch_report
@@ -1296,6 +1351,7 @@ print('OK: wrote flaky_measured')
 }
 
 @test "flaky-int-c: flaky_integration.py with 0 extra runs uses jev value" {
+  need_poc_venv
   cd "$POC_DIR"
   make_m62_batch_report
   run "$PY" flaky_integration.py \
@@ -1331,6 +1387,7 @@ print('OK: wrote flaky_measured')
 }
 
 @test "gh-pr-b: gh_pr_comment.py render_comment has 4 sections" {
+  need_poc_venv
   cd "$POC_DIR"
   "$PY" -c "
 import sys
@@ -1358,6 +1415,7 @@ print(f'OK: comment {len(body)} chars')
 }
 
 @test "gh-pr-c: gh_pr_comment.py dry-run prints body without gh" {
+  need_poc_venv
   cd "$POC_DIR"
   run "$PY" gh_pr_comment.py \
     --batch-report /tmp/gh-pr-test-batch.json \
@@ -1373,6 +1431,7 @@ print(f'OK: comment {len(body)} chars')
 }
 
 @test "gh-pr-d: gh_pr_comment.py output file written when --output specified" {
+  need_poc_venv
   cd "$POC_DIR"
   local out="/tmp/gh-pr-test-output.md"
   rm -f "$out"
@@ -1394,6 +1453,7 @@ print(f'OK: comment {len(body)} chars')
 }
 
 @test "gh-pr-f: gh_pr_comment.py handles missing batch_report gracefully" {
+  need_poc_venv
   cd "$POC_DIR"
   run "$PY" gh_pr_comment.py \
     --batch-report /tmp/nonexistent-batch.json \
@@ -1409,6 +1469,7 @@ print(f'OK: comment {len(body)} chars')
 }
 
 @test "M7-gating-a: batch_report schema includes flaky_measured field" {
+  need_poc_venv
   # 跑一次 flaky_integration，確認 schema 包含新欄位
   cd "$POC_DIR"
   make_m62_batch_report
@@ -1430,6 +1491,7 @@ print(f'OK: comment {len(body)} chars')
 }
 
 @test "M7-gating-b: flaky_likelihood delta warning triggers on high delta" {
+  need_poc_venv
   cd "$POC_DIR"
   "$PY" -c "
 import sys

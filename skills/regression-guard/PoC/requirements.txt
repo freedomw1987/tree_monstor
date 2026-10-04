@@ -1,0 +1,15 @@
+# regression-guard Jev PoC 的執行期依賴（TMO-029）
+#
+# 這些是 PoC/*.py 頂層 `import` 的非 stdlib 模組；clean clone 少了它們，
+# tests/v2.1-jev-poc.bats 的 38 條 venv-dependent 探針會全紅並印出修復指令。
+# 用下面一行重建：
+#
+#   bash skills/regression-guard/PoC/setup-venv.sh
+#
+# 上限鎖 httpx<1：不鎖的話 CI 每次重解最新版，上游 breaking 會以
+# 「與該 commit 無關的紅」出現（reviewer P2-7）。
+httpx>=0.27,<1
+PyYAML>=6.0
+#
+# 已知未涵蓋（TMO-038）：縮排（函式內）與子目錄的 import 不在探針掃描範圍，
+# 例如 playwright_observer.py 內的 `import playwright`（optional dep，故意不裝）。

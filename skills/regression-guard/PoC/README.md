@@ -32,6 +32,8 @@ PoC/
 ├─ run_pipeline.sh       # 🚀 一鍵跑 M2 → M3 → M4
 ├─ journeys/
 │  └─ US-101.yaml        # 產出的人類可讀 journey spec（要進 git）
+├─ requirements.txt      # 執行期依賴（httpx / PyYAML）—— 唯一來源
+├─ setup-venv.sh         # 一鍵建 venv + 裝 requirements.txt（優先 uv，否則 python3 -m venv）
 ├─ cache/
 │  ├─ fixture_helper.py  # 預塞假 Jev 回應（沒 key 時 demo 用）
 │  └─ *.json             # 自動 cache（gitignored）
@@ -44,8 +46,8 @@ PoC/
 ```bash
 cd skills/regression-guard/PoC
 
-# 1. 建 venv 裝 httpx + pyyaml
-uv venv && uv pip install httpx pyyaml
+# 1. 建 venv 並裝依賴（httpx + PyYAML）；有 uv 用 uv，沒有就 python3 -m venv
+bash setup-venv.sh
 
 # 2. seed 預塞假 Jev 回應
 .venv/bin/python cache/fixture_helper.py

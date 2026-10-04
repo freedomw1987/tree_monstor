@@ -1,8 +1,6 @@
 # tree_monstor
 
 [![CI](https://github.com/apple/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/apple/tree_monstor/actions/workflows/ci.yml)
-[![bats tests](https://img.shields.io/badge/bats-209%2F209-brightgreen)](tests/)
-[![markdownlint](https://img.shields.io/badge/markdownlint-0%20issues-brightgreen)](.markdownlint.json)
 
 `tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent 等）的**工作 SOP + skills**。
 `install.sh` 把它 expose 到 agent 的讀取路徑（全域或專案層），以 symlink 為主，改源檔即時生效。

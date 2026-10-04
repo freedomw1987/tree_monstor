@@ -234,6 +234,18 @@ brew install bats-core    # macOS
 apt install bats          # Debian/Ubuntu
 ```
 
+### 跑全套測試前：建 Jev PoC venv（必需）
+
+`tests/v2.1-jev-poc.bats` 的 98 條裡有 **38 條**要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘 60 條是純靜態
+檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時那 38 條
+會全紅，而且每一條失敗測試各自印出修復指令：
+
+```bash
+bash skills/regression-guard/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
+```
+
+CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
+
 ### 可選：dav-wiki 媒體提取的測試依賴
 
 `tests/wiki-extract-media.bats` 有一部分案例需要額外工具；**缺工具時這些探針會直接失敗**（不會 skip），

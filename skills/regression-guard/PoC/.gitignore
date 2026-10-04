@@ -6,3 +6,5 @@ __pycache__/
 report.json
 report.md
 report.txt
+# uv 建的 venv 會自帶 .gitignore(*)；python3 -m venv 不會 → 這裡一定要擋（TMO-029）
+.venv/

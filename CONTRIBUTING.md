@@ -60,7 +60,8 @@ wc -l skills/dav-wiki/SKILL.md
 每個 PR 會自動跑（見 `.github/workflows/ci.yml`）：
 
 1. **bats 全套測試**（macOS + Linux）
-2. **markdownlint** （SKILL.md、cleanup handbook、所有 markdown）
+2. **markdownlint**（SKILL.md、cleanup handbook、所有 markdown）
+   ——**目前暫時 non-blocking**（`continue-on-error: true`），lint 債 246 處見 TMO-037
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**

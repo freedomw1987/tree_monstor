@@ -1,0 +1,8 @@
+{
+  "// 說明": "markdownlint-cli2 設定：規則仍由 .markdownlint.json 提供，這裡只加忽略清單",
+  "// 為什麼": "skills/regression-guard/PoC/.venv 建在 skills/** 內，site-packages 的 LICENSE.md 會被 skills/**/*.md 撈到（TMO-029 起 CI/本機都會踩）",
+  "ignores": [
+    "**/.venv/**",
+    "**/node_modules/**"
+  ]
+}
