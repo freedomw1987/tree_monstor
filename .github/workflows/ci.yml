@@ -22,15 +22,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install bats (Linux)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y bats
+          sudo apt-get install -y bats poppler-utils pandoc tesseract-ocr
+          python3 -m pip install python-pptx
 
-      - name: Install bats (macOS)
+      - name: Install test dependencies (macOS)
         if: runner.os == 'macOS'
-        run: brew install bats-core
+        run: |
+          brew install bats-core poppler pandoc tesseract
+          python3 -m pip install python-pptx
 
       - name: Run bats tests
         run: bats tests/
@@ -45,6 +53,7 @@ jobs:
         run: |
           bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
           bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
+          bash -n skills/dav-wiki/scripts/wiki-extract-media.sh
 
       - name: Verify SKILL.md size (≤ 150 lines)
         run: |

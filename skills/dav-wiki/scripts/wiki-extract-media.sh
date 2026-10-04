@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tools/wiki-extract-media.sh — Sprint 08 FR-2.6.1 dav-wiki 多模組資產提取
-# 對應 docs/prd/03-knowledge-extraction.md FR-3 / docs/plan/2026-01-15-dav-wiki-sprint-08.md
+# skills/dav-wiki/scripts/wiki-extract-media.sh — Sprint 08 FR-2.6.1 dav-wiki 多模組資產提取
+# 對應 docs/system-design.md §3.2（FR-3 資料流）
 
 set -uo pipefail
 
@@ -17,6 +17,7 @@ EXIT_USAGE=1
 EXIT_NOINPUT=2
 EXIT_BADTYPE=3
 EXIT_TOOLMISSING=4
+EXIT_EXTRACT=5
 
 # === 使用說明 ===
 usage() {
@@ -45,8 +46,9 @@ Exit codes:
   2  輸入檔案不存在
   3  不支援的檔案類型
   4  必要工具缺失
+  5  提取失敗（不得假成功：不會留下 claim 成功但其實沒產出的狀態）
 
-對應手冊: docs/prd/03-knowledge-extraction.md (FR-3)
+對應設計: docs/system-design.md §3.2（FR-3 資料流）
 EOF
 }
 
@@ -56,6 +58,21 @@ require_tool() {
         echo "ERROR: required tool '$1' not found in PATH" >&2
         echo "  install hint: $2" >&2
         exit "$EXIT_TOOLMISSING"
+    fi
+}
+
+# === 產出驗證（TMO-025：抽不到檔一律大聲失敗，不得假成功）===
+verify_artifact() {
+    local path="$1"
+    local label="$2"
+    if [[ ! -f "$path" ]]; then
+        echo "ERROR: ${label} 未產出（應有檔案：${path}）" >&2
+        echo "  hint: 提取工具可能不支援此輸入格式，或輸入已損壞（詳見上方工具輸出）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
+    # 空內容（無文字層）不是失敗：掃描件合法，交由圖片 + OCR（FR-2.2.3）補
+    if [[ -z "$(tr -d '[:space:]' < "$path" 2>/dev/null)" ]]; then
+        echo "  ⚠ ${label} 內容為空 — 可能是掃描件／無文字層，建議改走圖片 + OCR（FR-2.2.3）" >&2
     fi
 }
 
@@ -96,13 +113,20 @@ EOF
 extract_pdf_images() {
     require_tool pdfimages "brew install poppler"
     mkdir -p "$OUTPUT_DIR/images"
-    pdfimages -png "$INPUT" "$OUTPUT_DIR/images/img"
+    if ! pdfimages -png "$INPUT" "$OUTPUT_DIR/images/img"; then
+        echo "ERROR: pdfimages 失敗（輸入：${INPUT}）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
     echo "  ✓ PDF 圖片提取完成"
 }
 
 extract_pdf_text() {
     require_tool pdftotext "brew install poppler"
-    pdftotext -layout "$INPUT" "$OUTPUT_DIR/text.md"
+    if ! pdftotext -layout "$INPUT" "$OUTPUT_DIR/text.md"; then
+        echo "ERROR: pdftotext 失敗（輸入：${INPUT}）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
+    verify_artifact "$OUTPUT_DIR/text.md" "PDF 文字"
     echo "  ✓ PDF 文字提取完成"
 }
 
@@ -112,8 +136,11 @@ extract_docx_images() {
     local media_dir="$OUTPUT_DIR/images"
     mkdir -p "$media_dir"
     # pandoc 提取 media 到指定目錄，會在 media_dir 下建 media/ 子目錄
-    pandoc --extract-media="$media_dir" \
-           "$INPUT" -t markdown -o "$OUTPUT_DIR/_pandoc_out.md"
+    if ! pandoc --extract-media="$media_dir" \
+           "$INPUT" -t markdown -o "$OUTPUT_DIR/_pandoc_out.md"; then
+        echo "ERROR: pandoc DOCX 媒體提取失敗（輸入：${INPUT}）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
     # 把 media/ 子目錄內的圖片移到 images/
     if [ -d "$media_dir/media" ]; then
         mv "$media_dir/media"/* "$media_dir/" 2>/dev/null || true
@@ -124,7 +151,11 @@ extract_docx_images() {
 
 extract_docx_text() {
     require_tool pandoc "brew install pandoc"
-    pandoc "$INPUT" -t markdown -o "$OUTPUT_DIR/text.md"
+    if ! pandoc "$INPUT" -t markdown -o "$OUTPUT_DIR/text.md"; then
+        echo "ERROR: pandoc DOCX 文字提取失敗（輸入：${INPUT}）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
+    verify_artifact "$OUTPUT_DIR/text.md" "DOCX 文字"
     echo "  ✓ DOCX 文字提取完成"
 }
 
@@ -132,7 +163,8 @@ extract_docx_text() {
 extract_pptx_images() {
     require_tool python3 "install python3 + python-pptx (pip install python-pptx)"
     mkdir -p "$OUTPUT_DIR/images"
-    python3 - "$INPUT" "$OUTPUT_DIR/images" <<'PYEOF'
+    local rc=0
+    python3 - "$INPUT" "$OUTPUT_DIR/images" <<'PYEOF' || rc=$?
 import sys, os
 try:
     from pptx import Presentation
@@ -141,7 +173,11 @@ except ImportError:
     sys.exit(4)
 
 src, out_dir = sys.argv[1], sys.argv[2]
-prs = Presentation(src)
+try:
+    prs = Presentation(src)
+except Exception as e:
+    print(f"ERROR: 無法讀取 pptx：{e}", file=sys.stderr)
+    sys.exit(5)
 n = 0
 for slide_idx, slide in enumerate(prs.slides, 1):
     for shape in slide.shapes:
@@ -153,13 +189,60 @@ for slide_idx, slide in enumerate(prs.slides, 1):
                 f.write(shape.image.blob)
 sys.exit(0)
 PYEOF
+    if [ "$rc" -eq 4 ]; then
+        exit "$EXIT_TOOLMISSING"
+    fi
+    if [ "$rc" -ne 0 ]; then
+        echo "ERROR: PPTX 媒體提取失敗（python-pptx rc=${rc}）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
     echo "  ✓ PPTX 媒體提取完成"
 }
 
+# PPTX 文字：用 python-pptx（pandoc 無 pptx reader — TMO-025 修掉靜默假成功）
 extract_pptx_text() {
-    require_tool pandoc "brew install pandoc"
-    pandoc "$INPUT" -t markdown -o "$OUTPUT_DIR/text.md"
-    echo "  ✓ PPTX 文字提取完成"
+    require_tool python3 "install python3 + python-pptx (pip install python-pptx)"
+    local rc=0
+    python3 - "$INPUT" "$OUTPUT_DIR/text.md" <<'PYEOF' || rc=$?
+import sys
+
+try:
+    from pptx import Presentation
+except ImportError:
+    print("ERROR: python-pptx not installed（pip install python-pptx）", file=sys.stderr)
+    sys.exit(4)
+
+src, out_path = sys.argv[1], sys.argv[2]
+try:
+    prs = Presentation(src)
+except Exception as e:  # 損壞 / 非 pptx / 加密
+    print(f"ERROR: 無法讀取 pptx：{e}", file=sys.stderr)
+    sys.exit(5)
+
+lines = []
+for slide_idx, slide in enumerate(prs.slides, 1):
+    texts = []
+    for shape in slide.shapes:
+        if shape.has_text_frame and shape.text_frame.text.strip():
+            texts.append(shape.text_frame.text.strip())
+    lines.append(f"## Slide {slide_idx}")
+    lines.append("")
+    lines.append("\n\n".join(texts) if texts else "_（此頁無文字）_")
+    lines.append("")
+
+with open(out_path, "w", encoding="utf-8") as f:
+    f.write("\n".join(lines).rstrip() + "\n")
+sys.exit(0)
+PYEOF
+    if [ "$rc" -eq 4 ]; then
+        exit "$EXIT_TOOLMISSING"
+    fi
+    if [ "$rc" -ne 0 ]; then
+        echo "ERROR: PPTX 文字提取失敗（python-pptx rc=${rc}）" >&2
+        exit "$EXIT_EXTRACT"
+    fi
+    verify_artifact "$OUTPUT_DIR/text.md" "PPTX 文字"
+    echo "  ✓ PPTX 文字提取完成（python-pptx）"
 }
 
 # === 旗標解析 ===

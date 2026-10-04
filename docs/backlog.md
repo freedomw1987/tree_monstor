@@ -33,6 +33,7 @@
 | TMO-022 | M8 CI matrix pipeline (多 story_id 並行) | P1 | 5 | done (2026-09-28) | TMO-021 |
 | TMO-023 | 修 v2.1-jev-poc C 類探針 bug（8 紅：sandbox baseline fixture / flaky batch fixture / 缺 `run` / `ls` dotfile 假斷言）| P0 | 5 | done (2026-10-04) | — |
 | TMO-024 | README 精簡（288→90 行）+ 導向 AGENTS.md / skills + 新增 docs/install-reference.md | P2 | 3 | done (2026-10-04) | — |
+| TMO-025 | 修 B 類 12 紅：pptx 文字改用 python-pptx（修靜默假成功）+ 裝 poppler + 新探針 AC-E21/E22 + CI 依賴 | P1 | 5 | done (2026-10-04) | TMO-023 |
 
 ---
 
@@ -711,3 +712,53 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 ### 已知問題
 
 - README 的 `bats | 209/209` badge 已過期（實際 493 測試 / 463 綠 / 30 紅），且 CI badge 指向從未執行的 workflow → 待用戶決定 badge 處理方式
+
+---
+
+## TMO-025 詳細（B 類 12 紅修復：pptx 假成功 + poppler）
+
+### 問題（起始狀態：`bats tests/` 30 紅中的 B 類 12 紅）
+
+| # | 症狀 | 根因 |
+| --- | --- | --- |
+| 1 | 11 個 PDF 探針紅（AC-E1/E2/E9/E10/E11/E12/E15/E16/E17/E19/E20） | 本機缺 poppler（`pdfimages` / `pdftotext` MISSING）→ `require_tool` exit 4。**不是產品 bug**，是環境缺件 |
+| 2 | AC-E6（PPTX 文字）紅 | **真缺陷**：`extract_pptx_text()` 用 pandoc 讀 pptx，但 pandoc 3.8.2 無 pptx input format（`pandoc --list-input-formats` 只有 docx）→ pandoc rc=21 被忽略（`set -uo pipefail` 無 `-e`）→ 腳本印「✓ PPTX 文字提取完成」、rc=0、manifest 寫 text.md，但 text.md **從未產生** = **靜默假成功**。且 `docs/system-design.md:100` 設計本來就寫「PPTX → python-pptx」 |
+
+### 做法
+
+- **環境**：`brew install poppler`（另裝 `shellcheck` 作為 Gate 2 lint 工具）→ 11 個 PDF 探針真跑
+- **產品碼** `skills/dav-wiki/scripts/wiki-extract-media.sh`：
+  - `extract_pptx_text()` 改用 python-pptx 逐頁抽文字（`## Slide N` + 文字框），與設計文件一致
+  - 新增 `verify_artifact <path> <label>`：**檔案不存在 → ERROR + exit 5**；**內容為空 → 只警告**（掃描件合法，改走圖片 + OCR FR-2.2.3）
+  - 新增 `EXIT_EXTRACT=5`；usage/header 同步（並修掉 `tools/` 與 `docs/prd/03-knowledge-extraction.md` 兩處死引用）
+  - `pdfimages` / `pdftotext` / `pandoc`(×2) / python heredoc(×2) 全部補 rc 檢查；python `sys.exit(4)`（缺 python-pptx）正確映射回 `exit 4`
+- **探針** `tests/wiki-extract-media.bats`：
+  - AC-E6 標題改為 implementation-agnostic（斷言一字未改）
+  - **新增 AC-E21**：壞掉 `.pptx` → `status -eq 5`（釘住 exit code，區分「工具缺失 4」vs「提取失敗 5」）+ 不得留 text.md + 輸出含「無法讀取」
+  - **新增 AC-E22**：新 fixture `tests/fixtures/pdf-scan/scan.pdf`（無文字層）→ exit 0 + 圖片保留 + 出現「掃描件」警告；探針開頭有 fixture 漂移守衛
+- **文件 / CI**：`docs/install-reference.md` 新增「dav-wiki 測試依賴」表（明確寫「缺工具時探針直接失敗不 skip」）；`.github/workflows/ci.yml` 加 `actions/setup-python` + Linux/macOS 依賴安裝（poppler/pandoc/tesseract/python-pptx）+ `bash -n` 收錄本腳本
+
+### AC / DoD
+
+- ✅ `bats tests/wiki-extract-media.bats` → **22/22 綠**（修前 12 紅）
+- ✅ `bats tests/` → **not ok 18 / ok 477**（對比 baseline 30 紅：**新增失敗 = 0**，修好 = 12）
+- ✅ Gate 2：`bash -n` rc=0；`shellcheck` rc=0、0 issue（修改前版本亦 0 → 無新 lint 債）
+- ✅ 可證偽：突變測試 3 次 → 移除 rc 檢查+`verify_artifact` 時 AC-E21 轉紅；移除空文字層警告時 AC-E22 轉紅；`cp` 還原後皆轉綠
+- ✅ Gate 4：reviewer 兩輪（`approve-with-comments / risk low / 0 P0`），第二輪明示不需第三輪
+- ✅ deliverable：`docs/deliverable/2026-10-04-tmo-025-b-class-probe-fix.md`
+
+### Gate 4 期間發現並修掉的真 bug（自身）
+
+二審建議「AC-E21 改釘 `status -eq 5`」後探針立刻轉紅，追出根因：**`${var}` 寫成 `$var` 且緊鄰全角括號** →
+bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `rc: unbound variable`，exit code 變 1。
+全 repo 掃描同型地雷共 7 處（本檔 6 + 探針 1），已全數改為 `${var}`；另確認其他腳本無此型問題。
+
+### 已知問題
+
+- `bats tests/` 仍有 **18 紅**（A 類探針過期，見 TMO-023 詳細）
+- 評審 §4 建議以下升為 **P1** 另立票（本輪未動）：
+  1. `.github/workflows/ci.yml` trigger `branches: [main]` vs repo 預設 `master` → CI 從未執行（修好當下會立刻紅，建議與 A 類清理、SKILL.md 瘦身同批）
+  2. `skills/dav-wiki/SKILL.md` **151 行 > 150**（`tests/dav-wiki.bats:38` 已紅）+ `:95`「未裝時降級」與 `require_tool` 硬 `exit 4` 矛盾（需走 V03）
+  3. bats 1.14.0 對「`@test` 名含 CJK」會靜默不執行：實測 3 條（`restruct-agents-md.bats` ×2、`restruct-dav-planner.bats` ×1），宣告 498 / 實跑 495；3 條斷言本身若跑會綠
+- P2（report-only）：pptx 表格/群組文字未抽、CI badge owner 錯誤、sibling 死引用 8 腳本、scan.pdf 重建指令 macOS-only、`$var緊鄰全角字元` 未有 repo 級靜態守衛
+- 未 commit：工作區同時有 TMO-023 / TMO-024 / TMO-025 三輪變更，建議分開 commit（尚未執行）

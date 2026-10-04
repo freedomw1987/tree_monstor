@@ -11,11 +11,18 @@
 #   AC-E3: DOCX 媒體提取（pandoc --extract-media）
 #   AC-E4: DOCX 文字提取（pandoc）
 #   AC-E5: PPTX 媒體提取（python-pptx）
-#   AC-E6: PPTX 文字提取（pandoc）
+#   AC-E6: PPTX 文字提取（python-pptx；pandoc 無 pptx reader）
 #   AC-E7: 邊緣案例 - 不存在的檔案
 #   AC-E8: 邊緣案例 - 不支援的格式
 #   AC-E9: --output-dir 旗標
 #   AC-E10: --no-images / --no-text 旗標
+#   AC-E21: 提取失敗不得假成功（TMO-025）
+#   AC-E22: 掃描件 PDF（無文字層）→ 成功但警告（TMO-025）
+#
+# Fixtures:
+#   tests/fixtures/pdf-scan/scan.pdf — 無文字層的掃描件（重建指令，macOS）:
+#     pdftoppm -png -r 100 tests/fixtures/pdf-mixed/sample.pdf page \
+#       && sips -s format pdf page-1.png --out tests/fixtures/pdf-scan/scan.pdf
 #
 # Usage:
 #   bats tests/wiki-extract-media.bats
@@ -88,7 +95,7 @@ teardown() {
 }
 
 # ---------- AC-E6: PPTX 文字提取 ----------
-@test "AC-E6: PPTX text via pandoc" {
+@test "AC-E6: PPTX text extraction (python-pptx) writes text.md with slide text" {
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pptx-multimodal/mixed.pptx" \
               --output-dir "$WORK/out" \
               --type pptx
@@ -229,4 +236,39 @@ teardown() {
   # 不計 ocr/ 子目錄 (Sprint 09 FR-2.2.3)
   actual=$(find "$WORK/out/images" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
   [ "$expected" = "$actual" ]
+}
+
+# ---------- AC-E21: 提取失敗不得假成功（TMO-025）----------
+@test "AC-E21: extraction failure must not fake success (non-zero + no text.md)" {
+  # 副檔名合法（.pptx）但內容不是真的 pptx → python-pptx 必拋錯
+  echo "not a real pptx" > "$WORK/broken.pptx"
+  run "$TOOL" --input "$WORK/broken.pptx" \
+              --output-dir "$WORK/out" \
+              --type pptx \
+              --no-images
+  # 不得靜默假成功：rc 必須是 5（提取失敗），不得是 0、也不得與 4（工具缺失）混淆
+  [ "$status" -eq 5 ]
+  [ ! -f "$WORK/out/text.md" ]
+  # 必須是「無法讀取壞檔」那條路徑
+  [[ "$output" =~ "無法讀取" ]]
+}
+
+# ---------- AC-E22: 掃描件 PDF（無文字層）不得當成失敗 ----------
+@test "AC-E22: scanned PDF (no text layer) → exit 0 + images + empty-text warning" {
+  # fixture 漂移守衛：fixture 必須存在、且真的沒有文字層（否則這條探針測不到警告）
+  local fx="$REPO_ROOT/tests/fixtures/pdf-scan/scan.pdf"
+  [ -f "$fx" ] || { echo "FAIL: 缺少 fixture ${fx}（見檔頭重建指令）" >&2; return 1; }
+  if [ -n "$(pdftotext -layout "$fx" - 2>/dev/null | tr -d '[:space:]')" ]; then
+    echo "FAIL: fixture 有文字層，請依檔頭重建指令重新產生 scan.pdf" >&2
+    return 1
+  fi
+  run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-scan/scan.pdf" \
+              --output-dir "$WORK/out" \
+              --type pdf
+  # 文字層不存在是合法情境：圖片要留、整體算成功，但必須警告（建議走 OCR）
+  [ "$status" -eq 0 ]
+  [ -f "$WORK/out/text.md" ]
+  img=$(find "$WORK/out/images" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
+  [ "$img" -ge 1 ]
+  [[ "$output" =~ "掃描件" ]]
 }
