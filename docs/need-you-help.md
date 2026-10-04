@@ -5,9 +5,16 @@
 
 ## NYH-1（⚠️ 建議你行動）
 
+- [x] ✅ **繼續做（2026-10-05 ask-me）**：撤銷並輪替 key。用戶到 OpenRouter 撤銷舊 key、產生新 key 並更新
+  `skills/regression-guard/PoC/.env`（人工操作，Agent 無法代為撤銷）；更新後 Agent 複驗 `.env` sha256 已變、
+  且新值未出現在任何被追蹤檔或本輪 diff。
+  **抉擇理由（2026-10-05）**：session log 可能被同步／保存，保守視為已洩漏；輪替成本低（幾分鐘），
+  而「不輪替」需長期承擔未知洩漏面。
+  ⚠️ **backlog 對照：orphan**（`docs/backlog.md` 無對應 ticket）→ backlog.md 不動，結束時提醒人工處理。
+
 **事件**：02:41 做 TMO-045 的「反向驗證」時（故意把 `JEV_ENV_FILE` seam 改成半套實作，
 確認探針咬得住），探針的 FAIL 訊息把**本機真實的 `OPENROUTER_API_KEY`** 印進了本次 session log
-（開頭 `sk-or-v1-7472…`，完整值在對話記錄中）。
+（開頭 `sk-or-v1-****…（前綴已遮罩）`，完整值在對話記錄中）。
 
 **影響**：
 - 沒有進 git（`.env` 被 gitignore、本輪也不 push）；洩漏面僅限「本次對話／session log」。
@@ -19,13 +26,26 @@
 
 ## NYH-2
 
+- [x] ✅ **繼續做（2026-10-05 ask-me）**：做成通則＋靜態鎖。待實作（下一輪）：
+  ①`tests/helpers` 加通用 `mask_secrets()`；②為 oracle 相關探針加靜態鎖（FAIL 訊息不得直接印出
+  `_load_api_key()` 回傳值）；③補反向測試（故意讓探針失敗 → 斷言輸出不含 `sk-or-v1`）。走 V03 二審，估點數 2。
+  **抉擇理由（2026-10-05）**：NYH-1 的實際外洩就是這條缺失造成；只修單點無法防止同類探針再犯，
+  而靜態鎖能把「不得印出密鑰」變成可回歸的規則。
+  ⚠️ **backlog 對照：orphan**（`docs/backlog.md` 無對應 ticket）→ backlog.md 不動，結束時提醒人工處理
+  （建議開一張新 ticket，例：TMO-053）。
+
 **待決（P3 建議，未實作）**：是否把「探針 FAIL 訊息不得印出密鑰」做成通則
 （例：`_load_api_key()` 回傳值在測試輸出前遮罩）。目前只有 CLEAN-POC-i 的失敗訊息會印值。
 未實作原因：屬新規範、需 V03 二審，且與本輪 5 張票無關。
 
 ## NYH-3
 
-**待決（push）**：本輪所有 commits 都在本地分支 `trust/2026-10-05-tmo-cleanup`，**沒有 push**
+- [x] ✅ **繼續做（2026-10-05 ask-me）**：push `trust/2026-10-05-tmo-cleanup` 上 origin，讓 CI 真跑一次
+  （`workflow_dispatch` 也可，但 push 分支最直接）。若 CI 紅 → 立即修到綠；若綠 → 回報並等你決定 merge。
+  **抉擇理由（2026-10-05）**：這是本輪唯一「本機證明不了」的部分（bats 釘版後 `git clone` 安裝、
+  ffmpeg step 雙平台、lint job 真擋）；代價僅是分支會上遠端（可事後刪）。
+  ⚠️ **backlog 對照：orphan**（`docs/backlog.md` 無對應 ticket）→ backlog.md 不動，結束時提醒人工處理。
+：本輪所有 commits 都在本地分支 `trust/2026-10-05-tmo-cleanup`，**沒有 push**
 （trust 底線規則）。其中 TMO-044 / TMO-042 / TMO-041 動到 `.github/workflows/ci.yml`（CI 行為），
 本輪只能做「本地等價驗證」，**無法在真 CI 驗證**。
 
