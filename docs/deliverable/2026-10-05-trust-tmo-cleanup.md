@@ -3,7 +3,7 @@
 - **日期**：2026-10-05（trust session 01:21 → 08:00 CST，用戶指定 deadline）
 - **Backlog ID**：TMO-043、TMO-044、TMO-045、TMO-042、TMO-037
 - **作者**：pi（david 的 agent，**trust mode 自主執行**）
-- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**568 ok / 0 not ok**，TMO-047 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
+- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**569 ok / 0 not ok**，ENV-EQ-12 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
   `approve-with-comments`（0 P0 / 1 P1 / 5 P2，P1 與 P2 全數修完）；round B（TMO-042 / TMO-037 + 文件）=
   `1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**，「可交付用戶驗收？yes」；round C（TMO-030/031/032/034 + round-B 修正）=
   `e776fe77`：**approve-with-comments（0 P0 / 1 P1 / 6 P2）**，「可交付用戶驗收？yes」
@@ -58,6 +58,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （TMO-047） | TMO-047 skill-local 探針入 CI | 06:01:06* | 兩支探針加 `SKILLS_DIR_OVERRIDE`＋fail-closed；`ci.yml` 加一步；新增 `ENV-EQ-11`；M25–M28 突變 |
 | （TMO-046） | TMO-046 `tdd-test-writer/SKILL.md` 瘦身 | 06:06:53* | 149 → 105 行（流程／觸發壓表、去重）；規則面零刪減，13 條回歸全綠 |
 | （round I 修正） | reviewer round I 修正（P2-1＋P3-1..9） | 06:27:50* | `ENV-EQ-11` 補 fail-closed 鎖（空 root 必紅）＋文件數字／措辭對帳；M29 咬 ✓ |
+| （ENV-EQ-12） | ENV-EQ-12 追加（L4） | 06:30:52* | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 與 `skills/*/tests/`）；列舉下限 ≥40；M30–M32 全咬 ✓ |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -328,6 +329,26 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 全部只存在於記憶體、沒有落地，但我在 commit message 與 round G 章節都聲稱「已修」。
 **根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
 **對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
+
+## ENV-EQ-12 追加（L4 擴量，trust 期間）
+
+把 TMO-047 的 bug 類別**一般化**：不只 skill-local 探針，而是**任何**「存在但沒有任何 CI 步驟跑到」的 `.bats`
+都是假綠。量測：全 repo `.bats` 共 46 支，只有兩條執行路徑——`bats tests/`（**僅頂層、非遞迴**）與
+skill 自帶探針那一步；量測結果**無 orphan**（現況健康），但沒有任何鎖擋未來漂移。
+
+新增 `ENV-EQ-12`（`tests/env-equivalence.bats`）：列舉全 repo `.bats`（排除 `.git/`），逐檔要求落在
+`tests/*.bats` 或 `skills/*/tests/*.bats`，否則**大聲紅＋修法提示**；另設列舉下限（`>= 40`，防列舉器壞掉＝空過）。
+
+| 突變 | 內容 | 結果 |
+| --- | --- | --- |
+| M30 | 新增 `lib/tests/orphan.bats` | 紅 ✓（列出 orphan 檔名） |
+| M31 | 新增 `scripts/orphan.bats` | 紅 ✓ |
+| M32 | 把列舉改成 `find ./.git`（模擬列舉器壞掉） | 紅 ✓（「找不到任何 .bats」） |
+
+**⚠️ 自傷事故（已揭露）**：M30 清理時我誤用 `rm -rf lib`（正確應只刪 `lib/tests`）→ 連帶刪掉 7 個
+**已追蹤**檔案（`lib/log.sh`、`lib/install/*.sh`）。因這些檔相對 HEAD **未被修改**，以
+`git restore --source=HEAD -- lib` 還原，並用 `git status --porcelain`（僅剩本輪預期修改）＋
+`git diff HEAD -- lib`（空）驗證還原無誤。教訓：突變清理必須**只刪自己建的路徑**，清理後立刻 `git status` 核對。
 
 ## reviewer 修正（round I）＋二審結論
 

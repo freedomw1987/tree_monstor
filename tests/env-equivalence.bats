@@ -560,3 +560,28 @@ printf "%s\n" "${a[@]}"'
   }
   echo "OK: $n 個 skill 自帶探針都在 CI 被實跑（repo root + override）" >&2
 }
+
+# ENV-EQ-12（L4 擴量）：把 TMO-047 的 bug 類別一般化——「探針存在但沒有任何 CI 步驟跑到它」。
+# 目前 repo 只有兩條執行路徑：`bats tests/`（僅頂層，非遞迴）與 skill 自帶探針那一步。
+# 任何落在其他位置的 `.bats` 都不會被 CI 執行 → 改壞了沒人擋（假綠）。
+@test "ENV-EQ-12: no orphan .bats outside the two CI execution paths" {
+  local all orphan=""
+  all=$(cd "$REPO_ROOT" && find . -name '*.bats' -not -path './.git/*' | sed 's|^\./||' | sort)
+  [ -n "$all" ] || { echo "FAIL: 找不到任何 .bats（repo root 指錯？）" >&2; return 1; }
+  local f n=0
+  for f in $all; do
+    n=$((n + 1))
+    case "$f" in
+      tests/*.bats) continue ;;                    # CI: bats tests/
+      skills/*/tests/*.bats) continue ;;           # CI: SKILLS_DIR_OVERRIDE=... bats skills/*/tests/*.bats
+      *) orphan="$orphan $f" ;;
+    esac
+  done
+  [ "$n" -ge 40 ] || { echo "FAIL: 只列舉到 $n 個 .bats（<40）→ 列舉器壞了或路徑漂移" >&2; return 1; }
+  [ -z "$orphan" ] || {
+    echo "FAIL: 下列 .bats 不在任何 CI 執行路徑（orphan → 改了不會擋）：$orphan" >&2
+    echo "修法：移到 tests/（頂層）或 skills/<name>/tests/，或替它加一條 CI 步驟＋對應鎖" >&2
+    return 1
+  }
+  echo "OK: $n 個 .bats 全部落在 CI 執行路徑（tests/ 或 skills/*/tests/）" >&2
+}
