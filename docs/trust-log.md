@@ -64,11 +64,11 @@
 
 | # | 時間 | 階段 | 問題 / 決策 | 理由 | 可推翻 |
 |---|------|------|-----------|------|--------|
-| 1 | 01:21 | 啟動 | Trust Mode 啟動：清 TMO-043 / 044 / 045 / 042 / 037 | 用戶「trust mode 清上面的 tmo」+ 指定 deadline 08:00 CST | — |
-| 2 | 01:21 | 啟動 | 執行順序 043 → 044 → 045 → 042 → 037 | 先小後大；**TMO-037（markdownlint 全面改行）必排最後**，否則前面票新增的長行會被重複改寫 | ✅ |
-| 3 | 01:21 | 啟動 | push 策略：不 push（底線規則 #1/#2）→ 開本機分支 `trust/2026-10-05-tmo-cleanup` | trust 禁止外部指令；代價：TMO-044（CI 語意）無法用真 CI 驗收 → 改用「CI 等價本機驗證 + 步驟可被探針直接執行」補償 | ✅ |
-| 4 | 01:25 | 規劃 | TMO-037 的 273 處是否全部硬改行？ | **先量測規則分佈再定**：表中/code block 的 MD013 由 `.markdownlint.json` 豁免（tables:false / code_blocks:false；`.markdownlint-cli2.jsonc` 只管 `ignores`）→ 只處理真違規；若某類豁免是「合理約定」則維持全域豁免並在文件說明，**不以關規則取代改文** | ✅ |
-| 5 | 01:25 | 規劃 | 5 張票的交付物策略 | 1 份合併 deliverable（`docs/deliverable/2026-10-05-trust-tmo-cleanup.md`）+ 5 個 commit（每票一個，含探針與文件） | ✅ |
+| 1 | ~01:21 | 啟動 | Trust Mode 啟動：清 TMO-043 / 044 / 045 / 042 / 037 | 用戶「trust mode 清上面的 tmo」+ 指定 deadline 08:00 CST | — |
+| 2 | ~01:21 | 啟動 | 執行順序 043 → 044 → 045 → 042 → 037 | 先小後大；**TMO-037（markdownlint 全面改行）必排最後**，否則前面票新增的長行會被重複改寫 | ✅ |
+| 3 | ~01:21 | 啟動 | push 策略：不 push（底線規則 #1/#2）→ 開本機分支 `trust/2026-10-05-tmo-cleanup` | trust 禁止外部指令；代價：TMO-044（CI 語意）無法用真 CI 驗收 → 改用「CI 等價本機驗證 + 步驟可被探針直接執行」補償 | ✅ |
+| 4 | ~01:25 | 規劃 | TMO-037 的 273 處是否全部硬改行？ | **先量測規則分佈再定**：表中/code block 的 MD013 由 `.markdownlint.json` 豁免（tables:false / code_blocks:false；`.markdownlint-cli2.jsonc` 只管 `ignores`）→ 只處理真違規；若某類豁免是「合理約定」則維持全域豁免並在文件說明，**不以關規則取代改文** | ✅ |
+| 5 | ~01:25 | 規劃 | 5 張票的交付物策略 | 1 份合併 deliverable（`docs/deliverable/2026-10-05-trust-tmo-cleanup.md`）+ 5 個 commit（每票一個，含探針與文件） | ✅ |
 
 ## 2026-10-05 進度（執行中）
 
@@ -122,3 +122,6 @@
 | 48 | 04:33:53* | TMO-041 追加（L3 擴量）| `ENV-EQ-8`：`scripts/ci/` 護欄腳本**自動列舉**（新增鎖不會被漏，同 TMO-038 ④ 的教訓）＋每個 `lint-probe-*.py` 的 `--self-test` 必須自己綠**且印出通過標記**。Gate 1 突變：M12 孤兒鎖 → 咬；M13 初版（只斷言「有人呼叫 `--self-test`」）**不咬**（呼叫端用變數、行內沒有鎖名）→ 改為直接執行 self-test；M14 掏空 `self_test()`（`return 0`）初版**不咬** → 加「必須印通過標記」後咬 |
 | 49 | ~04:26 | L2 重訪：clean clone 實測 | 獨立複驗文件數字：真 `git clone` 到 `/tmp` 後跑全套（無 venv）＝**516 ok / 44 not ok**；44 ＝ `v2.1-jev-poc.bats` 40 ＋ `poc-clean-clone.bats` 2（CLEAN-POC-f/i）＋ `poc-bootstrap.bats` 1 ＋ `env-equivalence.bats` 1（ENV-EQ-7）。文件原寫「40＋1」**漏了 2 條 CLEAN-POC 與新加的 1 條** → 已校正並附實測數字 |
 | 50 | ~04:34 | L1 接力：決策票保守默認 | 剩兩張決策票（TMO-035 dav-wiki 文實矛盾、TMO-040 護欄邊界）依 trust 規則**不擅改**：保守默認＝不改檔，寫進 `docs/need-you-help.md`（NYH-4 推薦「改文件對齊現實」、NYH-5 推薦「危險清單＋`--force` 二次確認」），並補 NYH-3 的 push 選項（推薦 push 讓真 CI 跑一次）|
+| 51 | ~04:45 | reviewer round E | run=`f8f35524`（快照 `5742bf8`，範圍 TMO-036/033/038/041）：**OK with notes（0 P0 / 1 P1 / 10 P2）**。P1-1 成立：本檔 V03.6 申報表漏報 **2 條條件式放寬**（TMO-041 `CLEAN-POC-f` 排除 `env-equivalence.bats`、TMO-036 `專案端` 標記）且寫成「唯一一條放寬」＝**不實**，兩處理由還互相矛盾（`poc-clean-clone` 註解寫「nested re-run」／row 45 寫「`/tmp` 殘檔＋bats 漂移」）。**限制揭露**：該 reviewer 無 shell 工具 → V03.6 要的「逐檔修改前 fail／修改後 pass」它產不出來，改由我逐檔自跑補證 |
+| 52 | ~05:05 | round E 修正（P1-1 + P2-1..10） | ①P1-1 申報表補放寬②③、措辭與理由對齊 ②`lint-probe-tmp-paths.py` 只算非註解標記（`MIN_MARKS` 2→3）、樣式加 token 邊界＋`/private/tmp` ③兩鎖 `targets()` 補 `skills/*/tests/*.bats` ④檔頭改「9 條可證偽＋1 條量測」⑤新增 **ENV-EQ-9**（宣告數普查＋CJK canary；引號感知掃描器，排除 heredoc 示範碼）⑥`poc-clean-clone` 加 `excluded -eq 1` ⑦`restruct-zero-cross-read` 加 test 9（repo 自有路徑不得用標記豁免）⑧狀態列 552→567 ⑨安裝文件改釘版 `v1.14.0`＋`install.sh` 並加 **ENV-EQ-10** 鎖 ⑩rows 1–5 時間加 `~`。另修 `lint-probe-tools.py` 缺尾端換行、Gate 1 表補 pointer 列 |
+| 53 | ~05:15 | round E 追加鎖與自曝發現 | 新增 `tests/skill-size-guard.bats`（SSG-1..3）＋`scripts/ci/check-skill-size.sh`：CI 原本**只硬編檢查 `dav-wiki/SKILL.md` 一檔**（1/11），`tdd-test-writer/SKILL.md` 149/150 行仍不會被擋 → 改自動列舉。Gate 1 突變 M15 CI 不呼叫腳本→SSG-2 紅；M16 腳本上限改 999→SSG-3 紅（**首測沒套上**：變異字串 `SKILL_MAX=...` 與實際 `MAX=...` 不符，`replace` 靜默無效 → 加 `assert` 命中後重跑才咬；本輪第二次同類自傷）；M17 腳本掏空→紅；M18/M19 普查多算/少算→ENV-EQ-9 紅；M20/M21 文件漂移→ENV-EQ-10 紅。副產物：**bats 前處理器會把 heredoc 內的 `@test` 行改寫成 `bats_test_function ...`**（實測 1.14.0）→ 測「宣告數普查」的 fixture 不能用 heredoc 寫（改用 `printf`）；新鎖也會咬自己人（`/tmp` 鎖咬到 ENV-EQ-5 測試名→補 `TMP-OK`；`gh`/`brew` 鎖咬到 ENV-EQ-10 字面 → 間接組字）。Gate 3 **567 ok / 0 not ok**；round F 對 delta 另審 |

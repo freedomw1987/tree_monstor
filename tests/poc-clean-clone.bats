@@ -145,7 +145,8 @@ mask_secrets() {
   # CI 兩者皆無 → oracle 抛錯 → 3 條紅。
   #
   # TMO-045（reviewer P2-B/P2-D）把這道鎖從「點名 3 條」改成一般化：
-  #   ① 動態挑出所有提到 oracle 的測試檔（新檔自動納入，不是寫死名單）
+  #   ① 動態挑出所有提到 oracle 的測試檔（新檔自動納入；唯一的條件式排除是
+  #      env-equivalence.bats，且有下方的計數鎖擋「排除清單靜默擴張」）
   #   ② 每檔「整檔」在 CI 等價環境下重跑（不再用 --filter 點名）
   #   ③ 加 JEV_ENV_FILE=/dev/null → 連本機 PoC/.env 與 ~/.claude/.../.env 也擋掉，
   #      否則本機 key 會把 fixture 缺口掩蓋成假綠
@@ -167,15 +168,23 @@ mask_secrets() {
   # 動態挑檔：排除本檔（護欄自身也含這些關鍵字）與 env-equivalence.bats
   # （TMO-041：env-equivalence.bats 是「跑別人」的 harness，本身就會用 CI 等價環境
   #   重跑 oracle 子集；巢狀重跑只會讓時間翻倍，其正確性由 ENV-EQ-7 直接驗。）
-  local files=() f
+  local files=() f excluded=0
   for f in tests/*.bats; do
-    case "$f" in tests/poc-clean-clone.bats|tests/env-equivalence.bats) continue ;; esac
+    case "$f" in
+      tests/poc-clean-clone.bats) continue ;;                 # 自己（巢狀重跑沒意義）
+      tests/env-equivalence.bats) excluded=$((excluded + 1)); continue ;;  # 唯一條件式排除
+    esac
     grep -qE 'jev_oracle|fix_proposal|JEV_CACHE_DIR|JEV_ENV_FILE' "$f" || continue
     files+=("$f")
   done
   # 防空過：至少要挑到 1 檔
   [ "${#files[@]}" -ge 1 ] || {
     echo "FAIL: 沒挑到任何 oracle 相關測試檔 → 挑檔邏輯失效" >&2
+    return 1
+  }
+  # 防空過（round E P2-6）：排除清單不得靜默擴張（本檔只允許排除 env-equivalence.bats 一檔）
+  [ "$excluded" -eq 1 ] || {
+    echo "FAIL: 條件式排除 $excluded 檔（預期 1：只有 env-equivalence.bats）→ 排除清單被擴張了" >&2
     return 1
   }
 

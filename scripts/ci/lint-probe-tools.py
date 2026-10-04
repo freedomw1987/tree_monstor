@@ -27,7 +27,12 @@ MIN_FILES = 20
 
 def targets(root):
     root = pathlib.Path(root)
-    return sorted(root.glob("tests/*.bats")) + sorted(root.glob("tests/helpers/*.bash"))
+    # 覆蓋缺口（round E P2-3）：skill 自己的測試檔同樣是探針，不能漏掃
+    return (
+        sorted(root.glob("tests/*.bats"))
+        + sorted(root.glob("tests/helpers/*.bash"))
+        + sorted(root.glob("skills/*/tests/*.bats"))
+    )
 
 
 def violations(files):

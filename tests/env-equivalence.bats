@@ -10,23 +10,71 @@
 #   * 真網路：本機連得到，oracle 打到真 API 會讓 fixture 缺口被掩蓋
 #   * 未 stub 的外部工具（gh / brew）：本機有裝就會「剛好過」
 #
-# 本檔守 8 件事（全部可證偽）：
+# 本檔守 10 件事（9 條可證偽斷言 + 1 條量測 ENV-EQ-4）：
 #   1. 本機必須有 bash 5.x 可用（缺 → 紅＋安裝指令，不 skip）
 #   2. `tests/wiki-cleanup.bats` 在**每一個**本機可用 bash 版本下都全綠
 #      （PATH shim 真的把 bash 換掉；bash 5.x 這條＝CI 的 ubuntu bash 變體 Gate 3）
 #   3. shim 機制本身有效（bats 真的跑在目標 bash 上）→ 否則第 2 條等於在跑預設 bash
-#   4. 空陣列 × `set -u` 的行為對照表：逐版本實測並印出（環境等價的證據，不是猜測）
+#   4. 空陣列 × `set -u` 的行為對照表：逐版本實測並印出（**量測，刻意不斷言**；
+#      ubuntu bash 5.2 的行為本機無此版本可驗，寫預測會變假紅）
 #   5. 探針不得寫入固定 `/tmp/<name>`（要寫就寫 `$BATS_TEST_TMPDIR`；純資料引用標 `TMP-OK`）
 #   6. 探針不得直接執行 `gh` / `brew`（工具狀態依賴）
 #   7. oracle 子集在「網路黑洞」下必須全綠，且黑洞本身要有 canary 證明真的在擋
 #   8. `scripts/ci/` 的護欄腳本不得是「孤兒鎖」（沒有任何探針引用＝等於沒在跑），
 #      且每個 `--self-test` 鎖的自我測試都必須自己綠（新增的鎖自動納入＝不會漏）
+#   9. 宣告的 `@test` 數 == `bats --count`（防 TMO-026 型「宣告 N／實跑 N-3」）＋ CJK 名稱 canary
+#  10. 本機安裝文件必須教「釘版 bats」（CI 已釘 v1.14.0；只鎖 CI 一側＝本機仍是漂移來源）
 #
-# 註: @test 名稱純英文（homebrew bats 1.14 對 CJK 測試名會靜默丟棄）
+# 註: @test 名稱以純英文為主（TMO-026 當時的舊版 bats 對 CJK 名稱會靜默丟棄）。
+#     2026-10-05 實測 bats 1.14.0：開頭 CJK／尾綴 CJK 都會跑（見 ENV-EQ-9 的 canary）。
 
 setup() {
   load 'helpers/test-env'
   POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
+}
+
+# 宣告數普查用：只算 bats 真的會當成 @test 的行 —— heredoc 內容（示範碼）不算。
+# 註：bats 前處理器會把 heredoc 內的 `@test` 行改寫成 `bats_test_function ...`
+# （實測 1.14.0），所以「用 heredoc 寫 fixture」不能拿來測這個函式，fixture 要用 printf。
+count_declared_tests() {
+  # 只算 bats 真的會當成 @test 的行：heredoc 內容（示範碼）不算。掃描器是「引號感知」的
+  # —— 位於引號內的 `<<` 不當 heredoc 起點（否則 `printf '%s\n' "cat <<'EOF'"` 這種
+  # fixture 會讓掃描器一路吞到檔尾；ENV-EQ-9 的自我測試就釘住這件事）。
+  # 引號狀態跨行保存；交叉污染只會造成「大聲紅」（多算/少算都比對得出來），不會靜默。
+  awk '
+    BEGIN { skip = 0; q = "" }
+    {
+      if (skip) { if ($0 == tag) skip = 0; next }
+      nch = length($0); i = 1; found = 0; pos = 0
+      while (i <= nch) {
+        c = substr($0, i, 1)
+        if (q == "") {
+          if (c == "'\''") { q = "'\''"; i++; continue }
+          if (c == "\"") { q = "\""; i++; continue }
+          if (c == "\\") { i += 2; continue }
+          if (c == "<" && substr($0, i + 1, 1) == "<") { found = 1; pos = i; break }
+        } else if (q == "'\''") {
+          if (c == "'\''") q = ""
+        } else {
+          if (c == "\\") { i += 2; continue }
+          if (c == "\"") q = ""
+        }
+        i++
+      }
+      if (found) {
+        rest = substr($0, pos)
+        # heredoc 起點：delimiter 後面只接行尾或重導向（`<<%s` 之類不當 heredoc）
+        if (match(rest, /^<<-?[[:space:]]*["\047]?[A-Za-z_][A-Za-z0-9_-]*["\047]?([[:space:]]*$|[[:space:]]+[0-9]*[>&|])/)) {
+          t = substr(rest, RSTART, RLENGTH)
+          sub(/[[:space:]]*[0-9]*[>&|].*$/, "", t)
+          gsub(/<<-?[[:space:]]*/, "", t); gsub(/["\047]/, "", t)
+          tag = t; skip = 1
+        }
+      }
+      if ($0 ~ /^@test[[:space:]]/) n++
+    }
+    END { print n + 0 }
+  ' "$1"
 }
 
 # 找出本機所有可用的 bash（去重：以版本字串為鍵），寫進 $1（TSV: version<TAB>binary）
@@ -193,7 +241,7 @@ printf "%s\n" "${a[@]}"'
 }
 
 # 靜態鎖（TMO-041 ③d/③b）：實作抽在 scripts/ci/ 下，避免探針掃到自己
-@test "ENV-EQ-5: no probe writes to a fixed /tmp path (cross-run residue lock)" {
+@test "ENV-EQ-5: no probe writes to a fixed /tmp path (cross-run residue lock)" {  # TMP-OK: 只有測試名稱提到 /tmp，本行不寫檔
   local lock="$REPO_ROOT/scripts/ci/lint-probe-tmp-paths.py"
   [ -f "$lock" ] || {
     echo "FAIL: 缺 $lock" >&2
@@ -319,4 +367,111 @@ printf "%s\n" "${a[@]}"'
     return 1
   fi
   echo "OK: ${#locks[@]} 個 scripts/ci 護欄腳本都有探針引用；lint-probe-* 的 --self-test 全綠" >&2
+}
+
+
+@test "ENV-EQ-9: no test declaration is silently dropped (repo census + CJK-name canary)" {
+  # TMO-026 的病因：宣告 N 條、實跑 N-3 條，報表看起來全綠。這是那整類問題的一般性防線。
+  # (0) 先自我測試普查函式：heredoc 內的 @test 不算、字串裡的 << 不誤判。
+  #     fixture 一律用 printf 逐行寫（用 heredoc 寫會被 bats 前處理器改寫成
+  #     bats_test_function 形式，就不是要測的形狀了）。
+  local st="$BATS_TEST_TMPDIR/census-self-test.bats"
+  {
+    printf '%s\n' '#!/usr/bin/env bats'
+    printf '%s\n' '@test "real one" { true; }'
+    printf '%s\n' "cat > /dev/null <<'BODY'"
+    printf '%s\n' '@test "inside heredoc" { true; }'
+    printf '%s\n' 'BODY'
+    printf '%s\n' "cat > /dev/null <<'BODY2' 2>/dev/null"
+    printf '%s\n' '@test "inside heredoc with redirect" { true; }'
+    printf '%s\n' 'BODY2'
+    printf '%s\n' "cat > /dev/null <<'BODY3' 2>/dev/null"
+    printf '%s\n' '@test "inside heredoc3" { true; }'
+    printf '%s\n' 'BODY3'
+    printf '%s\n' "echo \"<<'NOT-A-HEREDOC'\" end"
+    printf '%s\n' '@test "real two" { true; }'
+    printf '%s\n' "awk 'BEGIN { print \"<<'X'\" }'"
+    printf '%s\n' '@test "real three" { true; }'
+  } > "$st"
+  local stn
+  stn=$(count_declared_tests "$st")
+  [ "$stn" -eq 3 ] || {
+    echo "FAIL: 普查函式自我測試失敗（期望 3，得到 $stn）→ 抽取器壞了" >&2
+    sed -n l "$st" >&2
+    return 1
+  }
+  # (1) 普查：宣告數必須等於 bats 自報的計畫數
+  local declared=0 f n
+  for f in "$REPO_ROOT"/tests/*.bats; do
+    n=$(count_declared_tests "$f")
+    declared=$((declared + n))
+  done
+  run bash -c "cd \"$REPO_ROOT\" && bats --count tests/"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: bats --count 失敗：$output" >&2
+    return 1
+  }
+  local planned="$output"
+  [ "$declared" -ge 500 ] || {
+    echo "FAIL: 只數到 $declared 個 @test（<500）→ 抽取器可能壞了（防空過）" >&2
+    return 1
+  }
+  [ "$planned" -eq "$declared" ] || {
+    echo "FAIL: 宣告 $declared 條 @test，但 bats 只認得 $planned 條 → 有測試沒在跑" >&2
+    return 1
+  }
+  # (2) canary：CJK 名稱是否被當前 bats 丟棄（printf 寫檔，避免前處理器改寫）
+  local mini="$BATS_TEST_TMPDIR/cjk-canary.bats"
+  {
+    printf '%s\n' '#!/usr/bin/env bats'
+    printf '%s\n' '@test "中文開頭名稱" { true; }'
+    printf '%s\n' '@test "ENV-CJK: 尾綴中文名稱" { true; }'
+  } > "$mini"
+  run bats "$mini"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: canary 檔跑不起來（rc=$status）：$output" >&2
+    return 1
+  }
+  local ran
+  ran=$(printf '%s\n' "$output" | grep -c '^ok ' || true)
+  [ "$ran" -eq 2 ] || {
+    echo "FAIL: CJK 測試名被 bats 丟棄（宣告 2 條、實跑 $ran 條）＝ TMO-026 重現" >&2
+    printf '%s\n' "$output" >&2
+    return 1
+  }
+  echo "OK: 宣告 $declared 條 == bats 計畫 $planned 條；CJK canary 2/2 都有跑" >&2
+}
+
+@test "ENV-EQ-10: install docs teach the pinned bats version (CI pins it, local must not drift)" {
+  # round E P2-9：CI 已釘 bats v1.14.0，但 install-reference / CONTRIBUTING 仍推薦
+  # 發行版安裝（apt 1.10 / brew 版本浮動）→ 本機仍是漂移來源。
+  local checked=0 f
+  for f in "$REPO_ROOT/docs/install-reference.md" "$REPO_ROOT/CONTRIBUTING.md"; do
+    [ -f "$f" ] || {
+      echo "FAIL: 缺檔案 $f" >&2
+      return 1
+    }
+    grep -q 'v1\.14\.0' "$f" || {
+      echo "FAIL: $f 沒有提到釘版版本 v1.14.0（本機安裝說明必須與 CI 一致）" >&2
+      return 1
+    }
+    grep -q 'bats-core/install\.sh' "$f" || {
+      echo "FAIL: $f 沒有教 bats-core/install.sh（只寫版本不寫怎麼裝＝教不動）" >&2
+      return 1
+    }
+    # 反向鎖：不得再推薦發行版 bats。工具名拆開寫 → 免得被 lint-probe-tools.py 誤判成
+    # 本測試「直接執行 brew」（那條鎖掃 tests/ 全域，分不出字串與執行）。
+    local bad_pat
+    bad_pat="($(printf 'b%s' rew)[[:space:]]+install[[:space:]]+bats|sudo apt(-get)? install[^#]*[[:space:]]bats)"
+    if grep -nE "$bad_pat" "$f"; then
+      echo "FAIL: $f 仍推薦發行版 bats（版本會漂移）→ 請改教 git clone --branch v1.14.0 + install.sh" >&2
+      return 1
+    fi
+    checked=$((checked + 1))
+  done
+  [ "$checked" -eq 2 ] || {
+    echo "FAIL: 只檢查了 $checked 個檔案（<2）→ 掃描清單可能壞了" >&2
+    return 1
+  }
+  echo "OK: 2 份本機安裝文件都教釘版 bats" >&2
 }

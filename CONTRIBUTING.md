@@ -7,8 +7,9 @@
 ### macOS
 
 ```bash
-# 安裝 bats
-brew install bats-core
+# 安裝 bats（釘版 v1.14.0：CI 用同一個 tag，發行版版本會漂移 → 本機綠／CI 紅）
+git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+sudo ./bats-core/install.sh /usr/local
 
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
@@ -32,9 +33,13 @@ python3 --version
 ### Linux (Ubuntu)
 
 ```bash
-# 安裝 bats 與媒體工具（ffmpeg/ffprobe 是 26 條媒體探針的硬依賴）
+# 安裝媒體工具（ffmpeg/ffprobe 是 26 條媒體探針的硬依賴）
 sudo apt-get update
-sudo apt-get install -y bats ffmpeg poppler-utils pandoc tesseract-ocr
+sudo apt-get install -y ffmpeg poppler-utils pandoc tesseract-ocr
+
+# 安裝 bats：同 macOS 的釘版做法（不要用發行版套件，版本會漂移）
+git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+sudo ./bats-core/install.sh /usr/local
 
 # 安裝 markdownlint
 npm install -g markdownlint-cli2

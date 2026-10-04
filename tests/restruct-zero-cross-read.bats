@@ -138,3 +138,22 @@ skill_files() {
     return 1
   }
 }
+
+@test "ZERO-CROSS-READ: 專案端標記不得用來豁免本 repo 自己的 docs（真 runtime 路徑才能豁免）" {
+  # round E P2-7：上一條只保證「標記貼在 docs/ 讀取行」，擋不住濫用——
+  # 任何 `讀 docs/backlog.md（專案端）` 都會被放行，於是規則被繞過。
+  # 這條把「本 repo 自己的 docs 根」列為不可豁免者；`docs/need-you-help.md`、
+  # `docs/concepts/`、`docs/wiki/` 這類**目標專案端** runtime 路徑才是合法豁免。
+  local forbidden='docs/(sop/|prd/|backlog\.md|deliverable/|reflection/)'
+  while IFS= read -r rel; do
+    local abs="$REPO_ROOT/$rel" hit
+    while IFS= read -r hit; do
+      [ -n "$hit" ] || continue
+      if printf '%s' "$hit" | grep -qE "$READ_VERBS \`?$forbidden"; then
+        echo "FAIL: $rel 用「$RUNTIME_MARK」豁免了本 repo 自己的 docs 路徑（不可豁免）：" >&2
+        echo "$hit" >&2
+        return 1
+      fi
+    done < <(grep -n "$RUNTIME_MARK" "$abs" || true)
+  done < <(skill_files)
+}

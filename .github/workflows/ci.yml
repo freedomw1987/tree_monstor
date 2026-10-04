@@ -71,13 +71,10 @@ jobs:
           echo "OK: $(ls skills/dav-wiki/scripts/*.sh | wc -l | tr -d ' ') scripts syntax-checked"
 
       - name: Verify SKILL.md size (≤ 150 lines)
-        run: |
-          LINES=$(wc -l < skills/dav-wiki/SKILL.md)
-          if [ "$LINES" -gt 150 ]; then
-            echo "::error::SKILL.md too long: $LINES lines (max 150)"
-            exit 1
-          fi
-          echo "OK: SKILL.md has $LINES lines"
+        # 自動列舉所有 skill 主檔（不再只檢查一個檔案）：
+        # 硬編單檔＝其他主檔改爆不會被擋（同 TMO-038 ④ / TMO-033 的教訓）。
+        # 守門探針：tests/skill-size-guard.bats（SSG-1/2/3）。
+        run: bash scripts/ci/check-skill-size.sh
 
       - name: Verify Python heredoc syntax
         run: bash scripts/ci/check-python-heredocs.sh

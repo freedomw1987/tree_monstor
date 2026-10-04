@@ -18,14 +18,21 @@ import tempfile
 
 MARK = "TMP-OK"
 # 孤立 /tmp/ 字面：前一字元不是檔名字元（避免誤判 $REPO_ROOT/tmp/）
-PAT = re.compile(r"(?<![A-Za-z0-9_.\-/$])/tmp/")
+# 前一字元不是檔名字元（避免誤判 $REPO_ROOT/tmp/）；同時吃 `/tmp/xxx`、`/tmp`（token 結尾，
+# 例如 `T=/tmp` 之後用 "$T/x" 繞道）與 macOS 的 `/private/tmp/xxx`（reviewer round E P2-2）
+PAT = re.compile(r"(?<![A-Za-z0-9_.\-/$])(?:/private)?/tmp(?![A-Za-z0-9_-])")
 MIN_FILES = 20
-MIN_MARKS = 2
+MIN_MARKS = 3
 
 
 def targets(root):
     root = pathlib.Path(root)
-    files = sorted(root.glob("tests/*.bats")) + sorted(root.glob("tests/helpers/*.bash"))
+    files = (
+        sorted(root.glob("tests/*.bats"))
+        + sorted(root.glob("tests/helpers/*.bash"))
+        # 覆蓋缺口（round E P2-3）：skill 自己的測試檔同樣是探針，不能漏掃
+        + sorted(root.glob("skills/*/tests/*.bats"))
+    )
     return files
 
 
@@ -47,6 +54,17 @@ def violations(files):
     return out
 
 
+def count_marks(files):
+    """只算「會執行的行」上的標記：註解行本來就不受檢查（見 violations 的 continue），
+    所以不能拿註解行來墊高標記數（round E P2-1：3 個真標記刪掉後，2 個純註解仍讓門檻通過）。"""
+    return sum(
+        1
+        for p in files
+        for line in p.read_text().split("\n")
+        if MARK in line and not line.strip().startswith("#")
+    )
+
+
 def self_test():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
@@ -62,7 +80,20 @@ def self_test():
         assert not violations([good]), "自我測試失敗：誤判有標記的行"
         assert violations([misuse]), "自我測試失敗：沒抓到 TMP-OK 標記濫用"
         assert not violations([comment]), "自我測試失敗：把註解誤判成寫入"
-    print("OK: 鎖 1 自我測試通過（正反兩向＋標記濫用＋註解豁免）")
+        # round E P2-2：`/tmp` token 形式（用變數繞道）與 macOS /private/tmp 也要咬
+        tok = d / "tok.bats"
+        tok.write_text('@test "x" {\n  T=/tmp\n  cp a "$T/zz-residue.json"\n}\n')
+        priv = d / "priv.bats"
+        priv.write_text('@test "x" {\n  cp a /private/tmp/zz-residue.json\n}\n')
+        assert violations([tok]), "自我測試失敗：沒抓到 /tmp token 形式（T=/tmp）"
+        assert violations([priv]), "自我測試失敗：沒抓到 /private/tmp/ 形式"
+        # round E P2-1：純註解行上的標記不得計入門檻
+        mixed = d / "mixed.bats"
+        mixed.write_text('# TMP-OK 只是註解\n@test "x" {\n  echo hi\n}\n')
+        assert count_marks([mixed]) == 0, "自我測試失敗：把註解行的標記算進門檻"
+        assert count_marks([good]) == 1, "自我測試失敗：真標記沒被計入"
+        assert count_marks([misuse]) == 1, "自我測試失敗：標記濫用行應照算（由 violations 判紅）"
+    print("OK: 鎖 1 自我測試通過（正反兩向＋標記濫用＋註解豁免＋token/private 形式＋標記計數）")
 
 
 def main(argv):
@@ -81,7 +112,7 @@ def main(argv):
         for line in found:
             print("FAIL: " + line)
         return 1
-    marked = sum(1 for p in files for line in p.read_text().split("\n") if MARK in line)
+    marked = count_marks(files)
     if marked < MIN_MARKS:
         print(f"FAIL: 只有 {marked} 行帶 {MARK}（防空過；預期 >= {MIN_MARKS}）")
         return 1

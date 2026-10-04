@@ -227,12 +227,18 @@ bats tests/install.bats --filter "AC-1"
 bash -x install.sh --dry-run --global
 ```
 
-需要 [bats-core](https://github.com/bats-core/bats-core)：
+需要 [bats-core](https://github.com/bats-core/bats-core)。**請裝釘版 `v1.14.0`**（CI 兩平台用同一個
+tag；發行版版本會漂移——apt 的 `bats` 是 1.10、brew 的 `bats-core` 隨更新變動，`@test` 名稱與旗標
+行為會跟著變，於是「本機綠、CI 紅」）：
 
 ```bash
-brew install bats-core    # macOS
-apt install bats          # Debian/Ubuntu
+git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+sudo ./bats-core/install.sh /usr/local   # macOS 與 Linux 相同
+bats --version                           # 應顯示 Bats 1.14.0
 ```
+
+> 這條由 `tests/env-equivalence.bats` 的 `ENV-EQ-10` 鎖住：本文件與 `CONTRIBUTING.md`
+> 都必須教釘版安裝，且不得再出現發行版安裝指令（否則本機就還是漂移來源）。
 
 ### 跑全套測試前：建 Jev PoC venv（必需）
 
@@ -255,7 +261,7 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（7 條）守「本機全綠 ≠ CI 全綠」那類假綠，全套現在是 **560 條**：
+`tests/env-equivalence.bats`（10 條）守「本機全綠 ≠ CI 全綠」那類假綠，全套現在是 **567 條**：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|
@@ -266,6 +272,10 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 | ENV-EQ-5 | 探針不得寫固定 `/tmp/<name>`（跨 run 殘檔 → 假綠） | `python3` |
 | ENV-EQ-6 | 探針不得直接執行 `gh` / `brew`（工具狀態依賴） | `python3` |
 | ENV-EQ-7 | oracle 子集在「網路黑洞」下仍全綠（黑洞有 canary） | PoC venv |
+| ENV-EQ-8 | `scripts/ci` 護欄腳本自動列舉：不得有孤兒鎖，`--self-test` 必須自己綠 | `python3` |
+| ENV-EQ-9 | `@test` 宣告數 == `bats --count`（防「宣告 N／實跑 N-3」；含 CJK 名稱 canary） | bats |
+| ENV-EQ-10 | 本機安裝文件必須教釘版 bats（只鎖 CI 一側＝本機仍漂移） | — |
+| （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
 
 兩個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py` 與 `scripts/ci/lint-probe-tools.py`，
 都可單獨跑（`--self-test` 驗抽取器本身）。寫檔請用 `$BATS_TEST_TMPDIR`；真的只是「資料引用」
