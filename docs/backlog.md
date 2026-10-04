@@ -43,7 +43,7 @@
 | TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | done (2026-10-05) | TMO-027 |
 | TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | done (2026-10-05) | TMO-028 |
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | done (2026-10-05) | TMO-028 |
-| TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
+| TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | 待決（NYH-4）| TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`＋清單硬編 9 檔（漏 `ask-me`，新增 skill 靜默漏掃）| P2 | 2 | done (2026-10-05) | TMO-028 |
 | TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..9：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內 / lint job 不得有 `if:`）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 16 處（12 檔） + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）**→ 已修（2026-10-05）**：①改 AST 遞迴掃描＋`PoC-OPTIONAL-DEP` 行內標記制（含反向鎖）、④helper 自動列舉、⑤新增 1 條 PyYAML 語意斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip）| P2 | 3 | done (2026-10-05) | TMO-029 |
@@ -53,7 +53,7 @@
 | TMO-043 | 死碼清理（原：`probe_metadata()` SC2329）——擴大為系統性掃描後共 3 處：①`wiki-extract-video.sh` `probe_metadata()` 刪除；②`wiki-media-describe.sh` `ext_pattern` **算完未用＝真 bug**（批次未依 mode 過濾，describe 會誤吃 .wav、transcript 會誤吃 .png）→ 修正 + 新探針 AC-D17/D18；③`wiki-ocr.sh` `EXIT_TOOLMISSING` 保留並註記（exit 4 契約屬 TMO-035 決策），`wiki-media-describe.sh` 則改用該常數。新探針 `tests/wiki-dead-code.bats`（WDC-1 靜態鎖 + WDC-2 掃描器自測） | P2 | 1 | done (2026-10-05) | TMO-039 |
 | TMO-044 | `ci.yml` `Verify Python heredoc syntax` 恆綠假檢查 → **已換成真檢查**：新增 `scripts/ci/check-python-heredocs.sh`（抽 python3 heredoc → `ast.parse` 驗語法；未結束/語法錯/抽不到都會 rc=1），ci.yml step 改為呼叫它（全 ci.yml 已無 `\|\| true`）。順帶修好覆蓋缺口：原檢查只涵蓋 5/9 個 heredoc（漏 wiki-extract-media ×2 / wiki-merge-media / wiki-index），現為 9/9。新探針`tests/ci-heredoc-check.bats` H1-H5（含 3 種突變證明咬得住） | P2 | 2 | done (2026-10-05) | TMO-039 |
 | TMO-045 | oracle 假綠的殘餘護欄（reviewer P2-B/C/D）→ **已修（2026-10-05）**：①`jev_oracle.py` 新增 `JEV_ENV_FILE` seam（覆寫即取代整份 `.env` 候選清單，涵蓋 `PoC/.env` 與 `~/.claude/.../PoC/.env`）；②`M6-g`/`M6.1-c` 自身加 `JEV_ENV_FILE=/dev/null`；③`CLEAN-POC-f` 由定點鎖（3 條）一般化為「動態挑出所有 oracle 測試檔 → 整檔離線重跑」（實測 `v2.1-jev-poc.bats` 100 條全綠，故未另做 CI 等價腳本）；④新增 `CLEAN-POC-h`（`PoC/.env`/`cache/` 不得被追蹤 + `.gitignore`/`.env.example` 正對照）與 `CLEAN-POC-i`（反向驗證 seam）；⑤CONTRIBUTING + cache-fixtures/README 精確化。敏感度證明：清 fixture→f 紅、`git add -f .env`→h 紅、半套 seam 突變→i 紅 | P2 | 3 | done (2026-10-05) | TMO-039 |
-| TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | todo | TMO-029 |
+| TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | 待決（NYH-5）| TMO-029 |
 
 > **狀態定義**（單一來源）：`todo` = 已描述、尚未開工（TMO-026 之後的新票，**非** trust mode 未結項）；`doing (日期)` = 進行中；`done (日期)` =
 > 已交付；`blocked (原因)` = 被外部條件卡住。
@@ -1123,7 +1123,7 @@ HEAD（`93ba04f`）狀態下：
 
 ### 已知問題（切票）
 
-- ~~TMO-041：bash 5.x 變體 Gate 3 未自動化、`bats` 未釘版、其他狀態依賴未掃完。~~ **已完成（2026-10-05）**，見本節末「TMO-041 結案」
+- ~~TMO-041：bash 5.x 變體 Gate 3 未自動化、`bats` 未釘版、其他狀態依賴未掃完。~~ **已完成（2026-10-05）**，見本節末「TMO-041 詳細」
 - TMO-037：lint 債（2026-10-04 實測 273 錯/66 檔；本票不處理）。
 - TMO-042：ffmpeg 版本漂移（apt 6.x / brew 8.x；下一批移除無法預期）。
 - TMO-043：`wiki-extract-video.sh:67 probe_metadata()` 死碼（shellcheck SC2329）。

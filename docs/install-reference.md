@@ -246,9 +246,12 @@ bash skills/regression-guard/PoC/setup-venv.sh        # 有 uv 用 uv，否則 p
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> `tests/poc-bootstrap.bats` 另有 1 條（TMO-038 的 CI 契約語意斷言）要用到 `PyYAML` 把 workflow 解成物件，
-> 沒 venv 時同樣是**紅＋修復指令**（不 skip）——這是刻意取捨：字串比對看不到 trigger／步驟先後／矩陣，
-> 而 CI 的執行次序保證了 venv 先建好。
+> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`516 ok / 44 not ok`）：
+> - `v2.1-jev-poc.bats` 40 + `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
+> - `poc-bootstrap.bats` 1（TMO-038 的 CI 契約語意斷言，PyYAML 解 workflow）
+> - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）。
+> 全部都是**紅＋修復指令**（不 skip）；`tests/poc-bootstrap.bats` 那條是刻意取捨：
+> 字串比對看不到 trigger／步驟先後／矩陣，而 CI 的執行次序保證了 venv 先建好。
 
 ### 環境等價探針（TMO-041）
 

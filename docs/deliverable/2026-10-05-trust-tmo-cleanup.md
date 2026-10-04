@@ -45,13 +45,16 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `18d0ec0` | TMO-036 | 03:20 | 跨目錄讀取探針：動詞表補 `讀取/grep/查/搜/掃`、skill 清單改**自動列舉**（`find skills -name SKILL.md`＝11 檔，補漏 `ask-me`）、新增 `專案端` 行內標記豁免＋**濫用反向鎖**、抽取器自我測試；`dav-designer` 不再排除 |
 | `273cce2` | TMO-033 | 03:27 | dav-wiki 子檔**內容錨點**（掏空即紅）：通用鎖（每個指標目標 non-blank ≥ 8 行）＋ 7 個獨立詞錨點（`--purge` 等用詞界比對，子字串版曾被自身突變 M2 抓到不咬） |
 | `3d04890` | round C 修正 | 03:36 | P1-1 對帳（`docs/prd/03:104` 是**移除**已廢除引用，非麵包屑）；P2-1 手改口徑＝12 檔 / 15 呼叫點 / 16 處替換；P2-2 `refute_file_body_contains` 收窄為「`## 變動歷史` 章節」；P2-3 MLG-8 去行首錨＋`Linting: ≥1 file`；P2-4 補放寬申報；P2-5 CHANGELOG 127→129；P2-6 DOCS-REDUCE-007 逐根存在檢查 |
+| `07291eb` | TMO-041 追加（L3 擴量） | 04:33 | `ENV-EQ-8`：`scripts/ci` 護欄腳本**自動列舉**（孤兒鎖 → 紅）＋每個 `lint-probe-*.py` 的 `--self-test` 必須自己綠且印出通過標記（掏空 `self_test()` 也會被抓） |
+| `7115cc8` | 文件校正（L2 重訪） | 04:34 | clean clone 實測 44 條紅（原寫 40＋1）→ 校正；NYH-4/5 決策票；backlog TMO-035/040 狀態改「待決（NYH-4/5）」 |
 | `24b2910` | TMO-038 | 03:55 | poc-bootstrap 探針強化：①遞迴 AST import 掃描＋module→dist 映射＋`PoC-OPTIONAL-DEP` 行內標記（含反向鎖）④helper 名單**自動列舉**（不再硬編 2 個，M6b 實證舊規則不咬）⑤新增 PyYAML 語意 CI 契約斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip） |
 | `cf3d466` | TMO-041 | 04:30 | 環境等價：新 `tests/env-equivalence.bats`（ENV-EQ-1..7：bash 5.x 必需、**每個本機 bash 版本**都跑 wiki-cleanup 套件、shim 有效性、空陣列×`set -u` 逐版本量測、固定 `/tmp` 殘檔鎖、`gh`/`brew` 執行鎖、網路黑洞＋canary）；`v2.1-jev-poc.bats` 56 處 `/tmp/` → `$BATS_TEST_TMPDIR`；CI 兩平台釘 bats-core `v1.14.0`＋契約斷言 |
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 
 新增檔案：`tests/wiki-dead-code.bats`、`tests/ci-heredoc-check.bats`、`tests/ffmpeg-version.bats`、
 `tests/markdownlint-guard.bats`、`tests/env-equivalence.bats`、`scripts/ci/check-python-heredocs.sh`、
-`scripts/ci/check-ffmpeg-version.sh`、`scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py`。
+`scripts/ci/check-ffmpeg-version.sh`、`scripts/ci/lint-probe-tmp-paths.py`、
+`scripts/ci/lint-probe-tools.py`（根目錄 `nowhere-at-all` 殘檔已刪）。
 
 ## 測試驗收證據（4 Gates）
 
@@ -99,6 +102,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | TMO-036 | 551 ok / 0 not ok | `/tmp/t36-gate3.txt` |
 | TMO-033 | 552 ok / 0 not ok | `/tmp/t33-gate3.txt` |
 | round C 修正 | **552 ok / 0 not ok** | `/tmp/rc-gate3.txt`（bats 1.14 TAP：`1..552`、`ok 552`、`rc=0`） |
+| TMO-041 追加（ENV-EQ-8） | **561 ok / 0 not ok** | `/tmp/t41-gate3d.txt` |
 | TMO-038 | 553 ok / 0 not ok | `/tmp/t38-gate3.txt` |
 | TMO-041 | 560 ok / 0 not ok | `/tmp/t41-gate3c.txt`（`1..560`、`ok 560`、`rc=0`） |
 
@@ -174,7 +178,13 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
   還在 repo 根留下 `nowhere-at-all` 殘檔；由 ENV-EQ-5 新鎖在最後一次全量跑時抓到（560 → 559）。
   已把標記移到行末、刪殘檔、重跑 560 ok。
 - **TMO-041 殘餘**：CI 的 ubuntu bash 5.2 行為本機無法驗證（只有 3.2 / 5.3）；本機 `python3` 3.14 vs CI 3.12
-  未納入等價探針。
+  未納入等價探針；`ENV-EQ-8` 的「自我測試沒被掏空」只靠「必須印出 `OK: 鎖 N 自我測試通過`」這個印記
+  （鎖可以選擇只印記號不做事＝best-effort 上界）。
+- **文件校正（L2 重訪實測）**：`docs/install-reference.md` 原本寫 clean clone 沒 venv 會紅「40＋1 條」，
+  實際量測為 **44 條**（漏記 `poc-clean-clone.bats` 的 CLEAN-POC-f/i 2 條＋新加的 ENV-EQ-7 1 條）；
+  已校正並附 `516 ok / 44 not ok` 實測數字。
+- **L1 接力剩下的兩張決策票**：TMO-035、TMO-040 依 trust 規則保守默認（不改檔），選項與推薦寫入
+  `docs/need-you-help.md`（NYH-4、NYH-5）。
 
 ## 下一步建議
 
