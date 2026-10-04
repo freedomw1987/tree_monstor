@@ -10,7 +10,7 @@
 #   * 真網路：本機連得到，oracle 打到真 API 會讓 fixture 缺口被掩蓋
 #   * 未 stub 的外部工具（gh / brew）：本機有裝就會「剛好過」
 #
-# 本檔守 7 件事（全部可證偽）：
+# 本檔守 8 件事（全部可證偽）：
 #   1. 本機必須有 bash 5.x 可用（缺 → 紅＋安裝指令，不 skip）
 #   2. `tests/wiki-cleanup.bats` 在**每一個**本機可用 bash 版本下都全綠
 #      （PATH shim 真的把 bash 換掉；bash 5.x 這條＝CI 的 ubuntu bash 變體 Gate 3）
@@ -19,6 +19,8 @@
 #   5. 探針不得寫入固定 `/tmp/<name>`（要寫就寫 `$BATS_TEST_TMPDIR`；純資料引用標 `TMP-OK`）
 #   6. 探針不得直接執行 `gh` / `brew`（工具狀態依賴）
 #   7. oracle 子集在「網路黑洞」下必須全綠，且黑洞本身要有 canary 證明真的在擋
+#   8. `scripts/ci/` 的護欄腳本不得是「孤兒鎖」（沒有任何探針引用＝等於沒在跑），
+#      且每個 `--self-test` 鎖的自我測試都必須自己綠（新增的鎖自動納入＝不會漏）
 #
 # 註: @test 名稱純英文（homebrew bats 1.14 對 CJK 測試名會靜默丟棄）
 
@@ -278,4 +280,43 @@ printf "%s\n" "${a[@]}"'
     return 1
   }
   echo "OK: 3 條 oracle 探針在黑洞網路下全綠（canary 證明黑洞有效）" >&2
+}
+
+@test "ENV-EQ-8: every scripts/ci lock is referenced by a probe, and every self-testable lock passes its own self-test" {
+  local d="$REPO_ROOT/scripts/ci"
+  local -a locks=() orphans=() failed=()
+  local f name out
+  for f in "$d"/check-*.sh "$d"/lint-probe-*.py; do
+    [ -f "$f" ] || continue          # 允許某類尚未存在（不讓 glob 落空變成假綠）
+    locks+=("$f")
+  done
+  [ "${#locks[@]}" -ge 4 ] || {
+    echo "FAIL: 只找到 ${#locks[@]} 個 scripts/ci 護欄腳本（<4）→ 抽取器可能壞了（防空過）" >&2
+    return 1
+  }
+  for f in "${locks[@]+${locks[@]}}"; do
+    name="$(basename "$f")"
+    # (a) 有沒有任何探針引用它（＝有沒有人在跑它；新增鎖不會被漏掉＝自動列舉）
+    grep -rqF "$name" "$REPO_ROOT/tests" || orphans+=("$name")
+    # (b) 支援 `--self-test` 的鎖（py 靜態鎖）：自我測試必須自己綠（抽取器的正反兩向證明）
+    if [ "${name#lint-probe-}" != "$name" ]; then
+      if out=$(python3 "$f" --self-test 2>&1); then
+        # 自我測試必須真的印出「通過」標記；把 self_test() 掏空成 `return 0` 也會被這條抓到
+        printf '%s\n' "$out" | grep -qE 'OK: 鎖 [0-9]+ 自我測試通過' ||
+          failed+=("$name：--self-test 沒印通過標記（自我測試可能被掏空）")
+      else
+        failed+=("$name")
+        printf '%s\n' "$out" >&2
+      fi
+    fi
+  done
+  if [ "${#orphans[@]}" -ne 0 ]; then
+    echo "FAIL: 孤兒護欄腳本（沒有任何探針引用，等於沒在跑）：${orphans[*]}" >&2
+    return 1
+  fi
+  if [ "${#failed[@]}" -ne 0 ]; then
+    echo "FAIL: 這些鎖的自我測試紅了（抽取器壞掉卻沒人知道）：${failed[*]}" >&2
+    return 1
+  fi
+  echo "OK: ${#locks[@]} 個 scripts/ci 護欄腳本都有探針引用；lint-probe-* 的 --self-test 全綠" >&2
 }
