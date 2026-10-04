@@ -72,10 +72,17 @@ load 'helpers/test-env'
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
   # v2.1 用戶決策廢除 §2.7 用戶背景收集（見 skills/dav-planner/CHANGELOG.md）→ 不可回流
   # 用主題級字串而非 §2.7 編號（reviewer P2-2：避免未來合法編號誤紅）
-  refute_file_contains "$skill" "用戶背景收集"
-  refute_file_contains "$skill" "角色詢問"
+  # TMO-032（reviewer P2-b）：改用 body-only 斷言——變動歷史列（`^| v`）本來就允許
+  # 依「撤銷的章節不抹去」政策提到已廢除名稱，不該誤紅。
+  refute_file_body_contains "$skill" "用戶背景收集"
+  refute_file_body_contains "$skill" "角色詢問"
   for role in "PM/PO" "業務"; do
-    refute_file_contains "$skill" "$role"
+    refute_file_body_contains "$skill" "$role"
+  done
+  # TMO-032（M11 缺口）：同義詞改詞回流——best-effort 加幾個最可能被拿來重寫的說法。
+  # 無法窮盡同義詞（已在 backlog 記為已知限制），但常見寫法要能咬。
+  for syn in "使用者背景" "自我介紹" "你的角色是" "您的角色"; do
+    refute_file_body_contains "$skill" "$syn"
   done
   # 但「不問對話用戶個人角色」的定位句必須留著
   assert_file_contains "$skill" "不問對話用戶的個人角色"

@@ -27,8 +27,15 @@ load 'helpers/test-env'
   # 主題級負向斷言（reviewer P2-2）：不用 §2.7 編號——reference.md 的 §2.1–§2.6 序列未來
   # 合法長出 §2.7（與已廢功能無關）時不應誤紅
   for target in "$skill" "$ref"; do
-    refute_file_contains "$target" "用戶背景收集"
-    refute_file_contains "$target" "角色詢問"
+    # TMO-032（reviewer P2-b）：body-only（排除 `^| v` 變動歷史列，避免政策誤紅）
+    refute_file_body_contains "$target" "用戶背景收集"
+    refute_file_body_contains "$target" "角色詢問"
+  done
+  # TMO-032（M11 缺口）：同義詞改詞回流 best-effort
+  for syn in "使用者背景" "自我介紹" "你的角色是" "您的角色"; do
+    for target in "$skill" "$ref"; do
+      refute_file_body_contains "$target" "$syn"
+    done
   done
   # 「為什麼廢除」的定位句必須留著（防後人「補回缺失章節」）
   assert_file_contains "$skill" "不問對話用戶的個人角色"
@@ -46,7 +53,11 @@ load 'helpers/test-env'
 @test "DEPRECATED: retirement of v1.9 section 2.7 is recorded (local + global)" {
   local cl="$REPO_ROOT/skills/dav-planner/CHANGELOG.md"
   local gcl="$REPO_ROOT/docs/sop/handbook/changelog.md"
-  assert_file_contains "$cl" "已被 v2.1 撤銷"
+  # TMO-032：列級錨定（原本 whole-file grep，任何一列寫到這句就算過）
+  if ! grep -F '| v1.9 |' "$cl" | grep -qF '已被 v2.1 撤銷'; then
+    echo "FAIL: $cl v1.9 row must record 已被 v2.1 撤銷" >&2
+    return 1
+  fi
   # 列級錨定（whole-file grep 會被 v2.2 列的「已廢棄」蒙混過關）
   if ! grep -F '| v1.9 |' "$cl" | grep -qF '已廢棄'; then
     echo "FAIL: $cl v1.9 row must be annotated 已廢棄" >&2

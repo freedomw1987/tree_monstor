@@ -87,6 +87,8 @@ assert_path_is_file() {
 assert_file_contains() {
   local p="$1"
   local needle="$2"
+  # TMO-032：先驗檔案存在，把「找不到檔案」與「找不到字串」分開報，避免誤導。
+  [[ -f "$p" ]] || { echo "FAIL: expected file at $p (assert_file_contains)" >&2; return 1; }
   if ! grep -F -q -- "$needle" "$p"; then
     echo "FAIL: file $p does not contain: $needle" >&2
     return 1
@@ -99,8 +101,24 @@ assert_file_contains() {
 refute_file_contains() {
   local p="$1"
   local needle="$2"
+  # TMO-032（reviewer P2-a）：檔案不存在時 grep rc=2，原本 `if grep` 不成立
+  # → 負向斷言「安靜地綠」（整類假綠）。改為明確 FAIL。
+  [[ -f "$p" ]] || { echo "FAIL: expected file at $p (refute_file_contains)" >&2; return 1; }
   if grep -F -q -- "$needle" "$p"; then
     echo "FAIL: file $p must NOT contain: $needle" >&2
+    return 1
+  fi
+}
+
+# refute_file_body_contains <path> <substring>
+# 同上，但**排除變動歷史表列**（`^| v`）：SOP 政策是「撤銷的章節不抹去、只在變動歷史
+# 加註（已廢棄）」，所以在變動歷史提到已廢除名稱是合法的，不該誤紅（reviewer P2-b）。
+refute_file_body_contains() {
+  local p="$1"
+  local needle="$2"
+  [[ -f "$p" ]] || { echo "FAIL: expected file at $p (refute_file_body_contains)" >&2; return 1; }
+  if grep -v -E '^\| v' "$p" | grep -F -q -- "$needle"; then
+    echo "FAIL: file $p body (excluding 變動歷史) must NOT contain: $needle" >&2
     return 1
   fi
 }

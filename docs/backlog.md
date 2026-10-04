@@ -40,7 +40,7 @@
 | TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI trigger `[main, master]` + 探針「缺 venv 就大聲紅、靜態測試不誤紅」；驗收=本機 506/506（CI 首跑全綠待 TMO-039）| P1 | 3 | done (2026-10-04) | TMO-026 |
 | TMO-030 | 廢除麵包屑補齊：`docs/prd/02` + `docs/prd/03:104` + backlog TMO-007 詳細段加「已廢棄」註 | P2 | 2 | done (2026-10-05) | TMO-027 |
 | TMO-031 | `skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」→ 現行 Step 1/2）| P2 | 1 | done (2026-10-05) | TMO-027 |
-| TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | todo | TMO-027 |
+| TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | done (2026-10-05) | TMO-027 |
 | TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | todo | TMO-028 |
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | done (2026-10-05) | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
