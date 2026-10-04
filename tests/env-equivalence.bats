@@ -371,8 +371,17 @@ printf "%s\n" "${a[@]}"'
 
 
 @test "ENV-EQ-9: no test declaration is silently dropped (repo census + CJK-name canary)" {
-  # 註（round F P3-6）：本條只掃 `tests/*.bats`（非遞迴），與 `bats --count tests/` 目前一致；
-  # 未來若新增 `tests/<子目錄>/`，普查會**少算 → 大聲紅**（不會靜默放過）。
+  # 註（round F P3-6；round G F1 更正不實敘述）：本條的普查與 `bats --count tests/` **都非遞迴**
+  # （bats 沒有 `-r` 時只掃 `tests/*.bats`）→ 若新增 `tests/<子目錄>/`，**兩邊一起少算＝靜默綠**，
+  # 不是「大聲紅」。故下方先加反向鎖：tests/ 必須維持平坦，否則本條直接紅（TMO-047 追蹤擴充）。
+  local nested
+  nested=$(find "$REPO_ROOT/tests" -mindepth 2 -name '*.bats' | head -5)
+  [ -z "$nested" ] || {
+    echo "FAIL: tests/ 出現子目錄探針 → 普查與 bats --count 皆非遞迴，會靜默漏算：" >&2
+    echo "$nested" >&2
+    echo "修法：把普查 glob 擴為 tests/**/*.bats 並讓 CI 跑 bats -r tests/，或把探針移回 tests/ 頂層" >&2
+    return 1
+  }
   # TMO-026 的病因：宣告 N 條、實跑 N-3 條，報表看起來全綠。這是那整類問題的一般性防線。
   # (0) 先自我測試普查函式：heredoc 內的 @test 不算、字串裡的 << 不誤判。
   #     fixture 一律用 printf 逐行寫（用 heredoc 寫會被 bats 前處理器改寫成

@@ -54,6 +54,11 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `cf3d466` | TMO-041 | 04:30 | 環境等價：新 `tests/env-equivalence.bats`（ENV-EQ-1..7：bash 5.x 必需、**每個本機 bash 版本**都跑 wiki-cleanup 套件、shim 有效性、空陣列×`set -u` 逐版本量測、固定 `/tmp` 殘檔鎖、`gh`/`brew` 執行鎖、網路黑洞＋canary）；`v2.1-jev-poc.bats` 56 處 `/tmp/` → `$BATS_TEST_TMPDIR`；CI 兩平台釘 bats-core `v1.14.0`＋契約斷言 |
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 
+> **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
+> （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
+> ＝當時 `git log -1 --format=%h`（trust-log 該列有記）；最後一個帳務 commit 的 hash 只存在於 `git log`
+> 與交付報告，這是刻意的（否則每輪審查都要再開一個 commit 記錄前一個）。
+
 新增檔案：`tests/wiki-dead-code.bats`、`tests/ci-heredoc-check.bats`、`tests/ffmpeg-version.bats`、
 `scripts/ci/check-skill-size.sh`、`tests/skill-size-guard.bats`（round E 追加；round F P2-3 補列）、
 `tests/markdownlint-guard.bats`、`tests/env-equivalence.bats`、`scripts/ci/check-python-heredocs.sh`、
@@ -237,6 +242,24 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 
 **本輪自曝（延續）**：P2-6 的修法**首測仍不咬**（邊界 `(/|$)` 抓不到 `` `docs/trust-log.md` `` 後接反引號），
 改成 `([^A-Za-z0-9_.-]|$)` 後才咬——這是本輪第二次「改完要突變驗」的實例（第一次是 M16）。
+
+## reviewer 修正（round G）
+
+`8a98a3ba`（凍結快照 `4ffd3de`，範圍 `c686dd4..4ffd3de`）：**OK with notes（0 P0 / 0 P1 / 1 P2 / 5 P3）**，
+「可交付用戶驗收？yes（附註）」。round F 的 6 P2 + 7 P3 **全部判定已修**（P2-5/P3-6/P3-7 為部分修 → 見下）。
+本輪同樣**無 shell 工具**（Gate 1/2/3 證據為引用 `/tmp/rg-*.txt`）；唯一 P2 是「測試註解敘述為假」。
+
+| 編號 | 內容 | 修正 |
+| --- | --- | --- |
+| **F1（P2）** | `tests/env-equivalence.bats` 新增註解宣稱「未來新增 `tests/<子目錄>/` → 普查少算 → **大聲紅**」**為假**：`bats` 無 `-r` 時 `bats --count tests/` 也**非遞迴** → 兩邊一起少算＝**靜默綠**（正是宣告數鎖失去覆蓋的那一格） | ①註解改寫為真話；②追加**反向鎖**：`find tests -mindepth 2 -name '*.bats'` 必須為空，否則該條直接紅（附修法指引：擴 glob 為 `tests/**/*.bats` 並讓 CI 跑 `bats -r tests/`）；擴充追蹤於 TMO-047。**突變 M24**：建 `tests/mut-g1-sub/nested.bats` → 紅 ✓；移除 → 綠 ✓ |
+| F2（P3） | 本檔 P2-5 列寫「移到 TMO-040 之後（ID 遞增）」不實（全表本就非嚴格 ID 序） | 刪「（ID 遞增）」，改註明 TMO-040 為既存錯置 |
+| F3（P3） | trust-log row 56 的 P3 對帳漏 P3-6 | row 58 補記（含 F1 更正） |
+| F4（P3） | 本檔引用的新 pattern 與程式不符（`\s` 非 POSIX ERE，照字面讀反而抓不到目標） | 改貼程式原字串 `(sudo[[:space:]]+)?apt(-get)? install[^#]*[[:space:]]bats` |
+| F5（P3） | P3-7 缺陷敘述誤寫「末列」；新增列插中段、時間倒序 | 敘述更正＋本檔加「凍結快照約定」段（帳務 commit 不列表，記於 trust-log） |
+| F6（P3） | `restruct-zero-cross-read.bats` 的 `local allow=…` 是死碼（真正生效的是 `case` 字面）→ 豁免清單兩份來源可無聲分岔 | 刪除 `allow` 變數，改為 `case` 旁註解（單一來源） |
+
+**本輪無新增探針**（reviewer 已確認：diff 無任何新 `@test`），兩處 regex 變動皆為**嚴格化**、無未申報放寬
+（reviewer 另建議：V03.6 表可補一句「本輪 regex 變動均為嚴格化、非放寬」）。
 
 ## 已知問題
 

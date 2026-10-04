@@ -147,7 +147,7 @@ skill_files() {
   # round F P2-6：原本硬編 5 個根（漏 trust-log.md / install-reference.md / DESIGN.md /
   # system-design.md…），註解卻自稱「把本 repo 自己的 docs 根列為不可豁免者」＝名實不符。
   # 改為**列舉 `docs/*` 推導**（新 docs 根自動納入），只放行明確的「目標專案端」runtime 路徑。
-  local allow='need-you-help.md|concepts|wiki|ac'
+  # 豁免清單＝下方 case 的單一來源（round G F6：原本另有一個沒人讀的 `allow` 變數，已刪）
   local forbidden='docs/(' parts='' rel esc
   local n=0
   while IFS= read -r rel; do
@@ -169,7 +169,6 @@ skill_files() {
     return 1
   }
   forbidden="$forbidden${parts%|})"
-  : "$allow"
   while IFS= read -r rel; do
     local abs="$REPO_ROOT/$rel" hit
     while IFS= read -r hit; do
