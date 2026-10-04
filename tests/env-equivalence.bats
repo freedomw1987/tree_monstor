@@ -624,3 +624,54 @@ printf "%s\n" "${a[@]}"'
   }
   echo "OK: $n 個 shell 檔都宣告 shell，Gate 2 指令自我列舉" >&2
 }
+
+# ENV-EQ-14（L6 擴量）：被追蹤的 .py / .json 靜態語法鎖。
+# 起因：`check-python-heredocs.sh` 只驗「嵌在 shell 裡的 Python heredoc」；repo 內被追蹤的
+# .py（30 支）與 .json（7 支）若沒被任何測試 import／讀取，寫壞了不會有任何東西擋。
+# 這條不需要額外套件（純 stdlib），也不寫出 __pycache__（用 ast.parse 而非 py_compile）。
+@test "ENV-EQ-14: every tracked .py parses and every tracked .json loads" {
+  local py js
+  py=$(cd "$REPO_ROOT" && git ls-files '*.py' | sort)
+  js=$(cd "$REPO_ROOT" && git ls-files '*.json' | sort)
+  local npy njs
+  npy=$(echo "$py" | grep -c . || true)
+  njs=$(echo "$js" | grep -c . || true)
+  [ "$npy" -ge 25 ] || { echo "FAIL: 只列舉到 $npy 支 .py（<25）→ 列舉器壞了" >&2; return 1; }
+  [ "$njs" -ge 5 ] || { echo "FAIL: 只列舉到 $njs 支 .json（<5）→ 列舉器壞了" >&2; return 1; }
+
+  run env PYTHONDONTWRITEBYTECODE=1 python3 -c '
+import ast, json, sys
+bad = []
+mode = sys.argv[1]
+for f in sys.argv[2:]:
+    try:
+        if mode == "py":
+            ast.parse(open(f, encoding="utf-8").read(), filename=f)
+        else:
+            json.load(open(f, encoding="utf-8"))
+    except Exception as e:
+        bad.append("%s: %s: %s" % (mode, f, e))
+print("\n".join(bad))
+sys.exit(1 if bad else 0)
+' py $py
+  [ "$status" -eq 0 ] || { echo "FAIL: 有 .py 語法錯誤 → $output" >&2; return 1; }
+
+  run env PYTHONDONTWRITEBYTECODE=1 python3 -c '
+import ast, json, sys
+bad = []
+mode = sys.argv[1]
+for f in sys.argv[2:]:
+    try:
+        if mode == "py":
+            ast.parse(open(f, encoding="utf-8").read(), filename=f)
+        else:
+            json.load(open(f, encoding="utf-8"))
+    except Exception as e:
+        bad.append("%s: %s: %s" % (mode, f, e))
+print("\n".join(bad))
+sys.exit(1 if bad else 0)
+' json $js
+  [ "$status" -eq 0 ] || { echo "FAIL: 有 .json 解析失敗 → $output" >&2; return 1; }
+
+  echo "OK: $npy 支 .py 全數 ast.parse 通過、$njs 支 .json 全數 json.load 通過" >&2
+}

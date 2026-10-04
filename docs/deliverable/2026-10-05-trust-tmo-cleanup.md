@@ -3,7 +3,7 @@
 - **日期**：2026-10-05（trust session 01:21 → 08:00 CST，用戶指定 deadline）
 - **Backlog ID**：TMO-043、TMO-044、TMO-045、TMO-042、TMO-037
 - **作者**：pi（david 的 agent，**trust mode 自主執行**）
-- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**570 ok / 0 not ok**，ENV-EQ-13 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
+- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**571 ok / 0 not ok**，ENV-EQ-14 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
   `approve-with-comments`（0 P0 / 1 P1 / 5 P2，P1 與 P2 全數修完）；round B（TMO-042 / TMO-037 + 文件）=
   `1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**，「可交付用戶驗收？yes」；round C（TMO-030/031/032/034 + round-B 修正）=
   `e776fe77`：**approve-with-comments（0 P0 / 1 P1 / 6 P2）**，「可交付用戶驗收？yes」
@@ -60,6 +60,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （round I 修正） | reviewer round I 修正（P2-1＋P3-1..9） | 06:27:50* | `ENV-EQ-11` 補 fail-closed 鎖（空 root 必紅）＋文件數字／措辭對帳；M29 咬 ✓ |
 | （ENV-EQ-12） | ENV-EQ-12 追加（L4） | 06:30:52* | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 與 `skills/*/tests/`）；列舉下限 ≥40；M30–M32 全咬 ✓ |
 | （ENV-EQ-13） | ENV-EQ-13 追加（L5）＋Gate 2 掃描面補洞 | 06:34:56* | 每個 shell 檔須宣告 shell；Gate 2 改自我列舉（23 檔 rc=0）；M33–M35 全咬 ✓ |
+| （ENV-EQ-14） | ENV-EQ-14 追加（L6） | 06:39:41* | 全 repo `.py` 須 `ast.parse` 通過、`.json` 須 `json.load` 通過（不寫 `__pycache__`）；下限 ≥25／≥5；M36–M38 全咬 ✓ |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -330,6 +331,26 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 全部只存在於記憶體、沒有落地，但我在 commit message 與 round G 章節都聲稱「已修」。
 **根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
 **對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
+
+## ENV-EQ-14 追加（L6 擴量，trust 期間）— .py / .json 靜態語法鎖
+
+**量測**：`scripts/ci/check-python-heredocs.sh` 只驗「嵌在 shell 裡的 Python heredoc」（9 檔）。
+repo 內被追蹤的 `.py`（30 支）與 `.json`（7 支）中，沒被任何測試 import／讀取的那些（例如 PoC 的
+CLI 腳本、fixture JSON），寫壞了**不會有任何東西擋**。實測現況全部健康（30/30 `ast.parse`、7/7 `json.load`），
+但無鎖擋未來漂移。
+
+新增 **`ENV-EQ-14`**：列舉 `git ls-files '*.py'` 與 `'*.json'`，逐檔用 stdlib 驗語法
+（`.py` 用 `ast.parse`、`.json` 用 `json.load`；**不寫 `__pycache__`**，故不需 `py_compile`），
+失敗時大聲紅＋點名檔案；另設列舉下限（`.py >= 25`、`.json >= 5`）防列舉器壞掉＝空過。
+
+| 突變 | 內容 | 結果 |
+| --- | --- | --- |
+| M36 | 在 `PoC/sandbox_runner.py` 尾端注入語法錯誤 | 紅 ✓ |
+| M37 | 把 `.markdownlint.json` 改成非法 JSON | 紅 ✓ |
+| M38 | 列舉器縮成 `git ls-files 'tests/*.py'`（模擬漏掃） | 紅 ✓（下限 `>= 25` 擋下） |
+
+**Gate 2**：lint 128 檔 0 issue、shellcheck 23 檔 rc=0、heredoc 9 檔 OK。
+**Gate 3**：`bats tests/` = **571 ok / 0 not ok**（`/tmp/t47-gate3-l6.txt`）。
 
 ## ENV-EQ-13 追加（L5 擴量，trust 期間）— Gate 2 掃描面的洞
 
