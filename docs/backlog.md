@@ -47,7 +47,8 @@
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`，故 `dav-planner/SKILL.md:80`「先 grep `docs/concepts/`」實質跨目錄讀取抓不到 | P2 | 2 | todo | TMO-028 |
 | TMO-037 | 清 markdownlint 債（實測 246 錯：MD013×184、MD047×18、其餘 14 種；含 `docs/backlog.md` 45、deliverable 檔 ~75、`changelog.md` 18、`skills/**` ~21）——現以 `ci.yml` lint-only `continue-on-error: true` 暫時不阻擋，清完須移除該行 | P2 | 8 | todo | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
-| TMO-039 | 首次真實 GitHub Actions 驗證：`ci.yml` 已加 `workflow_dispatch` 可手動觸發；需貼 run URL 確認（a）test job 全綠（b）runner 的 bats/python 版本假設（c）lint-only 紅燈以 annotation 呈現且不阻擋 | P1 | 2 | todo | TMO-029 |
+| TMO-039 | 首次真實 GitHub Actions 驗證（**首跑已於 2026-10-04 執行，run `37213235272` 全 job 紅**，揭露 6 類真因並修正，見 §TMO-039 詳細）| P1 | 2 | doing (2026-10-04) | TMO-029 |
+| TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴（`/tmp` 殘留、`$HOME`、跨 checkout 路徑）尚未掃完 | P2 | 3 | todo | TMO-039 |
 | TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | todo | TMO-029 |
 
 > **狀態定義**：`done (日期)` = 已交付；`todo` = TMO-026 之後新開的後續票（已描述、尚未開工，**非** trust mode 未結項）。
@@ -986,3 +987,43 @@ HEAD（`93ba04f`）狀態下：
 - **假綠有兩種**：`skip`（永遠不跑）與空過斷言（跑了但什麼都沒驗）。本票各抓到一批，並用「本檔 skip 數必須 0」與「不變式等號」把它們鎖住。
 - **護欄會寫錯，而且會錯在等價寫法**：`/tmp` 擋住了、`/tmp/` 卻繞過去（`case` 的 `*` 可跨 `/`）；是第 3 輪 reviewer 抓到的。教訓：**安全性檢查要拿「同義寫法矩陣」來測**，不是測一個代表值。
 - **自傷當場說**：M10 第一次是假突變（awk 語法錯把檔案清空）、M17 第一次沒命中卻意外揭露探針③只是字串形狀、探針③第一版誤紅、`$status（` 全形括號 bug、以及**用 `git checkout` 還原突變時誤刪未 commit 的整批編輯**（已重做並改用 `cp` 備份）——四件事全部寫進證據包，其中最後一件由 reviewer 反向查出兩處漏補。
+
+## TMO-039 詳細（首次真實 Actions 驗證：34 紅的真因與修復）
+
+**首跑結果**：`CI` run `37213235272`（`Test on ubuntu-latest` 34 紅、`Test on macos-latest` 較少、`Markdown lint` 紅但不阻擋）。
+本機當時是 **506/506 全綠** —— 這是本票最重要的產物：**本機全綠是假綠**。
+
+### 六類真因（每一類都已在 CI log 有直接證據）
+
+| # | 真因 | 紅燈 | 修法 |
+| --- | --- | --- | --- |
+| 1 | `journeys/US-101.yaml:3` 寫死 `/Users/<作者>/…/docs/ac/US-101.md` | CI-only 5 條（M5.2-c/M5-runtime-b/M3.1-e/M6-g/M6.1-c） | 改相對路徑 `../../../docs/ac/US-101.md`（與 US-M62/US-M63 一致）|
+| 2 | `journeys/US-M62.yaml` 被 `.gitignore` 忽略且**沒有任何程式會產生它**（fixtures 則由測試自己 `cat >` 寫出）| clean clone `flaky-d` 1 條 | 解除忽略 + `git add` `US-M62.yaml`（測試素材本該版控）|
+| 2b | **`sandbox_runner.py` 真 bug**：`sandbox_dir / <絕對路徑>` 在 pathlib 會「右邊覆寫左邊」→ 複製來源 == 目的（`SameFileError`）且原檔被就地改壞 | clean clone `M6.3-b..e` 4 條（**CI 上反而是綠的**，因為 runner 的 checkout 路徑不含 symlink；macOS `/tmp` → `/private/tmp` 才觸發）| 改用 `.resolve().relative_to(REPO_ROOT.resolve())`，轉不出來就用檔名（保證落在 sandbox 內）；新探針 `M6.3-k`（repo 外檔案）|
+| 3 | runner 沒裝 `ffmpeg`/`ffprobe` | 約 26 條媒體探針（AC-A*/W*/V*）| `ci.yml` 兩平台安裝清單加 `ffmpeg` |
+| 4 | `wiki-cleanup.sh` 用陣列長度展開判斷空陣列 —— bash 5.2+ 在 `set -u` 下對「已宣告但為空」的陣列報 `unbound variable` | ubuntu-only 2 條（`wiki-cleanup: deprecated`、`E4 idempotent re-run`）| 改明確計數器 `CLEAN_COUNT`（並以 brew bash 5.3 本機重現 → 修後 20/20 綠）|
+| 5 | `python-version: '3.x'` 浮動（今日實得 3.14.7）| 環境不可重現 | 釘 `'3.12'` |
+| 6 | lint-only job 真有 246 個 markdownlint 錯 | 已 `continue-on-error: true` | 維持 → TMO-037（清完移除）|
+
+### 新增探針（Gate 1 先紅後綠）
+
+- `tests/poc-clean-clone.bats`（5 條，本機修前 **5 紅** → 修後 5 綠）：①journey `source:` 可從 `PoC/` 相對解析且非絕對路徑 ②`journeys/fixtures` 不得含 `/Users/`、`/home/` ③測試引用的 fixture/journey 必須 `git ls-files --error-unmatch` 得到 ④`ci.yml` 兩平台都裝 ffmpeg ⑤`python-version` 已釘版（非 `3.x`）。每條都有「防空過」前置條件（例：journey 數 ≥3）。
+- `tests/v2.1-jev-poc.bats` 加 `M6.3-k`：sandbox 必須接受「repo 外」的目標檔且原檔一字不改（修前紅、修後綠）。
+- `tests/wiki-cleanup.bats` 加 1 條靜態鎖：腳本不得出現陣列長度展開（bash 5.2+ 空陣列 unbound）。
+
+### 證據
+
+- Gate 1：`bats tests/poc-clean-clone.bats` 修前 **5 not ok / 0 ok**（訊息含 `US-101.yaml`、7 個未追蹤檔）→ 修後 **5 ok**；`tests/wiki-cleanup.bats` 新探針修前紅、修後 20 ok。
+- Gate 2：`shellcheck -x wiki-cleanup.sh` rc=0（順修 2 處既有 SC2295 與 `source=` 相對路徑）、`bash -n` rc=0、`.bats` 用 bats 自驗 rc=0、`ci.yml`/journeys PyYAML 解析 ok。
+- Gate 3：`bats tests/` 本機 **513 ok / 0 not ok / 0 skip**（bash 3.2）；`PATH=/opt/homebrew/bin:$PATH bats tests/`（bash 5.3，≈ubuntu 等價）；clean clone（`git clone` 到 `/tmp`）**513 ok / 0 not ok / 0 skip**。
+
+### 已知問題（切票）
+
+- TMO-041：bash 5.x 變體 Gate 3 未自動化、`bats` 未釘版、其他狀態依賴未掃完。
+- TMO-037：lint 債 246 處（本票不處理）。
+
+### 反思
+
+- **「本機 506 全綠」是最貴的一個錯覺**：真正的驗證是「在別人的機器上、從零開始」，而我在此之前從未讓 CI 真的跑過一次。
+- **假綠有四種**：skip、空過斷言、**依賴本機狀態而成立**（路徑存在、檔案未版控但剛好還在本機）、以及**路徑寫法差異**（`/tmp` vs `/private/tmp` 讓同一個 bug 在本機與 clone 各露一半）。後兩種最難看，因為它們長得完全像綠。
+- **錯誤歸因也是債**：clean clone 的 4 紅我一開始歸因「缺 fixture」，實際是 `src == dst` 真 bug（CI 上還全綠）。是「不用 `/tmp` clone，改用 repo 外檔案」的探針把它逼出來的。

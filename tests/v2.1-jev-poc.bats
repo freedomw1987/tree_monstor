@@ -1173,6 +1173,40 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   }
 }
 
+@test "M6.3-k: sandbox_runner accepts a target file outside the repo without SameFileError" {
+  need_poc_venv
+  cd "$POC_DIR"
+  # TMO-039 實證：sandbox_dir / <絕對路徑> 在 pathlib 會「右邊覆蓋左邊」，
+  # 於是複製來源 == 目的（SameFileError），且原本的檔案會被就地改壞。
+  # repo 外的檔案必定走這條路（含 repo 路徑含 symlink 的情境，如 macOS /tmp → /private/tmp）。
+  local outside="$BATS_TEST_TMPDIR/outside-sample.py"
+  printf 'def hello():\n    return "world"\n' > "$outside"
+  make_us_m63_before
+  run "$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "$outside" \
+    --old 'return "world"' \
+    --new 'return "planet"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --sandbox-dry-run
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: dry-run on out-of-repo file should return 0, got $status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "dry_run" || {
+    echo "FAIL: should classify as dry_run" >&2
+    return 1
+  }
+  # 原檔必須一字未改（sandbox 的意義）
+  grep -q 'return "world"' "$outside" || {
+    echo "FAIL: out-of-repo source was modified" >&2
+    return 1
+  }
+}
+
 # ────────────────────────────────────────────────────────────────────
 # Probe 14: Flaky 驗證 (TMO-020)
 # ────────────────────────────────────────────────────────────────────

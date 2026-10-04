@@ -278,3 +278,13 @@ EOF
     # --purge 不該重建 README
     [ ! -f "$TEST_ROOT/docs/README.md" ]
 }
+
+@test "wiki-cleanup: empty-list path must not use array-length expansion (bash 5.2+ set -u unbound)" {
+    # TMO-039 實證：macOS 預設 bash 3.2 對「已宣告但為空的陣列」做長度展開不會報錯，
+    # 但 Ubuntu CI 的 bash 5.2 在 set -u 下會報 `TO_CLEAN: unbound variable`
+    # → 「本機全綠、CI 紅」的經典假綠。空清單路徑（無 deprecated 檔）尤須守住。
+    ! grep -qE '\$\{#[A-Za-z_]+\[@\]\}' "$WIKI_CLEANUP" || {
+        echo "FAIL: wiki-cleanup.sh 使用陣列長度展開（bash 5.2+ 遇空陣列會 unbound）" >&2
+        false
+    }
+}

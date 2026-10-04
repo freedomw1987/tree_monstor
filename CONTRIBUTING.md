@@ -13,6 +13,9 @@ brew install bats-core
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
 
+# 安裝媒體工具（AC-A* / AC-W* / AC-V* 等 26 條 ffmpeg 探針依賴，缺了會紅）
+brew install ffmpeg poppler pandoc tesseract
+
 # 確認 python3
 python3 --version
 ```
@@ -20,9 +23,9 @@ python3 --version
 ### Linux (Ubuntu)
 
 ```bash
-# 安裝 bats
+# 安裝 bats 與媒體工具（ffmpeg/ffprobe 是 26 條媒體探針的硬依賴）
 sudo apt-get update
-sudo apt-get install -y bats
+sudo apt-get install -y bats ffmpeg poppler-utils pandoc tesseract-ocr
 
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
@@ -31,6 +34,9 @@ npm install -g markdownlint-cli2
 ## 跑測試
 
 ```bash
+# 建 PoC venv（httpx + PyYAML；v2.1-jev-poc.bats 的 38 條需要）
+bash skills/regression-guard/PoC/setup-venv.sh
+
 # 跑全套 bats tests
 bats tests/
 
@@ -40,6 +46,10 @@ bats tests/wiki-cleanup.bats
 # 跑邊緣案例
 bats tests/wiki-cleanup.bats --filter "E1"
 ```
+
+> ⚠️ **本機綠 ≠ CI 綠**：CI 是 clean clone，拿不到未版控的檔案。
+> 若新增測試素材，必須真的 `git add`（`tests/poc-clean-clone.bats` 會擋）；
+> fixture 內也不得寫自己機器的絕對路徑。
 
 ## Lint
 
@@ -59,7 +69,7 @@ wc -l skills/dav-wiki/SKILL.md
 
 每個 PR 會自動跑（見 `.github/workflows/ci.yml`）：
 
-1. **bats 全套測試**（macOS + Linux）
+1. **bats 全套測試**（macOS + Linux；先建 PoC venv、裝 ffmpeg）
 2. **markdownlint**（SKILL.md、cleanup handbook、所有 markdown）
    ——**目前暫時 non-blocking**（`continue-on-error: true`），lint 債 246 處見 TMO-037
 3. **bash -n** 驗證 CLI 腳本語法

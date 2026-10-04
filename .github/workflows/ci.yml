@@ -28,19 +28,19 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
 
       - name: Install test dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y bats poppler-utils pandoc tesseract-ocr
+          sudo apt-get install -y bats poppler-utils pandoc tesseract-ocr ffmpeg
           python3 -m pip install python-pptx
 
       - name: Install test dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install bats-core poppler pandoc tesseract
+          brew install bats-core poppler pandoc tesseract ffmpeg
           python3 -m pip install python-pptx
 
       - name: Build PoC venv (httpx + PyYAML)

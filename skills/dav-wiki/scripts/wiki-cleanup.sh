@@ -13,7 +13,7 @@ set -uo pipefail
 # this script raise expected errors (e.g. _purge mode skips creating
 # _deprecated/, so the DEPRECATED_INDEX Python block fails harmlessly).
 _LOG_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/lib/log.sh"
-# shellcheck source=../../../lib/log.sh
+# shellcheck source=lib/log.sh  # 相對於 repo root（Gate 2 一律在 repo root 跑 shellcheck）
 source "$_LOG_LIB"
 
 # === 預設值 ===
@@ -128,6 +128,10 @@ get_quarter() {
 # 決定方式：優先用 frontmatter 的 deprecated_at；若無則用 mtime。
 TODAY=$(date +%Y-%m-%d)
 declare -a TO_CLEAN
+# 刻意用明確計數器，不用陣列長度展開（形如 #arr[@] 的寫法）：
+# macOS 預設 bash 3.2 對空陣列做長度展開不會報錯，但 bash 5.2+（Ubuntu CI）
+# 在 set -u 下會報 `TO_CLEAN: unbound variable` → 空清單路徑整條失敗（TMO-039）。
+CLEAN_COUNT=0
 
 while IFS= read -r -d '' file; do
     # 跳過 _deprecated/ 內
@@ -157,10 +161,11 @@ while IFS= read -r -d '' file; do
     [[ "$age" -lt "$OLDER_THAN" ]] && continue
 
     TO_CLEAN+=("$file")
+    CLEAN_COUNT=$((CLEAN_COUNT + 1))
 done < <(find "$WIKI_DIR" -type f -name "*.md" -print0)
 
 # === 顯示計畫 ===
-COUNT=${#TO_CLEAN[@]}
+COUNT=$CLEAN_COUNT
 if [[ "$COUNT" -eq 0 ]]; then
     log_info "沒有 deprecated 超過 ${OLDER_THAN} 天的檔案，nothing to do。"
     exit 0
@@ -169,7 +174,7 @@ fi
 log_info "找到 $COUNT 個 deprecated 超過 ${OLDER_THAN} 天的檔案："
 for f in "${TO_CLEAN[@]}"; do
     dep_at=$(get_fm "$f" "deprecated_at")
-    log_plan "${f#$WIKI_DIR/} (deprecated ${dep_at})"
+    log_plan "${f#"$WIKI_DIR"/} (deprecated ${dep_at})"
 done
 
 if $DRY_RUN; then
@@ -206,7 +211,7 @@ skipped=0
 errors=0
 
 for f in "${TO_CLEAN[@]}"; do
-    rel="${f#$WIKI_DIR/}"
+    rel="${f#"$WIKI_DIR"/}"
     fname=$(basename "$f")
     dep_at=$(get_fm "$f" "deprecated_at")
     quarter=$(get_quarter "$dep_at")

@@ -1,0 +1,207 @@
+journey_id: US-M62
+title: AC 範本 — regression-guard M6.2 patch + re-validate 閉環
+source: ../../../docs/ac/US-M62.md
+generated_by: typesafe/jev-1.13
+generated_at: '2026-09-28T15:39:36+00:00'
+total_steps: 13
+steps:
+- id: US-M62-AC01-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC01
+  verifying_then: 抽出 `(file_path, old_text, new_text)` 三元組，產出 structured JSON
+  depends_on: []
+- id: US-M62-AC01-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC01
+  verifying_then: 抽出 `(file_path, old_text, new_text)` 三元組，產出 structured JSON
+  depends_on:
+  - US-M62-AC01-s1
+- id: US-M62-AC01-s3
+  action: observe
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC01
+  verifying_then: 抽出 `(file_path, old_text, new_text)` 三元組，產出 structured JSON
+  depends_on:
+  - US-M62-AC01-s2
+- id: US-M62-AC02-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC02
+  verifying_then: 不修改 source file，僅產出 diff 報告（unified diff 格式）
+  depends_on:
+  - US-M62-AC01-s3
+- id: US-M62-AC02-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC02
+  verifying_then: 不修改 source file，僅產出 diff 報告（unified diff 格式）
+  depends_on:
+  - US-M62-AC02-s1
+- id: US-M62-AC02-s3
+  action: observe
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC02
+  verifying_then: 不修改 source file，僅產出 diff 報告（unified diff 格式）
+  depends_on:
+  - US-M62-AC02-s2
+- id: US-M62-AC03-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC03
+  verifying_then: 產出 `before.json` + `after.json`，diff verdict 分布
+  depends_on:
+  - US-M62-AC02-s3
+- id: US-M62-AC03-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC03
+  verifying_then: 產出 `before.json` + `after.json`，diff verdict 分布
+  depends_on:
+  - US-M62-AC03-s1
+- id: US-M62-AC03-s3
+  action: multi_step
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC03
+  verifying_then: 產出 `before.json` + `after.json`，diff verdict 分布
+  depends_on:
+  - US-M62-AC03-s2
+- id: US-M62-AC04-s1
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC04
+  verifying_then: 8 個 M6.2 探針全綠（parser / patcher / re-validate / pipeline 整合）
+  depends_on:
+  - US-M62-AC03-s3
+- id: US-M62-AC04-s2
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC04
+  verifying_then: 8 個 M6.2 探針全綠（parser / patcher / re-validate / pipeline 整合）
+  depends_on:
+  - US-M62-AC04-s1
+- id: US-M62-AC04-s3
+  action: setup_state
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC04
+  verifying_then: 8 個 M6.2 探針全綠（parser / patcher / re-validate / pipeline 整合）
+  depends_on:
+  - US-M62-AC04-s2
+- id: US-M62-AC04-s4
+  action: multi_step
+  target: ''
+  target_text: ''
+  value: ''
+  expected_url: ''
+  expected_text: ''
+  timeout_ms: 3000
+  verifying_ac: US-M62-AC04
+  verifying_then: 8 個 M6.2 探針全綠（parser / patcher / re-validate / pipeline 整合）
+  depends_on:
+  - US-M62-AC04-s3
+meta:
+  story_id: US-M62
+  title: AC 範本 — regression-guard M6.2 patch + re-validate 閉環
+  ac_count: 4
+  calls:
+  - ac_id: US-M62-AC01
+    phase: complexity
+    latency_ms: 948
+    cached: false
+    score: 1.84
+  - ac_id: US-M62-AC01
+    phase: action_plan
+    latency_ms: 308
+    cached: false
+    choice: observe
+  - ac_id: US-M62-AC02
+    phase: complexity
+    latency_ms: 365
+    cached: false
+    score: 2.11
+  - ac_id: US-M62-AC02
+    phase: action_plan
+    latency_ms: 355
+    cached: false
+    choice: observe
+  - ac_id: US-M62-AC03
+    phase: complexity
+    latency_ms: 285
+    cached: false
+    score: 2.37
+  - ac_id: US-M62-AC03
+    phase: action_plan
+    latency_ms: 331
+    cached: false
+    choice: multi_step
+  - ac_id: US-M62-AC04
+    phase: complexity
+    latency_ms: 421
+    cached: false
+    score: 2.78
+  - ac_id: US-M62-AC04
+    phase: action_plan
+    latency_ms: 356
+    cached: false
+    choice: multi_step

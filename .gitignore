@@ -14,10 +14,9 @@ __pycache__/
 .agents/
 .claude/
 .pi/
-# regression-guard PoC test fixtures (created by bats probes, don't commit)
-skills/regression-guard/PoC/fixtures/US-M63-*-test.py
-skills/regression-guard/PoC/fixtures/US-M63-ambiguous.py
-skills/regression-guard/PoC/journeys/US-M62.yaml
+# regression-guard PoC 的 journeys/fixtures 是**測試素材**，必須版控：
+# clean clone（CI）拿不到未版控的檔案，會在 v2.1-jev-poc.bats 造成「本機綠、CI 紅」。
+# 只有 tmp/ 這種執行期產物才忽略：
 skills/regression-guard/PoC/tmp/
 # regression-guard sandbox 工作目錄（sandbox_runner.py 在 repo root tmp/ 建 .sandbox-*）
 /tmp/

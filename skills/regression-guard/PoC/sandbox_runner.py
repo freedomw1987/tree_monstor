@@ -145,9 +145,16 @@ def run_sandbox(
     try:
         sandbox_dir.mkdir(parents=True, exist_ok=True)
         # 複製 fixture / journey / source
+        # 注意：pathlib 的 `/` 遇到「右邊是絕對路徑」會直接覆寫左邊，
+        # 使得 src == dst（SameFileError），並把原檔就地改壞。
+        # 因此務必把目標轉成「相對路徑」；轉不出來（repo 外／path 含 symlink）就用檔名，
+        # 保證複本一定落在 sandbox 內。
         rel_file = target_file
         if rel_file.is_absolute():
-            rel_file = rel_file.relative_to(REPO_ROOT) if str(target_file).startswith(str(REPO_ROOT)) else target_file
+            try:
+                rel_file = target_file.resolve().relative_to(REPO_ROOT.resolve())
+            except ValueError:
+                rel_file = Path(target_file.name)
         sandbox_file = sandbox_dir / rel_file
         _copy_to_sandbox(target_file, sandbox_file)
         # 複製 journey YAML

@@ -1,6 +1,6 @@
 journey_id: US-101
 title: AC 範本
-source: /Users/davidchu/Sites/localhost/tree_monstor/docs/ac/US-101.md
+source: ../../../docs/ac/US-101.md
 generated_by: typesafe/jev-1.13
 generated_at: '2026-09-28T14:33:19+00:00'
 total_steps: 9
