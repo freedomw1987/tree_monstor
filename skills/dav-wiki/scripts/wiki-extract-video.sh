@@ -136,7 +136,7 @@ extract_chapters() {
 
     # 用 ffmpeg scene detect 找出切換時間
     local times_file="$output.tmp"
-    # 注意：不用已移除的 vsync 旗標（ffmpeg 8 移除），一律用 -fps_mode（ffmpeg 4.3+）
+    # 注意：不用已移除的 vsync 旗標（ffmpeg 8 移除），一律用 -fps_mode（現代 ffmpeg 皆支援）
     ffmpeg -i "$input" \
            -vf "select=gt(scene\,$threshold),showinfo" \
            -fps_mode vfr \

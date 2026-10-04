@@ -66,17 +66,33 @@ Gate 2 lint 語法／Gate 3 regression／Gate 4 reviewer 原文回傳）。
 
 | 環境 | 結果 |
 | --- | --- |
-| **CI 等價**：`PoC/.env` 與 8233 筆暖快取**移走** + `env -u OPENROUTER_API_KEY HOME=/tmp/fakehome` | **516 ok / 0 not ok / 0 skip** |
-| 本機 bash 3.2（`/bin/bash` 3.2.57）| **516 ok / 0 not ok / 0 skip** |
-| 本機 bash 5.3（`PATH=/opt/homebrew/bin:$PATH`，≈ubuntu 5.2）| **516 ok / 0 not ok / 0 skip** |
-| clean clone（從本 commit `git clone` 到 `/tmp`）| 見 §下一步建議（push 後補；前輪 513 ok）|
+| **CI 等價**：`PoC/.env` 與 8233 筆暖快取**移走** + `env -u OPENROUTER_API_KEY HOME=/tmp/fakehome` | **517 ok / 0 not ok / 0 skip** |
+| 本機 bash 3.2（`/bin/bash` 3.2.57）| **517 ok / 0 not ok / 0 skip** |
+| 本機 bash 5.3（`PATH=/opt/homebrew/bin:$PATH`，≈ubuntu 5.2）| **517 ok / 0 not ok / 0 skip** |
+| clean clone（從 commit `2437914` `git clone` 到 `/tmp/cc4`，路徑含 symlink）| **517 ok / 0 not ok / 0 skip** |
 
 > 第一列是本輪最重要的證據：把本機的 oracle 依賴全部拔掉後仍全綠，代表那 3 條探針**不再靠我的機器**。
 
 ### Gate 4（reviewer）
 
-- V03.6 判定（本輪）：`M6.3-l`、`AC-V11`、`CLEAN-POC-f`、`CLEAN-POC-g` = **新增探針（嚴格化）**；
-  `CLEAN-POC-c` regex 修正 = **條件放寬**（消除假陽性，已明示並附前後輸出）→ 需 reviewer 二審。
+### V03.6 分類與放寬申報（含 reviewer 補正）
+
+- **新增探針（嚴格化）**：`M6.3-l`、`AC-V11`、`CLEAN-POC-f`、`CLEAN-POC-g`、`wiki-cleanup` 靜態鎖防空過。
+- **條件放寬（明示 1 處）**：`CLEAN-POC-c` regex 由 substring 改為需邊界（消假陽性）→ 已附前後輸出與敏感度測試。
+- **放寬申報補正（reviewer P2-E）**：`M5-runtime-b`/`M6-g`/`M6.1-c` 由「真 API」改「stub／版控 fixture」，
+  依 V03.6 條件①「讓原本會 fail 的情況改為 pass」的字面定義**亦屬放寬語意**，本輪原本只寫「語意替換」→ 現補申報。
+  不視為弱化的理由：三者被驗的性質未變（stale 偵測／CLI 端到端＋cache-key 推導），產品邏輯壞掉仍會紅；
+  此為「移除環境依賴」而非「削弱斷言」。
+
+### Reviewer 判決（round 3）
+
+- **`approve-with-comments`：0 P0 / 0 P1 / 6 P2**（原文回傳於對話，未經改寫）。
+- 前輪 5 個 P2：**全數已收尾**（P2-1 sandbox 逃逸、P2-2/P2-3 防空過、P2-4 檔數→本輪再修正計數、P2-5 狀態定義）。
+- 本輪 6 P2 去向：P2-A（計數一致性）**本 commit 已修**；P2-F（`-fps_mode` 版本註解）**本 commit 已修**；
+  P2-E **已補申報**（上方）；P2-B（`PoC/.env` 未被現行機制中和）、P2-C（無探針防 `git add -f .env`／暖快取）、
+  P2-D（`CLEAN-POC-f` 是定點鎖，非通則）→ 切票 **TMO-045**；reviewer 另指出的 CI `Verify Python heredoc syntax`
+  恆綠步驟 → 切票 **TMO-044**。
+- 唯讀 reviewer 的限制已由其自行聲明（無 git/bats 執行權，以凍結檔內容 + 我提供的原始輸出交叉驗證）。
 - Reviewer 判決與真實 CI run 結果：§下一步建議 前的補記（原文回傳，未經我改寫）。
 - **真實 CI（第三輪，commit `2437914`）**：run `37218446930` → **conclusion: success**；
   `Test on ubuntu-latest` ✓、`Test on macos-latest` ✓（macos log 可見 `ok 510 AC-V4` = ffmpeg 8 修好）、
@@ -89,6 +105,10 @@ Gate 2 lint 語法／Gate 3 regression／Gate 4 reviewer 原文回傳）。
 - **TMO-041**：bash 5.x 變體未自動化（本輪仍以 `brew bash` 手動跑）、`bats` 未釘版、其他狀態依賴未掃完。
 - **TMO-042**（新）：ffmpeg 版本漂移（apt 6.x vs brew 8.x）——下一批移除無法預期。
 - **TMO-043**（新）：`wiki-extract-video.sh:67 probe_metadata()` 死碼（SC2329），本輪未動以免擴大範圍。
+- **TMO-044**（新，reviewer 發現）：`ci.yml` 的 `Verify Python heredoc syntax` 是**恆綠步驟**（開不存在的
+  `wiki-cleanup.yaml` + `|| true`，且 PYEOF 計數判斷式會對正常值發假警告，CI 實測輸出 2 次 `::warning::` 但 step 仍 success）。
+- **TMO-045**（新，reviewer P2-B/C/D）：oracle 假綠的殘餘護欄——`PoC/.env` 未被 `CLEAN-POC-f` 中和、
+  無探針擋 `git add -f .env`／暖快取進版控、`CLEAN-POC-f` 屬定點鎖（新 oracle 依賴仍只有 CI 兜底）。
 - **reviewer P2-3 已收尾**：`wiki-cleanup.bats` 靜態鎖補防空過（附「指向不存在檔案／空殼檔／真的把 bug 種回去」三種紅燈證據）；
   仍只擋 `${#arr[@]}` 形狀（行為面由同檔 20 條測試覆蓋）。
 - 本機無 ubuntu 容器（docker daemon 未啟動）→ clean clone + bash 5.3 + 拔掉 oracle 是最接近的等價。
