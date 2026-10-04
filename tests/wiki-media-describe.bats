@@ -204,3 +204,32 @@ teardown() {
   grep -q '"language"' "$WORK/transcript.json"
   grep -q '"zh"' "$WORK/transcript.json"
 }
+# ---------- AC-D17: 批次 mode 過濾（describe 只吃圖片） ----------
+@test "AC-D17: batch describe skips non-image files" {
+  mkdir -p "$WORK/batch-img"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-img/"
+  ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
+         -ar 16000 -ac 1 "$WORK/batch-img/sine.wav" -y 2>/dev/null
+  run "$TOOL" --mode describe \
+              --input-dir "$WORK/batch-img" \
+              --output-dir "$WORK/out-img" \
+              --mock
+  [ "$status" -eq 0 ]
+  [ -f "$WORK/out-img/red.desc.json" ]
+  [ ! -f "$WORK/out-img/sine.desc.json" ]
+}
+
+# ---------- AC-D18: 批次 mode 過濾（transcript 只吃音訊/影片） ----------
+@test "AC-D18: batch transcript skips image files" {
+  mkdir -p "$WORK/batch-aud"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-aud/"
+  ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
+         -ar 16000 -ac 1 "$WORK/batch-aud/sine.wav" -y 2>/dev/null
+  run "$TOOL" --mode transcript \
+              --input-dir "$WORK/batch-aud" \
+              --output-dir "$WORK/out-aud" \
+              --mock
+  [ "$status" -eq 0 ]
+  [ -f "$WORK/out-aud/sine.desc.json" ]
+  [ ! -f "$WORK/out-aud/red.desc.json" ]
+}

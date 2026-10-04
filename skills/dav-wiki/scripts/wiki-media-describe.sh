@@ -123,7 +123,7 @@ real_describe() {
     local file="$1"
     echo "ERROR: real Vision API not implemented yet" >&2
     echo "  set DAV_WIKI_MOCK=1 or pass --mock for testing" >&2
-    return 4
+    return "$EXIT_TOOLMISSING"
 }
 
 # === Real API transcript（未實作，留 TODO） ===
@@ -131,7 +131,7 @@ real_transcribe() {
     local file="$1"
     echo "ERROR: real Whisper API not implemented yet" >&2
     echo "  set DAV_WIKI_MOCK=1 or pass --mock for testing" >&2
-    return 4
+    return "$EXIT_TOOLMISSING"
 }
 
 # === 處理單檔 ===
@@ -182,11 +182,33 @@ process_batch() {
 
     mkdir -p "$outdir"
     local count=0
+
+    # 依 mode 決定接受哪些副檔名。
+    # 2026-10-05 TMO-043：原 `ext_pattern` 算完從未使用（shellcheck SC2034），
+    # `find` 反而寫死「圖片 + 音訊/影片」全部副檔名 → describe 模式會誤吃 .wav/.mp4，
+    # transcript 模式會誤吃 .png（真 bug，見 AC-D17/AC-D18）。
     local ext_pattern=""
     case "$MODE" in
-        describe)   ext_pattern='*.png|*.jpg|*.jpeg|*.gif|*.webp' ;;
-        transcript) ext_pattern='*.mp3|*.wav|*.m4a|*.mp4|*.mov|*.mkv' ;;
+        describe)   ext_pattern="png|jpg|jpeg|gif|webp" ;;
+        transcript) ext_pattern="mp3|wav|m4a|mp4|mov|mkv" ;;
+        *)
+            echo "ERROR: unsupported --mode '$MODE' for --input-dir" >&2
+            return 3
+            ;;
     esac
+
+    local find_args=()
+    local first_ext=1
+    local ext
+    while IFS= read -r ext; do
+        [[ -n "$ext" ]] || continue
+        if [[ $first_ext -eq 1 ]]; then
+            find_args+=( -iname "*.$ext" )
+            first_ext=0
+        else
+            find_args+=( -o -iname "*.$ext" )
+        fi
+    done < <(printf '%s\n' "$ext_pattern" | tr '|' '\n')
 
     while IFS= read -r -d '' file; do
         local name
@@ -200,7 +222,7 @@ process_batch() {
         if [[ $count -ge $MAX_CONCURRENCY ]]; then
             break
         fi
-    done < <(find "$dir" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.mp3" -o -iname "*.wav" -o -iname "*.m4a" -o -iname "*.mp4" -o -iname "*.mov" -o -iname "*.mkv" \) -print0)
+    done < <(find "$dir" -maxdepth 1 -type f \( "${find_args[@]}" \) -print0)
 
     echo ""
     echo "✅ 批次完成：$count 個檔案"

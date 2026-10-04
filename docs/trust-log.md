@@ -53,3 +53,30 @@
 ---
 
 （繼續累積中…）
+
+---
+
+# Trust Log — TMO-037/042/043/044/045（清上一輪留下的 5 張票）
+
+> 期間：2026-10-05 01:21 → 08:00 CST（deadline 用戶指定）
+> Agent 自主完成；中途不問問題（歧義自答 + 寫本 log；爭議寫 docs/need-you-help.md）
+> 底線：**不 push、不動 production** → 本輪所有 commit 留在本機分支 `trust/2026-10-05-tmo-cleanup`
+
+## 2026-10-05 啟動
+
+| # | 時間 | 階段 | 問題 / 決策 | 理由 | 可推翻 |
+|---|------|------|-----------|------|--------|
+| 1 | 01:21 | 啟動 | Trust Mode 啟動：清 TMO-043 / 044 / 045 / 042 / 037 | 用戶「trust mode 清上面的 tmo」+ 指定 deadline 08:00 CST | — |
+| 2 | 01:21 | 啟動 | 執行順序 043 → 044 → 045 → 042 → 037 | 先小後大；**TMO-037（markdownlint 全面改行）必排最後**，否則前面票新增的長行會被重複改寫 | ✅ |
+| 3 | 01:21 | 啟動 | push 策略：不 push（底線規則 #1/#2）→ 開本機分支 `trust/2026-10-05-tmo-cleanup` | trust 禁止外部指令；代價：TMO-044（CI 語意）無法用真 CI 驗收 → 改用「CI 等價本機驗證 + 步驟可被探針直接執行」補償 | ✅ |
+| 4 | 01:25 | 規劃 | TMO-037 的 273 處是否全部硬改行？ | **先量測規則分佈再定**：表中/code block 的 MD013 由 `.markdownlint-cli2.jsonc` 豁免（tables:false / code_blocks:false）→ 只處理真違規；若某類豁免是「合理約定」則維持全域豁免並在文件說明，**不以關規則取代改文** | ✅ |
+| 5 | 01:25 | 規劃 | 5 張票的交付物策略 | 1 份合併 deliverable（`docs/deliverable/2026-10-05-trust-tmo-cleanup.md`）+ 5 個 commit（每票一個，含探針與文件） | ✅ |
+
+## 2026-10-05 進度（執行中）
+
+| # | 時間 | 階段 | 進度 |
+|---|------|------|------|
+| 6 | 01:38 | TMO-043 規劃 | 現場掃描（shellcheck 全 severity）：不只 `probe_metadata`，另有 `ext_pattern`（**真 bug**：批次不吃 mode 過濾）＋2 個未用常數 |
+| 7 | 01:40 | TMO-043 執行 | 決策：`ext_pattern` 修正為依 mode 建 `find` 條件（行為改變＝真修 bug，附 AC-D17/D18）；`EXIT_TOOLMISSING` in ocr 保留＋註記（exit 4 契約歸 TMO-035）；media-describe 改用該常數 |
+| 8 | 01:44 | TMO-043 探針 | ✅ WDC-1/WDC-2 新增（修前紅：`wiki-extract-video.sh: probe_metadata`）；AC-D17/18 修前紅、修後綠 |
+| 9 | 01:46 | TMO-043 Gate 3 | ✅ 全量 521 ok / 0 not ok（原 517 + 4） |

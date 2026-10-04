@@ -21,6 +21,10 @@ fi
 EXIT_OK=0
 EXIT_USAGE=1
 EXIT_NOINPUT=2
+# EXIT_TOOLMISSING：usage 已承諾 exit 4 =「必要工具缺失（且未啟 mock）」，
+# 但現行行為是自動降級為 mock（見下方 WARN）。「硬退 4 or 降級」屬 TMO-035 的決策，
+# 這裡保留常數不動（TMO-043 只清確定性的死碼）。
+# shellcheck disable=SC2034
 EXIT_TOOLMISSING=4
 
 # === 使用說明 ===
