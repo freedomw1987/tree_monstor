@@ -39,7 +39,7 @@ while IFS= read -r f; do
 done < <(find "$ROOT/skills" -name SKILL.md -type f | sort)
 
 if [ "$files" -lt "$MIN" ]; then
-  echo "FAIL: 只列舉到 $files 個 SKILL.md（< $MIN）→ 枚舉可能壞了（防空過），root=$ROOT" >&2
+  echo "FAIL: 只列舉到 $files 個 SKILL.md（< ${MIN}）→ 枚舉可能壞了（防空過），root=$ROOT" >&2
   exit 1
 fi
 
@@ -48,4 +48,4 @@ if [ "$over" -ne 0 ]; then
   exit 1
 fi
 
-echo "OK: $files 個 SKILL.md 皆 <= $MAX 行（最長 $worst_lines 行：$worst_file）"
+echo "OK: $files 個 SKILL.md 皆 <= $MAX 行（最長 $worst_lines 行：${worst_file}）"

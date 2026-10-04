@@ -205,7 +205,7 @@ mask_secrets() {
     # rc 也要 0（reviewer P2-2）：bats 硬崩（非逐條 fail）時可能一個 `not ok` 都沒有，
     # 只看 notok 計數會讓「整檔沒跑完」也變綠。
     if [ "$rc" -ne 0 ] || [ "$notok_n" -gt 0 ]; then
-      echo "FAIL: $f 在 CI 等價環境（無 key／無暖快取／.env 已封）紅了（bats rc=$rc, not ok=$notok_n）：" >&2
+      echo "FAIL: $f 在 CI 等價環境（無 key／無暖快取／.env 已封）紅了（bats rc=$rc, not ok=${notok_n}）：" >&2
       printf '%s\n' "$out" | grep -A5 '^not ok ' | mask_secrets >&2
       return 1
     fi
@@ -263,7 +263,7 @@ mask_secrets() {
   # 本條驗證新加的 JEV_ENV_FILE seam 真的有效：假 .env 預設讀得到、覆寫 /dev/null 就讀不到。
   local py="$POC_DIR/.venv/bin/python"
   if [ ! -x "$py" ]; then
-    echo "FAIL: 缺 PoC venv（$py）" >&2
+    echo "FAIL: 缺 PoC venv（${py}）" >&2
     echo "  修法：bash skills/regression-guard/PoC/setup-venv.sh" >&2
     return 1
   fi

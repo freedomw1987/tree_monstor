@@ -106,7 +106,7 @@ PY-EOF
 SH
   run env MIN_HEREDOCS=1 bash "$CHECK" "$good"
   [ "$status" -eq 0 ] || {
-    echo "FAIL: 合法的 - delimiter heredoc 被誤判（$output）" >&2
+    echo "FAIL: 合法的 - delimiter heredoc 被誤判（${output}）" >&2
     return 1
   }
 
@@ -147,7 +147,7 @@ SH
   printf '\tPYEOF\n' >> "$tmp"
   run env MIN_HEREDOCS=1 bash "$CHECK" "$tmp"
   [ "$status" -eq 0 ] || {
-    echo "FAIL: <<- 的 tab 縮排結尾未被接受（$output）" >&2
+    echo "FAIL: <<- 的 tab 縮排結尾未被接受（${output}）" >&2
     return 1
   }
 }
@@ -168,7 +168,7 @@ SH
   # 真 repo 掃描時，預設下限就是 8（不得被環境變數悄悄放寬）
   run bash -c 'cd "$0" && env -u MIN_HEREDOCS bash scripts/ci/check-python-heredocs.sh' "$REPO_ROOT"
   [ "$status" -eq 0 ] || {
-    echo "FAIL: 預設下限下真 repo 掃描失敗（$output）" >&2
+    echo "FAIL: 預設下限下真 repo 掃描失敗（${output}）" >&2
     return 1
   }
 

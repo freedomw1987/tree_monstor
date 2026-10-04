@@ -147,7 +147,7 @@ load 'helpers/test-env'
     local f="$dir/${rel#./}"
     lines=$(grep -c '[^[:space:]]' "$f")
     [ "$lines" -ge 8 ] || {
-      echo "FAIL: skills/dav-wiki/${rel#./} 有效行僅 $lines（< 8）＝子檔被掏空" >&2
+      echo "FAIL: skills/dav-wiki/${rel#./} 有效行僅 ${lines}（< 8）＝子檔被掏空" >&2
       return 1
     }
     checked=$((checked + 1))

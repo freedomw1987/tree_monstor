@@ -102,7 +102,7 @@ for f in ${files[@]+"${files[@]}"}; do
             delim=""
             total=$((total + 1))
             if ! python3 -c 'import ast,sys; ast.parse(open(sys.argv[1], encoding="utf-8").read())' "$out"; then
-                echo "::error file=$f,line=$start_line::Python heredoc 語法錯誤（delimiter=$closed）"
+                echo "::error file=$f,line=$start_line::Python heredoc 語法錯誤（delimiter=${closed}）"
                 fail=$((fail + 1))
             fi
             continue
@@ -118,7 +118,7 @@ for f in ${files[@]+"${files[@]}"}; do
 done
 
 if [[ $total -lt $MIN_HEREDOCS ]]; then
-    echo "::error::只抽到 $total 個 Python heredoc（預期 >= $MIN_HEREDOCS）→ 掃描邏輯可能失效"
+    echo "::error::只抽到 $total 個 Python heredoc（預期 >= ${MIN_HEREDOCS}）→ 掃描邏輯可能失效"
     exit 1
 fi
 

@@ -77,7 +77,7 @@ count_declared_tests() {
   ' "$1"
 }
 
-# 找出本機所有可用的 bash（去重：以版本字串為鍵），寫進 $1（TSV: version<TAB>binary）
+# 找出本機所有可用的 bash（去重：以版本字串為鍵），寫進 ${1}（TSV: version<TAB>binary）
 collect_bash_versions() {
   local out="$1" cand v
   : > "$out"
@@ -130,7 +130,7 @@ find_bash5() {
     # 反空過：shim 必須真的把 PATH 上的 bash 換成這個版本
     got=$(PATH="$shim:$PATH" bash -c 'echo $BASH_VERSION')
     [ "$got" = "$v" ] || {
-      echo "FAIL: shim 沒生效（期望 $v，得到 $got）" >&2
+      echo "FAIL: shim 沒生效（期望 ${v}，得到 ${got}）" >&2
       return 1
     }
     run env PATH="$shim:$PATH" bats "$REPO_ROOT/tests/wiki-cleanup.bats"
@@ -140,7 +140,7 @@ find_bash5() {
     notok=$(printf '%s\n' "$output" | grep -c '^not ok ' || true)
     printf '  bash %-28s → rc=%s ok=%s not ok=%s (%s)\n' "$v" "$rc" "$okn" "$notok" "$bin" >&2
     [ "$rc" -eq 0 ] && [ "$notok" -eq 0 ] || {
-      echo "FAIL: wiki-cleanup 套件在 bash $v 下紅了（rc=$rc, not ok=$notok）；輸出見 $BATS_TEST_TMPDIR/wc-$ran.txt" >&2
+      echo "FAIL: wiki-cleanup 套件在 bash $v 下紅了（rc=$rc, not ok=${notok}）；輸出見 $BATS_TEST_TMPDIR/wc-$ran.txt" >&2
       grep -A3 '^not ok ' "$BATS_TEST_TMPDIR/wc-$ran.txt" | head -12 >&2
       return 1
     }
@@ -193,7 +193,7 @@ MINI
   run env PATH="$shim:$PATH" bats "$mini"
   rc=$status
   [ "$rc" -eq 0 ] || {
-    echo "FAIL: 在 bash 5.x shim 下小測試檔沒過（rc=$rc）→ shim 沒生效，ENV-EQ-2 會是假的" >&2
+    echo "FAIL: 在 bash 5.x shim 下小測試檔沒過（rc=${rc}）→ shim 沒生效，ENV-EQ-2 會是假的" >&2
     printf '%s\n' "$output" >&2
     return 1
   }
@@ -207,7 +207,7 @@ MINI
     }
     echo "OK: shim 把 bash 由 $defv 換成 $("$b5" -c 'echo $BASH_VERSION')（對照組紅 ✓）" >&2
   else
-    echo "OK: 預設 bash 已是 $defv（>= 5）→ 無 3.x 對照組（本機單一版本）" >&2
+    echo "OK: 預設 bash 已是 ${defv}（>= 5）→ 無 3.x 對照組（本機單一版本）" >&2
   fi
 }
 
@@ -237,7 +237,7 @@ printf "%s\n" "${a[@]}"'
     esac
     printf '  bash %-28s  ${#a[@]} → rc=%s   "${a[@]}" → %s\n' "$v" "$lenform" "$arrform" >&2
   done < "$vers"
-  echo "OK: 已逐版本量測（上表為環境等價證據；版本清單 = $vers）" >&2
+  echo "OK: 已逐版本量測（上表為環境等價證據；版本清單 = ${vers}）" >&2
 }
 
 # 靜態鎖（TMO-041 ③d/③b）：實作抽在 scripts/ci/ 下，避免探針掃到自己
@@ -315,7 +315,7 @@ printf "%s\n" "${a[@]}"'
     okn=$(printf '%s\n' "$output" | grep -c '^ok ' || true)
     notokn=$(printf '%s\n' "$output" | grep -c '^not ok ' || true)
     [ "$rc" -eq 0 ] && [ "$notokn" -eq 0 ] && [ "$okn" -eq 1 ] || {
-      echo "FAIL: 黑洞網路下 $f 紅了（rc=$rc, ok=$okn, not ok=$notokn）；輸出見 $BATS_TEST_TMPDIR/oracle-$ran.txt" >&2
+      echo "FAIL: 黑洞網路下 $f 紅了（rc=$rc, ok=$okn, not ok=${notokn}）；輸出見 $BATS_TEST_TMPDIR/oracle-$ran.txt" >&2
       grep -A5 '^not ok ' "$BATS_TEST_TMPDIR/oracle-$ran.txt" | head -12 >&2
       return 1
     }
@@ -351,7 +351,7 @@ printf "%s\n" "${a[@]}"'
       if out=$(python3 "$f" --self-test 2>&1); then
         # 自我測試必須真的印出「通過」標記；把 self_test() 掏空成 `return 0` 也會被這條抓到
         printf '%s\n' "$out" | grep -qE 'OK: 鎖 [0-9]+ 自我測試通過' ||
-          failed+=("$name：--self-test 沒印通過標記（自我測試可能被掏空）")
+          failed+=("${name}：--self-test 沒印通過標記（自我測試可能被掏空）")
       else
         failed+=("$name")
         printf '%s\n' "$out" >&2
@@ -413,7 +413,7 @@ printf "%s\n" "${a[@]}"'
   local stn
   stn=$(count_declared_tests "$st")
   [ "$stn" -eq 3 ] || {
-    echo "FAIL: 普查函式自我測試失敗（期望 3，得到 $stn）→ 抽取器壞了" >&2
+    echo "FAIL: 普查函式自我測試失敗（期望 3，得到 ${stn}）→ 抽取器壞了" >&2
     sed -n l "$st" >&2
     return 1
   }
@@ -446,7 +446,7 @@ printf "%s\n" "${a[@]}"'
   } > "$mini"
   run bats "$mini"
   [ "$status" -eq 0 ] || {
-    echo "FAIL: canary 檔跑不起來（rc=$status）：$output" >&2
+    echo "FAIL: canary 檔跑不起來（rc=${status}）：$output" >&2
     return 1
   }
   local ran
@@ -485,7 +485,7 @@ printf "%s\n" "${a[@]}"'
     local _case
     for _case in "sudo apt install bats" "apt install bats" "apt-get install -y bats"; do
       printf '%s' "$_case" | grep -qE "$bad_pat" || {
-        echo "FAIL: 反向鎖 pattern 漏抓「$_case」→ 鎖比宣稱弱（self-test）" >&2
+        echo "FAIL: 反向鎖 pattern 漏抓「${_case}」→ 鎖比宣稱弱（self-test）" >&2
         return 1
       }
     done
@@ -524,7 +524,7 @@ printf "%s\n" "${a[@]}"'
   for f in ${files[@]+"${files[@]}"}; do
     run env SKILLS_DIR_OVERRIDE="$REPO_ROOT/skills" bats "$REPO_ROOT/$f"
     [ "$status" -eq 0 ] || {
-      echo "FAIL: $f 在 repo root 下不綠（rc=$status）：$output" >&2
+      echo "FAIL: $f 在 repo root 下不綠（rc=${status}）：$output" >&2
       return 1
     }
     case "$output" in
@@ -749,4 +749,116 @@ PYEOF
   n=$(echo "$output" | sed -n 's/^scanned=\([0-9]*\).*/\1/p')
   [ "${n:-0}" -ge 100 ] || { echo "FAIL: 只掃到 ${n:-0} 檔（<100）→ 列舉器壞了" >&2; return 1; }
   echo "OK: $n 個被追蹤檔通過換行檢查（binary 以 NUL 嗅探排除）" >&2
+}
+
+# ENV-EQ-17（2026-10-05 CI 首跑）：`$var` 緊接非 ASCII 字元 —— bash 3.2 + UTF-8 locale 陷阱。
+# 起因：macOS CI leg（/bin/bash 3.2 + runner 的 UTF-8 locale）下，`scripts/ci/check-skill-size.sh:51`
+# 的 `$worst_file）` 被 bash 3.2 解析成變數 `$worst_file\xef` → `set -u` 下 `unbound variable`
+# → `skill-size-guard.bats SSG-3` 只在 macOS leg 紅；本機 bash 5 完全看不到（本機全綠 ≠ CI 全綠）。
+# 全 repo 同類寫法共 39 處已修（一律改 `${var}`，語意相同、變數名有邊界）。
+# 靜態鎖實作在 `scripts/ci/lint-shell-var-nonascii.py`（獨立檔，避免探針掃到自己的說明文字）。
+@test "ENV-EQ-17: no shell or CI file puts a non-ASCII byte right after a variable expansion" {
+  local lock="$REPO_ROOT/scripts/ci/lint-shell-var-nonascii.py"
+  [ -f "$lock" ] || {
+    echo "FAIL: 缺 $lock" >&2
+    return 1
+  }
+  run python3 "$lock" --self-test
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 鎖的自我測試沒過：$output" >&2
+    return 1
+  }
+  run python3 "$lock" "$REPO_ROOT"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: $output" >&2
+    return 1
+  }
+  echo "OK: $output" >&2
+}
+
+# ENV-EQ-18（2026-10-05 CI 首跑，NYH-6 決策 A）：CI 必須真的跑 shellcheck，且語法檢查要自我列舉。
+# 起因：`ci.yml` 完全沒有 shellcheck（「本機 Gate 2 全綠」不等於 CI 會擋），而 `Verify bash syntax`
+# 只 glob 硬編子集 `skills/dav-wiki/scripts/*.sh` → 漏掉 `install.sh`、`lib/**`、`scripts/ci/**`、
+# `skills/*/PoC/**`、`tests/helpers/**`（同 TMO-038 ④ 的「硬編清單＝漏抓」病根）。
+@test "ENV-EQ-18: CI runs shellcheck and the syntax step enumerates all tracked shell files" {
+  local ci="$REPO_ROOT/.github/workflows/ci.yml"
+  [ -f "$ci" ] || {
+    echo "FAIL: 缺 $ci" >&2
+    return 1
+  }
+  # 只取 `test` job 的區塊（下一個頂層 job key 之前），避免 lint-only job 的內容混淆判定
+  local block
+  block=$(awk '/^  test:$/ { on = 1; next } /^  [A-Za-z0-9_-]+:$/ { on = 0 } on' "$ci")
+  [ -n "$block" ] || {
+    echo "FAIL: 抓不到 ci.yml 的 test job 區塊（anchor 漂移？）" >&2
+    return 1
+  }
+  printf '%s\n' "$block" | grep -qF "shellcheck -x -S style \$(git ls-files '*.sh' '*.bash')" || {
+    echo "FAIL: test job 沒有跑「自我列舉的 shellcheck」（NYH-6 決策 A）" >&2
+    return 1
+  }
+  if printf '%s\n' "$block" | sed 's/#.*$//' | grep -qF 'skills/dav-wiki/scripts/*.sh'; then
+    echo "FAIL: Verify bash syntax 還是硬編子集 glob（漏 install.sh／lib／scripts/ci／PoC／helpers）" >&2
+    return 1
+  fi
+  printf '%s\n' "$block" | grep -qF "git ls-files '*.sh' '*.bash'" || {
+    echo "FAIL: 找不到自我列舉語法檢查（預期 git ls-files '*.sh' '*.bash'）" >&2
+    return 1
+  }
+  # 反假綠：這兩步不得用 || true / continue-on-error 裝飾
+  if printf '%s\n' "$block" | grep -qE '\|\|[[:space:]]*true|continue-on-error'; then
+    echo "FAIL: test job 內出現 || true 或 continue-on-error（假綠構造）" >&2
+    return 1
+  fi
+  echo "OK: CI 有自我列舉的 shellcheck＋語法檢查，且無假綠裝飾" >&2
+}
+
+# ENV-EQ-19（2026-10-05 CI 首跑）：`scripts/ci/*.sh` 必須在「每一個本機 bash 版本」下都跑得過。
+# 起因：SSG-3 只在 macOS leg 紅，因為本機 PATH 上的 bash 是 5.x；CI 的 macOS leg 用 3.2。
+# 這是 ENV-EQ-2（wiki-cleanup 套件逐 bash 版本）的「護欄腳本版」——把 CI 才咬得到的
+# 版本差異搬回本機咬（先量測，再斷言；locale 以實際可用者為準並印出來當證據）。
+@test "ENV-EQ-19: every scripts/ci guard script runs clean under every local bash version" {
+  local vers="$BATS_TEST_TMPDIR/bash-versions.tsv"
+  collect_bash_versions "$vers" || {
+    echo "FAIL: 收不到任何可用的 bash（環境異常）" >&2
+    return 1
+  }
+  # 挑一個 UTF-8 locale（bash 3.2 的變數名吞位元組行為只在多位元組 locale 下出現）
+  local loc="" cand
+  for cand in C.UTF-8 en_US.UTF-8 zh_TW.UTF-8; do
+    if [ -z "$loc" ] && LC_ALL="$cand" bash -c 'echo ok' >/dev/null 2>&1; then loc="$cand"; fi
+  done
+  [ -n "$loc" ] || {
+    echo "FAIL: 找不到任何 UTF-8 locale（C.UTF-8／en_US.UTF-8／zh_TW.UTF-8）→ 這條鎖會變假綠" >&2
+    echo "      修復（macOS）：系統設定加入 en_US.UTF-8；CI：ubuntu 內建 C.UTF-8" >&2
+    return 1
+  }
+  local scripts n=0 s v bin rc out
+  scripts=$(cd "$REPO_ROOT" && git ls-files 'scripts/ci/*.sh')
+  [ -n "$scripts" ] || {
+    echo "FAIL: 找不到 scripts/ci/*.sh（列舉器壞了）" >&2
+    return 1
+  }
+  n=$(printf '%s\n' "$scripts" | grep -c .)
+  [ "$n" -ge 3 ] || {
+    echo "FAIL: 只列舉到 $n 支護欄腳本（防空過；預期 >= 3）" >&2
+    return 1
+  }
+  local ran=0
+  while IFS=$'\t' read -r v bin; do
+    for s in $scripts; do
+      if out=$(cd "$REPO_ROOT" && env LC_ALL="$loc" "$bin" "$s" 2>&1); then rc=0; else rc=$?; fi
+      if [ "$rc" -ne 0 ] || [ -z "$out" ]; then
+        echo "FAIL: bash $v 跑 $s → rc=${rc}（輸出 ${#out} 字元）" >&2
+        printf '%s\n' "$out" | head -6 >&2
+        return 1
+      fi
+      ran=$((ran + 1))
+    done
+  done < "$vers"
+  [ "$ran" -ge 3 ] || {
+    echo "FAIL: 只跑了 $ran 次（防空過）" >&2
+    return 1
+  }
+  echo "OK: $n 支護欄腳本 × 每個本機 bash 版本（locale=${loc}）共 $ran 次皆 rc=0 且有輸出" >&2
 }

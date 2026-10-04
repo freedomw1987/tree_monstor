@@ -24,8 +24,8 @@ fail() {
     exit 1
 }
 
-command -v "$FFMPEG_BIN" >/dev/null 2>&1 || fail "找不到 ffmpeg（$FFMPEG_BIN）"
-command -v "$FFPROBE_BIN" >/dev/null 2>&1 || fail "找不到 ffprobe（$FFPROBE_BIN）"
+command -v "$FFMPEG_BIN" >/dev/null 2>&1 || fail "找不到 ffmpeg（${FFMPEG_BIN}）"
+command -v "$FFPROBE_BIN" >/dev/null 2>&1 || fail "找不到 ffprobe（${FFPROBE_BIN}）"
 
 ff_line="$("$FFMPEG_BIN" -version 2>/dev/null | head -n1)"
 [[ -n "$ff_line" ]] || fail "$FFMPEG_BIN -version 沒有輸出（工具可能壞掉）"
@@ -39,10 +39,10 @@ rest="${ver#*.}"
 minor="${rest%%.*}"
 
 if [[ "$major" -lt "$MIN_MAJOR" ]]; then
-    fail "ffmpeg $ver 太舊（底線 $MIN_MAJOR.$MIN_MINOR：-fps_mode 自 5.1 起取代 -vsync）"
+    fail "ffmpeg $ver 太舊（底線 $MIN_MAJOR.${MIN_MINOR}：-fps_mode 自 5.1 起取代 -vsync）"
 fi
 if [[ "$major" -eq "$MIN_MAJOR" && "$minor" -lt "$MIN_MINOR" ]]; then
-    fail "ffmpeg $ver 太舊（底線 $MIN_MAJOR.$MIN_MINOR：-fps_mode 自 5.1 起取代 -vsync）"
+    fail "ffmpeg $ver 太舊（底線 $MIN_MAJOR.${MIN_MINOR}：-fps_mode 自 5.1 起取代 -vsync）"
 fi
 
 # 能力實測：跟 extract_chapters() 同一組旗標；舊版／改名的話這裡會非 0

@@ -34,21 +34,30 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y poppler-utils pandoc tesseract-ocr ffmpeg
+          # shellcheck：Gate 2 的靜態檢查（NYH-6 決策 A：CI 過去完全沒跑 shellcheck）
+          sudo apt-get install -y poppler-utils pandoc tesseract-ocr ffmpeg shellcheck
           python3 -m pip install python-pptx
           # bats-core 固定版本（TMO-041）：apt 的 bats 版本會隨 runner 映像漂移，
           # 探針行為（陣列展開、輸出格式）就會跟著變 → 兩平台都裝同一個 tag。
-          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
-          sudo ./bats-core/install.sh /usr/local
+          # 2026-10-05 CI 首跑修正：clone 到 $RUNNER_TEMP，**不汙染工作區**——
+          # 否則 `bats-core/test/**` 會被 ENV-EQ-12 的 orphan 掃描當成 repo 的孤兒 .bats（紅）。
+          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats-core"
+          sudo "$RUNNER_TEMP/bats-core/install.sh" /usr/local
 
       - name: Install test dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install poppler pandoc tesseract ffmpeg
+          # bash：macOS runner 的 /bin/bash 是 3.2，而 bats 1.14.0 的 test-name 編碼在
+          # 「bash 3.2 + UTF-8 locale」下會把非 ASCII 測試名編壞 → 靜默丟掉 31 條測試
+          # （2026-10-05 CI 首跑實測）。裝 bash 5 並排到 PATH 最前，讓 `env bash` 解析到 5.x，
+          # 與開發者本機、與 ubuntu leg 等價；3.2 覆蓋由本機鎖 ENV-EQ-19 接手。
+          # shellcheck：Gate 2 的靜態檢查（NYH-6 決策 A）
+          brew install poppler pandoc tesseract ffmpeg shellcheck bash
           python3 -m pip install python-pptx
           # bats-core 固定版本（TMO-041）＋與 Linux 同一個 tag（見上方說明）
-          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
-          sudo ./bats-core/install.sh /usr/local
+          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats-core"
+          sudo "$RUNNER_TEMP/bats-core/install.sh" /usr/local
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
 
       - name: Verify ffmpeg version and flags
         # TMO-042：兩平台版本不同（apt ffmpeg 6.x / brew 8.x），ffmpeg 8 已移除 -vsync。
@@ -69,13 +78,24 @@ jobs:
         # 守門探針：tests/env-equivalence.bats ENV-EQ-11。
         run: SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
+      - name: ShellCheck every tracked shell file
+        # NYH-6（2026-10-05 決策 A）：CI 過去完全沒跑 shellcheck，且下一步只 glob 硬編子集
+        # → 「本機 Gate 2 全綠」不等於 CI 會擋。這裡與本機 Gate 2 用同一條自我列舉指令。
+        # 守門探針：tests/env-equivalence.bats ENV-EQ-18。
+        run: shellcheck -x -S style $(git ls-files '*.sh' '*.bash')
+
       - name: Verify bash syntax
+        # NYH-6 決策 A：原本只 glob `skills/dav-wiki/scripts/*.sh`（硬編子集，漏 install.sh、
+        # lib/**、scripts/ci/**、skills/*/PoC/**、tests/helpers/**）→ 改為自我列舉。
+        # 守門探針：tests/env-equivalence.bats ENV-EQ-18。
         run: |
-          # 全部 dav-wiki scripts（TMO-039：原本只驗 3 支，改到其他 6 支不會被擋）
-          for f in skills/dav-wiki/scripts/*.sh; do
+          n=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
             bash -n "$f" || exit 1
-          done
-          echo "OK: $(ls skills/dav-wiki/scripts/*.sh | wc -l | tr -d ' ') scripts syntax-checked"
+            n=$((n + 1))
+          done <<< "$(git ls-files '*.sh' '*.bash')"
+          echo "OK: $n shell files syntax-checked"
 
       - name: Verify SKILL.md size (≤ 150 lines)
         # 自動列舉所有 skill 主檔（不再只檢查一個檔案）：

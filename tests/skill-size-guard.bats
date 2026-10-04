@@ -40,7 +40,7 @@ setup() {
     echo "FAIL: 只列舉到 $n 個 SKILL.md（< 11）→ 列舉壞掉（防空過）" >&2
     return 1
   }
-  echo "OK: $n 個 SKILL.md 皆 <= 150 行（最長 $worst 行：$worst_f）" >&2
+  echo "OK: $n 個 SKILL.md 皆 <= 150 行（最長 $worst 行：${worst_f}）" >&2
 }
 
 @test "SSG-2: CI step runs the auto-enumerating script (no single-file hardcode)" {

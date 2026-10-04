@@ -123,7 +123,7 @@ make_fake_ffprobe() {
   bat_line=$(grep -n 'bats tests/' "$CI_YML" | head -1 | cut -d: -f1)
   [ -n "$step_line" ] && [ -n "$bat_line" ]
   [ "$step_line" -lt "$bat_line" ] || {
-    echo "FAIL: 版本檢查應在跑 bats 之前（step#$step_line, bats#$bat_line）" >&2
+    echo "FAIL: 版本檢查應在跑 bats 之前（step#$step_line, bats#${bat_line}）" >&2
     return 1
   }
 }

@@ -11,7 +11,7 @@ setup() {
   # 沒有 root 就大聲紅（否則整支探針會空過：掃不到檔 → 0 violations）。
   SKILLS_DIR="${SKILLS_DIR_OVERRIDE:-${HOME}/.pi/agent/skills}"
   if [ ! -d "$SKILLS_DIR" ]; then
-    echo "FAIL: SKILLS_DIR 不存在：$SKILLS_DIR（探針會空過）→ 設 SKILLS_DIR_OVERRIDE 或檢查環境" >&2
+    echo "FAIL: SKILLS_DIR 不存在：${SKILLS_DIR}（探針會空過）→ 設 SKILLS_DIR_OVERRIDE 或檢查環境" >&2
     return 1
   fi
 }

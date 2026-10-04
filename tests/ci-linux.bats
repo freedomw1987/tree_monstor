@@ -60,7 +60,7 @@ teardown() {
         got=$(date -d '90 days ago' +%F)  # GNU（Linux）
     fi
     [ -n "$got" ] || { echo "FAIL: 既非 GNU 也非 BSD date → 工具鏈沒有可用的回溯寫法" >&2; return 1; }
-    [ "$got" = "$py" ] || { echo "FAIL: date 回溯 90 天 = $got，Python = $py" >&2; return 1; }
+    [ "$got" = "$py" ] || { echo "FAIL: date 回溯 90 天 = ${got}，Python = $py" >&2; return 1; }
 }
 
 @test "ci-linux: README Linux" {

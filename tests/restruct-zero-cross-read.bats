@@ -46,7 +46,7 @@ skill_files() {
     local hits
     hits=$(grep -nE "$READ_VERBS \`?docs/" "$abs" | grep -v "$RUNTIME_MARK" || true)
     if [ -n "$hits" ]; then
-      echo "FAIL: $rel 有跨目錄 docs/ 讀取引用（確為專案端 runtime 路徑者，行內需標記「$RUNTIME_MARK」）" >&2
+      echo "FAIL: $rel 有跨目錄 docs/ 讀取引用（確為專案端 runtime 路徑者，行內需標記「${RUNTIME_MARK}」）" >&2
       echo "$hits" >&2
       return 1
     fi
@@ -111,7 +111,7 @@ skill_files() {
     while IFS= read -r hit; do
       [ -n "$hit" ] || continue
       if ! printf '%s' "$hit" | grep -qE "$READ_VERBS \`?docs/"; then
-        echo "FAIL: $rel 有「$RUNTIME_MARK」標記，但該行不是 docs/ 讀取引用（標記濫用＝萬用豁免）" >&2
+        echo "FAIL: $rel 有「${RUNTIME_MARK}」標記，但該行不是 docs/ 讀取引用（標記濫用＝萬用豁免）" >&2
         echo "$hit" >&2
         return 1
       fi
@@ -174,7 +174,7 @@ skill_files() {
     while IFS= read -r hit; do
       [ -n "$hit" ] || continue
       if printf '%s' "$hit" | grep -qE "$READ_VERBS \`?$forbidden"; then
-        echo "FAIL: $rel 用「$RUNTIME_MARK」豁免了本 repo 自己的 docs 路徑（不可豁免）：" >&2
+        echo "FAIL: $rel 用「${RUNTIME_MARK}」豁免了本 repo 自己的 docs 路徑（不可豁免）：" >&2
         echo "$hit" >&2
         return 1
       fi

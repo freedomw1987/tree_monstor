@@ -285,7 +285,7 @@ EOF
     # → 「本機全綠、CI 紅」的經典假綠。空清單路徑（無 deprecated 檔）尤須守住。
     # 防空過（二審 P2-3）：擋的是「檔案被改名/搬走」時這條靜態鎖變成永久綠。
     [ -f "$WIKI_CLEANUP" ] || {
-        echo "FAIL: 找不到 $WIKI_CLEANUP（靜態鎖會空過）" >&2
+        echo "FAIL: 找不到 ${WIKI_CLEANUP}（靜態鎖會空過）" >&2
         return 1
     }
     local lines

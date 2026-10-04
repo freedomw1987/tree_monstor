@@ -29,7 +29,7 @@ setup() {
 }
 
 # 假的 python3（供 ③/⑥ 真跑 fallback 分支，不碰真 venv、不需網路）：
-# 記錄每個呼叫到 $SHIM_LOG；被要求 `-m venv <dir>` 時偽造出 <dir>/bin/python（同樣會記錄）。
+# 記錄每個呼叫到 ${SHIM_LOG}；被要求 `-m venv <dir>` 時偽造出 <dir>/bin/python（同樣會記錄）。
 # 用法：make_python3_shim <shim 目錄>
 make_python3_shim() {
   local shim="$1"
@@ -215,7 +215,7 @@ PY
     return 1
   }
 
-  # 覆蓋不變式（reviewer P2-2）：用到 $PY（含經 fixture helper 間接使用）的測試數 == 有守門的測試數。
+  # 覆蓋不變式（reviewer P2-2）：用到 ${PY}（含經 fixture helper 間接使用）的測試數 == 有守門的測試數。
   # 靜態掃描（不重跑整個檔，省 78s）：新增 venv-dependent 測試忘記守門就會咬。
   # TMO-038 ④：helper 名稱不再硬編（原硬編 2 個 → 新增 helper 會漏抓）→
   # 先自動列舉「本檔內 body 用到 $PY 的 helper」，再把名單餵進偵測 awk。
