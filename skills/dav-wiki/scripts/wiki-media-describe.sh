@@ -22,6 +22,13 @@ if [[ "${DAV_WIKI_MOCK:-}" == "1" ]]; then
 fi
 API_KEY="${API_KEY:-${OPENAI_API_KEY:-}}"
 
+# === 副檔名白名單（單一來源，reviewer P2-6）===
+# describe 只吃圖片、transcript 只吃音訊/影片；批次（process_batch）與單檔白名單共用這份。
+# ⚠️ 合約邊界：`.webm` / `.flac` / `.tiff` 從未在本檔白名單內（單檔模式一直會發 WARN），
+#    故批次也只略過不處理；若產品要支援，請同時改這裡與 usage 說明。
+IMAGE_EXTS="png|jpg|jpeg|gif|webp"
+AUDIO_EXTS="mp3|wav|m4a|mp4|mov|mkv"
+
 # === 錯誤碼 ===
 EXIT_OK=0
 EXIT_USAGE=1
@@ -189,8 +196,8 @@ process_batch() {
     # transcript 模式會誤吃 .png（真 bug，見 AC-D17/AC-D18）。
     local ext_pattern=""
     case "$MODE" in
-        describe)   ext_pattern="png|jpg|jpeg|gif|webp" ;;
-        transcript) ext_pattern="mp3|wav|m4a|mp4|mov|mkv" ;;
+        describe)   ext_pattern="$IMAGE_EXTS" ;;
+        transcript) ext_pattern="$AUDIO_EXTS" ;;
         *)
             echo "ERROR: unsupported --mode '$MODE' for --input-dir" >&2
             return 3
@@ -322,22 +329,16 @@ else
         exit "$EXIT_NOINPUT"
     fi
 
-    # describe 對非圖、副檔名警告（mock 仍執行）
+    # describe 對非圖、副檔名警告（mock 仍執行）；白名單來自單一來源常數（不用 case 展開，免 SC2254）
     if [[ "$MODE" == "describe" ]]; then
-        case "${INPUT##*.}" in
-            png|jpg|jpeg|gif|webp) ;;
-            *)
-                echo "WARN: input '$INPUT' is not an image file" >&2
-                ;;
-        esac
+        if ! printf '%s\n' "${INPUT##*.}" | grep -qE "^($IMAGE_EXTS)$"; then
+            echo "WARN: input '$INPUT' is not an image file" >&2
+        fi
     fi
     if [[ "$MODE" == "transcript" ]]; then
-        case "${INPUT##*.}" in
-            mp3|wav|m4a|mp4|mov|mkv) ;;
-            *)
-                echo "WARN: input '$INPUT' is not an audio/video file" >&2
-                ;;
-        esac
+        if ! printf '%s\n' "${INPUT##*.}" | grep -qE "^($AUDIO_EXTS)$"; then
+            echo "WARN: input '$INPUT' is not an audio/video file" >&2
+        fi
     fi
 
     echo "→ Single mode: $MODE"

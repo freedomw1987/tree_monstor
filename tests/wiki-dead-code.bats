@@ -25,7 +25,10 @@ find_dead_functions() {
   grep -oE '^[a-zA-Z_][a-zA-Z0-9_]*\(\)' "$file" 2>/dev/null | sed 's/()$//' | sort -u |
     while IFS= read -r fn; do
       [[ -n "$fn" ]] || continue
-      count=$(grep -cE "(^|[^A-Za-z0-9_])${fn}([^A-Za-z0-9_]|$)" "$file" 2>/dev/null || true)
+      # 只算「非註解行」的引用（reviewer P2-3）：註解／文件裡提到函式名不算「使用」，
+      # 否則把死函式的呼叫點刪掉、順手在註解寫「# foo 待實作」就能逃過。
+      count=$(grep -vE '^[[:space:]]*#' "$file" 2>/dev/null |
+                grep -cE "(^|[^A-Za-z0-9_])${fn}([^A-Za-z0-9_]|$)" || true)
       if [[ "${count:-0}" -le 1 ]]; then
         printf '%s\n' "$fn"
       fi
@@ -75,6 +78,16 @@ find_dead_functions() {
   }
   ! printf '%s' "$out" | grep -q "^used_fn$" || {
     echo "FAIL: 掃描器誤報 used_fn（有被呼叫）" >&2
+    return 1
+  }
+
+  # reviewer P2-3 的第二個情境：只在「註解」提到死函式 → 仍必須回報
+  local tmp2="$BATS_TEST_TMPDIR/comment-only-sample.sh"
+  printf '#!/usr/bin/env bash\n# commented_fn 待實作（只是註解，不是呼叫）\ncommented_fn() {\n  echo hi\n}\n# 另一種寫法：commented_fn() 可以考慮拿掉\n' > "$tmp2"
+  local out2
+  out2=$(find_dead_functions "$tmp2")
+  [[ "$out2" == "commented_fn" ]] || {
+    echo "FAIL: 只在註解出現的死函式沒被回報（實際='$out2'）→ 掃描器可被註解騙過" >&2
     return 1
   }
 }

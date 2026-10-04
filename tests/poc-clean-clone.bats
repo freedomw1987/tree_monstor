@@ -25,6 +25,12 @@ load 'helpers/test-env'
 
 POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
 
+# FAIL 訊息不得外洩密鑰（reviewer round-A P1：CLEAN-POC-i 的失敗訊息曾把本機真 key 印進 log）。
+# 任何要 echo 出去的「被測程式輸出」都先過這一層。
+mask_secrets() {
+  sed -E 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g'
+}
+
 @test "CLEAN-POC-a: every journey source resolves relative to PoC (no absolute path)" {
   cd "$REPO_ROOT"
   local journeys count bad=0 j src
@@ -173,19 +179,22 @@ POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
 
   empty_cache="$BATS_TEST_TMPDIR/empty-cache"
   mkdir -p "$empty_cache"
-  local total_ok=0 total_notok=0 out
+  local total_ok=0 total_notok=0 out rc
   for f in ${files[@]+"${files[@]}"}; do
     out=$(env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
           JEV_CACHE_DIR="$empty_cache" JEV_ENV_FILE=/dev/null \
-          bats "$f" 2>&1) || true
+          bats "$f" 2>&1)
+    rc=$?
     local ok_n notok_n
     ok_n=$(printf '%s\n' "$out" | grep -c '^ok ' || true)
     notok_n=$(printf '%s\n' "$out" | grep -c '^not ok ' || true)
     total_ok=$((total_ok + ok_n))
     total_notok=$((total_notok + notok_n))
-    if [ "$notok_n" -gt 0 ]; then
-      echo "FAIL: $f 在 CI 等價環境（無 key／無暖快取／.env 已封）紅了：" >&2
-      printf '%s\n' "$out" | grep -A5 '^not ok ' >&2
+    # rc 也要 0（reviewer P2-2）：bats 硬崩（非逐條 fail）時可能一個 `not ok` 都沒有，
+    # 只看 notok 計數會讓「整檔沒跑完」也變綠。
+    if [ "$rc" -ne 0 ] || [ "$notok_n" -gt 0 ]; then
+      echo "FAIL: $f 在 CI 等價環境（無 key／無暖快取／.env 已封）紅了（bats rc=$rc, not ok=$notok_n）：" >&2
+      printf '%s\n' "$out" | grep -A5 '^not ok ' | mask_secrets >&2
       return 1
     fi
   done
@@ -262,7 +271,7 @@ POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
       "$py" -c "import jev_oracle; print(repr(jev_oracle._load_api_key()))"
   [ "$status" -eq 0 ]
   [[ "$output" == *"''"* ]] || {
-    echo "FAIL: JEV_ENV_FILE=/dev/null 仍讀到 key（=$output）→ 本機 .env 會造成假綠" >&2
+    echo "FAIL: JEV_ENV_FILE=/dev/null 仍讀到非空 key（值已遮罩：$(printf '%s' "$output" | mask_secrets)）→ 本機 .env 會造成假綠" >&2
     return 1
   }
 
@@ -276,7 +285,7 @@ POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
       "$py" -c "import jev_oracle; print(repr(jev_oracle._load_api_key()))"
   [ "$status" -eq 0 ]
   [[ "$output" == *"''"* ]] || {
-    echo "FAIL: ~/.claude/... 來源未被 seam 蓋掉（=$output）" >&2
+    echo "FAIL: ~/.claude/... 來源未被 seam 蓋掉（值已遮罩：$(printf '%s' "$output" | mask_secrets)）" >&2
     return 1
   }
 }
