@@ -675,3 +675,63 @@ sys.exit(1 if bad else 0)
 
   echo "OK: $npy 支 .py 全數 ast.parse 通過、$njs 支 .json 全數 json.load 通過" >&2
 }
+
+# ENV-EQ-15（L7 擴量）：禁止「永遠不可能失敗」的空過斷言。
+# 起因：`tests/ci-linux.bats` 原有一條 `if Linux then skip else [ true ]` —— 在任何平台都不可能紅，
+# 是純裝飾的綠燈（正是「探針禁空過」要擋的類別）。現況已改成真斷言（date 回溯 vs Python），
+# 這條鎖則防止再寫回來。範圍：repo 內所有 .bats。
+@test "ENV-EQ-15: no tautological assertions in any .bats" {
+  local files n=0 hits="" f
+  files=$(cd "$REPO_ROOT" && { git ls-files 'tests/*.bats'; git ls-files 'skills/*/tests/*.bats'; } | sort)
+  [ -n "$files" ] || { echo "FAIL: 找不到任何 .bats（repo root 指錯？）" >&2; return 1; }
+  for f in $files; do
+    n=$((n + 1))
+    local h
+    h=$(grep -nE '^[[:space:]]*(\[\[?[[:space:]]*true[[:space:]]*\]\]?|true|:)[[:space:]]*$' "$REPO_ROOT/$f" | grep -v '#' || true)
+    [ -z "$h" ] || hits="$hits
+$f:$h"
+  done
+  [ "$n" -ge 40 ] || { echo "FAIL: 只掃到 $n 支 .bats（<40）→ 列舉器壞了" >&2; return 1; }
+  [ -z "$hits" ] || {
+    echo "FAIL: 下列 .bats 有空過斷言（永遠不會失敗 → 假綠）：$hits" >&2
+    echo "修法：刪掉該行，或改成真斷言（檢查實際輸出／狀態碼）" >&2
+    return 1
+  }
+  echo "OK: $n 支 .bats 都沒有空過斷言" >&2
+}
+
+# ENV-EQ-16（L8 擴量）：被追蹤的文字檔必須以換行結尾（binary 除外）。
+# 起因：量測發現 35 個被追蹤的文字檔（shell 腳本、.bats、.json…）**檔尾缺換行**，
+# 這種檔案會讓 `cat`/`git diff`/append 行為出錯（本輪 mutation M39/M40 就因為它而靜默沒套上）。
+# binary fixture（docx/png/pptx）以 NUL byte 嗅探排除，不強加換行。
+#
+# ⚠️ 第一版是**假綠**：用 bash `grep -q $'\x00'` 做 NUL 嗅探，但 bash 的 `$'\x00'` 會變成**空字串**
+# → `grep -q ''` 對每個檔都命中 → 全部被當 binary 跳過（M43 沒咬才發現）。改用 Python 嗅探。
+@test "ENV-EQ-16: every tracked text file ends with a newline" {
+  local out n
+  run env PYTHONDONTWRITEBYTECODE=1 python3 - "$REPO_ROOT" <<'PYEOF'
+import pathlib, subprocess, sys
+root = pathlib.Path(sys.argv[1])
+files = subprocess.run(["git", "-C", str(root), "ls-files"], capture_output=True, text=True).stdout.split()
+bad, n, bins = [], 0, 0
+for f in files:
+    p = root / f
+    if not p.is_file() or p.stat().st_size == 0:
+        continue
+    n += 1
+    b = p.read_bytes()
+    if b"\x00" in b[:8192]:      # binary 嗅探（docx/png/pptx…）
+        bins += 1
+        continue
+    if not b.endswith(b"\n"):
+        bad.append(f)
+print("scanned=%d binary=%d" % (n, bins))
+if bad:
+    print("FAIL: 檔尾缺換行：" + " ".join(bad))
+    sys.exit(1)
+PYEOF
+  [ "$status" -eq 0 ] || { echo "FAIL: $output" >&2; return 1; }
+  n=$(echo "$output" | sed -n 's/^scanned=\([0-9]*\).*/\1/p')
+  [ "${n:-0}" -ge 100 ] || { echo "FAIL: 只掃到 ${n:-0} 檔（<100）→ 列舉器壞了" >&2; return 1; }
+  echo "OK: $n 個被追蹤檔通過換行檢查（binary 以 NUL 嗅探排除）" >&2
+}

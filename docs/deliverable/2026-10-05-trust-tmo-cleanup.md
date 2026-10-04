@@ -3,7 +3,7 @@
 - **日期**：2026-10-05（trust session 01:21 → 08:00 CST，用戶指定 deadline）
 - **Backlog ID**：TMO-043、TMO-044、TMO-045、TMO-042、TMO-037
 - **作者**：pi（david 的 agent，**trust mode 自主執行**）
-- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**571 ok / 0 not ok**，ENV-EQ-14 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
+- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**573 ok / 0 not ok**，ENV-EQ-15/16 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
   `approve-with-comments`（0 P0 / 1 P1 / 5 P2，P1 與 P2 全數修完）；round B（TMO-042 / TMO-037 + 文件）=
   `1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**，「可交付用戶驗收？yes」；round C（TMO-030/031/032/034 + round-B 修正）=
   `e776fe77`：**approve-with-comments（0 P0 / 1 P1 / 6 P2）**，「可交付用戶驗收？yes」
@@ -61,6 +61,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （ENV-EQ-12） | ENV-EQ-12 追加（L4） | 06:30:52* | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 與 `skills/*/tests/`）；列舉下限 ≥40；M30–M32 全咬 ✓ |
 | （ENV-EQ-13） | ENV-EQ-13 追加（L5）＋Gate 2 掃描面補洞 | 06:34:56* | 每個 shell 檔須宣告 shell；Gate 2 改自我列舉（23 檔 rc=0）；M33–M35 全咬 ✓ |
 | （ENV-EQ-14） | ENV-EQ-14 追加（L6） | 06:39:41* | 全 repo `.py` 須 `ast.parse` 通過、`.json` 須 `json.load` 通過（不寫 `__pycache__`）；下限 ≥25／≥5；M36–M38 全咬 ✓ |
+| （ENV-EQ-15/16） | ENV-EQ-15/16 追加（L7/L8）＋35 檔補檔尾換行 | 06:45:30* | 禁空過斷言（`[ true ]`／單行 `true`）；文字檔須以換行結尾（binary 排除）；M39–M46 全咬 ✓（M43 曾抓出 ENV-EQ-16 第一版假綠） |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -331,6 +332,46 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 全部只存在於記憶體、沒有落地，但我在 commit message 與 round G 章節都聲稱「已修」。
 **根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
 **對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
+
+## ENV-EQ-15/16 追加（L7/L8 擴量，trust 期間）— 空過斷言、檔尾換行
+
+### L7：一條「永遠不可能失敗」的空過測試
+
+`tests/ci-linux.bats` 的 `ci-linux: OS LinuxCI` 是 `if Linux then skip else [ true ]` —— 在任何平台
+都不可能紅，是純裝飾的綠燈（正是「探針禁空過」要擋的類別）。改成真斷言：**兩種平台的 date 回溯寫法
+（BSD `date -v-90d` / GNU `date -d '90 days ago'`）算出的日期必須等於 Python 算的**（工具鏈跨平台契約）。
+
+新增 **`ENV-EQ-15`**：掃描 repo 內所有 `.bats`，禁止 `[ true ]`／`[[ true ]]`／單獨一行 `true`／`:` 這類
+不可能失敗的斷言；列舉下限 `>= 40` 防列舉器空過。
+
+### L8：35 個文字檔檔尾缺換行（且害 mutation 靜默失效）
+
+量測發現 **35 個被追蹤的文字檔**（`install.sh`、`lib/**`、`scripts/ci/*.sh`、`skills/**/*.sh`、13 支 `.bats`、
+3 支 `.json`…）檔尾沒有換行。這不只是潔癖問題——本輪 mutation **M39/M40 就是因為目標檔尾沒換行，
+`>>` 直接黏在最後一行而靜默沒套上**（`[ true ]` 變成 `}    [ true ]`，不符 `^…$` 而未被鎖抓到）。
+
+已把 35 個文字檔補上檔尾換行（**逐檔等價驗證：去掉尾端換行後內容與原檔完全相同**）；
+6 個 binary fixture（docx/png/pptx）以 NUL 嗅探排除、不動。
+
+新增 **`ENV-EQ-16`**：每個被追蹤的文字檔必須以換行結尾。
+
+> **⚠️ 自曝：ENV-EQ-16 第一版是假綠。** 我用 `head -c 8192 | grep -q $'\x00'` 做 NUL 嗅探，
+> 但 bash 的 `$'\x00'` 會變成**空字串** → `grep -q ''` 對每個檔都命中 → 全部被當 binary 跳過
+> （整條鎖空過）。是 **M43 沒咬**才發現的，改用 Python 讀 bytes 嗅探後 M43/M44/M45/M46 全數咬合。
+
+| 突變 | 內容 | 結果 |
+| --- | --- | --- |
+| M39 | 在某 `.bats` 塞回 `[ true ]` | 紅 ✓（ENV-EQ-15） |
+| M40 | 塞單獨一行 `true` | 紅 ✓（ENV-EQ-15） |
+| M41 | ENV-EQ-15 列舉器縮小 | 紅 ✓（下限 <40） |
+| M42 | 把 ci-linux 真斷言換回 `[ true ]` | 紅 ✓（ENV-EQ-15） |
+| M43 | 拔掉一個文字檔的檔尾換行 | 紅 ✓（ENV-EQ-16） |
+| M44 | binary fixture（png 無換行）不得被誤判 | 綠 ✓（排除有效） |
+| M45 | ENV-EQ-16 列舉器縮小 | 紅 ✓（下限 <100） |
+| M46 | 關掉 ENV-EQ-16 的 NUL 嗅探 | 紅 ✓（binary=0 → 8 個 binary 被誤報） |
+
+**Gate 2**：lint 128 檔 0 issue、shellcheck 23 檔 rc=0、heredoc 9 檔 OK、SKILL 11 檔 OK。
+**Gate 3**：`bats tests/` = **573 ok / 0 not ok**（`/tmp/t47-gate3-l7.txt`）。
 
 ## ENV-EQ-14 追加（L6 擴量，trust 期間）— .py / .json 靜態語法鎖
 
