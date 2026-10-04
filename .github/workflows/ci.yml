@@ -62,6 +62,13 @@ jobs:
       - name: Run bats tests
         run: bats tests/
 
+      - name: Run skill-local probes
+        # TMO-047：skills/*/tests/*.bats 過去從未被 CI 執行（改了不會擋）。
+        # 這些探針預設掃「已安裝」的 skills，故必須以環境變數把 root 指到 repo，
+        # 否則掃不到檔＝靜默綠（原本其中一支甚至會 skip 掉）。
+        # 守門探針：tests/env-equivalence.bats ENV-EQ-11。
+        run: SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
+
       - name: Verify bash syntax
         run: |
           # 全部 dav-wiki scripts（TMO-039：原本只驗 3 支，改到其他 6 支不會被擋）

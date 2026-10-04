@@ -505,3 +505,45 @@ printf "%s\n" "${a[@]}"'
   }
   echo "OK: 2 份本機安裝文件都教釘版 bats" >&2
 }
+
+@test "ENV-EQ-11: skill-local probes exist and CI really runs them against the repo" {
+  # TMO-047（起源：round F P3-5）：`skills/*/tests/*.bats` 存在而且綠，但 CI 只跑 `bats tests/`
+  # → 這些探針永遠不會被執行（改了不會擋）。本條鎖三件事：
+  # ① 自動列舉（>=2 檔；硬編清單＝漂移時靜默漏掃）；② 每檔在「repo 為 root」下真的跑綠，
+  # 且**不得出現 skip**（那兩支原本掃 `~/.pi/agent/skills`，CI 上掃不到檔＝靜默綠）；
+  # ③ ci.yml 有一步真的呼叫它們，並以環境變數把 root 指到 repo。
+  local f files=() n=0
+  while IFS= read -r f; do
+    files+=("$f"); n=$((n + 1))
+  done < <(cd "$REPO_ROOT" && find skills -path '*/tests/*.bats' | sort)
+  [ "$n" -ge 2 ] || {
+    echo "FAIL: 只找到 $n 個 skill 自帶探針（<2）→ 列舉壞了或探針被刪" >&2
+    return 1
+  }
+
+  for f in ${files[@]+"${files[@]}"}; do
+    run env SKILLS_DIR_OVERRIDE="$REPO_ROOT/skills" bats "$REPO_ROOT/$f"
+    [ "$status" -eq 0 ] || {
+      echo "FAIL: $f 在 repo root 下不綠（rc=$status）：$output" >&2
+      return 1
+    }
+    case "$output" in
+      *'# skip'*)
+        echo "FAIL: $f 出現 skip（探針空過）→ 不得以 skip 代替通過：$output" >&2
+        return 1
+        ;;
+    esac
+    grep -q 'SKILLS_DIR_OVERRIDE' "$REPO_ROOT/$f" || {
+      echo "FAIL: $f 不認 SKILLS_DIR_OVERRIDE → CI 上會掃預設目錄（掃不到檔＝靜默綠）" >&2
+      return 1
+    }
+  done
+
+  local ci="$REPO_ROOT/.github/workflows/ci.yml" hits
+  hits=$(grep -cE 'run: SKILLS_DIR_OVERRIDE="\$PWD/skills" bats skills/\*/tests/\*\.bats' "$ci" || true)
+  [ "$hits" -eq 1 ] || {
+    echo "FAIL: ci.yml 沒有（或重複）skill-local 探針步驟（命中 $hits 次）→ 這些探針永遠不會被 CI 執行" >&2
+    return 1
+  }
+  echo "OK: $n 個 skill 自帶探針都在 CI 被實跑（repo root + override）" >&2
+}

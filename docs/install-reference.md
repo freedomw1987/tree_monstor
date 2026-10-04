@@ -261,7 +261,7 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（10 條）守「本機全綠 ≠ CI 全綠」那類假綠，全套現在是 **567 條**：
+`tests/env-equivalence.bats`（11 條）守「本機全綠 ≠ CI 全綠」那類假綠，全套現在是 **568 條**：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|

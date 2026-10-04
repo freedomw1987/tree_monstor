@@ -3,7 +3,7 @@
 - **日期**：2026-10-05（trust session 01:21 → 08:00 CST，用戶指定 deadline）
 - **Backlog ID**：TMO-043、TMO-044、TMO-045、TMO-042、TMO-037
 - **作者**：pi（david 的 agent，**trust mode 自主執行**）
-- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**567 ok / 0 not ok**，round E 修正後）；Gate 4 reviewer round A（TMO-043/044/045）=
+- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**568 ok / 0 not ok**，TMO-047 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
   `approve-with-comments`（0 P0 / 1 P1 / 5 P2，P1 與 P2 全數修完）；round B（TMO-042 / TMO-037 + 文件）=
   `1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**，「可交付用戶驗收？yes」；round C（TMO-030/031/032/034 + round-B 修正）=
   `e776fe77`：**approve-with-comments（0 P0 / 1 P1 / 6 P2）**，「可交付用戶驗收？yes」
@@ -55,6 +55,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 | `a2d65fe` | reviewer round G 修正 | 05:42 | F1（`ENV-EQ-9` 註解敘述更正＋子目錄反向鎖，突變 M24）／F2-F5 文件不實敘述更正＋凍結快照約定／F6 刪死碼 `allow` 變數 |
 | `807d707` | reviewer round H 修正 | 05:53 | P2-1（F2/F4/F5 真正落地＋措辭對齊）／P3-1..7（含 `ENV-EQ-9` 反向鎖 `find` 失敗改大聲紅）／審查迴圈收斂宣告 |
+| （TMO-047） | TMO-047 skill-local 探針入 CI | 06:0x | 兩支探針加 `SKILLS_DIR_OVERRIDE`＋fail-closed；`ci.yml` 加一步；新增 `ENV-EQ-11`；M25–M28 突變 |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -262,6 +263,32 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 
 **本輪（＝受審範圍 `c686dd4..4ffd3de`）無新增探針**（reviewer 已確認：diff 無任何新 `@test`），兩處 regex 變動皆為**嚴格化**、無未申報放寬
 （reviewer 另建議：V03.6 表可補一句「本輪 regex 變動均為嚴格化、非放寬」）。
+
+## TMO-047 追加（L3 擴量，trust 期間）
+
+round F P3-5 發現 `skills/*/tests/*.bats`（3 條，當時 3/3 綠）**從未被 CI 執行**——CI 只跑 `bats tests/`，
+所以這兩支探針改了不會擋。追查後發現**天真修法會製造新的假綠**：
+
+| 量測 | 指令 | 結果 |
+| --- | --- | --- |
+| 模擬 CI（`HOME` 指向空目錄） | `HOME=/tmp/emptyhome-047 bats skills/dav-skill-creater/tests/*.bats` | 一支 **`# skip`**、另一支 **0 violations**（掃不到檔）＝**假綠** |
+| root 指到 repo | 同兩支，`SKILLS_DIR_OVERRIDE=<repo>/skills` | **3/3 真綠**（repo 有 5 個 `skills/*/examples`） |
+
+因為這兩支探針的 `setup()` 是硬編 `$HOME/.pi/agent/skills`，在 CI 上只會掃到空集合。故實作為：
+
+1. 兩支探針改 `SKILLS_DIR="${SKILLS_DIR_OVERRIDE:-${HOME}/.pi/agent/skills}"` ＋ **fail-closed**
+   （root 不存在／掃不到任何檔 → 大聲紅，不再 `skip`）。
+2. `.github/workflows/ci.yml` 的 `test` job 加一步
+   `run: SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats`。
+3. 新增 **`ENV-EQ-11`**：自動列舉 skill 自帶探針（`find skills -path '*/tests/*.bats'`，≥2 檔）
+   ＋逐檔以 repo 為 root **實跑**（不是只驗存在）＋輸出**不得含 `# skip`**＋每檔必須認 `SKILLS_DIR_OVERRIDE`
+   ＋`ci.yml` 恰好一步且寫法相符。
+4. **未擴 `ENV-EQ-9` 普查**：`bats tests/` 的條數不含 skill 自帶探針，硬混進同一計數會讓兩套執行路徑互相掩蓋；
+   skill-local 集合改由 `ENV-EQ-11` 獨立鎖（此偏離已揭露）。
+
+**突變（Gate 1 追加）**：M25 刪 ci.yml 步驟 → `ENV-EQ-11` 紅 ✓；M26 probe 1 不認 override → 紅 ✓；
+M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不符即紅，屬 best-effort）；M28 藏起一支探針（n=1）→ 紅 ✓；
+另以 `SKILLS_DIR_OVERRIDE=/tmp/t47-empty` 直接驗 fail-closed：兩支都**紅**（不再是 skip）✓。
 
 ## reviewer 修正（round H）＋審查迴圈收斂
 
