@@ -44,7 +44,7 @@
 | TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | todo | TMO-028 |
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | done (2026-10-05) | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
-| TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`，故 `dav-planner/SKILL.md:80`「先 grep `docs/concepts/`」實質跨目錄讀取抓不到 | P2 | 2 | todo | TMO-028 |
+| TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`＋清單硬編 9 檔（漏 `ask-me`，新增 skill 靜默漏掃）| P2 | 2 | done (2026-10-05) | TMO-028 |
 | TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..8：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 17 處 + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
 | TMO-039 | 首次真實 GitHub Actions 驗證（首跑 `37213235272` 全 job 紅 → 6 類真因；第二輪 `37215560458` **34 紅收斂到 4 紅** → 再揭露 2 類：①oracle 依賴假綠 3 條 ②macOS ffmpeg 8 移除 `-vsync`；第三輪修法見 §TMO-039 詳細；**第三輪 run `37218446930` ubuntu+macos test job 全綠**，僅 lint-only 紅＝TMO-037；**reviewer round-3 `approve-with-comments`（0 P0 / 0 P1 / 6 P2）**，前輪 5 P2 全數收尾，本輪 P2 已修 3 條／切票 TMO-044、TMO-045；**用戶決策「收在此」→ 結案**，收尾 run `37219489118` 亦綠）| P1 | 3 | done (2026-10-04) | TMO-029 |
@@ -981,6 +981,9 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 
 - TMO-033 子檔內容錨點、TMO-034 四處同源死引用、TMO-035 `SKILL.md:94-95` 降級條款 vs `require_tool()` 硬 `exit 4`
   （首次立票；觀察早已在 `:771` 卻無票）、TMO-036 跨目錄探針動詞表缺口
+  （**2026-10-05 結案**：動詞表補 `grep`/`讀取`/`查`/`搜`/`掃`；清單改**自動列舉** `skills/**/SKILL.md`
+  （11 檔，修前只掃 9 檔＝漏 `ask-me`）＋「禁空過」抽取器自我測試；例外改為**就地標記「專案端」**
+  ＋「標記濫用」反向鎖；`ask-me`/`dav-planner` 3 行加標記，`dev-checker-loop` 舊折行刪減已還原）
 - P2-2（漂移鎖訊息不可診斷，屬 fail-closed）→ 折入 TMO-032，dav-planner / regression-guard 三檔一起改
 
 ### 反思
