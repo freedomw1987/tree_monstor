@@ -571,11 +571,15 @@ printf "%s\n" "${a[@]}"'
   local f n=0
   for f in $all; do
     n=$((n + 1))
-    case "$f" in
-      tests/*.bats) continue ;;                    # CI: bats tests/
-      skills/*/tests/*.bats) continue ;;           # CI: SKILLS_DIR_OVERRIDE=... bats skills/*/tests/*.bats
-      *) orphan="$orphan $f" ;;
-    esac
+    # 注意：case 的 `*` 會跨 `/`（`tests/*.bats` 也會匹配 `tests/sub/x.bats`），
+    # 但 CI 的 `bats tests/` 是**非遞迴**的 → 必須用精確 regex 才不會漏放嵌套檔。
+    if [[ "$f" =~ ^tests/[^/]+\.bats$ ]]; then
+      continue                                     # CI: bats tests/
+    elif [[ "$f" =~ ^skills/[^/]+/tests/[^/]+\.bats$ ]]; then
+      continue                                     # CI: SKILLS_DIR_OVERRIDE=... bats skills/*/tests/*.bats
+    else
+      orphan="$orphan $f"
+    fi
   done
   [ "$n" -ge 40 ] || { echo "FAIL: 只列舉到 $n 個 .bats（<40）→ 列舉器壞了或路徑漂移" >&2; return 1; }
   [ -z "$orphan" ] || {

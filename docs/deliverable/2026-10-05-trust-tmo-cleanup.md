@@ -438,6 +438,8 @@ skill 自帶探針那一步；量測結果**無 orphan**（現況健康），但
 | M30 | 新增 `lib/tests/orphan.bats` | 紅 ✓（列出 orphan 檔名） |
 | M31 | 新增 `scripts/orphan.bats` | 紅 ✓ |
 | M32 | 把列舉改成 `find ./.git`（模擬列舉器壞掉） | 紅 ✓（「找不到任何 .bats」） |
+| M47 | 新增嵌套 `tests/sub/x.bats` | 紅 ✓（**修正後**） |
+| M48 | 同上，但用**舊 `case` glob 版**跑 | **綠＝漏洞**（`case` 的 `*` 跨 `/`，`tests/*.bats` 會誤放 `tests/sub/x.bats`，但 CI 的 `bats tests/` 是非遞迴）→ 已把 ENV-EQ-12 改成精確 regex `^tests/[^/]+\.bats$`／`^skills/[^/]+/tests/[^/]+\.bats$` |
 
 **⚠️ 自傷事故（已揭露）**：M30 清理時我誤用 `rm -rf lib`（正確應只刪 `lib/tests`）→ 連帶刪掉 7 個
 **已追蹤**檔案（`lib/log.sh`、`lib/install/*.sh`）。因這些檔相對 HEAD **未被修改**，以
