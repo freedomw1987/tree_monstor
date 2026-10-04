@@ -102,7 +102,12 @@
   `docs/install-reference.md` 揭露「macOS leg 未涵蓋 shellcheck」。改 `ci.yml` 屬 V03.6（CI 語意變更）→ 走二審。
   **抉擇理由（2026-10-05）**：CI 首跑已證明「CI 與本機不等價」是真風險（macOS leg 靜默丟 31 條測試、
   bash 3.2 bug 本機看不到）；shellcheck 含語法檢查，一次補齊 TMO-049＋TMO-052 兩洞最省。
-  ⚠️ **backlog 對照：TMO-049 與 TMO-052 皆為同一決策**（已在 `docs/backlog.md` 同步為 `✅ 已確認（2026-10-05）`）。
+  ⚠️ **backlog 對照：TMO-049 與 TMO-052 皆為同一決策**（已在 `docs/backlog.md` 同步為 `✅ 2026-10-05 完成（待 CI 複驗）`）。
+  **✅ 已實作（2026-10-05，`f600385`）**：`test` job 新增「ShellCheck every tracked shell file」步驟
+  （自我列舉 `git ls-files '*.sh' '*.bash'`）；`Verify bash syntax` 也改成自我列舉後逐一 `bash -n`。
+  macOS leg 以 `brew install shellcheck` 安裝（runner 未預裝）→ **待 CI 複驗**；若 macOS 裝不起來，
+  會改成 ubuntu-only 並在本檔＋`install-reference.md` 揭露「macOS leg 未涵蓋 shellcheck」。
+  守門探針：`tests/env-equivalence.bats` 的 `ENV-EQ-18`。
 
 **待決（TMO-049／TMO-052，CI 覆蓋面）**：①CI **完全沒跑 shellcheck**（Gate 2 只在開發者本機跑），
 所以「本機 Gate 2 全綠」不等於 CI 會擋 shellcheck 類問題；②CI 的 `Verify bash syntax` 步驟只 glob
@@ -126,7 +131,10 @@
   （append-only 慣例）。
   **抉擇理由（2026-10-05）**：handbook 是 SOP 文件、是使用者真的會點的連結；純文字修正成本極低，
   而留著壞連結會讓後續讀者以為該 skill 不存在。
-  ⚠️ **backlog 對照：TMO-051**（已在 `docs/backlog.md` 同步為 `✅ 已確認（2026-10-05）`）。
+  ⚠️ **backlog 對照：TMO-051**（已在 `docs/backlog.md` 同步為 `✅ 2026-10-05 完成`）。
+  **✅ 已實作（2026-10-05，`f600385`）**：`docs/sop/handbook/2.3-execution.md` 的連結已改為
+  `../../../skills/regression-guard/SKILL.md`（從 `docs/sop/handbook/` 解析到 repo 根 ✓，已用
+  `pathlib` 實測 `exists()==True`）。歷史交付物那 2 條依 append-only 慣例不動。
 
 **待決（TMO-051，docs 連結）**：`docs/sop/handbook/2.3-execution.md` 有一條壞連結
 `../../skills/regression-guard/SKILL.md`（從 `docs/sop/handbook/` 算只到 `docs/`，應為 `../../../skills/...`）。

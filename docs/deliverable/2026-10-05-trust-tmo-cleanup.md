@@ -507,18 +507,60 @@ TMO-047 探針改動無新假綠（test body 亦有 guard，不依賴 `setup()` 
 **Gate 3（修正後）**：`bats tests/` = **568 ok / 0 not ok**（`/tmp/ri-gate3-fix.txt`）；
 skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
 
-## 最終狀態（trust 結束時的實測值）
+## CI 首跑修復（2026-10-05，`f600385`）
+
+`ask-me` 結束後你選了 push（NYH-3）→ `gh workflow run ci.yml --ref trust/2026-10-05-tmo-cleanup`
+（run `37244140774`）→ **紅**（Markdown lint 綠；兩個 test job 紅，共 8 條 `not ok`）。
+已承諾「若 CI 紅，我會立即修到綠」，故 4 個根因全部先在本機重現、再修：
+
+| # | 症狀（哪個 leg） | 根因 | 修法 |
+| --- | --- | --- | --- |
+| 1 | SSG-3（**只 macOS**） | `scripts/ci/check-skill-size.sh:51` 的 `$worst_file）`：bash 3.2 + UTF-8 locale 把 `）` 的首位元組吞進變數名 → `set -u` 下 `worst_file: unbound variable` | 全 repo **39 處** `$var` 緊接非 ASCII 改 `${var}`（語意相同）＋靜態鎖 `ENV-EQ-17` |
+| 2 | ENV-EQ-12（**兩 leg**） | CI 把 bats-core clone 進**工作區** → orphan 掃描看到 ~250 個孤兒 `.bats` | clone 改到 `$RUNNER_TEMP`（兩平台），不再汙染工作區 |
+| 3 | ENV-EQ-1/2/3（**只 macOS**） | macOS runner 沒有 bash 5.x（只有 `/bin/bash` 3.2.57） | `brew install bash`＋`$(brew --prefix)/bin` 前置 `$GITHUB_PATH`；3.2 覆蓋改由本機新鎖 `ENV-EQ-19` 接手 |
+| 4 | ENV-EQ-9＋**31 條被靜默丟棄**（**只 macOS**） | bats 1.14.0 的 test-name 編碼在「bash 3.2 + UTF-8」下把非 ASCII `@test` 名編壞 → `bats: unknown test name`（macOS 只跑 542/573） | 同 #3（bats 子程序走 `env bash` → 5.x）；本機可用 `env -i PATH=/usr/bin:/bin LANG=en_US.UTF-8 /bin/bash` 重現 |
+
+另依 NYH-6／NYH-7 決策一併完成：
+
+- **NYH-6（A，TMO-049＋TMO-052）**：`test` job 新增自我列舉 shellcheck
+  （`shellcheck -x -S style $(git ls-files '*.sh' '*.bash')`，兩 leg 都裝 shellcheck）；
+  `Verify bash syntax` 由硬編 `skills/dav-wiki/scripts/*.sh` 改為自我列舉後逐一 `bash -n`。
+- **NYH-7（A，TMO-051）**：`docs/sop/handbook/2.3-execution.md` 的壞連結改 `../../../skills/...`
+  （V03 二審範圍）；歷史交付物那 2 條依 append-only 不動。
+
+### 本輪新增的三把鎖（都先紅後綠）
+
+| 鎖 | 守什麼 | 反向驗證（突變） |
+| --- | --- | --- |
+| ENV-EQ-17 | shell／CI 檔不得有「`$var` 緊接非 ASCII」（靜態；實作 `scripts/ci/lint-shell-var-nonascii.py`） | M-A 把 `$worst_file）` 種回 → 紅 ✓，還原後綠 ✓ |
+| ENV-EQ-18 | CI `test` job 必須跑自我列舉 shellcheck＋語法步驟不得回頭用硬編 glob＋不得有 `\|\| true`／`continue-on-error` | M-B 刪掉 shellcheck 步驟 → 紅 ✓，還原後綠 ✓ |
+| ENV-EQ-19 | `scripts/ci/*.sh` 在**每個**本機 bash 版本（含 3.2）＋UTF-8 locale 下 rc=0 且有輸出 | M-C 種回 bash 3.2 bug → **在本機重現 CI 的 `worst_file: unbound variable`** → 紅 ✓，還原後綠 ✓ |
+
+### 修復後實測
+
+- Gate 1：三把新鎖各自「先紅（突變）後綠（還原）」，命令與輸出見上表。
+- Gate 2：`shellcheck -x -S style $(git ls-files '*.sh' '*.bash')` → **23 檔 rc=0**；
+  markdownlint（CI 同一 glob）→ **0 issue / 128 檔**；`bash -n` 自我列舉 → 23 檔 OK。
+- Gate 3：本機 `bats tests/` = **576 ok / 0 not ok**（`/tmp/t3-run.txt`）；skill-local 探針 **3/3**。
+- clean clone（無 venv）：**532 ok / 44 not ok**（44 全是需 PoC venv 的測試，CI 會先建 venv）。
+- **⚠️ 自曝（本輪自己踩到）**：新鎖檔 `scripts/ci/lint-shell-var-nonascii.py` 檔尾缺換行，
+  **本機全綠看不到**——因為它當時還沒 `git add`，而 `ENV-EQ-14/16/17` 這類鎖用 `git ls-files` 列舉，
+  **未追蹤的新檔不在掃描面內**；一進 clean clone（已追蹤）就被 `ENV-EQ-16` 咬到。已修，並寫進
+  `docs/install-reference.md` 的已知盲點。
+- CI 複驗：修復 push 後重跑 `ci.yml`，結果見下節「CI 複驗」；`docs/trust-log.md` rows 78–80 有時間軸。
+
+## 最終狀態（trust 結束時的實測值；CI 修復後更新）
 
 | 項目 | 值 | 證據 |
 | --- | --- | --- |
-| 分支 / 是否 push | `trust/2026-10-05-tmo-cleanup`／**未 push**（trust 底線規則 #1） | `git status`／`git log` |
-| 本機 `bats tests/` | **573 ok / 0 not ok** | `/tmp/rk-gate3-l13.txt` |
+| 分支 / 是否 push | `trust/2026-10-05-tmo-cleanup`／**已 push**（`481ead1` 起；CI 修復另推 `f600385`） | `git log`／`gh run list` |
+| 本機 `bats tests/` | **576 ok / 0 not ok**（trust 結束時 573，+3 為 ENV-EQ-17/18/19） | `/tmp/t3-run.txt` |
 | skill-local 探針 | **3 ok / 0 not ok**（`SKILLS_DIR_OVERRIDE` 指向 repo） | 同上輪實跑 |
 | Gate 2 | markdownlint **0 issue / 128 檔**；shellcheck `-S style` **rc=0 / 23 檔** | `/tmp/rk-lint.txt`、`/tmp/rk-shellcheck.txt`（空） |
 | 其他 CI 等價檢查 | heredoc 9 OK、SKILL 主檔 11 檔（最長 148 ≤ 150） | `scripts/ci/*.sh` 實跑 |
-| clean clone（無 venv） | **529 ok / 44 not ok**（44＝需 PoC venv 的測試；CI 會先建 venv） | `/tmp/t53-clean.txt` @ `cd0a41c` |
-| 探針總數 | `tests/env-equivalence.bats` 16 條（ENV-EQ-1..16）；`tests/` 頂層 44 支 `.bats` | `install-reference.md` |
-| 開放的待決票 | TMO-049（CI 無 shellcheck）、TMO-051（handbook 壞連結需 V03）、TMO-052（CI `bash -n` 硬編子集）、TMO-040、TMO-035 | `docs/backlog.md`、`docs/need-you-help.md` NYH-3/4/5/6/7 |
+| clean clone（無 venv） | **532 ok / 44 not ok**（44＝需 PoC venv 的測試；CI 會先建 venv） | 本輪重測 |
+| 探針總數 | `tests/env-equivalence.bats` 19 條（ENV-EQ-1..19）；`tests/` 頂層 44 支 `.bats` | `install-reference.md` |
+| 開放的待決票 | TMO-040、TMO-035（其餘 TMO-049/051/052 已於本輪完成；NYH-1 金鑰輪替與 NYH-2 仍待你處理） | `docs/backlog.md`、`docs/need-you-help.md` |
 
 ## 已知問題
 

@@ -259,7 +259,8 @@ SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`529 ok / 44 not ok`，@ `cd0a41c`；529 + 44 = 573 條；`6ca7cfb`／`8f3639c` 量測同值）：
+> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`532 ok / 44 not ok`，@ `f600385` 之後；532 + 44 = 576 條。
+> 較早量測：`529 ok / 44 not ok` @ `cd0a41c`，當時套件是 573 條；`6ca7cfb`／`8f3639c` 同值）：
 > - `v2.1-jev-poc.bats` 40 + `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
 > - `poc-bootstrap.bats` 1（TMO-038 的 CI 契約語意斷言，PyYAML 解 workflow）
 > - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）。
@@ -268,8 +269,8 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（16 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **573 條**；
-CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **576 條**：
+`tests/env-equivalence.bats`（19 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **576 條**；
+CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **579 條**：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|
@@ -289,15 +290,30 @@ CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起�
 | ENV-EQ-14 | 每個被追蹤 `.py` 須 `ast.parse` 通過、`.json` 須 `json.load` 通過（stdlib、不寫 `__pycache__`）＋下限 ≥25／≥5 | python3 |
 | ENV-EQ-15 | `.bats` 不得有**下列字面**的空過斷言：`[ true ]`／`[[ true ]]`／單行 `true`／`:`（先剝行尾註解再比對）＋下限 ≥40。**注意**：`\|\| true`、`[[ 1 -eq 1 ]]` 等變體**不在鎖內**（實測 `.bats` 內有 49 處 `\|\| true`，硬鎖會誤殺） | grep + sed |
 | ENV-EQ-16 | 每個被追蹤文字檔須以換行結尾（binary 以 NUL 嗅探排除）＋下限 ≥100 | python3 |
+| ENV-EQ-17 | shell／CI 檔不得有「`$var` 緊接非 ASCII 字元」——bash 3.2 + UTF-8 locale 會把該字元首位元組吞進變數名（`$f（` → 展開 `$f\xef`）。實作：`scripts/ci/lint-shell-var-nonascii.py` | python3 + git |
+| ENV-EQ-18 | CI `test` job 必須跑**自我列舉**的 shellcheck，且 `Verify bash syntax` 不得回頭用硬編子集 glob；這兩步不得有 `\|\| true`／`continue-on-error` | git + awk |
+| ENV-EQ-19 | `scripts/ci/*.sh` 在**每一個**本機 bash 版本（含 3.2）＋UTF-8 locale 下都必須 rc=0 且有輸出（CI 的 macOS leg 過去就是 3.2，本機看不到） | bash 多版本 |
 | （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
 
-兩個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py` 與 `scripts/ci/lint-probe-tools.py`，
-都可單獨跑（`--self-test` 驗抽取器本身）。寫檔請用 `$BATS_TEST_TMPDIR`；真的只是「資料引用」
-（例如壞值清單、故意不存在的路徑）就在該行標 `TMP-OK` 就地豁免——反向鎖會擋「拿標記當萬用豁免」。
+三個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py` 與
+`scripts/ci/lint-shell-var-nonascii.py`，都可單獨跑（`--self-test` 驗抽取器本身）。寫檔請用
+`$BATS_TEST_TMPDIR`；真的只是「資料引用」（例如壞值清單、故意不存在的路徑）就在該行標 `TMP-OK`
+就地豁免——反向鎖會擋「拿標記當萬用豁免」。
+
+> ⚠️ **`git ls-files` 型鎖的已知盲點**：`ENV-EQ-14`／`16`／`17` 這類以 `git ls-files` 列舉的鎖，
+> **看不到「還沒 `git add` 的新檔」**。本輪就吃過一次：新鎖檔本身缺檔尾換行，本機全綠、
+> 一進 clean clone（已追蹤）才被 `ENV-EQ-16` 咬到。新增檔案請先 `git add -N`（intent-to-add）
+> 或直接 `git add` 後再跑一次套件。
 
 CI 的 bats-core 已釘版：兩個 runner 都 `git clone --branch v1.14.0`＋`install.sh /usr/local`
 （apt 的 bats 與 brew 的 bats-core 版本會漂移，`@test` 名稱／旗標行為跟著變），契約由
 `tests/poc-bootstrap.bats` 的 PyYAML 語意斷言鎖住（兩平台同 tag、`>= v1.14.0`）。
+
+2026-10-05 CI 首跑後另修三件事（見 `ENV-EQ-17/18/19`）：clone 位置改 `$RUNNER_TEMP`
+（過去 clone 進工作區，會被 `ENV-EQ-12` 當成 ~250 個孤兒 `.bats`）、macOS leg 改裝 bash 5
+並把 `$(brew --prefix)/bin` 前置到 `$GITHUB_PATH`（原本 `/bin/bash` 3.2 會讓 bats 1.14.0
+的 test-name 編碼壞掉、**靜默丟掉 31 條**非 ASCII 名稱的測試）、CI 補上自我列舉的 shellcheck。
+bash 3.2 的覆蓋改由本機 `ENV-EQ-19` 接手（逐版本實跑 `scripts/ci/*.sh`）。
 
 ### 可選：dav-wiki 媒體提取的測試依賴
 

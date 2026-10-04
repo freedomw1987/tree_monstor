@@ -10,7 +10,7 @@
 #   * 真網路：本機連得到，oracle 打到真 API 會讓 fixture 缺口被掩蓋
 #   * 未 stub 的外部工具（gh / brew）：本機有裝就會「剛好過」
 #
-# 本檔守 10 件事（9 條可證偽斷言 + 1 條量測 ENV-EQ-4）：
+# 本檔守 ENV-EQ-1..19（18 條可證偽斷言 + 1 條量測 ENV-EQ-4；11..19 於 TMO-041/2026-10-05 CI 首跑追加）：
 #   1. 本機必須有 bash 5.x 可用（缺 → 紅＋安裝指令，不 skip）
 #   2. `tests/wiki-cleanup.bats` 在**每一個**本機可用 bash 版本下都全綠
 #      （PATH shim 真的把 bash 換掉；bash 5.x 這條＝CI 的 ubuntu bash 變體 Gate 3）
