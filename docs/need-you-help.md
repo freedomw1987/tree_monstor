@@ -59,3 +59,33 @@
 - **C：不動程式，只在 README 加警告** — 最便宜，但護欄等於沒有。
 
 **保守默認（trust 期間照此辦理）**：**不修改**（破壞性路徑語意屬你的決策），只記錄在此。
+
+## NYH-6
+
+**待決（TMO-049／TMO-052，CI 覆蓋面）**：①CI **完全沒跑 shellcheck**（Gate 2 只在開發者本機跑），
+所以「本機 Gate 2 全綠」不等於 CI 會擋 shellcheck 類問題；②CI 的 `Verify bash syntax` 步驟只 glob
+`skills/dav-wiki/scripts/*.sh`（硬編子集），漏掉 `install.sh`、`lib/**`、`scripts/ci/*.sh`、`skills/*/PoC/*.sh`、
+`tests/helpers/*.bash`。緩解：ENV-EQ-13 的靜態宣告鎖跑在 CI 內，且 `tests/install.bats` 真的會執行 `install.sh`，
+所以不是完全裸奔。
+
+**最推薦 A：兩件合併——在 `test` job 加一步 `shellcheck -x -S style $(git ls-files '*.sh' '*.bash')`，
+並把 `Verify bash syntax` 改成自我列舉（或直接刪除，交給 shellcheck）** — 原因：一次補齊兩洞、
+且 shellcheck 已含語法檢查；代價：需 push 才能驗證 runner 是否預裝 shellcheck（若 macOS runner 沒有，
+可只在 ubuntu leg 跑並在文件揭露「macOS 未涵蓋」）。
+- **B：只加 shellcheck、保留原 `bash -n` 步驟** — 冗餘但保守，零風險（多花幾秒）。
+- **C：維持現狀（只留 TMO-049/052 記錄）** — CI 對 installer 核心永遠只有「被 tests 執行到才擋」。
+
+**保守默認（trust 期間照此辦理）**：**不修改 CI**（需 push 才驗、且 trust 禁 push），只記錄在此。
+
+## NYH-7
+
+**待決（TMO-051，docs 連結）**：`docs/sop/handbook/2.3-execution.md` 有一條壞連結
+`../../skills/regression-guard/SKILL.md`（從 `docs/sop/handbook/` 算只到 `docs/`，應為 `../../../skills/...`）。
+另 2 條壞連結在 `docs/deliverable/2026-09-26-reduce-deliverables.md`（歷史交付物，append-only 慣例不動）。
+
+**最推薦 A：修 handbook 那一條（加一層 `../`）並走 V03 二審** — 原因：handbook 是 SOP 文件、
+是使用者實際會點的連結；代價：要走一次 Reviewer（純文字修正，成本低）。
+- **B：連 2 條歷史交付物的連結一起修** — 一次清乾淨，但違反本 repo 對歷史文件的 append-only 慣例。
+- **C：不修，只保留 ticket** — 成本 0，但連結繼續壞。
+
+**保守默認（trust 期間照此辦理）**：**不修改 handbook**（V03 需二審），只記錄在此。
