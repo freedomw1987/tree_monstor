@@ -54,6 +54,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `cf3d466` | TMO-041 | 04:30 | 環境等價：新 `tests/env-equivalence.bats`（ENV-EQ-1..7：bash 5.x 必需、**每個本機 bash 版本**都跑 wiki-cleanup 套件、shim 有效性、空陣列×`set -u` 逐版本量測、固定 `/tmp` 殘檔鎖、`gh`/`brew` 執行鎖、網路黑洞＋canary）；`v2.1-jev-poc.bats` 56 處 `/tmp/` → `$BATS_TEST_TMPDIR`；CI 兩平台釘 bats-core `v1.14.0`＋契約斷言 |
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 | `a2d65fe` | reviewer round G 修正 | 05:42 | F1（`ENV-EQ-9` 註解敘述更正＋子目錄反向鎖，突變 M24）／F2-F5 文件不實敘述更正＋凍結快照約定／F6 刪死碼 `allow` 變數 |
+| `807d707` | reviewer round H 修正 | 05:53 | P2-1（F2/F4/F5 真正落地＋措辭對齊）／P3-1..7（含 `ENV-EQ-9` 反向鎖 `find` 失敗改大聲紅）／審查迴圈收斂宣告 |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
