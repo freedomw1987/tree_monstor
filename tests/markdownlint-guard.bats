@@ -110,7 +110,9 @@ setup() {
   # cli2 ignore 清單若命中 fixture 路徑（任何提到 tests/fixtures 的 ignore 字串，
   # 不論寫成 "!**/tests/**" / "tests/**" / "**/fixtures/**"）→ glob 覆蓋就是假的
   # （reviewer round B P2-3：原 regex 只認以 **/tests/ 開頭的形式，可繞過）
-  if grep -qE '^[[:space:]]*"[^"]*(tests|fixtures)[^"]*"' "$MDLINT_CLI2"; then
+  # round C P2-3：再去掉行首錨——單行陣列 `"ignores": ["**/.venv/**", "tests/fixtures/**"]`
+  # 的行首引號 token 是 `ignores`，行首錨版本咬不到（註解被誤咬＝fail-closed，可接受）
+  if grep -qE '"[^"]*(tests|fixtures)[^"]*"' "$MDLINT_CLI2"; then
     echo "FAIL: .markdownlint-cli2.jsonc 有排除 tests/fixtures 的規則（glob 覆蓋失效）" >&2
     return 1
   fi
@@ -120,6 +122,12 @@ setup() {
   run markdownlint-cli2 "$rel"
   [ "$status" -eq 0 ] || {
     echo "FAIL: fixture markdown 不乾淨: $rel" >&2; return 1; }
+  # round C P2-3：rc=0 也可能是「一個檔都沒 lint 到」（ignore 生效時）→ 必須確認有實掃
+  printf '%s' "$output" | grep -qE 'Linting: [1-9][0-9]* file' || {
+    echo "FAIL: cli2 沒有真的 lint 到任何檔（Linting: 0 file）＝glob/ignore 生效中，rc=0 不可信" >&2
+    printf '%s\n' "$output" >&2
+    return 1
+  }
 }
 
 @test "MLG-9: lint job 不得被停用（不得有 if: 阻斷式條件）" {

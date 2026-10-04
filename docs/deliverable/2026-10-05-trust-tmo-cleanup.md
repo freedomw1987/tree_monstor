@@ -38,7 +38,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `985d1e5` | TMO-045（rev-A 修正） | 02:00 | `mask_secrets()` 遮罩（修正 P1：失敗訊息外洩真 key）；WDC-1/2 排除註解行；heredoc delimiter 字元集與縮排界線；`MIN_HEREDOCS` 1→8 + H6–H9；`IMAGE_EXTS`/`AUDIO_EXTS` 單一來源 |
 | `c04644c` | TMO-042 | 02:05 | 新 `scripts/ci/check-ffmpeg-version.sh`（底線 ≥5.1 + 旗標能力實測 + 缺工具）；ci.yml 兩平台新增 step；`tests/ffmpeg-version.bats` FV-1..7；CONTRIBUTING 移除清單 |
 | `c3a187c` | （自我糾錯） | 02:08 | trust-log 時間戳造假的自清：改 `*`=git log 實測 / `~`=估值、加揭露註記、記錄事件列 21（並修回被誤改的 2026-09-28 段落） |
-| `9d4cb6b` / `472c0cd` / `cbe8691` | TMO-030 / 031 / 034 | 02:48 | 廢棄麵包屑（`docs/prd/02`、`docs/prd/03`、backlog TMO-007）；`dav-planner/SKILL.md:73` 舊步驟名 → 現行 Step 1/Step 2；`wiki-cleanup.sh` 死引用 → `skills/dav-wiki/soft-delete.md`；新探針 `DOCS-REDUCE-007` |
+| `9d4cb6b` / `472c0cd` / `cbe8691` | TMO-030 / 031 / 034 | 02:48 | 廢棄麵包屑（`docs/prd/02`、backlog TMO-007）＋`docs/prd/03:104` 移除已廢除 §2.7 引用；`dav-planner/SKILL.md:73` 舊步驟名 → 現行 Step 1/Step 2；`wiki-cleanup.sh` 死引用 → `skills/dav-wiki/soft-delete.md`；新探針 `DOCS-REDUCE-007` |
 | `f71962d` | TMO-037 | 02:41:31 | markdownlint 270 → 0；ci.yml 移除 `continue-on-error`；`tests/markdownlint-guard.bats`（MLG-1..8）；CONTRIBUTING 補 lint/shellcheck 政策；3 支產品腳本 shellcheck info 級歸零（SC1091/SC2015/SC2094） |
 | （本輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 
@@ -104,6 +104,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | `MIN_HEREDOCS` 1→8、H1 門檻 5→8、`total_ok ≥ 50` | 嚴格化 | reviewer P2 要求把覆蓋下限提高 |
 | `mask_secrets()`、`rc==0` 檢查 | 嚴格化 | reviewer P1/P2 修正 |
 | MLG-2 改為「剝掉註解行後再比對」 | **修正探針自我匹配**（非放寬） | 我自己的 ci.yml 註解提到被鎖字串會誤觸；實際 YAML 鍵仍嚴格禁止 |
+| **`refute_file_contains` → `refute_file_body_contains`（負向斷言改掃 body、排除變動歷史）** | **放寬（條件式；V03.6 定義①）** | 唯一一條放寬，round C 點名補報：原本會 fail 的「變動歷史列提到已廢除名稱」改為 pass。理由＝SOP 政策合法（`changelog` v2.5「撤銷的章節不抹去」）；補償＝+4 同義詞 needle、M-A/M-B/M-C/M-D 突變全咬。round C P2-2 再把排除面從「全檔 `\| v` 列」收窄為「`## 變動歷史` 章節」（**回歸嚴格化**） |
 | markdownlint：折行 / 轉義 / 改寫 | **不改規則** | 未動 `MD013` 上限（仍 120）、未縮 glob、未加 ignore；MLG-3/4/5/8 反過來把「縮小 glob / 調大上限」鎖死 |
 
 ## reviewer 修正（round B）
@@ -114,7 +115,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | --- | --- | --- |
 | **P1-1** | 我先前把 `dev-checker-loop/SKILL.md:10,46,51` 折行時**實質刪減**內容（Step 3 掉了「regression-guard 探針」與 jev 子步驟），卻在 trust-log 記為「內容不變」 | 3 行全部逐字還原（只做折行）：正規化後與 `5da880e` **逐字相同**；行數 127 → 129（`<130` 綠區）；trust-log row 27 由「內容不變」**改寫為「實為刪減」**並加註被抓到的來源 |
 | P2-1 | deliverable 數字口徑錯（「270 → 0（127 檔）」） | 改為「270 錯（63 檔受影響 / 127 檔受檢）→ 0」（63 = `/tmp/t37-before.txt` 去重檔數） |
-| P2-2 | trust-log 寫「手改 17 處」 | 依 `/tmp/t37-manual.py` 重算＝**14 檔、18 個 pattern 替換**（含 `\|\| M4_RC=$?` 一次命中 2 處），row 24 加自我糾錯註 |
+| P2-2 | trust-log 寫「手改 17 處」 | 對 `/tmp/t37-manual.py` AST 靜態解析＝**15 個 `sub()` 呼叫點、12 檔、16 處替換**（1 個呼叫 `expect=2`）；**round B 一度誤寫「14 檔、18 個 pattern」，round C P2-1 再更正**，row 24 加自我糾錯註 |
 | P2-3 | MLG 探針 4 個缺口 | ①MLG-2 抽取區塊錨點由 `name:` 改為 job key `lint-only`、比對前去空白（`\|\|true` 也咬）；②新增 **MLG-9**（lint job 不得有 `if:`）；③MLG-8 regex 改為「任何提到 tests/fixtures 的 ignore 都咬」；④區塊抽取不再是「印到 EOF」 |
 | P2-4 | 新 deliverable 未入 lint 計數 | 本輪結尾重跑全量 lint（含新檔）並記綠；MLG-7 缺工具時**明示 skip**（不假綠） |
 | P2-5 | trust-log row 4 引錯檔 | 改為 `.markdownlint.json`（`tables/code_blocks` 在該檔；`.markdownlint-cli2.jsonc` 只管 `ignores`） |

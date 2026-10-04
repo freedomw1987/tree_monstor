@@ -38,14 +38,14 @@
 | TMO-027 | 廢棄守門：dav-planner §2.7 用戶背景收集（用戶已決策廢除）5 條探針轉負向斷言 | P2 | 3 | done (2026-10-04) | TMO-026 |
 | TMO-028 | `skills/dav-wiki/SKILL.md` 151 → **129 行**（V03.5 強制 ≤130）：輸出結構/軟刪除細節移子檔 + 指標存在探針 + 版本漂移鎖 | P2 | 3 | done (2026-10-04) | TMO-026 |
 | TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI trigger `[main, master]` + 探針「缺 venv 就大聲紅、靜態測試不誤紅」；驗收=本機 506/506（CI 首跑全綠待 TMO-039）| P1 | 3 | done (2026-10-04) | TMO-026 |
-| TMO-030 | 廢除麵包屑補齊：`docs/prd/02` + `docs/prd/03:104` + backlog TMO-007 詳細段加「已廢棄」註 | P2 | 2 | done (2026-10-05) | TMO-027 |
+| TMO-030 | 廢除麵包屑補齊：`docs/prd/02` 頂部加「已廢棄」狀態塊 + `docs/prd/03:104` **移除**已廢除的 §2.7 引用（該檔與 §2.7 無關，**不加**麵包屑）+ backlog TMO-007 詳細段加註 | P2 | 2 | done (2026-10-05) | TMO-027 |
 | TMO-031 | `skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」→ 現行 Step 1/2）| P2 | 1 | done (2026-10-05) | TMO-027 |
 | TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | done (2026-10-05) | TMO-027 |
 | TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | done (2026-10-05) | TMO-028 |
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | done (2026-10-05) | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`＋清單硬編 9 檔（漏 `ask-me`，新增 skill 靜默漏掃）| P2 | 2 | done (2026-10-05) | TMO-028 |
-| TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..8：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 17 處 + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
+| TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..9：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內 / lint job 不得有 `if:`）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 16 處（12 檔） + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
 | TMO-039 | 首次真實 GitHub Actions 驗證（首跑 `37213235272` 全 job 紅 → 6 類真因；第二輪 `37215560458` **34 紅收斂到 4 紅** → 再揭露 2 類：①oracle 依賴假綠 3 條 ②macOS ffmpeg 8 移除 `-vsync`；第三輪修法見 §TMO-039 詳細；**第三輪 run `37218446930` ubuntu+macos test job 全綠**，僅 lint-only 紅＝TMO-037；**reviewer round-3 `approve-with-comments`（0 P0 / 0 P1 / 6 P2）**，前輪 5 P2 全數收尾，本輪 P2 已修 3 條／切票 TMO-044、TMO-045；**用戶決策「收在此」→ 結案**，收尾 run `37219489118` 亦綠）| P1 | 3 | done (2026-10-04) | TMO-029 |
 | TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴尚未掃完——reviewer round-3 具體點名：真網路未封鎖、`PoC/.env`（`__file__` 旁，非 `HOME`）、固定 `/tmp` 檔名跨 run 殘留、`bats`/`bash` 版本、`gh`/`brew` 工具未 stub（①已涵蓋版本項） | P2 | 3 | todo | TMO-039 |
@@ -932,6 +932,9 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 ### 已知問題（本輪未處理，已切票）
 
 - TMO-030：`docs/prd/02-dav-planner-user-background.md` / `docs/prd/03:104` / backlog TMO-007 詳細段仍把 §2.7 寫成現行規格
+  （**2026-10-05 結案**：prd/02 加廢棄狀態塊；prd/03:104 該列把「§2.7 (v1.9) 角色題依舊先問」改為
+  「交付物格式定錨」＝**移除**已廢除引用而非加麵包屑；backlog TMO-007 詳細段加麵包屑。
+  註：先前三份紀錄寫「prd/03 廢棄麵包屑」與事實不符 → round C P1-1 對帳修正）
 - TMO-031：`skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」；pre-existing，v2.6 引入 Step 1.5 時即如此）
 - TMO-032：探針精準化（第 2 輪 P2-a/P2-b 折入）— ① `refute_file_contains` helper 內加 `[[ -f "$p" ]]` 根除整類假綠；② `SKILL.md`
   變動歷史段（`:119-138`）會被「撤銷章節不抹去」政策誤紅 → 負向斷言改掃 body（排除 `^| v` 列）；③ `dav-planner-user-background.bats` v1.9 條目仍為 whole-file

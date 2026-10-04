@@ -111,14 +111,17 @@ refute_file_contains() {
 }
 
 # refute_file_body_contains <path> <substring>
-# 同上，但**排除變動歷史表列**（`^| v`）：SOP 政策是「撤銷的章節不抹去、只在變動歷史
+# 同上，但**排除 `## 變動歷史` 章節**：SOP 政策是「撤銷的章節不抹去、只在變動歷史
 # 加註（已廢棄）」，所以在變動歷史提到已廢除名稱是合法的，不該誤紅（reviewer P2-b）。
+# round C P2-2：原本用 `grep -v -E '^\| v'` 排除「全檔任何 `| v` 起始列」→ 任何表內
+# 以 `| v` 開頭的列（含別的表、甚至偽造的歷史列）都被靜默豁免。改為**只切掉變動歷史
+# 章節**（`## 變動歷史` 到下一個 `## `），其餘全掃；檔案沒有該章節時等於全掃（更嚴）。
 refute_file_body_contains() {
   local p="$1"
   local needle="$2"
   [[ -f "$p" ]] || { echo "FAIL: expected file at $p (refute_file_body_contains)" >&2; return 1; }
-  if grep -v -E '^\| v' "$p" | grep -F -q -- "$needle"; then
-    echo "FAIL: file $p body (excluding 變動歷史) must NOT contain: $needle" >&2
+  if awk '/^## 變動歷史/{skip=1; next} /^## /{skip=0} !skip' "$p" | grep -F -q -- "$needle"; then
+    echo "FAIL: file $p body (excluding 變動歷史 section) must NOT contain: $needle" >&2
     return 1
   fi
 }
