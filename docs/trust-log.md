@@ -80,3 +80,7 @@
 | 7 | 01:40 | TMO-043 執行 | 決策：`ext_pattern` 修正為依 mode 建 `find` 條件（行為改變＝真修 bug，附 AC-D17/D18）；`EXIT_TOOLMISSING` in ocr 保留＋註記（exit 4 契約歸 TMO-035）；media-describe 改用該常數 |
 | 8 | 01:44 | TMO-043 探針 | ✅ WDC-1/WDC-2 新增（修前紅：`wiki-extract-video.sh: probe_metadata`）；AC-D17/18 修前紅、修後綠 |
 | 9 | 01:46 | TMO-043 Gate 3 | ✅ 全量 521 ok / 0 not ok（原 517 + 4） |
+| 10 | 02:05 | TMO-044 執行 | 新 `scripts/ci/check-python-heredocs.sh`（ast.parse，不執行）；剔除自家掃描器假陽性（註解行的 `python3` + `<<EOF` 被誤判）→ 加「略過註解行 + `<<` 前需空白」兩道界線 |
+| 11 | 02:08 | TMO-044 探針 | ✅ H1-H5（含 3 突變：語法錯／未結束／只有註解假 heredoc）；H5 修前紅（ci.yml 未呼叫） |
+| 12 | 02:10 | TMO-044 決策 | 為何從 `wiki-cleanup.yaml` 檢查改為「抽 heredoc」：原檢查連目標檔都不存在；且只驗 5/9 個 heredoc；改 ast.parse 後語意真檢查且零額外依賴（stdlib） |
+| 13 | 02:12 | TMO-044 Gate 3 | ✅ 全量 526 ok / 0 not ok（+5） |
