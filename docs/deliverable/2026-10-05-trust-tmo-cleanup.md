@@ -62,6 +62,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （ENV-EQ-13） | ENV-EQ-13 追加（L5）＋Gate 2 掃描面補洞 | 06:34:56* | 每個 shell 檔須宣告 shell；Gate 2 改自我列舉（23 檔 rc=0）；M33–M35 全咬 ✓ |
 | （ENV-EQ-14） | ENV-EQ-14 追加（L6） | 06:39:41* | 全 repo `.py` 須 `ast.parse` 通過、`.json` 須 `json.load` 通過（不寫 `__pycache__`）；下限 ≥25／≥5；M36–M38 全咬 ✓ |
 | （ENV-EQ-15/16） | ENV-EQ-15/16 追加（L7/L8）＋35 檔補檔尾換行 | 06:45:30* | 禁空過斷言（`[ true ]`／單行 `true`）；文字檔須以換行結尾（binary 排除）；M39–M46 全咬 ✓（M43 曾抓出 ENV-EQ-16 第一版假綠） |
+| （round J） | Reviewer round J 二審（L4–L10 delta）＋P2-1/P2-2/P3-1..4 修正 | （見下） | 0 P0 / 0 P1 / 2 P2 / 5 P3、可交付、不需再開一輪；P2-1 find 加 gitignore 排除（M31 仍咬／M49 不誤報）、P3-1 死碼改 `sed` 剝註解（M50 咬） |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -333,6 +334,32 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 **根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
 **對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
 
+## Reviewer round J（L4–L10 delta 二審）＋修正
+
+**範圍**：`git diff e0e2b5d..b7375bc`（48 檔、+441/−63）。
+**Verdict**：**0 P0 / 0 P1 / 2 P2 / 5 P3**，**可交付（附註）**，**不需再開一輪**（已收斂）。
+reviewer 確認：這批 delta **全部是探針新增或嚴格化、無任何條件放寬**；Round I 的 7 條修正逐條完好未被回退；
+35 檔補換行經 diff 檢視確認「只多一個換行、內容零變動」；`install.sh`／`lib/install/*.sh` 為純註解、
+`run_pipeline.sh` 補引號對 `US-101` 這類 id 輸出不變（行為不變）。
+
+### 已修（P2-1 / P2-2 / P3-1..P3-4）
+
+| 項 | 內容 | 修法 |
+| --- | --- | --- |
+| P2-1 | `ENV-EQ-12` 的 `find` **非 hermetic**：不讀 gitignore，若開發者跑過 `./install.sh`，`.agents/tree_monstor/tests/*.bats` 會被當 orphan → 偽紅 | `find` 追加排除 `./.agents/*`、`./.claude/*`、`./.pi/*`、`./tmp/*`、`./.venv/*`；**仍保留 `find`**（不用 `git ls-files`）才能抓到未追蹤的 orphan。實證：M31（未追蹤 `scripts/orphan.bats`）仍紅 ✓、M49（`.agents/tree_monstor/tests/x.bats`）不誤報 ✓ |
+| P2-2 | `ENV-EQ-15` 文件措辭過寬（寫「任何空過斷言」，實作只咬 3 種字面） | 收斂 `docs/install-reference.md` 措辭並註明 `\|\| true` 等變體**不在鎖內**（實測 `.bats` 內有 **49 處** `\|\| true`，硬鎖會誤殺） |
+| P3-1 | `ENV-EQ-15` 的 `\| grep -v '#'` 是**死碼**（anchored pattern 不可能命中含 `#` 的行） | 改成 `sed 's/#.*$//'` 先剝行尾註解再比對 → **順帶嚴格化**：`true  # 待補` 現在也咬（M50 紅 ✓） |
+| P3-2 | binary fixture 數「6」與 M46「binary=8」矛盾 | 統一為 **8**（docx×2／png×2／pdf×2／pptx×2）；6 是「同時也缺檔尾換行」的數 |
+| P3-3 | 「全 repo 46 支 .bats」 | 更正為 **44**（`git ls-files '*.bats'` 與 `find` 皆 44） |
+| P3-4 | trust-log rows 66–69 時間戳非單調、row 67 精確時間無 `*` | rows 66/68 估算值改 `~06:35`／`~06:40`，row 67 改 `~06:36`（`*` 只標 git log 實值） |
+
+### 未修（report-only，reviewer 明示不阻斷）
+
+- **P3-5**：`ENV-EQ-14` 的 py/json 兩段 ~15 行 Python heredoc 逐字重複 → 可參數化；未動（避免為美觀改動已驗證的鎖）。
+
+**Gate 2**：lint 128 檔 0 issue、shellcheck 23 檔 rc=0。
+**Gate 3**：`bats tests/` = **573 ok / 0 not ok**（`/tmp/t47-gate3-l11.txt`）。
+
 ## ENV-EQ-15/16 追加（L7/L8 擴量，trust 期間）— 空過斷言、檔尾換行
 
 ### L7：一條「永遠不可能失敗」的空過測試
@@ -351,7 +378,7 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 `>>` 直接黏在最後一行而靜默沒套上**（`[ true ]` 變成 `}    [ true ]`，不符 `^…$` 而未被鎖抓到）。
 
 已把 35 個文字檔補上檔尾換行（**逐檔等價驗證：去掉尾端換行後內容與原檔完全相同**）；
-6 個 binary fixture（docx/png/pptx）以 NUL 嗅探排除、不動。
+8 個 binary fixture（docx×2、png×2、pdf×2、pptx×2）以 NUL 嗅探排除、不動；其中 6 個同時也缺檔尾換行。
 
 新增 **`ENV-EQ-16`**：每個被追蹤的文字檔必須以換行結尾。
 
@@ -427,7 +454,8 @@ CLI 腳本、fixture JSON），寫壞了**不會有任何東西擋**。實測現
 ## ENV-EQ-12 追加（L4 擴量，trust 期間）
 
 把 TMO-047 的 bug 類別**一般化**：不只 skill-local 探針，而是**任何**「存在但沒有任何 CI 步驟跑到」的 `.bats`
-都是假綠。量測：全 repo `.bats` 共 46 支，只有兩條執行路徑——`bats tests/`（**僅頂層、非遞迴**）與
+都是假綠。量測：全 repo `.bats` 共 44 支（先前記 46 為誤植，見 reviewer round J P3-3；
+`git ls-files '*.bats'` 與 `find` 皆 44），只有兩條執行路徑——`bats tests/`（**僅頂層、非遞迴**）與
 skill 自帶探針那一步；量測結果**無 orphan**（現況健康），但沒有任何鎖擋未來漂移。
 
 新增 `ENV-EQ-12`（`tests/env-equivalence.bats`）：列舉全 repo `.bats`（排除 `.git/`），逐檔要求落在

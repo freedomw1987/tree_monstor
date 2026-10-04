@@ -566,7 +566,12 @@ printf "%s\n" "${a[@]}"'
 # 任何落在其他位置的 `.bats` 都不會被 CI 執行 → 改壞了沒人擋（假綠）。
 @test "ENV-EQ-12: no orphan .bats outside the two CI execution paths" {
   local all orphan=""
-  all=$(cd "$REPO_ROOT" && find . -name '*.bats' -not -path './.git/*' | sed 's|^\./||' | sort)
+  # 排除 gitignored 的本機副本樹（.agents/ .claude/ .pi/ tmp/ .venv/）——它們不是 repo 內容，
+  # 但 find 不讀 gitignore；不排除會讓「跑過 ./install.sh 的開發者」看到偽紅（reviewer round J P2-1）。
+  # 註：仍用 find（而非 git ls-files）才能抓到**未追蹤**的 orphan（例：scripts/orphan.bats）。
+  all=$(cd "$REPO_ROOT" && find . -name '*.bats' \
+    -not -path './.git/*' -not -path './.agents/*' -not -path './.claude/*' \
+    -not -path './.pi/*' -not -path './tmp/*' -not -path './.venv/*' | sed 's|^\./||' | sort)
   [ -n "$all" ] || { echo "FAIL: 找不到任何 .bats（repo root 指錯？）" >&2; return 1; }
   local f n=0
   for f in $all; do
@@ -691,7 +696,9 @@ sys.exit(1 if bad else 0)
   for f in $files; do
     n=$((n + 1))
     local h
-    h=$(grep -nE '^[[:space:]]*(\[\[?[[:space:]]*true[[:space:]]*\]\]?|true|:)[[:space:]]*$' "$REPO_ROOT/$f" | grep -v '#' || true)
+    # 先剝掉行尾註解再比對（原本的 `| grep -v '#'` 是死碼：anchored pattern 不可能命中含 `#` 的行），
+    # 這樣連 `true  # 待補` 這種也抓得到。
+    h=$(sed 's/#.*$//' "$REPO_ROOT/$f" | grep -nE '^[[:space:]]*(\[\[?[[:space:]]*true[[:space:]]*\]\]?|true|:)[[:space:]]*$' || true)
     [ -z "$h" ] || hits="$hits
 $f:$h"
   done
