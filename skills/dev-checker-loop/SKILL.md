@@ -38,7 +38,7 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 
 ### Step 1：dev 領取任務（Module 級派工）
 
-- **動作+為什麼**：dev Subagent 從 `docs/backlog.md` 領 PENDING 任務、讀 `docs/system-design.md` 拿 Module 綁定、更新為 `in_progress`；避免搶任務 + Module 平行派工
+- **動作+為什麼**：dev Subagent 從目標專案的 backlog（`docs/backlog.md`）領任務、取 system-design 拿 Module 綁定、更新 `in_progress`；避免搶任務 + 平行派工
 - **產出+證據**：backlog 狀態更新 + Module 邊界記錄；對應 row 標記 + dev 持有 Module 清單
 
 ### Step 2：dev 開發（含 Module 邊界）
@@ -112,9 +112,9 @@ dev-checker-loop v2.2 起支援 **Module 級派工**。Module 定義在 `docs/sy
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.5 | 2026-10-04 | Step 1「動作+為什麼」措辭精確化：明示 backlog / system-design 屬「目標專案」、改寫為非跨目錄讀取式語法；主檔 127 行不變 | TMO-026：V03.6 探針 retarget 附帶修正；V03 Reviewer 二審 approve-with-comments / 0 P0-P1 |
+| v2.4 | 2026-09-26 | +可用性偵測（Step 0）+校驗前/後 jev 快篩與驗證 +escalate 落報告 +術語對齊 +輕量路徑 +6 條新規則；主檔 148 → 127 行 | 用戶決策：全面整合 jev-use；Reviewer ⚠️ approve with suggestions（3 必加 + 3 建議全納入）|
 | v2.3 | 2026-09-26 | 自包含化：搬入 `examples/checklist.md`（原 monorepo 範例總目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/checklist.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
-| v2.2 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
-| v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 9：LLM 注意力優化 + skill 獨立搬動 |
 
 ---
 ---

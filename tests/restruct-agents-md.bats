@@ -28,7 +28,7 @@ load 'helpers/test-env'
   done
 }
 
-@test "RESTRUCT-AGENTS-MD: 萬事原則 (soul) preserved" {
+@test "RESTRUCT-AGENTS-MD: core principles (soul) preserved" {
   local f="$REPO_ROOT/AGENTS.md"
   # Key phrases from the soul that must NOT be lost
   for phrase in "用戶好伙伴" "誠實" "負責任" "有承擔" "Think Big"; do
@@ -57,7 +57,7 @@ load 'helpers/test-env'
   done
 }
 
-@test "RESTRUCT-AGENTS-MD: 變動歷史 section exists" {
+@test "RESTRUCT-AGENTS-MD: change history section exists" {
   local f="$REPO_ROOT/AGENTS.md"
   grep -q "^## 變動歷史" "$f" || {
     echo "FAIL: AGENTS.md should have ## 變動歷史 section" >&2

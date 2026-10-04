@@ -34,6 +34,10 @@
 | TMO-023 | 修 v2.1-jev-poc C 類探針 bug（8 紅：sandbox baseline fixture / flaky batch fixture / 缺 `run` / `ls` dotfile 假斷言）| P0 | 5 | done (2026-10-04) | — |
 | TMO-024 | README 精簡（288→90 行）+ 導向 AGENTS.md / skills + 新增 docs/install-reference.md | P2 | 3 | done (2026-10-04) | — |
 | TMO-025 | 修 B 類 12 紅：pptx 文字改用 python-pptx（修靜默假成功）+ 裝 poppler + 新探針 AC-E21/E22 + CI 依賴 | P1 | 5 | done (2026-10-04) | TMO-023 |
+| TMO-026 | 修 A 類 12 紅：探針 retarget 到 skill 拆檔後的新家（+3 條 CJK 靜默假綠探針復活）| P1 | 5 | done (2026-10-04) | TMO-025 |
+| TMO-027 | 廢棄守門：dav-planner §2.7 用戶背景收集（用戶已決策廢除）5 條探針轉負向斷言 | P2 | 3 | pending | TMO-026 |
+| TMO-028 | `skills/dav-wiki/SKILL.md` 151 → ≤150 行（走 V03 + 行數預檢）| P2 | 2 | pending | TMO-026 |
+| TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI + 探針「缺 venv 就大聲紅」| P1 | 3 | pending | TMO-026 |
 
 ---
 
@@ -761,4 +765,54 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
   2. `skills/dav-wiki/SKILL.md` **151 行 > 150**（`tests/dav-wiki.bats:38` 已紅）+ `:95`「未裝時降級」與 `require_tool` 硬 `exit 4` 矛盾（需走 V03）
   3. bats 1.14.0 對「`@test` 名含 CJK」會靜默不執行：實測 3 條（`restruct-agents-md.bats` ×2、`restruct-dav-planner.bats` ×1），宣告 498 / 實跑 495；3 條斷言本身若跑會綠
 - P2（report-only）：pptx 表格/群組文字未抽、CI badge owner 錯誤、sibling 死引用 8 腳本、scan.pdf 重建指令 macOS-only、`$var緊鄰全角字元` 未有 repo 級靜態守衛
-- 未 commit：工作區同時有 TMO-023 / TMO-024 / TMO-025 三輪變更，建議分開 commit（尚未執行）
+- 未 commit：工作區同時有 TMO-023 / TMO-024 / TMO-025 三輪變更，建議分開 commit（**已於 2026-10-04 分成 3 個 commit**：`c2b036c` TMO-023 / `b3a9b49` TMO-024 / `5ed097e` TMO-025）
+
+---
+
+## TMO-026 詳細（A 類 12 紅 retarget + 3 條 CJK 假綠探針復活）
+
+### 病因（兩類，刻意分開處理）
+
+1. **探針落後重構**（12 紅）：v2.1–v2.9 各 skill 依「任務導航 + 子檔拆分」把內文從 `SKILL.md` 搬進同 skill 子檔
+   （`backlog-rules.md` / `runner-cheatsheet.md` / `jev-oracle.md` / `CHANGELOG.md`），探針仍盯舊址找舊字串 → 一片紅。
+   **處理原則：retarget 探針**（指向事實的新家 + 鎖住「主檔留有指標」），**不是**把內文搬回去迎合探針。
+2. **探針根本沒在跑**（3 條）：`bats` 1.14.0 對「`@test` 名含 CJK」靜默不執行（宣告 498 / 實跑 495）。
+   它們是「不在報告裡的守門人」＝最安靜的債。改名為 ASCII 使其真的執行且真的通過 → **宣告 498 == 實跑 498**。
+
+### 處理範圍
+
+| 檔 | 做什麼 |
+| --- | --- |
+| `tests/dav-planner-ac-templates.bats` | `AC 範本生成 SOP` → `backlog-rules.md`（+ 主檔指標斷言）|
+| `tests/regression-guard-watch-mode.bats` | runner 對照表 → `runner-cheatsheet.md`；CROSS 改**段落級** awk 指標斷言 + 加 `gates.json` 斷言 |
+| `tests/restruct-dav-planner.bats` | `v2.0` → `CHANGELOG.md` + **版本漂移鎖**；1 條 CJK 名改 ASCII |
+| `tests/restruct-regression-guard.bats` | 同上（漂移鎖）；TTY：主檔斷 `watch|interactive`、子檔斷 `/dev/null` |
+| `tests/v2.1-jev-poc.bats` | SKILL-b/d/M6-e/M6.1-e → `jev-oracle.md` + `CHANGELOG.md`（+ 主檔指標斷言）|
+| `tests/restruct-agents-md.bats` | 2 條 CJK 名改 ASCII（改前未執行）|
+| `skills/dev-checker-loop/SKILL.md` | `:41` 措辭精確化（明示「目標專案」→ 清 zero-cross-read 命中）；變動歷史表刷新 v2.5/v2.4/v2.3 |
+| `skills/dev-checker-loop/CHANGELOG.md` | 新增 v2.5 列 |
+
+### 驗收證據
+
+- Gate 1（紅→綠）：逐檔 before/after = 1→0 / 3→0 / 2→1 / 2→0 / 1→0 / 4→0 / 0→0（後者 executed 8→10）；**7 次突變**證明探針會咬人
+  （搬走 4 個子檔 → 3/1/3/3 紅；指標移出段落 → 1 紅；版本不一致 → 2 紅；拿掉 `gates.json` 字串 → 1 紅；全部還原後回綠）
+- Gate 2：`bats` 逐檔 0 parse warning；`markdownlint` `SKILL.md` MD013 **2 → 1**（剩 `:51` 為既有未觸碰）；無 `.sh` 改動 → shellcheck N/A
+- Gate 3：`bats tests/` **18 not ok / 477 ok（實跑 495）→ 6 not ok / 492 ok（實跑 498）**；集合差 **已修 12 / 新增 0**
+- Gate 4（V03/V03.6 二審 2 輪）：兩輪均 **approve-with-comments / risk low / 0 P0-P1**；第 1 輪逐條附行號驗證 11 個新家字串存在；第 2 輪判「真強化、非化妝」＋「改寫為實質修正、非字面規避」
+
+### 已知問題（本輪未處理，進 backlog）
+
+- `bats tests/` 仍有 **6 紅**：5 條 → TMO-027（dav-planner §2.7 廢棄條款）、1 條 → TMO-028（`dav-wiki/SKILL.md` 151 行）
+- P2-1：`restruct-zero-cross-read.bats` 的 `SKILLS` 陣列漏 `skills/ask-me/SKILL.md`（`:10`/`:36` 真實命中 `讀 \`docs/need-you-help.md\``）；`dev-checker-loop/module-rules.md:23,39` 同型。**刻意不修**（現加會製造新紅，違反本輪「0 新增」）→ 應與 reword 同批
+- P2-2：`regression-guard/CHANGELOG.md:11,12` 兩列同為 `v2.10`（重複版本號）
+- P2-3：③ 的「主檔→子檔指標」斷言仍為 whole-file grep（與 ① 同類弱點）
+- P2-4：`restruct-dev-checker-loop.bats:44-56` 用 OR 分支（v2.x 列 **或** `CHANGELOG.md` 指標）→ **不會**抓到二審抓到的「主檔陳舊型態」；建議移植漂移鎖
+- P2-5：`docs/sop/gates.json:62` / `docs/sop/handbook/2.3-execution.md:43` 仍指向 TMO-009 階段 7 已改名的「測試指令執行規範」章節
+
+### 反思
+
+- **「紅燈」有三種病：探針過期 / 守著廢棄功能 / 產品缺陷**；本輪只該治第一種。若把三者一起「弄綠」，會把「廢棄功能的守門人」偷刪（所以 TMO-027 需用戶決策：刪除 or 轉負向斷言）
+- **retarget ≠ 放寬**，界線在「有沒有同時鎖住主檔→子檔指標」；沒有這一步，子檔被刪/改名時主檔仍漂漂亮亮
+- **最安靜的債是沒在跑的探針**：紅燈會叫人，假綠不會；`宣告 == 實跑` 是可稽核的守門指標
+- **二審第二次咬到作者自己**：引述自家規則字串（`讀 \`docs/…\``）而踩線 → 逼出「修正 vs 字面規避」判準（動詞是否移除 / 資訊是否隱藏 / 有無不可見字元）
+- **未質問的根因**：重構 skill 的流程裡缺「探針同步」這一步；本輪只是事後補。建議 V03 檢查清單可加「本次是否搬動了被探針斷言的內文」

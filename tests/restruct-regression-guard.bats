@@ -43,9 +43,20 @@ load 'helpers/test-env'
 
 @test "RESTRUCT-REGRESSION-GUARD: change history with v2.0 reference" {
   local skill="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  local cl="$REPO_ROOT/skills/regression-guard/CHANGELOG.md"
   assert_file_contains "$skill" "## 變動歷史"
-  awk '/^## 變動歷史/,EOF' "$skill" | grep -qE "v2\.0" || {
-    echo "FAIL: 變動歷史 should reference v2.0" >&2
+  # v2.9 拆檔：主檔只留最近 3 條，完整歷史在 CHANGELOG.md；v2.0 應在完整歷史裡
+  assert_file_contains "$skill" "CHANGELOG.md"
+  # 主檔仍須真的列出最近版本列，且最新的版本須與 CHANGELOG 一致（防漂移）
+  local v_skill v_cl
+  v_skill=$(awk '/^## 變動歷史/{flag=1} flag' "$skill" | grep -oE '^\| v[0-9]+\.[0-9]+' | head -1 | tr -d '| ')
+  v_cl=$(grep -oE '^\| v[0-9]+\.[0-9]+' "$cl" | head -1 | tr -d '| ')
+  [ -n "$v_skill" ] && [ "$v_skill" = "$v_cl" ] || {
+    echo "FAIL: 主檔最新版本($v_skill) 與 CHANGELOG($v_cl) 不一致" >&2
+    return 1
+  }
+  grep -qE "v2\.0" "$cl" || {
+    echo "FAIL: CHANGELOG.md should reference v2.0" >&2
     return 1
   }
 }
@@ -72,13 +83,15 @@ load 'helpers/test-env'
 
 @test "RESTRUCT-REGRESSION-GUARD: TTY fail-fast rule preserved" {
   local skill="$REPO_ROOT/skills/regression-guard/SKILL.md"
-  # The TTY/watch mode rule is the most important fail-fast guard
-  grep -qF "/dev/null" "$skill" || {
-    echo "FAIL: should document '/dev/null' TTY fix" >&2
-    return 1
-  }
+  local cheat="$REPO_ROOT/skills/regression-guard/runner-cheatsheet.md"
+  # 主檔保留「禁用 watch / interactive」條款
   grep -qiE "watch|interactive" "$skill" || {
     echo "FAIL: should mention watch/interactive mode" >&2
+    return 1
+  }
+  # v2.9 拆檔：`/dev/null` 通用保險搬到 runner-cheatsheet.md
+  grep -qF "/dev/null" "$cheat" || {
+    echo "FAIL: runner-cheatsheet.md should document '/dev/null' TTY fix" >&2
     return 1
   }
 }

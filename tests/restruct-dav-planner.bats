@@ -42,9 +42,20 @@ load 'helpers/test-env'
 
 @test "RESTRUCT-DAV-PLANNER: change history section with v2.0 reference" {
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
+  local cl="$REPO_ROOT/skills/dav-planner/CHANGELOG.md"
   assert_file_contains "$skill" "## 變動歷史"
-  awk '/^## 變動歷史/,EOF' "$skill" | grep -qE "v2\.0" || {
-    echo "FAIL: 變動歷史 should reference v2.0" >&2
+  # v2.2 拆檔：主檔只留最近 3 條，推到 CHANGELOG.md；v2.0 應在完整歷史裡
+  assert_file_contains "$skill" "CHANGELOG.md"
+  # 主檔仍須真的列出最近版本列，且最新的版本須與 CHANGELOG 一致（防漂移）
+  local v_skill v_cl
+  v_skill=$(awk '/^## 變動歷史/{flag=1} flag' "$skill" | grep -oE '^\| v[0-9]+\.[0-9]+' | head -1 | tr -d '| ')
+  v_cl=$(grep -oE '^\| v[0-9]+\.[0-9]+' "$cl" | head -1 | tr -d '| ')
+  [ -n "$v_skill" ] && [ "$v_skill" = "$v_cl" ] || {
+    echo "FAIL: 主檔最新版本($v_skill) 與 CHANGELOG($v_cl) 不一致" >&2
+    return 1
+  }
+  grep -qE "v2\.0" "$cl" || {
+    echo "FAIL: CHANGELOG.md should reference v2.0" >&2
     return 1
   }
 }
@@ -90,7 +101,7 @@ load 'helpers/test-env'
   assert_file_contains "$skill" "補充 5 維度"
 }
 
-@test "RESTRUCT-DAV-PLANNER: V01/V02/V03 紀律 referenced" {
+@test "RESTRUCT-DAV-PLANNER: V01/V02/V03 discipline referenced" {
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
   for v in "V01" "V02" "V03"; do
     grep -qF "$v" "$skill" || {

@@ -7,6 +7,7 @@
 #
 #   1. skills/dav-planner/SKILL.md   (the skill body)
 #        - section 4.3.2 AC column slim rule
+#   1b. skills/dav-planner/backlog-rules.md (v2.2 拆檔)
 #        - section 4.6  AC template generation SOP
 #   2. docs/prd/01-dav-planner-ac-templates.md  (the PRD)
 #   3. docs/ac/                                     (template files)
@@ -40,8 +41,11 @@ setup() {
 
 @test "SKILL: dav-planner documents HTML generation SOP (v1.8)" {
   local f="$REPO_ROOT/skills/dav-planner/SKILL.md"
-  # v2.0 restructured: rule may be in 「Backlog 規則」 section
-  assert_file_contains "$f" "AC 範本生成 SOP"
+  local rules="$REPO_ROOT/skills/dav-planner/backlog-rules.md"
+  # v2.2 拆檔：§4.6「AC 範本生成 SOP」內文搬到 backlog-rules.md，主檔只留指標 + 產出格式
+  assert_file_contains "$rules" "AC 範本生成 SOP"
+  # 主檔仍須留下進子檔的指標（可達可尋）
+  assert_file_contains "$f" "backlog-rules.md"
   assert_file_contains "$f" "docs/ac/"
   grep -qE "(<US-ID>|US-XXX)\.html" "$f" || {
     echo "FAIL: SKILL.md should reference <US-ID>.html or US-XXX.html" >&2

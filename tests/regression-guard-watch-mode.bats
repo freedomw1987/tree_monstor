@@ -3,12 +3,14 @@
 # tests/regression-guard-watch-mode.bats
 #
 # Regression tests for the "test commands must disable watch / interactive
-# mode" rule (added v1.3). Ensures the rule is documented in all three places
+# mode" rule (added v1.3). Ensures the rule is documented in all places
 # that an agent reads when running Gate 3:
 #
-#   1. skills/regression-guard/SKILL.md  (the skill body)
-#   2. docs/sop/gates.json               (Gate 3 definition, single source)
-#   3. docs/sop/handbook/2.3-execution.md (the human-readable explanation)
+#   1. skills/regression-guard/SKILL.md      (the skill body: 規則條款)
+#   2. skills/regression-guard/runner-cheatsheet.md (v2.9 拆檔: runner 對照表 +
+#      Fail-fast 自檢 + `< /dev/null` 保險)
+#   3. docs/sop/gates.json                   (Gate 3 definition, single source)
+#   4. docs/sop/handbook/2.3-execution.md    (the human-readable explanation)
 #
 # If any of these drop the rule, an agent may invoke a watch-mode test runner
 # and freeze the session (the symptom that motivated this rule: the
@@ -24,24 +26,32 @@ setup() {
 # ---------- regression-guard SKILL.md ----------
 @test "SKILL: regression-guard documents the watch-mode rule" {
   local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  local cheat="$REPO_ROOT/skills/regression-guard/runner-cheatsheet.md"
   # TMO-009 stage 7: wording changed from 測試指令執行規範 to TTY fail-fast
   assert_file_contains "$f" "TTY fail-fast"
   assert_file_contains "$f" "watch"
   assert_file_contains "$f" "interactive"
-  assert_file_contains "$f" "vitest run"
-  assert_file_contains "$f" "jest --ci"
-  assert_file_contains "$f" "< /dev/null"
+  # v2.9 拆檔：runner 具體指令對照表搬到 runner-cheatsheet.md
+  assert_file_contains "$cheat" "vitest run"
+  assert_file_contains "$cheat" "jest --ci"
+  assert_file_contains "$cheat" "< /dev/null"
 }
 
 @test "SKILL: regression-guard has a fail-fast self-check section" {
   local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
-  # TMO-009 stage 7: section still labeled "Fail-fast 自檢"
+  local cheat="$REPO_ROOT/skills/regression-guard/runner-cheatsheet.md"
+  # TMO-009 stage 7: 主檔保留「TTY fail-fast」規則條
   LC_ALL=C grep -qE "Fail-fast" "$f" || {
     echo "FAIL: missing Fail-fast section" >&2
     return 1
   }
-  grep -qF "Watch Usage" "$f" || {
-    echo "FAIL: missing Watch Usage string" >&2
+  # v2.9 拆檔：自檢段（含 Watch Usage 症狀）在 runner-cheatsheet.md
+  grep -qF "Fail-fast" "$cheat" || {
+    echo "FAIL: missing Fail-fast self-check in runner-cheatsheet.md" >&2
+    return 1
+  }
+  grep -qF "Watch Usage" "$cheat" || {
+    echo "FAIL: missing Watch Usage string in runner-cheatsheet.md" >&2
     return 1
   }
 }
@@ -74,9 +84,17 @@ PY
 }
 
 # ---------- Cross-consistency ----------
-@test "CROSS: all three documents agree on the < /dev/null universal fallback" {
-  local skill="$REPO_ROOT/skills/regression-guard/SKILL.md"
+@test "CROSS: < /dev/null fallback reachable from all four documents" {
+  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+  local cheat="$REPO_ROOT/skills/regression-guard/runner-cheatsheet.md"
+  local gates="$REPO_ROOT/docs/sop/gates.json"
   local handbook="$REPO_ROOT/docs/sop/handbook/2.3-execution.md"
-  assert_file_contains "$skill" "< /dev/null"
+  # v2.9 拆檔：主檔須在「TTY fail-fast 對照表」段落內留指標（不可只是別處順帶提及）
+  awk '/^## .*TTY fail-fast/{flag=1; next} flag && (/^## /||/^---/){exit} flag' "$f" | grep -qF "runner-cheatsheet.md" || {
+    echo "FAIL: SKILL.md TTY fail-fast section should point at runner-cheatsheet.md" >&2
+    return 1
+  }
+  assert_file_contains "$cheat" "< /dev/null"
+  assert_file_contains "$gates" "< /dev/null"
   assert_file_contains "$handbook" "< /dev/null"
 }

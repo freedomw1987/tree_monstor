@@ -327,11 +327,14 @@ print('OK: module imports, _is_playwright_available=False')
   assert_file_contains "$f" "## Jev Oracle 補充"
 }
 
-@test "SKILL-b: SKILL.md chapter mentions 3 backends (ac_aware/mock/playwright)" {
-  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+@test "SKILL-b: Jev Oracle chapter mentions 3 backends (ac_aware/mock/playwright)" {
+  # v2.9 拆檔：Jev 章節內文搬到 jev-oracle.md（主檔只留指標）
+  local f="$REPO_ROOT/skills/regression-guard/jev-oracle.md"
+  # 主檔仍須留下進子檔的指標（可達可尋）
+  assert_file_contains "$REPO_ROOT/skills/regression-guard/SKILL.md" "jev-oracle.md"
   for backend in ac_aware mock playwright; do
     assert_file_contains "$f" "$backend" || {
-      echo "FAIL: SKILL.md Jev chapter should mention $backend" >&2
+      echo "FAIL: jev-oracle.md should mention $backend" >&2
       return 1
     }
   done
@@ -348,8 +351,9 @@ print('OK: module imports, _is_playwright_available=False')
   done
 }
 
-@test "SKILL-d: SKILL.md v2.2 changelog entry exists" {
-  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+@test "SKILL-d: v2.2 changelog entry exists" {
+  # v2.9 拆檔：主檔只留最近 3 條 → 完整歷史（含 v2.2 / TMO-013）在 CHANGELOG.md
+  local f="$REPO_ROOT/skills/regression-guard/CHANGELOG.md"
   assert_file_contains "$f" "v2.2"
   assert_file_contains "$f" "TMO-013"
 }
@@ -454,11 +458,13 @@ print('OK: FixProposal has 3 conf fields')
   assert_file_contains "$f" "|| M4_RC="
 }
 
-@test "M6-e: SKILL.md has M6 fix-loop section" {
-  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+@test "M6-e: Jev Oracle has M6 fix-loop section" {
+  # v2.9 拆檔：M6 補充在 jev-oracle.md；TMO-016 紀錄在 CHANGELOG.md
+  local f="$REPO_ROOT/skills/regression-guard/jev-oracle.md"
+  local cl="$REPO_ROOT/skills/regression-guard/CHANGELOG.md"
   assert_file_contains "$f" "修正循環補充"
   assert_file_contains "$f" "JEV_FIX_PROPOSAL"
-  assert_file_contains "$f" "TMO-016"
+  assert_file_contains "$cl" "TMO-016"
 }
 
 @test "M6-f: examples.md has fix proposal example" {
@@ -531,11 +537,13 @@ print('OK: FixProposal has 3 conf fields')
   assert_file_contains "$f" "fix_proposal_v2.py"
 }
 
-@test "M6.1-e: SKILL.md v2.4 has LLM Relay section" {
-  local f="$REPO_ROOT/skills/regression-guard/SKILL.md"
+@test "M6.1-e: Jev Oracle v2.4 has LLM Relay section" {
+  # v2.9 拆檔：M6.1 補充在 jev-oracle.md；TMO-017 紀錄在 CHANGELOG.md
+  local f="$REPO_ROOT/skills/regression-guard/jev-oracle.md"
+  local cl="$REPO_ROOT/skills/regression-guard/CHANGELOG.md"
   assert_file_contains "$f" "M6.1 修正循環補充"
   assert_file_contains "$f" "LLM Relay"
-  assert_file_contains "$f" "TMO-017"
+  assert_file_contains "$cl" "TMO-017"
 }
 
 @test "M6.1-f: examples.md has v2 LLM relay example" {
