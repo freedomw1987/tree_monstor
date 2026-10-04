@@ -47,6 +47,7 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `3d04890` | round C 修正 | 03:36 | P1-1 對帳（`docs/prd/03:104` 是**移除**已廢除引用，非麵包屑）；P2-1 手改口徑＝12 檔 / 15 呼叫點 / 16 處替換；P2-2 `refute_file_body_contains` 收窄為「`## 變動歷史` 章節」；P2-3 MLG-8 去行首錨＋`Linting: ≥1 file`；P2-4 補放寬申報；P2-5 CHANGELOG 127→129；P2-6 DOCS-REDUCE-007 逐根存在檢查 |
 | `07291eb` | TMO-041 追加（L3 擴量） | 04:33 | `ENV-EQ-8`：`scripts/ci` 護欄腳本**自動列舉**（孤兒鎖 → 紅）＋每個 `lint-probe-*.py` 的 `--self-test` 必須自己綠且印出通過標記（掏空 `self_test()` 也會被抓） |
 | `2decece` | 文件校正（L2 重訪） | 04:35 | clean clone 實測 44 條紅（原寫 40＋1）→ 校正；NYH-4/5 決策票；backlog TMO-035/040 狀態改「待決（NYH-4/5）」。（原寫 `7115cc8`，該 commit 已 amend 為 `2decece`，本輪更正） |
+| `ea58822` | reviewer round F 修正 | 05:28 | P2-1..6＋P3-1..7（`ENV-EQ-10` 反向鎖加嚴＋pattern 自我測試／`ZERO-CROSS-READ` 禁制清單改列舉推導／理由統一／狀態詞定義／TMP-OK 4 行／尾端換行）；新開 TMO-047 |
 | `c686dd4` | 文件對帳（round E） | 05:04 | `7115cc8` → `2decece` commit 對帳；trust-log row 54 |
 | `c9789d4` | reviewer round E 修正 | 05:01 | P1-1 放寬申報補列＋P2-1..10（兩鎖加嚴／`ENV-EQ-9` 宣告數普查＋CJK canary／`ENV-EQ-10` 安裝文件釘版／`excluded -eq 1`／cross-read test 9／安裝文件改釘版）；新增 `scripts/ci/check-skill-size.sh`＋`tests/skill-size-guard.bats`（SSG-1..3）＋ci.yml 該步改自動列舉 |
 | `24b2910` | TMO-038 | 03:55 | poc-bootstrap 探針強化：①遞迴 AST import 掃描＋module→dist 映射＋`PoC-OPTIONAL-DEP` 行內標記（含反向鎖）④helper 名單**自動列舉**（不再硬編 2 個，M6b 實證舊規則不咬）⑤新增 PyYAML 語意 CI 契約斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip） |
