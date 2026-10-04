@@ -3,7 +3,8 @@
 - **日期**：2026-10-04
 - **Backlog ID**：TMO-039（新增 TMO-042 / TMO-043；修正 TMO-029 deliverable 的錯誤歸因）
 - **作者**：pi（david 的 agent）
-- **狀態**：待用戶驗收（第三輪修復已 push，CI run 結果見 §測試驗收證據 → Gate 4）
+- **狀態**：**已驗收（2026-10-04）**——reviewer round-3 `approve-with-comments`（0 P0 / 0 P1），CI 連續 3 commit 全綠（`37218446930` / `37218923503` / `37219489118`），用戶決策「收在此」，
+  後續護欄強化切票 TMO-044 / TMO-045 排下一輪。
 
 ## 摘要
 
@@ -120,7 +121,7 @@ Gate 2 lint 語法／Gate 3 regression／Gate 4 reviewer 原文回傳）。
    - 預估時間：**約 10–15 分鐘**（push 後全矩陣）。
    - 風險提示：若仍有紅，最可能是 macOS ffmpeg 8 的**其他**已移除旗標（TMO-042）或 apt bats 1.10 行為差異；
      請把紅燈清單給我，我會照同一套「先寫紅探針再修」處理。
-2. 綠燈後：把 TMO-039 收成 `done`（附 run id），並把 TMO-041／TMO-042 排進下一輪。
+2. ~~綠燈後把 TMO-039 收成 `done`~~ **已完成**（`done (2026-10-04)`，附 3 個綠 run id）；TMO-041／TMO-042／TMO-044／TMO-045 排下一輪。
 3. 若要把「本機假綠」徹底關掉：讓 Gate 3 固定跑「拔掉 key/暖快取 + bash 5.x + clean clone」三件套（本輪已手動跑，
    可寫成 `scripts/gate3-ci-parity.sh`）；需要 Docker 才能真的跑 ubuntu 容器。
 
