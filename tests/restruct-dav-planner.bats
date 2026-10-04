@@ -68,20 +68,17 @@ load 'helpers/test-env'
   fi
 }
 
-@test "RESTRUCT-DAV-PLANNER: v1.9 §2.7 user background collection rule preserved" {
+@test "RESTRUCT-DAV-PLANNER: v1.9 section 2.7 retired (not re-introduced)" {
   local skill="$REPO_ROOT/skills/dav-planner/SKILL.md"
-  # v2.0 restructured: header may be "## §2.7" (with § prefix)
-  grep -qF "§2.7" "$skill" || {
-    echo "FAIL: skill should reference §2.7" >&2
-    return 1
-  }
-  # 5 roles
-  for role in "PM/PO" "開發者" "設計師" "業務" "其他"; do
-    grep -qF "$role" "$skill" || {
-      echo "FAIL: §2.7 missing role '$role'" >&2
-      return 1
-    }
+  # v2.1 用戶決策廢除 §2.7 用戶背景收集（見 skills/dav-planner/CHANGELOG.md）→ 不可回流
+  # 用主題級字串而非 §2.7 編號（reviewer P2-2：避免未來合法編號誤紅）
+  refute_file_contains "$skill" "用戶背景收集"
+  refute_file_contains "$skill" "角色詢問"
+  for role in "PM/PO" "業務"; do
+    refute_file_contains "$skill" "$role"
   done
+  # 但「不問對話用戶個人角色」的定位句必須留著
+  assert_file_contains "$skill" "不問對話用戶的個人角色"
 }
 
 @test "RESTRUCT-DAV-PLANNER: v1.8 AC template generation rule preserved" {

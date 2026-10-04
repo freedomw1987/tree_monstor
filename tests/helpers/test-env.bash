@@ -93,6 +93,18 @@ assert_file_contains() {
   fi
 }
 
+# refute_file_contains <path> <substring>
+# 負向斷言：檔案**不得**包含該字串。用於「廢棄守門」——被用戶決策廢除的功能
+# 不得靜默回流（例如 dav-planner §2.7 用戶背景收集，v2.1 已廢除）。
+refute_file_contains() {
+  local p="$1"
+  local needle="$2"
+  if grep -F -q -- "$needle" "$p"; then
+    echo "FAIL: file $p must NOT contain: $needle" >&2
+    return 1
+  fi
+}
+
 # create_existing_claude_skills_dir
 # Pre-populate $TEST_HOME/.claude/skills with two fake user skills plus
 # one that will conflict with the source fixture's `conflict-skill`.

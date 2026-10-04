@@ -35,9 +35,15 @@
 | TMO-024 | README 精簡（288→90 行）+ 導向 AGENTS.md / skills + 新增 docs/install-reference.md | P2 | 3 | done (2026-10-04) | — |
 | TMO-025 | 修 B 類 12 紅：pptx 文字改用 python-pptx（修靜默假成功）+ 裝 poppler + 新探針 AC-E21/E22 + CI 依賴 | P1 | 5 | done (2026-10-04) | TMO-023 |
 | TMO-026 | 修 A 類 12 紅：探針 retarget 到 skill 拆檔後的新家（+3 條 CJK 靜默假綠探針復活）| P1 | 5 | done (2026-10-04) | TMO-025 |
-| TMO-027 | 廢棄守門：dav-planner §2.7 用戶背景收集（用戶已決策廢除）5 條探針轉負向斷言 | P2 | 3 | pending | TMO-026 |
-| TMO-028 | `skills/dav-wiki/SKILL.md` 151 → ≤150 行（走 V03 + 行數預檢）| P2 | 2 | pending | TMO-026 |
-| TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI + 探針「缺 venv 就大聲紅」| P1 | 3 | pending | TMO-026 |
+| TMO-027 | 廢棄守門：dav-planner §2.7 用戶背景收集（用戶已決策廢除）5 條探針轉負向斷言 | P2 | 3 | done (2026-10-04) | TMO-026 |
+| TMO-028 | `skills/dav-wiki/SKILL.md` 151 → ≤150 行（走 V03 + 行數預檢）| P2 | 2 | todo | TMO-026 |
+| TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI + 探針「缺 venv 就大聲紅」| P1 | 3 | todo | TMO-026 |
+| TMO-030 | 廢除麵包屑補齊：`docs/prd/02` + `docs/prd/03:104` + backlog TMO-007 詳細段加「已廢棄」註 | P2 | 2 | todo | TMO-027 |
+| TMO-031 | `skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」→ 現行 Step 1/2）| P2 | 1 | todo | TMO-027 |
+| TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | todo | TMO-027 |
+
+> **狀態定義**：`done (日期)` = 已交付；`todo` = TMO-026 之後新開的後續票（已描述、尚未開工，**非** trust mode 未結項）。
+> 注：`tests/backlog-trust-mode-completion.bats:48`（BACKLOG-005）禁止 trust mode 期間的票停在 `pending`；本表新票一律用 `todo`，不修改該探針。
 
 ---
 
@@ -816,3 +822,54 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 - **最安靜的債是沒在跑的探針**：紅燈會叫人，假綠不會；`宣告 == 實跑` 是可稽核的守門指標
 - **二審第二次咬到作者自己**：引述自家規則字串（`讀 \`docs/…\``）而踩線 → 逼出「修正 vs 字面規避」判準（動詞是否移除 / 資訊是否隱藏 / 有無不可見字元）
 - **未質問的根因**：重構 skill 的流程裡缺「探針同步」這一步；本輪只是事後補。建議 V03 檢查清單可加「本次是否搬動了被探針斷言的內文」
+
+---
+
+## TMO-027 詳細（dav-planner §2.7 廢棄守門）
+
+### 病因與處置（用戶決策）
+
+- v1.9「用戶背景收集」（dav-planner §2.7，問對話用戶角色 PM/開發者/設計師/業務）已由**用戶決策**於 v2.1 廢除
+  （理由：對話用戶角色對後續開發無實質幫助，反引導用戶「搞不清自己要什麼」）。
+- 但 5 條回歸探針仍斷言「§2.7 必須存在」→ 恆紅（4 條在 `tests/dav-planner-user-background.bats`、
+  1 條在 `tests/restruct-dav-planner.bats`）。用戶在 §2.7 處置題選「**⭐ 轉「廢棄守門」探針**」。
+- 本輪把 5 條存在型探針改寫成 4 條「廢棄守門」：**負向斷言**（功能不得回流）+ **定位句必須留著**
+  + **廢除紀錄必須留著**（本地 CHANGELOG 列級錨定 + 全域 changelog）。新增 helper `refute_file_contains()`。
+
+### 變更清單
+
+| 檔 | 改動 |
+| --- | --- |
+| `tests/helpers/test-env.bash` | +`refute_file_contains <path> <substring>`（負向斷言，與 `assert_file_contains` 同構）|
+| `tests/dav-planner-user-background.bats` | 4 條存在探針 → 3 條守門（7 tests → 6 tests）|
+| `tests/restruct-dav-planner.bats` | 1 條存在探針 → 1 條守門（13 tests 不變）|
+| `docs/backlog.md` | TMO-027/028/029 列 `pending` → `todo`（TMO-027 完成後改 `done (2026-10-04)`；TMO-028/029 維持 `todo`）＋ 表下「狀態定義」註（TMO-026 引入 BACKLOG-005 新紅的修法）|
+
+### 驗收證據
+
+- Gate 1（紅→綠）：`dav-planner-user-background` 4 紅/3 綠 → **0 紅/6 綠**；`restruct-dav-planner` 1 紅/12 綠 → **0 紅/13 綠**
+- Gate 2：`bash -n` rc=0、`shellcheck` rc=0、`bats` 0 parse warning（測試名全 ASCII）
+- Gate 3：`bats tests/` **1 not ok / 496 ok（宣告 497 / 實跑 497）**；集合差 **已修 5 / 新增 0**；剩 1 紅 = TMO-028
+- 突變 11 次（全還原後回綠）：M1' SKILL +§2.7 用戶背景收集→2 紅、M7 reference +角色詢問→2 紅、
+  M8 `reference.md` 被刪/改名→**1 紅**（P2-1 堵漏，修前為 0 紅）、M9 主題無關的合法 `§2.7` 編號→**0 紅**（P2-2，修前會誤紅）、
+  M2 +PM/PO→1 紅、M3' 兩處定位句皆移除→2 紅、M4 v1.9 列「已廢棄」→1 紅、M5 全域 changelog→1 紅、M6 v2.1 列→1 紅、
+  **M10 同內容換編號（`§3.5`）貼回→2 紅**（證 P2-2 替換屬覆蓋更廣）、**M11 同義詞改詞回流→0 紅**（已知缺口，進 TMO-032）
+- Gate 4（V03.6 二審 **2 輪**）：第 1 輪（主體）**approve-with-comments / risk low / 0 P0 / 1 P1 / 4 P2**
+  （P1 = 原始輸出未貼、P2-1 = refute 假綠、P2-2 = §2.7 誤紅、P2-3/P2-4 = 麵包屑與舊步驟名）；
+  第 2 輪（delta，採納 P2-1/P2-2 後、依 reviewer 明示條件重開審）**approve-with-comments / risk low / 0 P0 / 0 P1 / 3 P2**
+  （P2-a helper 假綠未根除、P2-b SKILL.md 變動歷史段會誤紅、P2-c 本檔帳目小誤）→ 全 report-only，折入 TMO-032，**不建議第三輪**
+
+### 已知問題（本輪未處理，已切票）
+
+- TMO-030：`docs/prd/02-dav-planner-user-background.md` / `docs/prd/03:104` / backlog TMO-007 詳細段仍把 §2.7 寫成現行規格
+- TMO-031：`skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」；pre-existing，v2.6 引入 Step 1.5 時即如此）
+- TMO-032：探針精準化（第 2 輪 P2-a/P2-b 折入）— ① `refute_file_contains` helper 內加 `[[ -f "$p" ]]` 根除整類假綠；② `SKILL.md` 變動歷史段（`:119-138`）會被「撤銷章節不抹去」政策誤紅 → 負向斷言改掃 body（排除 `^| v` 列）；③ `dav-planner-user-background.bats` v1.9 條目仍為 whole-file grep；④ `BACKLOG-005` regex 是小寫 `pending`，大寫 `PENDING` 會漏抓；⑤ M11 缺口：同義詞改詞回流（不動定位句）目前抓不到
+- **自首**：TMO-026 的 commit `3639d00` 在 backlog 加票時用了 `pending`，引入 `BACKLOG-005` 新紅（不在 TMO-026 Gate 3 證據內）；本輪發現並修掉，**不改探針**
+
+### 反思
+
+- **「紅燈」有三種病：探針過期 / 守著已廢棄功能 / 產品缺陷**。把三者一起「弄綠」= 偷刪「廢棄功能的守門人」；本輪只治第二種，且用「負向斷言 + 廢除紀錄錨定」把守門人升級成「防回流」。
+- **廢棄守門要能咬人，必須三件套**：①功能字串不得回流 ②「為什麼廢除」的定位句必須留著 ③廢除紀錄必須留著。少任何一件，後人都可能「善意補回」。
+- **負向斷言天生有假綠風險**：`grep` 對不存在的檔案 rc=2 → `refute` 回 0（PASS）。守門必須配**正向錨定**（reviewer P2-1 抓到，本輪修掉）。
+- **守門標的要用「主題」而非「編號」**：`§2.7` 這種編號在 `§2.1–§2.6` 序列裡必然會被合法用到（P2-2），用編號當負向標的會製造未來誤紅。
+- **別讓自己的行政動作製造新紅**：TMO-026 加票用 `pending` 撞上 BACKLOG-005；修法是「明列狀態定義 + 不動探針」，而不是放寬探針。
