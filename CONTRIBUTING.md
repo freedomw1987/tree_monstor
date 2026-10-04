@@ -15,7 +15,15 @@ npm install -g markdownlint-cli2
 
 # 安裝媒體工具（AC-A* / AC-W* / AC-V* 等 26 條 ffmpeg 探針依賴，缺了會紅）
 brew install ffmpeg poppler pandoc tesseract
-# 註：ffmpeg 8 已移除 -vsync（用 -fps_mode）；腳本/探針禁用 -vsync，AC-V11 會擋。
+
+# ffmpeg 版本底線：>= 5.1（-fps_mode 自 5.1 起取代 -vsync）
+#   CI 兩平台實測：ubuntu-latest（apt，6.x）、macos-latest（brew，8.x）
+#   檢查方式：bash scripts/ci/check-ffmpeg-version.sh
+#     （①比版本底線 ②用本 repo 真的在用的旗標組合實測能力，缺一即 rc=1）
+# 移除/改名清單（本 repo 已改用新寫法，勿再引入舊旗標）：
+#   -vsync        → 已於 ffmpeg 8 移除，改用 -fps_mode（AC-V11 靜態擋）
+#   （下一個移除的旗標無法預期 → 靠 check-ffmpeg-version.sh 的能力實測 +
+#     tests/wiki-video-audio.bats 的功能探針一起兜底）
 
 # 確認 python3
 python3 --version

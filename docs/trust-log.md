@@ -88,3 +88,6 @@
 | 15 | 02:41 | TMO-045 敏感度證明 | ✅ 清空 cache-fixtures → M6.1-c/M6-g 紅、外層 CLEAN-POC-f 紅（`diff -r` 還原一致）；`git add -f .env`+cache → CLEAN-POC-h 紅（`.env` sha256 前後一致）；「半套 seam」突變 → CLEAN-POC-i 紅 |
 | 16 | 02:44 | ⚠️ 事件：key 洩漏到 session log | 反向驗證時 CLEAN-POC-i 的 FAIL 訊息印出了本機真 `OPENROUTER_API_KEY`（前綴 sk-or-v1-7472…）。未進 repo（只在本地 session log），但**建議輪替該 key**；已記入 need-you-help.md |
 | 17 | 02:47 | TMO-045 Gate 3 | ✅ 全量 528 ok / 0 not ok（+2）；新改 .md markdownlint 0 issues |
+| 18 | 03:12 | reviewer round-A 回來 | agent=reviewer、run=`7ddf5cb8`：**approve-with-comments**（0 P0 / 1 P1 / 5 P2），「可交付用戶驗收？yes」。P1＝CLEAN-POC-i 失敗訊息會外洩真 key（我自報）；P2＝`|| true` 吞 rc、WDC-1 註解可騙、heredoc delimiter/縮排邊界、覆蓋下限太鬆、副檔名三處重複 |
+| 19 | 03:25 | round-A P1/P2 全修完 | 遮罩 `mask_secrets()`（實測輸出 `sk-***MASKED***`）、bats 子行程加驗 rc==0、WDC-1 排除註解行（WDC-2 加註解情境）、delimiter 放寬含 `-`、結尾改 tab-only、`MIN_HEREDOCS` 1→8、副檔名抽 `IMAGE_EXTS`/`AUDIO_EXTS`；新增 H6–H9（H6/H7 皆有「舊碼→紅」證據）；commit `985d1e5`、532/0 |
+| 20 | 03:38 | TMO-042 完成 | `scripts/ci/check-ffmpeg-version.sh`（版本底線 5.1 + 旗標能力實測 + 缺工具）、ci.yml 兩平台新增 step、CONTRIBUTING 移除清單、`tests/ffmpeg-version.bats` FV-1..7（紅→綠：FV-6/FV-7 先紅）；bash 3.2 相容；Gate 3 539/0 |
