@@ -72,3 +72,27 @@ load 'helpers/test-env'
     echo "WARN: trust-mode reflection should contain date 2026-09-23" >&2
   }
 }
+
+@test "DOCS-REDUCE-007: live code/docs must not point at a missing handbook file" {
+  # TMO-034：`docs/sop/handbook/dav-wiki-cleanup.md` 被 TMO-028 刪除後，`wiki-cleanup.sh` 仍引用它。
+  # 此探針掃「活檔案」（skills/ scripts/ .github/ + 根目錄文件），任何指向不存在的
+  # docs/sop/handbook/*.md 都算死引用。（docs/ 內含歷史紀錄，不在掃描範圍。）
+  local refs ref
+  refs="$(grep -rhoE 'docs/sop/handbook/[0-9A-Za-z._-]+\.md' \
+      "$REPO_ROOT/skills" "$REPO_ROOT/scripts" "$REPO_ROOT/.github" \
+      "$REPO_ROOT/CONTRIBUTING.md" "$REPO_ROOT/README.md" "$REPO_ROOT/AGENTS.md" 2>/dev/null \
+      | sort -u || true)"
+  # 正向錨定：掃不到任何引用＝掃描器失效，不可是「安靜地綠」
+  [ -n "$refs" ] || {
+    echo "FAIL: 掃不到任何 handbook 引用，掃描器可能失效" >&2
+    return 1
+  }
+  while IFS= read -r ref; do
+    [ -z "$ref" ] && continue
+    [ -f "$REPO_ROOT/$ref" ] || {
+      echo "FAIL: 活檔案仍指向不存在的 handbook 檔：$ref" >&2
+      grep -rn "$ref" "$REPO_ROOT/skills" "$REPO_ROOT/scripts" 2>/dev/null >&2
+      return 1
+    }
+  done <<< "$refs"
+}
