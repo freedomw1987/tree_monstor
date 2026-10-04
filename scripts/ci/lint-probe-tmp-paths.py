@@ -17,8 +17,7 @@ import sys
 import tempfile
 
 MARK = "TMP-OK"
-# 孤立 /tmp/ 字面：前一字元不是檔名字元（避免誤判 $REPO_ROOT/tmp/）
-# 前一字元不是檔名字元（避免誤判 $REPO_ROOT/tmp/）；同時吃 `/tmp/xxx`、`/tmp`（token 結尾，
+# 孤立 /tmp/ 字面：前一字元不是檔名字元（避免誤判 $REPO_ROOT/tmp/）；同時吃 `/tmp/xxx`、`/tmp`（token 結尾，
 # 例如 `T=/tmp` 之後用 "$T/x" 繞道）與 macOS 的 `/private/tmp/xxx`（reviewer round E P2-2）
 PAT = re.compile(r"(?<![A-Za-z0-9_.\-/$])(?:/private)?/tmp(?![A-Za-z0-9_-])")
 MIN_FILES = 20

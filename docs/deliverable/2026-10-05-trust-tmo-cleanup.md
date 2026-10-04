@@ -47,12 +47,14 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `3d04890` | round C 修正 | 03:36 | P1-1 對帳（`docs/prd/03:104` 是**移除**已廢除引用，非麵包屑）；P2-1 手改口徑＝12 檔 / 15 呼叫點 / 16 處替換；P2-2 `refute_file_body_contains` 收窄為「`## 變動歷史` 章節」；P2-3 MLG-8 去行首錨＋`Linting: ≥1 file`；P2-4 補放寬申報；P2-5 CHANGELOG 127→129；P2-6 DOCS-REDUCE-007 逐根存在檢查 |
 | `07291eb` | TMO-041 追加（L3 擴量） | 04:33 | `ENV-EQ-8`：`scripts/ci` 護欄腳本**自動列舉**（孤兒鎖 → 紅）＋每個 `lint-probe-*.py` 的 `--self-test` 必須自己綠且印出通過標記（掏空 `self_test()` 也會被抓） |
 | `2decece` | 文件校正（L2 重訪） | 04:35 | clean clone 實測 44 條紅（原寫 40＋1）→ 校正；NYH-4/5 決策票；backlog TMO-035/040 狀態改「待決（NYH-4/5）」。（原寫 `7115cc8`，該 commit 已 amend 為 `2decece`，本輪更正） |
+| `c686dd4` | 文件對帳（round E） | 05:04 | `7115cc8` → `2decece` commit 對帳；trust-log row 54 |
 | `c9789d4` | reviewer round E 修正 | 05:01 | P1-1 放寬申報補列＋P2-1..10（兩鎖加嚴／`ENV-EQ-9` 宣告數普查＋CJK canary／`ENV-EQ-10` 安裝文件釘版／`excluded -eq 1`／cross-read test 9／安裝文件改釘版）；新增 `scripts/ci/check-skill-size.sh`＋`tests/skill-size-guard.bats`（SSG-1..3）＋ci.yml 該步改自動列舉 |
 | `24b2910` | TMO-038 | 03:55 | poc-bootstrap 探針強化：①遞迴 AST import 掃描＋module→dist 映射＋`PoC-OPTIONAL-DEP` 行內標記（含反向鎖）④helper 名單**自動列舉**（不再硬編 2 個，M6b 實證舊規則不咬）⑤新增 PyYAML 語意 CI 契約斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip） |
 | `cf3d466` | TMO-041 | 04:30 | 環境等價：新 `tests/env-equivalence.bats`（ENV-EQ-1..7：bash 5.x 必需、**每個本機 bash 版本**都跑 wiki-cleanup 套件、shim 有效性、空陣列×`set -u` 逐版本量測、固定 `/tmp` 殘檔鎖、`gh`/`brew` 執行鎖、網路黑洞＋canary）；`v2.1-jev-poc.bats` 56 處 `/tmp/` → `$BATS_TEST_TMPDIR`；CI 兩平台釘 bats-core `v1.14.0`＋契約斷言 |
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 
 新增檔案：`tests/wiki-dead-code.bats`、`tests/ci-heredoc-check.bats`、`tests/ffmpeg-version.bats`、
+`scripts/ci/check-skill-size.sh`、`tests/skill-size-guard.bats`（round E 追加；round F P2-3 補列）、
 `tests/markdownlint-guard.bats`、`tests/env-equivalence.bats`、`scripts/ci/check-python-heredocs.sh`、
 `scripts/ci/check-ffmpeg-version.sh`、`scripts/ci/lint-probe-tmp-paths.py`、
 `scripts/ci/lint-probe-tools.py`（根目錄 `nowhere-at-all` 殘檔已刪）。
@@ -128,7 +130,8 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
   verdict **OK with notes**：0 P0 / **1 P1 / 10 P2**；P1-1 成立（本檔 V03.6 表漏報 2 條條件式放寬＋
   「唯一一條放寬」不實），P2 全數修完（見「reviewer 修正（round E）」）。
 - **round F**：round E 之後的 delta（ENV-EQ-9/10、SSG-1..3、`check-skill-size.sh`、ci.yml step、文件修正）
-  另開一輪二審；本輪結束時已啟動。
+  run `2e1e2c5c`（凍結快照 `c686dd4`）：**OK with notes（0 P0 / 0 P1 / 6 P2 / 7 P3）**，「可交付用戶驗收？yes」
+  → P 項全修，見「reviewer 修正（round F）」。
 
 ### V03.6 分類與放寬申報
 
@@ -189,7 +192,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | **P1-1** | 本檔 V03.6 申報表漏報 2 條條件式放寬（TMO-041 `CLEAN-POC-f` 排除 `env-equivalence.bats`、TMO-036 `專案端` 行內標記），且寫成「唯一一條放寬」＝**不實**；兩處放寬理由互相矛盾（`poc-clean-clone.bats` 註解說「nested re-run」、trust-log row 45 說「`/tmp` 殘檔＋bats 漂移」） | 申報表補列**放寬②③**（含理由＋補償）、「唯一一條」改為「放寬①」、理由統一為「固定 `/tmp` 殘檔＋bats 版本漂移」；反思段同步改寫 |
 | P2-1 | `lint-probe-tmp-paths.py` 的 `MIN_MARKS=2` 把**註解行**也算進標記數 → 只要留 2 行註解就能過 | 新增 `count_marks()`（只算非註解行）、`MIN_MARKS` 2→3；self-test 加「註解不算」案例 |
 | P2-2 | `/tmp` 樣式要求尾隨 `/` → `T=/tmp` 這種寫法可繞過 | 樣式改為 `(?<![A-Za-z0-9_.\-/$])(?:/private)?/tmp(?![A-Za-z0-9_-])`（token 邊界＋`/private/tmp` 變體）；self-test 加 3 案例 |
-| P2-3 | 兩把鎖的 `targets()` 都漏 `skills/*/tests/*.bats` | 兩個鎖都加該 glob（並在 self-test 覆蓋） |
+| P2-3 | 兩把鎖的 `targets()` 都漏 `skills/*/tests/*.bats` | 兩個鎖都加該 glob（round F P3-1：原寫「並在 self-test 覆蓋」不實——兩支 `self_test()` 都只測 `violations`/`count_marks`，未測 `targets()`；已刪除該不實敘述） |
 | P2-4 | `env-equivalence.bats` 檔頭稱 7 條「全部可證偽」，但 ENV-EQ-4 是**量測** | 檔頭改為「10 件事（9 條可證偽斷言 + 1 條量測 ENV-EQ-4）」，並在該條註明「刻意不斷言（ubuntu 5.2 本機無法驗證）」。**round E 修正後新增 9/10 兩條 → 檔頭為 10 件事** |
 | P2-5 | CJK 名稱的說法無實測支撐；且「宣告 N／實跑 N-3」這類**根因**沒有鎖 | ①措辭改為「TMO-026 當時的舊版 bats 會丟棄；2026-10-05 實測 1.14.0 開頭/尾綴 CJK **都會跑**」；②新增 **ENV-EQ-9**：逐檔普查 `@test` 宣告數 == `bats --count`（引號感知、排除 heredoc 示範碼）＋CJK canary 實跑斷言 |
 | P2-6 | `poc-clean-clone.bats` 的硬編排除沒有計數鎖（排除面可能默默變大） | 加 `excluded` 計數 + `[ "$excluded" -eq 1 ]` 防空過斷言 |
@@ -209,6 +212,31 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 3. **M16 突變首測沒套上**（變異字串 `SKILL_MAX="${SKILL_MAX:-150}"` 與腳本實際 `MAX="${SKILL_MAX:-150}"` 不符，
    `replace` 靜默無效、探針看起來「不咬」）→ 之後所有突變腳本都先 `assert` 命中數再跑（本輪第二次同類自傷）。
 
+## reviewer 修正（round F）
+
+`2e1e2c5c`（凍結快照 `c686dd4`，範圍 `5742bf8..c686dd4`）：**OK with notes（0 P0 / 0 P1 / 6 P2 / 7 P3）**，
+「可交付用戶驗收？yes（附註）」。**限制揭露**：該 reviewer 同樣**無 shell 工具**（證據為引用我方 `/tmp`
+artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
+
+| 編號 | 內容 | 修正 |
+| --- | --- | --- |
+| P2-1 | `poc-clean-clone.bats:170` 的排除理由（「巢狀重跑讓時間翻倍」）與文件（「固定 `/tmp` 殘檔＋bats 漂移」）仍矛盾 → round E 聲稱「理由統一」不實 | 註解改寫為與文件一致的統一理由（含補償：ENV-EQ-5／bats 釘版／`excluded -eq 1`） |
+| P2-2 | `ENV-EQ-10` 反向鎖 pattern 要求 `sudo` → 抓不到本輪被移除的舊寫法 `apt install bats`（鎖比宣稱弱） | pattern 改為 `(sudo\s+)?apt(-get)? install[^#]*\s bats`；並加 **pattern 自我測試**（`sudo apt install bats`／`apt install bats`／`apt-get install -y bats` 必中；`apt install poppler-utils` 不中） |
+| P2-3 | 本檔新增檔案清單漏列 `scripts/ci/check-skill-size.sh`、`tests/skill-size-guard.bats` | 補列 |
+| P2-4 | trust-log row 54（`05:01:42*`）與 rows 52/53 估值時間衝突；row 49 排序早於 row 48 | rows 52/53 標明「時間為估值，非 commit 時間」；row 49 加「補記；工作時間早於 row 48」 |
+| P2-5 | backlog 新狀態詞 `待決（NYH-n）` 不在「狀態定義（單一來源）」內；TMO-046 用 `待做` 而非 `todo` | 定義補 `待決（NYH-n）`；TMO-046 改 `todo` 並移到 TMO-040 之後（ID 遞增） |
+| P2-6 | `ZERO-CROSS-READ` test 9 的禁制清單硬編 5 根（漏 `trust-log.md`／`install-reference.md`／`DESIGN.md`／`system-design.md`…）＝「別再硬編清單」的教訓重演 | 改為**列舉 `docs/*` 推導**（只放行明確的目標專案端 runtime 路徑：`need-you-help.md`／`concepts`／`wiki`／`ac`），並加「推導數 ≥5」防空過；突變驗證：`docs/trust-log.md` 標記豁免 → 紅 ✓、`docs/wiki/…` → 綠 ✓ |
+| P3-1 | 本檔「（並在 self-test 覆蓋）」不實（`targets()` 未自測） | 刪除不實敘述 |
+| P3-2 | `lint-probe-tools.py` 尾端換行「已修」無證據；新檔 `skill-size-guard.bats` 反而缺換行 | 實測三檔尾端位元組後補齊（兩把 py 鎖＋bats 檔） |
+| P3-3 | `lint-probe-tmp-paths.py:22-23` 註解重複片段 | 刪除重複行 |
+| P3-4 | TMP-OK 標記數文件寫 3，實際 4 | trust-log row 45／backlog TMO-041 詳細更正為 4 |
+| P3-5 | `skills/*/tests/*.bats` 從未被 CI 執行 | 開票 **TMO-047**（含兩把鎖反而會掃它們的說明）＋記入已知問題 |
+| P3-6 | `ENV-EQ-9` 普查只掃 `tests/*.bats`（非遞迴） | 於該條加註：未來新增子目錄會「少算 → 大聲紅」，不會靜默 |
+| P3-7 | 本檔變更清單末列不是凍結 HEAD | 補 `c686dd4` 列 |
+
+**本輪自曝（延續）**：P2-6 的修法**首測仍不咬**（邊界 `(/|$)` 抓不到 `` `docs/trust-log.md` `` 後接反引號），
+改成 `([^A-Za-z0-9_.-]|$)` 後才咬——這是本輪第二次「改完要突變驗」的實例（第一次是 M16）。
+
 ## 已知問題
 
 - **⚠️ NYH-1（安全）**：TMO-045 反向驗證時，CLEAN-POC-i 的 FAIL 訊息把本機真 `OPENROUTER_API_KEY`
@@ -227,9 +255,17 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 - **TMO-041 殘餘**：CI 的 ubuntu bash 5.2 行為本機無法驗證（只有 3.2 / 5.3）；本機 `python3` 3.14 vs CI 3.12
   未納入等價探針；`ENV-EQ-8` 的「自我測試沒被掏空」只靠「必須印出 `OK: 鎖 N 自我測試通過`」這個印記
   （鎖可以選擇只印記號不做事＝best-effort 上界）。
-- **文件校正（L2 重訪實測）**：`docs/install-reference.md` 原本寫 clean clone 沒 venv 會紅「40＋1 條」，
+- **文件校正（L2/L3 重訪實測）**：`docs/install-reference.md` 原本寫 clean clone 沒 venv 會紅「40＋1 條」，
   實際量測為 **44 條**（漏記 `poc-clean-clone.bats` 的 CLEAN-POC-f/i 2 條＋新加的 ENV-EQ-7 1 條）；
-  已校正並附 `516 ok / 44 not ok` 實測數字。
+  已校正並附 `523 ok / 44 not ok`（2026-10-05 於 `c686dd4` 實測；原寫 516 因新增 7 條探針而過時）。
+- **TMO-047（新開票，round F P3-5）**：`skills/dav-skill-creater/tests/*.bats` 共 3 條探針**目前 3/3 綠**，
+  但 CI 只跑 `bats tests/` → 這兩檔永遠不會被執行（改了不會擋）。兩把靜態鎖反而會掃它們。需決策
+  「CI 加一步」或「明文記錄不跑的理由」；`ENV-EQ-9` 的宣告數普查目前只掃 `tests/*.bats`，若加步驟要一起擴。
+- **round F reviewer 限制（同 round C/E）**：該輪 reviewer **無 shell 工具**，Gate 1/2/3 證據是引用我方
+  `/tmp` artifact（`/tmp/rf-gate3.txt` 等），非親跑；commit 範圍與 `git log` 時間戳它無法自驗。
+- **本輪第二次「突變首測不咬」（round F P2-6）**：`ZERO-CROSS-READ` test 9 的禁制清單改成列舉推導後，
+  首測仍不咬——因為邊界寫成 `(/|$)`，抓不到最常見的 `` `docs/trust-log.md` ``（後接反引號）；
+  改成 `([^A-Za-z0-9_.-]|$)` 後咬 ✓。教訓：**放寬成「列舉」還不夠，邊界也要用突變驗**。
 - **round E P2 修正後新增的兩道鎖與其邊界**：①`ENV-EQ-9`（宣告數普查）用「引號感知」掃描器排除
   heredoc 內的 `@test`；跨行引號狀態若被污染只會造成**大聲紅**（多算/少算都比對得出來），不會靜默。
   副產物發現：bats 前處理器會把 heredoc 內的 `@test` 行改寫成 `bats_test_function ...`，所以
@@ -248,7 +284,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 1. **push + 真實 CI 驗證**（需用戶同意）：`git push origin trust/2026-10-05-tmo-cleanup`，
    確認 `Markdown lint` job 由「假綠」變「真擋且綠」、TMO-042 的 ffmpeg step 兩平台通過。
 2. **輪替 `OPENROUTER_API_KEY`**（NYH-1）。
-3. reviewer round F 二審（本輪 delta：ENV-EQ-9/10、SSG-1..3、`check-skill-size.sh`、ci.yml step、文件修正）。
+3. reviewer round G 二審（round F 的 P 項修正 delta）。
 4. TMO-046（`tdd-test-writer/SKILL.md` 149 行餘量，P3）；剩 TMO-040（護欄設計邊界）、TMO-035（文實矛盾）為決策票。
 
 ## 反思

@@ -166,8 +166,9 @@ mask_secrets() {
   }
 
   # 動態挑檔：排除本檔（護欄自身也含這些關鍵字）與 env-equivalence.bats
-  # （TMO-041：env-equivalence.bats 是「跑別人」的 harness，本身就會用 CI 等價環境
-  #   重跑 oracle 子集；巢狀重跑只會讓時間翻倍，其正確性由 ENV-EQ-7 直接驗。）
+  # （TMO-041；round F P2-1 統一理由）：env-equivalence.bats 的紅燈來源是**固定 /tmp 殘檔
+  #   與 bats 版本漂移**，不是缺 key／缺暖快取——把它算進來會讓本條「離線可跑」的語意失真。
+  #   補償：ENV-EQ-5（殘檔鎖）＋CI 兩平台釘 bats v1.14.0＋下方 excluded -eq 1 計數鎖。）
   local files=() f excluded=0
   for f in tests/*.bats; do
     case "$f" in

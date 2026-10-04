@@ -144,7 +144,32 @@ skill_files() {
   # 任何 `讀 docs/backlog.md（專案端）` 都會被放行，於是規則被繞過。
   # 這條把「本 repo 自己的 docs 根」列為不可豁免者；`docs/need-you-help.md`、
   # `docs/concepts/`、`docs/wiki/` 這類**目標專案端** runtime 路徑才是合法豁免。
-  local forbidden='docs/(sop/|prd/|backlog\.md|deliverable/|reflection/)'
+  # round F P2-6：原本硬編 5 個根（漏 trust-log.md / install-reference.md / DESIGN.md /
+  # system-design.md…），註解卻自稱「把本 repo 自己的 docs 根列為不可豁免者」＝名實不符。
+  # 改為**列舉 `docs/*` 推導**（新 docs 根自動納入），只放行明確的「目標專案端」runtime 路徑。
+  local allow='need-you-help.md|concepts|wiki|ac'
+  local forbidden='docs/(' parts='' rel esc
+  local n=0
+  while IFS= read -r rel; do
+    case "$rel" in
+      need-you-help.md|concepts|wiki|ac) continue ;;   # 目標專案端 runtime 產物，合法豁免
+    esac
+    esc=$(printf '%s' "$rel" | sed 's/\./\\./g')
+    # 目錄（含 `/`）與檔案（`.md`）分開處理：檔案的結尾邊界要容許反引號／空白／括號，
+    # 否則 `` `docs/trust-log.md` `` 這種最常見寫法反而抓不到（round F 突變首測就是這樣漏的）。
+    case "$rel" in
+      */*) parts="$parts$esc/|" ;;
+      *.md) parts="$parts$esc([^A-Za-z0-9_.-]|$)|" ;;
+      *)   parts="$parts$esc/|" ;;
+    esac
+    n=$((n + 1))
+  done < <(cd "$REPO_ROOT/docs" && ls -1)
+  [ "$n" -ge 5 ] || {
+    echo "FAIL: 推導出的不可豁免 docs 根只有 $n 個（<5）→ 列舉可能壞了" >&2
+    return 1
+  }
+  forbidden="$forbidden${parts%|})"
+  : "$allow"
   while IFS= read -r rel; do
     local abs="$REPO_ROOT/$rel" hit
     while IFS= read -r hit; do

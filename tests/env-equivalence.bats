@@ -371,6 +371,8 @@ printf "%s\n" "${a[@]}"'
 
 
 @test "ENV-EQ-9: no test declaration is silently dropped (repo census + CJK-name canary)" {
+  # 註（round F P3-6）：本條只掃 `tests/*.bats`（非遞迴），與 `bats --count tests/` 目前一致；
+  # 未來若新增 `tests/<子目錄>/`，普查會**少算 → 大聲紅**（不會靜默放過）。
   # TMO-026 的病因：宣告 N 條、實跑 N-3 條，報表看起來全綠。這是那整類問題的一般性防線。
   # (0) 先自我測試普查函式：heredoc 內的 @test 不算、字串裡的 << 不誤判。
   #     fixture 一律用 printf 逐行寫（用 heredoc 寫會被 bats 前處理器改寫成
@@ -461,8 +463,21 @@ printf "%s\n" "${a[@]}"'
     }
     # 反向鎖：不得再推薦發行版 bats。工具名拆開寫 → 免得被 lint-probe-tools.py 誤判成
     # 本測試「直接執行 brew」（那條鎖掃 tests/ 全域，分不出字串與執行）。
+    # round F P2-2：原 pattern 要求 `sudo`，抓不到本輪被移除的舊寫法 `apt install bats`（無 sudo）。
+    # 先自我測試 pattern 本身（正例必中、反例不中）——否則「鎖比宣稱弱」沒人看得出來。
     local bad_pat
-    bad_pat="($(printf 'b%s' rew)[[:space:]]+install[[:space:]]+bats|sudo apt(-get)? install[^#]*[[:space:]]bats)"
+    bad_pat="($(printf 'b%s' rew)[[:space:]]+install[[:space:]]+bats|(sudo[[:space:]]+)?apt(-get)? install[^#]*[[:space:]]bats)"
+    local _case
+    for _case in "sudo apt install bats" "apt install bats" "apt-get install -y bats"; do
+      printf '%s' "$_case" | grep -qE "$bad_pat" || {
+        echo "FAIL: 反向鎖 pattern 漏抓「$_case」→ 鎖比宣稱弱（self-test）" >&2
+        return 1
+      }
+    done
+    printf '%s' "apt install poppler-utils" | grep -qE "$bad_pat" && {
+      echo "FAIL: 反向鎖 pattern 誤抓無關套件（apt install poppler-utils）" >&2
+      return 1
+    }
     if grep -nE "$bad_pat" "$f"; then
       echo "FAIL: $f 仍推薦發行版 bats（版本會漂移）→ 請改教 git clone --branch v1.14.0 + install.sh" >&2
       return 1
