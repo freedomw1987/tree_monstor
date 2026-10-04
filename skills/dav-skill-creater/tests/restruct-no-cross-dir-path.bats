@@ -3,6 +3,7 @@
 # 守則：任何 skill 的 SKILL.md 交叉引用段不得含具體跨目錄 path（除非白名單例外）
 # 守則起源：dav-skill-creater editor-guide.md v2.2 純文字引用零容忍
 # 守則適用：~/.pi/agent/skills/*/SKILL.md
+# CI 實跑：以 SKILLS_DIR_OVERRIDE 指向 repo 的 skills/（本機預設為 ~/.pi/agent/skills）
 # 觸發：2026-09-26 清存量任務 + skill 自包含化任務（Reviewer F2 修正探針邏輯）
 
 setup() {

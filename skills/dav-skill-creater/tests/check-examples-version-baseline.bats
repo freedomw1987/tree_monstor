@@ -3,6 +3,7 @@
 # 守則：每個 skill 的 examples/ 子目錄下檔案必含「對應 skill 版本基線」標記
 # 守則起源：skill 自包含化任務 Reviewer F4 修正（防範例與 skill 版本漂移）
 # 守則適用：~/.pi/agent/skills/*/examples/*.{md,ts}
+# CI 實跑：以 SKILLS_DIR_OVERRIDE 指向 repo 的 skills/（本機預設為 ~/.pi/agent/skills）
 # 觸發：2026-09-26 skill 自包含化
 
 setup() {

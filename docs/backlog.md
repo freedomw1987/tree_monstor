@@ -54,7 +54,7 @@
 | TMO-044 | `ci.yml` `Verify Python heredoc syntax` 恆綠假檢查 → **已換成真檢查**：新增 `scripts/ci/check-python-heredocs.sh`（抽 python3 heredoc → `ast.parse` 驗語法；未結束/語法錯/抽不到都會 rc=1），ci.yml step 改為呼叫它（全 ci.yml 已無 `\|\| true`）。順帶修好覆蓋缺口：原檢查只涵蓋 5/9 個 heredoc（漏 wiki-extract-media ×2 / wiki-merge-media / wiki-index），現為 9/9。新探針`tests/ci-heredoc-check.bats` H1-H5（含 3 種突變證明咬得住） | P2 | 2 | done (2026-10-05) | TMO-039 |
 | TMO-045 | oracle 假綠的殘餘護欄（reviewer P2-B/C/D）→ **已修（2026-10-05）**：①`jev_oracle.py` 新增 `JEV_ENV_FILE` seam（覆寫即取代整份 `.env` 候選清單，涵蓋 `PoC/.env` 與 `~/.claude/.../PoC/.env`）；②`M6-g`/`M6.1-c` 自身加 `JEV_ENV_FILE=/dev/null`；③`CLEAN-POC-f` 由定點鎖（3 條）一般化為「動態挑出所有 oracle 測試檔 → 整檔離線重跑」（實測 `v2.1-jev-poc.bats` 100 條全綠，故未另做 CI 等價腳本）；④新增 `CLEAN-POC-h`（`PoC/.env`/`cache/` 不得被追蹤 + `.gitignore`/`.env.example` 正對照）與 `CLEAN-POC-i`（反向驗證 seam）；⑤CONTRIBUTING + cache-fixtures/README 精確化。敏感度證明：清 fixture→f 紅、`git add -f .env`→h 紅、半套 seam 突變→i 紅 | P2 | 3 | done (2026-10-05) | TMO-039 |
 | TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | 待決（NYH-5）| TMO-029 |
-| TMO-046 | `skills/tdd-test-writer/SKILL.md` 已 **149/150 行**（餘 1 行）；主檔行數上限見 `dav-skill-creater/editor-guide.md`。CI 的尺寸檢查過去只盯 `dav-wiki/SKILL.md`（1/11 檔），本輪已改為自動列舉（SSG-1..3）→ 現在這檔已受鎖，但仍無餘裕：下一次修改極可能撞上限，需先瘦身（走 V03）。**實作（2026-10-05）**：已瘦身 **149 → 105 行**（觸發時機／流程 6 步壓成表格、移除重複的「測試結構模板」段、補檔尾換行），規則面零刪減（`RESTRUCT-TDD-TEST-WRITER` 13 條全綠）；現行最長主檔改為 `dav-skill-creater/SKILL.md`（148 行）。 | P3 | 1 | done (2026-10-05) | TMO-041 |
+| TMO-046 | `skills/tdd-test-writer/SKILL.md` 已 **149/150 行**（餘 1 行）；主檔行數上限見 `dav-skill-creater/editor-guide.md`。CI 的尺寸檢查過去只盯 `dav-wiki/SKILL.md`（1/11 檔），本輪已改為自動列舉（SSG-1..3）→ 現在這檔已受鎖，但仍無餘裕：下一次修改極可能撞上限，需先瘦身（走 V03）。**實作（2026-10-05）**：已瘦身 **149 → 105 行**（觸發時機／流程 6 步壓成表格、移除重複的「測試結構模板」段），規則面零刪減（`RESTRUCT-TDD-TEST-WRITER` 13 條全綠）；現行最長主檔改為 `dav-skill-creater/SKILL.md`（148 行）。 | P3 | 1 | done (2026-10-05) | TMO-041 |
 | TMO-047 | **skill 自帶探針從未被 CI 執行**（round F P3-5）：`skills/dav-skill-creater/tests/check-examples-version-baseline.bats`（1 條）、`restruct-no-cross-dir-path.bats`（2 條）目前 3/3 綠，但 `.github/workflows/ci.yml` 只跑 `bats tests/` → 這兩檔永遠不會被執行（改了也不會擋）。兩把靜態鎖（`lint-probe-*.py`）的 `targets()` 反而會掃它們。**實作（2026-10-05）**：①兩支探針加 `SKILLS_DIR_OVERRIDE`（預設仍掃 `~/.pi/agent/skills`）＋**fail-closed**（root 不存在／掃不到檔 → 紅，不再 skip）；②`ci.yml` 加一步 `SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats`；③新增 `ENV-EQ-11` 鎖「自動列舉 ≥2 檔 + 逐檔實跑綠 + 不得 skip + 每檔認 override + ci.yml 恰好一步且寫法相符」。**量測發現（為何不是天真版）**：這兩支原本掃 `~/.pi/agent/skills`，在 CI 上掃不到檔 → 一支 `skip`、另一支 0 violations＝**假綠**；故若只加 CI 步驟會製造新的假綠。**未擴 `ENV-EQ-9` 普查**：`bats tests/` 的條數不含 skill 自帶探針，skill-local 集合改由 `ENV-EQ-11` 獨立鎖（避免把兩套不同執行路徑混進同一個計數）。 | P2 | 1 | done (2026-10-05) | TMO-041 |
 
 > **狀態定義**（單一來源）：`todo` = 已描述、尚未開工（TMO-026 之後的新票，**非** trust mode 未結項）；`doing (日期)` = 進行中；`done (日期)` =
@@ -1213,7 +1213,7 @@ HEAD（`93ba04f`）狀態下：
   `tests/skill-size-guard.bats` SSG-1..3（`SKILL.md` ≤150 行自動列舉；CI 必須呼叫 `scripts/ci/check-skill-size.sh`）。
 - 追加（round F 修正）：`ENV-EQ-10` 反向鎖補「無 `sudo` 的 apt」＋pattern 自我測試（正例必中/反例不中）；
   `ZERO-CROSS-READ` test 9 的禁制清單改**列舉 `docs/*` 推導**（不再硬編 5 根）；`TMP-OK` 標記數更正為 4；
-  兩把 py 鎖補檔尾換行；`CLEAN-POC-f` 排除理由與文件統一（固定 `/tmp` 殘檔＋bats 漂移）。
+  兩把 py 鎖；`CLEAN-POC-f` 排除理由與文件統一（固定 `/tmp` 殘檔＋bats 漂移）。
 - `skills/*/tests/*.bats` 已納入 CI（**TMO-047** 已結，見上；並修正了兩支探針的「掃錯目錄＝假綠」）。
 
 ### 已知殘餘

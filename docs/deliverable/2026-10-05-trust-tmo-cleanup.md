@@ -55,8 +55,9 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 | `a2d65fe` | reviewer round G 修正 | 05:42 | F1（`ENV-EQ-9` 註解敘述更正＋子目錄反向鎖，突變 M24）／F2-F5 文件不實敘述更正＋凍結快照約定／F6 刪死碼 `allow` 變數 |
 | `807d707` | reviewer round H 修正 | 05:53 | P2-1（F2/F4/F5 真正落地＋措辭對齊）／P3-1..7（含 `ENV-EQ-9` 反向鎖 `find` 失敗改大聲紅）／審查迴圈收斂宣告 |
-| （TMO-047） | TMO-047 skill-local 探針入 CI | 06:0x | 兩支探針加 `SKILLS_DIR_OVERRIDE`＋fail-closed；`ci.yml` 加一步；新增 `ENV-EQ-11`；M25–M28 突變 |
-| （TMO-046） | TMO-046 `tdd-test-writer/SKILL.md` 瘦身 | 06:1x | 149 → 105 行（流程／觸發壓表、去重、補檔尾換行）；規則面零刪減，13 條回歸全綠 |
+| （TMO-047） | TMO-047 skill-local 探針入 CI | 06:01:06* | 兩支探針加 `SKILLS_DIR_OVERRIDE`＋fail-closed；`ci.yml` 加一步；新增 `ENV-EQ-11`；M25–M28 突變 |
+| （TMO-046） | TMO-046 `tdd-test-writer/SKILL.md` 瘦身 | 06:06:53* | 149 → 105 行（流程／觸發壓表、去重）；規則面零刪減，13 條回歸全綠 |
+| （round I 修正） | reviewer round I 修正（P2-1＋P3-1..9） | 06:27:50* | `ENV-EQ-11` 補 fail-closed 鎖（空 root 必紅）＋文件數字／措辭對帳；M29 咬 ✓ |
 
 > **凍結快照約定（round G F5）**：變更清單只列「**行為變更**」commit；本檔自身的帳務 commit
 > （更新列數／hash／審查紀錄）記於 `docs/trust-log.md` 對應列，不另列表。任一輪 reviewer 的凍結快照
@@ -273,7 +274,7 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 | --- | --- |
 | 壓成表格 | 「流程（6 步）」的 6 個 動作／為什麼／產出／證據 區塊（約 42 行）→ 1 張 6 列的表；「觸發時機」8 列 → 3 列 |
 | 去重 | 「測試結構模板」4 行 → 併入一行（Given-When-Then 仍在）；移除多餘 `---` 分隔線 |
-| 補齊 | 檔尾補換行（原缺，`MD047`）；`CHANGELOG.md` 補 v2.2 列 |
+| 補齊 | 檔尾換行：編輯途中一度缺（`MD047` 抓到、已補；凍結 diff 看不出此中間態）；`CHANGELOG.md` 補 v2.2 列 |
 
 **規則面零刪減**：`tests/restruct-tdd-test-writer.bats` 13 條（TL;DR／觸發時機＋❌／流程 4 anchors／規則／
 變更歷史 v2.0／無 ASCII 圖／backlog.md／框架／Given-When-Then／無跨目錄連結／大小）**全綠**。
@@ -327,6 +328,32 @@ M27 override 指到錯目錄 → 紅 ✓（此鎖為**結構比對**，寫法不
 全部只存在於記憶體、沒有落地，但我在 commit message 與 round G 章節都聲稱「已修」。
 **根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
 **對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
+
+## reviewer 修正（round I）＋二審結論
+
+**round I**（run `24853ce0`，凍結 `e0e2b5d`，範圍 `86f6738..e0e2b5d`）：**OK with notes（0 P0 / 0 P1 / 1 P2 / 8 P3）**，
+「可交付用戶驗收？**yes（附註）**」；收斂判定 **已收斂（探針／CI 層）**，並明示「**不需再開 reviewer 輪**」。
+Q1–Q3 判定：`ENV-EQ-11` 非恆真／非空過（列舉、逐檔實跑、`# skip`、認 override、`ci.yml` 比對皆有效）；
+TMO-047 探針改動無新假綠（test body 亦有 guard，不依賴 `setup()` 非零回傳語意）；TMO-046 **無規則遺失**（13 條全綠）。
+第一輪 run（`c8741c45`）因 reviewer 自行 `find /` 掃全機而 **timeout**（**repo 未變更**，`git status` 乾淨）；
+第二輪加硬性紀律後完成。
+
+| 編號 | 等級 | 修正 |
+| --- | --- | --- |
+| P2-1 | P2 | `ENV-EQ-11` 原本只鎖「override 指 repo → 綠」，**沒鎖 fail-closed 本身**（拿掉探針的 `found_any/scanned == 0 → return 1` 仍全綠）→ 追加：root 指向**空目錄**時**每一支**探針都必須 `rc != 0`。**突變 M29**（移除 probe 1 的 fail-closed guard）→ `ENV-EQ-11` 紅 ✓ |
+| P3-1 | P3 | 「149 → 104 行」自相矛盾 → 兩處（`SKILL.md`、`CHANGELOG.md`）改 **105** |
+| P3-2 | P3 | 「補檔尾換行（**原缺**，MD047）」與凍結 diff 不符（diff 無 `\ No newline` 標記）→ 改述為「編輯途中一度缺（`MD047` 抓到、已補；凍結 diff 看不出中間態）」 |
+| P3-3 | P3 | `install-reference` 探針表缺 ENV-EQ-11 列 → 補列 |
+| P3-4 | P3 | 「全套 568 條」已非 CI 全量 → 改「`bats tests/` 568 條；CI 另跑 3 條 skill 自帶探針＝**571 條**」 |
+| P3-5 | P3 | 兩支探針檔頭「守則適用：`~/.pi/agent/skills/*`」未反映 override → 各補一行 CI 實跑說明 |
+| P3-6 | P3 | 兩支 `.bats` 缺檔尾換行 → 補齊 |
+| P3-7 | P3 | 無 contributor 文件教怎麼跑 skill-local 探針 → `install-reference` 本機指令區補 `SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats` |
+| P3-8 | P3 | trust-log row 58 仍寫「round F 全判已修」→ 改「已修 10 條／部分修 3 條（後 3 條於 round H 落地）」 |
+| P3-9 | P3 | trust-log row 61／63 時間為估值且與自身 commit 時間倒序 → 改 `06:01:06*`／`06:06:53*`（取 `git log`）；deliverable 兩列同步 |
+
+**Gate 2（修正後）**：lint 128 檔 0 issue、shellcheck `rc=0`、heredoc 9 檔 OK、SKILL 11 檔 OK。
+**Gate 3（修正後）**：`bats tests/` = **568 ok / 0 not ok**（`/tmp/ri-gate3-fix.txt`）；
+skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
 
 ## 已知問題
 

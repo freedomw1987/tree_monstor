@@ -539,6 +539,19 @@ printf "%s\n" "${a[@]}"'
     }
   done
 
+  # P2-1（round I）：上面的實跑只證明「override 指向 repo → 綠」。若把探針的 fail-closed 拿掉
+  # （root 不存在／掃不到檔就當通過），本條仍會全綠 → 空過機制失去自動重驗。故再驗一次：
+  # root 指向**空目錄**時，每一支 skill 自帶探針都必須**失敗**（不得靜默通過）。
+  local empty="$BATS_TEST_TMPDIR/empty-skills-root"
+  mkdir -p "$empty"
+  for f in ${files[@]+"${files[@]}"}; do
+    run env SKILLS_DIR_OVERRIDE="$empty" bats "$REPO_ROOT/$f"
+    [ "$status" -ne 0 ] || {
+      echo "FAIL: $f 在空 skills root 下竟然通過（rc=0）→ 探針空過（假綠）；請補 fail-closed（掃不到檔要紅）" >&2
+      return 1
+    }
+  done
+
   local ci="$REPO_ROOT/.github/workflows/ci.yml" hits
   hits=$(grep -cE 'run: SKILLS_DIR_OVERRIDE="\$PWD/skills" bats skills/\*/tests/\*\.bats' "$ci" || true)
   [ "$hits" -eq 1 ] || {

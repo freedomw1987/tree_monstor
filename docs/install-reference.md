@@ -250,6 +250,13 @@ bats --version                           # 應顯示 Bats 1.14.0
 bash skills/regression-guard/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
 ```
 
+skill 自帶探針（`skills/*/tests/*.bats`，3 條）**不在** `bats tests/` 內，要自己跑；它們預設掃
+`~/.pi/agent/skills`，在 repo 內請用覆寫變數指向本 repo（否則會 fail-closed 紅）：
+
+```bash
+SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
+```
+
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 > **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`524 ok / 44 not ok`，@ `e347d1a`；524 + 44 = 568 條）：
@@ -261,7 +268,8 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（11 條）守「本機全綠 ≠ CI 全綠」那類假綠，全套現在是 **568 條**：
+`tests/env-equivalence.bats`（11 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **568 條**；
+CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **571 條**：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|
@@ -275,6 +283,7 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 | ENV-EQ-8 | `scripts/ci` 護欄腳本自動列舉：不得有孤兒鎖，`--self-test` 必須自己綠 | `python3` |
 | ENV-EQ-9 | `@test` 宣告數 == `bats --count`（防「宣告 N／實跑 N-3」；含 CJK 名稱 canary） | bats |
 | ENV-EQ-10 | 本機安裝文件必須教釘版 bats（只鎖 CI 一側＝本機仍漂移） | — |
+| ENV-EQ-11 | skill 自帶探針（`skills/*/tests/*.bats`，≥2 檔）存在且 CI 真跑：override 下逐檔實跑綠、不得 `skip`、每檔須認 override；空 root 必紅（防空過）；`ci.yml` 恰好一步 | bats |
 | （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
 
 兩個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py` 與 `scripts/ci/lint-probe-tools.py`，
