@@ -19,3 +19,5 @@ skills/regression-guard/PoC/fixtures/US-M63-*-test.py
 skills/regression-guard/PoC/fixtures/US-M63-ambiguous.py
 skills/regression-guard/PoC/journeys/US-M62.yaml
 skills/regression-guard/PoC/tmp/
+# regression-guard sandbox 工作目錄（sandbox_runner.py 在 repo root tmp/ 建 .sandbox-*）
+/tmp/

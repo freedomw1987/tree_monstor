@@ -21,6 +21,44 @@ setup() {
 }
 
 # ────────────────────────────────────────────────────────────────────
+# 共用 fixture helpers（TMO-023）
+#
+# M6.3 / M7 探針原本假設 /tmp/US-M63-before.json 與 /tmp/m62-batch.json 已存在，
+# 但測試檔內沒有任何步驟會產生它們 → 5+2 個探針永遠紅。
+# 這裡補上真實的 baseline 產生器：
+#   - make_us_m63_before：真跑一次 US-M63 journey 當 patch 前 baseline
+#     （patch 無關 → 重跑後 verdict 分布相同 → re_validate 判 no_change）
+#   - make_m62_batch_report：造 M7 flaky 整合所需的 batch_report 最小 fixture
+# ────────────────────────────────────────────────────────────────────
+
+make_us_m63_before() {
+  mkdir -p "$REPO_ROOT/tmp"
+  rm -f /tmp/US-M63-before.json
+  # journey 為 blocked → run_journey.py 回 rc=2（有寫出 JSON，但非 0）→ 只吞 rc，必驗檔真的產出
+  "$PY" "$POC_DIR/run_journey.py" "$POC_DIR/journeys/US-M63.yaml" \
+    --json-output /tmp/US-M63-before.json >/dev/null 2>&1 || true
+  if [ ! -s /tmp/US-M63-before.json ]; then
+    echo "FAIL: baseline fixture 未產出（/tmp/US-M63-before.json）" >&2
+    return 1
+  fi
+}
+
+make_m62_batch_report() {
+  "$PY" -c "
+import json
+json.dump({
+    'journey_id': 'US-M62',
+    'batch_report': {
+        'overall_health': 'green',
+        'flaky_likelihood': 0.0,
+        'regression_type': 'none',
+        'overall_health_probs': {'red': 0, 'green': 1, 'yellow': 0},
+    },
+}, open('/tmp/m62-batch.json', 'w'))
+"
+}
+
+# ────────────────────────────────────────────────────────────────────
 # Probe 1: M5.1 fixture YAML loader
 # ────────────────────────────────────────────────────────────────────
 
@@ -877,6 +915,7 @@ json.dump(a, open('$after', 'w'))
 def hello():
     return "world"
 EOF
+  make_us_m63_before
   run "$PY" sandbox_runner.py \
     --before /tmp/US-M63-before.json \
     --file "$sample" \
@@ -908,6 +947,7 @@ EOF
 def hello():
     return "unrelated-text-for-no-change-test"
 EOF
+  make_us_m63_before
   run "$PY" sandbox_runner.py \
     --before /tmp/US-M63-before.json \
     --file "$sample" \
@@ -934,6 +974,7 @@ foo = "x"
 foo = "x"
 foo = "x"
 EOF
+  make_us_m63_before
   run "$PY" sandbox_runner.py \
     --before /tmp/US-M63-before.json \
     --file "$sample" \
@@ -964,22 +1005,31 @@ EOF
 def hello():
     return "x"
 EOF
+  make_us_m63_before
   local before_count
-  before_count=$(ls "$REPO_ROOT/tmp/" | grep -c "^\.sandbox-US-M63" || echo 0)
-  "$PY" sandbox_runner.py \
+  # sandbox 目錄名以 . 開頭（`.sandbox-*`）→ 必用 ls -a，否則永遠數到 0（探針會空過）
+  before_count=$(ls -a "$REPO_ROOT/tmp/" 2>/dev/null | grep -c "^\.sandbox-US-M63" || true)
+  local out
+  out=$("$PY" sandbox_runner.py \
     --before /tmp/US-M63-before.json \
     --file "$sample" \
     --old 'return "x"' \
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md" >/dev/null 2>&1
+    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --json 2>&1 || true)
   local after_count
-  after_count=$(ls "$REPO_ROOT/tmp/" | grep -c "^\.sandbox-US-M63" || echo 0)
-  if [ "$after_count" -gt "$before_count" ]; then
+  after_count=$(ls -a "$REPO_ROOT/tmp/" 2>/dev/null | grep -c "^\.sandbox-US-M63" || true)
+  # 斷言 1：這趟自己建的 sandbox 目錄必須被刪乾淨（數量不得改變）
+  if [ "$after_count" -ne "$before_count" ]; then
     echo "FAIL: sandbox dir not cleaned up (before=$before_count after=$after_count)" >&2
     return 1
   fi
+  # 斷言 2：runner 自報 no_change + cleanup_ok=true
+  # （避免「數量不變」其實來自從沒建過 sandbox 或中途 patch 失敗，那些路徑 cleanup_ok 也是 true）
+  echo "$out" | grep -q '"classification": "no_change"'
+  echo "$out" | grep -q '"cleanup_ok": true'
 }
 
 @test "M6.3-f: sandbox JSON output has required fields" {
@@ -989,6 +1039,7 @@ EOF
 def hello():
     return "x"
 EOF
+  make_us_m63_before
   local out
   out=$("$PY" sandbox_runner.py \
     --before /tmp/US-M63-before.json \
@@ -1209,7 +1260,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 }
 EOF
   # 跑 0 次額外跑（快速測試）
-  "$PY" -c "
+  run "$PY" -c "
 import sys
 sys.path.insert(0, '.')
 import json
@@ -1238,6 +1289,7 @@ print('OK: wrote flaky_measured')
 
 @test "flaky-int-c: flaky_integration.py with 0 extra runs uses jev value" {
   cd "$POC_DIR"
+  make_m62_batch_report
   run "$PY" flaky_integration.py \
     --batch-report /tmp/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
@@ -1351,6 +1403,7 @@ print(f'OK: comment {len(body)} chars')
 @test "M7-gating-a: batch_report schema includes flaky_measured field" {
   # 跑一次 flaky_integration，確認 schema 包含新欄位
   cd "$POC_DIR"
+  make_m62_batch_report
   "$PY" flaky_integration.py \
     --batch-report /tmp/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \

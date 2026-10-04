@@ -31,6 +31,7 @@
 | TMO-020 | M6.3 互動式 sandbox + flaky 驗證 + cleanup CI 定期 | P1 | 13 | done (2026-09-28) | TMO-019 |
 | TMO-021 | M7 flaky→batch_report 整合 + gh pr comment | P1 | 5 | done (2026-09-28) | TMO-020 |
 | TMO-022 | M8 CI matrix pipeline (多 story_id 並行) | P1 | 5 | done (2026-09-28) | TMO-021 |
+| TMO-023 | 修 v2.1-jev-poc C 類探針 bug（8 紅：sandbox baseline fixture / flaky batch fixture / 缺 `run` / `ls` dotfile 假斷言）| P0 | 5 | done (2026-10-04) | — |
 
 ---
 
@@ -633,3 +634,56 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - **影響**：regression-guard CI 從「1 US / 1 run」升級為「3 US / 3 runs 並行 + 自動聚合」
 - **M8 為什麼只在 workflow_dispatch**：push/PR 跑 3 個 matrix 浪費 CI minutes；手動 trigger 拿可控性
 - **M8 為什麼 fail-fast: false**：reviewer 一次看 3 個結果比「1 個 fail 全部 cancel」更有用
+
+---
+
+## TMO-023 詳細（v2.1-jev-poc C 類探針修復）
+
+> 來源：2026-10-04 用戶對話「README 精簡 → 順手盤點 bats 38 紅」→ 用戶決策「先修 C 類探針 bug」
+> **狀態**：✅ 2026-10-04 完成
+
+### 問題（8 個探針自己壞掉，與 product code 無關）
+
+| 探針 | 病因 |
+|------|------|
+| M6.3-b/c/d/e/f（5） | 傳 `--before /tmp/US-M63-before.json`，但 repo 內**沒有任何步驟**產生該檔 → `sandbox_runner.py` 找不到就回 error |
+| flaky-int-b | 少 `run` 前綴 → `$status` 未設 → `[: : integer expression expected` |
+| flaky-int-c / M7-gating-a | 讀 `/tmp/m62-batch.json`，同樣沒有步驟產生 |
+| M6.3-e（額外發現） | ① `$REPO_ROOT/tmp/` 不存在 ② **`ls` 不列 dotfile**，而 sandbox 目錄叫 `.sandbox-*` → 清理斷言結構上永遠不可能 fail（假保證）③ `grep -c … \|\| echo 0` 在 0 命中時輸出 `0\n0` |
+
+### 做法（只改測試層，未動 product code）
+
+1. `tests/v2.1-jev-poc.bats` 新增兩支共用 fixture helper：
+   - `make_us_m63_before`：**真跑一次** US-M63 journey 當 patch 前 baseline（blocked → rc=2，只吞 rc、必驗檔案真的產出）
+   - `make_m62_batch_report`：造 M7 flaky 整合所需 batch_report 最小 fixture
+2. M6.3-b/c/d/e/f 改呼叫 `make_us_m63_before`；M6.3-e 另修 `ls -a` + `-ne` + 讀 `--json` 斷言 `classification=no_change` / `cleanup_ok=true`
+3. flaky-int-b 補 `run`；flaky-int-c / M7-gating-a 補 `make_m62_batch_report`
+4. `.gitignore` 加 `/tmp/`（sandbox_runner 在 repo root `tmp/` 建 `.sandbox-*`）
+
+### AC / DoD
+
+- ✅ AC1：M6.3-b/c/d/e/f 5 個探針綠（清空 `/tmp` fixture 後仍綠）
+- ✅ AC2：flaky-int-b/c + M7-gating-a 3 個探針綠
+- ✅ AC3：無新增失敗（全套 38 紅 → 30 紅，`comm -13` 為空）
+- ✅ AC4：探針**真的會紅** — 突變測試：故意把 `_cleanup()` 改成 `return False` → M6.3-e 轉 `not ok`（`FAIL: sandbox dir not cleaned up (before=4 after=5)`）→ 還原後 `ok`
+
+### 驗收證據
+
+- Gate 1（紅→綠）：`bats tests/v2.1-jev-poc.bats --filter 'M6\.3|flaky-int|M7-gating'` 修改前 8 紅 / 16 → 修改後 16 ok / 0 紅
+- Gate 3（regression）：`bats tests/` baseline（`git stash` 還原 + 清 `/tmp` fixture 量測）not ok 38 / ok 455 → 修改後 not ok 30 / ok 463
+- Gate 4（reviewer，V03.6 二審 2 輪）：第 1 輪 approve-with-comments / risk low（抓出 M6.3-e 假斷言 P1）→ 修正後第 2 輪 approve-with-comments / risk low / 0 P0-P1
+
+### 已知問題（本輪未修，另立後續）
+
+- **A 類 18 紅**：skill 改版後探針過期（dav-planner §2.7、regression-guard TTY、SKILL-b/d/M6-e/M6.1-e、dav-wiki AC-2 因 SKILL.md 151 行 > 150）
+- **B 類 12 紅**：11 個缺 poppler（`pdfimages`/`pdftotext`）；1 個**真缺陷** — pandoc 不支援 pptx reader，但 `wiki-extract-media.sh` 仍印「✓ PPTX 文字提取完成」並 exit 0（靜默假成功）
+- **`sandbox_runner.py` error 路徑不 cleanup**：建立 sandbox 後 copy 失敗時直接 return，目錄洩漏（本輪實測重現，非探針範圍）
+- **探針 P2 建議**：fixture 改 `$BATS_TEST_TMPDIR`、加 `timeout`、M6.3-f 應斷言 classification、M7-gating-b 恆真、flaky-int-c/M7-gating-a 只 grep key 存在
+- **CI 從未跑過**：`.github/workflows/ci.yml` trigger 是 `branches: [main]`，但 repo 預設分支是 `master`（`gh run list` 0 筆）
+
+### 反思
+
+- **快**：8 個紅燈同一病因（測試前置 fixture 缺失），兩支 helper 一次解掉
+- **慢 1 點**：第一版只「補 fixture 讓紅燈變綠」，被 reviewer 抓到 M6.3-e 是**假綠**（`ls` 不看 dotfile）；靠**突變測試**（故意破壞 `_cleanup`）才證明探針真的會紅
+- **影響**：`bats tests/` 38 → 30 紅；這 8 個紅燈不再掩蓋 M6.3/M7 的真回歸
+- **教訓**：「補前置資料讓紅燈變綠」必須分清**修探針** vs **放寬門檻**；能用突變測試證明「探針會紅」才算真修好
