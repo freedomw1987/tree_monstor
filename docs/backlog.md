@@ -48,7 +48,7 @@
 | TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..9：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內 / lint job 不得有 `if:`）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 16 處（12 檔） + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）**→ 已修（2026-10-05）**：①改 AST 遞迴掃描＋`PoC-OPTIONAL-DEP` 行內標記制（含反向鎖）、④helper 自動列舉、⑤新增 1 條 PyYAML 語意斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip）| P2 | 3 | done (2026-10-05) | TMO-029 |
 | TMO-039 | 首次真實 GitHub Actions 驗證（首跑 `37213235272` 全 job 紅 → 6 類真因；第二輪 `37215560458` **34 紅收斂到 4 紅** → 再揭露 2 類：①oracle 依賴假綠 3 條 ②macOS ffmpeg 8 移除 `-vsync`；第三輪修法見 §TMO-039 詳細；**第三輪 run `37218446930` ubuntu+macos test job 全綠**，僅 lint-only 紅＝TMO-037；**reviewer round-3 `approve-with-comments`（0 P0 / 0 P1 / 6 P2）**，前輪 5 P2 全數收尾，本輪 P2 已修 3 條／切票 TMO-044、TMO-045；**用戶決策「收在此」→ 結案**，收尾 run `37219489118` 亦綠）| P1 | 3 | done (2026-10-04) | TMO-029 |
-| TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴尚未掃完——reviewer round-3 具體點名：真網路未封鎖、`PoC/.env`（`__file__` 旁，非 `HOME`）、固定 `/tmp` 檔名跨 run 殘留、`bats`/`bash` 版本、`gh`/`brew` 工具未 stub（①已涵蓋版本項） | P2 | 3 | todo | TMO-039 |
+| TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴尚未掃完——reviewer round-3 具體點名：真網路未封鎖、`PoC/.env`（`__file__` 旁，非 `HOME`）、固定 `/tmp` 檔名跨 run 殘留、`bats`/`bash` 版本、`gh`/`brew` 工具未 stub（①已涵蓋版本項） **→ 已修（2026-10-05）**：新增 `tests/env-equivalence.bats`（ENV-EQ-1..7：bash 5.x 必需、「每個本機 bash 版本」都跑 `wiki-cleanup` 套件、shim 有效性、空陣列×`set -u` 逐版本量測、固定 `/tmp` 殘留鎖、`gh`/`brew` 執行鎖、網路黑洞＋canary）；②CI 兩平台把 bats-core 釘在 `v1.14.0`（git clone tag 取代 apt/brew 未釘版）＋契約探針加釘版斷言；③reviewer 點名的 4 個狀態依賴全部落地（真網路＝ENV-EQ-7、`PoC/.env`＝TMO-045 既有 seam、固定 `/tmp`＝鎖 1＋56 處改 `$BATS_TEST_TMPDIR`、`gh`/`brew`＝鎖 2） | P2 | 3 | done (2026-10-05) | TMO-039 |
 | TMO-042 | 媒體探針未鎖 ffmpeg 版本 → **已修（2026-10-05）**：新增 `scripts/ci/check-ffmpeg-version.sh`（①版本底線 ≥5.1 ②用本 repo 真的在用的旗標組合 `-vf select/showinfo` + `-fps_mode vfr` + `-f null -` 實測能力③缺 ffmpeg/ffprobe 即紅；`FFMPEG_BIN`/`FFPROBE_BIN` 可覆寫供測試）；ci.yml test job 兩平台都跑（bats 之前）；CONTRIBUTING 寫明底線、CI 實測版本與「移除/改名清單」（`-vsync` → `-fps_mode`）；新探針 `tests/ffmpeg-version.bats` FV-1..FV-7（含假殼舊版 4.4.2 / 5.0 / 旗標失效 / 缺工具 / CI 靜態鎖 / 文件鎖） | P2 | 2 | done (2026-10-05) | TMO-039 |
 | TMO-043 | 死碼清理（原：`probe_metadata()` SC2329）——擴大為系統性掃描後共 3 處：①`wiki-extract-video.sh` `probe_metadata()` 刪除；②`wiki-media-describe.sh` `ext_pattern` **算完未用＝真 bug**（批次未依 mode 過濾，describe 會誤吃 .wav、transcript 會誤吃 .png）→ 修正 + 新探針 AC-D17/D18；③`wiki-ocr.sh` `EXIT_TOOLMISSING` 保留並註記（exit 4 契約屬 TMO-035 決策），`wiki-media-describe.sh` 則改用該常數。新探針 `tests/wiki-dead-code.bats`（WDC-1 靜態鎖 + WDC-2 掃描器自測） | P2 | 1 | done (2026-10-05) | TMO-039 |
 | TMO-044 | `ci.yml` `Verify Python heredoc syntax` 恆綠假檢查 → **已換成真檢查**：新增 `scripts/ci/check-python-heredocs.sh`（抽 python3 heredoc → `ast.parse` 驗語法；未結束/語法錯/抽不到都會 rc=1），ci.yml step 改為呼叫它（全 ci.yml 已無 `\|\| true`）。順帶修好覆蓋缺口：原檢查只涵蓋 5/9 個 heredoc（漏 wiki-extract-media ×2 / wiki-merge-media / wiki-index），現為 9/9。新探針`tests/ci-heredoc-check.bats` H1-H5（含 3 種突變證明咬得住） | P2 | 2 | done (2026-10-05) | TMO-039 |
@@ -1123,7 +1123,7 @@ HEAD（`93ba04f`）狀態下：
 
 ### 已知問題（切票）
 
-- TMO-041：bash 5.x 變體 Gate 3 未自動化、`bats` 未釘版、其他狀態依賴未掃完。
+- ~~TMO-041：bash 5.x 變體 Gate 3 未自動化、`bats` 未釘版、其他狀態依賴未掃完。~~ **已完成（2026-10-05）**，見本節末「TMO-041 結案」
 - TMO-037：lint 債（2026-10-04 實測 273 錯/66 檔；本票不處理）。
 - TMO-042：ffmpeg 版本漂移（apt 6.x / brew 8.x；下一批移除無法預期）。
 - TMO-043：`wiki-extract-video.sh:67 probe_metadata()` 死碼（shellcheck SC2329）。
@@ -1173,3 +1173,39 @@ HEAD（`93ba04f`）狀態下：
 
 - 「helper 使用 `$PY`」的判定仍是靜態字串：若 venv 使用被藏進 `tests/helpers/*.bash` 或 `$(cat)` 之類間接形式，仍會漏抓（本輪未見實例，列為已知上界）。
 - `PoC/tmp/**` 的執行期 `.py` 也在掃描範圍內（本輪為空集合）；若未來 runtime 產生含第三方 import 的暫存碼，會誤紅 → 需加排除規則。
+
+## TMO-041 詳細（環境等價／「本機假綠」殘餘防線）
+
+三件事：**版本等價**（bash/bats）、**狀態等價**（網路／工具／殘檔）、**釘版**（CI 用的 bats）。
+
+| # | 交付 | 內容 |
+|---|------|------|
+| ① | `tests/env-equivalence.bats`（新檔，7 條） | ENV-EQ-1 bash 5.x 必需（缺→紅＋`brew install bash`，不 skip）；ENV-EQ-2 **每一個**本機可用 bash 都跑一遍 `tests/wiki-cleanup.bats`（PATH shim 換 bash，rc=0／not ok=0／`ok >= 20` 防空過，且必須真的跑到 5.x）；ENV-EQ-3 shim 有效性（小測試檔「必須 bash 5.x」在 shim 下綠、在預設 3.2 下紅）；ENV-EQ-4 空陣列 × `set -u` 逐版本量測印表；ENV-EQ-5 固定 `/tmp` 殘留鎖；ENV-EQ-6 `gh`/`brew` 執行鎖；ENV-EQ-7 網路黑洞＋canary |
+| ② | CI 釘 bats-core `v1.14.0` | 兩平台都 `git clone --branch v1.14.0 --depth 1 bats-core`＋`install.sh /usr/local`，移除 `apt install bats`／`brew install bats-core`（apt 版 1.10 vs brew 1.14，`@test` 名稱／旗標行為有差）；`poc-bootstrap` CI 契約探針加斷言：兩平台同一 tag、彼此相等、`>= v1.14.0`、Linux 不得再 apt 裝 distro bats、macOS 不得 `brew install bats-core` |
+| ③ | 狀態依賴清掃 | ③b 固定 `/tmp` 檔名：`tests/v2.1-jev-poc.bats` **56 處** `/tmp/` → `$BATS_TEST_TMPDIR`（順手抓出 `gh-pr-c/d` 靠別條測試留下的 fixture 的隱性耦合 → 抽出 `make_gh_pr_batch`）；純資料引用 3 行標 `TMP-OK`。③d `gh`/`brew` 未 stub：靜態鎖。③c 真網路：ENV-EQ-7。③ `.env`：TMO-045 既有 seam 已涵蓋 |
+
+### 刻意取捨
+
+- **不斷言「bash X 必須 unbound」**：票上寫「macOS 3.2 長度展開不報錯、bash 5.2 會 unbound」，但本機實測**相反**
+  （`/bin/bash` 3.2 對 `printf "%s\n" "${a[@]}"` 報 `unbound variable`；brew 5.3 **不報**）。
+  CI 當時（ubuntu bash 5.2）那條無法在本機重現 → 改成「逐版本實際跑套件」，不寫無法驗證的預測（避免假紅）。
+- 兩個鎖抽成 `scripts/ci/lint-probe-*.py`（可用 `--self-test` 單獨驗）：放在探針檔內會**掃到自己**。
+- `TMP-OK` 只給「純資料引用」用，且**反向鎖**要求標記只能落在真有 `/tmp/` 的行（不能當萬用豁免）。
+- `CLEAN-POC-f` 排除 `env-equivalence.bats`（它是「跑別人」的 harness，巢狀重跑只會讓時間翻倍；正確性由 ENV-EQ-7 直接驗）。
+
+### Gate 證據
+
+- Gate 1 突變 11 條全咬：M1 固定 `/tmp` 寫入、M2 `TMP-OK` 濫用、M3 鎖自我測試失效（`violations` 恆回空）、M4 執行 `gh`、
+  M5 鎖 2 樣式退化成只認行首（**第一次探針腳本自身壞掉、變異沒套上 → 修正後才咬，已揭露**）、
+  M6 產品腳本重現空陣列 × `set -u` 地雷（版本分歧咬到 ENV-EQ-2）、M7 macOS 取消釘版、M8 tag 降到 `v1.13.0`、
+  M9 黑洞代理失效（canary 咬）、M10 `find_bash5` 恆失敗、M11 shim 指回預設 bash。全部 `cp` 備份還原＋`diff -q` 驗證。
+- Gate 2：`markdownlint` 128 檔 0 issue；`shellcheck -x -S style` rc=0；
+  `py_compile` 兩個新 py OK；`check-python-heredocs.sh` 9 檔 OK。
+- Gate 3：`bats tests/` **560 ok / 0 not ok / 0 skip**（TMO-038 後 553 → +7）。
+- Gate 4（V03.6 二審）：見 `docs/trust-log.md` round E 條目。
+
+### 已知殘餘
+
+- CI 的 ubuntu bash **5.2** 行為本機無法驗證（只有 3.2 / 5.3）→ ENV-EQ-2 只能保證「本機所有版本」，CI 那條靠真跑（本輪 trust 模式不 push，未驗）。
+- CI 釘版走 `git clone`（需網路）；GitHub runner 上有 `git` 是前提。
+- 本機 `python3` 3.14 vs CI 3.12 **尚未**納入等價探針（PoC venv 3.11 才是有測到的路徑）。

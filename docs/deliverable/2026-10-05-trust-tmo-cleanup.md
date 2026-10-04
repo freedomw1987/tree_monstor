@@ -45,10 +45,13 @@ TMO-043 → 044 → 045 → 042 → 037，deadline 08:00 CST。五張票的性�
 | `18d0ec0` | TMO-036 | 03:20 | 跨目錄讀取探針：動詞表補 `讀取/grep/查/搜/掃`、skill 清單改**自動列舉**（`find skills -name SKILL.md`＝11 檔，補漏 `ask-me`）、新增 `專案端` 行內標記豁免＋**濫用反向鎖**、抽取器自我測試；`dav-designer` 不再排除 |
 | `273cce2` | TMO-033 | 03:27 | dav-wiki 子檔**內容錨點**（掏空即紅）：通用鎖（每個指標目標 non-blank ≥ 8 行）＋ 7 個獨立詞錨點（`--purge` 等用詞界比對，子字串版曾被自身突變 M2 抓到不咬） |
 | `3d04890` | round C 修正 | 03:36 | P1-1 對帳（`docs/prd/03:104` 是**移除**已廢除引用，非麵包屑）；P2-1 手改口徑＝12 檔 / 15 呼叫點 / 16 處替換；P2-2 `refute_file_body_contains` 收窄為「`## 變動歷史` 章節」；P2-3 MLG-8 去行首錨＋`Linting: ≥1 file`；P2-4 補放寬申報；P2-5 CHANGELOG 127→129；P2-6 DOCS-REDUCE-007 逐根存在檢查 |
+| `24b2910` | TMO-038 | 03:55 | poc-bootstrap 探針強化：①遞迴 AST import 掃描＋module→dist 映射＋`PoC-OPTIONAL-DEP` 行內標記（含反向鎖）④helper 名單**自動列舉**（不再硬編 2 個，M6b 實證舊規則不咬）⑤新增 PyYAML 語意 CI 契約斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip） |
+| `cf3d466` | TMO-041 | 04:30 | 環境等價：新 `tests/env-equivalence.bats`（ENV-EQ-1..7：bash 5.x 必需、**每個本機 bash 版本**都跑 wiki-cleanup 套件、shim 有效性、空陣列×`set -u` 逐版本量測、固定 `/tmp` 殘檔鎖、`gh`/`brew` 執行鎖、網路黑洞＋canary）；`v2.1-jev-poc.bats` 56 處 `/tmp/` → `$BATS_TEST_TMPDIR`；CI 兩平台釘 bats-core `v1.14.0`＋契約斷言 |
 | （前輪修正） | TMO-032 + round B P1/P2 | 02:56–03:10 | 負向斷言假綠根除（`refute_file_contains` 存在檢查 + `refute_file_body_contains`）、v1.9 列級錨定、`BACKLOG-005` 大小寫不敏感；`dev-checker-loop/SKILL.md` P1-1 逐字還原；MLG-2/8 強化 + MLG-9；trust-log / deliverable 數字對帳 |
 
 新增檔案：`tests/wiki-dead-code.bats`、`tests/ci-heredoc-check.bats`、`tests/ffmpeg-version.bats`、
-`tests/markdownlint-guard.bats`、`scripts/ci/check-python-heredocs.sh`、`scripts/ci/check-ffmpeg-version.sh`。
+`tests/markdownlint-guard.bats`、`tests/env-equivalence.bats`、`scripts/ci/check-python-heredocs.sh`、
+`scripts/ci/check-ffmpeg-version.sh`、`scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py`。
 
 ## 測試驗收證據（4 Gates）
 
@@ -96,6 +99,8 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | TMO-036 | 551 ok / 0 not ok | `/tmp/t36-gate3.txt` |
 | TMO-033 | 552 ok / 0 not ok | `/tmp/t33-gate3.txt` |
 | round C 修正 | **552 ok / 0 not ok** | `/tmp/rc-gate3.txt`（bats 1.14 TAP：`1..552`、`ok 552`、`rc=0`） |
+| TMO-038 | 553 ok / 0 not ok | `/tmp/t38-gate3.txt` |
+| TMO-041 | 560 ok / 0 not ok | `/tmp/t41-gate3c.txt`（`1..560`、`ok 560`、`rc=0`） |
 
 ### Gate 4（reviewer）
 
@@ -103,7 +108,10 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
   verdict **approve-with-comments**：0 P0 / 1 P1 / 5 P2，「可交付用戶驗收？yes」。
   P1＝CLEAN-POC-i 失敗訊息會外洩真 key（我自報）；P2＝`|| true` 吞 rc、WDC-1 註解可騙、
   heredoc delimiter/縮排邊界、覆蓋下限太鬆、副檔名三處重複 → 全部在 `985d1e5` 修完並附實測。
-- **round B**（TMO-042 / TMO-037 + 本檔）：見下節（待回）。
+- **round B**（TMO-042 / TMO-037 + 本檔）：見下節。
+- **round C**（TMO-030/031/034 + TMO-032 + round-B 修正）：run `e776fe77`，approve-with-comments
+  （0 P0 / 1 P1 / 6 P2）；該 reviewer **無 shell 工具**（證據是引用我的 `/tmp` 輸出）→ P 項見「reviewer 修正（round C）」。
+- **round D/E**（TMO-036/033 與 TMO-038/041）：待啟動（若 deadline 前跑不完，留給下一輪）。
 
 ### V03.6 分類與放寬申報
 
@@ -160,8 +168,13 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 - **TMO-037 附帶影響（已揭露）**：`markdownlint-cli2 --fix` 順手移除 2 個 shell 區塊的 `$` 提示字元
   （MD014）；`tests/fixtures/**` 的 markdown 也一起清乾淨（無探針依賴其 markdown 內容）。
 - **本機安裝（已揭露）**：為跑 MLG-7/8 實測，本機 `npm install -g markdownlint-cli2@0.23.3`。
-- **未修（切票既有）**：TMO-038（poc-bootstrap 探針強化）、TMO-041（環境等價：bash 5.x / bats 釘版 /
-  真網路封鎖 / 固定 `/tmp` 檔名）。
+- ~~未修（切票既有）：TMO-038、TMO-041~~ **兩張已於本輪完成**（見變更清單 `24b2910`、`cf3d466`）。
+- **⚠️ 自傷事件（已揭露、已修）**：TMO-041 加 `TMP-OK` 標記時，我把註解**插進 `ln -s` 指令中間**
+  （`ln -s "a"  # 註解  "b"`）→ 指令被截斷：測試不再驗「指錯的 symlink 被修好」（弱化），
+  還在 repo 根留下 `nowhere-at-all` 殘檔；由 ENV-EQ-5 新鎖在最後一次全量跑時抓到（560 → 559）。
+  已把標記移到行末、刪殘檔、重跑 560 ok。
+- **TMO-041 殘餘**：CI 的 ubuntu bash 5.2 行為本機無法驗證（只有 3.2 / 5.3）；本機 `python3` 3.14 vs CI 3.12
+  未納入等價探針。
 
 ## 下一步建議
 
@@ -169,7 +182,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
    確認 `Markdown lint` job 由「假綠」變「真擋且綠」、TMO-042 的 ffmpeg step 兩平台通過。
 2. **輪替 `OPENROUTER_API_KEY`**（NYH-1）。
 3. reviewer round B 的 P 項修正（若有）。
-4. 之後可做 TMO-041（環境等價）→ 它才是「本機假綠」的最後一道結構性防線。
+4. round E 二審（TMO-038 / TMO-041）；剩 TMO-040（護欄設計邊界）、TMO-035（文實矛盾）為決策票。
 
 ## 反思
 

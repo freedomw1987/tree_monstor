@@ -250,6 +250,28 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 > 沒 venv 時同樣是**紅＋修復指令**（不 skip）——這是刻意取捨：字串比對看不到 trigger／步驟先後／矩陣，
 > 而 CI 的執行次序保證了 venv 先建好。
 
+### 環境等價探針（TMO-041）
+
+`tests/env-equivalence.bats`（7 條）守「本機全綠 ≠ CI 全綠」那類假綠，全套現在是 **560 條**：
+
+| 探針 | 守什麼 | 本機需要什麼 |
+|------|--------|--------------|
+| ENV-EQ-1 | 本機要有 bash 5.x（CI 的 ubuntu 就是 5.x）| macOS：`brew install bash`（沒裝 → 紅＋這行指令，不 skip） |
+| ENV-EQ-2 | **每一個**本機可用的 bash 版本都跑一遍 `tests/wiki-cleanup.bats` | 同上（macOS 多一個 5.x 版本要跑） |
+| ENV-EQ-3 | PATH shim 真的把 bash 換掉（不然 ENV-EQ-2 是假的） | — |
+| ENV-EQ-4 | 空陣列 × `set -u` 行為逐版本量測並印表 | — |
+| ENV-EQ-5 | 探針不得寫固定 `/tmp/<name>`（跨 run 殘檔 → 假綠） | `python3` |
+| ENV-EQ-6 | 探針不得直接執行 `gh` / `brew`（工具狀態依賴） | `python3` |
+| ENV-EQ-7 | oracle 子集在「網路黑洞」下仍全綠（黑洞有 canary） | PoC venv |
+
+兩個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py` 與 `scripts/ci/lint-probe-tools.py`，
+都可單獨跑（`--self-test` 驗抽取器本身）。寫檔請用 `$BATS_TEST_TMPDIR`；真的只是「資料引用」
+（例如壞值清單、故意不存在的路徑）就在該行標 `TMP-OK` 就地豁免——反向鎖會擋「拿標記當萬用豁免」。
+
+CI 的 bats-core 已釘版：兩個 runner 都 `git clone --branch v1.14.0`＋`install.sh /usr/local`
+（apt 的 bats 與 brew 的 bats-core 版本會漂移，`@test` 名稱／旗標行為跟著變），契約由
+`tests/poc-bootstrap.bats` 的 PyYAML 語意斷言鎖住（兩平台同 tag、`>= v1.14.0`）。
+
 ### 可選：dav-wiki 媒體提取的測試依賴
 
 `tests/wiki-extract-media.bats` 有一部分案例需要額外工具；**缺工具時這些探針會直接失敗**（不會 skip），
