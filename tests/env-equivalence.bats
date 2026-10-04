@@ -566,12 +566,13 @@ printf "%s\n" "${a[@]}"'
 # 任何落在其他位置的 `.bats` 都不會被 CI 執行 → 改壞了沒人擋（假綠）。
 @test "ENV-EQ-12: no orphan .bats outside the two CI execution paths" {
   local all orphan=""
-  # 排除 gitignored 的本機副本樹（.agents/ .claude/ .pi/ tmp/ .venv/）——它們不是 repo 內容，
-  # 但 find 不讀 gitignore；不排除會讓「跑過 ./install.sh 的開發者」看到偽紅（reviewer round J P2-1）。
-  # 註：仍用 find（而非 git ls-files）才能抓到**未追蹤**的 orphan（例：scripts/orphan.bats）。
-  all=$(cd "$REPO_ROOT" && find . -name '*.bats' \
-    -not -path './.git/*' -not -path './.agents/*' -not -path './.claude/*' \
-    -not -path './.pi/*' -not -path './tmp/*' -not -path './.venv/*' | sed 's|^\./||' | sort)
+  # 用 find（而非 git ls-files）才能抓到**未追蹤**的 orphan（例：scripts/orphan.bats）；
+  # 但 find 不讀 gitignore，跑過 ./install.sh 的開發者會在本機副本樹（.agents/ .claude/ .pi/ tmp/ .venv/）
+  # 看到偽紅（reviewer round J P2-1）。故改用 `git check-ignore` 逐檔判斷，而非硬編排除清單：
+  # git check-ignore **預設會看 index**，所以「被追蹤」的檔永遠不算 ignored →
+  # 就算未來有被追蹤的 .bats 落在那些目錄，也不會被誤排除（M53 實證）。
+  all=$(cd "$REPO_ROOT" && find . -name '*.bats' -not -path './.git/*' | sed 's|^\./||' | sort \
+    | while IFS= read -r f; do git check-ignore -q -- "$f" || printf '%s\n' "$f"; done)
   [ -n "$all" ] || { echo "FAIL: 找不到任何 .bats（repo root 指錯？）" >&2; return 1; }
   local f n=0
   for f in $all; do
