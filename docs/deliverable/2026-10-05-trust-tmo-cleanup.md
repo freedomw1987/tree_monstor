@@ -228,18 +228,18 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 | 編號 | 內容 | 修正 |
 | --- | --- | --- |
 | P2-1 | `poc-clean-clone.bats:170` 的排除理由（「巢狀重跑讓時間翻倍」）與文件（「固定 `/tmp` 殘檔＋bats 漂移」）仍矛盾 → round E 聲稱「理由統一」不實 | 註解改寫為與文件一致的統一理由（含補償：ENV-EQ-5／bats 釘版／`excluded -eq 1`） |
-| P2-2 | `ENV-EQ-10` 反向鎖 pattern 要求 `sudo` → 抓不到本輪被移除的舊寫法 `apt install bats`（鎖比宣稱弱） | pattern 改為 `(sudo\s+)?apt(-get)? install[^#]*\s bats`；並加 **pattern 自我測試**（`sudo apt install bats`／`apt install bats`／`apt-get install -y bats` 必中；`apt install poppler-utils` 不中） |
+| P2-2 | `ENV-EQ-10` 反向鎖 pattern 要求 `sudo` → 抓不到本輪被移除的舊寫法 `apt install bats`（鎖比宣稱弱） | pattern 改為 `(sudo[[:space:]]+)?apt(-get)? install[^#]*[[:space:]]bats`（照程式原字串）；並加 **pattern 自我測試**（`sudo apt install bats`／`apt install bats`／`apt-get install -y bats` 必中；`apt install poppler-utils` 不中） |
 | P2-3 | 本檔新增檔案清單漏列 `scripts/ci/check-skill-size.sh`、`tests/skill-size-guard.bats` | 補列 |
 | P2-4 | trust-log row 54（`05:01:42*`）與 rows 52/53 估值時間衝突；row 49 排序早於 row 48 | rows 52/53 標明「時間為估值，非 commit 時間」；row 49 加「補記；工作時間早於 row 48」 |
-| P2-5 | backlog 新狀態詞 `待決（NYH-n）` 不在「狀態定義（單一來源）」內；TMO-046 用 `待做` 而非 `todo` | 定義補 `待決（NYH-n）`；TMO-046 改 `todo` 並移到 TMO-040 之後（ID 遞增） |
+| P2-5 | backlog 新狀態詞 `待決（NYH-n）` 不在「狀態定義（單一來源）」內；TMO-046 用 `待做` 而非 `todo` | 定義補 `待決（NYH-n）`；TMO-046 改 `todo` 並移到 TMO-040 之後（全表本就非嚴格 ID 序，TMO-040 為既存錯置） |
 | P2-6 | `ZERO-CROSS-READ` test 9 的禁制清單硬編 5 根（漏 `trust-log.md`／`install-reference.md`／`DESIGN.md`／`system-design.md`…）＝「別再硬編清單」的教訓重演 | 改為**列舉 `docs/*` 推導**（只放行明確的目標專案端 runtime 路徑：`need-you-help.md`／`concepts`／`wiki`／`ac`），並加「推導數 ≥5」防空過；突變驗證：`docs/trust-log.md` 標記豁免 → 紅 ✓、`docs/wiki/…` → 綠 ✓ |
 | P3-1 | 本檔「（並在 self-test 覆蓋）」不實（`targets()` 未自測） | 刪除不實敘述 |
 | P3-2 | `lint-probe-tools.py` 尾端換行「已修」無證據；新檔 `skill-size-guard.bats` 反而缺換行 | 實測三檔尾端位元組後補齊（兩把 py 鎖＋bats 檔） |
 | P3-3 | `lint-probe-tmp-paths.py:22-23` 註解重複片段 | 刪除重複行 |
 | P3-4 | TMP-OK 標記數文件寫 3，實際 4 | trust-log row 45／backlog TMO-041 詳細更正為 4 |
 | P3-5 | `skills/*/tests/*.bats` 從未被 CI 執行 | 開票 **TMO-047**（含兩把鎖反而會掃它們的說明）＋記入已知問題 |
-| P3-6 | `ENV-EQ-9` 普查只掃 `tests/*.bats`（非遞迴） | 於該條加註：未來新增子目錄會「少算 → 大聲紅」，不會靜默 |
-| P3-7 | 本檔變更清單末列不是凍結 HEAD | 補 `c686dd4` 列 |
+| P3-6 | `ENV-EQ-9` 普查只掃 `tests/*.bats`（非遞迴） | 於該條加註：未來新增子目錄會「少算 → 大聲紅」，不會靜默（**round G F1 更正：此理由為假**，見下節 F1） |
+| P3-7 | 本檔變更清單**未列入凍結 HEAD**（原敘述誤寫「末列」） | 補 `c686dd4` 列；round G F5 再加「凍結快照約定」段，並把當輪 commit 列於末列 |
 
 **本輪自曝（延續）**：P2-6 的修法**首測仍不咬**（邊界 `(/|$)` 抓不到 `` `docs/trust-log.md` `` 後接反引號），
 改成 `([^A-Za-z0-9_.-]|$)` 後才咬——這是本輪第二次「改完要突變驗」的實例（第一次是 M16）。
@@ -247,20 +247,43 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 ## reviewer 修正（round G）
 
 `8a98a3ba`（凍結快照 `4ffd3de`，範圍 `c686dd4..4ffd3de`）：**OK with notes（0 P0 / 0 P1 / 1 P2 / 5 P3）**，
-「可交付用戶驗收？yes（附註）」。round F 的 6 P2 + 7 P3 **全部判定已修**（P2-5/P3-6/P3-7 為部分修 → 見下）。
+「可交付用戶驗收？yes（附註）」。round F 的 6 P2 + 7 P3 判定為**已修 10 條／部分修 3 條**（P2-5、P3-6、P3-7 部分修 → 見下；三者的補正於 round H 完成）。
 本輪同樣**無 shell 工具**（Gate 1/2/3 證據為引用 `/tmp/rg-*.txt`）；唯一 P2 是「測試註解敘述為假」。
 
 | 編號 | 內容 | 修正 |
 | --- | --- | --- |
 | **F1（P2）** | `tests/env-equivalence.bats` 新增註解宣稱「未來新增 `tests/<子目錄>/` → 普查少算 → **大聲紅**」**為假**：`bats` 無 `-r` 時 `bats --count tests/` 也**非遞迴** → 兩邊一起少算＝**靜默綠**（正是宣告數鎖失去覆蓋的那一格） | ①註解改寫為真話；②追加**反向鎖**：`find tests -mindepth 2 -name '*.bats'` 必須為空，否則該條直接紅（附修法指引：擴 glob 為 `tests/**/*.bats` 並讓 CI 跑 `bats -r tests/`）；擴充追蹤於 TMO-047。**突變 M24**：建 `tests/mut-g1-sub/nested.bats` → 紅 ✓；移除 → 綠 ✓ |
-| F2（P3） | 本檔 P2-5 列寫「移到 TMO-040 之後（ID 遞增）」不實（全表本就非嚴格 ID 序） | 刪「（ID 遞增）」，改註明 TMO-040 為既存錯置 |
+| F2（P3） | 本檔 P2-5 列寫「移到 TMO-040 之後（ID 遞增）」不實（全表本就非嚴格 ID 序） | 刪「（ID 遞增）」，改註明 TMO-040 為既存錯置（**round H P2-1 抓到首版未落地**，已補） |
 | F3（P3） | trust-log row 56 的 P3 對帳漏 P3-6 | row 58 補記（含 F1 更正） |
-| F4（P3） | 本檔引用的新 pattern 與程式不符（`\s` 非 POSIX ERE，照字面讀反而抓不到目標） | 改貼程式原字串 `(sudo[[:space:]]+)?apt(-get)? install[^#]*[[:space:]]bats` |
-| F5（P3） | P3-7 缺陷敘述誤寫「末列」；新增列插中段、時間倒序 | 敘述更正＋本檔加「凍結快照約定」段（帳務 commit 不列表，記於 trust-log） |
+| F4（P3） | 本檔引用的新 pattern 與程式不符（`\s` 非 POSIX ERE，照字面讀反而抓不到目標） | 改貼程式原字串 `(sudo[[:space:]]+)?apt(-get)? install[^#]*[[:space:]]bats`（**round H P2-1 抓到首版未落地**，已補） |
+| F5（P3） | P3-7 缺陷敘述誤寫「末列」；新增列插中段、時間倒序 | 敘述更正（**round H P2-1 抓到首版未落地**，已補）＋本檔加「凍結快照約定」段（帳務 commit 不列表，記於 trust-log） |
 | F6（P3） | `restruct-zero-cross-read.bats` 的 `local allow=…` 是死碼（真正生效的是 `case` 字面）→ 豁免清單兩份來源可無聲分岔 | 刪除 `allow` 變數，改為 `case` 旁註解（單一來源） |
 
-**本輪無新增探針**（reviewer 已確認：diff 無任何新 `@test`），兩處 regex 變動皆為**嚴格化**、無未申報放寬
+**本輪（＝受審範圍 `c686dd4..4ffd3de`）無新增探針**（reviewer 已確認：diff 無任何新 `@test`），兩處 regex 變動皆為**嚴格化**、無未申報放寬
 （reviewer 另建議：V03.6 表可補一句「本輪 regex 變動均為嚴格化、非放寬」）。
+
+## reviewer 修正（round H）＋審查迴圈收斂
+
+`dcdd24bc`（凍結快照 `86f6738`，範圍 `4ffd3de..86f6738`）：**OK with notes（0 P0 / 0 P1 / 1 P2 / 7 P3）**，
+「可交付用戶驗收？**no**」（唯一原因＝本檔 round G 區塊有「已修」聲明與事實不符）。探針層判定**已收斂**
+（「本輪所有 P0/P1 皆為 0，唯一 probe 變動是單向加嚴且經 bats 1.14.0 原始碼靜態驗證正確、無未申報放寬
+→ 探針層再審也找不到新東西」）。
+
+| 編號 | 內容 | 修正 |
+| --- | --- | --- |
+| **P2-1（實質）** | 本檔 round G 區塊的 F2／F4／F5 三列聲稱「已修」，但**實際未落地**（`:231` 仍是 `\s`、`:234` 仍留「（ID 遞增）」、`:242` 仍寫「末列」）；且 `:250`「全部判定已修（P2-5/P3-6/P3-7 為部分修）」與 trust-log row 58「全判已修」措辭互斥 | 三項真正落地（本次已用 grep 逐一驗證）；措辭改為「已修 10 條／部分修 3 條」；row 58 補註 |
+| P3-1 | 同上 F2（`:234`） | 刪「（ID 遞增）」，改註 TMO-040 為既存錯置 |
+| P3-2 | 同上 F4（`:231`） | 改貼程式原字串 `[[:space:]]` |
+| P3-3 | 同上 F5（`:242`） | 敘述更正為「未列入凍結 HEAD」 |
+| P3-4 | trust-log row 59 把 `a2d65fe` 稱為「帳務 commit（不列入變更清單）」，但變更清單確實列了它 → 同 commit 兩份記錄分類互斥 | row 59 改為「本 commit 的**行為變更**部分（F1 反向鎖、F6 刪死碼）已列於變更清單；本列記錄其**帳務部分**」 |
+| P3-5 | row 58 記 `~05:50` 晚於 row 59 的 `05:42:30*` → 因果倒置 | 改 `~05:35（估值，早於 row 59 的 commit 時間）` |
+| P3-6 | round F P3-6 列仍留已被 F1 推翻的理由「少算 → 大聲紅」且無行內更正 | 加行內「（**round G F1 更正：此理由為假**，見下節 F1）」 |
+| P3-7 | `ENV-EQ-9` 反向鎖取的是管線末 `head` 的 rc → `find` 本身失敗時鎖靜默失效 | 改為 `if ! nested=$(find …); then FAIL; fi`；另以獨立片段驗證 guard 分支（`find /definitely-not-here` → 走 FAIL 分支 ✓）；**M24 重跑仍咬 ✓**（改動後再驗一次） |
+
+**本輪自曝（新增，第 3 次同類）**：round G 的文件修正腳本**漏寫 `write_text()`** → 三項編輯（F2/F4/F5）
+全部只存在於記憶體、沒有落地，但我在 commit message 與 round G 章節都聲稱「已修」。
+**根因**：腳本用 `rep()` 改字串但結尾沒有 `p.write_text(s)`，且我**沒有在 commit 前用 grep 驗證**落地。
+**對策（已生效）**：本輪所有編輯都在寫入後立即 `grep -c` 驗證（見上表各行）。
 
 ## 已知問題
 
@@ -309,8 +332,11 @@ artifact，非親跑）；commit 範圍與 `git log` 時間戳它無法自驗。
 1. **push + 真實 CI 驗證**（需用戶同意）：`git push origin trust/2026-10-05-tmo-cleanup`，
    確認 `Markdown lint` job 由「假綠」變「真擋且綠」、TMO-042 的 ffmpeg step 兩平台通過。
 2. **輪替 `OPENROUTER_API_KEY`**（NYH-1）。
-3. reviewer round G 二審（round F 的 P 項修正 delta）。
-4. TMO-046（`tdd-test-writer/SKILL.md` 149 行餘量，P3）；剩 TMO-040（護欄設計邊界）、TMO-035（文實矛盾）為決策票。
+3. **審查迴圈已收斂，停止再開 reviewer 輪**（依 round H 判定：探針層 0 P0/P1、本輪 probe 變動僅單向加嚴；
+   round H 的 P2-1／P3-4／P3-5 已落地）。**揭露**：本輪修正 commit 之後的**最後一個帳務 commit**
+   （把此節寫進檔案的那個）其 hash 只存在於 `git log` 與交付報告——依「凍結快照約定」這是刻意的。
+4. TMO-046（`tdd-test-writer/SKILL.md` 149 行餘量，P3）、TMO-047（`skills/*/tests/*.bats` 從未被 CI 跑）；
+   剩 TMO-040（護欄設計邊界）、TMO-035（文實矛盾）為決策票。
 
 ## 反思
 

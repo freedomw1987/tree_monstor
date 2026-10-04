@@ -375,7 +375,13 @@ printf "%s\n" "${a[@]}"'
   # （bats 沒有 `-r` 時只掃 `tests/*.bats`）→ 若新增 `tests/<子目錄>/`，**兩邊一起少算＝靜默綠**，
   # 不是「大聲紅」。故下方先加反向鎖：tests/ 必須維持平坦，否則本條直接紅（TMO-047 追蹤擴充）。
   local nested
-  nested=$(find "$REPO_ROOT/tests" -mindepth 2 -name '*.bats' | head -5)
+  # round H P3-7：`find` 本身失敗（缺 find／tests/ 不存在）時，管線末 `head` 的 rc 會蓋掉錯誤
+  # → 反向鎖靜默失效。故先驗 find 自己的 rc（`head` 不影響 `if` 判斷）。
+  if ! nested=$(find "$REPO_ROOT/tests" -mindepth 2 -name '*.bats' 2>/dev/null); then
+    echo "FAIL: 反向鎖無法列舉 tests/ 子目錄（find 失敗）→ 鎖沒生效，請檢查環境" >&2
+    return 1
+  fi
+  nested=$(printf '%s\n' "$nested" | head -5)
   [ -z "$nested" ] || {
     echo "FAIL: tests/ 出現子目錄探針 → 普查與 bats --count 皆非遞迴，會靜默漏算：" >&2
     echo "$nested" >&2
