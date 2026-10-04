@@ -32,6 +32,7 @@
 | TMO-021 | M7 flaky→batch_report 整合 + gh pr comment | P1 | 5 | done (2026-09-28) | TMO-020 |
 | TMO-022 | M8 CI matrix pipeline (多 story_id 並行) | P1 | 5 | done (2026-09-28) | TMO-021 |
 | TMO-023 | 修 v2.1-jev-poc C 類探針 bug（8 紅：sandbox baseline fixture / flaky batch fixture / 缺 `run` / `ls` dotfile 假斷言）| P0 | 5 | done (2026-10-04) | — |
+| TMO-024 | README 精簡（288→90 行）+ 導向 AGENTS.md / skills + 新增 docs/install-reference.md | P2 | 3 | done (2026-10-04) | — |
 
 ---
 
@@ -687,3 +688,26 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - **慢 1 點**：第一版只「補 fixture 讓紅燈變綠」，被 reviewer 抓到 M6.3-e 是**假綠**（`ls` 不看 dotfile）；靠**突變測試**（故意破壞 `_cleanup`）才證明探針真的會紅
 - **影響**：`bats tests/` 38 → 30 紅；這 8 個紅燈不再掩蓋 M6.3/M7 的真回歸
 - **教訓**：「補前置資料讓紅燈變綠」必須分清**修探針** vs **放寬門檻**；能用突變測試證明「探針會紅」才算真修好
+
+---
+
+## TMO-024 詳細（README 精簡 + install-reference）
+
+> 來源：2026-10-04 用戶對話「README 只留簡單安裝介紹，更多導向 AGENTS.md 與 skills」
+> **狀態**：✅ 2026-10-04 完成
+
+### 做法
+
+- `README.md` 288 → 90 行：badges / 一行介紹 / Quick Start / 精簡 Usage 表（保留 `Usage`、`--global`、`--uninstall` 三字串，`tests/install.bats` AC-15 依賴）/ 新增「工作流程：看 AGENTS.md」（§1 / §1.5 V01–V03 / §2.0 / §2.1–§2.5 / §2.3 4 Gate / §2.7）/ 新增「Skills」表（11 個 skill 一行說明 + 連結）/ 進階指向 `docs/install-reference.md`
+- 新增 `docs/install-reference.md`（296 行）：完整 flag 表、安裝後檔案結構、設計理由、環境變數、dev/test、6 題 troubleshooting
+- 修正原 README 不實描述：`REGRESSION_MODE=true bash install.sh` 這個環境變數在 `install.sh` / `lib/` 內不存在 → 改為 `bash -x install.sh --dry-run --global`
+
+### 驗收證據
+
+- `markdownlint`：0 問題
+- `bats tests/install.bats`：AC-15 綠；全套 `bats tests/` 無新增失敗（38 紅為 baseline）
+- 14 個相對連結逐一確認存在
+
+### 已知問題
+
+- README 的 `bats | 209/209` badge 已過期（實際 493 測試 / 463 綠 / 30 紅），且 CI badge 指向從未執行的 workflow → 待用戶決定 badge 處理方式
