@@ -46,7 +46,7 @@
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`＋清單硬編 9 檔（漏 `ask-me`，新增 skill 靜默漏掃）| P2 | 2 | done (2026-10-05) | TMO-028 |
 | TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..9：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內 / lint job 不得有 `if:`）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 16 處（12 檔） + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
-| TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
+| TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）**→ 已修（2026-10-05）**：①改 AST 遞迴掃描＋`PoC-OPTIONAL-DEP` 行內標記制（含反向鎖）、④helper 自動列舉、⑤新增 1 條 PyYAML 語意斷言（trigger／矩陣／步驟次序／不得吞錯；缺 PyYAML 大聲紅不 skip）| P2 | 3 | done (2026-10-05) | TMO-029 |
 | TMO-039 | 首次真實 GitHub Actions 驗證（首跑 `37213235272` 全 job 紅 → 6 類真因；第二輪 `37215560458` **34 紅收斂到 4 紅** → 再揭露 2 類：①oracle 依賴假綠 3 條 ②macOS ffmpeg 8 移除 `-vsync`；第三輪修法見 §TMO-039 詳細；**第三輪 run `37218446930` ubuntu+macos test job 全綠**，僅 lint-only 紅＝TMO-037；**reviewer round-3 `approve-with-comments`（0 P0 / 0 P1 / 6 P2）**，前輪 5 P2 全數收尾，本輪 P2 已修 3 條／切票 TMO-044、TMO-045；**用戶決策「收在此」→ 結案**，收尾 run `37219489118` 亦綠）| P1 | 3 | done (2026-10-04) | TMO-029 |
 | TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴尚未掃完——reviewer round-3 具體點名：真網路未封鎖、`PoC/.env`（`__file__` 旁，非 `HOME`）、固定 `/tmp` 檔名跨 run 殘留、`bats`/`bash` 版本、`gh`/`brew` 工具未 stub（①已涵蓋版本項） | P2 | 3 | todo | TMO-039 |
 | TMO-042 | 媒體探針未鎖 ffmpeg 版本 → **已修（2026-10-05）**：新增 `scripts/ci/check-ffmpeg-version.sh`（①版本底線 ≥5.1 ②用本 repo 真的在用的旗標組合 `-vf select/showinfo` + `-fps_mode vfr` + `-f null -` 實測能力③缺 ffmpeg/ffprobe 即紅；`FFMPEG_BIN`/`FFPROBE_BIN` 可覆寫供測試）；ci.yml test job 兩平台都跑（bats 之前）；CONTRIBUTING 寫明底線、CI 實測版本與「移除/改名清單」（`-vsync` → `-fps_mode`）；新探針 `tests/ffmpeg-version.bats` FV-1..FV-7（含假殼舊版 4.4.2 / 5.0 / 旗標失效 / 缺工具 / CI 靜態鎖 / 文件鎖） | P2 | 2 | done (2026-10-05) | TMO-039 |
@@ -1022,7 +1022,7 @@ HEAD（`93ba04f`）狀態下：
 | `.github/workflows/ci.yml` | triggers 加 `workflow_dispatch`；`push`/`pull_request` 分支 `[main, master]`；test job 加 `Build PoC venv` 步驟（排在 `bats tests/` 前）；lint-only 加 `continue-on-error: true`（→ TMO-037）|
 | `.markdownlint-cli2.jsonc` | **新增**：ignores `**/.venv/**`、`**/node_modules/**`（venv 在 `skills/**` 內，site-packages 的 LICENSE.md 會被撈進來）|
 | `tests/poc-bootstrap.bats` | **新增 8 條探針**（見下）|
-| `tests/v2.1-jev-poc.bats` | 38 條 venv-dependent 測試加 `need_poc_venv()`（缺 venv → 一條清楚的紅＋修復指令，不再 38 條 127）；新增 `make_us101_run()` 讓 M6-g / M6.1-c 真的跑；flaky-d 先清 `/tmp` 殘檔 |
+| `tests/v2.1-jev-poc.bats` | venv-dependent 測試加 `need_poc_venv()`（缺 venv → 一條清楚的紅＋修復指令，不再 38 條 127）；新增 `make_us101_run()` 讓 M6-g / M6.1-c 真的跑；flaky-d 先清 `/tmp` 殘檔（TMO-038 校正：實為 **40 條** venv-dependent／共 100 條，且名單改自動列舉）|
 | `README.md` | 移除數字 badge（bats `209/209`、markdownlint `0 issues` 皆無鎖且已失真）→ 只留 CI run badge |
 | `docs/install-reference.md` | 更正依賴說明：**38 / 98 條需 venv，其餘 60 條純靜態**（原誤寫「98 條全紅」）|
 
@@ -1030,14 +1030,14 @@ HEAD（`93ba04f`）狀態下：
 
 | # | 鎖什麼 | 反空過設計 |
 | --- | --- | --- |
-| 1 | `requirements.txt` 涵蓋 PoC 腳本所有 column-0 非 stdlib import | `-ge 2` 防空過；範圍外（縮排／子目錄）明示 → TMO-038 |
+| 1 | `requirements.txt` 涵蓋 PoC 腳本所有非 stdlib import | TMO-038 已修：AST 遞迴掃描（含縮排／子目錄）＋module→dist 映射（映射表自我測試）＋`PoC-OPTIONAL-DEP` 行內標記（反向鎖：標記只能落在 import 行）＋`-ge 2`／掃檔數 `-ge 15` 防空過 |
 | 2 | `setup-venv.sh` 存在、可執行、且真的從 `requirements.txt` 安裝 | 指名檔案（改讀 deps.txt 即紅）|
 | 3 | uv 缺席時走 `python3 -m venv` 退路 | **真跑**：PATH 只放 shim、`POC_VENV_DIR` 導向暫存；斷言 `-m venv` 與 `-m pip install` 都在呼叫記錄內 |
-| 4 | 每條 venv-dependent 測試都有 `need_poc_venv` | 靜態不變式（用到 `$PY`／helper 的測試數 == 有守門的測試數）＋ 同檔 `skip` 數必須 0 |
+| 4 | 每條 venv-dependent 測試都有 `need_poc_venv` | 靜態不變式（用到 `$PY`／helper 的測試數 == 有守門的測試數）＋ 同檔 `skip` 數必須 0；TMO-038 已修：helper 名單**自動列舉**（不再硬編 2 個，M6b 實證舊規則 40/40 不咬、新規則 41/40 咬）|
 | 5 | `.venv` 被 gitignore | `git check-ignore` 行為驗證（非只看字串）|
 | 6 | 可疑 `POC_VENV_DIR` 必須拒絕 | 9 個壞值（含 `/tmp/`、`//`、`/tmp/..`、`/tmp/.` 等價寫法）＋ 深層路徑正向對照；刻意不帶 `--force` |
 | 7 | 護欄必須排在 `rm -rf` 之前 | 行號靜態比較（註解行已用 `^[^#]` 排除）|
-| 8 | CI 在 `master` 觸發、且用 `setup-venv.sh` 建 venv | PyYAML 語意斷言 → TMO-038 |
+| 8 | CI 在 `master` 觸發、且用 `setup-venv.sh` 建 venv | TMO-038 已修：新增 PyYAML 語意斷言（`on` 解析陷阱、trigger 三件套、`push`/`pull_request` 均含 main+master、`matrix.os` 雙平台、venv 步驟早於 `bats tests/`、兩步皆禁 `continue-on-error`/`if`/`\|\| true`）；原字串層保留為下層 |
 
 ### 驗收證據
 
@@ -1052,7 +1052,7 @@ HEAD（`93ba04f`）狀態下：
 ### 已知問題（已切票）
 
 - TMO-037 lint 債 246 處（lint-only 暫 `continue-on-error`，清完須移除）
-- TMO-038 探針①④⑤ 範圍與語意強化
+- ~~TMO-038 探針①④⑤ 範圍與語意強化~~ **已完成（2026-10-05）**，見本節末「TMO-038 結案」
 - TMO-039 首次真實 Actions 驗證（本機不可驗）
 - TMO-040 護欄設計邊界（合法深層絕對路徑 + `--force`）
 
@@ -1138,3 +1138,38 @@ HEAD（`93ba04f`）狀態下：
 - **假綠第 5 型：依賴本機狀態**。3 條 oracle 探針在本機是綠的，靠的是「我 shell 裡剛好有 API key」＋「8233 筆未版控暖快取」——兩者都不在 CI。更貴的是：這種綠在**任何**本機驗證（含 clean
   clone、bash 5.3）都不會露餡，只有真的跑 CI 才看得到。
 - **產品 bug 會躲在探針的紅燈裡**：`-vsync` 一開始看起來像「CI 環境問題」（只有 macOS 紅），但同一個旗標就寫在產品腳本裡；P2-1 的 `..` 逃逸也是如此——探針紅了不代表只有探針要改。
+
+## TMO-038 詳細（探針強化：AST 掃描／標記制／自動列舉／CI 語意斷言）
+
+**問題**：`tests/poc-bootstrap.bats` 三處「看起來有守、其實漏守」——①依賴掃描只掃第 0 欄、只掃同目錄
+（函式內 optional import 與子目錄 `.py` 全在射程外）；④不變式的 helper 名單硬編 2 個（新增 helper
+靜默漏抓）；⑤CI 契約只有字串比對（看不到 trigger 結構、矩陣、步驟先後）。
+
+### 三項修法
+
+| # | 修法 | 反空過／反向鎖 |
+| --- | --- | --- |
+| ① | 依賴掃描改 **AST 遞迴**（`rglob('*.py')`，排除 `.venv`／`__pycache__`）＋ module→dist 映射表；optional 依賴改由原始碼**行內標記** `# PoC-OPTIONAL-DEP` 自我說明 | 映射表自我測試（`yaml→PyYAML` 等 ＋ 表長 ≥ 8）；掃檔數 ≥ 15／import 陳述 ≥ 20；標記**只能**落在 `import`/`from` 行（濫用即紅）；`requirements.txt` 必須出現標記字樣（機制不得變隱藏例外清單）；印出 optional 名單非空 |
+| ④ | helper 名單**自動列舉**（`awk` 抽「body 用到 `$PY` 的函式」）再餵給偵測規則 | 抽取器自我測試（`need_poc_venv` 必在名單內，否則紅）；空名單 → 紅 |
+| ⑤ | 新增一條 **PyYAML 語意斷言**（把 workflow 解成物件）：trigger 三件套、`push`/`pull_request` 均含 `main`+`master`、`matrix.os` 必須是 `[ubuntu-latest, macos-latest]`、venv 步驟早於 `bats tests/`、兩步驟皆禁 `continue-on-error`／`if:`／`\|\| true` | YAML 1.1 的裸 `on` 會被解成 `True` → 兩種鍵都認但必須**恰好一種**；缺 PyYAML → **大聲紅＋修復指令**（不 skip、不退回字串比對）；原字串層測試保留為下層 |
+
+**刻意取捨（已寫進 `docs/install-reference.md`）**：探針⑤讓「CI 契約」這 1 條從純靜態變成需要 `PyYAML`
+（clean clone 未建 venv 時會紅，但附修復指令）。理由：字串比對看不到步驟先後與矩陣，而 CI 的執行次序
+（`setup-venv.sh` → `bats tests/`）保證 CI 一定拿得到 PyYAML。
+
+### 驗收證據
+
+- Gate 1（紅→綠，突變 11 組全咬）：M1 子目錄＋縮排＋未列依賴（`requests`）→ 紅、M2 同一 import 加標記 → 綠（標記有效）、
+  M3 標記貼在非 import 行 → 紅、M4 `requirements.txt` 不再說明標記 → 紅、M5 `DIST={}` → 紅、M6 新增 `$PY` helper
+  ＋未守門測試 → 紅（**對照組 M6b**：helper 置檔首時舊硬編規則 40/40 **不咬**、新規則 41/40 咬）、M7 步驟次序對調 → 紅、
+  M8 拔 `workflow_dispatch` → 紅、M9 拔 macos → 紅、M10 venv 步驟加 `continue-on-error` → 紅、M11 藏掉 venv python → 紅＋指令。
+  全部以 `cp` 備份還原並 `diff -q` 驗證（未用 `git checkout`）。
+- Gate 2：`markdownlint` 128 檔 0 issue；`shellcheck -x -S style` rc=0；`bats --count` 解析兩檔 OK；
+  兩段內嵌 Python 以 `ast.parse` 驗語法、`py_compile` 驗 `playwright_observer.py`。
+- Gate 3：`bats tests/` **553 ok / 0 not ok / 0 skip**（TMO-033 後 552 → 新增 1 條語意斷言）。
+- Gate 4（V03.6 二審）：見 `docs/trust-log.md` round E 條目。
+
+### 已知殘餘
+
+- 「helper 使用 `$PY`」的判定仍是靜態字串：若 venv 使用被藏進 `tests/helpers/*.bash` 或 `$(cat)` 之類間接形式，仍會漏抓（本輪未見實例，列為已知上界）。
+- `PoC/tmp/**` 的執行期 `.py` 也在掃描範圍內（本輪為空集合）；若未來 runtime 產生含第三方 import 的暫存碼，會誤紅 → 需加排除規則。

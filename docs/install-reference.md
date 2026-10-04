@@ -236,15 +236,19 @@ apt install bats          # Debian/Ubuntu
 
 ### 跑全套測試前：建 Jev PoC venv（必需）
 
-`tests/v2.1-jev-poc.bats` 的 98 條裡有 **38 條**要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘 60 條是純靜態
-檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時那 38 條
-會全紅，而且每一條失敗測試各自印出修復指令：
+`tests/v2.1-jev-poc.bats` 的 100 條裡有 **40 條**要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘 60 條是純靜態
+檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時那 40 條
+會全紅，而且每一條失敗測試各自印出修復指令（TMO-038 起這 40 條的名單由探針自動列舉，不再硬編）：
 
 ```bash
 bash skills/regression-guard/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
 ```
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
+
+> `tests/poc-bootstrap.bats` 另有 1 條（TMO-038 的 CI 契約語意斷言）要用到 `PyYAML` 把 workflow 解成物件，
+> 沒 venv 時同樣是**紅＋修復指令**（不 skip）——這是刻意取捨：字串比對看不到 trigger／步驟先後／矩陣，
+> 而 CI 的執行次序保證了 venv 先建好。
 
 ### 可選：dav-wiki 媒體提取的測試依賴
 
