@@ -51,6 +51,7 @@ for f in ${files[@]+"${files[@]}"}; do
         continue
     fi
 
+    base="$(basename "$f")"
     lineno=0
     idx=0
     delim=""
@@ -75,7 +76,7 @@ for f in ${files[@]+"${files[@]}"}; do
             if [[ -n "$delim" ]]; then
                 start_line=$lineno
                 idx=$((idx + 1))
-                out="$tmpdir/$(basename "$f").$idx.py"
+                out="$tmpdir/$base.$idx.py"
                 : > "$out"
                 # `<<-` 才允許 tab 縮排結尾（bash 語意）；`<<` 必須行首頂格
                 case "$line" in

@@ -65,11 +65,11 @@ description: dav-planner 的「提問技巧 / 7 個維度 / 成熟度評估」�
 
 ### 補充 5 維度（視情境展開）
 
-5. **Non-goals** — 不做什麼？
-6. **Persona** — 目標用戶輪廓
-7. **Edge cases** — 邊界情況
-8. **Risks** — 風險
-9. **Open questions** — 待釐清問題
+1. **Non-goals** — 不做什麼？
+2. **Persona** — 目標用戶輪廓
+3. **Edge cases** — 邊界情況
+4. **Risks** — 風險
+5. **Open questions** — 待釐清問題
 
 ## §5 需求成熟度評估（寫 Backlog 前必跑）
 

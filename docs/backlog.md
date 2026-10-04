@@ -45,17 +45,18 @@
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | todo | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`，故 `dav-planner/SKILL.md:80`「先 grep `docs/concepts/`」實質跨目錄讀取抓不到 | P2 | 2 | todo | TMO-028 |
-| TMO-037 | 清 markdownlint 債（2026-10-04 實測 273 錯/66 檔；建立時為 246 錯——新增 deliverable 等文件使其成長，數字需每次重量；主類為 MD013、MD047）含 `docs/backlog.md` 45、deliverable 檔 ~75、`changelog.md` 18、`skills/**` ~21）——現以 `ci.yml` lint-only `continue-on-error: true` 暫時不阻擋，清完須移除該行 | P2 | 8 | todo | TMO-029 |
+| TMO-037 | 清 markdownlint 債（2026-10-05 實測 **270 錯 / 127 檔**；主類 MD013 201、MD047 20、MD056 9、MD038 8、MD031 7…）——**已清到 0**，並移除 lint job 的 `continue-on-error`（恢復阻擋）；新增守門探針 `tests/markdownlint-guard.bats`（MLG-1..8：job 存在 / 不得假綠 / glob 不得縮小 / MD013 上限鎖 120 / fixture 在範圍內）；手法＝`--fix` 機械修 52 + 折行 247 行 + 手改 MD056/MD036/MD025/MD028 共 17 處 + 順手清 3 筆 shellcheck info 級 | P2 | 8 | done (2026-10-05) | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
 | TMO-039 | 首次真實 GitHub Actions 驗證（首跑 `37213235272` 全 job 紅 → 6 類真因；第二輪 `37215560458` **34 紅收斂到 4 紅** → 再揭露 2 類：①oracle 依賴假綠 3 條 ②macOS ffmpeg 8 移除 `-vsync`；第三輪修法見 §TMO-039 詳細；**第三輪 run `37218446930` ubuntu+macos test job 全綠**，僅 lint-only 紅＝TMO-037；**reviewer round-3 `approve-with-comments`（0 P0 / 0 P1 / 6 P2）**，前輪 5 P2 全數收尾，本輪 P2 已修 3 條／切票 TMO-044、TMO-045；**用戶決策「收在此」→ 結案**，收尾 run `37219489118` 亦綠）| P1 | 3 | done (2026-10-04) | TMO-029 |
 | TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴尚未掃完——reviewer round-3 具體點名：真網路未封鎖、`PoC/.env`（`__file__` 旁，非 `HOME`）、固定 `/tmp` 檔名跨 run 殘留、`bats`/`bash` 版本、`gh`/`brew` 工具未 stub（①已涵蓋版本項） | P2 | 3 | todo | TMO-039 |
 | TMO-042 | 媒體探針未鎖 ffmpeg 版本 → **已修（2026-10-05）**：新增 `scripts/ci/check-ffmpeg-version.sh`（①版本底線 ≥5.1 ②用本 repo 真的在用的旗標組合 `-vf select/showinfo` + `-fps_mode vfr` + `-f null -` 實測能力③缺 ffmpeg/ffprobe 即紅；`FFMPEG_BIN`/`FFPROBE_BIN` 可覆寫供測試）；ci.yml test job 兩平台都跑（bats 之前）；CONTRIBUTING 寫明底線、CI 實測版本與「移除/改名清單」（`-vsync` → `-fps_mode`）；新探針 `tests/ffmpeg-version.bats` FV-1..FV-7（含假殼舊版 4.4.2 / 5.0 / 旗標失效 / 缺工具 / CI 靜態鎖 / 文件鎖） | P2 | 2 | done (2026-10-05) | TMO-039 |
 | TMO-043 | 死碼清理（原：`probe_metadata()` SC2329）——擴大為系統性掃描後共 3 處：①`wiki-extract-video.sh` `probe_metadata()` 刪除；②`wiki-media-describe.sh` `ext_pattern` **算完未用＝真 bug**（批次未依 mode 過濾，describe 會誤吃 .wav、transcript 會誤吃 .png）→ 修正 + 新探針 AC-D17/D18；③`wiki-ocr.sh` `EXIT_TOOLMISSING` 保留並註記（exit 4 契約屬 TMO-035 決策），`wiki-media-describe.sh` 則改用該常數。新探針 `tests/wiki-dead-code.bats`（WDC-1 靜態鎖 + WDC-2 掃描器自測） | P2 | 1 | done (2026-10-05) | TMO-039 |
-| TMO-044 | `ci.yml` `Verify Python heredoc syntax` 恆綠假檢查 → **已換成真檢查**：新增 `scripts/ci/check-python-heredocs.sh`（抽 python3 heredoc → `ast.parse` 驗語法；未結束/語法錯/抽不到都會 rc=1），ci.yml step 改為呼叫它（全 ci.yml 已無 `|| true`）。順帶修好覆蓋缺口：原檢查只涵蓋 5/9 個 heredoc（漏 wiki-extract-media ×2 / wiki-merge-media / wiki-index），現為 9/9。新探針 `tests/ci-heredoc-check.bats` H1-H5（含 3 種突變證明咬得住） | P2 | 2 | done (2026-10-05) | TMO-039 |
+| TMO-044 | `ci.yml` `Verify Python heredoc syntax` 恆綠假檢查 → **已換成真檢查**：新增 `scripts/ci/check-python-heredocs.sh`（抽 python3 heredoc → `ast.parse` 驗語法；未結束/語法錯/抽不到都會 rc=1），ci.yml step 改為呼叫它（全 ci.yml 已無 `\|\| true`）。順帶修好覆蓋缺口：原檢查只涵蓋 5/9 個 heredoc（漏 wiki-extract-media ×2 / wiki-merge-media / wiki-index），現為 9/9。新探針`tests/ci-heredoc-check.bats` H1-H5（含 3 種突變證明咬得住） | P2 | 2 | done (2026-10-05) | TMO-039 |
 | TMO-045 | oracle 假綠的殘餘護欄（reviewer P2-B/C/D）→ **已修（2026-10-05）**：①`jev_oracle.py` 新增 `JEV_ENV_FILE` seam（覆寫即取代整份 `.env` 候選清單，涵蓋 `PoC/.env` 與 `~/.claude/.../PoC/.env`）；②`M6-g`/`M6.1-c` 自身加 `JEV_ENV_FILE=/dev/null`；③`CLEAN-POC-f` 由定點鎖（3 條）一般化為「動態挑出所有 oracle 測試檔 → 整檔離線重跑」（實測 `v2.1-jev-poc.bats` 100 條全綠，故未另做 CI 等價腳本）；④新增 `CLEAN-POC-h`（`PoC/.env`/`cache/` 不得被追蹤 + `.gitignore`/`.env.example` 正對照）與 `CLEAN-POC-i`（反向驗證 seam）；⑤CONTRIBUTING + cache-fixtures/README 精確化。敏感度證明：清 fixture→f 紅、`git add -f .env`→h 紅、半套 seam 突變→i 紅 | P2 | 3 | done (2026-10-05) | TMO-039 |
 | TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | todo | TMO-029 |
 
-> **狀態定義**（單一來源）：`todo` = 已描述、尚未開工（TMO-026 之後的新票，**非** trust mode 未結項）；`doing (日期)` = 進行中；`done (日期)` = 已交付；`blocked (原因)` = 被外部條件卡住。
+> **狀態定義**（單一來源）：`todo` = 已描述、尚未開工（TMO-026 之後的新票，**非** trust mode 未結項）；`doing (日期)` = 進行中；`done (日期)` =
+> 已交付；`blocked (原因)` = 被外部條件卡住。
 > 注：`tests/backlog-trust-mode-completion.bats:48`（BACKLOG-005）禁止 trust mode 期間的票停在 `pending`；本表新票一律用 `todo`，不修改該探針。
 
 ---
@@ -66,7 +67,8 @@
 > **狀態**：✅ 2026-09-28 完成（commit 下一個）
 
 ### 做法
-1. **docs/ac/US-M63.md** + **docs/ac/US-M63.html**：M6.3 PENDING US，4 條 AC（sandbox 建立 / apply + re-validate / rollback / 探針守護）
+1. **docs/ac/US-M63.md** + **docs/ac/US-M63.html**：M6.3 PENDING US，4 條 AC（sandbox 建立 / apply + re-validate / rollback /
+   探針守護）
 2. **skills/regression-guard/PoC/sandbox_runner.py** 12.8KB / 379 行：
    - 6 步流程：建 sandbox → apply → 重跑 → re-validate → 自動 rollback（if regression）→ cleanup
    - safety 規則繼承 M6.2（ambiguous / not-found → abort + cleanup）
@@ -94,7 +96,8 @@
 
 ### 反思
 - **快**：3 個收尾選項一次到位（sandbox / flaky / cleanup-CI），80 探針全綠
-- **慢 1 點**：sandbox_runner 第一次在 pipeline 跑時因 AC_FILE unbound variable 中斷；用 `${AC_FILE:-$REPO_ROOT/docs/ac/${STORY_ID}.md}` fallback 解
+- **慢 1 點**：sandbox_runner 第一次在 pipeline 跑時因 AC_FILE unbound variable 中斷；用
+  `${AC_FILE:-$REPO_ROOT/docs/ac/${STORY_ID}.md}` fallback 解
 - **影響**：regression-guard 從「完整閉環」升級為「**完整閉環 + 自動 sandbox + 穩定性量測 + 文件自動審查**」四合一
 - **M6.3 的價值**：把 M6.2 的 3 步手動封裝成 1 步自動；reviewer 只需人工「把 sandbox 的 patch 拿回主 repo + commit」
 - **flaky 的價值**：用 5 次實跑證明 M6.2 結果穩定（不 flaky），CI 訊號可信
@@ -128,7 +131,8 @@
 
 ### DoD
 - ✅ AC01 / AC02 / AC03 / AC04 4 條全綠
-- ✅ `JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑通 M2→M3→M4→M6→M6.1→M6.2
+- ✅ `JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑通
+  M2→M3→M4→M6→M6.1→M6.2
 - ✅ `bats tests/v2.1-jev-poc.bats` 50 → 63 探針全綠
 - ✅ `patch_parser.py` / `playwright_patcher.py` / `re_validate.py` CLI 可獨立呼叫
 - ✅ deliverable.md 完成
@@ -137,14 +141,16 @@
 ### 反思
 - **快**：三模組 + 13 探針一次到位、完整 pipeline 一鍵跑通
 - **慢 1 點**：M3 在 US-M62 blocked=True → 原本會中斷 pipeline（set -e），加 M3_RC capture 解
-- **影響**：regression-guard skill 從「給建議」升級為「**建議 → 真的 patch → 自動驗證**」完整閉環；雖仍 sandbox 內 apply，但 reviewer 只需人工 sandbox 內 3 步就能完成修正
+- **影響**：regression-guard skill 從「給建議」升級為「**建議 → 真的 patch → 自動驗證**」完整閉環；雖仍 sandbox 內 apply，但 reviewer 只需人工 sandbox 內 3
+  步就能完成修正
 - **為什麼不全自動 apply**：CI 環境不能無人工 commit；LLM 接力文字可能錯，需人工 review
 
 ---
 
 ## TMO-001 詳細
 
-> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:08 — `.gitignore` 28→17 行、刪 `.agents/tree_monstor/` 132 檔。狀態完成但 backlog 欄漏改、2026-09-26 補上。
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:08 — `.gitignore` 28→17 行、刪 `.agents/tree_monstor/` 132
+> 檔。狀態完成但 backlog 欄漏改、2026-09-26 補上。
 
 **問題**：
 1. `.gitignore` 還殘留 5 行 sop-evolver RSI 規則（commit 5db8c2e 移除 RSI 但 .gitignore 漏改）
@@ -160,7 +166,8 @@
 
 ## TMO-002 詳細
 
-> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:25 — install.sh 993→569 行、抽出 19 個函數到 6 個 lib 檔。狀態完成但 backlog 欄漏改、2026-09-26 補上。
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:25 — install.sh 993→569 行、抽出 19 個函數到 6 個 lib 檔。狀態完成但 backlog
+> 欄漏改、2026-09-26 補上。
 
 **問題**：993 行 install.sh 拆成主程式 + lib 子模組
 
@@ -174,7 +181,8 @@
 
 ## TMO-003 詳細
 
-> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:38 — 範圍縮小為「只修 README badge 數字 105→209」，不另建新 bats、不合併 cross-ref。狀態完成但 backlog 欄漏改、2026-09-26 補上。
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:38 — 範圍縮小為「只修 README badge 數字 105→209」，不另建新 bats、不合併
+> cross-ref。狀態完成但 backlog 欄漏改、2026-09-26 補上。
 
 **問題**：
 1. 補上缺 bats 的工具（wiki-index / wiki-media-describe / wiki-extract-audio）
@@ -190,7 +198,8 @@
 
 ## TMO-004 詳細
 
-> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:55 — §2.0 表格改為「以 §2.6 為準」+ §2.6 加升級觸發器 + AGENTS.md 頂版本 v1.3→v1.5 + Reviewer APPROVE。狀態完成但 backlog 欄漏改、2026-09-26 補上。
+> **完成記錄**（2026-09-23）：見 `docs/trust-log.md` 2026-09-23 08:55 — §2.0 表格改為「以 §2.6 為準」+ §2.6 加升級觸發器 + AGENTS.md 頂版本
+> v1.3→v1.5 + Reviewer APPROVE。狀態完成但 backlog 欄漏改、2026-09-26 補上。
 
 **問題**：AGENTS.md §2.0 與 §2.6 角色混淆，新人不知走哪條
 
@@ -205,7 +214,8 @@
 
 ## TMO-005 詳細
 
-**狀態變更**：2026-09-25 完成（v1.7 翻轉決策拆 `skills/dav-wiki/scripts/`；v1.7.1 順手修 wiki-cleanup.sh 中文 log 變數解析 bug）。原始決策紀錄保留（trust-log 2026-09-23 + v1.7 changelog）。
+**狀態變更**：2026-09-25 完成（v1.7 翻轉決策拆 `skills/dav-wiki/scripts/`；v1.7.1 順手修 wiki-cleanup.sh 中文 log 變數解析
+bug）。原始決策紀錄保留（trust-log 2026-09-23 + v1.7 changelog）。
 
 **問題**：原方案「加 set -e」已驗證是錯的（已用 set -uo pipefail 故意設計）
 
@@ -223,13 +233,16 @@
 
 > **狀態**：✅ 2026-09-26 完成（v1.8 落地）
 > **Reviewer verdict**：PASS（首次 FAIL 抓到 2 P0 blocker，修正後 PASS）
-> **交付物**：`docs/deliverable/2026-09-26-dav-planner-ac-templates.md` / `.html` + `docs/reflection/v1.8-dav-planner-ac-templates-reflection.md`
+> **交付物**：`docs/deliverable/2026-09-26-dav-planner-ac-templates.md` / `.html` +
+> `docs/reflection/v1.8-dav-planner-ac-templates-reflection.md`
 
-來源：2026-09-25 用戶對話「我想優化 dav-planner 的在 Backlog 生成的同時，可以有帶有用戶的 User story 會有 AC 範本，AC 範本 是會獨立寫在 docs/ac 方便之後用戶做校對和閱讀，AC 要有 html 版本」
+來源：2026-09-25 用戶對話「我想優化 dav-planner 的在 Backlog 生成的同時，可以有帶有用戶的 User story 會有 AC 範本，AC 範本 是會獨立寫在 docs/ac 方便之後用戶做校對和閱讀，AC
+要有 html 版本」
 
 ### 背景
 
-dav-planner 目前 (§4.3) 把 AC（Given-When-Then + DoD）整段塞在 `docs/backlog.md` 的「交付價值與驗收標準 (AC)」表格 cell 內，閱讀體驗差、不利於利害關係人單獨校對 / 分享 / 列印。
+dav-planner 目前 (§4.3) 把 AC（Given-When-Then + DoD）整段塞在 `docs/backlog.md` 的「交付價值與驗收標準 (AC)」表格 cell 內，閱讀體驗差、不利於利害關係人單獨校對 /
+分享 / 列印。
 
 ### 目標
 
@@ -302,7 +315,8 @@ dav-planner skill 在 §2 提問技巧與 §3 思考維度中，目前**完全�
 
 ### 目標
 
-dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題「用戶角色」，並依角色動態選擇下一題追問（PM → 目標用戶/規模、Dev → 技術棧/團隊、Designer → 品牌規範、業務 → 目標市場/付款物流）。
+dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題「用戶角色」，並依角色動態選擇下一題追問（PM → 目標用戶/規模、Dev → 技術棧/團隊、Designer → 品牌規範、業務 →
+目標市場/付款物流）。
 
 ### 範圍
 
@@ -350,7 +364,8 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 
 ## TMO-008 詳細（減法：文件產出物精簡 v2.0）
 
-**背景**：v1.8 / v1.9 連續 2 個 sprint，每次都寫 6+ 個檔（changelog / PRD / reflection / deliverable.md / deliverable.html / tests）。文件產出物快速膨脹。
+**背景**：v1.8 / v1.9 連續 2 個 sprint，每次都寫 6+ 個檔（changelog / PRD / reflection / deliverable.md / deliverable.html /
+tests）。文件產出物快速膨脹。
 
 **目標**：未來 sprint 從「必寫 6 個檔」精簡為「必寫 2 個檔」。存量完全不動。
 
@@ -365,7 +380,8 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 4. 範圍：只動未來 sprint 規則，不動存量
 5. SOP 路徑：完整 §2.1-§2.5（V03 紀律）
 
-**Story Point 5**（AGENTS.md §2.4/§2.5 精簡 1 + dav-submitter 三層→兩層 1 + changelog v2.0 條目 1 + tests 探針 1 + 測試 + Reviewer + 提交 1）
+**Story Point 5**（AGENTS.md §2.4/§2.5 精簡 1 + dav-submitter 三層→兩層 1 + changelog v2.0 條目 1 + tests 探針 1 + 測試 + Reviewer +
+提交 1）
 
 **完成標準（DoD）**：
 - [x] changelog v2.0 條目
@@ -381,10 +397,10 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 
 **Reviewer 二審結果**：首次 FAIL（2 P0）+ 順手修 2 P1 → PASS
 
-
 ## TMO-011 詳細
 
-> **完成記錄**（2026-09-28）：branch `feat-jev-regression` 已 push origin，5 個 commit，2,148 行新增。詳見 `docs/deliverable/2026-09-28-feat-jev-regression-poc.md` 含「反思」末段。
+> **完成記錄**（2026-09-28）：branch `feat-jev-regression` 已 push origin，5 個 commit，2,148 行新增。詳見
+> `docs/deliverable/2026-09-28-feat-jev-regression-poc.md` 含「反思」末段。
 
 **問題**：原 `regression-guard` skill 是「字串比對 pass/fail」，抓不到語意 regression（結果對了語意錯、flaky、AC 寫得模糊）。
 
@@ -427,14 +443,20 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - ⏸ Skill 本體（SKILL.md / examples.md）整合 user-journey-as-test-spec 規範 → 順延至真實 PENDING US 出現（V02 用戶決策）
 
 ### 做法
-1. **M5.1 fixture config-driven** — 把 `AC_AWARE_FIXTURES` 從 hardcoded dict 抽進 `fixtures/US-101.yaml`（1528 bytes），`ac_aware_observe(step, prev, story_id=...)` 從 YAML 自動載入。
-2. **M5.2 stale 限同 AC** — `run_journey` 內加 `current_ac_id` 狀態機：進 step 前先比對 ac_id 變了沒，變了就 reset `consecutive_stale` 跟 `prev_signature`。同 AC 連續 3 步同 state 才 block（換 AC 重新計算）。
-3. **M5.3 CLI 重構** — `run_dry(journey, story_acs, *, stale_test, story_id, stale_threshold)` 統一入口；`_run_dry_stale_test` + `mock_observe_static` 專門負責 stale-test 模式（force 同 state，threshold 降為 2 保證能觸發 block）。`run_journey.py` 從 ~50 行收縮到 ~20 行。
-4. **M5.4 bats 探針** — 16 探針：4 區塊（fixture / stale / CLI / batch report）+ 2 runtime（真實跑 `_load_fixture` 跟 `run_dry` 證明 end-to-end 行為正確）。`@test` 名稱純英文（homebrew bats UTF-8 bug，見 wiki-merge-media.bats）。
+1. **M5.1 fixture config-driven** — 把 `AC_AWARE_FIXTURES` 從 hardcoded dict 抽進 `fixtures/US-101.yaml`（1528
+   bytes），`ac_aware_observe(step, prev, story_id=...)` 從 YAML 自動載入。
+2. **M5.2 stale 限同 AC** — `run_journey` 內加 `current_ac_id` 狀態機：進 step 前先比對 ac_id 變了沒，變了就 reset `consecutive_stale` 跟
+   `prev_signature`。同 AC 連續 3 步同 state 才 block（換 AC 重新計算）。
+3. **M5.3 CLI 重構** — `run_dry(journey, story_acs, *, stale_test, story_id, stale_threshold)`
+   統一入口；`_run_dry_stale_test` + `mock_observe_static` 專門負責 stale-test 模式（force 同 state，threshold 降為 2 保證能觸發
+   block）。`run_journey.py` 從 ~50 行收縮到 ~20 行。
+4. **M5.4 bats 探針** — 16 探針：4 區塊（fixture / stale / CLI / batch report）+ 2 runtime（真實跑 `_load_fixture` 跟 `run_dry` 證明
+   end-to-end 行為正確）。`@test` 名稱純英文（homebrew bats UTF-8 bug，見 wiki-merge-media.bats）。
 
 ### 反思
 - **快 5 點**：16/16 探針一次紅轉綠、零迴歸（M3 行為完全一致）、commit 4ac566d 乾淨單一
-- **慢 1 點**：一開始把 `--stale-test` 改完發現 `blocked: False`（因為 M5.2 改了限同 AC，stale-test 模式需要降 threshold 跟 static observer 兩招搭配）— 花了幾次迭代驗證
+- **慢 1 點**：一開始把 `--stale-test` 改完發現 `blocked: False`（因為 M5.2 改了限同 AC，stale-test 模式需要降 threshold 跟 static observer
+  兩招搭配）— 花了幾次迭代驗證
 - **影響**：M5 落地後 PoC 對新 US 是 plug-in 模式：只加 `fixtures/<story_id>.yaml` 就能跑
 
 ---
@@ -446,8 +468,10 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 > **交付物**：`docs/deliverable/2026-09-28-feat-jev-regression-m31-skill.md`（同 TMO-014 合併）
 
 ### 做法
-1. **playwright_observer.py 294 行**：lazy import playwright（不裝不 crash）、6 個 action handler（navigate / click / type / wait / observe / setup_state）、page session 共用（全域 `_session`）、DOM snapshot 摘要（main / article 文字 + 互動元素清單）
-2. **journey_runner.py dispatcher**：`_select_observer()` 根據 `OBSERVER_BACKEND` env 選 `ac_aware` (預設) / `mock` / `playwright`；`mock_observe` 加 `story_id` kwarg 對齊介面
+1. **playwright_observer.py 294 行**：lazy import playwright（不裝不 crash）、6 個 action handler（navigate / click / type / wait
+   / observe / setup_state）、page session 共用（全域 `_session`）、DOM snapshot 摘要（main / article 文字 + 互動元素清單）
+2. **journey_runner.py dispatcher**：`_select_observer()` 根據 `OBSERVER_BACKEND` env 選 `ac_aware` (預設) / `mock` /
+   `playwright`；`mock_observe` 加 `story_id` kwarg 對齊介面
 3. **graceful fail**：playwright 沒裝時 raise `RuntimeError`，runner dispatcher 不 crash
 4. **探針守護**：5 個 M3.1 探針（file exists & 6 actions / dispatcher / import OK / playwright fail graceful / mock 簽名）
 
@@ -465,7 +489,8 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 > **交付物**：`docs/deliverable/2026-09-28-feat-jev-regression-m31-skill.md`（同 TMO-013 合併）
 
 ### 做法
-1. **SKILL.md v2.2**：新增「Jev Oracle 補充（進階）」章節（+62 行），原 Steps 1-4 不動。章節內容：適用場景 / 不適用 / 怎麼試 / 3 種 observer backend / 實作成本預估 / 探針選名參考。
+1. **SKILL.md v2.2**：新增「Jev Oracle 補充（進階）」章節（+62 行），原 Steps 1-4 不動。章節內容：適用場景 / 不適用 / 怎麼試 / 3 種 observer backend / 實作成本預估
+   / 探針選名參考。
 2. **examples.md**：新增「🧠 Jev Oracle 範例（進階）」章節（+111 行），4 個範例：journey YAML / dry-run / batch report / JSON 報告。
 3. **changelog v2.2 entry**：標註 TMO-013 / TMO-014 整合。
 4. **探針守護**：4 個 SKILL 探針（SKILL.md Jev 章節 / 3 backends / examples.md 4 範例 / v2.2 entry）
@@ -477,8 +502,10 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 
 ### 反思
 - **快**：1 個 sprint 內 M3.1 + SKILL.md 整合 一起完成、25/25 探針、SKILL.md +63 行 + examples.md +111 行都是加法不破壞
-- **慢 1 點**：bats 探針名稱含中文引號 `'` 被 homebrew bats UTF-8 bug 拒絕（unknown test name）— 改為不帶引號的探針名（跟 wiki-merge-media.bats 一樣純英文 workaround）
-- **影響**：regression-guard skill 從「Steps 1-4 規範」升級為「Steps 1-4 規範 + 可選進階 Jev Oracle 章節」；要採用 Jev 的項目能直接看 SKILL + examples 評估實作成本
+- **慢 1 點**：bats 探針名稱含中文引號 `'` 被 homebrew bats UTF-8 bug 拒絕（unknown test name）— 改為不帶引號的探針名（跟 wiki-merge-media.bats 一樣純英文
+  workaround）
+- **影響**：regression-guard skill 從「Steps 1-4 規範」升級為「Steps 1-4 規範 + 可選進階 Jev Oracle 章節」；要採用 Jev 的項目能直接看 SKILL + examples
+  評估實作成本
 
 ---
 
@@ -488,8 +515,11 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 > **狀態**：✅ 2026-09-28 完成（commit `f0f6543`）
 
 ### 做法
-1. **`.github/workflows/regression-guard-jev-poc.yml`** 149 行：2 個 jobs（bats + pipeline）、3 個 triggers（push / PR / dispatch）、paths filter 限 `skills/regression-guard/**` + `docs/ac/**`、workflow_dispatch 帶 `story_id` + `use_stale_test` 參數。
-2. **Return code gate**：`set +e` + `PIPELINE_RC` capture → 0=green pass / 2=yellow warn / 1=red error blocks merge（`::error::` 標記）。
+1. **`.github/workflows/regression-guard-jev-poc.yml`** 149 行：2 個 jobs（bats + pipeline）、3 個 triggers（push / PR /
+   dispatch）、paths filter 限 `skills/regression-guard/**` + `docs/ac/**`、workflow_dispatch 帶 `story_id` +
+   `use_stale_test` 參數。
+2. **Return code gate**：`set +e` + `PIPELINE_RC` capture → 0=green pass / 2=yellow warn / 1=red error blocks
+   merge（`::error::` 標記）。
 3. **Artifact upload**：`regression-report-<STORY>` JSON + MD 30 天保留。
 4. **PR comment**：`$GITHUB_STEP_SUMMARY` 貼 markdown 報告。
 5. **Secrets**：`secrets.OPENROUTER_API_KEY` 走 repo secret（不 hardcode）。
@@ -516,12 +546,17 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 > **狀態**：✅ 2026-09-28 完成（commit `f0f6543`）
 
 ### 做法
-1. **`fix_proposal.py` 311 行**：3 題 noul batch call（problem_summary / proposed_fix / verification_steps），跟 batch_report.py 同 cache-first pattern。**因 Jev v1.13 不支援 free_response 題型**（只有 choice / score / noul），改成「信心度報告」 — 3 維度 noul 概率 + 整體信心度 + 失敗走跡截錄 200 字。
-2. **`FixProposal` dataclass**：3 conf 字段 + `overall_confidence` property + `_conf_label()` 評級（高/中/低/不可判定）+ `to_markdown()` 產人讀報告。
-3. **`run_pipeline.sh` M6 步驟**：`JEV_FIX_PROPOSAL=1` 開啟；`M4_RC=0` + `|| M4_RC=$?` capture M4 return code（不然 M4 紅色時 set -e 會中斷 pipeline）。
+1. **`fix_proposal.py` 311 行**：3 題 noul batch call（problem_summary / proposed_fix / verification_steps），跟
+   batch_report.py 同 cache-first pattern。**因 Jev v1.13 不支援 free_response 題型**（只有 choice / score / noul），改成「信心度報告」 — 3 維度
+   noul 概率 + 整體信心度 + 失敗走跡截錄 200 字。
+2. **`FixProposal` dataclass**：3 conf 字段 + `overall_confidence` property + `_conf_label()` 評級（高/中/低/不可判定）+
+   `to_markdown()` 產人讀報告。
+3. **`run_pipeline.sh` M6 步驟**：`JEV_FIX_PROPOSAL=1` 開啟；`M4_RC=0` + `|| M4_RC=$?` capture M4 return code（不然 M4 紅色時 set -e
+   會中斷 pipeline）。
 4. **SKILL.md v2.3**：「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節（+55 行）。明確標 Jev v1.13 限制 + 0.5 信心度 gating 門檻 + M6.1 升級路徑。
 5. **examples.md**：fix proposal 範例 markdown + reviewer workflow 3 步驟。
-6. **探針守護**：7 個 M6 探針（schema / dataclass / JEV_FIX_PROPOSAL env / M4_RC / SKILL section / examples example / end-to-end CLI）。
+6. **探針守護**：7 個 M6 探針（schema / dataclass / JEV_FIX_PROPOSAL env / M4_RC / SKILL section / examples example / end-to-end
+   CLI）。
 
 ### DoD
 - ✅ JEV_FIX_PROPOSAL=1 一鍵跑完整 pipeline + 產出 fix_proposal.md
@@ -578,7 +613,8 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 1. **docs/cleanup/cleanup-scan.py** 246 行：
    - 4 類分類：KEEP（≥2 cross-link）/ REVIEW（1）/ DELETE（0）/ MERGE（待實作）
    - 排除 `.venv/` / `__pycache__/` / `node_modules/` / `.relay/` / `journeys/` / `fixtures/` / `cache/`
-   - 保護所有 skill/ 目錄（dav-designer / dav-planner / ... / regression-guard）+ AGENTS.md / SKILL.md / handbook / ac/US-* / deliverable/ / backlog.md / ci/
+   - 保護所有 skill/ 目錄（dav-designer / dav-planner / ... / regression-guard）+ AGENTS.md / SKILL.md / handbook / ac/US-* /
+     deliverable/ / backlog.md / ci/
    - 支援 `--json` 輸出 + `--apply` 自動刪 DELETE 類（需手動確認）
 2. **本次掃描結果**：KEEP 63 / REVIEW 4 / DELETE 0
    - 4 個 REVIEW 都在 v2.0 規則下「保留為 audit trail」（PRD-04 / 2 個反思歷史 / testing-methods.md）
@@ -681,7 +717,8 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 1. `tests/v2.1-jev-poc.bats` 新增兩支共用 fixture helper：
    - `make_us_m63_before`：**真跑一次** US-M63 journey 當 patch 前 baseline（blocked → rc=2，只吞 rc、必驗檔案真的產出）
    - `make_m62_batch_report`：造 M7 flaky 整合所需 batch_report 最小 fixture
-2. M6.3-b/c/d/e/f 改呼叫 `make_us_m63_before`；M6.3-e 另修 `ls -a` + `-ne` + 讀 `--json` 斷言 `classification=no_change` / `cleanup_ok=true`
+2. M6.3-b/c/d/e/f 改呼叫 `make_us_m63_before`；M6.3-e 另修 `ls -a` + `-ne` + 讀 `--json` 斷言 `classification=no_change` /
+   `cleanup_ok=true`
 3. flaky-int-b 補 `run`；flaky-int-c / M7-gating-a 補 `make_m62_batch_report`
 4. `.gitignore` 加 `/tmp/`（sandbox_runner 在 repo root `tmp/` 建 `.sandbox-*`）
 
@@ -690,20 +727,26 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 - ✅ AC1：M6.3-b/c/d/e/f 5 個探針綠（清空 `/tmp` fixture 後仍綠）
 - ✅ AC2：flaky-int-b/c + M7-gating-a 3 個探針綠
 - ✅ AC3：無新增失敗（全套 38 紅 → 30 紅，`comm -13` 為空）
-- ✅ AC4：探針**真的會紅** — 突變測試：故意把 `_cleanup()` 改成 `return False` → M6.3-e 轉 `not ok`（`FAIL: sandbox dir not cleaned up (before=4 after=5)`）→ 還原後 `ok`
+- ✅ AC4：探針**真的會紅** — 突變測試：故意把 `_cleanup()` 改成 `return False` → M6.3-e 轉
+  `not ok`（`FAIL: sandbox dir not cleaned up (before=4 after=5)`）→ 還原後 `ok`
 
 ### 驗收證據
 
 - Gate 1（紅→綠）：`bats tests/v2.1-jev-poc.bats --filter 'M6\.3|flaky-int|M7-gating'` 修改前 8 紅 / 16 → 修改後 16 ok / 0 紅
-- Gate 3（regression）：`bats tests/` baseline（`git stash` 還原 + 清 `/tmp` fixture 量測）not ok 38 / ok 455 → 修改後 not ok 30 / ok 463
-- Gate 4（reviewer，V03.6 二審 2 輪）：第 1 輪 approve-with-comments / risk low（抓出 M6.3-e 假斷言 P1）→ 修正後第 2 輪 approve-with-comments / risk low / 0 P0-P1
+- Gate 3（regression）：`bats tests/` baseline（`git stash` 還原 + 清 `/tmp` fixture 量測）not ok 38 / ok 455 → 修改後 not ok 30 / ok
+  463
+- Gate 4（reviewer，V03.6 二審 2 輪）：第 1 輪 approve-with-comments / risk low（抓出 M6.3-e 假斷言 P1）→ 修正後第 2 輪 approve-with-comments
+  / risk low / 0 P0-P1
 
 ### 已知問題（本輪未修，另立後續）
 
-- **A 類 18 紅**：skill 改版後探針過期（dav-planner §2.7、regression-guard TTY、SKILL-b/d/M6-e/M6.1-e、dav-wiki AC-2 因 SKILL.md 151 行 > 150）
-- **B 類 12 紅**：11 個缺 poppler（`pdfimages`/`pdftotext`）；1 個**真缺陷** — pandoc 不支援 pptx reader，但 `wiki-extract-media.sh` 仍印「✓ PPTX 文字提取完成」並 exit 0（靜默假成功）
+- **A 類 18 紅**：skill 改版後探針過期（dav-planner §2.7、regression-guard TTY、SKILL-b/d/M6-e/M6.1-e、dav-wiki AC-2 因 SKILL.md 151
+  行 > 150）
+- **B 類 12 紅**：11 個缺 poppler（`pdfimages`/`pdftotext`）；1 個**真缺陷** — pandoc 不支援 pptx reader，但 `wiki-extract-media.sh` 仍印「✓
+  PPTX 文字提取完成」並 exit 0（靜默假成功）
 - **`sandbox_runner.py` error 路徑不 cleanup**：建立 sandbox 後 copy 失敗時直接 return，目錄洩漏（本輪實測重現，非探針範圍）
-- **探針 P2 建議**：fixture 改 `$BATS_TEST_TMPDIR`、加 `timeout`、M6.3-f 應斷言 classification、M7-gating-b 恆真、flaky-int-c/M7-gating-a 只 grep key 存在
+- **探針 P2 建議**：fixture 改 `$BATS_TEST_TMPDIR`、加 `timeout`、M6.3-f 應斷言 classification、M7-gating-b
+  恆真、flaky-int-c/M7-gating-a 只 grep key 存在
 - **CI 從未跑過**：`.github/workflows/ci.yml` trigger 是 `branches: [main]`，但 repo 預設分支是 `master`（`gh run list` 0 筆）
 
 ### 反思
@@ -722,9 +765,12 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
 
 ### 做法
 
-- `README.md` 288 → 90 行：badges / 一行介紹 / Quick Start / 精簡 Usage 表（保留 `Usage`、`--global`、`--uninstall` 三字串，`tests/install.bats` AC-15 依賴）/ 新增「工作流程：看 AGENTS.md」（§1 / §1.5 V01–V03 / §2.0 / §2.1–§2.5 / §2.3 4 Gate / §2.7）/ 新增「Skills」表（11 個 skill 一行說明 + 連結）/ 進階指向 `docs/install-reference.md`
+- `README.md` 288 → 90 行：badges / 一行介紹 / Quick Start / 精簡 Usage 表（保留 `Usage`、`--global`、`--uninstall`
+  三字串，`tests/install.bats` AC-15 依賴）/ 新增「工作流程：看 AGENTS.md」（§1 / §1.5 V01–V03 / §2.0 / §2.1–§2.5 / §2.3 4 Gate / §2.7）/
+  新增「Skills」表（11 個 skill 一行說明 + 連結）/ 進階指向 `docs/install-reference.md`
 - 新增 `docs/install-reference.md`（296 行）：完整 flag 表、安裝後檔案結構、設計理由、環境變數、dev/test、6 題 troubleshooting
-- 修正原 README 不實描述：`REGRESSION_MODE=true bash install.sh` 這個環境變數在 `install.sh` / `lib/` 內不存在 → 改為 `bash -x install.sh --dry-run --global`
+- 修正原 README 不實描述：`REGRESSION_MODE=true bash install.sh` 這個環境變數在 `install.sh` / `lib/` 內不存在 → 改為
+  `bash -x install.sh --dry-run --global`
 
 ### 驗收證據
 
@@ -754,12 +800,14 @@ dav-planner 從 v1.9 起，在每次對話**開始**（§3 之前）先問 1 題
   - `extract_pptx_text()` 改用 python-pptx 逐頁抽文字（`## Slide N` + 文字框），與設計文件一致
   - 新增 `verify_artifact <path> <label>`：**檔案不存在 → ERROR + exit 5**；**內容為空 → 只警告**（掃描件合法，改走圖片 + OCR FR-2.2.3）
   - 新增 `EXIT_EXTRACT=5`；usage/header 同步（並修掉 `tools/` 與 `docs/prd/03-knowledge-extraction.md` 兩處死引用）
-  - `pdfimages` / `pdftotext` / `pandoc`(×2) / python heredoc(×2) 全部補 rc 檢查；python `sys.exit(4)`（缺 python-pptx）正確映射回 `exit 4`
+  - `pdfimages` / `pdftotext` / `pandoc`(×2) / python heredoc(×2) 全部補 rc 檢查；python `sys.exit(4)`（缺 python-pptx）正確映射回
+    `exit 4`
 - **探針** `tests/wiki-extract-media.bats`：
   - AC-E6 標題改為 implementation-agnostic（斷言一字未改）
   - **新增 AC-E21**：壞掉 `.pptx` → `status -eq 5`（釘住 exit code，區分「工具缺失 4」vs「提取失敗 5」）+ 不得留 text.md + 輸出含「無法讀取」
   - **新增 AC-E22**：新 fixture `tests/fixtures/pdf-scan/scan.pdf`（無文字層）→ exit 0 + 圖片保留 + 出現「掃描件」警告；探針開頭有 fixture 漂移守衛
-- **文件 / CI**：`docs/install-reference.md` 新增「dav-wiki 測試依賴」表（明確寫「缺工具時探針直接失敗不 skip」）；`.github/workflows/ci.yml` 加 `actions/setup-python` + Linux/macOS 依賴安裝（poppler/pandoc/tesseract/python-pptx）+ `bash -n` 收錄本腳本
+- **文件 / CI**：`docs/install-reference.md` 新增「dav-wiki 測試依賴」表（明確寫「缺工具時探針直接失敗不 skip」）；`.github/workflows/ci.yml` 加
+  `actions/setup-python` + Linux/macOS 依賴安裝（poppler/pandoc/tesseract/python-pptx）+ `bash -n` 收錄本腳本
 
 ### AC / DoD
 
@@ -780,11 +828,15 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 
 - `bats tests/` 仍有 **18 紅**（A 類探針過期，見 TMO-023 詳細）
 - 評審 §4 建議以下升為 **P1** 另立票（本輪未動）：
-  1. `.github/workflows/ci.yml` trigger `branches: [main]` vs repo 預設 `master` → CI 從未執行（修好當下會立刻紅，建議與 A 類清理、SKILL.md 瘦身同批）
-  2. `skills/dav-wiki/SKILL.md` **151 行 > 150**（`tests/dav-wiki.bats:38` 已紅）+ `:95`「未裝時降級」與 `require_tool` 硬 `exit 4` 矛盾（需走 V03）
-  3. bats 1.14.0 對「`@test` 名含 CJK」會靜默不執行：實測 3 條（`restruct-agents-md.bats` ×2、`restruct-dav-planner.bats` ×1），宣告 498 / 實跑 495；3 條斷言本身若跑會綠
+  1. `.github/workflows/ci.yml` trigger `branches: [main]` vs repo 預設 `master` → CI 從未執行（修好當下會立刻紅，建議與 A 類清理、SKILL.md
+     瘦身同批）
+  2. `skills/dav-wiki/SKILL.md` **151 行 > 150**（`tests/dav-wiki.bats:38` 已紅）+ `:95`「未裝時降級」與 `require_tool` 硬 `exit 4`
+     矛盾（需走 V03）
+  3. bats 1.14.0 對「`@test` 名含 CJK」會靜默不執行：實測 3 條（`restruct-agents-md.bats` ×2、`restruct-dav-planner.bats` ×1），宣告 498 / 實跑
+     495；3 條斷言本身若跑會綠
 - P2（report-only）：pptx 表格/群組文字未抽、CI badge owner 錯誤、sibling 死引用 8 腳本、scan.pdf 重建指令 macOS-only、`$var緊鄰全角字元` 未有 repo 級靜態守衛
-- 未 commit：工作區同時有 TMO-023 / TMO-024 / TMO-025 三輪變更，建議分開 commit（**已於 2026-10-04 分成 3 個 commit**：`c2b036c` TMO-023 / `b3a9b49` TMO-024 / `5ed097e` TMO-025）
+- 未 commit：工作區同時有 TMO-023 / TMO-024 / TMO-025 三輪變更，建議分開 commit（**已於 2026-10-04 分成 3 個 commit**：`c2b036c` TMO-023 /
+  `b3a9b49` TMO-024 / `5ed097e` TMO-025）
 
 ---
 
@@ -805,7 +857,7 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 | `tests/dav-planner-ac-templates.bats` | `AC 範本生成 SOP` → `backlog-rules.md`（+ 主檔指標斷言）|
 | `tests/regression-guard-watch-mode.bats` | runner 對照表 → `runner-cheatsheet.md`；CROSS 改**段落級** awk 指標斷言 + 加 `gates.json` 斷言 |
 | `tests/restruct-dav-planner.bats` | `v2.0` → `CHANGELOG.md` + **版本漂移鎖**；1 條 CJK 名改 ASCII |
-| `tests/restruct-regression-guard.bats` | 同上（漂移鎖）；TTY：主檔斷 `watch|interactive`、子檔斷 `/dev/null` |
+| `tests/restruct-regression-guard.bats` | 同上（漂移鎖）；TTY：主檔斷 `watch\|interactive`、子檔斷`/dev/null` |
 | `tests/v2.1-jev-poc.bats` | SKILL-b/d/M6-e/M6.1-e → `jev-oracle.md` + `CHANGELOG.md`（+ 主檔指標斷言）|
 | `tests/restruct-agents-md.bats` | 2 條 CJK 名改 ASCII（改前未執行）|
 | `skills/dev-checker-loop/SKILL.md` | `:41` 措辭精確化（明示「目標專案」→ 清 zero-cross-read 命中）；變動歷史表刷新 v2.5/v2.4/v2.3 |
@@ -817,12 +869,14 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
   （搬走 4 個子檔 → 3/1/3/3 紅；指標移出段落 → 1 紅；版本不一致 → 2 紅；拿掉 `gates.json` 字串 → 1 紅；全部還原後回綠）
 - Gate 2：`bats` 逐檔 0 parse warning；`markdownlint` `SKILL.md` MD013 **2 → 1**（剩 `:51` 為既有未觸碰）；無 `.sh` 改動 → shellcheck N/A
 - Gate 3：`bats tests/` **18 not ok / 477 ok（實跑 495）→ 6 not ok / 492 ok（實跑 498）**；集合差 **已修 12 / 新增 0**
-- Gate 4（V03/V03.6 二審 2 輪）：兩輪均 **approve-with-comments / risk low / 0 P0-P1**；第 1 輪逐條附行號驗證 11 個新家字串存在；第 2 輪判「真強化、非化妝」＋「改寫為實質修正、非字面規避」
+- Gate 4（V03/V03.6 二審 2 輪）：兩輪均 **approve-with-comments / risk low / 0 P0-P1**；第 1 輪逐條附行號驗證 11 個新家字串存在；第 2
+  輪判「真強化、非化妝」＋「改寫為實質修正、非字面規避」
 
 ### 已知問題（本輪未處理，進 backlog）
 
 - `bats tests/` 仍有 **6 紅**：5 條 → TMO-027（dav-planner §2.7 廢棄條款）、1 條 → TMO-028（`dav-wiki/SKILL.md` 151 行）
-- P2-1：`restruct-zero-cross-read.bats` 的 `SKILLS` 陣列漏 `skills/ask-me/SKILL.md`（`:10`/`:36` 真實命中 `讀 \`docs/need-you-help.md\``）；`dev-checker-loop/module-rules.md:23,39` 同型。**刻意不修**（現加會製造新紅，違反本輪「0 新增」）→ 應與 reword 同批
+- P2-1：`restruct-zero-cross-read.bats` 的 `SKILLS` 陣列漏 `skills/ask-me/SKILL.md`（`:10`/`:36` 真實命中
+  `讀 \`docs/need-you-help.md\``）；`dev-checker-loop/module-rules.md:23,39` 同型。**刻意不修**（現加會製造新紅，違反本輪「0 新增」）→ 應與 reword 同批
 - P2-2：`regression-guard/CHANGELOG.md:11,12` 兩列同為 `v2.10`（重複版本號）
 - P2-3：③ 的「主檔→子檔指標」斷言仍為 whole-file grep（與 ① 同類弱點）
 - P2-4：`restruct-dev-checker-loop.bats:44-56` 用 OR 分支（v2.x 列 **或** `CHANGELOG.md` 指標）→ **不會**抓到二審抓到的「主檔陳舊型態」；建議移植漂移鎖
@@ -847,7 +901,7 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 - 但 5 條回歸探針仍斷言「§2.7 必須存在」→ 恆紅（4 條在 `tests/dav-planner-user-background.bats`、
   1 條在 `tests/restruct-dav-planner.bats`）。用戶在 §2.7 處置題選「**⭐ 轉「廢棄守門」探針**」。
 - 本輪把 5 條存在型探針改寫成 4 條「廢棄守門」：**負向斷言**（功能不得回流）+ **定位句必須留著**
-  + **廢除紀錄必須留著**（本地 CHANGELOG 列級錨定 + 全域 changelog）。新增 helper `refute_file_contains()`。
+  - **廢除紀錄必須留著**（本地 CHANGELOG 列級錨定 + 全域 changelog）。新增 helper `refute_file_contains()`。
 
 ### 變更清單
 
@@ -876,8 +930,11 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 
 - TMO-030：`docs/prd/02-dav-planner-user-background.md` / `docs/prd/03:104` / backlog TMO-007 詳細段仍把 §2.7 寫成現行規格
 - TMO-031：`skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」；pre-existing，v2.6 引入 Step 1.5 時即如此）
-- TMO-032：探針精準化（第 2 輪 P2-a/P2-b 折入）— ① `refute_file_contains` helper 內加 `[[ -f "$p" ]]` 根除整類假綠；② `SKILL.md` 變動歷史段（`:119-138`）會被「撤銷章節不抹去」政策誤紅 → 負向斷言改掃 body（排除 `^| v` 列）；③ `dav-planner-user-background.bats` v1.9 條目仍為 whole-file grep；④ `BACKLOG-005` regex 是小寫 `pending`，大寫 `PENDING` 會漏抓；⑤ M11 缺口：同義詞改詞回流（不動定位句）目前抓不到
-- **自首**：TMO-026 的 commit `3639d00` 在 backlog 加票時用了 `pending`，引入 `BACKLOG-005` 新紅（不在 TMO-026 Gate 3 證據內）；本輪發現並修掉，**不改探針**
+- TMO-032：探針精準化（第 2 輪 P2-a/P2-b 折入）— ① `refute_file_contains` helper 內加 `[[ -f "$p" ]]` 根除整類假綠；② `SKILL.md`
+  變動歷史段（`:119-138`）會被「撤銷章節不抹去」政策誤紅 → 負向斷言改掃 body（排除 `^| v` 列）；③ `dav-planner-user-background.bats` v1.9 條目仍為 whole-file
+  grep；④ `BACKLOG-005` regex 是小寫 `pending`，大寫 `PENDING` 會漏抓；⑤ M11 缺口：同義詞改詞回流（不動定位句）目前抓不到
+- **自首**：TMO-026 的 commit `3639d00` 在 backlog 加票時用了 `pending`，引入 `BACKLOG-005` 新紅（不在 TMO-026 Gate 3
+  證據內）；本輪發現並修掉，**不改探針**
 
 ### 反思
 
@@ -973,9 +1030,12 @@ HEAD（`93ba04f`）狀態下：
 ### 驗收證據
 
 - Gate 1（紅→綠）：`FAIL: 缺 PoC venv`（127 噪音）→ 38 條各自一條清楚紅；新探針 8 條紅→綠；突變 M10–M27c 逐條咬（含 M14 不咬 → TMO-038、M26b 咬 `/tmp/` 繞道）
-- Gate 2：`shellcheck` rc=0、`bash -n` rc=0、`markdownlint` 改動檔 0 issue（`PoC/README.md` 3 issue 為既有，`git show HEAD:` 對照證明零新增）、PyYAML 解析 `ci.yml` 語意正確
-- Gate 3：`bats tests/` **0 not ok / 506 ok / 0 skip**；隱藏 venv → **38 not ok / 468 ok / 0 skip / 0 個 `command not found`**
-- Gate 4（V03.6 二審 **4 輪**）：R1 approve-with-comments（0 P0 / 1 P1 / 11 P2）→ R2（0/1/7）→ R3（0/2/4，抓出 `/tmp/` 繞過護欄）→ R4 **approve-with-comments / risk low / 0 P0 / 0 P1 / 3 P2**，並明示「可進入 §2.5」
+- Gate 2：`shellcheck` rc=0、`bash -n` rc=0、`markdownlint` 改動檔 0 issue（`PoC/README.md` 3 issue 為既有，`git show HEAD:`
+  對照證明零新增）、PyYAML 解析 `ci.yml` 語意正確
+- Gate 3：`bats tests/` **0 not ok / 506 ok / 0 skip**；隱藏 venv →
+  **38 not ok / 468 ok / 0 skip / 0 個 `command not found`**
+- Gate 4（V03.6 二審 **4 輪**）：R1 approve-with-comments（0 P0 / 1 P1 / 11 P2）→ R2（0/1/7）→ R3（0/2/4，抓出 `/tmp/` 繞過護欄）→ R4
+  **approve-with-comments / risk low / 0 P0 / 0 P1 / 3 P2**，並明示「可進入 §2.5」
 
 ### 已知問題（已切票）
 
@@ -989,8 +1049,10 @@ HEAD（`93ba04f`）狀態下：
 - **「測試很多」不等於「測試會跑」**：真正致命的是 CI 從未觸發（`branches: [main]` vs 預設分支 `master`）—— 一個字的設定讓 209 條測試整年沒跑。
 - **缺環境要大聲紅、不要噪音**：38 條 127 噪音會讓人以為「測試壞了」；改成每條一條清楚的紅＋修復指令，才指得動人。
 - **假綠有兩種**：`skip`（永遠不跑）與空過斷言（跑了但什麼都沒驗）。本票各抓到一批，並用「本檔 skip 數必須 0」與「不變式等號」把它們鎖住。
-- **護欄會寫錯，而且會錯在等價寫法**：`/tmp` 擋住了、`/tmp/` 卻繞過去（`case` 的 `*` 可跨 `/`）；是第 3 輪 reviewer 抓到的。教訓：**安全性檢查要拿「同義寫法矩陣」來測**，不是測一個代表值。
-- **自傷當場說**：M10 第一次是假突變（awk 語法錯把檔案清空）、M17 第一次沒命中卻意外揭露探針③只是字串形狀、探針③第一版誤紅、`$status（` 全形括號 bug、以及**用 `git checkout` 還原突變時誤刪未 commit 的整批編輯**（已重做並改用 `cp` 備份）——四件事全部寫進證據包，其中最後一件由 reviewer 反向查出兩處漏補。
+- **護欄會寫錯，而且會錯在等價寫法**：`/tmp` 擋住了、`/tmp/` 卻繞過去（`case` 的 `*` 可跨 `/`）；是第 3 輪 reviewer
+  抓到的。教訓：**安全性檢查要拿「同義寫法矩陣」來測**，不是測一個代表值。
+- **自傷當場說**：M10 第一次是假突變（awk 語法錯把檔案清空）、M17 第一次沒命中卻意外揭露探針③只是字串形狀、探針③第一版誤紅、`$status（` 全形括號
+  bug、以及**用 `git checkout` 還原突變時誤刪未 commit 的整批編輯**（已重做並改用 `cp` 備份）——四件事全部寫進證據包，其中最後一件由 reviewer 反向查出兩處漏補。
 
 ## TMO-039 詳細（首次真實 Actions 驗證：34 紅的真因與修復）
 
@@ -1019,25 +1081,33 @@ HEAD（`93ba04f`）狀態下：
 | 7 | 3 條探針會呼叫**真 Jev oracle**：本機有 `OPENROUTER_API_KEY`（shell env 或未版控 `PoC/.env`）＋ 8233 筆暖快取 `PoC/cache/`（被 gitignore）；CI 兩者皆無 → `RuntimeError` → 紅。屬假綠第 5 型「依賴本機狀態」| ubuntu `M5-runtime-b`(299) / `M6-g`(320) / `M6.1-c`(323) | ①`M5-runtime-b` 改**注入 stub**（`jev_oracle.evaluate_ac = lambda …`，只驗 stale 偵測）②`M6-g`/`M6.1-c` 改讀版控 `fixtures/US-101-run.json` + 新增 `cache-fixtures/`（1 檔）+ `jev_oracle` 新增 `JEV_CACHE_DIR` seam ③新鎖探針 `CLEAN-POC-f`：清成 CI 環境（無 key／換 `HOME`／空快取）重跑那 3 條 |
 | 8 | **macOS 的 brew ffmpeg 8 已移除 `-vsync`** → `AC-V4` 第二個 ffmpeg 呼叫 exit 8（ubuntu apt 6.x、本機 7.1 都不會紅）；同旗標也存在於**產品腳本** `wiki-extract-video.sh:141`（真 bug，不只是探針）| macos `AC-V4`(507) | `-vsync vfr` → `-fps_mode vfr`（ffmpeg 4.3+，6/7/8 全支援）；新增靜態鎖 `AC-V11`（產品腳本不得含已移除旗標）|
 
-**二審 P2 一併收尾**：P2-1 `sandbox_runner` 相對路徑含 `..` 仍會逃出 sandbox（**實測會把複本寫到 repo 上層**，本輪已補洞＋新探針 `M6.3-l`）、P2-2 `CLEAN-POC-b` 防空過、P2-3 `CLEAN-POC-c` regex 假陽性（改為需邊界；屬條件放寬，已向 reviewer 明示）、P2-4 文件檔數不一致、P2-5 backlog 狀態未定義（已在表前加狀態圖例）。
+**二審 P2 一併收尾**：P2-1 `sandbox_runner` 相對路徑含 `..` 仍會逃出 sandbox（**實測會把複本寫到 repo 上層**，本輪已補洞＋新探針 `M6.3-l`）、P2-2 `CLEAN-POC-b`
+防空過、P2-3 `CLEAN-POC-c` regex 假陽性（改為需邊界；屬條件放寬，已向 reviewer 明示）、P2-4 文件檔數不一致、P2-5 backlog 狀態未定義（已在表前加狀態圖例）。
 
-**順手補的 CI 縫隙**：`ci.yml` 的 `bash -n` 原本只驗 3 支寫死的腳本（本輪改到的 `wiki-extract-video.sh` 不在內）→ 改 glob 掃全部 9 支，並加探針 `CLEAN-POC-g` 鎖住。
+**順手補的 CI 縫隙**：`ci.yml` 的 `bash -n` 原本只驗 3 支寫死的腳本（本輪改到的 `wiki-extract-video.sh` 不在內）→ 改 glob 掃全部 9 支，並加探針 `CLEAN-POC-g`
+鎖住。
 
 ### 新增探針（Gate 1 先紅後綠）
 
-
-
-- `tests/poc-clean-clone.bats`（5 條，本機修前 **5 紅** → 修後 5 綠）：①journey `source:` 可從 `PoC/` 相對解析且非絕對路徑 ②`journeys/fixtures` 不得含 `/Users/`、`/home/` ③測試引用的 fixture/journey 必須 `git ls-files --error-unmatch` 得到 ④`ci.yml` 兩平台都裝 ffmpeg ⑤`python-version` 已釘版（非 `3.x`）。每條都有「防空過」前置條件（例：journey 數 ≥3）。
+- `tests/poc-clean-clone.bats`（5 條，本機修前 **5 紅** → 修後 5 綠）：①journey `source:` 可從 `PoC/` 相對解析且非絕對路徑 ②`journeys/fixtures`
+  不得含 `/Users/`、`/home/` ③測試引用的 fixture/journey 必須 `git ls-files --error-unmatch` 得到 ④`ci.yml` 兩平台都裝 ffmpeg
+  ⑤`python-version` 已釘版（非 `3.x`）。每條都有「防空過」前置條件（例：journey 數 ≥3）。
 - `tests/v2.1-jev-poc.bats` 加 `M6.3-k`：sandbox 必須接受「repo 外」的目標檔且原檔一字不改（修前紅、修後綠）。
 - `tests/wiki-cleanup.bats` 加 1 條靜態鎖：腳本不得出現陣列長度展開（bash 5.2+ 空陣列 unbound）。
-- 第二輪再加：`tests/v2.1-jev-poc.bats` `M6.3-l`（相對 `..` 不得逃出 sandbox／外洩複本）、`tests/wiki-video-audio.bats` `AC-V11`（產品腳本禁用已移除旗標）、`tests/poc-clean-clone.bats` `CLEAN-POC-f`（oracle 探針離線可跑）與 `CLEAN-POC-g`（CI 用 glob 驗全部腳本語法）；`CLEAN-POC-a..e` 各補防空過前置條件。
+- 第二輪再加：`tests/v2.1-jev-poc.bats` `M6.3-l`（相對 `..` 不得逃出 sandbox／外洩複本）、`tests/wiki-video-audio.bats`
+  `AC-V11`（產品腳本禁用已移除旗標）、`tests/poc-clean-clone.bats` `CLEAN-POC-f`（oracle 探針離線可跑）與 `CLEAN-POC-g`（CI 用 glob
+  驗全部腳本語法）；`CLEAN-POC-a..e` 各補防空過前置條件。
 
 ### 證據
 
-- Gate 1：`bats tests/poc-clean-clone.bats` 修前 **5 not ok / 0 ok**（訊息含 `US-101.yaml`、7 個未追蹤檔）→ 修後 **5 ok**；`tests/wiki-cleanup.bats` 新探針修前紅、修後 20 ok。
-- Gate 2：`shellcheck -x wiki-cleanup.sh` rc=0（順修 2 處既有 SC2295 與 `source=` 相對路徑）、`bash -n` rc=0、`.bats` 用 bats 自驗 rc=0、`ci.yml`/journeys PyYAML 解析 ok。
-- Gate 3：`bats tests/` 本機 **513 ok / 0 not ok / 0 skip**（bash 3.2）；`PATH=/opt/homebrew/bin:$PATH bats tests/`（bash 5.3，≈ubuntu 等價）；clean clone（`git clone` 到 `/tmp`）**513 ok / 0 not ok / 0 skip**。
-- 第二輪 Gate 3（更嚴）：把 `PoC/.env` 與 8233 筆暖快取 `PoC/cache/` **移走**、`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome bats tests/` → **516 ok / 0 not ok**（修前此環境必然紅 3 條）；同樣條件再跑 `PATH=/opt/homebrew/bin:$PATH`（bash 5.3）→ **516 ok / 0 not ok**。
+- Gate 1：`bats tests/poc-clean-clone.bats` 修前 **5 not ok / 0 ok**（訊息含 `US-101.yaml`、7 個未追蹤檔）→ 修後
+  **5 ok**；`tests/wiki-cleanup.bats` 新探針修前紅、修後 20 ok。
+- Gate 2：`shellcheck -x wiki-cleanup.sh` rc=0（順修 2 處既有 SC2295 與 `source=` 相對路徑）、`bash -n` rc=0、`.bats` 用 bats 自驗
+  rc=0、`ci.yml`/journeys PyYAML 解析 ok。
+- Gate 3：`bats tests/` 本機 **513 ok / 0 not ok / 0 skip**（bash 3.2）；`PATH=/opt/homebrew/bin:$PATH bats tests/`（bash
+  5.3，≈ubuntu 等價）；clean clone（`git clone` 到 `/tmp`）**513 ok / 0 not ok / 0 skip**。
+- 第二輪 Gate 3（更嚴）：把 `PoC/.env` 與 8233 筆暖快取 `PoC/cache/` **移走**、`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome bats tests/`
+  → **516 ok / 0 not ok**（修前此環境必然紅 3 條）；同樣條件再跑 `PATH=/opt/homebrew/bin:$PATH`（bash 5.3）→ **516 ok / 0 not ok**。
 
 ### 已知問題（切票）
 
@@ -1049,7 +1119,10 @@ HEAD（`93ba04f`）狀態下：
 ### 反思
 
 - **「本機 506 全綠」是最貴的一個錯覺**：真正的驗證是「在別人的機器上、從零開始」，而我在此之前從未讓 CI 真的跑過一次。
-- **假綠有四種**：skip、空過斷言、**依賴本機狀態而成立**（路徑存在、檔案未版控但剛好還在本機）、以及**路徑寫法差異**（`/tmp` vs `/private/tmp` 讓同一個 bug 在本機與 clone 各露一半）。後兩種最難看，因為它們長得完全像綠。
-- **錯誤歸因也是債**：clean clone 的 4 紅我一開始歸因「缺 fixture」，實際是 `src == dst` 真 bug（CI 上還全綠）。是「不用 `/tmp` clone，改用 repo 外檔案」的探針把它逼出來的。
-- **假綠第 5 型：依賴本機狀態**。3 條 oracle 探針在本機是綠的，靠的是「我 shell 裡剛好有 API key」＋「8233 筆未版控暖快取」——兩者都不在 CI。更貴的是：這種綠在**任何**本機驗證（含 clean clone、bash 5.3）都不會露餡，只有真的跑 CI 才看得到。
+- **假綠有四種**：skip、空過斷言、**依賴本機狀態而成立**（路徑存在、檔案未版控但剛好還在本機）、以及**路徑寫法差異**（`/tmp` vs `/private/tmp` 讓同一個 bug 在本機與 clone
+  各露一半）。後兩種最難看，因為它們長得完全像綠。
+- **錯誤歸因也是債**：clean clone 的 4 紅我一開始歸因「缺 fixture」，實際是 `src == dst` 真 bug（CI 上還全綠）。是「不用 `/tmp` clone，改用 repo
+  外檔案」的探針把它逼出來的。
+- **假綠第 5 型：依賴本機狀態**。3 條 oracle 探針在本機是綠的，靠的是「我 shell 裡剛好有 API key」＋「8233 筆未版控暖快取」——兩者都不在 CI。更貴的是：這種綠在**任何**本機驗證（含 clean
+  clone、bash 5.3）都不會露餡，只有真的跑 CI 才看得到。
 - **產品 bug 會躲在探針的紅燈裡**：`-vsync` 一開始看起來像「CI 環境問題」（只有 macOS 紅），但同一個旗標就寫在產品腳本裡；P2-1 的 `..` 逃逸也是如此——探針紅了不代表只有探針要改。

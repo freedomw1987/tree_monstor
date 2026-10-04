@@ -15,7 +15,8 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
    - **探針命名具體**：避免 `test1`，必含描述（如 `user-login-returns-correct-data`）
    - **粒度適中**：每個邏輯斷言一個探針（不過粗、不過細）
    - **純文字引用**：skill 內不放跨檔 markdown 連結
-   - **探針綁 Module（v2.9）**：探針名稱必含 Module prefix（如 `M01-user-login-returns-correct-data`）；用 `REGRESSION_MODULE=M01` 限定只跑某 Module
+   - **探針綁 Module（v2.9）**：探針名稱必含 Module prefix（如 `M01-user-login-returns-correct-data`）；用 `REGRESSION_MODULE=M01` 限定只跑某
+     Module
 5. **必產出物**：探針程式碼（probe/assert/describe）+ 報告（文本 + JSON）+ 失敗時 `suggestion`
 
 ## 觸發時機
@@ -32,14 +33,16 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 ### Step 1：開發時埋入探針（含 Module prefix）
 
-- **動作**：在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)` 埋入測試點；**`name` 必含 Module prefix**（如 `M01-user-login-returns-correct-data`，其中 `M01` 為 system-design.md 定義的 Module 代碼）
+- **動作**：在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)`
+  埋入測試點；**`name` 必含 Module prefix**（如 `M01-user-login-returns-correct-data`，其中 `M01` 為 system-design.md 定義的 Module 代碼）
 - **為什麼**：探針讓後續測試 / 排錯 checker agent 能根據報錯和測試記錄驗證；Module prefix 讓探針可按 Module 跑、CI 可選只跑某 Module
 - **產出**：源代碼內含探針（帶 Module prefix）
 - **證據**：探針命名具體（避免 `test1`） + 探針名稱含 Module 代碼
 
 ### Step 2：環境變量配置（含 REGRESSION_MODULE）
 
-- **動作**：設定 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` / `REGRESSION_REPORT_PATH=./report.json` / **`REGRESSION_MODULE=M01`（可選，限定只跑某 Module）**
+- **動作**：設定 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` /
+  `REGRESSION_REPORT_PATH=./report.json` / **`REGRESSION_MODULE=M01`（可選，限定只跑某 Module）**
 - **為什麼**：環境變量控制探針開關 + 輸出格式 + 失敗處理 + Module 範圍
 - **產出**：shell 環境變量或 .env 檔
 - **證據**：`echo $REGRESSION_MODE` 顯示正確值 + `echo $REGRESSION_MODULE` 顯示 Module 代碼（若設定）

@@ -31,7 +31,7 @@ TMO-013 / TMO-014 反思的 3 個未來 Action Items 中 2 項要收尾：
 ### 修改
 - `skills/regression-guard/PoC/run_pipeline.sh` (+14 / -1)
   - 新增 Step 4 M6 區塊（`JEV_FIX_PROPOSAL=1` 開啟）
-  - M4 return code 用 `|| M4_RC=$?` 接住（set -e 防護）
+  - M4 return code 用 `\|\| M4_RC=$?` 接住（set -e 防護）
 - `skills/regression-guard/SKILL.md` (+55 → 323 行) → v2.3
   - 新增「修正循環補充（M6 自動 fix proposal）」+「CI 整合補充」小節
 - `skills/regression-guard/examples.md` (+38 → 511 行)
@@ -66,7 +66,7 @@ cat /tmp/test-fix-proposal.md
 | workflow YAML 解析 | ✅ 2 jobs / 14 steps / 3 triggers |
 | `fix_proposal.py` import + 結構檢查 | ✅ FixProposal dataclass 3 conf + overall_confidence |
 | `fix_proposal.py` 跑真 API | ✅ 374ms（cached 之後 <5ms）|
-| `M4 red 不中斷 pipeline` | ✅ M4_RC=0 + `|| M4_RC=$?` pattern 生效 |
+| `M4 red 不中斷 pipeline` | ✅ M4_RC=0 + `\|\| M4_RC=$?` pattern 生效 |
 
 ## 6. 設計決策
 
@@ -97,7 +97,8 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 ## 8. 已知限制 / Hardening
 
-- **GHA workflow 未實際觸發** — 需在 GitHub repo 設 `OPENROUTER_API_KEY` secret + 設 branch protection 才會跑；目前是文件化 workflow，CI gate 等待 admin 啟用
+- **GHA workflow 未實際觸發** — 需在 GitHub repo 設 `OPENROUTER_API_KEY` secret + 設 branch protection 才會跑；目前是文件化 workflow，CI
+  gate 等待 admin 啟用
 - **M6 不寫出 fix 文字** — Jev schema 限制；M6.1+ 升級接 Claude/GPT 接力
 - **CI SOP branch protection 沒實際開設** — 同上，需 repo admin
 - **fix_proposal.py cache key 沒分版本** — 改了 schema 需手動清 cache 才能 force re-call
@@ -107,7 +108,8 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 - [x] Gate 1 (TDD): `tests/v2.1-jev-poc.bats` 37 探針 RED → GREEN
 - [x] Gate 2 (lint): workflow YAML 解析正確 + python 模組 import 過
-- [x] Gate 3 (regression): `JEV_FIX_PROPOSAL=1 ./run_pipeline.sh US-101` 跟 M5 結果完全一致（3 pass / 6 fail）；M4_RC capture 防 set -e
+- [x] Gate 3 (regression): `JEV_FIX_PROPOSAL=1 ./run_pipeline.sh US-101` 跟 M5 結果完全一致（3 pass / 6 fail）；M4_RC capture 防
+  set -e
 - [x] Gate 4 (reviewer): 本檔即為 self-review deliverable
 
 ## 反思
@@ -127,7 +129,7 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 | 問題 | 狀態 | 解法 |
 |---|---|---|
-| `set -e` 在 M4 red 時中斷 pipeline | ✅ 解 | `M4_RC=0; .venv/bin/python run_report.py ... || M4_RC=$?` |
+| `set -e` 在 M4 red 時中斷 pipeline | ✅ 解 | `M4_RC=0; .venv/bin/python run_report.py ... \|\| M4_RC=$?` |
 | Jev v1.13 沒 free_response 題型 | ✅ 解 | 改用 noul 題輸出「信心度報告 + 走跡」 |
 | GHA 不能把 python exit code 直接變 env | ✅ 解 | `set +e` + `PIPELINE_RC=$?` capture → `GITHUB_OUTPUT` 寫入 → 條件判斷 |
 | bats 探針名稱含中文被 UTF-8 bug 拒 | ✅ 解 | 改純英文 `M6-e: SKILL.md has M6 fix-loop section` |
@@ -139,7 +141,8 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 - **V01（一次一問）**：1 個 ask_user_question（4 選項：CI 範圍 / M6 範圍），2 題合併 1 個問題，0 個 follow-up ✅
 - **V02（推薦第一）**：CI 推薦「workflow + exit code gate（推薦）」、M6 推薦「最小：Jev fix proposal（推薦）」— 都標 Recommended ✅
-- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL.md v2.2 → v2.3）+ workflow + CI SOP — **V03 N/A** ✅
+- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL.md v2.2 → v2.3）+ workflow + CI
+  SOP — **V03 N/A** ✅
 
 ### 對未來的 Action Items
 

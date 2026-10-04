@@ -9,9 +9,12 @@
 
 ## TL;DR
 
-1. **做什麼**：把 9 個 skill（dav-reflection / dav-submitter / dav-planner / dav-trust / dav-wiki / regression-guard / tdd-test-writer / dev-checker-loop / dav-skill-creater）+ AGENTS.md 重組為「任務導航」5 段結構（TL;DR / 觸發時機 / 流程 / 規則 / 變動歷史）；同時把跨檔 markdown / Obsidian 連結改為純文字引用，讓 skill 可獨立搬動。
+1. **做什麼**：把 9 個 skill（dav-reflection / dav-submitter / dav-planner / dav-trust / dav-wiki / regression-guard /
+   tdd-test-writer / dev-checker-loop / dav-skill-creater）+ AGENTS.md 重組為「任務導航」5 段結構（TL;DR / 觸發時機 / 流程 / 規則 /
+   變動歷史）；同時把跨檔 markdown / Obsidian 連結改為純文字引用，讓 skill 可獨立搬動。
 2. **影響範圍**：9 個 SKILL.md + AGENTS.md + 11 個 bats 探針 + PRD-04 + changelog。
-3. **累計成果**：SKILL.md 總行數 952 → 648（-32%），探針新增 99 個、修正 4 個（舊探針因結構改失效），regression 339/352 全綠（剩 13 個 pre-existing：wiki-extract-media 環境缺失）。
+3. **累計成果**：SKILL.md 總行數 952 → 648（-32%），探針新增 99 個、修正 4 個（舊探針因結構改失效），regression 339/352 全綠（剩 13 個
+   pre-existing：wiki-extract-media 環境缺失）。
 
 ---
 

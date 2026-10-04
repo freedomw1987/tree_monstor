@@ -148,7 +148,7 @@ Agent 走完整流程，不呼叫 `ask_user_question`。
 ### 3.5 L3 擴量實戰範例（v2.1 新增）
 
 > 場景：US-101 ~ US-106 跑完後仍剩時間，Agent 從 `docs/` 自主擴量。
-
+>
 > ⚠️ 本段是「時間軸示意」非 trust-log 格式；trust-log 必用 YYYY-MM-DD HH:MM:SS ±HHMM（見 time-anchor.md §3）
 
 ```
@@ -455,4 +455,5 @@ Agent:
          6/6 Backlog ✅
 ```
 
-> 💡 **本範例未觸發 L3**：deadline 短（1 小時）、且 US-105 收斂後剩餘 8% < 10%，依 §規則主動收斂，不再啟動新 L3 項目。若 deadline 是 2 小時版本，會進入 L3 自主擴量（見 §3.5 範例）。
+> 💡 **本範例未觸發 L3**：deadline 短（1 小時）、且 US-105 收斂後剩餘 8% < 10%，依 §規則主動收斂，不再啟動新 L3 項目。若 deadline 是 2 小時版本，會進入 L3 自主擴量（見 §3.5
+> 範例）。

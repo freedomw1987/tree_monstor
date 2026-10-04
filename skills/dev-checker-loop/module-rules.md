@@ -7,7 +7,8 @@
 
 ## Module 定義（什麼是 Module）
 
-Module 定義在 `docs/system-design.md`，由 **dav-designer** skill 產出。dav-designer v2.3 規範定義 Module 為「可獨立開發 / 增減 / 測試」的功能單位，附 5 條切割原則（功能內聚 / 低耦合 / 可獨立交付 / 可獨立測試 / 粒度適中）。
+Module 定義在 `docs/system-design.md`，由 **dav-designer** skill 產出。dav-designer v2.3 規範定義 Module 為「可獨立開發 / 增減 / 測試」的功能單位，附 5
+條切割原則（功能內聚 / 低耦合 / 可獨立交付 / 可獨立測試 / 粒度適中）。
 
 **Module 的 4 個屬性**：
 

@@ -8,7 +8,8 @@
 
 ## 1. 這次完成什麼
 
-把 SOP 從「每次 sprint 必寫 6+ 個檔」精簡成「必寫 2 個檔（changelog + deliverable.md）」。**完全不動存量**（v1.7.1 / v1.8 / v1.9 既有 PRD / reflection / deliverable / html 全部保留為 audit trail）。
+把 SOP 從「每次 sprint 必寫 6+ 個檔」精簡成「必寫 2 個檔（changelog + deliverable.md）」。**完全不動存量**（v1.7.1 / v1.8 / v1.9 既有 PRD / reflection
+/ deliverable / html 全部保留為 audit trail）。
 
 ## 2. 做了什麼改動
 
@@ -107,7 +108,7 @@
 
 ---
 
-# 反思（Reflection 末段，v2.0 新：併入此處）
+## 反思（Reflection 末段，v2.0 新：併入此處）
 
 > 依 §2.4 SOP + dav-reflection skill 的 6 維度檢查填寫。
 
@@ -152,7 +153,8 @@
 | **v1.9** | 2 P1（§2.7 跨檔語意衝突 + backlog 詳細段）| 2/2 |
 | **v2.0** | **2 P0（dav-reflection skill 仍指向舊路徑）**| 2/2 |
 
-**結論**：V03 強制二審是必要的 — 連續 3 個 sprint 都證明自審時漏掉「跨檔一致性 / 跨章節語意」問題。本次的 P0#1「dav-reflection skill 還寫獨立反思檔」是典型 — 我自審時只看了 dav-submitter（前端入口），完全沒檢查 dav-reflection（後端觸發）。
+**結論**：V03 強制二審是必要的 — 連續 3 個 sprint 都證明自審時漏掉「跨檔一致性 / 跨章節語意」問題。本次的 P0#1「dav-reflection skill 還寫獨立反思檔」是典型 — 我自審時只看了
+dav-submitter（前端入口），完全沒檢查 dav-reflection（後端觸發）。
 
 ## 本次 v2.0 真正在減什麼
 

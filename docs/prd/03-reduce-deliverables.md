@@ -32,7 +32,8 @@ v1.8 / v1.9 連續兩個 sprint 的反省報告顯示，**完整 SOP 流程產�
 3. **docs/sop/handbook/changelog.md**：新增 v2.0 條目
 4. **docs/backlog.md**：新增 TMO-008（Story Point 估算見下）
 5. **PRD**：本次變更需要架構決策 → 寫 PRD（本檔）
-6. **Tests**（必要守護）：6 個探針守護 v2.0 規則（changelog v2.0、dav-submitter 不再提「三層」、不要求 HTML、§2.5 self-check 無 HTML、§2.4 反思併進規則、TMO-008 backlog）
+6. **Tests**（必要守護）：6 個探針守護 v2.0 規則（changelog v2.0、dav-submitter 不再提「三層」、不要求 HTML、§2.5 self-check 無 HTML、§2.4
+   反思併進規則、TMO-008 backlog）
 
 ### Non-goals（不做）
 

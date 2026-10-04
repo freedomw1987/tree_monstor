@@ -20,7 +20,8 @@ v1.8 / v1.9 / v2.0 連續 3 個 sprint 的反省都顯示同個問題：
 | 「重要事項藏在大量文字中」 | Reviewer P2-3「存量特例」位置 |
 | 術語不一致 | 「反思 / 反省 / reflection」混用 |
 
-**根本問題**：當前 SKILL.md 結構是「人類好讀」風格，但**這個項目中 LLM 是主要讀者**（Agent skill 觸發、Reviewer 讀檔、bats 探針 grep）。人類可讀性 vs LLM 注意力友好之間存在張力，本 PRD 選擇「以 LLM 注意力為主、人類可讀為輔」。
+**根本問題**：當前 SKILL.md 結構是「人類好讀」風格，但**這個項目中 LLM 是主要讀者**（Agent skill 觸發、Reviewer 讀檔、bats 探針 grep）。人類可讀性 vs LLM
+注意力友好之間存在張力，本 PRD 選擇「以 LLM 注意力為主、人類可讀為輔」。
 
 ## 目標
 

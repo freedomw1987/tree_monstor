@@ -78,8 +78,11 @@ bats tests/wiki-cleanup.bats --filter "E1"
 ## Lint
 
 ```bash
-# markdownlint
-markdownlint-cli2 "skills/dav-wiki/*.md" "docs/sop/handbook/dav-wiki-cleanup.md"
+# markdownlint（與 CI 同一組 glob；本機先 `npm install -g markdownlint-cli2`）
+markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"
+
+# shellcheck（Gate 2；-x 讓它跟隨 source 進 lib/log.sh；全嚴重度需歸零）
+shellcheck -x -S style lib/log.sh skills/dav-wiki/scripts/*.sh scripts/ci/*.sh
 
 # bash 語法（CI 用 glob 掃全部 9 支）
 bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
@@ -90,13 +93,22 @@ for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 wc -l skills/dav-wiki/SKILL.md
 ```
 
+### markdownlint 政策（TMO-037 後）
+
+- 上限 **MD013 line_length = 120**（見 `.markdownlint.json`）；表格列、程式碼區塊、標題豁免。
+- 清債原則是**改文件**（折行 / 轉義 `\|`），不是**放寬規則**（調大上限、縮小 glob）；動規則會被
+  `tests/markdownlint-guard.bats` MLG-3/4/5/8 擋下。
+- `.venv/`、`node_modules/` 必排除（見 `.markdownlint-cli2.jsonc`），否則 PoC venv 會灌入假錯誤。
+- 表格列內若出現 `\|`、`||`、`a|b` 這類管線，需寫成 `\|`，否則整列會被當成非表格列（MD056 + 連帶 MD013）。
+
 ## CI / GitHub Actions
 
 每個 PR 會自動跑（見 `.github/workflows/ci.yml`）：
 
 1. **bats 全套測試**（macOS + Linux；先建 PoC venv、裝 ffmpeg）
-2. **markdownlint**（SKILL.md、cleanup handbook、所有 markdown）
-   ——**目前暫時 non-blocking**（`continue-on-error: true`），lint 債 246 處見 TMO-037
+2. **markdownlint**（全 repo：`skills/**/*.md`、`docs/**/*.md`、`tests/**/*.md`、`*.md`）
+   ——**阻擋式**（TMO-037 清完 270 個錯後已移除 `continue-on-error: true`）；由
+   `tests/markdownlint-guard.bats` 鎖住「必須存在、必須會擋、glob 不得縮小」
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
@@ -107,7 +119,7 @@ CI badge：見 [README.md](README.md) 頂部。
 
 1. Fork → 開 feature branch（`feature/xxx` 或 `fix/xxx`）
 2. 本機跑 `bats tests/` 確認全綠
-3. 本機跑 `markdownlint-cli2 "skills/dav-wiki/*.md"` 確認 0 issues
+3. 本機跑 `markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"` 確認 0 issues
 4. 提 PR → CI 自動跑
 5. 等待 review
 

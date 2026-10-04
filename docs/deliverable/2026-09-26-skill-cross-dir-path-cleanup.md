@@ -13,7 +13,9 @@
 
 ### 1.1 問題
 
-dav-skill-creater v2.2（2026-09-26 當天剛加入）的「跨目錄讀檔引用零容忍」規範，要求所有 skill 不得寫跨目錄讀檔引用（含自然語言「見 + path」）。但當下已有 **5 個 skill 違規**：dav-designer / dav-planner / dav-submitter / dev-checker-loop / regression-guard 都在交叉引用段指向具體路徑 `examples/module-lifecycle/...`。
+dav-skill-creater v2.2（2026-09-26 當天剛加入）的「跨目錄讀檔引用零容忍」規範，要求所有 skill 不得寫跨目錄讀檔引用（含自然語言「見 + path」）。但當下已有
+**5 個 skill 違規**：dav-designer / dav-planner / dav-submitter / dev-checker-loop / regression-guard 都在交叉引用段指向具體路徑
+`examples/module-lifecycle/...`。
 
 ### 1.2 為什麼是現在清
 
@@ -41,9 +43,11 @@ dav-skill-creater v2.2（2026-09-26 當天剛加入）的「跨目錄讀檔引�
 
 ### 2.2 改動背後的理由
 
-- **抽象詞寫法**：「見 monorepo 對應的 Module 完整生命週期範例（含 system-design.md / backlog.md / ...）」→ 既保留「這是 Module 範例」的語意，又不綁死 `examples/module-lifecycle/` 路徑；skill 搬到任何 monorepo 都能用。
+- **抽象詞寫法**：「見 monorepo 對應的 Module 完整生命週期範例（含 system-design.md / backlog.md / ...）」→ 既保留「這是 Module 範例」的語意，又不綁死
+  `examples/module-lifecycle/` 路徑；skill 搬到任何 monorepo 都能用。
 - **共用探針**：5 個 skill 都是同類違規，1 個共用探針守全部 5 個 → DRY、未來 v2.5+ 新增 skill 也自動受保護。
-- **主檔 vs CHANGELOG**：依 dav-skill-creater v2.4「≤ 3 條留主檔」規範，dev-checker-loop 主檔只 2 條，新條留主檔；其他 4 個 skill 主檔達 3 條，新條入 CHANGELOG。
+- **主檔 vs CHANGELOG**：依 dav-skill-creater v2.4「≤ 3 條留主檔」規範，dev-checker-loop 主檔只 2 條，新條留主檔；其他 4 個 skill 主檔達 3 條，新條入
+  CHANGELOG。
 
 ### 2.3 Reviewer 二審流程
 
@@ -120,7 +124,8 @@ dav-skill-creater v2.2（2026-09-26 當天剛加入）的「跨目錄讀檔引�
 ### 8.3 自我反省
 
 - **這次任務是 SOP 紀律演練的好樣本**：5 份 skill 同性質違規、清盤、撞盤，每處都觸發規範反思的不同發現面（V01/V02/V03、V2.4、M-Step 3、Reviewer P1/P2 分級、bats 探針）
-- **我最大的反省**：**未執行「先確認 subagent 是否存在」就直接派單**，結果花了 1 輪才知道 dev-checker-loop 不是 subagent agent。下次我會**先用 `{action:"list",capabilities:true}` 預檢**。
+- **我最大的反省**：**未執行「先確認 subagent 是否存在」就直接派單**，結果花了 1 輪才知道 dev-checker-loop 不是 subagent
+  agent。下次我會**先用 `{action:"list",capabilities:true}` 預檢**。
 - **V01 觸發驗證**：中途停下來問用戶「Reviewer 怎麼跑」這個動作，是 V01「一次一個問題」紀律的正確示範 — 不擅自決定、主動停下、確認後才動。
 - **V03 觸發觸發**：本次雖是 skill 修改而非 SOP 規範本體修改，仍主動跑 Reviewer 二審（用 `reviewer` subagent），符合 V03「寧可多審不可漏審」精神。
 

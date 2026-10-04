@@ -147,7 +147,8 @@ d7dee5d fix: M1 endpoint 改 /api/alpha/decisions
 
 - **V01（一次一問）**：1 個 ask_user_question（4 選項：M3.1 範圍 + SKILL 整合方式），2 題合併 1 個問題，0 個 follow-up ✅
 - **V02（推薦第一）**：M3.1 推薦「最小：Chrome driver + DOM snapshot」、SKILL 推薦「1 個新章節」— 都標 Recommended ✅
-- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；**改的是 skill 本體（SKILL.md v2.2 升級）** — 但這屬於 skill 自身演進（v2.1 → v2.2），不是 SOP 修改；**N/A** ✅
+- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；**改的是 skill 本體（SKILL.md v2.2 升級）** — 但這屬於 skill
+  自身演進（v2.1 → v2.2），不是 SOP 修改；**N/A** ✅
 
 ### 對未來的 Action Items
 
@@ -167,4 +168,5 @@ TMO-011 (M1-M4) → TMO-012 (M5) → TMO-013 (M3.1) → TMO-014 (SKILL v2.2)
      1 PR               local push      local push
 ```
 
-**11 個新檔 / 8 個 commit / 3,218 行 / 25 個探針 / 4 個 batch 維度 / 3 種 observer backend / 1 個 skill v2.2** — 從 PoC 到 plug-in framework 到 skill 規範完整閉環。
+**11 個新檔 / 8 個 commit / 3,218 行 / 25 個探針 / 4 個 batch 維度 / 3 種 observer backend / 1 個 skill v2.2** — 從 PoC 到 plug-in
+framework 到 skill 規範完整閉環。

@@ -11,7 +11,8 @@ description: dav-designer 的「6 步流程細節」附件（v2.4 拆分自主�
 
 ## Step 1：讀取 backlog 並標定範圍 + 詢問 DoD 深度
 
-- **動作**：讀取 monorepo 對應的 backlog 檔，篩選 `status = PENDING` 的項目；依功能內聚性分群為 Module。**同時詢問用戶每個 Module 的 DoD 深度（DoD-Lite / DoD-Full）**。
+- **動作**：讀取 monorepo 對應的 backlog 檔，篩選 `status = PENDING` 的項目；依功能內聚性分群為
+  Module。**同時詢問用戶每個 Module 的 DoD 深度（DoD-Lite / DoD-Full）**。
 - **為什麼**：避免一次處理全部 backlog 導致設計過廣；DoD 深度在 Step 1 一次問清，避免 Step 5 再打斷流程。
 - **產出**：Module 清單（含 Module 名稱 / backlog IDs / **DoD 深度**）。
 
@@ -21,7 +22,8 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 
 1. **可按 Module 獨立開發**：每個 Module 可被不同開發者 / 不同時間切片，Module 間只透過明確定義的介面互動。
 2. **可按 Module 增減**：新增或移除 Module 時，對項目全體影響最小（其他 Module 不需要重寫，只調整連接處）。
-3. **可按 Module 測試**：dev-checker-loop 與 regression-guard 可針對單一 Module 跑探針、跑校驗；測試粒度與 Module 對齊，不會「測了整個系統卻不知道是哪個 Module 壞掉」。
+3. **可按 Module 測試**：dev-checker-loop 與 regression-guard 可針對單一 Module 跑探針、跑校驗；測試粒度與 Module 對齊，不會「測了整個系統卻不知道是哪個 Module
+   壞掉」。
 
 **切割原則**（依上述目的倒推）：
 
@@ -53,7 +55,8 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 
 - **動作**：定義技術棧、系統組成部件（前端 / 後端 / DB / 第三方服務），並依 Module 劃分系統邊界。**禁止**出現真實 / 示範程式碼。
 - **為什麼**：架構設計只描述「為什麼這樣切」與「怎麼互動」，實作留給開發階段。
-- **Module 邊界是測試邊界**（v2.3 新增）：system-design.md 中的 Module 邊界就是未來 dev-checker-loop 與 regression-guard 的執行邊界 — 探針只針對該 Module 的介面與內部狀態，不會跨 Module 檢查（避免一個 Module 壞掉牽扯其他 Module 的綠燈 / 紅燈）。
+- **Module 邊界是測試邊界**（v2.3 新增）：system-design.md 中的 Module 邊界就是未來 dev-checker-loop 與 regression-guard 的執行邊界 — 探針只針對該
+  Module 的介面與內部狀態，不會跨 Module 檢查（避免一個 Module 壞掉牽扯其他 Module 的綠燈 / 紅燈）。
 - **產出**：system-design.md（含技術棧、模組邊界圖（純文字）、資料流）。
 - **證據**：同步更新 monorepo 對應的 backlog 檔，給每個 User Story 標上 Module 與 Story Point。
 
@@ -75,7 +78,8 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 
 ## Step 5：互動 HTML 原型（取代靜態 PRD html）
 
-- **動作**：依 Step 1 選定的 **DoD 深度**（DoD-Lite / DoD-Full），為每個 Module 產出 `docs/prd/<序號-module-name>.html`（**單檔 HTML**，內嵌 CSS + JS）。
+- **動作**：依 Step 1 選定的 **DoD 深度**（DoD-Lite / DoD-Full），為每個 Module 產出 `docs/prd/<序號-module-name>.html`（**單檔 HTML**，內嵌
+  CSS + JS）。
 - **為什麼**：原型是「可即點即試的 PRD」，讓用戶在瀏覽器直接走完整流程，驗收 UX 後才進開發。
 - **產出**：`docs/prd/<序號-module>.html`（單檔、無 build tool、雙擊即開）。
 - **DoD 深度對照**：依 Step 1 選定的 DoD 深度（Lite / Full）實作，詳細見 prototype-quality.md §0-§1。

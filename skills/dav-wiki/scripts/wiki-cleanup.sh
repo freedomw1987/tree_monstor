@@ -13,7 +13,7 @@ set -uo pipefail
 # this script raise expected errors (e.g. _purge mode skips creating
 # _deprecated/, so the DEPRECATED_INDEX Python block fails harmlessly).
 _LOG_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/lib/log.sh"
-# shellcheck source=lib/log.sh  # 相對於 repo root（Gate 2 一律在 repo root 跑 shellcheck）
+# shellcheck source=lib/log.sh  # 相對 repo root（Gate 2 一律在 repo root 跑 shellcheck -x）
 source "$_LOG_LIB"
 
 # === 預設值 ===

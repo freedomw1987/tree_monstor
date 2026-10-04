@@ -16,7 +16,8 @@
 
 ### 1.1 問題
 
-上個 §3（2026-09-26）清完 5 個 skill 的「`examples/module-lifecycle/...`」具體 path 引用後，採抽象詞「見 monorepo 對應的 X」處理 — 但**這只是「引用違規清掉」，範例本身仍是 monorepo 約束**。
+上個 §3（2026-09-26）清完 5 個 skill 的「`examples/module-lifecycle/...`」具體 path 引用後，採抽象詞「見 monorepo 對應的 X」處理 —
+但**這只是「引用違規清掉」，範例本身仍是 monorepo 約束**。
 
 **實際痛點**：
 - skill 搬到非 `tree_monstor/` 的 monorepo 就找不到範例（破壞 v2.2 「skill 獨立搬動」初衷）
@@ -72,7 +73,9 @@
 
 > ⚠️ **設計卡點**：dav-submitter 主檔第 2 次外移 v2.0 已是極限，不可能再外移。需要決定是否合併變動條目、或者接受主檔變 4 條。
 
-**dav-submitter 解法（F3 修正）**：把這次 + 上次清存量的變動合併成「v2.4 批次清理 + 自包含化」一條。主檔加這條後仍是 4 條（v2.4/v2.3/v2.2/v2.1），CHANGELOG.md 補一條詳細紀錄。**合併條目「為什麼」欄位寫法**：
+**dav-submitter 解法（F3 修正）**：把這次 + 上次清存量的變動合併成「v2.4 批次清理 + 自包含化」一條。主檔加這條後仍是 4 條（v2.4/v2.3/v2.2/v2.1），CHANGELOG.md
+補一條詳細紀錄。**合併條目「為什麼」欄位寫法**：
+
 ```
 v2.4 合併 v2.3（清存量）+ 本次自包含化：合併理由 — 主檔 4 條已達 v2.4 規範上限，再加會違規；可追溯性由 CHANGELOG.md 補條目保證；V03 Reviewer 二審通過
 ```
@@ -109,7 +112,8 @@ v2.4 合併 v2.3（清存量）+ 本次自包含化：合併理由 — 主檔 4 
 }
 ```
 
-> **設計理由**：v2.2 例外明確寫「skill 子檔可用 markdown」，現在要讓探針實質支持。**白名單精準匹配**「見本 skill 的 `examples/`」（反引號必含），不接受「見 monorepo」、「見 docs/」、「`../examples/`」等變體。
+> **設計理由**：v2.2 例外明確寫「skill 子檔可用 markdown」，現在要讓探針實質支持。**白名單精準匹配**「見本 skill 的 `examples/`」（反引號必含），不接受「見 monorepo」、「見
+> docs/」、「`../examples/`」等變體。
 
 ### 2.4.1 版本基線探針（F4 新增）
 
@@ -134,11 +138,11 @@ v2.4 合併 v2.3（清存量）+ 本次自包含化：合併理由 — 主檔 4 
 
 | 現有 | 改為 |
 |------|------|
-| `見 monorepo 對應的 Module 完整生命週期範例（含 system-design.md / backlog.md / ...；位置由 monorepo 約定）` | `見本 skill 的 `examples/system-design.md`` |
-| `見 monorepo 對應的 Module 完整生命週期範例（含 backlog.md；位置由 monorepo 約定）` | `見本 skill 的 `examples/backlog.md`` |
-| `見 monorepo 對應的 Module 完整生命週期範例（含 checklist.md；位置由 monorepo 約定）` | `見本 skill 的 `examples/checklist.md`` |
-| `見 monorepo 對應的 Module 完整生命週期範例（含 deliverable-sample.md；位置由 monorepo 約定）` | `見本 skill 的 `examples/deliverable-sample.md`` |
-| `見 monorepo 對應的 Module 完整生命週期範例（含 probes/；位置由 monorepo 約定）` | `見本 skill 的 `examples/probes/`` |
+| `見 monorepo 對應的 Module 完整生命週期範例（含 system-design.md / backlog.md / ...；位置由 monorepo 約定）` | `見本 skill 的`examples/system-design.md`` |
+| `見 monorepo 對應的 Module 完整生命週期範例（含 backlog.md；位置由 monorepo 約定）` | `見本 skill 的`examples/backlog.md`` |
+| `見 monorepo 對應的 Module 完整生命週期範例（含 checklist.md；位置由 monorepo 約定）` | `見本 skill 的`examples/checklist.md`` |
+| `見 monorepo 對應的 Module 完整生命週期範例（含 deliverable-sample.md；位置由 monorepo 約定）` | `見本 skill 的`examples/deliverable-sample.md`` |
+| `見 monorepo 對應的 Module 完整生命週期範例（含 probes/；位置由 monorepo 約定）` | `見本 skill 的`examples/probes/`` |
 
 **全部符合 v2.2 例外**：「skill 子檔可用 markdown」+「同 dir 子檔引用」 ✅
 

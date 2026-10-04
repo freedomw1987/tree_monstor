@@ -7,7 +7,7 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 
 ## TL;DR
 
-1. **做什麼**：兩個 Subagent 循環協作 — **dev** 領任務開發（含 regression-guard 探針）→ 標記「等待校驗」→ **checker** 全面校驗 → 發現問題由 dev 自動修復 → 重複循環直到終止條件。
+1. **做什麼**：**dev** 領任務開發（含 regression-guard 探針）→ 標記「等待校驗」→ **checker** 全面校驗 → dev 自動修復 → 循環至終止條件。
 2. **何時觸發**：大型項目、嚴格品質要求、V03 SOP 修改提案、用戶指定 dev-checker-loop。
 3. **預設 SOP 路徑**：§2.3 Gate 4 reviewer gate（在 Gate 1/2/3 後）。
 4. **關鍵紀律**：
@@ -43,12 +43,12 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 
 ### Step 2：dev 開發（含 Module 邊界）
 
-- **動作+為什麼**：依 system-design.md 的 Module 邊界開發、不跨 Module；保留 regression-guard 探針（探針名稱必含 Module prefix）；探針是後續校驗依據 + Module 邊界讓錯誤不外洩
+- **動作+為什麼**：依 system-design.md 的 Module 邊界開發、不跨 Module；保留 regression-guard 探針（名稱必含 Module prefix）；探針是後續校驗依據，邊界讓錯誤不外洩
 - **產出+證據**：Module 內代碼 + 帶 prefix 探針 + 標記；探針可運行 + backlog 標記
 
 ### Step 3：checker 全面校驗（Module 級校驗）
 
-- **動作**：checker Subagent 監控 backlog，發現「等待校驗」→ 校驗範圍限定 Module 邊界內（功能正確性、代碼品質、測試覆蓋、regression-guard 探針）→ 發現問題記錄；v2.4 新增 jev 嵌入細節（校驗前快篩 / 校驗後驗證 / escalate 落點）見 `workflow.md` 「## jev 整合細節（v2.4 新增）」
+- **動作**：checker 監控 backlog，見「等待校驗」→ 限 Module 邊界內校驗（功能、品質、覆蓋）→ 記錄問題；v2.4 新增 jev 嵌入細節見 `workflow.md`
 - **為什麼**：避免低級錯誤、確保品質；Module 邊界內校驗避免「跨 Module 越權」
 - **產出**：校驗報告（問題清單 + 分級 P0/P1/P2 + Module 標註）
 - **證據**：報告存在 + 問題清單完整 + 問題屬單 Module 或標「跨 Module」

@@ -8,7 +8,9 @@
 
 ## 1. 這次完成什麼
 
-把 `regression-guard` skill 從「**字串比對 pass/fail**」升級成「**語意判定 + confidence + severity + 真實 bug 機率 + end-of-run 健康評分**」。整個升級包成 4 milestone + 一鍵 pipeline：
+把 `regression-guard` skill
+從「**字串比對 pass/fail**」升級成「**語意判定 + confidence + severity + 真實 bug 機率 + end-of-run 健康評分**」。整個升級包成 4 milestone + 一鍵
+pipeline：
 
 | Milestone | 目標 | 檔案 |
 |---|---|---|
@@ -36,7 +38,7 @@
 | `run_pipeline.sh` | 88 | 🚀 一鍵 M2 → M3 → M4 |
 | `journeys/US-101.yaml` | 159 | M2 產物（人類可讀 journey spec）|
 
-**合計：12 個檔 / 2,105 行**
+合計：12 個檔 / 2,105 行
 
 ### 2.2 修改檔案
 
@@ -89,7 +91,8 @@
 
 ### 6.1 立即可做
 
-1. **發 PR** — `feat-jev-regression` 已 push 到 origin，draft description 在 `/tmp/pr-draft-feat-jev-regression.md`（5 commits + 4 milestone + 一鍵 pipeline）
+1. **發 PR** — `feat-jev-regression` 已 push 到 origin，draft description 在 `/tmp/pr-draft-feat-jev-regression.md`（5
+   commits + 4 milestone + 一鍵 pipeline）
 2. **Reviewer 看 PR** — 重點看 `run_journey.py --stale-test` 跟 `batch_report.py` 的 Jev schema
 
 ### 6.2 下一個 Sprint 考慮（M5）
@@ -117,7 +120,7 @@
 
 ---
 
-# 反思（Reflection 末段，v2.0 新：併入此處）
+## 反思（Reflection 末段，v2.0 新：併入此處）
 
 > 依 §2.4 SOP + dav-reflection skill 的 6 維度檢查填寫。
 
@@ -125,7 +128,7 @@
 
 | # | 維度 | 結果 | 備註 |
 | - | --- | --- | --- |
-| 1 | UX/UI 一致性 | ✅ | CLI 入口 4 個 + 1 pipeline shell；命名一致（run_* / *gen / *report）；Markdown report 用 emoji + 表格人讀友善；零學習曲線 |
+| 1 | UX/UI 一致性 | ✅ | CLI 入口 4 個 + 1 pipeline shell；命名一致（run_*/*gen / *report）；Markdown report 用 emoji + 表格人讀友善；零學習曲線 |
 | 2 | RWD 響應式設計 | N/A | 後端 / CLI 工具，無 UI |
 | 3 | 技術債 | ⚠️ | 3 項已知（P1#1 hardcoded fixture / P1#2 stale 不限 AC / P1#3 CLI inline 邏輯），全留 M5 |
 | 4 | 可維護性 | ✅ | 15 個檔案、2,148 行、最大單檔 351 行；模組分離清楚（oracle / generator / runner / batch_report）；cache key 用 SHA256 自動管理；三層 key loader 隔離設定 |
@@ -152,7 +155,8 @@
 
 #### ⚠️ [P1] 沒寫 bats 探針
 - **根因**：PoC 階段優先「證明可行」而不是「寫 regression 守護」。每個 milestone 都有 demo 跑通，但 demo 壞掉不會自動擋
-- **建議**：M5（或 v2.1 sprint）加 `tests/v2.1-jev-poc.bats`：守 4 件事 — (a) 4 milestone 都能跑 (b) cache 機制有效 (c) stale detection 觸發 (d) batch report 4 維度有輸出
+- **建議**：M5（或 v2.1 sprint）加 `tests/v2.1-jev-poc.bats`：守 4 件事 — (a) 4 milestone 都能跑 (b) cache 機制有效 (c) stale detection 觸發
+  (d) batch report 4 維度有輸出
 
 ## Action Items（每個填滿「動作 + 類型 + 驗收標準 + 預估」）
 

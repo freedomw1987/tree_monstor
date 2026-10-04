@@ -172,10 +172,15 @@ process_batch() {
     done < <(find "$dir" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) -print0)
 
     # 批次 manifest
+    # 引擎標記：mock 模式或本機沒有 tesseract 就算 mock（SC2015：不用 A && B || C）
+    ocr_engine="tesseract"
+    if [[ "$FORCE_MOCK" = true ]] || [[ -z "$(command -v tesseract)" ]]; then
+        ocr_engine="mock"
+    fi
     cat > "$outdir/manifest.json" <<EOF
 {
   "type": "ocr",
-  "engine": "$([ "$FORCE_MOCK" = true ] && echo "mock" || ([ -n "$(command -v tesseract)" ] && echo "tesseract" || echo "mock"))",
+  "engine": "$ocr_engine",
   "language": "$LANGUAGE",
   "count": $count,
   "extracted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"

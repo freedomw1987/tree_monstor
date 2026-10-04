@@ -78,9 +78,9 @@ jobs:
   lint-only:
     name: Markdown lint
     runs-on: ubuntu-latest
-    # TMO-037：lint 債 246 處（184 條長行）未清，先不讓 CI 首跑被它卡紅；
-    # 紅燈仍會以 annotation 顯示。清完 TMO-037 後請移除本行，讓 lint 恢復阻擋。
-    continue-on-error: true
+    # TMO-037（2026-10-05）：債已清 0，本 job 恢復阻擋（不再設 job 級容錯）。
+    # 守門探針：tests/markdownlint-guard.bats（MLG-1/2 鎖住 job 存在且會擋、MLG-3/4/8 鎖 glob 不縮小）。
+    # 注意：glob 必須涵蓋 tests/fixtures/**/*.md，且不得把 .venv/ 納入（見 .markdownlint-cli2.jsonc）。
     steps:
       - uses: actions/checkout@v4
       - run: npm install -g markdownlint-cli2
