@@ -96,38 +96,15 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 ## 輸出結構
 
-```
-docs/
-  README.md
-  wiki/
-    _index.json
-    _tags.json
-    {category}/{YYYY-MM}/
-      {title}.md
-      assets/
-        images/{n}.png
-        videos/{n}.mp4
-        videos/{n}.transcript.md
-        audio/{n}.mp3
-  concepts/
-    _concepts.json
-    {slug}.md
-```
+`docs/` 為寫入目的地（專案約定）；產出物清單見 TL;DR。完整樹狀圖與各節點用途 → 同套本 skill 子檔（`./output-structure.md`）
 
 ## Trust 整合
 
-| 用戶輸入 | 模式 |
-|---------|------|
-| `/trust <內容>` | 走 `dav-trust` 自主模式（不打扰用戶、自主完成、中間決策寫進 `docs/trust-log.md`）|
-| 普通輸入 | 正常逐步對話確認 |
+- `/trust <內容>` → 走 `dav-trust` 自主模式（不打扰用戶、自主完成、中間決策寫進 `docs/trust-log.md`）；普通輸入 → 正常逐步對話確認
 
 ## 軟刪除規則
 
-**不真刪除檔案**。用 frontmatter 標記：
-- **文件**：`deprecated: true` 或 `superseded_by: "<path>"`
-- **概念**：`deprecated: true` + `status: deprecated` + `superseded_by: "<slug>"` + 從 `_concepts.json` 移除
-
-**磁碟清理**：deprecated 超過 90 天的檔案可用 `scripts/wiki-cleanup.sh` 移到 `docs/wiki/_deprecated/{YYYY-Qn}/`，從主索引移除但保留可追溯。
+**不真刪除檔案**：frontmatter 標 `deprecated: true` / `superseded_by`，90 天後可移入 `docs/wiki/_deprecated/`；細節見 `./soft-delete.md`
 
 ## 變動歷史
 
@@ -135,16 +112,17 @@ docs/
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-10-04 | 主檔瘦身 151 → 129 行（輸出結構 / 軟刪除細節移子檔：`output-structure.md` / `soft-delete.md`）| TMO-028：V03.5 主檔 ≤130 預檢 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 6：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
 
----
 ---
 
 **交叉引用（純文字）**：
 - 操作範例 → 同套本 skill 子檔（`./examples.md`）
 - frontmatter schema → 同套本 skill 子檔（`./frontmatter-schema.md`）
 - 概念演進規則 → 同套本 skill 子檔（`./concept-evolution.md`）
+- 產出結構 / 軟刪除規則 → 同套本 skill 子檔（`./output-structure.md` / `./soft-delete.md`）
 - 互動設計系統 → 見 monorepo 對應的 design 文件（路徑由 monorepo 約定）
 - 技術架構 → 見 monorepo 對應的 system-design 文件（路徑由 monorepo 約定）
 - PRD → 見 monorepo 對應的 PRD 文件（路徑由 monorepo 約定）

@@ -36,11 +36,15 @@
 | TMO-025 | 修 B 類 12 紅：pptx 文字改用 python-pptx（修靜默假成功）+ 裝 poppler + 新探針 AC-E21/E22 + CI 依賴 | P1 | 5 | done (2026-10-04) | TMO-023 |
 | TMO-026 | 修 A 類 12 紅：探針 retarget 到 skill 拆檔後的新家（+3 條 CJK 靜默假綠探針復活）| P1 | 5 | done (2026-10-04) | TMO-025 |
 | TMO-027 | 廢棄守門：dav-planner §2.7 用戶背景收集（用戶已決策廢除）5 條探針轉負向斷言 | P2 | 3 | done (2026-10-04) | TMO-026 |
-| TMO-028 | `skills/dav-wiki/SKILL.md` 151 → ≤150 行（走 V03 + 行數預檢）| P2 | 2 | todo | TMO-026 |
+| TMO-028 | `skills/dav-wiki/SKILL.md` 151 → **129 行**（V03.5 強制 ≤130）：輸出結構/軟刪除細節移子檔 + 指標存在探針 + 版本漂移鎖 | P2 | 3 | done (2026-10-04) | TMO-026 |
 | TMO-029 | venv bootstrap：`PoC/requirements.txt` + setup 腳本 + CI + 探針「缺 venv 就大聲紅」| P1 | 3 | todo | TMO-026 |
 | TMO-030 | 廢除麵包屑補齊：`docs/prd/02` + `docs/prd/03:104` + backlog TMO-007 詳細段加「已廢棄」註 | P2 | 2 | todo | TMO-027 |
 | TMO-031 | `skills/dav-planner/SKILL.md:73` 殘留舊步驟名（「背景收集 / 最終目的」→ 現行 Step 1/2）| P2 | 1 | todo | TMO-027 |
 | TMO-032 | 探針精準化：`refute_file_contains` 加檔案存在檢查（根除假綠）+ 負向斷言排除變動歷史列 + v1.9 條目改列級錨定 + BACKLOG-005 大寫 `PENDING` 漏抓 | P2 | 3 | todo | TMO-027 |
+| TMO-033 | dav-wiki 子檔內容錨點：`output-structure.md` 需含 `_index.json`/`_tags.json`/`_concepts.json`/`transcript.md`；`soft-delete.md` 需含 `deprecated_at`/`--older-than`/`--purge`（現僅 existence 鎖，子檔被掏空仍綠）| P2 | 2 | todo | TMO-028 |
+| TMO-034 | 清 4 處同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`.github/workflows/ci.yml:50`、`CONTRIBUTING.md:48` | P2 | 1 | todo | TMO-028 |
+| TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
+| TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`，故 `dav-planner/SKILL.md:80`「先 grep `docs/concepts/`」實質跨目錄讀取抓不到 | P2 | 2 | todo | TMO-028 |
 
 > **狀態定義**：`done (日期)` = 已交付；`todo` = TMO-026 之後新開的後續票（已描述、尚未開工，**非** trust mode 未結項）。
 > 注：`tests/backlog-trust-mode-completion.bats:48`（BACKLOG-005）禁止 trust mode 期間的票停在 `pending`；本表新票一律用 `todo`，不修改該探針。
@@ -873,3 +877,47 @@ bash 在 UTF-8 locale 把 `$rc）` 解析成變數名 `rc）` → `set -u` 下 `
 - **負向斷言天生有假綠風險**：`grep` 對不存在的檔案 rc=2 → `refute` 回 0（PASS）。守門必須配**正向錨定**（reviewer P2-1 抓到，本輪修掉）。
 - **守門標的要用「主題」而非「編號」**：`§2.7` 這種編號在 `§2.1–§2.6` 序列裡必然會被合法用到（P2-2），用編號當負向標的會製造未來誤紅。
 - **別讓自己的行政動作製造新紅**：TMO-026 加票用 `pending` 撞上 BACKLOG-005；修法是「明列狀態定義 + 不動探針」，而不是放寬探針。
+
+## TMO-028 詳細（dav-wiki 主檔瘦身 + 版本漂移鎖）
+
+### 病因與處置
+
+- `skills/dav-wiki/SKILL.md` 151 行 > 硬上限 150 → `tests/dav-wiki.bats` AC-2 恆紅（TMO-027 後全套唯一 1 紅）。
+- 依 `skills/dav-skill-creater/editor-guide.md:102`（V03.5）「主檔 ≥150 → **必先瘦身至 ≤130 行**」，
+  本輪做**內容無損外移**（細節進同 skill 子檔、主檔留導航 + 指針），不是「151 → 150 剛好過關」。
+
+### 變更清單
+
+| 檔 | 改動 |
+| --- | --- |
+| `skills/dav-wiki/SKILL.md` | 151 → **129 行**；`## 輸出結構` 樹狀圖 → 1 行指針；`## Trust 整合` 表格 → 1 條 bullet（同義）；`## 軟刪除規則` → 1 行摘要 + 指針；尾端重複 `---` 收斂；`## 變動歷史` +v2.2 列；`:107` 122 → 118 字元 |
+| `skills/dav-wiki/output-structure.md` | 新增：樹狀圖（**逐字搬移**，diff 為空）+ 各節點用途表 |
+| `skills/dav-wiki/soft-delete.md` | 新增：軟刪除規則（重組 + 補充；CLI 參數逐項對照 `wiki-cleanup.sh` usage 驗證） |
+| `skills/dav-wiki/CHANGELOG.md` | 補 v2.2 列（原本缺，與主檔對齊） |
+| `tests/restruct-dav-wiki.bats` | **+1 條**指標存在探針（防空過 `found >= 4`）；既有「變動歷史」測試**追加**版本漂移鎖（未新增測試條數） |
+| `docs/deliverable/2026-10-04-tmo-028-dav-wiki-slim.md` | 本輪交付詳錄 |
+
+### 驗收證據
+
+- Gate 1（紅→綠）：`not ok 42 AC-2: SKILL.md is at most 150 lines`（151 行）→ `ok 6`（129 行）
+- Gate 1（突變，全還原後回綠）：M-a 刪 `output-structure.md` → 1 紅；M-b 指標改裸名 → 1 紅（`found 3`）；
+  M-c 主檔 v2.3 → 1 紅；M-d CHANGELOG v2.4 → 1 紅（c/d 皆 bats 級原始輸出）
+- Gate 2：`markdownlint-cli2 skills/dav-wiki/*.md` = 2 error（`:10`/`:18`，與 HEAD 逐字相同 → 零新增 lint 債）
+- Gate 3：`bats tests/` **0 not ok / 498 ok（宣告 498 / 實跑 498）**；集合差 已修 1 / 新增 0
+- Gate 4（V03 + V03.6 二審 **2 輪**）：第 1 輪 **approve-with-comments / risk low / 0 P0 / 0 P1 / 6 P2**
+  （判「真瘦身」、判「加嚴非放寬」；Q3 建議本輪補漂移鎖）；第 2 輪 delta **approve-with-comments / risk low /
+  0 P0 / 0 P1 / 4 P2**、**明示不需第三輪**（並給出四個重審觸發條件）
+
+### 已知問題（已切票）
+
+- TMO-033 子檔內容錨點、TMO-034 四處同源死引用、TMO-035 `SKILL.md:94-95` 降級條款 vs `require_tool()` 硬 `exit 4`
+  （首次立票；觀察早已在 `:771` 卻無票）、TMO-036 跨目錄探針動詞表缺口
+- P2-2（漂移鎖訊息不可診斷，屬 fail-closed）→ 折入 TMO-032，dav-planner / regression-guard 三檔一起改
+
+### 反思
+
+- **行數上限要的是分層，不是砍字**：只砍重複 `---` 過關，下個小改動又撞牆；細節外移才是結構性降注意力成本。
+- **搬移要能被證明是搬移**：`git show HEAD:…` 抽舊樹狀圖 vs 新子檔 fence 做 `diff` 得空輸出才算證據。
+- **負向與空值都有假綠**：新探針 `found >= 4` 擋「擷取失效 → 0 筆」；漂移鎖 `[ -n "$v_skill" ]` 擋「兩側抽空 → `"" = ""`」。
+- **最安靜的債是缺鎖**：dav-wiki 是三個拆檔家族中最後一個補上版本漂移鎖的 skill。
+- **自傷當場說**：`git checkout` 誤還原整份瘦身（已重做）、`"v2\.0"` 誤打成 `"v\.0"`（已修回）—— 兩者皆未進最終 diff，仍主動揭露。

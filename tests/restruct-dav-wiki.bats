@@ -43,9 +43,18 @@ load 'helpers/test-env'
 
 @test "RESTRUCT-DAV-WIKI: change history with v2.0 reference" {
   local skill="$REPO_ROOT/skills/dav-wiki/SKILL.md"
+  local cl="$REPO_ROOT/skills/dav-wiki/CHANGELOG.md"
   assert_file_contains "$skill" "## 變動歷史"
   awk '/^## 變動歷史/,EOF' "$skill" | grep -qE "v2\.0" || {
     echo "FAIL: 變動歷史 should reference v2.0" >&2
+    return 1
+  }
+  # 主檔最新版本列須與 CHANGELOG.md 首列一致（防版本漂移；同 dav-planner / regression-guard）
+  local v_skill v_cl
+  v_skill=$(awk '/^## 變動歷史/{flag=1} flag' "$skill" | grep -oE '^\| v[0-9]+\.[0-9]+' | head -1 | tr -d '| ')
+  v_cl=$(grep -oE '^\| v[0-9]+\.[0-9]+' "$cl" | head -1 | tr -d '| ')
+  [ -n "$v_skill" ] && [ "$v_skill" = "$v_cl" ] || {
+    echo "FAIL: 主檔最新版本($v_skill) 與 CHANGELOG($v_cl) 不一致" >&2
     return 1
   }
 }
@@ -106,6 +115,27 @@ load 'helpers/test-env'
     echo "FAIL: skill has Obsidian cross-directory link" >&2
     return 1
   fi
+}
+
+@test "RESTRUCT-DAV-WIKI: subfile pointers in SKILL.md resolve (no silent loss)" {
+  local skill="$REPO_ROOT/skills/dav-wiki/SKILL.md"
+  local dir
+  dir="$(dirname "$skill")"
+  # 主檔所有 `./xxx.md` 指標都必須指向真實存在的子檔
+  # （子檔被删/改名時不應安静變綠——TMO-026「最安静的債是沒在跑的探針」）
+  local found=0 rel
+  while IFS= read -r rel; do
+    found=$((found + 1))
+    [ -f "$dir/$rel" ] || {
+      echo "FAIL: pointer target missing: skills/dav-wiki/${rel#./}" >&2
+      return 1
+    }
+  done < <(grep -oE '\./[A-Za-z0-9._-]+\.md' "$skill" | sort -u)
+  # 防空過：指標擷取失效時 found=0 也會紅
+  [ "$found" -ge 4 ] || {
+    echo "FAIL: expected >=4 subfile pointers, found $found" >&2
+    return 1
+  }
 }
 
 @test "RESTRUCT-DAV-WIKI: file size sanity (was 143; allow up to 220)" {
