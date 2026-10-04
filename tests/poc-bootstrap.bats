@@ -182,7 +182,7 @@ SHIM
     }
     {
       if (index($0, "$PY") || index($0, "${PY}") || index($0, "make_us_m63_before") \
-          || index($0, "make_m62_batch_report") || index($0, "make_us101_run")) b_py=1
+          || index($0, "make_m62_batch_report")) b_py=1
       if (index($0, "need_poc_venv")) b_g=1
     }
     END { if (seen) { if (b_py) n_py++; if (b_g) n_g++ } ; print n_py, n_g }

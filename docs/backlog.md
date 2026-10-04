@@ -45,13 +45,15 @@
 | TMO-034 | 清同源死引用（指向已刪的 `docs/sop/handbook/dav-wiki-cleanup.md`）：`wiki-cleanup.sh:3`/`:39`、`CONTRIBUTING.md:48`（原 4 處，其中 `ci.yml:50` 已由 TMO-029 移除該 step）| P2 | 1 | todo | TMO-028 |
 | TMO-035 | 文實矛盾對齊：`SKILL.md:94-95`「未裝時降級為純文字模式」vs 三支腳本 `require_tool()` 硬 `exit 4`（無降級路徑）——需決策改文或實作降級（走 V03）；來源 `docs/backlog.md:771` | P2 | 3 | todo | TMO-028 |
 | TMO-036 | 跨目錄探針覆蓋缺口：`restruct-zero-cross-read.bats` 動詞表不含 `grep`，故 `dav-planner/SKILL.md:80`「先 grep `docs/concepts/`」實質跨目錄讀取抓不到 | P2 | 2 | todo | TMO-028 |
-| TMO-037 | 清 markdownlint 債（實測 246 錯：MD013×184、MD047×18、其餘 14 種；含 `docs/backlog.md` 45、deliverable 檔 ~75、`changelog.md` 18、`skills/**` ~21）——現以 `ci.yml` lint-only `continue-on-error: true` 暫時不阻擋，清完須移除該行 | P2 | 8 | todo | TMO-029 |
+| TMO-037 | 清 markdownlint 債（2026-10-04 實測 273 錯/66 檔；建立時為 246 錯——新增 deliverable 等文件使其成長，數字需每次重量；主類為 MD013、MD047）含 `docs/backlog.md` 45、deliverable 檔 ~75、`changelog.md` 18、`skills/**` ~21）——現以 `ci.yml` lint-only `continue-on-error: true` 暫時不阻擋，清完須移除該行 | P2 | 8 | todo | TMO-029 |
 | TMO-038 | 探針強化：`poc-bootstrap.bats` ① 掃描範圍放寬到縮排（函式內 optional import）與子目錄 `.py`、加 module→dist 映射；④ 靜態不變式的 helper 清單目前硬編 3 個（新增 helper → 漏抓）；⑤ CI 契約由字串改 PyYAML 語意斷言（含 `workflow_dispatch` 鎖、step 需排在 `bats tests/` 前）| P2 | 3 | todo | TMO-029 |
-| TMO-039 | 首次真實 GitHub Actions 驗證（**首跑已於 2026-10-04 執行，run `37213235272` 全 job 紅**，揭露 6 類真因並修正，見 §TMO-039 詳細）| P1 | 2 | doing (2026-10-04) | TMO-029 |
+| TMO-039 | 首次真實 GitHub Actions 驗證（首跑 `37213235272` 全 job 紅 → 6 類真因；第二輪 `37215560458` **34 紅收斂到 4 紅** → 再揭露 2 類：①oracle 依賴假綠 3 條 ②macOS ffmpeg 8 移除 `-vsync`；第三輪修法見 §TMO-039 詳細）| P1 | 3 | doing (2026-10-04) | TMO-029 |
 | TMO-041 | 環境等價／「本機假綠」殘餘防線：①macOS 預設 bash 3.2 對「已宣告空陣列」做長度展開不報錯、CI bash 5.2 在 `set -u` 下會 unbound（今日靠 `brew bash` 手動重現，未自動化）→ 需 bash 5.x 變體 Gate 3；②`bats` 未釘版（ubuntu apt 1.10 vs brew 1.14，`@test` 名稱/旗標行為有差）；③其他狀態依賴（`/tmp` 殘留、`$HOME`、跨 checkout 路徑）尚未掃完 | P2 | 3 | todo | TMO-039 |
+| TMO-042 | 媒體探針未鎖 ffmpeg 版本（apt 6.x vs brew 8.x）：`-vsync` 已於本輪改 `-fps_mode`，但下一批移除（編碼器/濾鏡改名）無法預期；需最小版本矩陣或釘版，並把「移除清單」寫進 CONTRIBUTING | P2 | 2 | todo | TMO-039 |
+| TMO-043 | `wiki-extract-video.sh:67 probe_metadata()` 死碼（shellcheck SC2329）——本輪改該檔時發現，未動以免擴大範圍 | P2 | 1 | todo | TMO-039 |
 | TMO-040 | 護欄設計邊界（Round-4 P2-2）：`POC_VENV_DIR` 指向合法的 ≥2 層絕對目錄（如 `$HOME`、`/private/tmp`）＋ `--force` 仍會 `rm -rf`；屬使用者明示操作、無法與真 venv 目錄區分，需決策（加 `$HOME` 排除？或改為只允許 `$POC_DIR` 之外的自訂目錄並加確認提示）| P2 | 2 | todo | TMO-029 |
 
-> **狀態定義**：`done (日期)` = 已交付；`todo` = TMO-026 之後新開的後續票（已描述、尚未開工，**非** trust mode 未結項）。
+> **狀態定義**（單一來源）：`todo` = 已描述、尚未開工（TMO-026 之後的新票，**非** trust mode 未結項）；`doing (日期)` = 進行中；`done (日期)` = 已交付；`blocked (原因)` = 被外部條件卡住。
 > 注：`tests/backlog-trust-mode-completion.bats:48`（BACKLOG-005）禁止 trust mode 期間的票停在 `pending`；本表新票一律用 `todo`，不修改該探針。
 
 ---
@@ -1005,25 +1007,47 @@ HEAD（`93ba04f`）狀態下：
 | 5 | `python-version: '3.x'` 浮動（今日實得 3.14.7）| 環境不可重現 | 釘 `'3.12'` |
 | 6 | lint-only job 真有 246 個 markdownlint 錯 | 已 `continue-on-error: true` | 維持 → TMO-037（清完移除）|
 
+### 第二輪：34 → 4 紅（run `37215560458`，commit `f20acbc`）
+
+第一輪修完推上去，ubuntu/macos 仍各 4 紅（`Markdown lint` 紅但 `continue-on-error`，屬 TMO-037）。
+剩下的紅**在本機全綠**，因為它們依賴「作者機器的狀態」：
+
+| # | 真因 | 紅燈 | 修法 |
+| --- | --- | --- | --- |
+| 7 | 3 條探針會呼叫**真 Jev oracle**：本機有 `OPENROUTER_API_KEY`（shell env 或未版控 `PoC/.env`）＋ 8233 筆暖快取 `PoC/cache/`（被 gitignore）；CI 兩者皆無 → `RuntimeError` → 紅。屬假綠第 5 型「依賴本機狀態」| ubuntu `M5-runtime-b`(299) / `M6-g`(320) / `M6.1-c`(323) | ①`M5-runtime-b` 改**注入 stub**（`jev_oracle.evaluate_ac = lambda …`，只驗 stale 偵測）②`M6-g`/`M6.1-c` 改讀版控 `fixtures/US-101-run.json` + 新增 `cache-fixtures/`（1 檔）+ `jev_oracle` 新增 `JEV_CACHE_DIR` seam ③新鎖探針 `CLEAN-POC-f`：清成 CI 環境（無 key／換 `HOME`／空快取）重跑那 3 條 |
+| 8 | **macOS 的 brew ffmpeg 8 已移除 `-vsync`** → `AC-V4` 第二個 ffmpeg 呼叫 exit 8（ubuntu apt 6.x、本機 7.1 都不會紅）；同旗標也存在於**產品腳本** `wiki-extract-video.sh:141`（真 bug，不只是探針）| macos `AC-V4`(507) | `-vsync vfr` → `-fps_mode vfr`（ffmpeg 4.3+，6/7/8 全支援）；新增靜態鎖 `AC-V11`（產品腳本不得含已移除旗標）|
+
+**二審 P2 一併收尾**：P2-1 `sandbox_runner` 相對路徑含 `..` 仍會逃出 sandbox（**實測會把複本寫到 repo 上層**，本輪已補洞＋新探針 `M6.3-l`）、P2-2 `CLEAN-POC-b` 防空過、P2-3 `CLEAN-POC-c` regex 假陽性（改為需邊界；屬條件放寬，已向 reviewer 明示）、P2-4 文件檔數不一致、P2-5 backlog 狀態未定義（已在表前加狀態圖例）。
+
+**順手補的 CI 縫隙**：`ci.yml` 的 `bash -n` 原本只驗 3 支寫死的腳本（本輪改到的 `wiki-extract-video.sh` 不在內）→ 改 glob 掃全部 9 支，並加探針 `CLEAN-POC-g` 鎖住。
+
 ### 新增探針（Gate 1 先紅後綠）
+
+
 
 - `tests/poc-clean-clone.bats`（5 條，本機修前 **5 紅** → 修後 5 綠）：①journey `source:` 可從 `PoC/` 相對解析且非絕對路徑 ②`journeys/fixtures` 不得含 `/Users/`、`/home/` ③測試引用的 fixture/journey 必須 `git ls-files --error-unmatch` 得到 ④`ci.yml` 兩平台都裝 ffmpeg ⑤`python-version` 已釘版（非 `3.x`）。每條都有「防空過」前置條件（例：journey 數 ≥3）。
 - `tests/v2.1-jev-poc.bats` 加 `M6.3-k`：sandbox 必須接受「repo 外」的目標檔且原檔一字不改（修前紅、修後綠）。
 - `tests/wiki-cleanup.bats` 加 1 條靜態鎖：腳本不得出現陣列長度展開（bash 5.2+ 空陣列 unbound）。
+- 第二輪再加：`tests/v2.1-jev-poc.bats` `M6.3-l`（相對 `..` 不得逃出 sandbox／外洩複本）、`tests/wiki-video-audio.bats` `AC-V11`（產品腳本禁用已移除旗標）、`tests/poc-clean-clone.bats` `CLEAN-POC-f`（oracle 探針離線可跑）與 `CLEAN-POC-g`（CI 用 glob 驗全部腳本語法）；`CLEAN-POC-a..e` 各補防空過前置條件。
 
 ### 證據
 
 - Gate 1：`bats tests/poc-clean-clone.bats` 修前 **5 not ok / 0 ok**（訊息含 `US-101.yaml`、7 個未追蹤檔）→ 修後 **5 ok**；`tests/wiki-cleanup.bats` 新探針修前紅、修後 20 ok。
 - Gate 2：`shellcheck -x wiki-cleanup.sh` rc=0（順修 2 處既有 SC2295 與 `source=` 相對路徑）、`bash -n` rc=0、`.bats` 用 bats 自驗 rc=0、`ci.yml`/journeys PyYAML 解析 ok。
 - Gate 3：`bats tests/` 本機 **513 ok / 0 not ok / 0 skip**（bash 3.2）；`PATH=/opt/homebrew/bin:$PATH bats tests/`（bash 5.3，≈ubuntu 等價）；clean clone（`git clone` 到 `/tmp`）**513 ok / 0 not ok / 0 skip**。
+- 第二輪 Gate 3（更嚴）：把 `PoC/.env` 與 8233 筆暖快取 `PoC/cache/` **移走**、`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome bats tests/` → **516 ok / 0 not ok**（修前此環境必然紅 3 條）；同樣條件再跑 `PATH=/opt/homebrew/bin:$PATH`（bash 5.3）→ **516 ok / 0 not ok**。
 
 ### 已知問題（切票）
 
 - TMO-041：bash 5.x 變體 Gate 3 未自動化、`bats` 未釘版、其他狀態依賴未掃完。
-- TMO-037：lint 債 246 處（本票不處理）。
+- TMO-037：lint 債（2026-10-04 實測 273 錯/66 檔；本票不處理）。
+- TMO-042：ffmpeg 版本漂移（apt 6.x / brew 8.x；下一批移除無法預期）。
+- TMO-043：`wiki-extract-video.sh:67 probe_metadata()` 死碼（shellcheck SC2329）。
 
 ### 反思
 
 - **「本機 506 全綠」是最貴的一個錯覺**：真正的驗證是「在別人的機器上、從零開始」，而我在此之前從未讓 CI 真的跑過一次。
 - **假綠有四種**：skip、空過斷言、**依賴本機狀態而成立**（路徑存在、檔案未版控但剛好還在本機）、以及**路徑寫法差異**（`/tmp` vs `/private/tmp` 讓同一個 bug 在本機與 clone 各露一半）。後兩種最難看，因為它們長得完全像綠。
 - **錯誤歸因也是債**：clean clone 的 4 紅我一開始歸因「缺 fixture」，實際是 `src == dst` 真 bug（CI 上還全綠）。是「不用 `/tmp` clone，改用 repo 外檔案」的探針把它逼出來的。
+- **假綠第 5 型：依賴本機狀態**。3 條 oracle 探針在本機是綠的，靠的是「我 shell 裡剛好有 API key」＋「8233 筆未版控暖快取」——兩者都不在 CI。更貴的是：這種綠在**任何**本機驗證（含 clean clone、bash 5.3）都不會露餡，只有真的跑 CI 才看得到。
+- **產品 bug 會躲在探針的紅燈裡**：`-vsync` 一開始看起來像「CI 環境問題」（只有 macOS 紅），但同一個旗標就寫在產品腳本裡；P2-1 的 `..` 逃逸也是如此——探針紅了不代表只有探針要改。

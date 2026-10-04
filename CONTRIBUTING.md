@@ -15,6 +15,7 @@ npm install -g markdownlint-cli2
 
 # 安裝媒體工具（AC-A* / AC-W* / AC-V* 等 26 條 ffmpeg 探針依賴，缺了會紅）
 brew install ffmpeg poppler pandoc tesseract
+# 註：ffmpeg 8 已移除 -vsync（用 -fps_mode）；腳本/探針禁用 -vsync，AC-V11 會擋。
 
 # 確認 python3
 python3 --version
@@ -47,9 +48,17 @@ bats tests/wiki-cleanup.bats
 bats tests/wiki-cleanup.bats --filter "E1"
 ```
 
-> ⚠️ **本機綠 ≠ CI 綠**：CI 是 clean clone，拿不到未版控的檔案。
+> ⚠️ **本機綠 ≠ CI 綠**：CI 是 clean clone，拿不到未版控的檔案，也**沒有 `OPENROUTER_API_KEY` 與暖快取**。
 > 若新增測試素材，必須真的 `git add`（`tests/poc-clean-clone.bats` 會擋）；
 > fixture 內也不得寫自己機器的絕對路徑。
+>
+> 會呼叫 Jev oracle 的 CLI（`fix_proposal*.py`）必須離線可跑：
+> 用版控的 `PoC/fixtures/US-101-run.json` + `PoC/cache-fixtures/` +
+> `JEV_CACHE_DIR=<dir>`（詳見 `PoC/cache-fixtures/README.md`）；
+> `tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會用「無 key／無暖快取」重跑那幾條探針來鎖住。
+>
+> 本機想驗 CI 等價：`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome bats tests/`
+> （本機有 key 會讓依賴 oracle 的探針假綠）。
 
 ## Lint
 
@@ -57,9 +66,10 @@ bats tests/wiki-cleanup.bats --filter "E1"
 # markdownlint
 markdownlint-cli2 "skills/dav-wiki/*.md" "docs/sop/handbook/dav-wiki-cleanup.md"
 
-# bash 語法
+# bash 語法（CI 用 glob 掃全部 9 支）
 bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
 bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
+for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 
 # SKILL.md 行數檢查（≤ 150）
 wc -l skills/dav-wiki/SKILL.md

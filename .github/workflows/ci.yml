@@ -51,9 +51,11 @@ jobs:
 
       - name: Verify bash syntax
         run: |
-          bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
-          bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
-          bash -n skills/dav-wiki/scripts/wiki-extract-media.sh
+          # 全部 dav-wiki scripts（TMO-039：原本只驗 3 支，改到其他 6 支不會被擋）
+          for f in skills/dav-wiki/scripts/*.sh; do
+            bash -n "$f" || exit 1
+          done
+          echo "OK: $(ls skills/dav-wiki/scripts/*.sh | wc -l | tr -d ' ') scripts syntax-checked"
 
       - name: Verify SKILL.md size (≤ 150 lines)
         run: |

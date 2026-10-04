@@ -41,8 +41,10 @@ need_poc_venv() {
 #   - make_us_m63_before：真跑一次 US-M63 journey 當 patch 前 baseline
 #     （patch 無關 → 重跑後 verdict 分布相同 → re_validate 判 no_change）
 #   - make_m62_batch_report：造 M7 flaky 整合所需的 batch_report 最小 fixture
-#   - make_us101_run：產 M6-g / M6.1-c 所需的 /tmp/US-101-run.json
-#     （原本兩條測試假設外部已跑 pipeline → CI 內永遠 skip = 假綠，TMO-029）
+#
+# 註（TMO-039）：M6-g / M6.1-c 原本用 make_us101_run 現場跑 pipeline，
+# 但那條路徑需要真 Jev oracle（API key / 本機快取）→ 已改讀版控 fixture
+# `fixtures/US-101-run.json` + `cache-fixtures/`（見 cache-fixtures/README.md）。
 # ────────────────────────────────────────────────────────────────────
 
 make_us_m63_before() {
@@ -53,17 +55,6 @@ make_us_m63_before() {
     --json-output /tmp/US-M63-before.json >/dev/null 2>&1 || true
   if [ ! -s /tmp/US-M63-before.json ]; then
     echo "FAIL: baseline fixture 未產出（/tmp/US-M63-before.json）" >&2
-    return 1
-  fi
-}
-
-make_us101_run() {
-  rm -f /tmp/US-101-run.json
-  # mock backend 即可（不需 API key）；rc=0 且 json 必須有內容
-  OBSERVER_BACKEND=mock "$PY" "$POC_DIR/run_journey.py" "$POC_DIR/journeys/US-101.yaml" \
-    --json-output /tmp/US-101-run.json >/dev/null 2>&1 || true
-  if [ ! -s /tmp/US-101-run.json ]; then
-    echo "FAIL: US-101 run fixture 未產出（/tmp/US-101-run.json）" >&2
     return 1
   fi
 }
@@ -254,6 +245,8 @@ print('OK: 4 fixtures, AC04=500')
   need_poc_venv
   local us_md="$REPO_ROOT/docs/ac/US-101.md"
   cd "$POC_DIR"
+  # TMO-039：Oracle 改「注入 stub」——探針只驗 stale 偵測邏輯，
+  # 不該依賴真 Jev API（本機有 key/快取才綠、CI 兩者皆無 → 假綠）
   "$PY" -c "
 import sys
 sys.path.insert(0, '.')
@@ -262,6 +255,19 @@ from pathlib import Path
 from journey_runner import run_dry
 from ac_schema import parse_story_file
 from journey_generator import Journey, Step, JOURNEYS_DIR
+import jev_oracle
+
+class _FakeResult:
+    # 固定 verdict=fail → 同狀態連續 2 步必定觸發 stale block
+    verdict = 'fail'
+    ac_id = 'US-101-AC01'
+    cached = True
+    latency_ms = 0
+    cost_usd = 0.0
+    confidence = 0.0
+
+# journey_runner 在函式內 `from jev_oracle import evaluate_ac` → patch 模組屬性即生效
+jev_oracle.evaluate_ac = lambda ctx, **kw: _FakeResult()
 
 story = parse_story_file(Path('$us_md'))
 raw = yaml.safe_load((JOURNEYS_DIR / 'US-101.yaml').read_text())
@@ -508,9 +514,12 @@ print('OK: FixProposal has 3 conf fields')
 @test "M6-g: end-to-end fix_proposal.py on /tmp/US-101-run.json" {
   need_poc_venv
   cd "$POC_DIR"
-  # fixture 自己產（TMO-029）：原本假設外部已跑 pipeline → CI 內永遠 skip = 假綠
-  make_us101_run || return 1
-  "$PY" fix_proposal.py /tmp/US-101-run.json /tmp/test-fix.md >/dev/null 2>&1 || {
+  # TMO-039：改用版控 run json fixture + 離線快取 fixture。
+  # 原本現場跑 pipeline（已移除的 make_us101_run helper）需要真 Jev API key → CI 必紅。
+  cp "$POC_DIR/fixtures/US-101-run.json" /tmp/US-101-run.json
+  env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+      JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
+      "$PY" fix_proposal.py /tmp/US-101-run.json /tmp/test-fix.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal.py CLI failed" >&2
     return 1
   }
@@ -548,16 +557,18 @@ print('OK: FixProposal has 3 conf fields')
 @test "M6.1-c: fix_proposal_v2.py gating < 0.5 skips LLM relay (end-to-end)" {
   need_poc_venv
   cd "$POC_DIR"
-  # fixture 自己產（TMO-029）：原本假設外部已跑 pipeline → CI 內永遠 skip = 假綠
-  make_us101_run || return 1
-  "$PY" fix_proposal_v2.py /tmp/US-101-run.json /tmp/test-v2.md >/dev/null 2>&1 || {
+  # TMO-039：同上（版控 fixture + 離線快取），不依賴真 API key
+  cp "$POC_DIR/fixtures/US-101-run.json" /tmp/US-101-run.json
+  env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+      JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
+      "$PY" fix_proposal_v2.py /tmp/US-101-run.json /tmp/test-v2.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal_v2.py CLI failed" >&2
     return 1
   }
   assert_path_is_file /tmp/test-v2.md
-  # 0.41 < 0.5 → 應該出現 "LLM Relay 跳過"
+  # 0.25 < 0.5 → 應該出現 "LLM Relay 跳過"
   grep -q "LLM Relay 跳過" /tmp/test-v2.md || {
-    echo "FAIL: test-v2.md should have LLM Relay 跳過 (0.41 < 0.5)" >&2
+    echo "FAIL: test-v2.md should have LLM Relay 跳過 (0.25 < 0.5)" >&2
     return 1
   }
 }
@@ -1203,6 +1214,52 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   # 原檔必須一字未改（sandbox 的意義）
   grep -q 'return "world"' "$outside" || {
     echo "FAIL: out-of-repo source was modified" >&2
+    return 1
+  }
+}
+
+@test "M6.3-l: sandbox_runner contains relative paths containing .. (no escape)" {
+  need_poc_venv
+  cd "$POC_DIR"
+  # TMO-039 二審 P2-1：絕對路徑已修，但相對路徑 + `..` 也一樣——
+  # sandbox_dir = REPO_ROOT/tmp/.sandbox-<id>，再加 `../../../tmp/x.py` 會正規化到
+  # repo 上層（pathlib 不做邊界檢查）→ 複本直接寫到 repo 外，sandbox 形同虚設。
+  # 目標檔故意放 repo 內 tmp/（gitignore），且用唯一檔名，才能「搜得到外洩」。
+  local sentinel="US-M63-leak-$$.py"
+  local target="$REPO_ROOT/tmp/$sentinel"
+  printf 'def hello():\n    return "world"\n' > "$target"
+  make_us_m63_before
+  run "$PY" sandbox_runner.py \
+    --before /tmp/US-M63-before.json \
+    --file "../../../tmp/$sentinel" \
+    --old 'return "world"' \
+    --new 'return "planet"' \
+    --journey "$POC_DIR/journeys/US-M63.yaml" \
+    --story-id US-M63 \
+    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --sandbox-dry-run
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 相對 .. 路徑應可安全處理，got $status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "dry_run" || {
+    echo "FAIL: 應分類為 dry_run" >&2
+    echo "$output" >&2
+    return 1
+  }
+  # 關鍵 1：目的地不能等於來源，否則原檔已被就地改壞
+  grep -q 'return "world"' "$target" || {
+    echo "FAIL: repo 內相對 .. 路徑的來源檔被就地改壞" >&2
+    return 1
+  }
+  # 關鍵 2：不得在 sandbox 外（repo 上層）留下任何複本
+  local leaked
+  leaked=$(find "$(dirname "$REPO_ROOT")" -maxdepth 4 -name "$sentinel" \
+             -not -path "$target" 2>/dev/null || true)
+  [ -z "$leaked" ] || {
+    echo "FAIL: 複本逃出 sandbox：" >&2
+    echo "$leaked" >&2
     return 1
   }
 }

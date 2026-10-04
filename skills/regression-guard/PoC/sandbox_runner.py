@@ -102,6 +102,24 @@ def _copy_to_sandbox(src: Path, dst: Path) -> None:
     shutil.copy2(src, dst)
 
 
+def _sandbox_relative_path(target_file: Path) -> Path:
+    """把目標檔轉成「相對 sandbox」的安全路徑。
+
+    pathlib 的 `sandbox_dir / p` 不做邊界檢查，有兩種逃逸路徑：
+      1. p 是絕對路徑 → 右邊覆寫左邊，src == dst（SameFileError，原檔被就地改壞）
+      2. p 含 `..`（如 ../../../tmp/x.py）→ 正規化後落在 sandbox 外（複本外洩）
+    因此一律先 resolve 再相對化；轉不出來或仍含 `..` 就退回檔名，保證複本一定在 sandbox 內。
+    """
+    abs_target = target_file if target_file.is_absolute() else Path.cwd() / target_file
+    try:
+        rel = abs_target.resolve().relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return Path(target_file.name)
+    if ".." in rel.parts:
+        return Path(target_file.name)
+    return rel
+
+
 def _count_verdicts(run_json: dict) -> dict[str, int]:
     """跟 re_validate 同樣邏輯抽 verdict 計數。"""
     counts: dict[str, int] = {"pass": 0, "fail": 0, "blocked": 0}
@@ -145,16 +163,9 @@ def run_sandbox(
     try:
         sandbox_dir.mkdir(parents=True, exist_ok=True)
         # 複製 fixture / journey / source
-        # 注意：pathlib 的 `/` 遇到「右邊是絕對路徑」會直接覆寫左邊，
-        # 使得 src == dst（SameFileError），並把原檔就地改壞。
-        # 因此務必把目標轉成「相對路徑」；轉不出來（repo 外／path 含 symlink）就用檔名，
-        # 保證複本一定落在 sandbox 內。
-        rel_file = target_file
-        if rel_file.is_absolute():
-            try:
-                rel_file = target_file.resolve().relative_to(REPO_ROOT.resolve())
-            except ValueError:
-                rel_file = Path(target_file.name)
+        # 注意：目標路徑必須先「安全相對化」（見 _sandbox_relative_path）：
+        # 絕對路徑與含 `..` 的相對路徑都會讓 `sandbox_dir / p` 指到 sandbox 之外。
+        rel_file = _sandbox_relative_path(target_file)
         sandbox_file = sandbox_dir / rel_file
         _copy_to_sandbox(target_file, sandbox_file)
         # 複製 journey YAML

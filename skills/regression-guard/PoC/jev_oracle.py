@@ -21,7 +21,9 @@ import httpx
 
 OPENROUTER_URL = "https://openrouter.ai/api/alpha/decisions"
 DEFAULT_MODEL = "typesafe/jev-1.13"
-CACHE_DIR = Path(__file__).parent / "cache"
+# 快取目錄（預設 PoC/cache，機器本機 state；不版控）。
+# JEV_CACHE_DIR 可覆寫 → 測試用離線 fixture（CI 沒有 API key、也沒有本機快取）。
+CACHE_DIR = Path(os.environ.get("JEV_CACHE_DIR") or (Path(__file__).parent / "cache"))
 
 
 # ─── Data shapes ────────────────────────────────────────────────────────────

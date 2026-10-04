@@ -1,0 +1,332 @@
+{
+  "journey_id": "US-101",
+  "journey_title": "AC 範本",
+  "journey_source": "../../../docs/ac/US-101.md",
+  "total_steps": 9,
+  "blocked": false,
+  "block_reason": "",
+  "verdict_counts": {
+    "fail": 9
+  },
+  "total_latency_ms": 2588,
+  "total_cost_usd": 0.000317436,
+  "cache_hits": 1,
+  "wall_time_ms": 2608,
+  "records": [
+    {
+      "step_id": "US-101-AC01-s1",
+      "action": "setup_state",
+      "verifying_ac": "US-101-AC01",
+      "observed": {
+        "url": "https://example.com",
+        "status": 200,
+        "body_excerpt": "[setup] 進入準備狀態 US-101-AC01",
+        "elapsed_ms": 1905
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.98,
+        "verdict_probs": {
+          "over_assertion": 0.01,
+          "flaky": 0,
+          "pass": 0,
+          "fail": 0.99
+        },
+        "severity": 1.9,
+        "severity_probs": {
+          "0": 0.04,
+          "1": 0.05,
+          "2": 0.89,
+          "3": 0.02
+        },
+        "is_real_bug": 0.24,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 392,
+        "cost_usd": 3.234e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC01-s2",
+      "action": "setup_state",
+      "verifying_ac": "US-101-AC01",
+      "observed": {
+        "url": "https://example.com",
+        "status": 200,
+        "body_excerpt": "[setup] 進入準備狀態 US-101-AC01",
+        "elapsed_ms": 1303
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.98,
+        "verdict_probs": {
+          "fail": 0.99,
+          "over_assertion": 0.01,
+          "flaky": 0,
+          "pass": 0
+        },
+        "severity": 1.96,
+        "severity_probs": {
+          "0": 0.02,
+          "1": 0.02,
+          "2": 0.94,
+          "3": 0.02
+        },
+        "is_real_bug": 0.32,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 310,
+        "cost_usd": 3.3264e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC01-s3",
+      "action": "click",
+      "verifying_ac": "US-101-AC01",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[click] 點擊「」",
+        "elapsed_ms": 581
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.99,
+        "verdict_probs": {
+          "flaky": 0,
+          "pass": 0,
+          "fail": 0.99,
+          "over_assertion": 0.01
+        },
+        "severity": 1.91,
+        "severity_probs": {
+          "0": 0.04,
+          "1": 0.03,
+          "2": 0.91,
+          "3": 0.02
+        },
+        "is_real_bug": 0.53,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 274,
+        "cost_usd": 3.3768e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC02-s1",
+      "action": "setup_state",
+      "verifying_ac": "US-101-AC02",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[setup] 進入準備狀態 US-101-AC02",
+        "elapsed_ms": 646
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.99,
+        "verdict_probs": {
+          "pass": 0,
+          "over_assertion": 0,
+          "flaky": 0,
+          "fail": 1
+        },
+        "severity": 1.85,
+        "severity_probs": {
+          "0": 0.08,
+          "1": 0.08,
+          "2": 0.74,
+          "3": 0.1
+        },
+        "is_real_bug": 0.43,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 328,
+        "cost_usd": 3.5658e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC02-s2",
+      "action": "type",
+      "verifying_ac": "US-101-AC02",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[type] 輸入「」到 ",
+        "elapsed_ms": 1192
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.99,
+        "verdict_probs": {
+          "pass": 0,
+          "fail": 0.99,
+          "flaky": 0,
+          "over_assertion": 0.01
+        },
+        "severity": 1.87,
+        "severity_probs": {
+          "0": 0.09,
+          "1": 0.09,
+          "2": 0.69,
+          "3": 0.13
+        },
+        "is_real_bug": 0.39,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 283,
+        "cost_usd": 3.612e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC03-s1",
+      "action": "setup_state",
+      "verifying_ac": "US-101-AC03",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[setup] 進入準備狀態 US-101-AC03",
+        "elapsed_ms": 1418
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.89,
+        "verdict_probs": {
+          "flaky": 0,
+          "over_assertion": 0.07,
+          "pass": 0,
+          "fail": 0.93
+        },
+        "severity": 1.66,
+        "severity_probs": {
+          "0": 0.16,
+          "1": 0.09,
+          "2": 0.68,
+          "3": 0.07
+        },
+        "is_real_bug": 0.19,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 403,
+        "cost_usd": 3.6288e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC03-s2",
+      "action": "wait",
+      "verifying_ac": "US-101-AC03",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[wait] 等待 3000ms",
+        "elapsed_ms": 3000
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.83,
+        "verdict_probs": {
+          "fail": 0.87,
+          "over_assertion": 0.09,
+          "pass": 0.03,
+          "flaky": 0.01
+        },
+        "severity": 1.59,
+        "severity_probs": {
+          "0": 0.16,
+          "1": 0.12,
+          "2": 0.67,
+          "3": 0.05
+        },
+        "is_real_bug": 0.35,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 0,
+        "cost_usd": 3.612e-05,
+        "cached": true
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC04-s1",
+      "action": "setup_state",
+      "verifying_ac": "US-101-AC04",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[setup] 進入準備狀態 US-101-AC04",
+        "elapsed_ms": 1965
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.99,
+        "verdict_probs": {
+          "flaky": 0,
+          "over_assertion": 0.01,
+          "fail": 0.99,
+          "pass": 0
+        },
+        "severity": 2.49,
+        "severity_probs": {
+          "0": 0.04,
+          "1": 0.02,
+          "2": 0.36,
+          "3": 0.58
+        },
+        "is_real_bug": 0.59,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 292,
+        "cost_usd": 3.717e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    },
+    {
+      "step_id": "US-101-AC04-s2",
+      "action": "observe",
+      "verifying_ac": "US-101-AC04",
+      "observed": {
+        "url": "https://example.com/clicked-button",
+        "status": 200,
+        "body_excerpt": "[observe] 觀察到 current state",
+        "elapsed_ms": 1708
+      },
+      "oracle": {
+        "verdict": "fail",
+        "confidence": 0.96,
+        "verdict_probs": {
+          "pass": 0,
+          "flaky": 0,
+          "fail": 0.97,
+          "over_assertion": 0.03
+        },
+        "severity": 2.55,
+        "severity_probs": {
+          "0": 0.06,
+          "1": 0.03,
+          "2": 0.22,
+          "3": 0.69
+        },
+        "is_real_bug": 0.56,
+        "is_real_bug_confidence": 0.0,
+        "latency_ms": 306,
+        "cost_usd": 3.6708e-05,
+        "cached": false
+      },
+      "blocked": false,
+      "block_reason": ""
+    }
+  ]
+}

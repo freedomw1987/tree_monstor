@@ -81,7 +81,7 @@ teardown() {
   mkdir -p "$WORK/scene_frames"
   ffmpeg -i "$WORK/scene.mp4" \
          -vf "select=gt(scene\,0.4),showinfo" \
-         -vsync vfr \
+         -fps_mode vfr \
          "$WORK/scene_frames/frame-%03d.png" -y 2>/dev/null
 
   # 應至少有 1 個場景變化（>0 frames）
@@ -151,4 +151,22 @@ teardown() {
   end=$(date +%s)
   elapsed=$((end - start))
   [ "$elapsed" -le 5 ]
+}
+
+# === AC-V11: 產品腳本不得用 -vsync（ffmpeg 8 移除；macos-latest 首跑紅燈） ===
+@test "AC-V11: extract-video script avoids removed -vsync flag" {
+  local script="$REPO_ROOT/skills/dav-wiki/scripts/wiki-extract-video.sh"
+  [ -f "$script" ] || {
+    echo "FAIL: $script 不存在" >&2
+    return 1
+  }
+  # ffmpeg 8 移除 -vsync → 用 -fps_mode（ffmpeg 4.3+，ubuntu 24.04 / brew 都支援）
+  if grep -qF -- "-vsync" "$script"; then
+    echo "FAIL: wiki-extract-video.sh 仍用 -vsync（ffmpeg 8 已移除，會 exit 8）" >&2
+    return 1
+  fi
+  grep -qF -- "-fps_mode vfr" "$script" || {
+    echo "FAIL: wiki-extract-video.sh 缺少 -fps_mode vfr" >&2
+    return 1
+  }
 }
