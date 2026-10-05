@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tools/wiki-media-describe.sh — Sprint 08 FR-2.6.2 dav-wiki 多模組 AI 描述
-# 對應 docs/prd/03-knowledge-extraction.md FR-3 / docs/plan/2026-01-15-dav-wiki-sprint-08.md
+# skills/dav-wiki/scripts/wiki-media-describe.sh — Sprint 08 FR-2.6.2 dav-wiki 多模組 AI 描述
+# 對應 docs/system-design.md §3.2（FR-3 資料流）
 
 set -uo pipefail
 
@@ -94,7 +94,7 @@ Exit codes:
 注：real 模式失敗**不會**回 0（TMO-058：原本零產出卻回報成功）。
      本機測試請用 mock：加 --mock 或設 DAV_WIKI_MOCK=1。
 
-對應手冊: docs/prd/03-knowledge-extraction.md (FR-3.4 / FR-3.7)
+對應手冊: docs/system-design.md §3.2（FR-3 資料流）
 EOF
 }
 

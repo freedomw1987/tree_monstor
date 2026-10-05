@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tools/wiki-extract-audio.sh — Sprint 08 FR-2.4 dav-wiki 音訊處理
-# 對應 docs/prd/03-knowledge-extraction.md FR-3.7 / docs/plan/2026-01-15-dav-wiki-sprint-08.md
+# skills/dav-wiki/scripts/wiki-extract-audio.sh — Sprint 08 FR-2.4 dav-wiki 音訊處理
+# 對應 docs/system-design.md §3.2（FR-3 資料流）
 
 set -uo pipefail
 
@@ -47,7 +47,7 @@ Exit codes:
   2  輸入檔案不存在
   4  必要工具缺失（ffmpeg / ffprobe）
 
-對應手冊: docs/prd/03-knowledge-extraction.md (FR-3.7)
+對應手冊: docs/system-design.md §3.2（FR-3 資料流）
 EOF
 }
 

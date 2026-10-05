@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tools/wiki-index.sh — Sprint 09 FR-2.5.1 dav-wiki 多模組索引
-# 對應 docs/prd/03-knowledge-extraction.md / docs/plan/2026-01-15-dav-wiki-sprint-09.md
+# skills/dav-wiki/scripts/wiki-index.sh — Sprint 09 FR-2.5.1 dav-wiki 多模組索引
+# 對應 docs/system-design.md §3.2（FR-3 資料流）
 #
 # 從 wiki frontmatter 收集多模組索引（images / videos / audios）到 _index.json。
 
@@ -47,7 +47,7 @@ Exit codes:
   1  用法錯誤
   2  輸入檔案 / 目錄不存在
 
-對應手冊: docs/prd/03-knowledge-extraction.md (FR-3.9)
+對應手冊: docs/system-design.md §3.2（FR-3 資料流）
 EOF
 }
 

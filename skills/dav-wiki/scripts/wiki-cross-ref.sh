@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tools/wiki-cross-ref.sh — TD-020 + Sprint 09 FR-2.5.2 dav-wiki 交叉引用
+# skills/dav-wiki/scripts/wiki-cross-ref.sh — TD-020 + Sprint 09 FR-2.5.2 dav-wiki 交叉引用
 # 對應 SKILL.md §[5] 規則 + FR-3.9 / FR-3.10（多模組比對）
 #
 # 兩種模式：

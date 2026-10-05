@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tools/wiki-ocr.sh — Sprint 09 FR-2.2.3 dav-wiki OCR 補強
-# 對應 docs/prd/03-knowledge-extraction.md FR-3.4 / docs/plan/2026-01-15-dav-wiki-sprint-09.md
+# skills/dav-wiki/scripts/wiki-ocr.sh — Sprint 09 FR-2.2.3 dav-wiki OCR 補強
+# 對應 docs/system-design.md §3.2（FR-3 資料流）
 
 set -uo pipefail
 
@@ -66,7 +66,7 @@ Exit codes:
 未裝 tesseract 時不會失敗：自動改用 mock placeholder（stderr 帶 WARN）。
 若你要「缺工具就停」，那是 wiki-extract-{audio,media,video}.sh 的行為（exit 4）。
 
-對應手冊: docs/prd/03-knowledge-extraction.md (FR-3.4)
+對應手冊: docs/system-design.md §3.2（FR-3 資料流）
 EOF
 }
 
