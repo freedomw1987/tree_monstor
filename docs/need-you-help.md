@@ -24,6 +24,34 @@
 （我沒有動 `.env` 內容；輪替前後 sha256 一致。）
 **替代**：若該 key 本來就只在本機、你接受風險，可選擇不輪替。
 
+### 📋 NYH-1 行動 checklist（人工，TMO-054）
+
+> 現況基準 sha256：`706ef9601fc90c63ae589661e905c03655e34f62a1790ad8a519413f97de5028`
+> 唯一要動的檔：`skills/regression-guard/PoC/.env`
+> （`~/.claude/skills/regression-guard` 是 symlink 指向 repo，同一份檔，不必分開改）
+> ⚠️ **全程不要把新 key 貼進對話**（會再洩進 session log）；只在本機終端操作。
+
+- [ ] **① 撤銷舊 key**：開 <https://openrouter.ai/keys> → 找到 `sk-or-v1-…` 舊 key → `Revoke`/刪除。
+- [ ] **② 產生新 key**：同頁 `Create Key` → 複製完整 `sk-or-v1-…`（**只顯示一次**）。
+- [ ] **③ 更新本機 `.env`**（整行替換，保持權限 600）：
+
+  ```bash
+  cd /Users/davidchu/Sites/localhost/tree_monstor
+  printf 'OPENROUTER_API_KEY=%s\n' '<貼上新key>' > skills/regression-guard/PoC/.env
+  chmod 600 skills/regression-guard/PoC/.env
+  ```
+
+- [ ] **④ 驗證新 key 載入**（不印出完整值）：
+
+  ```bash
+  cd skills/regression-guard/PoC
+  .venv/bin/python -c "from jev_oracle import _load_api_key; k=_load_api_key(); print('loaded:', bool(k), (k[:8]+'...') if k else '')"
+  # 預期：loaded: True sk-or-v1...
+  ```
+
+- [ ] **⑤ 回報 Agent 完成** → Agent 複驗：舊 sha256 已變、`git status` 乾淨（`.env` 被 gitignore）、
+  `git grep 'sk-or-v1-'` 追蹤檔查無真值，然後把 TMO-054 標 `done (2026-10-05)`。
+
 ## NYH-2
 
 - [x] ✅ **繼續做（2026-10-05 ask-me）**：做成通則＋靜態鎖。**已完成（2026-10-05）**：
