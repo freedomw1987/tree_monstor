@@ -3,14 +3,14 @@
 > trust mode run：2026-10-05 01:21–08:00（本地分支 `trust/2026-10-05-tmo-cleanup`）
 > 規則：不中斷、不 push；遇爭議採保守預設並寫在這裡。
 
-## NYH-1（⚠️ 建議你行動）
+## NYH-1（✅ 已結案：用戶決定接受風險、不輪替）
 
 - [x] ✅ **繼續做（2026-10-05 ask-me）**：撤銷並輪替 key。用戶到 OpenRouter 撤銷舊 key、產生新 key 並更新
   `skills/regression-guard/PoC/.env`（人工操作，Agent 無法代為撤銷）；更新後 Agent 複驗 `.env` sha256 已變、
   且新值未出現在任何被追蹤檔或本輪 diff。
   **抉擇理由（2026-10-05）**：session log 可能被同步／保存，保守視為已洩漏；輪替成本低（幾分鐘），
   而「不輪替」需長期承擔未知洩漏面。
-  ✅ **backlog 對照：TMO-054**（2026-10-05 開票，人工項；狀態 `todo`）。
+  ✅ **backlog 對照：TMO-054**（2026-10-05 開票，人工項；狀態 `⏸️ 跳過（接受風險，2026-10-05）`）。
 
 **事件**：02:41 做 TMO-045 的「反向驗證」時（故意把 `JEV_ENV_FILE` seam 改成半套實作，
 確認探針咬得住），探針的 FAIL 訊息把**本機真實的 `OPENROUTER_API_KEY`** 印進了本次 session log
@@ -24,7 +24,18 @@
 （我沒有動 `.env` 內容；輪替前後 sha256 一致。）
 **替代**：若該 key 本來就只在本機、你接受風險，可選擇不輪替。
 
-### 📋 NYH-1 行動 checklist（人工，TMO-054）
+### ✅ 結案紀錄（2026-10-05）｜決策＝接受風險、不輪替
+
+用戶將 key 改放到系統環境變數（`~/.zshrc`）。Agent 複驗發現該值與 `PoC/.env` 的 key
+**sha256 相同**（`6d5179cd…`）→ 只是搬存放位置、**未輪替**；原洩漏舊 key 仍有效，
+且現存於 `.env` 與 `~/.zshrc` 兩處。用戶拍板：**接受此風險、不撤銷、保留現狀**。
+
+- 存放點 `.env` / `~/.zshrc` / 系統環境變數：**維持不動**（舊 key 續用）
+- `_load_api_key()` 讀取順序 env > `PoC/.env` > `~/.claude/...`（symlink 同一份）；目前實際來源＝系統 env
+- 殘留風險：若 session log／dotfiles 備份外流，該 key 可被使用
+- ✅ **backlog 對照：TMO-054 → `⏸️ 跳過（接受風險，2026-10-05）`**
+
+<details><summary>（已作廢）原人工輪替 checklist，僅保留可追溯</summary>
 
 > 現況基準 sha256：`706ef9601fc90c63ae589661e905c03655e34f62a1790ad8a519413f97de5028`
 > 唯一要動的檔：`skills/regression-guard/PoC/.env`
@@ -51,6 +62,8 @@
 
 - [ ] **⑤ 回報 Agent 完成** → Agent 複驗：舊 sha256 已變、`git status` 乾淨（`.env` 被 gitignore）、
   `git grep 'sk-or-v1-'` 追蹤檔查無真值，然後把 TMO-054 標 `done (2026-10-05)`。
+
+</details>
 
 ## NYH-2
 
