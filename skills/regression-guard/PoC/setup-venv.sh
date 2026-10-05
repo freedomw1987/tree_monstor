@@ -69,10 +69,13 @@ esac
 # 只做「整條路徑完全相等」比對：子路徑（例：`$HOME/projects/x`、`/opt/venvs/x`）仍允許——
 # 那通常是使用者明示的自訂位置，且 --force 另有目錄名二次確認把關。
 # `--force` / `--yes` 都**不能**繞過這一關。
-# 兩個字面比對的繞道已堵（TMO-040 自審發現，各有反向探針）：
+# 三個字面比對的繞道已堵（各有反向探針）：
 #   ①`HOME` 結尾斜線：`HOME=/Users/x/` 會讓 `/Users/x` 字面不相等 → `_home_norm` 去尾斜線。
 #   ②symlink 祖先：`ln -s "$HOME" /tmp/e` 後 `/tmp/e/Documents` 字面看不到家目錄，`rm -rf` 卻會
 #     沿著連結刪到真目錄 → 存在的目錄再用 `pwd -P` 取物理路徑比對一次（兩邊都正規化）。
+#   ③大小寫：macOS 預設 case-insensitive，`/private/TMP` 與 `/private/tmp` 是同一個目錄，
+#     但字面不相等；`pwd -P` 也保留使用者輸入的大小寫（實測：`cd /private/TMP && pwd -P`
+#     → `/private/TMP`）→ 兩邊都 `_lower` 後再比。
 _reject_dangerous_venv_dir() {
     echo "ERROR: VENV_DIR=${1} 命中危險清單（POC_VENV_DIR 護欄：$HOME 本體、/private/tmp、/usr、/etc 等系統或使用者資料目錄）→ 即使 --force 也拒絕" >&2
     exit 1
@@ -80,31 +83,42 @@ _reject_dangerous_venv_dir() {
 _resolve_dir() {
     (cd "$1" 2>/dev/null && pwd -P) || printf '%s' "$1"
 }
+_lower() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
 _home_norm="${HOME%/}"
 _home_resolved="$(_resolve_dir "$_home_norm")"
 _is_dangerous_venv_dir() {
-    case "$1" in
-        /|/bin|/sbin|/usr|/etc|/var|/tmp|/opt|/private|/private/etc|/private/tmp|/private/var|/dev|/cores|/Network|/Library|/System|/Applications|/Users|/Volumes|/home|/root)
+    local _d _h
+    _d="$(_lower "$1")"
+    case "$_d" in
+        /|/bin|/sbin|/usr|/etc|/var|/tmp|/opt|/private|/private/etc|/private/tmp|/private/var|/dev|/cores|/network|/library|/system|/applications|/users|/volumes|/home|/root)
             return 0 ;;
     esac
     for _h in "$_home_norm" "$_home_resolved"; do
         [ -n "$_h" ] || continue
-        case "$1" in
-            "$_h"|"$_h/Library"|"$_h/.ssh"|"$_h/Desktop"|"$_h/Documents"|"$_h/Downloads"|"$_h/Movies"|"$_h/Music"|"$_h/Pictures"|"$_h/Public")
+        _h="$(_lower "$_h")"
+        case "$_d" in
+            "$_h"|"$_h/library"|"$_h/.ssh"|"$_h/desktop"|"$_h/documents"|"$_h/downloads"|"$_h/movies"|"$_h/music"|"$_h/pictures"|"$_h/public")
                 return 0 ;;
         esac
     done
     return 1
 }
-if _is_dangerous_venv_dir "$VENV_DIR"; then
-    _reject_dangerous_venv_dir "$VENV_DIR"
-fi
-if [ -d "$VENV_DIR" ]; then
-    _venv_resolved="$(_resolve_dir "$VENV_DIR")"
-    if [ "$_venv_resolved" != "$VENV_DIR" ] && _is_dangerous_venv_dir "$_venv_resolved"; then
-        _reject_dangerous_venv_dir "$_venv_resolved"
+# 兩次呼叫：①在二次確認之前（早拒，不浪費使用者輸入）②`rm -rf` 正前方（
+# 縮小 TOCTOU 窗——確認的 `read` 可能無限期阻塞，期間中間層目錄可被換成 symlink）。
+_assert_safe_venv_dir() {
+    if _is_dangerous_venv_dir "$VENV_DIR"; then
+        _reject_dangerous_venv_dir "$VENV_DIR"
     fi
-fi
+    if [ -d "$VENV_DIR" ]; then
+        _venv_resolved="$(_resolve_dir "$VENV_DIR")"
+        if [ "$_venv_resolved" != "$VENV_DIR" ] && _is_dangerous_venv_dir "$_venv_resolved"; then
+            _reject_dangerous_venv_dir "$_venv_resolved"
+        fi
+    fi
+}
+_assert_safe_venv_dir
 
 if [ "$FORCE" -eq 1 ] && [ -d "$VENV_DIR" ]; then
     # 二次確認（TMO-040）：--force 是破壞性的，而 POC_VENV_DIR 由外部指定。
@@ -124,6 +138,8 @@ if [ "$FORCE" -eq 1 ] && [ -d "$VENV_DIR" ]; then
         fi
     fi
     echo "==> --force：移除既有 ${VENV_DIR}"
+    # TOCTOU：確認的 read 可能等很久，刪前再驗一次
+    _assert_safe_venv_dir
     rm -rf "$VENV_DIR"
 fi
 

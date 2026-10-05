@@ -276,16 +276,44 @@ SHIM
   }
 }
 
+@test "POC-VENV-GUARD: case variants of danger-list paths are refused (macOS is case-insensitive)" {
+  # macOS 預設 case-insensitive：`.../CASEHOME` 就是 `.../casehome`，但字面不相等；
+  # `pwd -P` 也保留輸入的大小寫（實測 `cd /private/TMP && pwd -P` → `/private/TMP`），
+  # 所以不 `_lower` 的話 `--force --yes` 會沿著大小寫變體把家目錄刪掉。
+  # ⚠️ 故意用 tmp 內的大小寫變體，不用 `/private/TMP`：後者在 macOS 就是真的
+  # `/private/tmp`，護欄一旦回歸這條測試自己就會把系統目錄清掉（測試不得帶這種風險）。
+  local fake="$BATS_TEST_TMPDIR/casehome"
+  mkdir -p "$fake"
+  echo keep > "$fake/sentinel.txt"
+
+  run env HOME="$fake" POC_VENV_DIR="$BATS_TEST_TMPDIR/CASEHOME" bash "$SH" --force --yes
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 家目錄的大小寫變體未被擋（rc=${status}）" >&2
+    echo "$output" >&2
+    return 1
+  }
+  [[ "$output" == *"危險清單"* ]] || {
+    echo "FAIL: 被拒但訊息未提「危險清單」" >&2
+    echo "$output" >&2
+    return 1
+  }
+  [ -f "$fake/sentinel.txt" ] || {
+    echo "FAIL: 大小寫變體繞過護欄，sentinel 被刪" >&2
+    return 1
+  }
+}
+
 @test "POC-VENV-GUARD: danger check and confirmation both run before the destructive rm" {
   # 動態測試證明「行為」，這條靜態鎖證明「次序」——把護欄搬到 rm 之後仍可能靠別的路徑
   # 通過其他測試（例如 --force 未觸發），次序鎖讓那種搬移立刻紅。
   local sh="$SH"
-  local danger confirm rm_line
+  local danger confirm recheck rm_line
   danger="$(grep -nE '^[^#]*_reject_dangerous_venv_dir "\$VENV_DIR"' "$sh" | head -1 | cut -d: -f1)"
   confirm="$(grep -nE '^[^#]*read -r _answer' "$sh" | head -1 | cut -d: -f1)"
+  recheck="$(grep -nE '^[^#]*_assert_safe_venv_dir$' "$sh" | tail -1 | cut -d: -f1)"
   rm_line="$(grep -nE '^[[:space:]]*rm -rf "\$VENV_DIR"' "$sh" | head -1 | cut -d: -f1)"
-  [ -n "$danger" ] && [ -n "$confirm" ] && [ -n "$rm_line" ] || {
-    echo "FAIL: 找不到危險檢查（line=${danger}）／二次確認（line=${confirm}）／rm -rf（line=${rm_line}）→ 腳本結構已變，次序鎖要跟著改" >&2
+  [ -n "$danger" ] && [ -n "$confirm" ] && [ -n "$recheck" ] && [ -n "$rm_line" ] || {
+    echo "FAIL: 找不到危險檢查（line=${danger}）／二次確認（line=${confirm}）／刪前重驗（line=${recheck}）／rm -rf（line=${rm_line}）→ 腳本結構已變，次序鎖要跟著改" >&2
     return 1
   }
   [ "$danger" -lt "$rm_line" ] || {
@@ -294,6 +322,11 @@ SHIM
   }
   [ "$confirm" -lt "$rm_line" ] || {
     echo "FAIL: 二次確認在第 ${confirm} 行、rm -rf 在第 ${rm_line} 行 → 未確認就刪" >&2
+    return 1
+  }
+  # TOCTOU 縮窗（P3-c）：確認的 read 可能等很久，刪前必須再驗一次
+  [ "$recheck" -gt "$confirm" ] && [ "$recheck" -lt "$rm_line" ] || {
+    echo "FAIL: 刪前重驗在第 ${recheck} 行，不在二次確認（${confirm}）與 rm -rf（${rm_line}）之間 → TOCTOU 窗全開" >&2
     return 1
   }
 }
