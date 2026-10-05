@@ -797,6 +797,12 @@ PYEOF
     echo "FAIL: test job 沒有跑「自我列舉的 shellcheck」（NYH-6 決策 A）" >&2
     return 1
   }
+  # 版本漂移可診斷（reviewer 輕量確認輪 P3-2）：CI 要先印 shellcheck 版本——
+  # 本機 0.11.0 已不報 SC2002、ubuntu apt 0.9.x 仍會報，曾發生「本機綠、CI 紅」。
+  printf '%s\n' "$block" | sed 's/#.*$//' | grep -qF 'shellcheck --version' || {
+    echo "FAIL: shellcheck 步驟沒有先印版本（版本漂移時無法從 log 診斷）" >&2
+    return 1
+  }
   if printf '%s\n' "$block" | sed 's/#.*$//' | grep -qF 'skills/dav-wiki/scripts/*.sh'; then
     echo "FAIL: Verify bash syntax 還是硬編子集 glob（漏 install.sh／lib／scripts/ci／PoC／helpers）" >&2
     return 1
@@ -851,6 +857,8 @@ PYEOF
   }
   local ran=0 vcount=0
   vcount=$(grep -c . "$vers")
+  # 防空過（reviewer 輕量確認輪 P3-2）：版本清單空掉時 `ran == n×0` 會平凡成立
+  [ "$vcount" -ge 1 ] || { echo "FAIL: 版本清單是空的（collect_bash_versions 壞了）" >&2; return 1; }
   echo "  本機 bash 版本清單（$vcount 個）：$(cut -f1 "$vers" | tr '\n' ' ')" >&2
   while IFS=$'\t' read -r v bin; do
     for s in $scripts; do

@@ -95,7 +95,9 @@ tesseract_ocr() {
     tesseract "$file" "$output_base" -l "$LANGUAGE" 2>/dev/null
     local text=""
     if [[ -f "$output_base.txt" ]]; then
-        text=$(cat "$output_base.txt" | tr '\n' ' ' | sed 's/  */ /g' | sed 's/^ *//;s/ *$//')
+        # 不用 `cat file |`：ubuntu CI 的 shellcheck 0.9.x 會報 SC2002（本機 0.11.0 已不再報
+        # → 本機綠、CI 紅），改用輸入重導向寫法，兩版本都乾淨（2026-10-05 CI 第二次實測）
+        text=$(tr '\n' ' ' < "$output_base.txt" | sed 's/  */ /g' | sed 's/^ *//;s/ *$//')
     fi
 
     # 嘗試取得 confidence（從 tesseract verbose 模式）

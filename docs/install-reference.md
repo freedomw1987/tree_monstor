@@ -311,8 +311,17 @@ CI 的 bats-core 已釘版：兩個 runner 都 `git clone --branch v1.14.0`＋`i
 
 2026-10-05 CI 首跑後另修三件事（見 `ENV-EQ-17/18/19`）：clone 位置改 `$RUNNER_TEMP`
 （過去 clone 進工作區，會被 `ENV-EQ-12` 當成 ~250 個孤兒 `.bats`）、macOS leg 改裝 bash 5
-並把 `$(brew --prefix)/bin` 前置到 `$GITHUB_PATH`（原本 `/bin/bash` 3.2 會讓 bats 1.14.0
-的 test-name 編碼壞掉、**靜默丟掉 31 條**非 ASCII 名稱的測試）、CI 補上自我列舉的 shellcheck。
+（原本 `/bin/bash` 3.2 會讓 bats 1.14.0 的 test-name 編碼壞掉、**靜默丟掉 31 條**非 ASCII 名稱的測試）、
+CI 補上自我列舉的 shellcheck。
+
+> **⚠️ shellcheck 版本漂移（2026-10-05 實測，已發生過一次）**：本機 **0.11.0 已不再報 SC2002**，
+> 而 ubuntu apt 的 **0.9.x 仍會報** → 同一份碼「本機 Gate 2 綠、CI 紅」是真的會發生
+> （實例：`wiki-ocr.sh` 的 `cat file | tr`，已改成 `tr < file`）。CI 的 shellcheck 步驟會先印
+> `shellcheck --version`（由 ENV-EQ-18 鎖住），遇到紅燈請先看版本再判定。
+>
+> **⚠️ macOS PATH 教訓（同輪自傷，已修）**：把整個 `$(brew --prefix)/bin` 前置到 `$GITHUB_PATH`
+> 會讓後續步驟的 `python3` 變成 homebrew python（沒裝 `python-pptx`）→ PPTX 探針 AC-E5／E6／E21 紅。
+> 現在只把 **bash 一個符號連結**放進 `$HOME/.ci-bin` 再前置，副作用最小。
 bash 3.2 的覆蓋改由本機 `ENV-EQ-19` 接手（逐版本實跑 `scripts/ci/*.sh`）。
 **⚠️ 但這條只在「本機真的裝了 3.2」時有效**（本機 macOS 的 `/bin/bash` 就是 3.2，故 5.3.20＋3.2.57
 兩個版本都跑到）；**CI 兩 leg 已無 3.2**（ubuntu 是 5.x、macOS 已改用 brew bash 5），所以

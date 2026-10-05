@@ -171,7 +171,7 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | **ENV-EQ-17／18／19＋CI 新增自我列舉 shellcheck 步驟（`f600385`）** | **新增＝嚴格化** | 過去 CI 完全沒跑 shellcheck、也沒有「bash 版本等價」鎖；三把鎖皆先紅後綠（`/tmp/mA-17.txt`、`mB-18.txt`、`mC-19.txt`） |
 | **`Verify bash syntax` 由硬編 glob 改自我列舉（`f600385`）** | **覆蓋嚴格化 ＋ 新增放寬（已於 round L 修掉）** | 覆蓋面由 1 檔子集→全量 23 檔（嚴格化）；但初版 `n=0` 無下限，`git ls-files` 空掉時會印 `OK: 0 shell files` 假綠（舊硬編 glob 在無匹配時是 fail-closed）→ round L **P2-1** 已加 `[ "$n" -ge 20 ]` 下限，並由 ENV-EQ-18 靜態鎖住（M-D 突變會咬） |
 | **bats-core clone 改 `$RUNNER_TEMP`；macOS leg 改 bash 5（`brew install bash`＋`$GITHUB_PATH` 前置）（`f600385`）** | **環境修正（依 V03.6 定義①字面屬放寬；探針條件未動）** | 兩者在 CI 內都是 **red → green**：前者讓 ENV-EQ-12 不再把 CI 自己 clone 進工作區的 ~250 個 `.bats` 誤報為 orphan；後者讓 macOS leg 跑得動 ENV-EQ-1/2/3/9 與 31 條非 ASCII 名稱測試。**代價（已揭露）**：CI 兩 leg 都不再跑 bash 3.2，該 bug 類別只剩「本機剛好有 3.2」時由 ENV-EQ-19 守 |
-| **round L 修正（`6a773b0` 之後）：ENV-EQ-19 的 `ran == n×vcount`、ENV-EQ-18 剝註解＋下限鎖、鎖 regex 支援多位數位置參數／豁免轉義 `\$`** | **嚴格化** | 皆是把「原本會 pass 的情況改成 fail」（單一 bash 版本空過、註解偽裝、`$10（` 漏抓），無放寬 |
+| **round L 修正（`6a773b0` 之後）：ENV-EQ-19 的 `ran == n×vcount`＋版本清單下限、ENV-EQ-18 剝註解＋下限鎖、鎖 regex 支援多位數位置參數／豁免轉義 `\$`** | **嚴格化**（其中負向 grep 剝註解屬**修偽陽**，同 MLG-2 分類） | 主體是把「原本會 pass 的情況改成 fail」（單一 bash 版本空過、註解偽裝、`$10（` 漏抓）；ENV-EQ-18 的負向 grep 剝註解則是「註解提到被禁字串不再偽紅」＝修偽陽，與 MLG-2 既有先例同類。無放寬 |
 
 ## reviewer 修正（round L）＋CI 修復二審結論
 
@@ -569,6 +569,27 @@ skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
 | ENV-EQ-18 | CI `test` job 必須跑自我列舉 shellcheck＋語法步驟不得回頭用硬編 glob＋不得有 `\|\| true`／`continue-on-error` | M-B 刪掉 shellcheck 步驟 → 紅 ✓，還原後綠 ✓ |
 | ENV-EQ-19 | `scripts/ci/*.sh` 在**每個**本機 bash 版本（含 3.2）＋UTF-8 locale 下 rc=0 且有輸出 | M-C 種回 bash 3.2 bug → **在本機重現 CI 的 `worst_file: unbound variable`** → 紅 ✓，還原後綠 ✓ |
 
+### CI 第二次實測（run `37246460870`）：又紅 2 因（其中 1 條是我自己造成的回歸）
+
+第一輪修復後 CI 大幅改善（macOS 不再靜默丟 31 條、ENV-EQ-1/2/3/9/12 與 SSG-3 全綠、ubuntu 的
+`bats tests/` **576 ok / 0 not ok**），但仍紅在兩個新原因：
+
+| # | leg | 症狀 | 根因 | 修法 |
+| --- | --- | --- | --- | --- |
+| 1 | **ubuntu** | `ShellCheck every tracked shell file` rc=1：`wiki-ocr.sh:98` SC2002（useless cat） | **shellcheck 版本漂移**：本機 0.11.0 已不再報 SC2002，ubuntu apt 0.9.x 仍會報 → 本機綠、CI 紅 | 改成 `tr '\n' ' ' < "$output_base.txt" \| …`（兩版本都乾淨）；CI 步驟加印 `shellcheck --version`（ENV-EQ-18 鎖住） |
+| 2 | **macOS** | AC-E5／AC-E6／AC-E21（PPTX）3 條 `not ok` | **我自己造成的回歸**：把整個 `$(brew --prefix)/bin` 前置 `$GITHUB_PATH`，使後續步驟的 `python3` 變成 homebrew python（沒有 `python-pptx`）→ 工具 rc≠0 | 改成只把 `bash` 一個符號連結放進 `$HOME/.ci-bin` 再前置 |
+
+### 輕量確認輪（`6a773b0..c3285c2`）
+
+round L 的 4 條 P2 全數確認修好、**無新洞**：**0 P0 / 0 P1 / 0 P2 / 5 P3**（全 report-only），
+reviewer 明示「不需再開一輪」。5 條 P3 已順手修：
+
+- **P3-1**：交付物「`env-equivalence.bats` 已達 **16** 條」→ **19** 條（與同檔最終狀態表對齊）。
+- **P3-2**：ENV-EQ-19 補 `[ "$vcount" -ge 1 ]`（防 `vcount=0` 時 `ran == n×0` 平凡成立）。
+- **P3-3**：`ci.yml` 的門檻 20 註解寫明是「列舉器 tripwire（現況 23 檔），縮檔時需同步調整」。
+- **P3-4**：`lint-shell-var-nonascii.py` docstring 補列「偶數反斜線 `\\$var（` 理論偽陰」已知界限。
+- **P3-5**：V03.6 表補註「ENV-EQ-18 負向 grep 剝註解＝修偽陽，同 MLG-2 分類」。
+
 ### 修復後實測
 
 - Gate 1：三把新鎖各自「先紅（突變）後綠（還原）」，命令與輸出見上表。
@@ -651,7 +672,7 @@ skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
 ### 其他建議（未建 ticket）
 
 - reviewer round J 的 **P3-5**（`ENV-EQ-14` 的 py/json 兩段 Python heredoc 逐字重複）為 report-only，可下次順手參數化。
-- `tests/env-equivalence.bats` 已達 16 條，檔案漸長；若續增可考慮按主題拆檔（但注意 CI 只跑 `tests/` 頂層，拆檔後仍須落在頂層）。
+- `tests/env-equivalence.bats` 已達 19 條，檔案漸長；若續增可考慮按主題拆檔（但注意 CI 只跑 `tests/` 頂層，拆檔後仍須落在頂層）。
 
 1. **push + 真實 CI 驗證**（需用戶同意）：`git push origin trust/2026-10-05-tmo-cleanup`，
    確認 `Markdown lint` job 由「假綠」變「真擋且綠」、TMO-042 的 ffmpeg step 兩平台通過。

@@ -57,7 +57,13 @@ jobs:
           # bats-core 固定版本（TMO-041）＋與 Linux 同一個 tag（見上方說明）
           git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats-core"
           sudo "$RUNNER_TEMP/bats-core/install.sh" /usr/local
-          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+          # ⚠️ 只把 bash 5 推入 PATH 最前，**不要把整個 $(brew --prefix)/bin 推進去**：
+          # 那會讓後續步驟的 `python3` 變成 homebrew 的 python（沒裝 python-pptx）
+          # → PPTX 探針 AC-E5／AC-E6／AC-E21 紅（2026-10-05 CI 第二次實測，我自己造成的回歸）。
+          # 用一個只含 bash 符號連結的目錄，效果相同、副作用最小。
+          mkdir -p "$HOME/.ci-bin"
+          ln -sf "$(brew --prefix)/bin/bash" "$HOME/.ci-bin/bash"
+          echo "$HOME/.ci-bin" >> "$GITHUB_PATH"
 
       - name: Verify ffmpeg version and flags
         # TMO-042：兩平台版本不同（apt ffmpeg 6.x / brew 8.x），ffmpeg 8 已移除 -vsync。
@@ -81,8 +87,12 @@ jobs:
       - name: ShellCheck every tracked shell file
         # NYH-6（2026-10-05 決策 A）：CI 過去完全沒跑 shellcheck，且下一步只 glob 硬編子集
         # → 「本機 Gate 2 全綠」不等於 CI 會擋。這裡與本機 Gate 2 用同一條自我列舉指令。
+        # ⚠️ 版本漂移（2026-10-05 實測）：本機 0.11.0 已不再報 SC2002，ubuntu apt 0.9.x 仍會報
+        # → 同一份碼「本機綠、CI 紅」確實發生過。先印版本，方便日後從 log 診斷。
         # 守門探針：tests/env-equivalence.bats ENV-EQ-18。
-        run: shellcheck -x -S style $(git ls-files '*.sh' '*.bash')
+        run: |
+          shellcheck --version | head -3
+          shellcheck -x -S style $(git ls-files '*.sh' '*.bash')
 
       - name: Verify bash syntax
         # NYH-6 決策 A：原本只 glob `skills/dav-wiki/scripts/*.sh`（硬編子集，漏 install.sh、
@@ -95,7 +105,8 @@ jobs:
             bash -n "$f" || exit 1
             n=$((n + 1))
           done <<< "$(git ls-files '*.sh' '*.bash')"
-          # 下限（reviewer round L P2-1）：列舉空掉時不能印 OK 假綠（舊硬編 glob 在無匹配時是 fail-closed）
+          # 下限（reviewer round L P2-1）：列舉空掉時不能印 OK 假綠（舊硬編 glob 在無匹配時是 fail-closed）。
+          # 門檻 20 是列舉器 tripwire（現況 23 檔）；若日後合法縮到 < 20 支 shell 檔，請同步調整此值。
           [ "$n" -ge 20 ] || { echo "FAIL: 只列舉到 $n 個 shell 檔（< 20）→ 列舉器壞了"; exit 1; }
           echo "OK: $n shell files syntax-checked"
 
