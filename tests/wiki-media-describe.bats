@@ -5,19 +5,12 @@
 # Black-box tests for skills/dav-wiki/scripts/wiki-media-describe.sh
 # Sprint 08: dav-wiki 多模組擴充 (FR-2.6.2)
 #
-# Coverage:
-#   AC-D1: --mode describe（圖片描述）+ mock 模式
-#   AC-D2: --mode transcript（音訊轉錄）+ mock 模式
-#   AC-D3: --input 指定單張圖/音檔
-#   AC-D4: --input-dir 批次處理目錄
-#   AC-D5: --output-json 寫 metadata
-#   AC-D6: --mock 強制 mock（不連 API）
-#   AC-D7: --api-key 從環境變數
-#   AC-D8: 缺 --mode → 錯誤
-#   AC-D9: 不存在的輸入 → 錯誤
-#   AC-D10: --max-concurrency 限制
-#   AC-D11: --dry-run
-#   AC-D12: 不支援的 mode
+# Coverage: 見下方指引（原 AC-D1~D12 手寫清單自 D3 起已整體錯位，2026-10-05 移除，
+# 避免再出現「看起來完整其實錯的對照表」）。
+#
+# TMO-058 起補到 AC-D30（real 模式不得假成功／rc 契約），TMO-060 再補到 AC-D38
+# （--batch-limit 正名＋預設無上限＋額度＝嘗試數；reviewer Round-1 的 P1-1／P2-1／
+# P2-4／P3-1／P3-5 各補一條回歸鎖）。完整清單見 `grep -n '^@test' tests/wiki-media-describe.bats`。
 #
 # Usage:
 #   bats tests/wiki-media-describe.bats
@@ -131,6 +124,10 @@ teardown() {
   # 重點是不要 crash（exit 139/134 segmentation fault）
   [ "$status" -ne 139 ]
   [ "$status" -ne 134 ]
+  # TMO-060（reviewer Round-2 P3-7）：非媒體檔必須**出聲**——否則「把 WARN 整段
+  # 拿掉」的突變可存活（本票正好動了這一行）。注意 `-qi` 只影響大寫判定，
+  # `.txt` 兩種寫法都該 WARN。
+  [[ "$output" == *"not an image"* ]]
 }
 
 # ---------- AC-D10: transcript 對 .png 副檔名 ----------
@@ -328,7 +325,8 @@ teardown() {
       --output-dir "$WORK/out-many" --mock --max-concurrency 2
   [ "$status" -eq 0 ]
   [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
-  [[ "$output" == *"未處理"* ]]
+  # TMO-060（reviewer P2-2）：收緊到整行——否則「訊息印死 --batch-limit」的突變能存活。
+  [[ "$output" == *"已達 --max-concurrency 上限（2），尚有 3 個未處理"* ]]
 }
 
 # ---------- AC-D26: 部分失敗可達（輸出寫不進去 → ❌ + rc=6） ----------
@@ -371,21 +369,32 @@ teardown() {
   [[ "$output" != *"✅ 批次完成"* ]]
 }
 
-# ---------- AC-D29: --max-concurrency 非法值不得「零產出＋回 0」 ----------
-# reviewer Round-1 P2-2：0 → 每檔都算截斷（零產出卻印 ✅ 回 0）；2x → [[ ]] 算術報錯
-# 走 false 分支（默默不限制）。兩者都要求正整數 → exit 1。
-@test "AC-D29: --max-concurrency 0 / 非數字 → rc=1, no batch success" {
+# ---------- AC-D29: 上限旗標非法值 → rc=1（TMO-060：`0` 改為合法＝無限制） ----------
+# TMO-058 時鎖的是「0／2x 皆非法」。TMO-060 重定義語意後 `0`＝無限制（合法），
+# 故拒收方向改壓在 -1／2x／1.5（覆蓋面比原本更廣，且要求新的精確訊息）；
+# 「0 必須被接受」由 AC-D32 正面鎖。← V03.6 申報的條件放寬項：0 由 fail 改為 pass。
+@test "AC-D29: --batch-limit/--max-concurrency 非法值 → rc=1, no batch success" {
   mkdir -p "$WORK/batch-mc"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-mc/"
+  local n
+  # `007`（前導零）刻意拒收：否則 `^[0-9]+$` 這種「只擋非數字」的突變能存活
+  # （reviewer Round-2 P2-1 的 M15 證據補強）。訊息另註明「不得有前導零」，
+  # 否則「是正整數卻被拒」對使用者是自我矛盾（reviewer Round-3 P2-A）。
+  for n in -1 2x 1.5 007; do
+    run "$TOOL" --mode describe --input-dir "$WORK/batch-mc" \
+        --output-dir "$WORK/out-mc-$n" --mock --batch-limit "$n"
+    [ "$status" -eq 1 ]
+    [[ "$output" != *"✅ 批次完成"* ]]
+    # TMO-060（reviewer P3-1）：斷言整行含**使用者實際打的旗標名**——否則把訊息
+    # 寫死成 --batch-limit 的突變能存活（M21 實測）。
+    [[ "$output" == *"ERROR: --batch-limit 需為 0 或正整數（不得有前導零）（收到：${n}）"* ]]
+    [ -z "$(find "$WORK/out-mc-$n" -maxdepth 1 -type f 2>/dev/null)" ]
+  done
+  # 別名必須走同一條驗證（不得只驗正名）
   run "$TOOL" --mode describe --input-dir "$WORK/batch-mc" \
-      --output-dir "$WORK/out-mc0" --mock --max-concurrency 0
+      --output-dir "$WORK/out-mc-alias" --mock --max-concurrency 2x
   [ "$status" -eq 1 ]
-  [[ "$output" != *"✅ 批次完成"* ]]
-  [ -z "$(find "$WORK/out-mc0" -maxdepth 1 -type f 2>/dev/null)" ]
-  run "$TOOL" --mode describe --input-dir "$WORK/batch-mc" \
-      --output-dir "$WORK/out-mc2" --mock --max-concurrency 2x
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"需為正整數"* ]]
+  [[ "$output" == *"ERROR: --max-concurrency 需為 0 或正整數（不得有前導零）（收到：2x）"* ]]
 }
 
 # ---------- AC-D30: --max-concurrency 合法值不得被新驗證誤擋 ----------
@@ -399,4 +408,157 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"✅ 批次完成：1 個檔案"* ]]
   done
+}
+
+# ==========================================================================
+# TMO-060：--batch-limit（正名）／--max-concurrency（相容別名）
+# 語意＝單次批次最多**嘗試**處理 N 檔；0＝無限制，且為**新預設**（舊預設 4 會丟檔）。
+# ==========================================================================
+
+# ---------- AC-D31: 預設＝無上限（6 檔批次不得丟檔） ----------
+@test "AC-D31: 預設無上限 → 6 檔批次全處理（舊版預設 4 會丟 2 檔）" {
+  mkdir -p "$WORK/batch-six"
+  local i
+  for i in 1 2 3 4 5 6; do
+    cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-six/img$i.png"
+  done
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-six" \
+      --output-dir "$WORK/out-six" --mock
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：6 個檔案"* ]]
+  [[ "$output" != *"未處理"* ]]
+  [ "$(find "$WORK/out-six" -maxdepth 1 -type f -name '*.desc.json' | wc -l | tr -d ' ')" -eq 6 ]
+}
+
+# ---------- AC-D32: --batch-limit 名實相符＋別名等價＋0＝無限制 ----------
+@test "AC-D32: --batch-limit 2 截斷訊息＋--max-concurrency 等價＋0＝無限制" {
+  mkdir -p "$WORK/batch-limit"
+  local i
+  for i in 1 2 3 4; do
+    cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-limit/img$i.png"
+  done
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-limit" \
+      --output-dir "$WORK/out-bl" --mock --batch-limit 2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
+  [[ "$output" == *"已達 --batch-limit 上限（2），尚有 2 個未處理"* ]]
+  # 別名：同一組輸入 → 同一行批次摘要（等價性的可觀察證據）
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-limit" \
+      --output-dir "$WORK/out-mcalias" --mock --max-concurrency 2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
+  [[ "$output" == *"已達 --max-concurrency 上限（2），尚有 2 個未處理"* ]]
+  # 0＝無限制（TMO-060 新語意）
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-limit" \
+      --output-dir "$WORK/out-mc0" --mock --max-concurrency 0
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：4 個檔案"* ]]
+  [[ "$output" != *"未處理"* ]]
+}
+
+# ---------- AC-D33a: 失敗檔佔額度（額度＝嘗試數，不是成功數） ----------
+@test "AC-D33a: 額度計嘗試數——失敗檔也佔額度（舊版會變「失敗 3」）" {
+  # --batch-limit 1：3 檔都註定失敗 → 只能嘗試 1 檔
+  #     （舊版只數成功 → 3 檔全試，訊息會是「失敗 3」）
+  mkdir -p "$WORK/batch-fail" "$WORK/out-fail"
+  local s
+  for s in a b c; do
+    cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-fail/$s.png"
+    mkdir -p "$WORK/out-fail/$s.desc.json"   # 產物路徑被佔成目錄 → 寫入必失敗（rc 6）
+  done
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-fail" \
+      --output-dir "$WORK/out-fail" --mock --batch-limit 1
+  [ "$status" -eq 6 ]
+  [[ "$output" == *"❌ 批次失敗：成功 0 / 失敗 1"* ]]
+  [[ "$output" == *"已達 --batch-limit 上限（1），尚有 2 個未處理"* ]]
+}
+
+# ---------- AC-D33b: 不符 mode 白名單的檔要計數 WARN ----------
+@test "AC-D33b: 批次對不符白名單的檔發出計數 WARN（原本完全靜默）" {
+  mkdir -p "$WORK/batch-wl"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-wl/"
+  echo "not an image" > "$WORK/batch-wl/notes.txt"
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-wl" \
+      --output-dir "$WORK/out-wl" --mock
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：1 個檔案"* ]]
+  [[ "$output" == *"已略過 1 個不符 describe 白名單的檔"* ]]
+}
+
+# ---------- AC-D33c: dry-run 批次不得宣稱完成 ----------
+@test "AC-D33c: dry-run 批次印 [DRY-RUN] 前綴且不得出現 ✅ 批次完成" {
+  mkdir -p "$WORK/batch-dry"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-dry/"
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-dry" \
+      --output-dir "$WORK/out-dry" --mock --dry-run
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[DRY-RUN] 批次完成：1 個檔案"* ]]
+  [[ "$output" != *"✅ 批次完成"* ]]
+}
+
+# ---------- AC-D34: 大寫副檔名必須被處理（P1-1 回歸鎖） ----------
+# reviewer Round-1 P1-1：本票把 `find -iname`（大小寫不敏感）換成 `grep -qE` 時弄丟了
+# `-i`，導致 `IMG_001.PNG`（macOS 相機／截圖常見）由「被處理」變成「靜默跳過」。
+@test "AC-D34: 批次大寫副檔名（IMG_001.PNG）仍要被處理" {
+  mkdir -p "$WORK/batch-upper"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-upper/IMG_001.PNG"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-upper/ok.png"
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-upper" \
+      --output-dir "$WORK/out-upper" --mock
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
+  [[ "$output" != *"已略過"* ]]
+  [ -f "$WORK/out-upper/IMG_001.desc.json" ]
+}
+
+# ---------- AC-D35: 全部檔都被白名單略過 → WARN + rc 0（零產物仍印 ✅＝明示契約） ----------
+# reviewer Round-1 P2-4 要求把這條路徑變成明示取捨：訊息不靜默（有 WARN、有計數），
+# 但「成功」指的是「沒有失敗」，不是「有產出」—— 所以仍印 ✅ 且 rc 0。
+@test "AC-D35: 目錄內全是 non-media 檔 → 略過 WARN + 完成 0 檔 + rc 0" {
+  mkdir -p "$WORK/batch-allskip"
+  echo "a" > "$WORK/batch-allskip/a.txt"
+  echo "b" > "$WORK/batch-allskip/b.txt"
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-allskip" \
+      --output-dir "$WORK/out-allskip" --mock
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"已略過 2 個不符 describe 白名單的檔"* ]]
+  [[ "$output" == *"✅ 批次完成：0 個檔案"* ]]
+}
+
+# ---------- AC-D38: 旗標缺值要走友善錯誤（P3-5） ----------
+# reviewer Round-1 P3-5：`BATCH_LIMIT="$2"` 在 `set -u` 下缺值會直接以
+# `unbound variable` 中止（rc 1 但無訊息、指不到哪個旗標）→ 改用 `${2:-}` 走同一條驗證。
+@test "AC-D38: --batch-limit 缺值 → rc=1 且印友善錯誤（不是 unbound variable）" {
+  mkdir -p "$WORK/batch-noval"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-noval/"
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-noval" \
+      --output-dir "$WORK/out-noval" --mock --batch-limit
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ERROR: --batch-limit 需為 0 或正整數（不得有前導零）（收到：）"* ]]
+  [[ "$output" != *"unbound variable"* ]]
+}
+
+# ---------- AC-D37: 隱藏但符合白名單的媒體檔仍要處理（P2-1 的反面） ----------
+# reviewer Round-1 P2-1：dotfile 豁免只能用在「隱藏**且**不符白名單」；
+# 否則 `.cover.png` 這種合法媒體檔又會變成靜默丟檔（正是本票在修的病）。
+@test "AC-D37: 隱藏媒體檔（.cover.png）仍要被處理、不列入略過計數" {
+  mkdir -p "$WORK/batch-hidden"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-hidden/.cover.png"
+  run "$TOOL" --mode describe --input-dir "$WORK/batch-hidden" \
+      --output-dir "$WORK/out-hidden" --mock
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"✅ 批次完成：1 個檔案"* ]]
+  [[ "$output" != *"已略過"* ]]
+  [ -f "$WORK/out-hidden/.cover.desc.json" ]
+}
+
+# ---------- AC-D36: 單檔模式對大寫副檔名不得誤報「not an image」 ----------
+# TMO-060 順修（已揭露）：批次端已 case-insensitive；單檔端原本 case-sensitive →
+# `IMG_002.PNG` 會被警告成「not an image file」卻照樣處理＝同一檔兩種結論。
+@test "AC-D36: 單檔大寫副檔名 rc 0 且不得出現 not an image 警告" {
+  mkdir -p "$WORK/single-upper"
+  cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/single-upper/IMG_002.PNG"
+  run "$TOOL" --mode describe --input "$WORK/single-upper/IMG_002.PNG"       --output-dir "$WORK/out-single-upper" --mock
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"not an image"* ]]
 }

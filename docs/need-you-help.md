@@ -71,7 +71,7 @@ OCR（缺 tesseract 走 mock placeholder）為唯一例外；`wiki-ocr.sh` usage
 `EXIT_TOOLMISSING`）。**衍生 TMO-058**：`wiki-media-describe.sh` real 模式（Whisper / Vision）未實作，
 **修前**失敗仍回 rc 0＝假成功；已從「缺工具就停」的承諾中**拆出另列**（不再算缺工具），行為修正另開票。
 → **已修（TMO-058，2026-10-05）**：real 未實作改 `exit 5`、單檔接回傳值、批次 fail-closed（任一失敗不得印 ✅）、
-輸出寫入／output-dir 建立失敗改 `exit 6`；`--max-concurrency` 限正整數（`exit 1`）。
+輸出寫入／output-dir 建立失敗改 `exit 6`；`--max-concurrency` 限正整數（`exit 1`；**TMO-060 起 `0` 亦合法＝無限制**，並正名為 `--batch-limit`）。
 探針（**TMO-035／TMO-053 的**，非 TMO-058）：`tests/wiki-toolmissing-contract.bats`（WTM-1~9）＋ `tests/secret-masking.bats`（SM-1~5）。
 
 以下為 2026-10-05 當時的提問原文（保留可追溯）：

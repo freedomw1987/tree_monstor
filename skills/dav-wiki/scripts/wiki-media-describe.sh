@@ -13,7 +13,11 @@ OUTPUT_DIR=""
 API_KEY=""
 MOCK=false
 DRY_RUN=false
-MAX_CONCURRENCY=4
+# TMO-060：本旗標=「單次批次最多**嘗試**處理幾檔」，不是並發度（實作是逐檔同步）。
+# 舊名 --max-concurrency 會誤導成平行度，故正名 --batch-limit；舊名保留為等價別名。
+# 0＝無限制（新預設；舊預設 4 會讓任何 >4 檔的批次靜默丟檔，是真 bug）。
+BATCH_LIMIT=0
+LIMIT_FLAG="--batch-limit"   # 只在此處與旗標解析處設定（勿在別處寫死旗標名）
 LANGUAGE="auto"
 
 # === 環境變數支援 ===
@@ -63,9 +67,13 @@ Options:
   --mock                   強制 mock 模式（不連真實 API）
   --api-key <key>          API key（也可從 OPENAI_API_KEY 環境變數讀）
   --language <zh|en|auto>  語言（預設 auto）
-  --max-concurrency <N>    平行處裡數（預設 4；必須是正整數）
+  --batch-limit <N>        單次批次最多嘗試處理 N 檔（0＝無限制、預設 0；不得有前導零）
+  --max-concurrency <N>    同上（歷史名稱，不是並發度，僅為相容別名）
   --dry-run                只印計畫不執行
   --help / -h              顯示說明
+
+注：--batch-limit / --max-concurrency 算的是「嘗試處理」的檔數
+（失敗的檔也佔額度；0＝無限制）。
 
 Output JSON (describe):
   { "mode": "describe", "source": "<file>", "caption": "...",
@@ -219,6 +227,8 @@ process_batch() {
     local ok=0
     local fail=0
     local truncated=0
+    local skipped_ext=0
+    local attempted=0
     local first_err=0
 
     # 依 mode 決定接受哪些副檔名。
@@ -235,26 +245,31 @@ process_batch() {
             ;;
     esac
 
-    local find_args=()
-    local first_ext=1
-    local ext
-    while IFS= read -r ext; do
-        [[ -n "$ext" ]] || continue
-        if [[ $first_ext -eq 1 ]]; then
-            find_args+=( -iname "*.$ext" )
-            first_ext=0
-        else
-            find_args+=( -o -iname "*.$ext" )
-        fi
-    done < <(printf '%s\n' "$ext_pattern" | tr '|' '\n')
-
+    # TMO-060：不再靠 `find -iname` 過濾，改成掃全部檔再自行判白名單——
+    # 這樣才「數得到」不符白名單而被略過的檔（原本批次是靜默略過）。
+    # 點開頭**且不符白名單**的檔名（.DS_Store 等）不計不報，避免噪音。
     while IFS= read -r -d '' file; do
-        # 達 --max-concurrency 上限就不再處理，但**要數**——原版 `break` 直接
-        # 靜默丟掉剩下的檔（訊息卻說「批次完成」）。WARN 由下方統一印。
-        if [[ $ok -ge $MAX_CONCURRENCY ]]; then
+        local base
+        base=$(basename "$file")
+        # P1-1：必須 case-insensitive（舊版用 `find -iname`，IMG_001.JPG 會被處理）；
+        # 用 `grep -qiE`（bash 3.2 安全，勿用 ${var,,}）。
+        if ! printf '%s\n' "${file##*.}" | grep -qiE "^(${ext_pattern})$"; then
+            # P2-1：只有「隱藏**且**不符白名單」才不計不報（.DS_Store 等）；隱藏但符合
+            # 白名單的檔（如 .cover.png）仍要處理——否則就是本票在修的「靜默丟檔」。
+            case "$base" in
+                .*) continue ;;
+            esac
+            skipped_ext=$((skipped_ext + 1))
+            continue
+        fi
+        # TMO-060：上限是「處理額度」不是「成功額度」——失敗檔也佔額度
+        # （舊版以成功數計，`--max-concurrency 1` 遇失敗時實際會處理 2 檔）。
+        # 達上限仍**要數**：原版 `break` 直接靜默丟掉剩下的檔（訊息卻說「批次完成」）。
+        if [[ $BATCH_LIMIT -gt 0 && $attempted -ge $BATCH_LIMIT ]]; then
             truncated=$((truncated + 1))
             continue
         fi
+        attempted=$((attempted + 1))
         local name
         name=$(basename "${file%.*}")
         local output="$outdir/$name.desc.json"
@@ -269,11 +284,14 @@ process_batch() {
             continue
         fi
         ok=$((ok + 1))
-    done < <(find "$dir" -maxdepth 1 -type f \( "${find_args[@]}" \) -print0)
+    done < <(find "$dir" -maxdepth 1 -type f -print0)
 
     echo ""
+    if [[ $skipped_ext -gt 0 ]]; then
+        echo "⚠ 已略過 $skipped_ext 個不符 ${MODE} 白名單的檔" >&2
+    fi
     if [[ $truncated -gt 0 ]]; then
-        echo "⚠ 已達 --max-concurrency 上限（${MAX_CONCURRENCY}），尚有 $truncated 個未處理" >&2
+        echo "⚠ 已達 ${LIMIT_FLAG} 上限（${BATCH_LIMIT}），尚有 $truncated 個未處理" >&2
     fi
     if [[ $fail -gt 0 ]]; then
         if [[ $ok -gt 0 ]]; then
@@ -283,7 +301,12 @@ process_batch() {
         fi
         return "$first_err"
     fi
-    echo "✅ 批次完成：$ok 個檔案"
+    # TMO-060：dry-run 沒有真的做事，不得宣稱「完成」
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[DRY-RUN] 批次完成：$ok 個檔案"
+    else
+        echo "✅ 批次完成：$ok 個檔案"
+    fi
     return 0
 }
 
@@ -322,13 +345,16 @@ while [[ $# -gt 0 ]]; do
             LANGUAGE="$2"
             shift 2
             ;;
-        --max-concurrency)
-            MAX_CONCURRENCY="$2"
-            # TMO-058 順修（reviewer Round-1 P2-2）：0 會讓「每個檔都算截斷」→ 零產出卻
-            # 印 ✅ 並回 0（正好違反本票契約）；非數字（如 2x）則讓 `[[ ]]` 算術報錯後
-            # 走 false 分支＝默默不限制。兩者都不是原意（平行度/單次上限）→ 要求正整數。
-            if [[ ! "$MAX_CONCURRENCY" =~ ^[1-9][0-9]*$ ]]; then
-                echo "ERROR: --max-concurrency 需為正整數（收到：${MAX_CONCURRENCY}）" >&2
+        --batch-limit|--max-concurrency)
+            # TMO-060：0 合法（＝無限制）；拒絕負數／小數／非數字。
+            LIMIT_FLAG="$1"
+            BATCH_LIMIT="${2:-}"
+            # TMO-058 順修（reviewer Round-1 P2-2）：非法值不可變「零產出卻印 ✅ 回 0」
+            # 或「[[ ]] 算術報錯後默默不限制」→ 一律擋掉。
+            # TMO-060：`0` 由非法改為合法（＝無限制，新預設），故訊息改「0 或正整數」。
+            if [[ ! "$BATCH_LIMIT" =~ ^([0-9]|[1-9][0-9]*)$ ]]; then
+                # P3-5：缺值時 `$2` 在 set -u 下會直接炸 → 走同一條友善錯誤（${2:-}）
+                echo "ERROR: ${LIMIT_FLAG} 需為 0 或正整數（不得有前導零）（收到：${BATCH_LIMIT}）" >&2
                 exit "$EXIT_USAGE"
             fi
             shift 2
@@ -390,12 +416,14 @@ else
 
     # describe 對非圖、副檔名警告（mock 仍執行）；白名單來自單一來源常數（不用 case 展開，免 SC2254）
     if [[ "$MODE" == "describe" ]]; then
-        if ! printf '%s\n' "${INPUT##*.}" | grep -qE "^($IMAGE_EXTS)$"; then
+        # TMO-060 順修（已揭露）：改 `-qi`——`IMG_001.JPG` 是圖片，不該被警告成
+        # 「not an image file」；批次端已 case-insensitive，兩端結論必須一致。
+        if ! printf '%s\n' "${INPUT##*.}" | grep -qiE "^($IMAGE_EXTS)$"; then
             echo "WARN: input '$INPUT' is not an image file" >&2
         fi
     fi
     if [[ "$MODE" == "transcript" ]]; then
-        if ! printf '%s\n' "${INPUT##*.}" | grep -qE "^($AUDIO_EXTS)$"; then
+        if ! printf '%s\n' "${INPUT##*.}" | grep -qiE "^($AUDIO_EXTS)$"; then
             echo "WARN: input '$INPUT' is not an audio/video file" >&2
         fi
     fi
