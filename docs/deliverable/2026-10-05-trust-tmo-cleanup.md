@@ -3,12 +3,13 @@
 - **日期**：2026-10-05（trust session 01:21 → 08:00 CST，用戶指定 deadline）
 - **Backlog ID**：TMO-043、TMO-044、TMO-045、TMO-042、TMO-037
 - **作者**：pi（david 的 agent，**trust mode 自主執行**）
-- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**573 ok / 0 not ok**，ENV-EQ-15/16 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
+- **狀態**：**待用戶驗收**。Gate 1–3 本機全綠（**576 ok / 0 not ok**，ENV-EQ-17/18/19 追加後）；Gate 4 reviewer round A（TMO-043/044/045）=
   `approve-with-comments`（0 P0 / 1 P1 / 5 P2，P1 與 P2 全數修完）；round B（TMO-042 / TMO-037 + 文件）=
   `1cdbdcf6`：**approve-with-comments（0 P0 / 1 P1 / 5 P2）**，「可交付用戶驗收？yes」；round C（TMO-030/031/032/034 + round-B 修正）=
   `e776fe77`：**approve-with-comments（0 P0 / 1 P1 / 6 P2）**，「可交付用戶驗收？yes」
   （註：round C reviewer **無 shell 工具**，其 Gate 證據為引用我方 `/tmp` artifact，已由我逐項自跑複驗）。
-  **三輪的 P1 與 P2 全數修完**（見下方 §reviewer 修正）。**未 push**（trust 底線：不推 remote），全部成果在本機分支
+  **三輪的 P1 與 P2 全數修完**（見下方 §reviewer 修正）。trust 結束後你選了 push（NYH-3）→
+  已推 `481ead1`，CI 首跑紅 → 修復 `f600385`＋文件 `6a773b0`（見 §CI 首跑修復），branch
   `trust/2026-10-05-tmo-cleanup`。
 
 ## 摘要
@@ -166,6 +167,38 @@ markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"   # 0 i
 | **TMO-036 `專案端` 行內標記：跨目錄引用若標記即豁免（`tests/restruct-zero-cross-read.bats`）** | **放寬③（條件式；V03.6 定義①）** | 原本會 fail 的「runtime 產物路徑引用」改為 pass。理由＝探針產物（如 `docs/ac/`）在專案端才存在，屬合法引用而非麵包屑腐化。補償＝①標記必須與引用**同一行**；②反向鎖禁止「沒有引用卻掛標記」；③round E P2-7 再加反向測試（`docs/sop\|prd\|backlog.md\|deliverable\|reflection` 這些 repo 自有路徑**不得**用標記豁免） |
 | **`ENV-EQ-12` 的 orphan 列舉由「純 `find`」改為「`find` ＋ `git check-ignore` 逐檔排除 gitignored 項」（round J P2-1 → round K 改良）** | **放寬④（條件式；V03.6 定義①）** | 原本會 fail 的「gitignored 未追蹤副本樹裡的 `.bats`（跑過 `./install.sh` 的開發者本機才有）被列為 orphan」改為 pass。理由＝那些路徑不是 repo 內容、不可能被 commit，鎖的意圖（被 commit 的 orphan 不會被 CI 跑到）未被削弱；且 round J reviewer 明示建議此修法。**關鍵：排除是依 gitignore 事實而非硬編清單，且 `git check-ignore` 預設看 index → 被追蹤檔永不排除**（M53 實證：`git add -f .agents/.../x.bats` 後仍紅）。補償＝①`[ -n "$all" ]` ＋ 下限 ≥40（排除過頭會紅，不靜默綠）；②M31（未追蹤 `scripts/orphan.bats`）仍紅；③M49（gitignored 副本）綠；④M53 紅；⑤CI 內等價於原版（checkout 只有被追蹤檔，check-ignore 成 no-op）。**此為本輪唯一放寬。** |
 | markdownlint：折行 / 轉義 / 改寫 | **不改規則** | 未動 `MD013` 上限（仍 120）、未縮 glob、未加 ignore；MLG-3/4/5/8 反過來把「縮小 glob / 調大上限」鎖死 |
+| **39 處 `$var` 緊接非 ASCII → `${var}`（`f600385`）** | **等價改寫**（非放寬、非嚴格化） | `{}` 只界定變數名邊界，展開語意完全相同；覆蓋 `.sh/.bash/.bats/.yml/.yaml` |
+| **ENV-EQ-17／18／19＋CI 新增自我列舉 shellcheck 步驟（`f600385`）** | **新增＝嚴格化** | 過去 CI 完全沒跑 shellcheck、也沒有「bash 版本等價」鎖；三把鎖皆先紅後綠（`/tmp/mA-17.txt`、`mB-18.txt`、`mC-19.txt`） |
+| **`Verify bash syntax` 由硬編 glob 改自我列舉（`f600385`）** | **覆蓋嚴格化 ＋ 新增放寬（已於 round L 修掉）** | 覆蓋面由 1 檔子集→全量 23 檔（嚴格化）；但初版 `n=0` 無下限，`git ls-files` 空掉時會印 `OK: 0 shell files` 假綠（舊硬編 glob 在無匹配時是 fail-closed）→ round L **P2-1** 已加 `[ "$n" -ge 20 ]` 下限，並由 ENV-EQ-18 靜態鎖住（M-D 突變會咬） |
+| **bats-core clone 改 `$RUNNER_TEMP`；macOS leg 改 bash 5（`brew install bash`＋`$GITHUB_PATH` 前置）（`f600385`）** | **環境修正（依 V03.6 定義①字面屬放寬；探針條件未動）** | 兩者在 CI 內都是 **red → green**：前者讓 ENV-EQ-12 不再把 CI 自己 clone 進工作區的 ~250 個 `.bats` 誤報為 orphan；後者讓 macOS leg 跑得動 ENV-EQ-1/2/3/9 與 31 條非 ASCII 名稱測試。**代價（已揭露）**：CI 兩 leg 都不再跑 bash 3.2，該 bug 類別只剩「本機剛好有 3.2」時由 ENV-EQ-19 守 |
+| **round L 修正（`6a773b0` 之後）：ENV-EQ-19 的 `ran == n×vcount`、ENV-EQ-18 剝註解＋下限鎖、鎖 regex 支援多位數位置參數／豁免轉義 `\$`** | **嚴格化** | 皆是把「原本會 pass 的情況改成 fail」（單一 bash 版本空過、註解偽裝、`$10（` 漏抓），無放寬 |
+
+## reviewer 修正（round L）＋CI 修復二審結論
+
+`5d389364`（凍結快照 `6a773b0`，範圍 `eb3c12c..6a773b0`）：**OK with notes（0 P0 / 0 P1 / 4 P2 / 4 P3）**，
+「可交付用戶驗收？yes」、「不需再開一輪」。reviewer 逐項確認：39 處 `${var}` 為**等價改寫**、
+**沒有任何既有鎖的斷言被放鬆**、三把新鎖都有反向突變證據、handbook 連結修正正確且完整
+（L9 審計的另 2 條在 append-only 歷史交付物，政策上不動）、`git ls-files` 盲點已充分揭露。
+
+### 已修（P2-1 / P2-2 / P2-3 / P2-4、P3-1、P3-3）
+
+| 項 | 問題 | 修法 | 證據 |
+| --- | --- | --- | --- |
+| P2-1 | `Verify bash syntax` 自我列舉後 `n=0` 無下限 → `git ls-files` 空掉時印 `OK: 0 shell files` 假綠（舊硬編 glob 在無匹配時是 fail-closed） | 加 `[ "$n" -ge 20 ] \|\| { echo FAIL…; exit 1; }`；ENV-EQ-18 增靜態鎖 `\[ "\$n" -ge [0-9]+ \]` | M-D（拿掉下限）→ ENV-EQ-18 紅 ✓ |
+| P2-2 | ENV-EQ-19 的 `ran >= 3` 下限允許「本機只有一個 bash 版本」空過；且文件把「3.2 覆蓋改由本機鎖接手」講得太滿 | 改 `ran == n × vcount`（每個「腳本 × 版本」組合都必須跑到）＋印版本清單；`install-reference.md` 更正為「**本機有 3.2 時才有 3.2 覆蓋；CI 兩 leg 已無 3.2**」 | M-E（`ran` 多算一次）→ 紅 ✓，訊息含版本清單 `5.3.20＋3.2.57` |
+| P2-3 | V03.6 分類表只收到 round K，未收錄 `f600385` 這批 | 補 4 列：`$var`→`${var}`＝等價改寫；ENV-EQ-17/18/19＋CI shellcheck 步驟＝新增嚴格化；語法步驟＝覆蓋嚴格化＋（已修）空列舉放寬；`$RUNNER_TEMP`／macOS brew bash＝**環境修正（CI red→green，探針條件未動）** | 本檔 §V03.6 分類與放寬申報 |
+| P2-4 | 交付物表頭 `573 ok`／「未 push」與正文衝突；`tests/` 頂層 `.bats` 誤寫 44（實為 42，全 repo 44） | 表頭改 `576 ok`＋已 push；改「`tests/` 頂層 42／全 repo 44」 | 本檔表頭與 §最終狀態 |
+| P3-1 | 鎖 regex 漏多位數位置參數 `$10（`、誤判轉義 `\$var（` | regex 改 `(?<!\\)\$(?:[A-Za-z_][A-Za-z0-9_]*\|[0-9]+\|[?@*#!$-])(?=[^\x00-\x7F])`；self-test 加 `$10（`（須咬）與 `\$var（`（不得咬） | `python3 scripts/ci/lint-shell-var-nonascii.py --self-test` ✓ |
+| P3-3 | ENV-EQ-18 的正／負向 `grep` 未剝註解（註解提到同字串可偽陰／偽紅） | 四個 `grep` 一律先 `sed 's/#.*$//'`（與 ENV-EQ-15 對齊） | ENV-EQ-18 綠；M-B 仍咬 ✓ |
+
+### 未修（report-only，reviewer 明示不阻斷）
+
+- **P3-2（shellcheck 版本未釘）**：ubuntu apt（~0.9）與 macOS brew（最新）版本不同，加上 `-S style`
+  最嚴 → 未來 runner 升級可能**假紅**（不是假綠）。屬 CI 穩定性風險，記錄於此；若要釘版需自建 binary。
+- **P3-4（鎖 glob 不含 `*.md`）**：`.md` 內嵌可執行 shell 片段不在 ENV-EQ-17 掃描面；現況載體是
+  `.sh/.bash/.bats/.yml`，影響低。不納入是因為 `*.md` 內的**示範字串**會造成大量偽陽。
+- **P3（理論偽陽，已知界限）**：鎖是行級、不辨識引號語境，所以單引號內 `'$var（'`（不會展開）
+  仍會被標記；刻意選「寧嚴不漏」。
 
 ## reviewer 修正（round B）
 
@@ -559,7 +592,7 @@ skill-local 3 條以 repo 為 root 實跑 **3/3 綠**。
 | Gate 2 | markdownlint **0 issue / 128 檔**；shellcheck `-S style` **rc=0 / 23 檔** | `/tmp/rk-lint.txt`、`/tmp/rk-shellcheck.txt`（空） |
 | 其他 CI 等價檢查 | heredoc 9 OK、SKILL 主檔 11 檔（最長 148 ≤ 150） | `scripts/ci/*.sh` 實跑 |
 | clean clone（無 venv） | **532 ok / 44 not ok**（44＝需 PoC venv 的測試；CI 會先建 venv） | 本輪重測 |
-| 探針總數 | `tests/env-equivalence.bats` 19 條（ENV-EQ-1..19）；`tests/` 頂層 44 支 `.bats` | `install-reference.md` |
+| 探針總數 | `tests/env-equivalence.bats` 19 條（ENV-EQ-1..19）；`.bats`＝`tests/` 頂層 42 支／全 repo 44 支 | `install-reference.md` |
 | 開放的待決票 | TMO-040、TMO-035（其餘 TMO-049/051/052 已於本輪完成；NYH-1 金鑰輪替與 NYH-2 仍待你處理） | `docs/backlog.md`、`docs/need-you-help.md` |
 
 ## 已知問題

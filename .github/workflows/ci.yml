@@ -95,6 +95,8 @@ jobs:
             bash -n "$f" || exit 1
             n=$((n + 1))
           done <<< "$(git ls-files '*.sh' '*.bash')"
+          # 下限（reviewer round L P2-1）：列舉空掉時不能印 OK 假綠（舊硬編 glob 在無匹配時是 fail-closed）
+          [ "$n" -ge 20 ] || { echo "FAIL: 只列舉到 $n 個 shell 檔（< 20）→ 列舉器壞了"; exit 1; }
           echo "OK: $n shell files syntax-checked"
 
       - name: Verify SKILL.md size (≤ 150 lines)

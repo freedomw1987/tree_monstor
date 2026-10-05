@@ -22,8 +22,10 @@ import subprocess
 import sys
 import tempfile
 
-# `$name` / `$1` / `$?` / `$@` … 緊接一個非 ASCII 位元組
-PAT = re.compile(r"\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9?@*#!$-])(?=[^\x00-\x7F])")
+# `$name` / `$1` / `$10` / `$?` / `$@` … 緊接一個非 ASCII 位元組。
+# 排除 `\$var（`（轉義＝不展開，reviewer round L P3-1）。已知界限：不辨識引號語境
+# （單引號內 `'$var（'` 不會被展開，但這裡仍會標記）——行級靜態鎖的刻意取捨，寧嚴不漏。
+PAT = re.compile(r"(?<!\\)\$(?:[A-Za-z_][A-Za-z0-9_]*|[0-9]+|[?@*#!$-])(?=[^\x00-\x7F])")
 GLOBS = ["*.sh", "*.bash", "*.bats", "*.yml", "*.yaml"]
 MIN_FILES = 40
 
@@ -70,6 +72,10 @@ def self_test():
         comment.write_text('# 壞寫法示範：$var）\n')
         pos = d / "pos.sh"
         pos.write_text('echo "路徑 $1（必填）"\n')
+        pos10 = d / "pos10.sh"
+        pos10.write_text('echo "第 $10（位）"\n')
+        esc = d / "esc.sh"
+        esc.write_text('echo "字面 \\$var（不展開）"\n')
         special = d / "special.sh"
         special.write_text('echo "rc=$?（見上）"\n')
         assert violations([bad]), "自我測試失敗：沒抓到 $var 緊接非 ASCII"
@@ -77,8 +83,10 @@ def self_test():
         assert not violations([ascii_ok]), "自我測試失敗：誤判 ASCII 後綴"
         assert not violations([comment]), "自我測試失敗：把註解行誤判成違規"
         assert violations([pos]), "自我測試失敗：沒抓到位置參數 $1（"
+        assert violations([pos10]), "自我測試失敗：沒抓到多位數位置參數 $10（"
+        assert not violations([esc]), "自我測試失敗：把轉義 \\$var（ 誤判成展開"
         assert violations([special]), "自我測試失敗：沒抓到特殊參數 $?（"
-    print("OK: 鎖自我測試通過（正反兩向＋位置／特殊參數＋註解豁免）")
+    print("OK: 鎖自我測試通過（正反兩向＋位置／多位數位置／特殊參數＋轉義豁免＋註解豁免）")
 
 
 def main(argv):

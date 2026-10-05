@@ -292,7 +292,7 @@ CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起�
 | ENV-EQ-16 | 每個被追蹤文字檔須以換行結尾（binary 以 NUL 嗅探排除）＋下限 ≥100 | python3 |
 | ENV-EQ-17 | shell／CI 檔不得有「`$var` 緊接非 ASCII 字元」——bash 3.2 + UTF-8 locale 會把該字元首位元組吞進變數名（`$f（` → 展開 `$f\xef`）。實作：`scripts/ci/lint-shell-var-nonascii.py` | python3 + git |
 | ENV-EQ-18 | CI `test` job 必須跑**自我列舉**的 shellcheck，且 `Verify bash syntax` 不得回頭用硬編子集 glob；這兩步不得有 `\|\| true`／`continue-on-error` | git + awk |
-| ENV-EQ-19 | `scripts/ci/*.sh` 在**每一個**本機 bash 版本（含 3.2）＋UTF-8 locale 下都必須 rc=0 且有輸出（CI 的 macOS leg 過去就是 3.2，本機看不到） | bash 多版本 |
+| ENV-EQ-19 | `scripts/ci/*.sh` 在**每一個本機可用** bash 版本 × 每支腳本（組合數必須全部跑到）＋UTF-8 locale 下都必須 rc=0 且有輸出 | bash 多版本 |
 | （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
 
 三個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py` 與
@@ -314,6 +314,9 @@ CI 的 bats-core 已釘版：兩個 runner 都 `git clone --branch v1.14.0`＋`i
 並把 `$(brew --prefix)/bin` 前置到 `$GITHUB_PATH`（原本 `/bin/bash` 3.2 會讓 bats 1.14.0
 的 test-name 編碼壞掉、**靜默丟掉 31 條**非 ASCII 名稱的測試）、CI 補上自我列舉的 shellcheck。
 bash 3.2 的覆蓋改由本機 `ENV-EQ-19` 接手（逐版本實跑 `scripts/ci/*.sh`）。
+**⚠️ 但這條只在「本機真的裝了 3.2」時有效**（本機 macOS 的 `/bin/bash` 就是 3.2，故 5.3.20＋3.2.57
+兩個版本都跑到）；**CI 兩 leg 已無 3.2**（ubuntu 是 5.x、macOS 已改用 brew bash 5），所以
+「CI 也能擋 3.2 專屬 bug」**不成立**——那是換取「macOS leg 跑得完 576 條」的必要取捨，已在此揭露。
 
 ### 可選：dav-wiki 媒體提取的測試依賴
 

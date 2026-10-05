@@ -793,7 +793,7 @@ PYEOF
     echo "FAIL: 抓不到 ci.yml 的 test job 區塊（anchor 漂移？）" >&2
     return 1
   }
-  printf '%s\n' "$block" | grep -qF "shellcheck -x -S style \$(git ls-files '*.sh' '*.bash')" || {
+  printf '%s\n' "$block" | sed 's/#.*$//' | grep -qF "shellcheck -x -S style \$(git ls-files '*.sh' '*.bash')" || {
     echo "FAIL: test job 沒有跑「自我列舉的 shellcheck」（NYH-6 決策 A）" >&2
     return 1
   }
@@ -801,12 +801,17 @@ PYEOF
     echo "FAIL: Verify bash syntax 還是硬編子集 glob（漏 install.sh／lib／scripts/ci／PoC／helpers）" >&2
     return 1
   fi
-  printf '%s\n' "$block" | grep -qF "git ls-files '*.sh' '*.bash'" || {
+  printf '%s\n' "$block" | sed 's/#.*$//' | grep -qF "git ls-files '*.sh' '*.bash'" || {
     echo "FAIL: 找不到自我列舉語法檢查（預期 git ls-files '*.sh' '*.bash'）" >&2
     return 1
   }
-  # 反假綠：這兩步不得用 || true / continue-on-error 裝飾
-  if printf '%s\n' "$block" | grep -qE '\|\|[[:space:]]*true|continue-on-error'; then
+  # 下限（reviewer round L P2-1）：語法步驟必須有列舉下限，列舉空掉時不得印 OK 假綠
+  printf '%s\n' "$block" | sed 's/#.*$//' | grep -qE '\[ "\$n" -ge [0-9]+ \]' || {
+    echo "FAIL: Verify bash syntax 沒有列舉下限（git ls-files 空掉時會印 OK: 0 shell files 假綠）" >&2
+    return 1
+  }
+  # 反假綠：這兩步不得用 || true / continue-on-error 裝飾（先剝註解，否則註解提及也會偽紅）
+  if printf '%s\n' "$block" | sed 's/#.*$//' | grep -qE '\|\|[[:space:]]*true|continue-on-error'; then
     echo "FAIL: test job 內出現 || true 或 continue-on-error（假綠構造）" >&2
     return 1
   fi
@@ -844,7 +849,9 @@ PYEOF
     echo "FAIL: 只列舉到 $n 支護欄腳本（防空過；預期 >= 3）" >&2
     return 1
   }
-  local ran=0
+  local ran=0 vcount=0
+  vcount=$(grep -c . "$vers")
+  echo "  本機 bash 版本清單（$vcount 個）：$(cut -f1 "$vers" | tr '\n' ' ')" >&2
   while IFS=$'\t' read -r v bin; do
     for s in $scripts; do
       if out=$(cd "$REPO_ROOT" && env LC_ALL="$loc" "$bin" "$s" 2>&1); then rc=0; else rc=$?; fi
@@ -856,9 +863,12 @@ PYEOF
       ran=$((ran + 1))
     done
   done < "$vers"
-  [ "$ran" -ge 3 ] || {
-    echo "FAIL: 只跑了 $ran 次（防空過）" >&2
+  # 每一個（腳本 × 版本）組合都必須跑到（reviewer round L P2-2）：不然「只跑了一個版本」也會綠
+  [ "$ran" -eq $((n * vcount)) ] || {
+    echo "FAIL: 只跑了 $ran 次，預期 $((n * vcount)) 次（$n 腳本 × $vcount 版本）→ 有組合沒跑到" >&2
     return 1
   }
-  echo "OK: $n 支護欄腳本 × 每個本機 bash 版本（locale=${loc}）共 $ran 次皆 rc=0 且有輸出" >&2
+  # 註：本鎖只保證「每個『本機可用』版本 × 每支腳本都跑到」——若本機沒有 bash 3.x（例如 ubuntu CI），
+  #     就不會有 3.2 覆蓋；CI 的 macOS leg 改用 bash 5 後亦同（已揭露於 install-reference.md）。
+  echo "OK: $n 支護欄腳本 × $vcount 個本機 bash 版本（locale=${loc}）共 $ran 次皆 rc=0 且有輸出" >&2
 }
