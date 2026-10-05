@@ -259,18 +259,21 @@ SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）總共會紅 44 條**（2026-10-05 實測：`532 ok / 44 not ok`，@ `f600385` 之後；532 + 44 = 576 條。
-> 較早量測：`529 ok / 44 not ok` @ `cd0a41c`，當時套件是 573 條；`6ca7cfb`／`8f3639c` 同值）：
-> - `v2.1-jev-poc.bats` 40 + `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
-> - `poc-bootstrap.bats` 1（TMO-038 的 CI 契約語意斷言，PyYAML 解 workflow）
-> - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）。
+> **clean clone（無 venv）總共會紅 43 條**（2026-10-05 實測（TMO-040 後）：`542 ok / 43 not ok`，套件共 585 條。
+> 43 ＝ `v2.1-jev-poc.bats` 40 ＋ `poc-clean-clone.bats` 2（CLEAN-POC-f/i）＋ `env-equivalence.bats` 1（ENV-EQ-7）。
+> 較早量測：`532 ok / 44 not ok` @ `f600385` 之後（576 條；當時多 1 條 = `poc-bootstrap.bats` 的 PyYAML 斷言，
+> 因該機 `python3` 無 PyYAML；本機 python3 剛好有 → 現在是 43。缺 PyYAML 的機器仍會是 44）：
+> - `v2.1-jev-poc.bats` 40
+> - `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
+> - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）
+> - `poc-bootstrap.bats` 1（**只在缺 PyYAML 的機器上紅**：TMO-038 的 CI 契約語意斷言用 PyYAML 解 workflow）
 > 全部都是**紅＋修復指令**（不 skip）；`tests/poc-bootstrap.bats` 那條是刻意取捨：
 > 字串比對看不到 trigger／步驟先後／矩陣，而 CI 的執行次序保證了 venv 先建好。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（19 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **576 條**；
-CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **579 條**：
+`tests/env-equivalence.bats`（19 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **585 條**；
+CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **588 條**：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|

@@ -5,11 +5,16 @@
 # 目的（TMO-029）：clean clone 後 `bats tests/` 不再 38 條全紅（venv-dependent）——一行就能把環境建起來。
 #
 # 用法：
-#   bash skills/regression-guard/PoC/setup-venv.sh          # 建/更新 .venv
-#   bash skills/regression-guard/PoC/setup-venv.sh --force  # 砍掉重建
+#   bash skills/regression-guard/PoC/setup-venv.sh               # 建/更新 .venv
+#   bash skills/regression-guard/PoC/setup-venv.sh --force       # 砍掉重建（預設路徑免確認）
+#   bash skills/regression-guard/PoC/setup-venv.sh --force --yes # 自訂 POC_VENV_DIR 時的非互動豁免
 #
 # 依賴：uv（最快，若有）或 python3（-m venv）—— uv 非必要。
 # 環境變數 POC_VENV_DIR 可覆寫 venv 位置（探針用），預設 PoC/.venv。
+# ⚠️ 破壞性護欄（TMO-040 / NYH-5 方案 A）：--force 會 `rm -rf "$VENV_DIR"`，因此
+#   ①危險清單（`$HOME` 本體、`/private/tmp`、`/usr`、`/etc` 等）即使 --force 也拒；
+#   ②自訂 POC_VENV_DIR 且目錄已存在時，--force 需輸入目錄名二次確認（--yes 豁免）。
+#   守門探針：tests/poc-venv-guard.bats
 # 註：本 repo 的探針另需 python >= 3.10（取 sys.stdlib_module_names）；httpx/PyYAML 本身不挑版本。
 # 退出碼：0 成功 / 1 參數或環境問題（含建不出 venv）/ 2 安裝或驗證失敗
 
@@ -19,17 +24,21 @@ POC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="${POC_VENV_DIR:-$POC_DIR/.venv}"
 REQ="$POC_DIR/requirements.txt"
 FORCE=0
+YES=0
 
 for arg in "$@"; do
     case "$arg" in
         --force|-f) FORCE=1 ;;
+        # 非互動豁免：只對「自訂 POC_VENV_DIR 的 --force 二次確認」生效，
+        # 不能繞過危險清單（見下方 _is_dangerous_venv_dir）。
+        --yes|-y) YES=1 ;;
         -h|--help)
             # 印檔頭註解區塊（不用硬編行號，表頭長度改了不會漂移）
             awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "${BASH_SOURCE[0]}"
             exit 0
             ;;
         *)
-            echo "ERROR: 未知參數 ${arg}（可用：--force / --help）" >&2
+            echo "ERROR: 未知參數 ${arg}（可用：--force / --yes / --help）" >&2
             exit 1
             ;;
     esac
@@ -55,7 +64,65 @@ case "$VENV_DIR" in
     */|*/./*|*/../*|*/..|*/.|*//*) _reject_venv_dir "$VENV_DIR" ;;
 esac
 
+# 危險清單護欄（TMO-040 / NYH-5 方案 A）：結構合法的路徑仍可能「合法但危險」——
+# `POC_VENV_DIR=$HOME --force` 會把家目錄整個 rm -rf；`/private/tmp`、`/usr`、`/etc` 同理。
+# 只做「整條路徑完全相等」比對：子路徑（例：`$HOME/projects/x`、`/opt/venvs/x`）仍允許——
+# 那通常是使用者明示的自訂位置，且 --force 另有目錄名二次確認把關。
+# `--force` / `--yes` 都**不能**繞過這一關。
+# 兩個字面比對的繞道已堵（TMO-040 自審發現，各有反向探針）：
+#   ①`HOME` 結尾斜線：`HOME=/Users/x/` 會讓 `/Users/x` 字面不相等 → `_home_norm` 去尾斜線。
+#   ②symlink 祖先：`ln -s "$HOME" /tmp/e` 後 `/tmp/e/Documents` 字面看不到家目錄，`rm -rf` 卻會
+#     沿著連結刪到真目錄 → 存在的目錄再用 `pwd -P` 取物理路徑比對一次（兩邊都正規化）。
+_reject_dangerous_venv_dir() {
+    echo "ERROR: VENV_DIR=${1} 命中危險清單（POC_VENV_DIR 護欄：$HOME 本體、/private/tmp、/usr、/etc 等系統或使用者資料目錄）→ 即使 --force 也拒絕" >&2
+    exit 1
+}
+_resolve_dir() {
+    (cd "$1" 2>/dev/null && pwd -P) || printf '%s' "$1"
+}
+_home_norm="${HOME%/}"
+_home_resolved="$(_resolve_dir "$_home_norm")"
+_is_dangerous_venv_dir() {
+    case "$1" in
+        /|/bin|/sbin|/usr|/etc|/var|/tmp|/opt|/private|/private/etc|/private/tmp|/private/var|/dev|/cores|/Network|/Library|/System|/Applications|/Users|/Volumes|/home|/root)
+            return 0 ;;
+    esac
+    for _h in "$_home_norm" "$_home_resolved"; do
+        [ -n "$_h" ] || continue
+        case "$1" in
+            "$_h"|"$_h/Library"|"$_h/.ssh"|"$_h/Desktop"|"$_h/Documents"|"$_h/Downloads"|"$_h/Movies"|"$_h/Music"|"$_h/Pictures"|"$_h/Public")
+                return 0 ;;
+        esac
+    done
+    return 1
+}
+if _is_dangerous_venv_dir "$VENV_DIR"; then
+    _reject_dangerous_venv_dir "$VENV_DIR"
+fi
+if [ -d "$VENV_DIR" ]; then
+    _venv_resolved="$(_resolve_dir "$VENV_DIR")"
+    if [ "$_venv_resolved" != "$VENV_DIR" ] && _is_dangerous_venv_dir "$_venv_resolved"; then
+        _reject_dangerous_venv_dir "$_venv_resolved"
+    fi
+fi
+
 if [ "$FORCE" -eq 1 ] && [ -d "$VENV_DIR" ]; then
+    # 二次確認（TMO-040）：--force 是破壞性的，而 POC_VENV_DIR 由外部指定。
+    # 只在「使用者自訂 POC_VENV_DIR」時要求——預設的 PoC/.venv 是腳本自己算出來的，沒有外部輸入。
+    # --yes 供 CI／非互動腳本豁免；讀不到輸入一律 fail-closed（不刪就退出）。
+    if [ -n "${POC_VENV_DIR:-}" ] && [ "$YES" -eq 0 ]; then
+        _base="$(basename "$VENV_DIR")"
+        printf '將移除既有目錄：%s\n請輸入目錄名 [%s] 以確認（非互動請改用 --yes）：' "$VENV_DIR" "$_base" >&2
+        if ! IFS= read -r _answer; then
+            printf '\n' >&2
+            echo "ERROR: 讀不到確認輸入（非互動環境請加 --yes）" >&2
+            exit 1
+        fi
+        if [ "$_answer" != "$_base" ]; then
+            echo "ERROR: 確認失敗（輸入 '${_answer}' != 目錄名 '${_base}'）→ 未刪除任何東西" >&2
+            exit 1
+        fi
+    fi
     echo "==> --force：移除既有 ${VENV_DIR}"
     rm -rf "$VENV_DIR"
 fi

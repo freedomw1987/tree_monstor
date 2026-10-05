@@ -34,7 +34,7 @@ PoC/
 ├─ journeys/
 │  └─ US-101.yaml        # 產出的人類可讀 journey spec（要進 git）
 ├─ requirements.txt      # 執行期依賴（httpx / PyYAML）—— 唯一來源
-├─ setup-venv.sh         # 一鍵建 venv + 裝 requirements.txt（優先 uv，否則 python3 -m venv）
+├─ setup-venv.sh         # 一鍵建 venv + 裝 requirements.txt（優先 uv，否則 python3 -m venv；--force 有破壞性護欄）
 ├─ cache/
 │  ├─ fixture_helper.py  # 預塞假 Jev 回應（沒 key 時 demo 用）
 │  └─ *.json             # 自動 cache（gitignored）
@@ -50,12 +50,23 @@ cd skills/regression-guard/PoC
 # 1. 建 venv 並裝依賴（httpx + PyYAML）；有 uv 用 uv，沒有就 python3 -m venv
 bash setup-venv.sh
 
+# 1b.（可選）--force 砍掉重建
+bash setup-venv.sh --force                                   # 預設 .venv：直接重建
+POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force           # 自訂目錄：要你輸入 `venv` 確認
+POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force --yes     # 非互動（腳本）免除二次確認
+
 # 2. seed 預塞假 Jev 回應
 .venv/bin/python cache/fixture_helper.py
 
 # 3. 跑 oracle demo（4 條 AC、4 種 verdict）
 .venv/bin/python example_run.py
 ```
+
+> **⚠️ 破壞性護欄（TMO-040 / NYH-5 方案 A）**：`--force` 會 `rm -rf "$VENV_DIR"`，所以腳本擋兩層：
+> ①**危險清單**（`$HOME` 本體、`$HOME/Documents`、`/private/tmp`、`/usr`、`/etc` …）命中即拒，
+> **`--force` 與 `--yes` 都不能繞過**（`HOME` 帶尾斜線、symlink 祖先這兩種字面繞道也堵了：
+> 存在的目錄另用 `pwd -P` 物理路徑比對一次）；②自訂 `POC_VENV_DIR` 且目錄已存在時，`--force` 需
+> **輸入目錄名**確認（讀不到輸入一律「不刪就退出」）。守門探針：`tests/poc-venv-guard.bats`（9 條）。
 
 會看到：
 

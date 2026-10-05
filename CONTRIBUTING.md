@@ -50,6 +50,8 @@ npm install -g markdownlint-cli2
 ```bash
 # 建 PoC venv（httpx + PyYAML；v2.1-jev-poc.bats 的 38 條需要）
 bash skills/regression-guard/PoC/setup-venv.sh
+# 重建：--force 會 rm -rf 目標目錄（TMO-040 護欄：危險路徑如 $HOME、/private/tmp、/usr
+# 直接拒；自訂 POC_VENV_DIR 且目錄已存在時需輸入目錄名確認，非互動腳本加 --yes）
 
 # 跑全套 bats tests
 bats tests/
