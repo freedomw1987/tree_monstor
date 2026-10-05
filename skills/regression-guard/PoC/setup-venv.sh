@@ -8,11 +8,13 @@
 #   bash skills/regression-guard/PoC/setup-venv.sh               # 建/更新 .venv
 #   bash skills/regression-guard/PoC/setup-venv.sh --force       # 砍掉重建（預設路徑免確認）
 #   bash skills/regression-guard/PoC/setup-venv.sh --force --yes # 自訂 POC_VENV_DIR 時的非互動豁免
+#   bash skills/regression-guard/PoC/setup-venv.sh --check-danger <path> # 純查詢：<path> 是否命中危險清單（rc 1=危險）
 #
 # 依賴：uv（最快，若有）或 python3（-m venv）—— uv 非必要。
 # 環境變數 POC_VENV_DIR 可覆寫 venv 位置（探針用），預設 PoC/.venv。
 # ⚠️ 破壞性護欄（TMO-040 / NYH-5 方案 A）：--force 會 `rm -rf "$VENV_DIR"`，因此
-#   ①危險清單（`$HOME` 本體、`/private/tmp`、`/usr`、`/etc` 等）即使 --force 也拒；
+#   ①危險清單（`$HOME` 本體、`/private/tmp`、`/usr`、`/etc`，以及容器本體直接子項
+#     `/Users/*`、`/Volumes/*`、`/home/*`；層數==2 才拒，更深的 `/Users/me/projects` 仍放行）即使 --force 也拒；
 #   ②自訂 POC_VENV_DIR 且目錄已存在時，--force 需輸入目錄名二次確認（--yes 豁免）。
 #   守門探針：tests/poc-venv-guard.bats
 # 註：本 repo 的探針另需 python >= 3.10（取 sys.stdlib_module_names）；httpx/PyYAML 本身不挑版本。
@@ -26,28 +28,40 @@ REQ="$POC_DIR/requirements.txt"
 FORCE=0
 YES=0
 
-for arg in "$@"; do
+CHECK_DANGER=""
+while [ "$#" -gt 0 ]; do
+    arg="$1"
     case "$arg" in
         --force|-f) FORCE=1 ;;
         # 非互動豁免：只對「自訂 POC_VENV_DIR 的 --force 二次確認」生效，
         # 不能繞過危險清單（見下方 _is_dangerous_venv_dir）。
         --yes|-y) YES=1 ;;
+        # 純查詢 seam（TMO-056）：判斷 <path> 是否命中危險清單、**不寫任何檔**；
+        # 讓探針在無可寫入同構路徑的環境（Linux CI）也能驗 allow/reject 兩側。
+        --check-danger)
+            shift
+            CHECK_DANGER="${1:-}"
+            [ -n "$CHECK_DANGER" ] || { echo "ERROR: --check-danger 需要一個路徑" >&2; exit 2; }
+            ;;
         -h|--help)
             # 印檔頭註解區塊（不用硬編行號，表頭長度改了不會漂移）
             awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "${BASH_SOURCE[0]}"
             exit 0
             ;;
         *)
-            echo "ERROR: 未知參數 ${arg}（可用：--force / --yes / --help）" >&2
+            echo "ERROR: 未知參數 ${arg}（可用：--force / --yes / --check-danger <path> / --help）" >&2
             exit 1
             ;;
     esac
+    shift
 done
 
-[ -f "$REQ" ] || {
-    echo "ERROR: 缺 ${REQ}" >&2
-    exit 1
-}
+if [ -z "$CHECK_DANGER" ]; then
+    [ -f "$REQ" ] || {
+        echo "ERROR: 缺 ${REQ}" >&2
+        exit 1
+    }
+fi
 
 # 護欄（reviewer Round-2 P2 / Round-3 P1）：POC_VENV_DIR 由外部指定，而 --force 會 `rm -rf "$VENV_DIR"`。
 # 需要：非空、絕對、至少兩層、且不含結尾斜線或 `.` / `..` 段
@@ -56,13 +70,15 @@ _reject_venv_dir() {
     echo "ERROR: 可疑的 VENV_DIR=${1}（POC_VENV_DIR 護欄：需為非空、絕對、至少兩層、且無結尾斜線或 . / .. 段）" >&2
     exit 1
 }
-case "$VENV_DIR" in
-    ""|/*/*) : ;;
-    *) _reject_venv_dir "$VENV_DIR" ;;
-esac
-case "$VENV_DIR" in
-    */|*/./*|*/../*|*/..|*/.|*//*) _reject_venv_dir "$VENV_DIR" ;;
-esac
+if [ -z "$CHECK_DANGER" ]; then
+    case "$VENV_DIR" in
+        ""|/*/*) : ;;
+        *) _reject_venv_dir "$VENV_DIR" ;;
+    esac
+    case "$VENV_DIR" in
+        */|*/./*|*/../*|*/..|*/.|*//*) _reject_venv_dir "$VENV_DIR" ;;
+    esac
+fi
 
 # 危險清單護欄（TMO-040 / NYH-5 方案 A）：結構合法的路徑仍可能「合法但危險」——
 # `POC_VENV_DIR=$HOME --force` 會把家目錄整個 rm -rf；`/private/tmp`、`/usr`、`/etc` 同理。
@@ -77,7 +93,7 @@ esac
 #     但字面不相等；`pwd -P` 也保留使用者輸入的大小寫（實測：`cd /private/TMP && pwd -P`
 #     → `/private/TMP`）→ 兩邊都 `_lower` 後再比。
 _reject_dangerous_venv_dir() {
-    echo "ERROR: VENV_DIR=${1} 命中危險清單（POC_VENV_DIR 護欄：$HOME 本體、/private/tmp、/usr、/etc 等系統或使用者資料目錄）→ 即使 --force 也拒絕" >&2
+    echo "ERROR: VENV_DIR=${1} 命中危險清單（POC_VENV_DIR 護欄：$HOME 本體、/private/tmp、/usr、/etc 等系統或使用者資料目錄，以及容器本體直接子項 /Users/*、/Volumes/*、/home/*）→ 即使 --force 也拒絕" >&2
     exit 1
 }
 _resolve_dir() {
@@ -95,6 +111,17 @@ _is_dangerous_venv_dir() {
         /|/bin|/sbin|/usr|/etc|/var|/tmp|/opt|/private|/private/etc|/private/tmp|/private/var|/dev|/cores|/network|/library|/system|/applications|/users|/volumes|/home|/root)
             return 0 ;;
     esac
+    # 容器本體的直接子項（TMO-056）：/Users/<x>、/Volumes/<x>、/home/<x> 且層數 == 2，
+    # 就是「整顆碟／整個家目錄」層級（`rm -rf /Volumes/Backup` 會清空整顆碟）→ 拒；
+    # 更深的路徑（`/Users/me/projects/x`）仍放行。
+    case "$_d" in
+        /users/*|/volumes/*|/home/*)
+            case "${_d#/}" in
+                */*/*) : ;;       # 3 段以上 → 放行
+                */*) return 0 ;;  # 恰好 2 段（容器本體 + 一個直接子項）→ 拒
+            esac
+            ;;
+    esac
     for _h in "$_home_norm" "$_home_resolved"; do
         [ -n "$_h" ] || continue
         _h="$(_lower "$_h")"
@@ -107,17 +134,41 @@ _is_dangerous_venv_dir() {
 }
 # 兩次呼叫：①在二次確認之前（早拒，不浪費使用者輸入）②`rm -rf` 正前方（
 # 縮小 TOCTOU 窗——確認的 `read` 可能無限期阻塞，期間中間層目錄可被換成 symlink）。
-_assert_safe_venv_dir() {
-    if _is_dangerous_venv_dir "$VENV_DIR"; then
-        _reject_dangerous_venv_dir "$VENV_DIR"
+# 危險判定（TMO-056 seam 共用）：rc=0＝命中危險清單、rc=1＝安全；
+# 命中時把「命中的那條路徑」放 stdout（可能是字面，或存在目錄解析後）。
+# 只判定、不 exit——生產路徑的訊息與退出交給 _reject_dangerous_venv_dir。
+_dangerous_path() {
+    local _p="$1" _r
+    if _is_dangerous_venv_dir "$_p"; then
+        printf '%s' "$_p"; return 0
     fi
-    if [ -d "$VENV_DIR" ]; then
-        _venv_resolved="$(_resolve_dir "$VENV_DIR")"
-        if [ "$_venv_resolved" != "$VENV_DIR" ] && _is_dangerous_venv_dir "$_venv_resolved"; then
-            _reject_dangerous_venv_dir "$_venv_resolved"
+    if [ -d "$_p" ]; then
+        _r="$(_resolve_dir "$_p")"
+        if [ "$_r" != "$_p" ] && _is_dangerous_venv_dir "$_r"; then
+            printf '%s' "$_r"; return 0
         fi
     fi
+    return 1
 }
+_assert_safe_venv_dir() {
+    local _m
+    if _m="$(_dangerous_path "$VENV_DIR")"; then
+        _reject_dangerous_venv_dir "$_m"
+    fi
+}
+
+# --check-danger（TMO-056 seam）：純查詢，不建 venv、不寫檔、不做二次確認；
+# rc0＝**未命中危險清單**（不含結構護欄）、rc1＝命中。
+# 與生產路徑共用同一個 _dangerous_path，避免兩份判定邏輯漂移。
+if [ -n "$CHECK_DANGER" ]; then
+    if _dangerous_path "$CHECK_DANGER" >/dev/null; then
+        echo "dangerous: $CHECK_DANGER"
+        exit 1
+    fi
+    echo "safe: $CHECK_DANGER"
+    exit 0
+fi
+
 _assert_safe_venv_dir
 
 if [ "$FORCE" -eq 1 ] && [ -d "$VENV_DIR" ]; then

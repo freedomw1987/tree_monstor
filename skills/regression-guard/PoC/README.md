@@ -63,11 +63,12 @@ POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force --yes     # 非互動（腳�
 ```
 
 > **⚠️ 破壞性護欄（TMO-040 / NYH-5 方案 A）**：`--force` 會 `rm -rf "$VENV_DIR"`，所以腳本擋兩層：
-> ①**危險清單**（`$HOME` 本體、`$HOME/Documents`、`/private/tmp`、`/usr`、`/etc` …）命中即拒，
+> ①**危險清單**（`$HOME` 本體、`$HOME/Documents`、`/private/tmp`、`/usr`、`/etc` …，以及容器本體直接子項
+> `/Users/<x>`、`/Volumes/<碟>`、`/home/<x>`（層數==2，TMO-056））命中即拒，
 > **`--force` 與 `--yes` 都不能繞過**（`HOME` 帶尾斜線、symlink 祖先、大小寫變體
 > （`/private/TMP` 在 macOS 就是 `/private/tmp`）這三種字面繞道也堵了：存在的目錄另用
 > `pwd -P` 取物理路徑比對一次，兩邊都比對前先轉小寫）；②自訂 `POC_VENV_DIR` 且目錄已存在時，`--force` 需
-> **輸入目錄名**確認（讀不到輸入一律「不刪就退出」）。守門探針：`tests/poc-venv-guard.bats`（10 條）。
+> **輸入目錄名**確認（讀不到輸入一律「不刪就退出」）。守門探針：`tests/poc-venv-guard.bats`（12 條）。
 
 會看到：
 

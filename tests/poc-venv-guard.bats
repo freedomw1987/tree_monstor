@@ -308,7 +308,7 @@ SHIM
   # 通過其他測試（例如 --force 未觸發），次序鎖讓那種搬移立刻紅。
   local sh="$SH"
   local danger confirm recheck rm_line
-  danger="$(grep -nE '^[^#]*_reject_dangerous_venv_dir "\$VENV_DIR"' "$sh" | head -1 | cut -d: -f1)"
+  danger="$(grep -nE '^[^#]*_dangerous_path "\$VENV_DIR"' "$sh" | head -1 | cut -d: -f1)"
   confirm="$(grep -nE '^[^#]*read -r _answer' "$sh" | head -1 | cut -d: -f1)"
   recheck="$(grep -nE '^[^#]*_assert_safe_venv_dir$' "$sh" | tail -1 | cut -d: -f1)"
   rm_line="$(grep -nE '^[[:space:]]*rm -rf "\$VENV_DIR"' "$sh" | head -1 | cut -d: -f1)"
@@ -329,4 +329,41 @@ SHIM
     echo "FAIL: 刪前重驗在第 ${recheck} 行，不在二次確認（${confirm}）與 rm -rf（${rm_line}）之間 → TOCTOU 窗全開" >&2
     return 1
   }
+}
+
+@test "POC-VENV-GUARD: direct children of container roots are refused (TMO-056)" {
+  # /Users/<x>、/Volumes/<x>、/home/<x> 屬「整顆碟／整個人」層級；即使結構合法（兩層）也拒。
+  # 用 --check-danger 純查詢（不寫檔）才能在 Linux CI 用字面路徑驗 allow/reject 兩側。
+  local bad
+  for bad in /Users/other /Volumes/Backup /home/other; do
+    run bash "$SH" --check-danger "$bad"
+    [ "$status" -eq 1 ] || {
+      echo "FAIL: ${bad} 未命中危險清單（rc=${status}）" >&2
+      echo "$output" >&2
+      return 1
+    }
+    [[ "$output" == *"dangerous:"* ]] || {
+      echo "FAIL: $bad 被拒但不是危險清單擋的（--check-danger 未生效？）" >&2
+      echo "$output" >&2
+      return 1
+    }
+  done
+}
+
+@test "POC-VENV-GUARD: deeper paths under container roots stay allowed (TMO-056 allow side)" {
+  # allow 側：層數 >= 3 的合法自訂路徑仍放行（不得過度阻擋）。
+  local ok
+  for ok in /Users/me/projects /Users/me/projects/x /Volumes/Backup/sub /home/me/venv /opt/venvs/x; do
+    run bash "$SH" --check-danger "$ok"
+    [ "$status" -eq 0 ] || {
+      echo "FAIL: ${ok} 被過度阻擋（rc=${status}，應放行）" >&2
+      echo "$output" >&2
+      return 1
+    }
+    [[ "$output" == *"safe:"* ]] || {
+      echo "FAIL: $ok 未被 --check-danger 判定為 safe" >&2
+      echo "$output" >&2
+      return 1
+    }
+  done
 }

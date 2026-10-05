@@ -135,13 +135,14 @@ OCR（缺 tesseract 走 mock placeholder）為唯一例外；`wiki-ocr.sh` usage
   **抉擇理由（2026-10-05）**：保留「自訂目錄」能力（先給空目錄的合法用法），只擋最常見手誤；
   選項 B（只允許空／像 venv）會破壞既有合法流程，選項 C 等於沒護欄。
   ✅ **已實作並經二審**：commit `b2a775b`（Round-1 `approve-with-comments`）＋ Round-2 修 1×P2/3×P3
-  （大小寫變體 `/private/TMP` 繞道、刪前重驗 TOCTOU、文件舊數字）→ 探針 `tests/poc-venv-guard.bats` **10 條**。
-  遺留缺口（不阻 merge）：`/Volumes/<碟>` 這種一層子項未入清單 → 已開 **TMO-056**。
+  （大小寫變體 `/private/TMP` 繞道、刪前重驗 TOCTOU、文件舊數字）→ 探針 `tests/poc-venv-guard.bats` **12 條**。
+  遺留缺口（不阻 merge）：`/Volumes/<碟>` 這種一層子項未入清單 → **✅ 2026-10-05 TMO-056 已完成**
+  （`--check-danger` seam ＋ 容器直接子項規則，探針 10→12）。
   ✅ **backlog 已同步**：TMO-040 狀態 `待決（NYH-5）` → `doing (2026-10-05)` → `done (2026-10-05)`（見 `docs/backlog.md`）。
 
 **✅ 已結案（TMO-040，2026-10-05）**：`setup-venv.sh` 的 `POC_VENV_DIR` guard 原本只擋 `/`、`/tmp/` 這類；
 指到合法但危險的目錄（例：`$HOME`、`/private/tmp`，≥2 層絕對路徑）＋ `--force` 仍會 `rm -rf`。
-現已加危險清單＋二次確認（commit `b2a775b` ＋ Round-2 補正），探針 10 條。遺留 `TMO-056`（容器一層子項）。
+現已加危險清單＋二次確認（commit `b2a775b` ＋ Round-2 補正），探針 12 條。`TMO-056`（容器一層子項）已於 2026-10-05 完成。
 
 **最推薦 A：危險清單（`$HOME` 本體、`/private/tmp`、`/usr`…）＋ `--force` 需輸入目錄名二次確認** —
 原因：保留自訂目錄能力，同時擋掉最常見手滑；代價：`--force` 互動語意改變（CI 用 `--yes` 需一併豁免）。
