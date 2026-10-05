@@ -94,7 +94,8 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 | 預測性 token < 2k | 大檔案例外可全文 | 預設用 `_index.json` 比對 |
 | 寫入失敗 rollback | N/A | temp file + rename 模式 |
 | OCR / 字幕為擴充模組 | 預設僅支援核心三來源（純文字 / Office / 網頁） | 需另裝 tesseract / yt-dlp |
-| FR-2 多模組需 poppler / ffmpeg / Whisper | 未裝時降級為純文字模式 | 降級時必警告 |
+| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字 | 唯一例外：OCR 未裝 tesseract → 自動用 mock placeholder（有 WARN，見 `./scripts/wiki-ocr.sh`）|
+| Whisper / Vision 模組（`./scripts/wiki-media-describe.sh`）| real 模式尚未實作：要 `--mock` 或 `DAV_WIKI_MOCK=1`；目前失敗仍回 rc 0＝**假成功**（追蹤 TMO-058）| 這與「未裝工具」無關，不要期待安裝提示 |
 
 ## 輸出結構
 
@@ -110,10 +111,12 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 ## 變動歷史
 
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
+完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條 + v2.0 首版錨點
+（`tests/restruct-dav-wiki.bats` 需要）以節省 LLM 注意力。
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2.1 | 2026-10-05 | 限制表對齊現實：缺必要工具＝該模組直接停（`exit 4`），不降級成純文字；OCR mock 為唯一例外 | TMO-035：文實矛盾 |
 | v2.2 | 2026-10-04 | 主檔瘦身 151 → 129 行（輸出結構 / 軟刪除細節移子檔：`output-structure.md` / `soft-delete.md`）| TMO-028：V03.5 主檔 ≤130 預檢 |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 6：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |

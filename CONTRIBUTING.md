@@ -79,6 +79,15 @@ bats tests/wiki-cleanup.bats --filter "E1"
 > `CLEAN-POC-h` 另鎖「`PoC/.env` 與 `PoC/cache/` 不得被 git 追蹤」，
 > `CLEAN-POC-i` 則反向驗證 `JEV_ENV_FILE` seam 真的封得住兩個 .env 來源。
 >
+> **探針輸出不得外洩密鑰**（TMO-053 / NYH-2）：任何把「被測程式的輸出」寫進 FAIL 訊息或 log 的
+> 地方，都要先過共用 helper 的 `mask_secrets`（`tests/helpers/test-env.bash`；其他檔不得自己
+> 再定義一份）。靜態鎖 `scripts/ci/lint-probe-secrets.py`（鎖 4）會擋真 `sk-or-v1-` 前綴、擋「碰
+> `_load_api_key` 卻整檔沒有遮罩呼叫（註解提到名字不算）」、擋「FAIL 訊息直接展開 `$output` /
+> `${output}`」、擋「在共用 helper 以外重新定義 `mask_secrets`」。斷言需要的假字面（例如
+> `*"sk-or-v1-"*` 樣式）在該行標 `SECRET-OK: <理由>` 就地豁免。
+> 標記是**顯式、可 grep 的人工豁免**，不是自動防濫用——它只擋「標在無關行」與「沒寫理由」，
+> 審查時請以掃描器印出的標記總數當錨點。
+>
 > 本機想驗 CI 等價：`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome JEV_ENV_FILE=/dev/null bats tests/`
 > （本機有 key 或 `.env` 會讓依賴 oracle 的探針假綠）。
 

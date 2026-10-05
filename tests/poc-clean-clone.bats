@@ -26,10 +26,8 @@ load 'helpers/test-env'
 POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
 
 # FAIL 訊息不得外洩密鑰（reviewer round-A P1：CLEAN-POC-i 的失敗訊息曾把本機真 key 印進 log）。
-# 任何要 echo 出去的「被測程式輸出」都先過這一層。
-mask_secrets() {
-  sed -E 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g'
-}
+# 遮罩函式已移到共用 helper（`tests/helpers/test-env.bash` 的 `mask_secrets`，TMO-053），
+# 本檔不再自己定義一份——免得只遮一半。任何要 echo 出去的「被測程式輸出」都先過那一層。
 
 @test "CLEAN-POC-a: every journey source resolves relative to PoC (no absolute path)" {
   cd "$REPO_ROOT"

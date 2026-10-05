@@ -17,15 +17,15 @@ if [[ "${DAV_WIKI_MOCK:-}" == "1" ]]; then
     FORCE_MOCK=true
 fi
 
-# === 錯誤碼 ===
+# 錯誤碼
+# TMO-035 決策（2026-10-05，V03 二審）：OCR **不走硬退 4**——未裝 tesseract 時自動
+# 改用 mock placeholder（下方 WARN），這是本檔明示且被測的降級路徑
+# （tests/wiki-ocr.bats AC-O3）。與 audio / media / video 三支的 `require_tool()`
+# 硬退 4 不同：那些模組缺工具就直接停、不降級（見 skills/dav-wiki/SKILL.md 限制表）。
+# 原本保留的 `exit 4` 常數在本檔沒有任何呼叫點 → 隨決策一併移除（不再留死碼）。
 EXIT_OK=0
 EXIT_USAGE=1
 EXIT_NOINPUT=2
-# EXIT_TOOLMISSING：usage 已承諾 exit 4 =「必要工具缺失（且未啟 mock）」，
-# 但現行行為是自動降級為 mock（見下方 WARN）。「硬退 4 or 降級」屬 TMO-035 的決策，
-# 這裡保留常數不動（TMO-043 只清確定性的死碼）。
-# shellcheck disable=SC2034
-EXIT_TOOLMISSING=4
 
 # === 使用說明 ===
 usage() {
@@ -59,10 +59,12 @@ Output JSON:
   }
 
 Exit codes:
-  0  成功
+  0  成功（含未裝 tesseract 時自動降級為 mock）
   1  用法錯誤
   2  輸入檔案 / 目錄不存在
-  4  必要工具缺失（且未啟 mock）
+
+未裝 tesseract 時不會失敗：自動改用 mock placeholder（stderr 帶 WARN）。
+若你要「缺工具就停」，那是 wiki-extract-{audio,media,video}.sh 的行為（exit 4）。
 
 對應手冊: docs/prd/03-knowledge-extraction.md (FR-3.4)
 EOF

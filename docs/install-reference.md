@@ -259,7 +259,7 @@ SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）總共會紅 43 條**（2026-10-05 實測（TMO-040 後）：`543 ok / 43 not ok`，套件共 586 條。
+> **clean clone（無 venv）總共會紅 43 條**（2026-10-05 實測（TMO-035/053 後）：`557 ok / 43 not ok`，套件共 600 條。
 > 43 ＝ `v2.1-jev-poc.bats` 40 ＋ `poc-clean-clone.bats` 2（CLEAN-POC-f/i）＋ `env-equivalence.bats` 1（ENV-EQ-7）。
 > 較早量測：`532 ok / 44 not ok` @ `f600385` 之後（576 條；當時多 1 條 = `poc-bootstrap.bats` 的 PyYAML 斷言，
 > 因該機 `python3` 無 PyYAML；本機 python3 剛好有 → 現在是 43。缺 PyYAML 的機器仍會是 44）：
@@ -272,8 +272,8 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（19 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **586 條**；
-CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **589 條**：
+`tests/env-equivalence.bats`（19 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **600 條**；
+CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **603 條**：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|
@@ -298,10 +298,12 @@ CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起�
 | ENV-EQ-19 | `scripts/ci/*.sh` 在**每一個本機可用** bash 版本 × 每支腳本（組合數必須全部跑到）＋UTF-8 locale 下都必須 rc=0 且有輸出 | bash 多版本 |
 | （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
 
-三個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py` 與
-`scripts/ci/lint-shell-var-nonascii.py`，都可單獨跑（`--self-test` 驗抽取器本身）。寫檔請用
+四個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py`、
+`scripts/ci/lint-shell-var-nonascii.py` 與 `scripts/ci/lint-probe-secrets.py`（鎖 4：密鑰不得進 FAIL
+訊息），都可單獨跑（`--self-test` 驗抽取器本身）。寫檔請用
 `$BATS_TEST_TMPDIR`；真的只是「資料引用」（例如壞值清單、故意不存在的路徑）就在該行標 `TMP-OK`
-就地豁免——反向鎖會擋「拿標記當萬用豁免」。
+就地豁免；密鑰字面（例如斷言樣式）同理標 `SECRET-OK: <理由>`——標記必須寫理由，且只擋「標在
+非洩漏行」的濫用（真實語意見掃描器 docstring；審查以印出的標記總數為錨點）。
 
 > ⚠️ **`git ls-files` 型鎖的已知盲點**：`ENV-EQ-14`／`16`／`17` 這類以 `git ls-files` 列舉的鎖，
 > **看不到「還沒 `git add` 的新檔」**。本輪就吃過一次：新鎖檔本身缺檔尾換行，本機全綠、
@@ -328,7 +330,7 @@ CI 補上自我列舉的 shellcheck。
 bash 3.2 的覆蓋改由本機 `ENV-EQ-19` 接手（逐版本實跑 `scripts/ci/*.sh`）。
 **⚠️ 但這條只在「本機真的裝了 3.2」時有效**（本機 macOS 的 `/bin/bash` 就是 3.2，故 5.3.20＋3.2.57
 兩個版本都跑到）；**CI 兩 leg 已無 3.2**（ubuntu 是 5.x、macOS 已改用 brew bash 5），所以
-「CI 也能擋 3.2 專屬 bug」**不成立**——那是換取「macOS leg 跑得完 586 條」的必要取捨，已在此揭露。
+「CI 也能擋 3.2 專屬 bug」**不成立**——那是換取「macOS leg 跑得完 600 條」的必要取捨，已在此揭露。
 
 ### 可選：dav-wiki 媒體提取的測試依賴
 

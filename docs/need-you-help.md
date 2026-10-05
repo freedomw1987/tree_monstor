@@ -26,16 +26,17 @@
 
 ## NYH-2
 
-- [x] ✅ **繼續做（2026-10-05 ask-me）**：做成通則＋靜態鎖。待實作（下一輪）：
-  ①`tests/helpers` 加通用 `mask_secrets()`；②為 oracle 相關探針加靜態鎖（FAIL 訊息不得直接印出
-  `_load_api_key()` 回傳值）；③補反向測試（故意讓探針失敗 → 斷言輸出不含 `sk-or-v1`）。走 V03 二審，估點數 2。
+- [x] ✅ **繼續做（2026-10-05 ask-me）**：做成通則＋靜態鎖。**已完成（2026-10-05）**：
+  ①`mask_secrets()` 上移共用 `tests/helpers/test-env.bash`（`tests/poc-clean-clone.bats` 的本地副本移除）；
+  ②新靜態鎖 `scripts/ci/lint-probe-secrets.py`（鎖 4）：R1 真 `sk-or-v1-` 前綴／R2 碰 `_load_api_key`
+  的檔必須有遮罩能力／R3 FAIL 訊息展開 `$output` 必過遮罩／R4 單一真相＋防空過下限；
+  ③新探針 `tests/secret-masking.bats`（SM-1~5），含**反向實測**：真的讓 `CLEAN-POC-i` 失敗，
+  斷言 bats 輸出不得含密鑰（實測輸出為 `值已遮罩：'sk-***MASKED***'`）。走 V03 二審。
   **抉擇理由（2026-10-05）**：NYH-1 的實際外洩就是這條缺失造成；只修單點無法防止同類探針再犯，
   而靜態鎖能把「不得印出密鑰」變成可回歸的規則。
-  ✅ **backlog 對照：TMO-053**（2026-10-05 開票；狀態 `todo`）。
+  ✅ **backlog 對照：TMO-053**（2026-10-05 完成；狀態 `done (2026-10-05)`）。
 
-**待決（P3 建議，未實作）**：是否把「探針 FAIL 訊息不得印出密鑰」做成通則
-（例：`_load_api_key()` 回傳值在測試輸出前遮罩）。目前只有 CLEAN-POC-i 的失敗訊息會印值。
-未實作原因：屬新規範、需 V03 二審，且與本輪 5 張票無關。
+**已結案**：探針 FAIL 訊息不得印出密鑰的通則已實作（見上），不再只靠單點遮罩。
 
 ## NYH-3
 
@@ -62,16 +63,25 @@
   純文字修正，走 V03 二審後施工。
   **抉擇理由（2026-10-05）**：保留 TMO-025「抽不到檔一律大聲失敗、不得假成功」的紀律；
   降級模式會創造「部分成功」的模糊驗收面，成本（M）與風險都高於直接改文。
-  ✅ **backlog 已同步**：TMO-035 狀態 `待決（NYH-4）` → `doing (2026-10-05)`（見 `docs/backlog.md` 表下註腳）。
+  ✅ **backlog 已同步**：TMO-035 狀態 `待決（NYH-4）` → `done (2026-10-05)`（見 `docs/backlog.md` 表下註腳）。
 
-**待決（TMO-035，文實矛盾）**：`skills/dav-wiki/SKILL.md:94-95` 寫「未安裝時降級為純文字模式」，
-但三支腳本（`wiki-extract-media.sh` / `wiki-extract-video.sh` / `wiki-ocr.sh`）的 `require_tool()`
-是硬 `exit 4`，**沒有降級路徑**。
+✅ **已結案（2026-10-05，TMO-035 ＋ TMO-053 合批、走 V03 二審）**：A 案施工完成——`SKILL.md` 限制表
+改成「缺必要工具（poppler / ffmpeg / pandoc / python-pptx）＝該模組直接 `exit 4` ＋安裝提示」，
+OCR（缺 tesseract 走 mock placeholder）為唯一例外；`wiki-ocr.sh` usage 同步（移除死常數
+`EXIT_TOOLMISSING`）。**衍生 TMO-058**：`wiki-media-describe.sh` real 模式（Whisper / Vision）未實作，
+失敗仍回 rc 0＝假成功；已從「缺工具就停」的承諾中**拆出另列**（不再算缺工具），行為修正另開票。
+探針：`tests/wiki-toolmissing-contract.bats`（WTM-1~9）＋ `tests/secret-masking.bats`（SM-1~5）。
 
-**最推薦 A：改文件對齊現實（只動 SKILL.md 文字，不動行為）** — 原因：零行為風險、矛盾立即消失；
-代價：拿掉「降級」這個承諾（若你其實想要降級，就得選 B）。此案要走 V03 二審。
-- **B：實作降級模式**（缺工具 → 只出文字層 + 警告、exit 0）— 功能變更，要新探針＋新測試，工作量 M。
-- **C：維持現狀** — 不推薦：下次 reviewer 會再抓一次同一條。
+以下為 2026-10-05 當時的提問原文（保留可追溯）：
+
+> **當時的待決（TMO-035，文實矛盾）**：`skills/dav-wiki/SKILL.md:94-95` 寫「未安裝時降級為純文字模式」，
+> 但三支腳本（`wiki-extract-media.sh` / `wiki-extract-video.sh` / `wiki-ocr.sh`）的 `require_tool()`
+> 是硬 `exit 4`，**沒有降級路徑**。
+>
+> **最推薦 A：改文件對齊現實（只動 SKILL.md 文字，不動行為）** — 原因：零行為風險、矛盾立即消失；
+> 代價：拿掉「降級」這個承諾（若你其實想要降級，就得選 B）。此案要走 V03 二審。
+> - **B：實作降級模式**（缺工具 → 只出文字層 + 警告、exit 0）— 功能變更，要新探針＋新測試，工作量 M。
+> - **C：維持現狀** — 不推薦：下次 reviewer 會再抓一次同一條。
 
 **保守默認（trust 期間照此辦理）**：**不修改任何檔案**，只記錄在此（改 skill 語意需你點頭）。
 

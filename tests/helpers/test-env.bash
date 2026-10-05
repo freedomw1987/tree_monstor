@@ -126,6 +126,19 @@ refute_file_body_contains() {
   fi
 }
 
+# mask_secrets
+# 任何「被測程式的輸出」在寫進 FAIL 訊息／log 之前都要先過這一層（TMO-053 / NYH-2）：
+# 2026-10-05 做 TMO-045 反向驗證時，探針 FAIL 訊息把本機真 `OPENROUTER_API_KEY`
+# 印進了 session log。
+# 遮罩範圍：①`sk-…` 形式的金鑰；②`*KEY=…` / `*TOKEN=…` / `*SECRET=…` 的指派值。
+# 單一真相來源：探針檔不得自己再定義一份（靜態鎖 `scripts/ci/lint-probe-secrets.py`
+# 的 R4 ＋ `tests/secret-masking.bats` SM-1 都會擋）。
+mask_secrets() {
+  sed -E \
+    -e 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g' \
+    -e 's/([A-Za-z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Za-z0-9_]*)=[^[:space:]]*/\1=***MASKED***/g'
+}
+
 # create_existing_claude_skills_dir
 # Pre-populate $TEST_HOME/.claude/skills with two fake user skills plus
 # one that will conflict with the source fixture's `conflict-skill`.
