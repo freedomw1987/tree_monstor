@@ -8,7 +8,7 @@
 > **對應 Backlog**: M02-US-201, M02-US-202, M02-US-203, M02-DE-301
 > **Sprint / Module**: Sprint 1 / M02-payment
 > **交付狀態**: ✅ 完成（Module 級交付）
-
+>
 > **本檔為範例**，由 dav-submitter skill v2.2 產出。展示 Module 級交付語法 + §9 Module 級總結。
 
 ---

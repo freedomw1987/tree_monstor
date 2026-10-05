@@ -133,7 +133,8 @@ JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
 # → /tmp/r-final.md 含 Jev 信心度 + LLM relay 文字 + 走跡對照
 ```
 
-**信心度 gating 規則**（[`fix_proposal_v2.py`](../../skills/regression-guard/PoC/fix_proposal_v2.py) `RELAY_GATING_THRESHOLD`）：
+**信心度 gating 規則**（[`fix_proposal_v2.py`](../../skills/regression-guard/PoC/fix_proposal_v2.py)
+`RELAY_GATING_THRESHOLD`）：
 
 | 整體信心度 | 動作 | final report 內容 |
 |---|---|---|
@@ -216,7 +217,8 @@ JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
 
 **Pipeline 整合**：
 
-`JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑 M2→M3→M4→M6→M6.1→M6.2。M6.2 步驟只「產 patch 素材」（`-patches.json`），apply / re-validate 仍需手動在 sandbox 跑（sandbox 限制：不能自動 commit / 不能無人工 apply）。
+`JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑 M2→M3→M4→M6→M6.1→M6.2。M6.2 步驟只「產 patch
+素材」（`-patches.json`），apply / re-validate 仍需手動在 sandbox 跑（sandbox 限制：不能自動 commit / 不能無人工 apply）。
 
 **為什麼 apply + re-validate 不全自動**：
 

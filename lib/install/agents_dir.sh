@@ -1,3 +1,4 @@
+# shellcheck shell=bash  # 被 source 的函式庫（無 shebang），明確告知 shellcheck 目標 shell
 # lib/install/agents_dir.sh — Local .agents/ copy installer + exclusion rules.
 #
 # Source this from install.sh. Defines:

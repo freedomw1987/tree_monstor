@@ -64,12 +64,8 @@ require_tool() {
 }
 
 # === 取得影片 metadata ===
-probe_metadata() {
-    local file="$1"
-    ffprobe -v error -show_entries format=duration:stream=codec_type,codec_name \
-            -of csv=p=0 "$file" 2>/dev/null
-}
-
+# 註：原本這裡有一個 `probe_metadata()`，但它從未被任何地方呼叫（shellcheck SC2329）；
+#     真正在用的是下方的 `get_duration()`。2026-10-05 TMO-043 直接刪除死碼。
 get_duration() {
     ffprobe -v error -show_entries format=duration \
             -of csv=p=0 "$1" 2>/dev/null

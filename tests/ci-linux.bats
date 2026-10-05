@@ -49,13 +49,18 @@ teardown() {
     [ -f "$TEST_ROOT/docs/wiki/_deprecated/2025-Q1/linux-test.md" ]
 }
 
-@test "ci-linux: OS LinuxCI" {
-    if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$(uname)" == "Linux" ]]; then
-        skip "本機是 Linux，跳過此測試"
-    else
-        # 在 macOS / 其他環境跑，驗證測試本身不會 fail
-        [ true ]
+@test "ci-linux: date 90d back matches Python (GNU or BSD)" {
+    # 原測試是空過（Linux skip／macOS `[ true ]`），永遠不可能失敗 → 改成真斷言：
+    # 兩種平台的 date 回溯寫法都必須跟 Python 算出的日期一致（工具鏈跨平台契約）。
+    local py got=""
+    py=$(python3 -c "from datetime import date, timedelta; print((date.today() - timedelta(days=90)).isoformat())")
+    if date -v-90d +%F >/dev/null 2>&1; then
+        got=$(date -v-90d +%F)            # BSD（macOS）
+    elif date -d '90 days ago' +%F >/dev/null 2>&1; then
+        got=$(date -d '90 days ago' +%F)  # GNU（Linux）
     fi
+    [ -n "$got" ] || { echo "FAIL: 既非 GNU 也非 BSD date → 工具鏈沒有可用的回溯寫法" >&2; return 1; }
+    [ "$got" = "$py" ] || { echo "FAIL: date 回溯 90 天 = ${got}，Python = $py" >&2; return 1; }
 }
 
 @test "ci-linux: README Linux" {

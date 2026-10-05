@@ -43,12 +43,14 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 
 ### Step 2：dev 開發（含 Module 邊界）
 
-- **動作+為什麼**：依 system-design.md 的 Module 邊界開發、不跨 Module；保留 regression-guard 探針（探針名稱必含 Module prefix）；探針是後續校驗依據 + Module 邊界讓錯誤不外洩
+- **動作+為什麼**：依 system-design.md 的 Module 邊界開發、不跨 Module；保留 regression-guard 探針（探針名稱必含 Module prefix）；
+  探針是後續校驗依據 + Module 邊界讓錯誤不外洩
 - **產出+證據**：Module 內代碼 + 帶 prefix 探針 + 標記；探針可運行 + backlog 標記
 
 ### Step 3：checker 全面校驗（Module 級校驗）
 
-- **動作**：checker Subagent 監控 backlog，發現「等待校驗」→ 校驗範圍限定 Module 邊界內（功能正確性、代碼品質、測試覆蓋、regression-guard 探針）→ 發現問題記錄；v2.4 新增 jev 嵌入細節（校驗前快篩 / 校驗後驗證 / escalate 落點）見 `workflow.md` 「## jev 整合細節（v2.4 新增）」
+- **動作**：checker Subagent 監控 backlog，發現「等待校驗」→ 校驗範圍限定 Module 邊界內（功能正確性、代碼品質、測試覆蓋、regression-guard 探針）→ 發現問題記錄；
+  v2.4 新增 jev 嵌入細節（校驗前快篩 / 校驗後驗證 / escalate 落點）見 `workflow.md` 「## jev 整合細節（v2.4 新增）」
 - **為什麼**：避免低級錯誤、確保品質；Module 邊界內校驗避免「跨 Module 越權」
 - **產出**：校驗報告（問題清單 + 分級 P0/P1/P2 + Module 標註）
 - **證據**：報告存在 + 問題清單完整 + 問題屬單 Module 或標「跨 Module」

@@ -19,7 +19,8 @@
 
 **關鍵設計決策**：
 
-> **M6.2 不全自動 apply**。CI 環境不能無人工 commit；LLM 接力文字可能錯。Pipeline 只「產 patch 素材」（`-patches.json`），apply / re-validate 仍在 sandbox 由人工跑（3 步手動）。
+> **M6.2 不全自動 apply**。CI 環境不能無人工 commit；LLM 接力文字可能錯。Pipeline 只「產 patch 素材」（`-patches.json`），apply / re-validate 仍在
+> sandbox 由人工跑（3 步手動）。
 
 ---
 
@@ -109,7 +110,7 @@ JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 JEV_PATCH_AND_REVALIDATE=1 \
 | **playwright_patcher 自動備份 .bak** | 即使 dry-run 也備份，便於比對；rollback 從 .bak 還原 |
 | **re_validate 分類只有 3 種** | improvement / regression / no_change；no_change 算中性由人工 review |
 | **三模組獨立 CLI** | 可單獨用 patch_parser / patcher / re_validate；不一定要跑完整 pipeline |
-| **M3_RC capture 修 set -e 中斷** | US-M62 blocked=True → exit 2 → 原 pipeline 中斷；加 `M3_RC=0; cmd || M3_RC=$?` 修復 |
+| **M3_RC capture 修 set -e 中斷** | US-M62 blocked=True → exit 2 → 原 pipeline 中斷；加 `M3_RC=0; cmd \|\| M3_RC=$?` 修復 |
 | **describe_only 用啟發式抽檔名** | 找反引號包圍的 `.py/.md/.sh/...` 或「推測」字樣旁的檔名；信心度低但「有比沒有好」|
 
 ---
@@ -180,7 +181,8 @@ fffbd28 Merge PR #2 (M1-M4) → master
 ## 9. 已知限制 / Hardening
 
 - **M6.2 apply + re-validate 需人工** — sandbox 限制；未來可加「互動式 sandbox」（playwright driver 在隔離環境 apply + 自動 re-validate）
-- **patch_parser 對非標準 diff 格式 fragile** — 只支援 `--- a/path / +++ b/path / @@` 標準格式；其他格式（如 git format-patch）fallback 到 describe_only
+- **patch_parser 對非標準 diff 格式 fragile** — 只支援 `--- a/path / +++ b/path / @@` 標準格式；其他格式（如 git format-patch）fallback 到
+  describe_only
 - **re_validate 不看具體失敗步** — 只比 verdict 計數；不看哪幾步從 fail → pass（可加但 v1 先求簡）
 - **playwright_patcher 不處理 nested code structure** — 只 string replace；不解析 AST；如有需要未來可換 libcst / rope
 - **CI 不會自動召喚 LLM relay 也不會自動 patch** — 兩個都需手動或外部觸發
@@ -202,7 +204,7 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 | # | 維度 | 結果 | 備註 |
 | - | --- | --- | --- |
-| 1 | UX/CLI 一致性 | ✅ | 三模組 CLI 風格一致：`<file> [--old ... --new ...] [--apply|--rollback]` |
+| 1 | UX/CLI 一致性 | ✅ | 三模組 CLI 風格一致：`<file> [--old ... --new ...] [--apply\|--rollback]` |
 | 2 | RWD / 跨平台 | ✅ | 純 stdlib + httpx；無外部依賴；playwright patcher lazy import（PoC 內不需要 playwright）|
 | 3 | 技術債 | ✅ | 三模組獨立、無交叉依賴；M3_RC capture 修 pipeline set -e 漏洞 |
 | 4 | 可維護性 | ✅ | SKILL v2.5 加法不破壞；safety 表 / 分類表清楚 |
@@ -227,7 +229,8 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 - **V01（一次一問）**：1 個 ask_user_question（建 PENDING US / 主題）2 個問題合併，0 個 follow-up ✅
 - **V02（推薦第一）**：建 PENDING US 推薦「建 1 個真實 PENDING US（推薦）」、主題推薦「regression-guard M6.2（推薦）」— 都標 Recommended ✅
-- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL.md v2.4 → v2.5）+ 新增模組 — **V03 N/A** ✅
+- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL.md v2.4 → v2.5）+ 新增模組 —
+  **V03 N/A** ✅
 
 ### feat-jev-regression 整體回顧（5 sprint, 16 commits）
 

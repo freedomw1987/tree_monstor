@@ -171,7 +171,7 @@ docs/
 
 ### 4.2 frontmatter 設計
 
-參見 [`frontmatter-schema.md`](skills/dav-wiki/frontmatter-schema.md)（US-009 產出）
+參見 [`frontmatter-schema.md`](../skills/dav-wiki/frontmatter-schema.md)（US-009 產出）
 
 ### 4.3 命名規範
 
@@ -245,5 +245,5 @@ error_template:
 ## 8. 參考資料
 
 - [Google Stitch DESIGN.md spec](https://stitch.withgoogle.com/docs/design-md/specification/)
-- [tree_monstor SOP §1.5](../sop/handbook/changelog.md) — V01 / V02 提問與建議紀律
+- [tree_monstor SOP §1.5](sop/handbook/changelog.md) — V01 / V02 提問與建議紀律
 - [dav-skill-creater](../skills/dav-skill-creater/SKILL.md) — skill 命名與結構規範

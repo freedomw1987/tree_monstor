@@ -1,3 +1,4 @@
+# shellcheck shell=bash  # 這是被 source 的函式庫（無 shebang），明確告知 shellcheck 目標 shell
 # lib/log.sh — Shared logging helpers for tools/* and lib/* scripts.
 #
 # Source this from any script that wants consistent color-aware logging

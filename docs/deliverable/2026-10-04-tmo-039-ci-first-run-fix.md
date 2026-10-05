@@ -3,7 +3,8 @@
 - **日期**：2026-10-04
 - **Backlog ID**：TMO-039（新增 TMO-042 / TMO-043；修正 TMO-029 deliverable 的錯誤歸因）
 - **作者**：pi（david 的 agent）
-- **狀態**：**已驗收（2026-10-04）**——reviewer round-3 `approve-with-comments`（0 P0 / 0 P1），CI 連續 3 commit 全綠（`37218446930` / `37218923503` / `37219489118`），用戶決策「收在此」，
+- **狀態**：**已驗收（2026-10-04）**——reviewer round-3 `approve-with-comments`（0 P0 / 0 P1），CI 連續 3 commit 全綠（`37218446930` /
+  `37218923503` / `37219489118`），用戶決策「收在此」，
   後續護欄強化切票 TMO-044 / TMO-045 排下一輪。
 
 ## 摘要

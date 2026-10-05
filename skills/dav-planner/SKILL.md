@@ -70,14 +70,14 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 
 ### Step 1.5：來源抽取（複雜開發任務可選）
 
-> **位置**：Step 1.5 在 Step 1（背景收集）之後、Step 2（最終目的）之前觸發
+> **位置**：Step 1.5 在 Step 1（提問技巧）之後、Step 2（決策點判斷）之前觸發
 
 **觸發條件**（以下任一即符合「複雜任務」）：
 - 既有文件分散在 monorepo `docs/` 多份檔案（需求、決策、設變記錄）
 - 來源檔案格式非 Markdown（PDF / DOCX / PPTX / 網頁 URL）
 - 需求來源跨多個工具（Obsidian / Notion / Confluence / GitHub Issues）
 - 你預期未來會**多次更新需求**（每次都要回到來源重新對照）
-- 既有 dav-wiki 知識庫已收錄相關概念（先 grep `docs/concepts/` + `docs/wiki/_index.json`，命中 ≥ 1 條 → 直接讀、不需重新抽取）
+- 既有 dav-wiki 知識庫已收錄相關概念（先 grep `docs/concepts/` + `docs/wiki/_index.json`；此 `docs/` 為專案端知識庫路徑，命中 ≥ 1 條 → 直接讀、不需重新抽取）
 
 **動作**：
 1. 列出來源候選清單（檔案路徑 / URL / Obsidian Vault 位置）

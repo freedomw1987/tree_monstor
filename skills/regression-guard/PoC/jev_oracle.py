@@ -25,7 +25,6 @@ DEFAULT_MODEL = "typesafe/jev-1.13"
 # JEV_CACHE_DIR 可覆寫 → 測試用離線 fixture（CI 沒有 API key、也沒有本機快取）。
 CACHE_DIR = Path(os.environ.get("JEV_CACHE_DIR") or (Path(__file__).parent / "cache"))
 
-
 # ─── Data shapes ────────────────────────────────────────────────────────────
 
 @dataclass
@@ -67,14 +66,30 @@ class OracleResult:
 
 # ─── HTTP / cache / key loader ────────────────────────────────────────────
 
-def _load_api_key() -> str:
-    """順序：env > PoC/.env > ~/.claude/skills/regression-guard/PoC/.env"""
-    if k := os.environ.get("OPENROUTER_API_KEY"):
-        return k
-    candidates = [
+def _env_file_candidates() -> list[Path]:
+    """回傳「要去哪裡找 OPENROUTER_API_KEY=」的檔案清單。
+
+    `JEV_ENV_FILE` 可覆寫此清單（TMO-045，reviewer P2-B）：設成 `/dev/null` 即等效
+    「本機沒有任何 .env」——涵蓋 PoC/.env 與 ~/.claude/... 兩個來源。
+    測試靠這個 seam 才能真的排除「本機 .env 掩蓋 fixture 缺口」的假綠。
+    """
+    override = os.environ.get("JEV_ENV_FILE")
+    if override:
+        return [Path(override)]
+    return [
         Path(__file__).parent / ".env",
         Path.home() / ".claude" / "skills" / "regression-guard" / "PoC" / ".env",
     ]
+
+
+def _load_api_key() -> str:
+    """順序：env > PoC/.env > ~/.claude/skills/regression-guard/PoC/.env
+
+    檔案來源可用 `JEV_ENV_FILE` 覆寫（見 `_env_file_candidates()`）。
+    """
+    if k := os.environ.get("OPENROUTER_API_KEY"):
+        return k
+    candidates = _env_file_candidates()
     for p in candidates:
         if p.exists():
             for line in p.read_text().splitlines():

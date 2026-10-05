@@ -35,7 +35,7 @@ need_poc_venv() {
 # ────────────────────────────────────────────────────────────────────
 # 共用 fixture helpers（TMO-023 / TMO-029）
 #
-# M6.3 / M7 探針原本假設 /tmp/US-M63-before.json 與 /tmp/m62-batch.json 已存在，
+# M6.3 / M7 探針原本假設 $BATS_TEST_TMPDIR/US-M63-before.json 與 $BATS_TEST_TMPDIR/m62-batch.json 已存在，
 # 但測試檔內沒有任何步驟會產生它們 → 5+2 個探針永遠紅。
 # 這裡補上真實的 baseline 產生器：
 #   - make_us_m63_before：真跑一次 US-M63 journey 當 patch 前 baseline
@@ -49,12 +49,12 @@ need_poc_venv() {
 
 make_us_m63_before() {
   mkdir -p "$REPO_ROOT/tmp"
-  rm -f /tmp/US-M63-before.json
+  rm -f $BATS_TEST_TMPDIR/US-M63-before.json
   # journey 為 blocked → run_journey.py 回 rc=2（有寫出 JSON，但非 0）→ 只吞 rc，必驗檔真的產出
   "$PY" "$POC_DIR/run_journey.py" "$POC_DIR/journeys/US-M63.yaml" \
-    --json-output /tmp/US-M63-before.json >/dev/null 2>&1 || true
-  if [ ! -s /tmp/US-M63-before.json ]; then
-    echo "FAIL: baseline fixture 未產出（/tmp/US-M63-before.json）" >&2
+    --json-output $BATS_TEST_TMPDIR/US-M63-before.json >/dev/null 2>&1 || true
+  if [ ! -s $BATS_TEST_TMPDIR/US-M63-before.json ]; then
+    echo "FAIL: baseline fixture 未產出（$BATS_TEST_TMPDIR/US-M63-before.json）" >&2
     return 1
   fi
 }
@@ -70,7 +70,7 @@ json.dump({
         'regression_type': 'none',
         'overall_health_probs': {'red': 0, 'green': 1, 'yellow': 0},
     },
-}, open('/tmp/m62-batch.json', 'w'))
+}, open('$BATS_TEST_TMPDIR/m62-batch.json', 'w'))
 "
 }
 
@@ -511,21 +511,24 @@ print('OK: FixProposal has 3 conf fields')
   assert_file_contains "$f" "JEV_FIX_PROPOSAL"
 }
 
-@test "M6-g: end-to-end fix_proposal.py on /tmp/US-101-run.json" {
+@test "M6-g: end-to-end fix_proposal.py on $BATS_TEST_TMPDIR/US-101-run.json" {
   need_poc_venv
   cd "$POC_DIR"
   # TMO-039：改用版控 run json fixture + 離線快取 fixture。
   # 原本現場跑 pipeline（已移除的 make_us101_run helper）需要真 Jev API key → CI 必紅。
-  cp "$POC_DIR/fixtures/US-101-run.json" /tmp/US-101-run.json
+  # TMO-045：外加 JEV_ENV_FILE=/dev/null，連本機 PoC/.env 也要擋
+  # （否則 client 端 cache miss 時會拿本機 key 去打真 API，fixture 缺口被掩蓋仍綠）。
+  cp "$POC_DIR/fixtures/US-101-run.json" $BATS_TEST_TMPDIR/US-101-run.json
   env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+      JEV_ENV_FILE=/dev/null \
       JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
-      "$PY" fix_proposal.py /tmp/US-101-run.json /tmp/test-fix.md >/dev/null 2>&1 || {
+      "$PY" fix_proposal.py $BATS_TEST_TMPDIR/US-101-run.json $BATS_TEST_TMPDIR/test-fix.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal.py CLI failed" >&2
     return 1
   }
-  assert_path_is_file /tmp/test-fix.md
+  assert_path_is_file $BATS_TEST_TMPDIR/test-fix.md
   # 確認內容是信心度報告格式
-  grep -q "整體信心度" /tmp/test-fix.md || {
+  grep -q "整體信心度" $BATS_TEST_TMPDIR/test-fix.md || {
     echo "FAIL: fix_proposal.md missing 整體信心度" >&2
     return 1
   }
@@ -558,16 +561,18 @@ print('OK: FixProposal has 3 conf fields')
   need_poc_venv
   cd "$POC_DIR"
   # TMO-039：同上（版控 fixture + 離線快取），不依賴真 API key
-  cp "$POC_DIR/fixtures/US-101-run.json" /tmp/US-101-run.json
+  # TMO-045：同上加 JEV_ENV_FILE=/dev/null（擋本機 PoC/.env）
+  cp "$POC_DIR/fixtures/US-101-run.json" $BATS_TEST_TMPDIR/US-101-run.json
   env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
+      JEV_ENV_FILE=/dev/null \
       JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
-      "$PY" fix_proposal_v2.py /tmp/US-101-run.json /tmp/test-v2.md >/dev/null 2>&1 || {
+      "$PY" fix_proposal_v2.py $BATS_TEST_TMPDIR/US-101-run.json $BATS_TEST_TMPDIR/test-v2.md >/dev/null 2>&1 || {
     echo "FAIL: fix_proposal_v2.py CLI failed" >&2
     return 1
   }
-  assert_path_is_file /tmp/test-v2.md
+  assert_path_is_file $BATS_TEST_TMPDIR/test-v2.md
   # 0.25 < 0.5 → 應該出現 "LLM Relay 跳過"
-  grep -q "LLM Relay 跳過" /tmp/test-v2.md || {
+  grep -q "LLM Relay 跳過" $BATS_TEST_TMPDIR/test-v2.md || {
     echo "FAIL: test-v2.md should have LLM Relay 跳過 (0.25 < 0.5)" >&2
     return 1
   }
@@ -695,7 +700,7 @@ print('OK: FixProposal has 3 conf fields')
 @test "M6.2-b: patch_parser extracts (file, old, new) from unified diff" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-diff.md
+  local sample=$BATS_TEST_TMPDIR/m62-test-diff.md
   cat > "$sample" <<'EOF'
 # Fix Proposal — US-M62
 
@@ -729,7 +734,7 @@ EOF
 @test "M6.2-c: patch_parser handles describe_only mode (no diff code block)" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-describe.md
+  local sample=$BATS_TEST_TMPDIR/m62-test-describe.md
   cat > "$sample" <<'EOF'
 # Fix Proposal — US-X
 
@@ -758,7 +763,7 @@ EOF
 @test "M6.2-d: patch_parser returns 2 when no patches found" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-empty.md
+  local sample=$BATS_TEST_TMPDIR/m62-test-empty.md
   echo "# Empty Proposal" > "$sample"
   run "$PY" patch_parser.py "$sample"
   # exit 2 = 沒 patches
@@ -771,7 +776,7 @@ EOF
 @test "M6.2-e: playwright_patcher.py dry-run does NOT modify file" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-dryrun.py
+  local sample=$BATS_TEST_TMPDIR/m62-test-dryrun.py
   echo 'def hello(): return "world"' > "$sample"
   local before_content
   before_content=$(cat "$sample")
@@ -793,7 +798,7 @@ EOF
 @test "M6.2-f: playwright_patcher.py --apply modifies file & creates backup" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-apply.py
+  local sample=$BATS_TEST_TMPDIR/m62-test-apply.py
   echo 'def hello(): return "world"' > "$sample"
   run "$PY" playwright_patcher.py "$sample" \
     --old 'return "world"' --new 'return "planet"' --apply
@@ -822,7 +827,7 @@ EOF
 @test "M6.2-g: playwright_patcher.py refuses ambiguous old_text (>1 match)" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-ambiguous.py
+  local sample=$BATS_TEST_TMPDIR/m62-test-ambiguous.py
   cat > "$sample" <<'EOF'
 foo = "x"
 foo = "x"
@@ -839,7 +844,7 @@ EOF
 @test "M6.2-h: playwright_patcher.py refuses old_text not found" {
   need_poc_venv
   cd "$POC_DIR"
-  local sample=/tmp/m62-test-notfound.py
+  local sample=$BATS_TEST_TMPDIR/m62-test-notfound.py
   echo 'def hello(): return "world"' > "$sample"
   run "$PY" playwright_patcher.py "$sample" \
     --old 'NONEXISTENT_TEXT' --new 'X'
@@ -852,8 +857,8 @@ EOF
 @test "M6.2-i: re_validate.py classifies improvement (fail -N)" {
   need_poc_venv
   cd "$POC_DIR"
-  local before=/tmp/m62-before.json
-  local after=/tmp/m62-after.json
+  local before=$BATS_TEST_TMPDIR/m62-before.json
+  local after=$BATS_TEST_TMPDIR/m62-after.json
   # 建模擬 before
   "$PY" -c "
 import json
@@ -888,8 +893,8 @@ json.dump(a, open('$after', 'w'))
 @test "M6.2-j: re_validate.py classifies regression (fail +N) & returns 1" {
   need_poc_venv
   cd "$POC_DIR"
-  local before=/tmp/m62-reg-before.json
-  local after=/tmp/m62-reg-after.json
+  local before=$BATS_TEST_TMPDIR/m62-reg-before.json
+  local after=$BATS_TEST_TMPDIR/m62-reg-after.json
   "$PY" -c "
 import json
 b = {'journey_id': 'US-M62', 'records': [
@@ -980,7 +985,7 @@ def hello():
 EOF
   make_us_m63_before
   run "$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "world"' \
     --new 'return "planet"' \
@@ -1013,7 +1018,7 @@ def hello():
 EOF
   make_us_m63_before
   run "$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "unrelated-text-for-no-change-test"' \
     --new 'return "different-unrelated-text"' \
@@ -1041,7 +1046,7 @@ foo = "x"
 EOF
   make_us_m63_before
   run "$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'foo = "x"' \
     --new 'foo = "y"' \
@@ -1077,7 +1082,7 @@ EOF
   before_count=$(ls -a "$REPO_ROOT/tmp/" 2>/dev/null | grep -c "^\.sandbox-US-M63" || true)
   local out
   out=$("$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "x"' \
     --new 'return "y"' \
@@ -1109,7 +1114,7 @@ EOF
   make_us_m63_before
   local out
   out=$("$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "x"' \
     --new 'return "y"' \
@@ -1167,7 +1172,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   local sample="$POC_DIR/fixtures/US-M63-missing-test.py"
   echo 'def x(): return "x"' > "$sample"
   run "$PY" sandbox_runner.py \
-    --before /tmp/nonexistent-before.json \
+    --before $BATS_TEST_TMPDIR/nonexistent-before.json \
     --file "$sample" \
     --old 'return "x"' \
     --new 'return "y"' \
@@ -1194,7 +1199,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   printf 'def hello():\n    return "world"\n' > "$outside"
   make_us_m63_before
   run "$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$outside" \
     --old 'return "world"' \
     --new 'return "planet"' \
@@ -1230,7 +1235,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   printf 'def hello():\n    return "world"\n' > "$target"
   make_us_m63_before
   run "$PY" sandbox_runner.py \
-    --before /tmp/US-M63-before.json \
+    --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "../../../tmp/$sentinel" \
     --old 'return "world"' \
     --new 'return "planet"' \
@@ -1340,14 +1345,14 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
   need_poc_venv
   cd "$POC_DIR"
   # 先清殘檔：否則上一次的 /tmp 檔會讓這條假綠（reviewer P2-4）
-  rm -f /tmp/flaky-test.md
+  rm -f $BATS_TEST_TMPDIR/flaky-test.md
   "$PY" flaky_check.py "$POC_DIR/journeys/US-M62.yaml" \
     --source "$REPO_ROOT/docs/ac/US-M62.md" \
     --story-id US-M62-flaky-test --runs 3 \
-    --output /tmp/flaky-test.md >/dev/null 2>&1 || true
-  assert_path_is_file "/tmp/flaky-test.md"
-  assert_file_contains "/tmp/flaky-test.md" "分類"
-  assert_file_contains "/tmp/flaky-test.md" "Per-Run Detail"
+    --output $BATS_TEST_TMPDIR/flaky-test.md >/dev/null 2>&1 || true
+  assert_path_is_file "$BATS_TEST_TMPDIR/flaky-test.md"
+  assert_file_contains "$BATS_TEST_TMPDIR/flaky-test.md" "分類"
+  assert_file_contains "$BATS_TEST_TMPDIR/flaky-test.md" "Per-Run Detail"
 }
 
 # ────────────────────────────────────────────────────────────────────
@@ -1399,7 +1404,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 @test "flaky-int-b: flaky_integration.py writes flaky_measured to batch_report" {
   need_poc_venv
   cd "$POC_DIR"
-  local tmp_batch="/tmp/flaky-int-test-batch.json"
+  local tmp_batch="$BATS_TEST_TMPDIR/flaky-int-test-batch.json"
   # 造一個 batch_report
   cat > "$tmp_batch" <<'EOF'
 {
@@ -1446,7 +1451,7 @@ print('OK: wrote flaky_measured')
   cd "$POC_DIR"
   make_m62_batch_report
   run "$PY" flaky_integration.py \
-    --batch-report /tmp/m62-batch.json \
+    --batch-report $BATS_TEST_TMPDIR/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
     --story-id US-M62 \
     --source "$REPO_ROOT/docs/ac/US-M62.md" \
@@ -1457,7 +1462,7 @@ print('OK: wrote flaky_measured')
     return 1
   }
   # 應該有 flaky_measured 寫回
-  grep -q "flaky_measured" /tmp/m62-batch.json || {
+  grep -q "flaky_measured" $BATS_TEST_TMPDIR/m62-batch.json || {
     echo "FAIL: batch_report should now have flaky_measured" >&2
     return 1
   }
@@ -1496,8 +1501,8 @@ batch = {
         'regression_type': 'real_bug',
     }
 }
-Path('/tmp/gh-pr-test-batch.json').write_text(__import__('json').dumps(batch, ensure_ascii=False))
-body = render_comment(batch_report_path=Path('/tmp/gh-pr-test-batch.json'), fix_proposal_path=None)
+Path('$BATS_TEST_TMPDIR/gh-pr-test-batch.json').write_text(__import__('json').dumps(batch, ensure_ascii=False))
+body = render_comment(batch_report_path=Path('$BATS_TEST_TMPDIR/gh-pr-test-batch.json'), fix_proposal_path=None)
 # 4 段
 for sec in ['regression-guard Report', 'Fix Proposal', 'Sandbox 建議', '問題分析']:
     assert sec in body or '未產出' in body, f'missing section: {sec}'
@@ -1505,11 +1510,26 @@ print(f'OK: comment {len(body)} chars')
 "
 }
 
+# TMO-041：fixture 產生器抽成 helper（每條測試自帶），不再讓 gh-pr-c/d 讀「別條測試留在
+# 固定路徑的檔」。原本那顆 `/tmp` 檔跨 run 會殘留 → 寫入失敗時 gh-pr-c/d 仍可能假綠。
+make_gh_pr_batch() {
+  "$PY" -c "
+import sys, json
+sys.path.insert(0, '.')
+from pathlib import Path
+batch = {'journey_id': 'US-M62', 'journey_title': 'Test',
+         'batch_report': {'overall_health': 'red', 'fix_priority': 2.97,
+                          'flaky_likelihood': 0.24, 'regression_type': 'real_bug'}}
+Path('$BATS_TEST_TMPDIR/gh-pr-test-batch.json').write_text(json.dumps(batch, ensure_ascii=False))
+"
+}
+
 @test "gh-pr-c: gh_pr_comment.py dry-run prints body without gh" {
   need_poc_venv
   cd "$POC_DIR"
+  make_gh_pr_batch
   run "$PY" gh_pr_comment.py \
-    --batch-report /tmp/gh-pr-test-batch.json \
+    --batch-report $BATS_TEST_TMPDIR/gh-pr-test-batch.json \
     --dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: dry-run should return 0, got $status" >&2
@@ -1524,10 +1544,11 @@ print(f'OK: comment {len(body)} chars')
 @test "gh-pr-d: gh_pr_comment.py output file written when --output specified" {
   need_poc_venv
   cd "$POC_DIR"
-  local out="/tmp/gh-pr-test-output.md"
+  make_gh_pr_batch
+  local out="$BATS_TEST_TMPDIR/gh-pr-test-output.md"
   rm -f "$out"
   "$PY" gh_pr_comment.py \
-    --batch-report /tmp/gh-pr-test-batch.json \
+    --batch-report $BATS_TEST_TMPDIR/gh-pr-test-batch.json \
     --dry-run \
     --output "$out" >/dev/null 2>&1
   assert_path_is_file "$out"
@@ -1547,7 +1568,7 @@ print(f'OK: comment {len(body)} chars')
   need_poc_venv
   cd "$POC_DIR"
   run "$PY" gh_pr_comment.py \
-    --batch-report /tmp/nonexistent-batch.json \
+    --batch-report $BATS_TEST_TMPDIR/nonexistent-batch.json \
     --dry-run
   [ "$status" -eq 1 ] || {
     echo "FAIL: missing batch_report should return 1, got $status" >&2
@@ -1565,17 +1586,17 @@ print(f'OK: comment {len(body)} chars')
   cd "$POC_DIR"
   make_m62_batch_report
   "$PY" flaky_integration.py \
-    --batch-report /tmp/m62-batch.json \
+    --batch-report $BATS_TEST_TMPDIR/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
     --story-id US-M62 \
     --source "$REPO_ROOT/docs/ac/US-M62.md" \
     --runs 0 >/dev/null 2>&1 || true
-  grep -q "flaky_measured" /tmp/m62-batch.json || {
+  grep -q "flaky_measured" $BATS_TEST_TMPDIR/m62-batch.json || {
     echo "FAIL: batch_report missing flaky_measured" >&2
     return 1
   }
   # 確認 schema 完整
-  grep -q "likelihood" /tmp/m62-batch.json || {
+  grep -q "likelihood" $BATS_TEST_TMPDIR/m62-batch.json || {
     echo "FAIL: flaky_measured missing likelihood" >&2
     return 1
   }
@@ -1599,7 +1620,7 @@ batch = {
         'overall_health_probs': {'red': 1, 'green': 0, 'yellow': 0},
     }
 }
-Path('/tmp/m7-delta-test.json').write_text(json.dumps(batch, ensure_ascii=False))
+Path('$BATS_TEST_TMPDIR/m7-delta-test.json').write_text(json.dumps(batch, ensure_ascii=False))
 # 模擬 measured 0.85（highly_flaky）
 batch['batch_report']['flaky_measured'] = {
     'likelihood': 0.85,
@@ -1607,7 +1628,7 @@ batch['batch_report']['flaky_measured'] = {
     'warning': True,
     'delta': 0.61,
 }
-Path('/tmp/m7-delta-test.json').write_text(json.dumps(batch, ensure_ascii=False))
+Path('$BATS_TEST_TMPDIR/m7-delta-test.json').write_text(json.dumps(batch, ensure_ascii=False))
 assert batch['batch_report']['flaky_measured']['warning'] == True
 assert batch['batch_report']['flaky_measured']['delta'] == 0.61
 print('OK: high delta warning')

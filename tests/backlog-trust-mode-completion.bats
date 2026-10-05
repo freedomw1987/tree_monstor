@@ -47,9 +47,10 @@ load 'helpers/test-env'
 
 @test "BACKLOG-005: no backlog row stays in pending" {
   local backlog="$REPO_ROOT/docs/backlog.md"
-  if LC_ALL=C grep -E '^\| TMO-[0-9]+ \|' "$backlog" | grep -qE '\| pending( |\(|$)'; then
+  # TMO-032：大小寫不敏感——原本只比對小寫 `pending`，`PENDING` 會漏抓
+  if LC_ALL=C grep -E '^\| TMO-[0-9]+ \|' "$backlog" | grep -qiE '\| pending( |\(|$)'; then
     echo "FAIL: Some TMO still in pending state" >&2
-    LC_ALL=C grep -E '^\| TMO-[0-9]+ \|' "$backlog" | grep -E '\| pending( |\(|$)' >&2
+    LC_ALL=C grep -E '^\| TMO-[0-9]+ \|' "$backlog" | grep -iE '\| pending( |\(|$)' >&2
     return 1
   fi
 }

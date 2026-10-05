@@ -6,7 +6,8 @@
 
 ## TL;DR
 
-1. **做什麼**：用 OpenRouter 上的 `typesafe/jev-1.13` 當 structured decision oracle，把「**讀 AC 文字 + 觀察結果 → 判定過 / fail / flaky / 過度斷言**」這件事自動化。
+1. **做什麼**：用 OpenRouter 上的 `typesafe/jev-1.13` 當 structured decision
+   oracle，把「**讀 AC 文字 + 觀察結果 → 判定過 / fail / flaky / 過度斷言**」這件事自動化。
 2. **何時觸發**：每個 User Story 跑完 user journey 後，需要語意判定「這條 AC 算不算過」。
 3. **預設 SOP 路徑**：`regression-guard` Step 3 之後插一個新 Step「**oracle 評估**」、再進 Step 4 修正循環。
 4. **關鍵紀律**：
@@ -96,6 +97,7 @@ REGEN_JOURNEY=1 ./run_pipeline.sh US-101
 ```
 
 會產出：
+
 ```
 journeys/US-101.yaml     ← human-readable journey spec（git tracked）
 /tmp/US-101-run.json     ← M3 run 結果（給 M4 讀）
@@ -177,7 +179,8 @@ steps:
 
 ## M3 接續
 
-**Journey runner**：Chrome + DOM snapshot driver（dry-run loop 先、不接 Chrome；接 Chrome 留 M3.1）。每步用 oracle 評估 + recheck freshness。## M4 接續
+**Journey runner**：Chrome + DOM snapshot driver（dry-run loop 先、不接 Chrome；接 Chrome 留 M3.1）。每步用 oracle 評估 + recheck
+freshness。## M4 接續
 
 **End-of-run report**：batch call 出 overall_health / fix_priority / flaky_likelihood，寫進 `REGRESSION_REPORT_PATH`。✅ 完成
 
@@ -227,11 +230,13 @@ bats tests/v2.1-jev-poc.bats
 - `2` (yellow) — warning（不擋 merge）
 - `1` (red) — error，擋 merge
 
-詳細 branch protection + secrets 設定見 [`docs/ci/regression-guard-jev-poc.md`](../../../docs/ci/regression-guard-jev-poc.md)。
+詳細 branch protection + secrets 設定見
+[`docs/ci/regression-guard-jev-poc.md`](../../../docs/ci/regression-guard-jev-poc.md)。
 
 ---
 
-**核心精神**：regression-guard 不只記錄「test 是 pass 還是 fail」，而是「這個 fail 是真 bug、flaky、還是 AC 本身寫得不好」。Jev oracle 把這層語意判定帶進來，用 confidence gating 確保不誤導修正循環。
+**核心精神**：regression-guard 不只記錄「test 是 pass 還是 fail」，而是「這個 fail 是真 bug、flaky、還是 AC 本身寫得不好」。Jev oracle 把這層語意判定帶進來，用
+confidence gating 確保不誤導修正循環。
 
 **本 sprint 已完成**：
 - ✅ **M3.1**：Playwright Chrome driver + dispatcher（`OBSERVER_BACKEND=playwright` 切換）

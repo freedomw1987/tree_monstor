@@ -7,7 +7,8 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 ## TL;DR
 
-1. **做什麼**：把任何來源的資料（純文字、Office 文件、網頁、OCR、字幕）統一轉成 Markdown 知識庫，存進 `docs/wiki/`；自動提取概念到 `docs/concepts/`；可透過 Obsidian 雙向連結 `<教學範例>[[xxx]]</教學範例>` 交叉引用。
+1. **做什麼**：把任何來源的資料（純文字、Office 文件、網頁、OCR、字幕）統一轉成 Markdown 知識庫，存進 `docs/wiki/`；自動提取概念到 `docs/concepts/`；可透過 Obsidian 雙向連結
+   `<教學範例>[[xxx]]</教學範例>` 交叉引用。
 2. **何時觸發**：用戶給文件要轉 wiki / 給網址要收錄 / 批次處理多份文件 / 更新既有 wiki。
 3. **預設 SOP 路徑**：§2.3 執行（無單獨 SOP Gate，由 dav-planner 啟動後調用）。
 4. **關鍵紀律**：
@@ -15,7 +16,8 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
    - **V02**：多選必標推薦（推薦放第一）
    - **純文字引用**：skill 內不放跨檔 markdown 連結，所有引用純文字描述
    - **Trust 整合**：用戶輸入加 `/trust` 前綴 → 走 `dav-trust` 自主模式
-5. **必產出物**：`docs/wiki/{category}/{YYYY-MM}/{title}.md` + `docs/concepts/{slug}.md` + 更新 `_index.json` / `_tags.json` / `_concepts.json` / `docs/README.md`
+5. **必產出物**：`docs/wiki/{category}/{YYYY-MM}/{title}.md` + `docs/concepts/{slug}.md` + 更新 `_index.json` / `_tags.json` /
+   `_concepts.json` / `docs/README.md`
 
 ## 觸發時機
 

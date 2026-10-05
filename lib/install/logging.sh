@@ -1,3 +1,4 @@
+# shellcheck shell=bash  # 被 source 的函式庫（無 shebang），明確告知 shellcheck 目標 shell
 # lib/install/logging.sh — Logging helpers (color-aware, NO_COLOR aware).
 #
 # Source this from install.sh. Defines:

@@ -48,7 +48,15 @@ git add cache-fixtures   # 記得只 commit *.json，不要 commit 密鑰
 
 ## 防線
 
-- `tests/poc-clean-clone.bats` → `CLEAN-POC-f`：把環境清成跟 CI 一樣
-  （無 key、`HOME` 換掉、`JEV_CACHE_DIR` 指向空目錄）重跑那 3 條 oracle 相關探針，
-  任何一條回頭依賴真 API / 本機暖快取就會紅。
+- `tests/poc-clean-clone.bats` → `CLEAN-POC-f`：動態挑出所有提到 oracle 的測試檔
+  （目前是 `tests/v2.1-jev-poc.bats`），把環境清成跟 CI 一樣
+  （無 key、`HOME` 換掉、`JEV_CACHE_DIR` 指向空目錄、**`JEV_ENV_FILE=/dev/null`**）
+  整檔重跑；任何一條回頭依賴真 API / 本機暖快取 / 本機 `.env` 就會紅。
+- `CLEAN-POC-h`：`PoC/.env`、`PoC/.env.local`、`PoC/cache/*` 一律不得被 git 追蹤
+  （另驗 `PoC/.env.example` 有在版控、`.gitignore` 真的擋著）。
+- `CLEAN-POC-i`：反向驗證 `JEV_ENV_FILE` seam——造假的 `.env` 時讀得到、
+  覆寫成 `/dev/null` 時兩個來源（`PoC/.env` 與 `~/.claude/.../PoC/.env`）都讀不到。
 - 本檔與 `*.json` 必須**被 git 追蹤**（CLEAN-POC-f 會驗），否則 clean clone 缺檔。
+
+> ⚠️ 本目錄的 `*.json` 是**離線 fixture（可版控）**，與 `PoC/cache/`（本機暖快取、
+> 8206 檔、已 gitignore）是兩回事。不要把 `PoC/cache/` 的東西搬進來。

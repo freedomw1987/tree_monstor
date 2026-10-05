@@ -220,7 +220,9 @@ dav-trust skill 接管
 
 ## 🚨 4. M4 — Self-Evolution (RSI) 詳細設計（**已歸檔移除 2026-09-22**）
 
-> **🚨 公告 2026-09-22**：RSI 整套機制（`sop-evolver` skill、Gate 5、`tools/rsi-*.sh`、`extensions/auto-observe.ts`、觀察記錄系統、跨專案學習等）已全部移除。RSI 從未真正運作（8KB 觀察資料/2 個專案/270 commits），對個人/小團隊改 SOP 成本不適用。本章節保留為歷史設計記錄。
+> **🚨 公告 2026-09-22**：RSI 整套機制（`sop-evolver` skill、Gate
+> 5、`tools/rsi-*.sh`、`extensions/auto-observe.ts`、觀察記錄系統、跨專案學習等）已全部移除。RSI 從未真正運作（8KB 觀察資料/2 個專案/270 commits），對個人/小團隊改
+> SOP 成本不適用。本章節保留為歷史設計記錄。
 
 ### 4.1 設計目標
 
@@ -418,7 +420,8 @@ M4 — Self-Evolution
 
 ### ADR-014：rsi-propose.sh 規則庫 ≥ 8 個內建規則（Sprint 10, TD-030）
 - **理由**：Sprint 09 只有 3 個內建規則，新觀察類型都 fallback 到「待人工分析」；累積後要擴充
-- **影響**：`lookup_proposal()` 加 5 個新 case：`markdownlint_error` / `bash_error` / `test_fail` / `bats_unknown` / `v02_violated`
+- **影響**：`lookup_proposal()` 加 5 個新 case：`markdownlint_error` / `bash_error` / `test_fail` / `bats_unknown` /
+  `v02_violated`
 - **實作**：每個規則對應 1 個修改提案 + ≥ 1 個 bats 測試
 
 ---

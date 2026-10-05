@@ -7,15 +7,24 @@
 ### macOS
 
 ```bash
-# 安裝 bats
-brew install bats-core
+# 安裝 bats（釘版 v1.14.0：CI 用同一個 tag，發行版版本會漂移 → 本機綠／CI 紅）
+git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+sudo ./bats-core/install.sh /usr/local
 
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
 
 # 安裝媒體工具（AC-A* / AC-W* / AC-V* 等 26 條 ffmpeg 探針依賴，缺了會紅）
 brew install ffmpeg poppler pandoc tesseract
-# 註：ffmpeg 8 已移除 -vsync（用 -fps_mode）；腳本/探針禁用 -vsync，AC-V11 會擋。
+
+# ffmpeg 版本底線：>= 5.1（-fps_mode 自 5.1 起取代 -vsync）
+#   CI 兩平台實測：ubuntu-latest（apt，6.x）、macos-latest（brew，8.x）
+#   檢查方式：bash scripts/ci/check-ffmpeg-version.sh
+#     （①比版本底線 ②用本 repo 真的在用的旗標組合實測能力，缺一即 rc=1）
+# 移除/改名清單（本 repo 已改用新寫法，勿再引入舊旗標）：
+#   -vsync        → 已於 ffmpeg 8 移除，改用 -fps_mode（AC-V11 靜態擋）
+#   （下一個移除的旗標無法預期 → 靠 check-ffmpeg-version.sh 的能力實測 +
+#     tests/wiki-video-audio.bats 的功能探針一起兜底）
 
 # 確認 python3
 python3 --version
@@ -24,9 +33,13 @@ python3 --version
 ### Linux (Ubuntu)
 
 ```bash
-# 安裝 bats 與媒體工具（ffmpeg/ffprobe 是 26 條媒體探針的硬依賴）
+# 安裝媒體工具（ffmpeg/ffprobe 是 26 條媒體探針的硬依賴）
 sudo apt-get update
-sudo apt-get install -y bats ffmpeg poppler-utils pandoc tesseract-ocr
+sudo apt-get install -y ffmpeg poppler-utils pandoc tesseract-ocr
+
+# 安裝 bats：同 macOS 的釘版做法（不要用發行版套件，版本會漂移）
+git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git
+sudo ./bats-core/install.sh /usr/local
 
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
@@ -55,16 +68,27 @@ bats tests/wiki-cleanup.bats --filter "E1"
 > 會呼叫 Jev oracle 的 CLI（`fix_proposal*.py`）必須離線可跑：
 > 用版控的 `PoC/fixtures/US-101-run.json` + `PoC/cache-fixtures/` +
 > `JEV_CACHE_DIR=<dir>`（詳見 `PoC/cache-fixtures/README.md`）；
-> `tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會用「無 key／無暖快取」重跑那幾條探針來鎖住。
+> 探針內也要加 `JEV_ENV_FILE=/dev/null`（TMO-045），否則本機 `PoC/.env` 會在
+> cache miss 時拿真 key 去打 API，把「fixture 不够用」掩蓋成假綠。
 >
-> 本機想驗 CI 等價：`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome bats tests/`
-> （本機有 key 會讓依賴 oracle 的探針假綠）。
+> `tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
+> （目前即 `tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
+> CI 等價環境下**整檔**重跑，任何一條回頭依賴真 API 或本機快取都會紅；
+> `CLEAN-POC-h` 另鎖「`PoC/.env` 與 `PoC/cache/` 不得被 git 追蹤」，
+> `CLEAN-POC-i` 則反向驗證 `JEV_ENV_FILE` seam 真的封得住兩個 .env 來源。
+>
+> 本機想驗 CI 等價：`env -u OPENROUTER_API_KEY HOME=/tmp/fakehome JEV_ENV_FILE=/dev/null bats tests/`
+> （本機有 key 或 `.env` 會讓依賴 oracle 的探針假綠）。
 
 ## Lint
 
 ```bash
-# markdownlint
-markdownlint-cli2 "skills/dav-wiki/*.md" "docs/sop/handbook/dav-wiki-cleanup.md"
+# markdownlint（與 CI 同一組 glob；本機先 `npm install -g markdownlint-cli2`）
+markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"
+
+# shellcheck（Gate 2；-x 讓它跟隨 source；全嚴重度 -S style 需歸零）
+# 自我列舉：新增任何 .sh / .bash 都會自動納入，不會漏掃（ENV-EQ-13 鎖住這個性質）
+shellcheck -x -S style $(git ls-files '*.sh' '*.bash')
 
 # bash 語法（CI 用 glob 掃全部 9 支）
 bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
@@ -75,13 +99,22 @@ for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 wc -l skills/dav-wiki/SKILL.md
 ```
 
+### markdownlint 政策（TMO-037 後）
+
+- 上限 **MD013 line_length = 120**（見 `.markdownlint.json`）；表格列、程式碼區塊、標題豁免。
+- 清債原則是**改文件**（折行 / 轉義 `\|`），不是**放寬規則**（調大上限、縮小 glob）；動規則會被
+  `tests/markdownlint-guard.bats` MLG-3/4/5/8 擋下。
+- `.venv/`、`node_modules/` 必排除（見 `.markdownlint-cli2.jsonc`），否則 PoC venv 會灌入假錯誤。
+- 表格列內若出現 `\|`、`||`、`a|b` 這類管線，需寫成 `\|`，否則整列會被當成非表格列（MD056 + 連帶 MD013）。
+
 ## CI / GitHub Actions
 
 每個 PR 會自動跑（見 `.github/workflows/ci.yml`）：
 
 1. **bats 全套測試**（macOS + Linux；先建 PoC venv、裝 ffmpeg）
-2. **markdownlint**（SKILL.md、cleanup handbook、所有 markdown）
-   ——**目前暫時 non-blocking**（`continue-on-error: true`），lint 債 246 處見 TMO-037
+2. **markdownlint**（全 repo：`skills/**/*.md`、`docs/**/*.md`、`tests/**/*.md`、`*.md`）
+   ——**阻擋式**（TMO-037 清完 270 個錯後已移除 `continue-on-error: true`）；由
+   `tests/markdownlint-guard.bats` 鎖住「必須存在、必須會擋、glob 不得縮小」
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
@@ -92,7 +125,7 @@ CI badge：見 [README.md](README.md) 頂部。
 
 1. Fork → 開 feature branch（`feature/xxx` 或 `fix/xxx`）
 2. 本機跑 `bats tests/` 確認全綠
-3. 本機跑 `markdownlint-cli2 "skills/dav-wiki/*.md"` 確認 0 issues
+3. 本機跑 `markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"` 確認 0 issues
 4. 提 PR → CI 自動跑
 5. 等待 review
 

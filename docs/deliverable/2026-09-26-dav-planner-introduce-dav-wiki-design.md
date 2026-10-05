@@ -27,7 +27,8 @@ dav-wiki 已是安裝在 monorepo 的 skill，**功能完全對應需求**：
 
 > 統一文件資料提取與 Markdown 化。支援純文字、PDF/DOCX/PPTX、網頁 URL、圖片 OCR、影音字幕等多種來源，自動轉成結構化 Markdown 知識庫（含 frontmatter、tag、概念、交叉引用）。
 
-讓 dav-planner 「規劃時」調用 dav-wiki 「抽取來源」 → 結構化 Markdown → dav-planner 讀該 Markdown → 規劃。**未來需求更新時**重新跑同一流程 → 自動標記「哪幾個 US 受影響」。
+讓 dav-planner 「規劃時」調用 dav-wiki 「抽取來源」 → 結構化 Markdown → dav-planner 讀該 Markdown → 規劃。**未來需求更新時**重新跑同一流程 → 自動標記「哪幾個 US
+受影響」。
 
 ### 1.3 為什麼是「Step 1.5 可選步驟」不是「強制 Step 1」
 
@@ -101,7 +102,8 @@ dav-wiki 已是安裝在 monorepo 的 skill，**功能完全對應需求**：
 | v2.6 | 2026-09-26 | +Step 1.5「來源抽取（複雜任務可選）」：位於 Step 1 後 Step 2 前；觸發條件 + 推薦調用 dav-wiki + 何時跳過 + dav-wiki 未裝 fallback | 用戶決策：複雜任務需求會多次更新、需要回原始來源；dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝 |
 ```
 
-**主檔變動歷史瘦身**：當前 3 條（v2.5 / v2.4 / v2.3）→ 加 v2.6 後變 4 條 → **觸發 v2.4 規範 → v2.3 條目外移到 CHANGELOG.md**，主檔只留 v2.6 / v2.5 / v2.4 共 3 條。
+**主檔變動歷史瘦身**：當前 3 條（v2.5 / v2.4 / v2.3）→ 加 v2.6 後變 4 條 → **觸發 v2.4 規範 → v2.3 條目外移到 CHANGELOG.md**，主檔只留 v2.6 / v2.5 /
+v2.4 共 3 條。
 
 ### 2.5 不動的部分
 

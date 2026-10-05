@@ -46,7 +46,8 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 1. **Backlog ID 格式**：`<MODULE_CODE>-<US_ID>`（如 `M01-US-101`、`M02-US-203`）；多 US 同 Module 交付時在 §2.1-2.3 用 `M01 多 US 集合` 代表
 2. **Module 邊界即測試邊界**（v2.8 dev-checker-loop 規則）：探針必含 Module prefix；交付檔必明記 Module
-3. **deliverable.md 命名**：`docs/deliverable/<YYYY-MM-DD>-<module>-<slug>.md`（Module 級）或原本 `<YYYY-MM-DD>-<task-slug>.md`（US 級）
+3. **deliverable.md 命名**：`docs/deliverable/<YYYY-MM-DD>-<module>-<slug>.md`（Module 級）或原本
+   `<YYYY-MM-DD>-<task-slug>.md`（US 級）
 4. **Module 交付有「第 9 段」**：§9 Module 級總結（包含多 US 間的關聯、跨 Module 遺留問題、Module 級技術債）
 
 詳見 `module-delivery.md` 子檔（v2.2 新增）。
@@ -69,7 +70,8 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 ### Step 3：寫 Markdown 詳錄（含「為什麼」獨立段 + 反思末段）
 
-- **動作**：套用 `skills/dav-submitter/template.md` 模板（含 `## 1.2 為什麼做這個改動`、`## 2.4 改動背後的理由`、`## 8. 反思` 段），寫入 `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
+- **動作**：套用 `skills/dav-submitter/template.md` 模板（含 `## 1.2 為什麼做這個改動`、`## 2.4 改動背後的理由`、`## 8. 反思` 段），寫入
+  `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
 - **為什麼**：v2.0 規則；v2.1 加「為什麼」獨立段；Markdown 詳錄是 audit trail（含反思 + 設計判斷理由）
 - **產出**：`docs/deliverable/<...>.md` 完整檔案（含為什麼）
 - **證據**：bats 探針驗證檔案存在；包含「為什麼做這個改動」段 + `## 反思` 段

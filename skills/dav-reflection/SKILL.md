@@ -32,7 +32,8 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 ### Step 1：確認反省範圍
 
 - **動作**：判斷 User Story / Sprint / Module 三個層級之一；收集交付物（代碼、文檔、設計稿）
-- **v2.1 新增 — jev 可用性偵測**：執行 `which jev-use`；可用則設定 `JEV_AVAILABLE=true`、後續 Step 2 走 jev 嵌入流程；不可用則跳過 jev 步驟、純 LLM 評分、降級為原本流程；對話中明示「jev 模式：on/off」
+- **v2.1 新增 — jev 可用性偵測**：執行 `which jev-use`；可用則設定 `JEV_AVAILABLE=true`、後續 Step 2 走 jev 嵌入流程；不可用則跳過 jev 步驟、純 LLM
+  評分、降級為原本流程；對話中明示「jev 模式：on/off」
 - **v2.1 內部失敗 fallback**（S3）：jev 內部失敗（API key 缺失 / 網路錯誤 / jev_judge 拋例外）→ 視同 `JEV_AVAILABLE=false`、走軟性降級、不 fail-fast
 - **為什麼**：不同層級的反省深度不同（US 輕量、Sprint 標準、Module 深度）
 - **產出**：對話中明示「本次反省層級 = X」
@@ -41,9 +42,12 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 ### Step 2：檢查 6 維度
 
 - **動作**：逐維度標記 ✅ 通過 / ⚠️ 有風險 / ❌ 不通過；每個 ❌ 必含「根因 + 建議」
-- **v2.1 新增 — jev 逐維度打分**（限 `JEV_AVAILABLE=true`）：每個維度用 `jev_judge`（**僅 score 類型**，三檔 ✅/⚠️/❌）獨立評分；jev 結果與 LLM 自評比對，不一致時以 LLM 為準、但 jev 結果附在反思段備註；**輕量路徑（S2）**：US 級別反省只打關鍵 2 維度（需求對齊 + 測試覆蓋率），避免過重；這只是輔助、不取代 LLM 評分
-- **v2.1 新增 — 反思結果驗證**：6 維度結果出來後用 `jev_judge`（noul）驗證「這個反省結論有沒有遺漏風險」；`escalate: true` → 標記 ⚠️ 待確認，列在 deliverable「## 反思」段「⚠️ jev escalate 待確認」清單（**不寫在 checklist.md**），不在對話中自己補
-- **v2.1 術語說明**（B2）：本 skill 只用 `score` 類型（6 維度單類打分）；dev-checker-loop 用 `noul / choice / score` 三類混合（聚焦不同風險類型），兩者屬設計選擇、不是錯
+- **v2.1 新增 — jev 逐維度打分**（限 `JEV_AVAILABLE=true`）：每個維度用 `jev_judge`（**僅 score 類型**，三檔 ✅/⚠️/❌）獨立評分；jev 結果與 LLM 自評比對，不一致時以
+  LLM 為準、但 jev 結果附在反思段備註；**輕量路徑（S2）**：US 級別反省只打關鍵 2 維度（需求對齊 + 測試覆蓋率），避免過重；這只是輔助、不取代 LLM 評分
+- **v2.1 新增 — 反思結果驗證**：6 維度結果出來後用 `jev_judge`（noul）驗證「這個反省結論有沒有遺漏風險」；`escalate: true` → 標記 ⚠️ 待確認，列在 deliverable「##
+  反思」段「⚠️ jev escalate 待確認」清單（**不寫在 checklist.md**），不在對話中自己補
+- **v2.1 術語說明**（B2）：本 skill 只用 `score` 類型（6 維度單類打分）；dev-checker-loop 用 `noul / choice / score`
+  三類混合（聚焦不同風險類型），兩者屬設計選擇、不是錯
 - **v2.1 jev 對接模板**：6 維度對應的 jev_judge 問題模板見 `checklist.md` 「## 7. jev_judge 對接表」
 - **為什麼**：6 維度是檢驗「交付物是否真的好」的核心
 - **產出**：對話中 6 維度檢查表

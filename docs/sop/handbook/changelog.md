@@ -20,11 +20,13 @@
 
 **決策紀錄（重要）**：
 
-- **v2.8 → v2.9 的關係**：v2.8 鋪 Module 基礎（design / dev / regression 三個 skill），v2.9 補完「Module 從 backlog 到交付」的閉環（planner + submitter + 範例）
+- **v2.8 → v2.9 的關係**：v2.8 鋪 Module 基礎（design / dev / regression 三個 skill），v2.9 補完「Module 從 backlog 到交付」的閉環（planner +
+  submitter + 範例）
 - **為什麼要建範例**：5 個 skill 連環改的價值只在完整流程中顯現；範例讓抽象 skill 變具體可讀；可作未來 skill 修改的「驗證素材」
 - **範例放 monorepo 主干**（用戶選推薦）：隨主 repo 演進、不會過期；可隨時 checkout / grep / diff
 - **「為什麼必含」的價值**：v2.8 前交付物只講「做了什麼」、驗收只看結果；v2.9 起必含「為什麼」獨立段、用戶可驗收決策是否對（不只是結果對不對）
 - **5 skill 連環改 = 閉環**：
+
   ```
   dav-designer v2.6 → 定義 Module 切割
        ↓
@@ -61,15 +63,19 @@
 | **P1** | `skills/regression-guard/api-contract.md` + `probe-naming.md` 加 Module 規則 | `REGRESSION_MODULE` 環境變量說明；探針命名加 Module prefix；integration test 用 `INT-` prefix |
 | **P2** | 三 commit 分 3 次推送（用戶決策） | `dav-skill-creater` 拆檔 commit + `regression-guard` 拆檔 commit + Module 感知邏輯 commit |
 
-**合計**：3 個 commit、7 個 skill 檔改動、+3 子檔（`editor-guide.md` / 5 個 `regression-guard/*` / `module-rules.md`）、合計約 +1300 行 / −700 行。
+**合計**：3 個 commit、7 個 skill 檔改動、+3 子檔（`editor-guide.md` / 5 個 `regression-guard/*` / `module-rules.md`）、合計約 +1300 行 /
+−700 行。
 
 **決策紀錄（重要）**：
 - **3 commit 還是 1 commit**（用戶決策起點）：選 3 commit — 可隨時 checkout 某個 task，不會混在一起。中間不需 checkpoint = 不需要 1 commit
 - **Module 單元怎麼訂**（用戶決策起點）：Module = 一組檔案 — 適合中大型項目，dav-designer 的 system-design.md 是 Module 定義來源
 - **Module 改動深度**（用戶決策起點）：全面、含兩個 skill — dev-checker-loop 派工 + regression-guard 探針都要綁 Module，缺一不可
-- **拆檔哲學一脈相承**：v2.5（dav-planner）流程 vs 內容 / v2.6（dav-designer）流程 vs 品質 / v2.7（變動歷史外移）/ v2.8（拆檔 + Module 感知）— 都是「以子檔職責正交為拆檔粒度」
-- **v2.6 dav-designer 鋪路 + v2.8 實現**：v2.6 dav-designer 加 Module 定義時說「為下游鋪路」；v2.8 實作時才看到「鋪路」是 dev-checker-loop + regression-guard 兩個 skill
-- **連環改不是失誤是必要**：Module 感知需 3 個 skill 同步改，只改一個 = 設計與執行不一致。傳統「一個 task 一個 commit」會讓人誤以為這是 3 個獨立任務；本 SOP 用「拆 commit 但仍記在同一版本（v2.8）」表達「是多個連環動作」
+- **拆檔哲學一脈相承**：v2.5（dav-planner）流程 vs 內容 / v2.6（dav-designer）流程 vs 品質 / v2.7（變動歷史外移）/ v2.8（拆檔 + Module 感知）—
+  都是「以子檔職責正交為拆檔粒度」
+- **v2.6 dav-designer 鋪路 + v2.8 實現**：v2.6 dav-designer 加 Module 定義時說「為下游鋪路」；v2.8 實作時才看到「鋪路」是 dev-checker-loop +
+  regression-guard 兩個 skill
+- **連環改不是失誤是必要**：Module 感知需 3 個 skill 同步改，只改一個 = 設計與執行不一致。傳統「一個 task 一個 commit」會讓人誤以為這是 3 個獨立任務；本 SOP 用「拆 commit
+  但仍記在同一版本（v2.8）」表達「是多個連環動作」
 
 **範圍邊界**：
 - ✅ 在 scope：`skills/dav-skill-creater` + `skills/regression-guard` + `skills/dev-checker-loop` 三 skill
@@ -124,8 +130,10 @@
 **合計**：主檔 −57 行、子檔 +1 個（workflow.md）、Module 定義 +1 章節。
 
 **決策紀錄（重要）**：
-- **Module 設計為下游 Skill 鋪路**：dav-designer 的 Module 定義不是為了設計本身，是為了讓未來重構 dev-checker-loop / regression-guard 時有明確的「執行邊界」。本次不動這兩個 skill（保留彈性），但 Step 3 明文寫下「Module 邊界即測試邊界」，下次重構有據可依
-- **拆檔哲學差异化 dav-planner**：dav-planner v2.2 拆「流程層 vs 內容層」（reference.md + backlog-rules.md）；dav-designer v2.4 拆「流程層 vs 品質層」（workflow.md + prototype-quality.md）。拆法不是固定模板，而是看「子檔職責是否正交」
+- **Module 設計為下游 Skill 鋪路**：dav-designer 的 Module 定義不是為了設計本身，是為了讓未來重構 dev-checker-loop / regression-guard
+  時有明確的「執行邊界」。本次不動這兩個 skill（保留彈性），但 Step 3 明文寫下「Module 邊界即測試邊界」，下次重構有據可依
+- **拆檔哲學差异化 dav-planner**：dav-planner v2.2 拆「流程層 vs 內容層」（reference.md + backlog-rules.md）；dav-designer v2.4 拆「流程層 vs
+  品質層」（workflow.md + prototype-quality.md）。拆法不是固定模板，而是看「子檔職責是否正交」
 - **dev-checker-loop / regression-guard 本次不動**：依用戶明確決策「只動 dav-designer」。下次重構這兩個 skill 時可實作「按 Module 派工 / 校驗 / 探針」邏輯
 - **跨 SOP 一致性**：dav-submitter 已使用「Module 級交付」術語（與本次定義一致）；AGENTS.md / 其他下游 skill 不受本次影響
 
@@ -134,7 +142,8 @@
 - ❌ 不在 scope：`skills/dev-checker-loop/` + `skills/regression-guard/`（用戶決策延後重構，僅在 dav-designer 內部為未來鋪路）
 - ❌ 不在 scope：`skills/dav-designer/prototype-quality.md`（既有子檔，職責與本次 workflow.md 正交，不需動）
 
-**前置**：本變更由用戶明確批准 + Agent 自跑校驗（行數 / 結構 / 三檔職責不重疊 / prototype-quality.md 引用一致），符合 V03 SOP 修改提案規範（diff + verdict 兩者並呈、用戶批准後生效）。
+**前置**：本變更由用戶明確批准 + Agent 自跑校驗（行數 / 結構 / 三檔職責不重疊 / prototype-quality.md 引用一致），符合 V03 SOP 修改提案規範（diff + verdict
+兩者並呈、用戶批准後生效）。
 
 ---
 
@@ -153,7 +162,8 @@
 **合計**：主檔 −110 行、子檔 +2 個、§2.7 章節 −1。
 
 **決策紀錄（重要）**：
-- **職責收斂**：dav-planner 從「對齊用戶（角色）+ 對齊任務（背景/目的/標準）」收斂為「只對齊任務」。下游 skill（dav-designer / tdd-test-writer / dav-submitter）吃的是 `docs/backlog.md` + `docs/ac/`，不需要對話用戶的角色資訊
+- **職責收斂**：dav-planner 從「對齊用戶（角色）+ 對齊任務（背景/目的/標準）」收斂為「只對齊任務」。下游 skill（dav-designer / tdd-test-writer / dav-submitter）吃的是
+  `docs/backlog.md` + `docs/ac/`，不需要對話用戶的角色資訊
 - **拆檔哲學**：呼應 SOP v2.0「LLM 注意力是稀缺資源」 — 主檔只留「流程怎麼走」，子檔是「Step 跑到的時候再去讀」。每個 Step 末尾新增 `**參考**：` 指向子檔
 - **撤銷的章節不抹去**：v1.9「用戶背景收集」保留在變動歷史，加註「（已廢棄）」讓未來讀者知道「為什麼這裡跳號」
 - **跨 SOP 一致性**：AGENTS.md / dav-designer / dav-trust / tdd-test-writer 等下游 skill 引用 dav-planner 為入口，不涉及 §2.7 細節，無連動修改
@@ -188,7 +198,8 @@
 
 **範圍邊界**：
 - ✅ 在 scope：v1.8 / v1.9 反思、v1.8 / v1.9 deliverable HTML、孤立 handbook
-- ❌ 不在 scope：trust-mode 反思（跨越 v2.0 規則設計重點）、v1.7.1 反思（技術債清理、跨多個 sprint）、DESIGN.md / system-design.md（兩個不同職責不同 sprint 使用）、TMO-005~009 的 deliverable.md（v2.0 後的對應檔，保留 audit）
+- ❌ 不在 scope：trust-mode 反思（跨越 v2.0 規則設計重點）、v1.7.1 反思（技術債清理、跨多個 sprint）、DESIGN.md / system-design.md（兩個不同職責不同 sprint
+  使用）、TMO-005~009 的 deliverable.md（v2.0 後的對應檔，保留 audit）
 
 **探針**：`tests/docs-reduction.bats` 6 探針守護已減狀態不退化。
 
@@ -287,7 +298,8 @@
 | 跨 dir 引用 | ✅ 純文字（見 `<path>`）；禁止 `../` markdown / `[[...]]` Obsidian 跨 dir |
 | skill 重結構 | ✅ 必走 TDD（探針先紅後綠）+ regression 全綠 |
 
-**前置**：Reviewer 二審驗收（內部 audit，基於結構對照表 + 跨 SOP 一致性檢查）→ **verdict: PASS WITH MINOR**（P0=0, P1=1 探針, P2=2 pre-existing 不阻擋 merge）。
+**前置**：Reviewer 二審驗收（內部 audit，基於結構對照表 + 跨 SOP 一致性檢查）→ **verdict: PASS WITH MINOR**（P0=0, P1=1 探針, P2=2 pre-existing 不阻擋
+merge）。
 
 ---
 
@@ -356,7 +368,8 @@
 | **P1** | `tests/dav-planner-ac-templates.bats` 新建 | 9 個探針守護 SKILL.md 章節（§4.3.2 / §4.6）/ PRD / docs/ac/ 範本 / changelog v1.8 / cross-consistency 不被靜默移除 |
 | **P2** | `docs/backlog.md` 新增 TMO-006 | 記錄本次變更 + Story Point 8 + 完成標準 |
 
-**目的**：解決用戶痛點「AC 塞在 backlog.md 表格 cell 內，閱讀體驗差、不利校對 / 分享 / 列印」— 根本原因是 markdown 表格 cell 對長內容渲染差，無論用 `<br>` 或 blockquote 都難用。修法是把 AC 抽出到獨立檔案（.md 給開發者、.html 給利害關係人），backlog.md 仍為 single source of truth。
+**目的**：解決用戶痛點「AC 塞在 backlog.md 表格 cell 內，閱讀體驗差、不利校對 / 分享 / 列印」— 根本原因是 markdown 表格 cell 對長內容渲染差，無論用 `<br>` 或 blockquote
+都難用。修法是把 AC 抽出到獨立檔案（.md 給開發者、.html 給利害關係人），backlog.md 仍為 single source of truth。
 
 **決策紀錄**：
 - **AC 架構**：A 方案「兩者並存」（backlog.md 精簡為摘要+連結，docs/ac/ 為完整 AC）
@@ -370,7 +383,8 @@
 - 本次 AC 摘要同樣用純文字前綴 + `<br>`（與 v1.6 慣例一致）
 - 完整 AC 不再塞 cell（徹底避開 markdown 表格渲染不一致問題）
 
-**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03 SOP 修改規則），驗證跨 SOP 一致性（dav-planner ↔ docs/prd ↔ docs/ac ↔ changelog）。Reviewer verdict 詳見對話記錄。
+**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03 SOP 修改規則），驗證跨 SOP 一致性（dav-planner ↔ docs/prd ↔ docs/ac ↔
+changelog）。Reviewer verdict 詳見對話記錄。
 
 ---
 
@@ -426,7 +440,8 @@
 | `tests/regression-guard-watch-mode.bats` | 0 / 5 | ⏭️ 無需改 |
 | **合計** | **137 / 209** | **15 個 bats 全改完** |
 
-**為什麼 Reviewer 二審補遺必要**：初版 audit 誤判「其他 7 個 wiki-*.bats 無中文」，違背 AGENTS.md §1 「誠實和用戶溝通」。Reviewer 獨立 audit 抓出實際遺漏 7 個 bats / 89 個 test。採方案 A（順手改完）保證 macOS 本地全綠。
+**為什麼 Reviewer 二審補遺必要**：初版 audit 誤判「其他 7 個 wiki-*.bats 無中文」，違背 AGENTS.md §1 「誠實和用戶溝通」。Reviewer 獨立 audit 抓出實際遺漏 7 個 bats
+/ 89 個 test。採方案 A（順手改完）保證 macOS 本地全綠。
 
 **順手修 latent bugs**（utf-8 改中文 test name 後浮現）：
 
@@ -443,7 +458,8 @@
 - Gate 3：regression == Gate 1
 
 **前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03）兩次：
-- 首次審查：FAIL（4 P0 blockers：选 6 個 bats 事實錯誤、漏 wiki-cross-ref 系列、system-design.md:195 缺 `../` 前綴、漏 DESIGN.md + CONTRIBUTING.md 殘留）
+- 首次審查：FAIL（4 P0 blockers：选 6 個 bats 事實錯誤、漏 wiki-cross-ref 系列、system-design.md:195 缺 `../` 前綴、漏 DESIGN.md +
+  CONTRIBUTING.md 殘留）
 - 重審：FAIL（1 P0 blocker：漏 7 個未改的 wiki-*.bats，含 89 個中文 test name）
 - 最終審查（包含上進全部修正後）：仍待續審
 
@@ -474,7 +490,8 @@
 
 **翻轉依據**：
 1. **當初問題已不存在**：v1.4 changelog 已為 bats 加了 `$REPO_ROOT` 標準化（`tests/helpers/test-env.bash`），絕對路徑依賴已消除
-2. **新需求觸發**：skill self-contained 是 dav-wiki install.sh 簡化部署的關鍵（`install.sh` 把整個 `skills/dav-wiki/` 一起 symlink 進 `~/.pi/skills/dav-wiki/` 時，scripts 也跟著安裝，UX 一致）
+2. **新需求觸發**：skill self-contained 是 dav-wiki install.sh 簡化部署的關鍵（`install.sh` 把整個 `skills/dav-wiki/` 一起 symlink 進
+   `~/.pi/skills/dav-wiki/` 時，scripts 也跟著安裝，UX 一致）
 3. **成本 vs 收益**：bats 10 個檔案機械式路徑替換 ≈ 30 分鐘；換來未來 install.sh 簡化 50%+、skill 真正 self-contained
 4. **不再破壞向後相容**：本次確認無外部用戶（無下游依賴 `tools/wiki-*`）；TMO-005 加註 superseded by v1.7
 
@@ -497,11 +514,13 @@
 | **P1** | `2.1-planning.md` Plan Gate 通過聲明加「SWOT 落版（如有）」選填欄 | 對應 §2.6 與 §4.3.1；如有展開 SWOT 才填 |
 | **同步** | `tree_monstor/skills/dav-planner/SKILL.md`（如為獨立檔案，非 hardlink） | 與 `~/.pi/agent/skills/dav-planner/SKILL.md` 同步 |
 
-**目的**：讓 dav-planner 在「關鍵決策點」不只是給一句話效果說明，而是展開策略性 SWOT（Strengths/Weaknesses/Opportunities/Threats），協助用戶做更完整的策略性決策；同時保留 §2.2 的輕量路徑，避免認知過載（不每個選項都做 SWOT）。
+**目的**：讓 dav-planner 在「關鍵決策點」不只是給一句話效果說明，而是展開策略性 SWOT（Strengths/Weaknesses/Opportunities/Threats），協助用戶做更完整的策略性決策；同時保留
+§2.2 的輕量路徑，避免認知過載（不每個選項都做 SWOT）。
 
 **觸發條件**：用戶提出 dav-planner skill 優化需求，2026-09-25 確認方向（只在關鍵決策點用 / Agent 草案+用戶驗證 / 對話+落版備註）。
 
-**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03 SOP 修改規則），驗證跨 SOP 一致性 + Markdown 表格渲染風險。Reviewer verdict: PASS with Conditions，已接受全部 10 項修訂（4 必改 + 3 強烈建議 + 3 可選）。
+**前置**：變更經 dev-checker-loop Reviewer subagent 二審（V03 SOP 修改規則），驗證跨 SOP 一致性 + Markdown 表格渲染風險。Reviewer verdict: PASS with
+Conditions，已接受全部 10 項修訂（4 必改 + 3 強烈建議 + 3 可選）。
 
 ---
 
@@ -531,9 +550,12 @@
 | **P1** | `docs/sop/handbook/2.3-execution.md` 加「Gate 3 測試指令的常見陷阱」章節 | 對齊 SKILL.md 的核心指令表，方便人類閱讀 |
 | **P1** | `tests/regression-guard-watch-mode.bats`（5 個探針） | 守護新規則不會被靜默移除（SKILL × 2 / gates.json × 1 / handbook × 1 / cross-consistency × 1）|
 
-**目的**：解決用戶痛點「Tree Monstor 跑 Gate 3 baseline 時卡在 `Waiting for task` 凍住 session」— 根本原因是 agent shell 在 TTY 偵測上模糊，runner（vitest / jest / 部分 `npm test`）預設進入 watch mode 等 stdin。修法是把「禁用 watch mode」從隱性經驗提升為 SOP 強制規則，並用 bats 守護不被未來改動移除。
+**目的**：解決用戶痛點「Tree Monstor 跑 Gate 3 baseline 時卡在 `Waiting for task` 凍住 session」— 根本原因是 agent shell 在 TTY
+偵測上模糊，runner（vitest / jest / 部分 `npm test`）預設進入 watch mode 等 stdin。修法是把「禁用 watch mode」從隱性經驗提升為 SOP 強制規則，並用 bats
+守護不被未來改動移除。
 
-**前置**：`~/.claude/skills/regression-guard/SKILL.md` 與 `tree_monstor/skills/regression-guard/SKILL.md` 是同一 inode（hardlink），改一邊兩邊同步。
+**前置**：`~/.claude/skills/regression-guard/SKILL.md` 與 `tree_monstor/skills/regression-guard/SKILL.md` 是同一
+inode（hardlink），改一邊兩邊同步。
 
 ## v1.3 — 2025-08-24
 
@@ -546,9 +568,11 @@
 | **P1** | `2.3-execution.md` 加「失敗處理策略」章節 | 三種策略表 + 各 Gate 預設表 + Agent 必做動作 |
 | **同步** | `tests/fixtures/mock-tree-monstor/docs/sop/` 三檔同步 | gates.json / gates.schema.json / 2.3-execution.md |
 
-**目的**：解決用戶痛點「明明 test 做好了，但 agent 就停下來等」— 根本原因是 SOP 只寫 fail_action（禁止行為）沒寫補救策略，導致 agent 行為不一致。`remediation` 補上明確指引，讓 Agent 知道失敗時該「自動修」還是「問用戶」，預估整體等待時間減少 30-40%。
+**目的**：解決用戶痛點「明明 test 做好了，但 agent 就停下來等」— 根本原因是 SOP 只寫 fail_action（禁止行為）沒寫補救策略，導致 agent 行為不一致。`remediation` 補上明確指引，讓
+Agent 知道失敗時該「自動修」還是「問用戶」，預估整體等待時間減少 30-40%。
 
-**前置設定**（同日已完成）：在 `~/.pi/agent/settings.json` 把 `retry.provider.timeoutMs` 從預設 3,600,000 ms (1 hr) → 600,000 ms (10 min)，避免 agent 卡 1 小時才 abort。
+**前置設定**（同日已完成）：在 `~/.pi/agent/settings.json` 把 `retry.provider.timeoutMs` 從預設 3,600,000 ms (1 hr) → 600,000 ms (10
+min)，避免 agent 卡 1 小時才 abort。
 
 ## v1.2 — 2025-08-22
 

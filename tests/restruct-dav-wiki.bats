@@ -138,6 +138,44 @@ load 'helpers/test-env'
   }
 }
 
+@test "RESTRUCT-DAV-WIKI: 子檔內容錨點（掏空即紅，TMO-033）" {
+  local dir="$REPO_ROOT/skills/dav-wiki"
+  # TMO-033：原本只鎖「指標指向的檔案存在」→ 子檔被掏空（只剩標題）仍綠。
+  # ① 通用鎖：每個被指到的子檔都要有實質內容（非空白行 ≥ 8）
+  local checked=0 rel lines
+  while IFS= read -r rel; do
+    local f="$dir/${rel#./}"
+    lines=$(grep -c '[^[:space:]]' "$f")
+    [ "$lines" -ge 8 ] || {
+      echo "FAIL: skills/dav-wiki/${rel#./} 有效行僅 ${lines}（< 8）＝子檔被掏空" >&2
+      return 1
+    }
+    checked=$((checked + 1))
+  done < <(grep -oE '\./[A-Za-z0-9._-]+\.md' "$REPO_ROOT/skills/dav-wiki/SKILL.md" | sort -u)
+  [ "$checked" -ge 4 ] || { echo "FAIL: 只檢查到 $checked 個子檔（擷取失效）" >&2; return 1; }
+
+  # ② 關鍵內容鎖：被 TMO-028 拆出去的子檔，其核心產物／機制名詞必須還在
+  #    錨點須為「獨立詞」（前後不得為英數/底線/連字號），否則 `--purge-x` 也會誤過
+  anchor_hit() {
+    local pat="${2//./\\.}"
+    grep -qE "(^|[^A-Za-z0-9_-])${pat}([^A-Za-z0-9_-]|\$)" "$1"
+  }
+  local anchors=0 token f
+  for token in '_index.json' '_tags.json' '_concepts.json' 'transcript.md'; do
+    f="$dir/output-structure.md"
+    anchor_hit "$f" "$token" || {
+      echo "FAIL: output-structure.md 缺獨立詞 '$token'（內容漂移／掏空）" >&2; return 1; }
+    anchors=$((anchors + 1))
+  done
+  for token in 'deprecated_at' '--older-than' '--purge'; do
+    f="$dir/soft-delete.md"
+    anchor_hit "$f" "$token" || {
+      echo "FAIL: soft-delete.md 缺獨立詞 '$token'（內容漂移／掏空）" >&2; return 1; }
+    anchors=$((anchors + 1))
+  done
+  [ "$anchors" -ge 7 ] || { echo "FAIL: 內容錨點只驗到 $anchors 個（< 7）＝錨點表被削弱" >&2; return 1; }
+}
+
 @test "RESTRUCT-DAV-WIKI: file size sanity (was 143; allow up to 220)" {
   local skill="$REPO_ROOT/skills/dav-wiki/SKILL.md"
   local lines

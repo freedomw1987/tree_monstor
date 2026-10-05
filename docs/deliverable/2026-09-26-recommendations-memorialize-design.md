@@ -36,6 +36,7 @@ dav-planner v2.6 引入 dav-wiki 後產生 2 條「給未來的建議」（見 d
 ### 2.2 A. dav-planner 主檔 v2.6「為什麼」欄位追加
 
 **原內容**：
+
 ```
 dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝
 ```
@@ -43,6 +44,7 @@ dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二�
 **修正**：分兩段（決策依據 + 後續維護提醒），避免混雜語意
 
 **修正後（兩段）**：
+
 ```
 dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝
 
@@ -56,6 +58,7 @@ dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二�
 **修正原因**：AGENTS.md 無 §2.1 母節（已抽去 handbook）、§2.1.5 編號會破壞 §2.x 索引一致性；§1.5.1 是「紀律延伸」、語意最貼切（預檢是 fail-fast 紀律的一部分）
 
 **內容**（在 §1.5 表格加 1 行）：
+
 ```
 | **V03.5** — V03 SOP 修改前必跑主檔行數預檢（見 `dav-skill-creater/editor-guide.md`「主檔行數預檢規範」） | 避免主檔逼近 150 上限 | 純文字修正不需預檢 |
 ```
@@ -90,9 +93,11 @@ dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二�
 | v2.6 | 2026-09-26 | +editor-guide.md 「主檔行數預檢規範」新章節；V03 SOP 修改前必跑 `wc -l` 預檢 | dav-planner v2.6 反思 R4：主檔 138/150 餘裕 12 行，下次再加需外移；建立預檢機制以免屆時被動瘦身 |
 ```
 
-**dav-skill-creater 主檔加 v2.6 後觸發 v2.4 外移**：當前 3 條（v2.5/v2.4/v2.3）+ v2.6 = 4 條 → **v2.3 外移到 CHANGELOG.md**，主檔只留 v2.6 / v2.5 / v2.4 共 3 條
+**dav-skill-creater 主檔加 v2.6 後觸發 v2.4 外移**：當前 3 條（v2.5/v2.4/v2.3）+ v2.6 = 4 條 → **v2.3 外移到 CHANGELOG.md**，主檔只留 v2.6 /
+v2.5 / v2.4 共 3 條
 
 **dav-skill-creater/CHANGELOG.md 加 v2.6 條目**（完整紀錄）：
+
 ```markdown
 | v2.6 | 2026-09-26 | +editor-guide.md 「主檔行數預檢規範」新章節（V03 SOP 修改前必跑 `wc -l`）；主檔變動歷史 v2.3 外移 | dav-planner v2.6 反思 R4：主檔 138/150 餘裕 12 行；建立預檢機制以免主檔逼近 150 才被動瘦身 |
 ```

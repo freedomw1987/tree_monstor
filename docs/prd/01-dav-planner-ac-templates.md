@@ -11,7 +11,8 @@
 
 ### 1.1 問題
 
-dav-planner skill (§4.3) 目前把 AC（Acceptance Criteria）整段塞在 `docs/backlog.md` 表格的「交付價值與驗收標準 (AC)」cell 內。一個 User Story 的 AC 通常含：
+dav-planner skill (§4.3) 目前把 AC（Acceptance Criteria）整段塞在 `docs/backlog.md` 表格的「交付價值與驗收標準 (AC)」cell 內。一個 User Story 的 AC
+通常含：
 
 - Given-When-Then × 3-5 條
 - DoD checklist × 4-6 項

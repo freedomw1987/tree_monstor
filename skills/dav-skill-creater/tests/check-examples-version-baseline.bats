@@ -3,10 +3,17 @@
 # 守則：每個 skill 的 examples/ 子目錄下檔案必含「對應 skill 版本基線」標記
 # 守則起源：skill 自包含化任務 Reviewer F4 修正（防範例與 skill 版本漂移）
 # 守則適用：~/.pi/agent/skills/*/examples/*.{md,ts}
+# CI 實跑：以 SKILLS_DIR_OVERRIDE 指向 repo 的 skills/（本機預設為 ~/.pi/agent/skills）
 # 觸發：2026-09-26 skill 自包含化
 
 setup() {
-  SKILLS_DIR="${HOME}/.pi/agent/skills"
+  # TMO-047：預設掃「已安裝」的 skills；CI 以 SKILLS_DIR_OVERRIDE 指向 repo 的 skills/。
+  # 沒有 root 就大聲紅（否則整支探針會空過：掃不到檔 → 0 violations）。
+  SKILLS_DIR="${SKILLS_DIR_OVERRIDE:-${HOME}/.pi/agent/skills}"
+  if [ ! -d "$SKILLS_DIR" ]; then
+    echo "FAIL: SKILLS_DIR 不存在：${SKILLS_DIR}（探針會空過）→ 設 SKILLS_DIR_OVERRIDE 或檢查環境" >&2
+    return 1
+  fi
 }
 
 @test "each example file declares its skill version baseline" {
@@ -33,9 +40,11 @@ setup() {
       done
     fi
   done
-  # 若完全沒有 examples/ 子目錄，視為通過（探針不強制要求每個 skill 都有 examples）
+  # TMO-047：原本「掃不到就 skip」＝空過（CI 上會靜默綠）。改為大聲紅：
+  # 掃不到任何 examples/ 通常代表 root 指錯，而不是「大家剛好都沒有 examples」。
   if [ "$found_any" -eq 0 ]; then
-    skip "no examples/ subdirectory found in any skill"
+    echo "FAIL: 在 $SKILLS_DIR 掃不到任何 skill 的 examples/（found_any=0）→ 探針空過，root 可能指錯" >&2
+    return 1
   fi
   [ "$violations" -eq 0 ]
 }

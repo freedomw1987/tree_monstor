@@ -32,7 +32,8 @@ v1.8 / v1.9 連續兩個 sprint 的反省報告顯示，**完整 SOP 流程產�
 3. **docs/sop/handbook/changelog.md**：新增 v2.0 條目
 4. **docs/backlog.md**：新增 TMO-008（Story Point 估算見下）
 5. **PRD**：本次變更需要架構決策 → 寫 PRD（本檔）
-6. **Tests**（必要守護）：6 個探針守護 v2.0 規則（changelog v2.0、dav-submitter 不再提「三層」、不要求 HTML、§2.5 self-check 無 HTML、§2.4 反思併進規則、TMO-008 backlog）
+6. **Tests**（必要守護）：6 個探針守護 v2.0 規則（changelog v2.0、dav-submitter 不再提「三層」、不要求 HTML、§2.5 self-check 無 HTML、§2.4
+   反思併進規則、TMO-008 backlog）
 
 ### Non-goals（不做）
 
@@ -101,7 +102,7 @@ v1.8 / v1.9 連續兩個 sprint 的反省報告顯示，**完整 SOP 流程產�
 
 | 風險 | 緩解 |
 |------|------|
-| 用戶忘記新規則，Agent 又寫出 html | §2.5 SOP 明示「不再生成 html」+ §2.7 (v1.9) 角色題依舊先問 |
+| 用戶忘記新規則，Agent 又寫出 html | §2.5 SOP 明示「不再生成 html」+ 交付物格式定錨（模板與章節清單）|
 | Reflection 併進 deliverable 變長，難讀 | deliverable 結構強制定錨「## 反思」段 |
 | 探針減少 → 守護不足 | 加「必要守護判斷準則」（什麼情境要加探針）|
 

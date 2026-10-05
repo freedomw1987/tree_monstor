@@ -245,7 +245,8 @@ fcd8f3f feat(regression-guard): M6.2 patch + re-validate 閉環
 
 - **V01（一次一問）**：trust 模式不解 ask_user_question（用戶已授權 trust）✅
 - **V02（推薦第一）**：trust 模式按 V01 用戶指示「M7 M8 做」順序 ✅
-- **V03（SOP 修改必 Reviewer）**：本 sprint 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL v2.7/v2.8）+ 新增模組 — **V03 N/A** ✅
+- **V03（SOP 修改必 Reviewer）**：本 sprint 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL v2.7/v2.8）+ 新增模組 —
+  **V03 N/A** ✅
 
 ### trust 底線遵守
 

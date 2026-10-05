@@ -31,7 +31,8 @@
   - **AC-1** (Given-When-Then): Given 用戶在結帳頁輸入有效信用卡 When 點擊付款 Then 建立付款單且呼叫第三方閘道
   - **AC-2** (Given-When-Then): Given 第三方閘道回傳成功 When 用戶等待 3 秒內 Then 訂單狀態更新為 PAID
   - **AC-3** (Given-When-Then): Given 第三方閘道 timeout When 超過 30 秒 Then 付款單狀態為 FAILED 且釋放 DB connection
-  - **AC-4** (DoD): 探針 `M02-create-payment-returns-success-on-valid-card` 必通過；`REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201` 必綠
+  - **AC-4** (DoD): 探針 `M02-create-payment-returns-success-on-valid-card`
+    必通過；`REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201` 必綠
 - **依賴**: —
 - **驗收方式**: 跑 `REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201`；M02 內部所有探針全綠
 - **為什麼這個優先**（dav-planner v2.3 新增）：P0 是因為這是 M02 Module 的入口；沒這個 US，M02 其他 US 無法測試；INT-M01-M02-01 也依賴它

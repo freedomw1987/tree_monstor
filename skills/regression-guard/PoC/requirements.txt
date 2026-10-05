@@ -11,5 +11,11 @@
 httpx>=0.27,<1
 PyYAML>=6.0
 #
-# 已知未涵蓋（TMO-038）：縮排（函式內）與子目錄的 import 不在探針掃描範圍，
-# 例如 playwright_observer.py 內的 `import playwright`（optional dep，故意不裝）。
+# 掃描範圍（TMO-038）：探針改用 AST 遞迴掃描**全部** *.py（含縮排的函式內 import、
+# 含子目錄），因此任何新依賴都會被要求列在這裡。
+#
+# optional 依賴：原始碼用行內標記 `# PoC-OPTIONAL-DEP` 自我說明（例：
+# playwright_observer.py 的 lazy `import playwright` / `from playwright.sync_api import ...`）。
+# 探針會把有標記的 import 排除在「必須列於本檔」之外，但同時有反向鎖：
+# 標記只能出現在 import/from 行上（濫用即紅）、且本檔必須出現 `PoC-OPTIONAL-DEP` 字樣
+# （機制必須可被發現，不得變成隱藏例外清單）。

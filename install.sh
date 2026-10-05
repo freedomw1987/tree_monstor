@@ -41,9 +41,11 @@ readonly DIR_AGENTS=".agents"
 
 # Loader marker 用來識別被本腳本管理的檔案
 readonly LOADER_MARKER="tree-monstor-loader:DO-NOT-EDIT-START"
+# shellcheck disable=SC2034  # 目前未使用：保留為 loader 格式的單一來源（實際字串在 lib/install/agents.sh 的 heredoc）
 readonly LOADER_END_MARKER="tree-monstor-loader:DO-NOT-EDIT-END"
 
 # 已知 agent 列表（驗證用）
+# shellcheck disable=SC2034  # 目前未使用：保留為 agent 白名單的單一來源
 readonly KNOWN_AGENTS=("claude" "pi")
 
 # ---------- Source the lib/ helpers ----------

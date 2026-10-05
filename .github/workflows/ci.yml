@@ -34,14 +34,42 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y bats poppler-utils pandoc tesseract-ocr ffmpeg
+          # shellcheck：Gate 2 的靜態檢查（NYH-6 決策 A：CI 過去完全沒跑 shellcheck）
+          sudo apt-get install -y poppler-utils pandoc tesseract-ocr ffmpeg shellcheck
           python3 -m pip install python-pptx
+          # bats-core 固定版本（TMO-041）：apt 的 bats 版本會隨 runner 映像漂移，
+          # 探針行為（陣列展開、輸出格式）就會跟著變 → 兩平台都裝同一個 tag。
+          # 2026-10-05 CI 首跑修正：clone 到 $RUNNER_TEMP，**不汙染工作區**——
+          # 否則 `bats-core/test/**` 會被 ENV-EQ-12 的 orphan 掃描當成 repo 的孤兒 .bats（紅）。
+          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats-core"
+          sudo "$RUNNER_TEMP/bats-core/install.sh" /usr/local
 
       - name: Install test dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install bats-core poppler pandoc tesseract ffmpeg
+          # bash：macOS runner 的 /bin/bash 是 3.2，而 bats 1.14.0 的 test-name 編碼在
+          # 「bash 3.2 + UTF-8 locale」下會把非 ASCII 測試名編壞 → 靜默丟掉 31 條測試
+          # （2026-10-05 CI 首跑實測）。裝 bash 5 並排到 PATH 最前，讓 `env bash` 解析到 5.x，
+          # 與開發者本機、與 ubuntu leg 等價；3.2 覆蓋由本機鎖 ENV-EQ-19 接手。
+          # shellcheck：Gate 2 的靜態檢查（NYH-6 決策 A）
+          brew install poppler pandoc tesseract ffmpeg shellcheck bash
           python3 -m pip install python-pptx
+          # bats-core 固定版本（TMO-041）＋與 Linux 同一個 tag（見上方說明）
+          git clone --branch v1.14.0 --depth 1 https://github.com/bats-core/bats-core.git "$RUNNER_TEMP/bats-core"
+          sudo "$RUNNER_TEMP/bats-core/install.sh" /usr/local
+          # ⚠️ 只把 bash 5 推入 PATH 最前，**不要把整個 $(brew --prefix)/bin 推進去**：
+          # 那會讓後續步驟的 `python3` 變成 homebrew 的 python（沒裝 python-pptx）
+          # → PPTX 探針 AC-E5／AC-E6／AC-E21 紅（2026-10-05 CI 第二次實測，我自己造成的回歸）。
+          # 用一個只含 bash 符號連結的目錄，效果相同、副作用最小。
+          mkdir -p "$HOME/.ci-bin"
+          ln -sf "$(brew --prefix)/bin/bash" "$HOME/.ci-bin/bash"
+          echo "$HOME/.ci-bin" >> "$GITHUB_PATH"
+
+      - name: Verify ffmpeg version and flags
+        # TMO-042：兩平台版本不同（apt ffmpeg 6.x / brew 8.x），ffmpeg 8 已移除 -vsync。
+        # 這步鎖「版本底線 5.1」+ 用本 repo 真的在用的旗標組合（-vf select/showinfo +
+        # -fps_mode vfr + -f null -）實測能力，缺一即紅。
+        run: bash scripts/ci/check-ffmpeg-version.sh
 
       - name: Build PoC venv (httpx + PyYAML)
         run: bash skills/regression-guard/PoC/setup-venv.sh
@@ -49,38 +77,54 @@ jobs:
       - name: Run bats tests
         run: bats tests/
 
-      - name: Verify bash syntax
+      - name: Run skill-local probes
+        # TMO-047：skills/*/tests/*.bats 過去從未被 CI 執行（改了不會擋）。
+        # 這些探針預設掃「已安裝」的 skills，故必須以環境變數把 root 指到 repo，
+        # 否則掃不到檔＝靜默綠（原本其中一支甚至會 skip 掉）。
+        # 守門探針：tests/env-equivalence.bats ENV-EQ-11。
+        run: SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
+
+      - name: ShellCheck every tracked shell file
+        # NYH-6（2026-10-05 決策 A）：CI 過去完全沒跑 shellcheck，且下一步只 glob 硬編子集
+        # → 「本機 Gate 2 全綠」不等於 CI 會擋。這裡與本機 Gate 2 用同一條自我列舉指令。
+        # ⚠️ 版本漂移（2026-10-05 實測）：本機 0.11.0 已不再報 SC2002，ubuntu apt 0.9.x 仍會報
+        # → 同一份碼「本機綠、CI 紅」確實發生過。先印版本，方便日後從 log 診斷。
+        # 守門探針：tests/env-equivalence.bats ENV-EQ-18。
         run: |
-          # 全部 dav-wiki scripts（TMO-039：原本只驗 3 支，改到其他 6 支不會被擋）
-          for f in skills/dav-wiki/scripts/*.sh; do
+          shellcheck --version | head -3
+          shellcheck -x -S style $(git ls-files '*.sh' '*.bash')
+
+      - name: Verify bash syntax
+        # NYH-6 決策 A：原本只 glob `skills/dav-wiki/scripts/*.sh`（硬編子集，漏 install.sh、
+        # lib/**、scripts/ci/**、skills/*/PoC/**、tests/helpers/**）→ 改為自我列舉。
+        # 守門探針：tests/env-equivalence.bats ENV-EQ-18。
+        run: |
+          n=0
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
             bash -n "$f" || exit 1
-          done
-          echo "OK: $(ls skills/dav-wiki/scripts/*.sh | wc -l | tr -d ' ') scripts syntax-checked"
+            n=$((n + 1))
+          done <<< "$(git ls-files '*.sh' '*.bash')"
+          # 下限（reviewer round L P2-1）：列舉空掉時不能印 OK 假綠（舊硬編 glob 在無匹配時是 fail-closed）。
+          # 門檻 20 是列舉器 tripwire（現況 23 檔）；若日後合法縮到 < 20 支 shell 檔，請同步調整此值。
+          [ "$n" -ge 20 ] || { echo "FAIL: 只列舉到 $n 個 shell 檔（< 20）→ 列舉器壞了"; exit 1; }
+          echo "OK: $n shell files syntax-checked"
 
       - name: Verify SKILL.md size (≤ 150 lines)
-        run: |
-          LINES=$(wc -l < skills/dav-wiki/SKILL.md)
-          if [ "$LINES" -gt 150 ]; then
-            echo "::error::SKILL.md too long: $LINES lines (max 150)"
-            exit 1
-          fi
-          echo "OK: SKILL.md has $LINES lines"
+        # 自動列舉所有 skill 主檔（不再只檢查一個檔案）：
+        # 硬編單檔＝其他主檔改爆不會被擋（同 TMO-038 ④ / TMO-033 的教訓）。
+        # 守門探針：tests/skill-size-guard.bats（SSG-1/2/3）。
+        run: bash scripts/ci/check-skill-size.sh
 
       - name: Verify Python heredoc syntax
-        run: |
-          # 抽出 wiki-cleanup.sh 的 Python heredoc 並驗證語法
-          python3 -c "import yaml; yaml.safe_load(open('skills/dav-wiki/scripts/wiki-cleanup.sh'.replace('.sh','.yaml')))" 2>/dev/null || true
-          # 簡單檢查 heredoc 開頭/結尾平衡
-          if grep -c "^PYEOF$" skills/dav-wiki/scripts/wiki-cleanup.sh skills/dav-wiki/scripts/wiki-cross-ref.sh | grep -v ":0$" | grep -v ":1$" | grep -v ":2$" >/dev/null; then
-            echo "::warning::PYEOF marker count unexpected"
-          fi
+        run: bash scripts/ci/check-python-heredocs.sh
 
   lint-only:
     name: Markdown lint
     runs-on: ubuntu-latest
-    # TMO-037：lint 債 246 處（184 條長行）未清，先不讓 CI 首跑被它卡紅；
-    # 紅燈仍會以 annotation 顯示。清完 TMO-037 後請移除本行，讓 lint 恢復阻擋。
-    continue-on-error: true
+    # TMO-037（2026-10-05）：債已清 0，本 job 恢復阻擋（不再設 job 級容錯）。
+    # 守門探針：tests/markdownlint-guard.bats（MLG-1/2 鎖住 job 存在且會擋、MLG-3/4/8 鎖 glob 不縮小）。
+    # 注意：glob 必須涵蓋 tests/fixtures/**/*.md，且不得把 .venv/ 納入（見 .markdownlint-cli2.jsonc）。
     steps:
       - uses: actions/checkout@v4
       - run: npm install -g markdownlint-cli2

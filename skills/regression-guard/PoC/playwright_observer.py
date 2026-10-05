@@ -41,7 +41,7 @@ USER_AGENT = "regression-guard-jev-poc/3.1"
 def _is_playwright_available() -> bool:
     """檢查 playwright 是否有裝。沒裝就不能用這個 backend。"""
     try:
-        import playwright  # noqa: F401
+        import playwright  # noqa: F401  # PoC-OPTIONAL-DEP（lazy import：沒裝仍可 import 本模組）
         return True
     except ImportError:
         return False
@@ -103,7 +103,7 @@ class PlaywrightSession:
         if self._page is not None:
             return
         # Lazy import：沒裝 playwright 會在這裡 raise
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright  # PoC-OPTIONAL-DEP（同 _is_playwright_available 的 lazy 策略）
         self._started_at = time.perf_counter()
         pw = sync_playwright().start()
         self._browser = pw.chromium.launch(headless=self._headless)

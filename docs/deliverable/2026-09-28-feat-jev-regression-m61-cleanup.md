@@ -17,7 +17,8 @@
 
 **關鍵設計決策**：
 
-> **M6.1 不接外部 Claude/GPT** — 召喚 regression-guard skill 時的 LLM（subagent / pi 本身）就是接力的 LLM。Prompt template 是「檔案」可版本化，不需另外維護 prompt 邏輯雙重來源。
+> **M6.1 不接外部 Claude/GPT** — 召喚 regression-guard skill 時的 LLM（subagent / pi 本身）就是接力的 LLM。Prompt template
+> 是「檔案」可版本化，不需另外維護 prompt 邏輯雙重來源。
 
 ---
 
@@ -177,7 +178,8 @@ fffbd28 Merge PR #2 (M1-M4) → master
 
 - **V01（一次一問）**：1 個 ask_user_question（4 選項：M6.1 形式 / cleanup 範圍），2 題合併 1 個問題，0 個 follow-up ✅
 - **V02（推薦第一）**：M6.1 推薦「Subagent 接力（推薦）」、cleanup 推薦「加 /docs/cleanup（推薦）」— 都標 Recommended ✅
-- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL.md v2.3 → v2.4）+ prompt template + 新增 `docs/cleanup/` 模組 — **V03 N/A** ✅
+- **V03（SOP 修改必 Reviewer）**：本 PR 沒改 SOP/AGENTS.md/gates.json/handbook；改的是 skill 本體（SKILL.md v2.3 → v2.4）+ prompt
+  template + 新增 `docs/cleanup/` 模組 — **V03 N/A** ✅
 
 ### 對未來的 Action Items
 

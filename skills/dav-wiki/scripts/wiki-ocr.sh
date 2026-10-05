@@ -21,6 +21,10 @@ fi
 EXIT_OK=0
 EXIT_USAGE=1
 EXIT_NOINPUT=2
+# EXIT_TOOLMISSING：usage 已承諾 exit 4 =「必要工具缺失（且未啟 mock）」，
+# 但現行行為是自動降級為 mock（見下方 WARN）。「硬退 4 or 降級」屬 TMO-035 的決策，
+# 這裡保留常數不動（TMO-043 只清確定性的死碼）。
+# shellcheck disable=SC2034
 EXIT_TOOLMISSING=4
 
 # === 使用說明 ===
@@ -91,7 +95,9 @@ tesseract_ocr() {
     tesseract "$file" "$output_base" -l "$LANGUAGE" 2>/dev/null
     local text=""
     if [[ -f "$output_base.txt" ]]; then
-        text=$(cat "$output_base.txt" | tr '\n' ' ' | sed 's/  */ /g' | sed 's/^ *//;s/ *$//')
+        # 不用 `cat file |`：ubuntu CI 的 shellcheck 0.9.x 會報 SC2002（本機 0.11.0 已不再報
+        # → 本機綠、CI 紅），改用輸入重導向寫法，兩版本都乾淨（2026-10-05 CI 第二次實測）
+        text=$(tr '\n' ' ' < "$output_base.txt" | sed 's/  */ /g' | sed 's/^ *//;s/ *$//')
     fi
 
     # 嘗試取得 confidence（從 tesseract verbose 模式）
@@ -168,10 +174,15 @@ process_batch() {
     done < <(find "$dir" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) -print0)
 
     # 批次 manifest
+    # 引擎標記：mock 模式或本機沒有 tesseract 就算 mock（SC2015：不用 A && B || C）
+    ocr_engine="tesseract"
+    if [[ "$FORCE_MOCK" = true ]] || [[ -z "$(command -v tesseract)" ]]; then
+        ocr_engine="mock"
+    fi
     cat > "$outdir/manifest.json" <<EOF
 {
   "type": "ocr",
-  "engine": "$([ "$FORCE_MOCK" = true ] && echo "mock" || ([ -n "$(command -v tesseract)" ] && echo "tesseract" || echo "mock"))",
+  "engine": "$ocr_engine",
   "language": "$LANGUAGE",
   "count": $count,
   "extracted_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"

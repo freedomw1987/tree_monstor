@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # skills/dav-wiki/scripts/wiki-cleanup.sh — TD-019 dav-wiki 軟刪除磁碟清理 CLI
-# 對應 docs/sop/handbook/dav-wiki-cleanup.md
+# 對應 skills/dav-wiki/soft-delete.md（TMO-028 後手冊已從 docs/sop/handbook 併回 skill）
 
 set -uo pipefail
 
@@ -13,7 +13,7 @@ set -uo pipefail
 # this script raise expected errors (e.g. _purge mode skips creating
 # _deprecated/, so the DEPRECATED_INDEX Python block fails harmlessly).
 _LOG_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/lib/log.sh"
-# shellcheck source=lib/log.sh  # 相對於 repo root（Gate 2 一律在 repo root 跑 shellcheck）
+# shellcheck source=lib/log.sh  # 相對 repo root（Gate 2 一律在 repo root 跑 shellcheck -x）
 source "$_LOG_LIB"
 
 # === 預設值 ===
@@ -36,7 +36,7 @@ Options:
   --purge               真刪除（危險，預設禁用）
   --help / -h           顯示說明
 
-對應手冊: docs/sop/handbook/dav-wiki-cleanup.md
+對應手冊: skills/dav-wiki/soft-delete.md
 EOF
 }
 

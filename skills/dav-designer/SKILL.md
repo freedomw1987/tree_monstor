@@ -15,7 +15,8 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
    - **V02**：方案必標推薦
    - **V03**：本 skill 修改必走 Reviewer 二審
    - **互動原型先於實作**：未走 Step 4.5 自審 + 用戶簽核，不得進入 Step 5 產原型
-5. **必產出物**：`DESIGN.md` + `system-design.md` + `docs/prd/<序號-module>.md`（含追溯矩陣）+ `docs/prd/<序號-module>.html`（**互動原型**）+ 自審報告（對話產出）
+5. **必產出物**：`DESIGN.md` + `system-design.md` + `docs/prd/<序號-module>.md`（含追溯矩陣）+ `docs/prd/<序號-module>.html`（**互動原型**）+
+   自審報告（對話產出）
 
 ## 觸發時機
 

@@ -7,7 +7,7 @@ description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂�
 
 ## TL;DR
 
-1. **做什麼**：trust mode 結束後，讀 `docs/need-you-help.md` 把 ☐ 未確認的擔憂**一個一個**問用戶、確認後**雙寫**（要法 `need-you-help.md` + `docs/backlog.md`），全部處理完才退出。
+1. **做什麼**：trust mode 結束後，讀 `docs/need-you-help.md`（專案端路徑）把 ☐ 未確認的擔憂**一個一個**問用戶、確認後**雙寫**（要法 `need-you-help.md` + `docs/backlog.md`），全部處理完才退出。
 2. **何時觸發**：用戶說「處理 need-you-help」「ask-me」「跑完需要我幫的子問題」、trust mode 自然結束後有遺留擔憂。
 3. **不適用於**：trust mode 進行中（打斷 trust）、一般對話提問（用 ask_user_question 就好）、純諮詢（用戶只是問問題不需決策）。
 4. **關鍵紀律**：
@@ -33,7 +33,7 @@ description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂�
 ### Step 1：讀 need-you-help.md
 
 - **動作**：
-  1. 讀 `docs/need-you-help.md` 全文
+  1. 讀 `docs/need-you-help.md` 全文（專案端路徑）
   2. 列舉所有 `- [ ] ...` 未確認條目（跳過 `- [x]` 已確認）
   3. 若 0 個 ☐ → 輸出「無未確認擔憂」+ 退出
 - **為什麼**：避免「沒東西還硬問」、保證主流程有意義

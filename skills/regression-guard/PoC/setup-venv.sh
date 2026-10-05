@@ -44,7 +44,7 @@ done
 # 需要：非空、絕對、至少兩層、且不含結尾斜線或 `.` / `..` 段
 # （`/tmp/` 與 `/tmp` 同義、`//` 與 `/` 同義、`/tmp/..` 就是 `/`）。
 _reject_venv_dir() {
-    echo "ERROR: 可疑的 VENV_DIR=$1（POC_VENV_DIR 護欄：需為非空、絕對、至少兩層、且無結尾斜線或 . / .. 段）" >&2
+    echo "ERROR: 可疑的 VENV_DIR=${1}（POC_VENV_DIR 護欄：需為非空、絕對、至少兩層、且無結尾斜線或 . / .. 段）" >&2
     exit 1
 }
 case "$VENV_DIR" in

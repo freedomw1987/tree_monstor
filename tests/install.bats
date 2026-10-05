@@ -374,7 +374,8 @@ teardown() {
 
   # Replace user's dav-planner with a symlink pointing to the wrong target.
   rm -rf "$TEST_HOME/.claude/skills/dav-planner"
-  ln -s "/tmp/nowhere-at-all" "$TEST_HOME/.claude/skills/dav-planner"
+  # 故意讓 symlink 指到一個不存在的目標（驗「安裝器會修好指錯的 symlink」）
+  ln -s "/tmp/nowhere-at-all" "$TEST_HOME/.claude/skills/dav-planner"  # TMP-OK: 純字串（不會寫檔）
 
   run run_install --global --yes
   [ "$status" -eq 0 ]
