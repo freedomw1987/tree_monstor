@@ -19,8 +19,9 @@
 # （MUT-A 回寫降級→WTM-5 紅、MUT-B 改成 exit 0→WTM-2 紅、MUT-G 拿掉 poppler→WTM-8 紅）。
 #
 # 已知落差（不在本票範圍，已開票 TMO-058）：`wiki-media-describe.sh` 的 real 模式
-# （Whisper/Vision）目前**未實作**，失敗時印 ERROR 但 rc=0 且不產檔＝假成功；
+# （Whisper/Vision）目前**未實作**，修前失敗時印 ERROR 但 rc=0 且不產檔＝假成功；
 # 它跟「缺工具安裝」無關，因此不能算進「缺工具就停」的契約，見 SKILL.md 限制表另列一列。
+# 已修：TMO-058（2026-10-05）→ real 未實作改 `exit 5`、批次 fail-closed；本段描述為**修前狀態**。
 load 'helpers/test-env'
 
 WIKI="$REPO_ROOT/skills/dav-wiki"

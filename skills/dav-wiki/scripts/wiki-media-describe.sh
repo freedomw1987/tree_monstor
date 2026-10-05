@@ -34,7 +34,15 @@ EXIT_OK=0
 EXIT_USAGE=1
 EXIT_NOINPUT=2
 EXIT_BADMODE=3
-EXIT_TOOLMISSING=4
+# TMO-058：real 模式（Vision / Whisper API）尚未實作。
+# 原本借用「錯誤碼 4（必要工具缺失）」→ 語意錯：本檔根本沒有工具檢查，
+# 且 SKILL.md 已明說「不要期待安裝提示」。改用獨立碼，讓 caller 能分辨
+# 「未實作」vs「缺工具」（其他腳本的 4 不受影響）。
+# 注意：5 在本檔是「未實作」，`wiki-extract-media.sh` 的 5 是 `EXIT_EXTRACT`（抽不到產物）
+# ——同號不同義（本檔沒有 skill 級 exit code 總表，故在此就地聲明，勿跨腳本比對 rc）。
+EXIT_NOTIMPL=5
+# 輸出寫入失敗（mkdir 不出來 / 產物寫不下去）。TMO-058 順修：原版這些路徑完全不看 rc。
+EXIT_WRITE=6
 
 # === 使用說明 ===
 usage() {
@@ -55,7 +63,7 @@ Options:
   --mock                   強制 mock 模式（不連真實 API）
   --api-key <key>          API key（也可從 OPENAI_API_KEY 環境變數讀）
   --language <zh|en|auto>  語言（預設 auto）
-  --max-concurrency <N>    平行處裡數（預設 4）
+  --max-concurrency <N>    平行處裡數（預設 4；必須是正整數）
   --dry-run                只印計畫不執行
   --help / -h              顯示說明
 
@@ -72,7 +80,11 @@ Exit codes:
   1  用法錯誤
   2  輸入檔案 / 目錄不存在
   3  不支援的 mode
-  4  必要工具缺失
+  5  未實作（real 模式：Vision / Whisper API 尚未接上）
+  6  輸出寫入失敗（無法建立輸出目錄 / 寫不進產物）
+
+注：real 模式失敗**不會**回 0（TMO-058：原本零產出卻回報成功）。
+     本機測試請用 mock：加 --mock 或設 DAV_WIKI_MOCK=1。
 
 對應手冊: docs/prd/03-knowledge-extraction.md (FR-3.4 / FR-3.7)
 EOF
@@ -130,7 +142,7 @@ real_describe() {
     local file="$1"
     echo "ERROR: real Vision API not implemented yet" >&2
     echo "  set DAV_WIKI_MOCK=1 or pass --mock for testing" >&2
-    return "$EXIT_TOOLMISSING"
+    return "$EXIT_NOTIMPL"
 }
 
 # === Real API transcript（未實作，留 TODO） ===
@@ -138,7 +150,7 @@ real_transcribe() {
     local file="$1"
     echo "ERROR: real Whisper API not implemented yet" >&2
     echo "  set DAV_WIKI_MOCK=1 or pass --mock for testing" >&2
-    return "$EXIT_TOOLMISSING"
+    return "$EXIT_NOTIMPL"
 }
 
 # === 處理單檔 ===
@@ -157,6 +169,7 @@ process_single() {
     fi
 
     local result
+    local rc=0
     if [[ "$MOCK" == true ]]; then
         case "$MODE" in
             describe)   result=$(mock_describe "$file") ;;
@@ -164,13 +177,23 @@ process_single() {
         esac
     else
         case "$MODE" in
-            describe)   real_describe "$file" || return $? ;;
-            transcript) real_transcribe "$file" || return $? ;;
+            describe)   real_describe "$file" || rc=$? ;;
+            transcript) real_transcribe "$file" || rc=$? ;;
         esac
+        # 失敗就不准再往前（尤其不准寫任何產出）
+        if [[ $rc -ne 0 ]]; then
+            echo "ERROR: 未產生任何輸出（${file}）" >&2
+            return "$rc"
+        fi
     fi
 
     if [[ -n "$output" ]]; then
-        echo "$result" > "$output"
+        # TMO-058 順修（已揭露）：原版 `echo > "$output"` 不看 rc，寫入失敗（目錄不可寫、
+        # 路徑被佔成目錄、磁碟滿）照樣印 `✓ wrote` 並回 0 → 同一家族「零產出卻假成功」。
+        if ! echo "$result" > "$output"; then
+            echo "ERROR: 寫入輸出失敗（${output}）" >&2
+            return "$EXIT_WRITE"
+        fi
         echo "  ✓ wrote: $output"
     else
         echo "$result"
@@ -187,8 +210,16 @@ process_batch() {
         return 2
     fi
 
-    mkdir -p "$outdir"
-    local count=0
+    mkdir -p "$outdir" || {
+        echo "ERROR: 無法建立 output-dir（${outdir}）" >&2
+        return "$EXIT_WRITE"
+    }
+    # TMO-058：原版 `count` 只數成功、失敗 `continue` 後照樣印「✅ 批次完成」
+    # → 全部失敗也會回報成功。改成 ok / fail / truncated 三個計數 + 聚合 rc。
+    local ok=0
+    local fail=0
+    local truncated=0
+    local first_err=0
 
     # 依 mode 決定接受哪些副檔名。
     # 2026-10-05 TMO-043：原 `ext_pattern` 算完從未使用（shellcheck SC2034），
@@ -218,21 +249,42 @@ process_batch() {
     done < <(printf '%s\n' "$ext_pattern" | tr '|' '\n')
 
     while IFS= read -r -d '' file; do
+        # 達 --max-concurrency 上限就不再處理，但**要數**——原版 `break` 直接
+        # 靜默丟掉剩下的檔（訊息卻說「批次完成」）。WARN 由下方統一印。
+        if [[ $ok -ge $MAX_CONCURRENCY ]]; then
+            truncated=$((truncated + 1))
+            continue
+        fi
         local name
         name=$(basename "${file%.*}")
         local output="$outdir/$name.desc.json"
-        process_single "$file" "$output" || {
+        local rc=0
+        process_single "$file" "$output" || rc=$?
+        if [[ $rc -ne 0 ]]; then
             echo "  ⚠ skipped: $file" >&2
+            fail=$((fail + 1))
+            if [[ $first_err -eq 0 ]]; then
+                first_err=$rc
+            fi
             continue
-        }
-        ((count++))
-        if [[ $count -ge $MAX_CONCURRENCY ]]; then
-            break
         fi
+        ok=$((ok + 1))
     done < <(find "$dir" -maxdepth 1 -type f \( "${find_args[@]}" \) -print0)
 
     echo ""
-    echo "✅ 批次完成：$count 個檔案"
+    if [[ $truncated -gt 0 ]]; then
+        echo "⚠ 已達 --max-concurrency 上限（${MAX_CONCURRENCY}），尚有 $truncated 個未處理" >&2
+    fi
+    if [[ $fail -gt 0 ]]; then
+        if [[ $ok -gt 0 ]]; then
+            echo "❌ 批次部分失敗：成功 $ok / 失敗 $fail"
+        else
+            echo "❌ 批次失敗：成功 0 / 失敗 $fail"
+        fi
+        return "$first_err"
+    fi
+    echo "✅ 批次完成：$ok 個檔案"
+    return 0
 }
 
 # === 旗標解析 ===
@@ -272,6 +324,13 @@ while [[ $# -gt 0 ]]; do
             ;;
         --max-concurrency)
             MAX_CONCURRENCY="$2"
+            # TMO-058 順修（reviewer Round-1 P2-2）：0 會讓「每個檔都算截斷」→ 零產出卻
+            # 印 ✅ 並回 0（正好違反本票契約）；非數字（如 2x）則讓 `[[ ]]` 算術報錯後
+            # 走 false 分支＝默默不限制。兩者都不是原意（平行度/單次上限）→ 要求正整數。
+            if [[ ! "$MAX_CONCURRENCY" =~ ^[1-9][0-9]*$ ]]; then
+                echo "ERROR: --max-concurrency 需為正整數（收到：${MAX_CONCURRENCY}）" >&2
+                exit "$EXIT_USAGE"
+            fi
             shift 2
             ;;
         --dry-run)
@@ -342,7 +401,8 @@ else
     fi
 
     echo "→ Single mode: $MODE"
-    process_single "$INPUT" "$OUTPUT_JSON"
+    # TMO-058：回傳值必須傳出去（`set -uo pipefail` 沒有 `-e`，不接就變 rc 0）
+    process_single "$INPUT" "$OUTPUT_JSON" || exit $?
 fi
 
 exit "$EXIT_OK"

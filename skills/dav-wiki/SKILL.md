@@ -95,7 +95,7 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 | 寫入失敗 rollback | N/A | temp file + rename 模式 |
 | OCR / 字幕為擴充模組 | 預設僅支援核心三來源（純文字 / Office / 網頁） | 需另裝 tesseract / yt-dlp |
 | FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字 | 唯一例外：OCR 未裝 tesseract → 自動用 mock placeholder（有 WARN，見 `./scripts/wiki-ocr.sh`）|
-| Whisper / Vision 模組（`./scripts/wiki-media-describe.sh`）| real 模式尚未實作：要 `--mock` 或 `DAV_WIKI_MOCK=1`；目前失敗仍回 rc 0＝**假成功**（追蹤 TMO-058）| 這與「未裝工具」無關，不要期待安裝提示 |
+| Whisper / Vision 模組（`./scripts/wiki-media-describe.sh`）| real 模式尚未實作：要 `--mock` 或 `DAV_WIKI_MOCK=1`；未實作就 `exit 5`（不產出、不回報成功；寫入失敗 `exit 6`）| 這與「未裝工具」無關，不要期待安裝提示 |
 
 ## 輸出結構
 
@@ -116,9 +116,9 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2.2 | 2026-10-05 | 限制表：Whisper / Vision real 模式未實作改為 `exit 5`（原本零產出卻回 rc 0＝假成功）| TMO-058：不得假成功 |
 | v2.2.1 | 2026-10-05 | 限制表對齊現實：缺必要工具＝該模組直接停（`exit 4`），不降級成純文字；OCR mock 為唯一例外 | TMO-035：文實矛盾 |
 | v2.2 | 2026-10-04 | 主檔瘦身 151 → 129 行（輸出結構 / 軟刪除細節移子檔：`output-structure.md` / `soft-delete.md`）| TMO-028：V03.5 主檔 ≤130 預檢 |
-| v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 6：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
 
 ---
