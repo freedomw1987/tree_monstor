@@ -608,7 +608,7 @@ reviewer 明示「不需再開一輪」。5 條 P3 已順手修：
 | 項目 | 值 | 證據 |
 | --- | --- | --- |
 | 分支 / 是否 push | `trust/2026-10-05-tmo-cleanup`／**已 push**（HEAD `278aeb0`；`481ead1` 起共推 4 次） | `git log`／`gh run list` |
-| **CI（GitHub Actions）** | **✅ 全綠**：run [`37247233945`](https://github.com/freedomw1987/tree_monstor/actions/runs/37247233945) `success`——`Markdown lint` ✓、`Test on ubuntu-latest` ✓、`Test on macos-latest` ✓ | `/tmp/ci3-full.txt` |
+| **CI（GitHub Actions）** | **✅ 全綠**：run [`37247515182`](https://github.com/freedomw1987/tree_monstor/actions/runs/37247515182) @ `6f44dcc` `success`（前一綠 [`37247233945`](https://github.com/freedomw1987/tree_monstor/actions/runs/37247233945) @ `278aeb0`）——`Markdown lint` ✓、`Test on ubuntu-latest` ✓、`Test on macos-latest` ✓ | `/tmp/ci3-full.txt` |
 | CI 兩 leg 實測 | 各 **579 ok / 0 not ok**（`tests/` 576 ＋ skill-local 3）；`Verify bash syntax` 23 檔；`Verify SKILL.md size` 11 檔（最長 148）；shellcheck ubuntu **0.9.0**／macOS **0.11.0** 皆 rc=0 | 同上 |
 | 本機 `bats tests/` | **576 ok / 0 not ok**（trust 結束時 573，+3 為 ENV-EQ-17/18/19） | `/tmp/t3-run.txt` |
 | skill-local 探針 | **3 ok / 0 not ok**（`SKILLS_DIR_OVERRIDE` 指向 repo） | 同上輪實跑 |
