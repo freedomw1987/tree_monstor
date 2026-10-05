@@ -216,6 +216,8 @@ description: |
 
 ## 開發 / 測試
 
+> ℹ️ **探針總數會隨開發變動，一律以 `bats --count tests/` 為準**；本文件不再硬編總數（TMO-061）。
+
 ```bash
 # 跑全部測試
 bats tests/
@@ -242,15 +244,16 @@ bats --version                           # 應顯示 Bats 1.14.0
 
 ### 跑全套測試前：建 Jev PoC venv（必需）
 
-`tests/v2.1-jev-poc.bats` 的 100 條裡有 **40 條**要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘 60 條是純靜態
-檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時那 40 條
-會全紅，而且每一條失敗測試各自印出修復指令（TMO-038 起這 40 條的名單由探針自動列舉，不再硬編）：
+`tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
+靜態檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時
+這批案例會全紅，而且每一條失敗測試各自印出修復指令（TMO-038 起該名單由探針自動列舉，不再硬編；
+**確切條數以 `bats --count tests/v2.1-jev-poc.bats` 為準**）：
 
 ```bash
 bash skills/regression-guard/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
 ```
 
-skill 自帶探針（`skills/*/tests/*.bats`，3 條）**不在** `bats tests/` 內，要自己跑；它們預設掃
+skill 自帶探針（`skills/*/tests/*.bats`）**不在** `bats tests/` 內，要自己跑；它們預設掃
 `~/.pi/agent/skills`，在 repo 內請用覆寫變數指向本 repo（否則會 fail-closed 紅）：
 
 ```bash
@@ -259,21 +262,19 @@ SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）總共會紅 43 條**（2026-10-05 實測（TMO-060 後）：`579 ok / 43 not ok`，套件共 622 條。
-> 43 ＝ `v2.1-jev-poc.bats` 40 ＋ `poc-clean-clone.bats` 2（CLEAN-POC-f/i）＋ `env-equivalence.bats` 1（ENV-EQ-7）。
-> 較早量測：`532 ok / 44 not ok` @ `f600385` 之後（576 條；當時多 1 條 = `poc-bootstrap.bats` 的 PyYAML 斷言，
-> 因該機 `python3` 無 PyYAML；本機 python3 剛好有 → 現在是 43。缺 PyYAML 的機器仍會是 44）：
-> - `v2.1-jev-poc.bats` 40
-> - `poc-clean-clone.bats` 2（CLEAN-POC-f/i，整檔離線重跑也要 venv）
-> - `env-equivalence.bats` 1（ENV-EQ-7 網路黑洞下的 oracle 子集）
-> - `poc-bootstrap.bats` 1（**只在缺 PyYAML 的機器上紅**：TMO-038 的 CI 契約語意斷言用 PyYAML 解 workflow）
+> **clean clone（無 venv）會有一批紅**（確切條數 = `bats --count tests/` 減去實跑 `ok`，隨新增探針變動）：
+> - `v2.1-jev-poc.bats` 的 venv-dependent 子集
+> - `poc-clean-clone.bats`（CLEAN-POC-f/i，整檔離線重跑也要 venv）
+> - `env-equivalence.bats`（ENV-EQ-7 網路黑洞下的 oracle 子集）
+> - `poc-bootstrap.bats`（**只在缺 PyYAML 的機器上紅**：TMO-038 的 CI 契約語意斷言用 PyYAML 解 workflow）
 > 全部都是**紅＋修復指令**（不 skip）；`tests/poc-bootstrap.bats` 那條是刻意取捨：
 > 字串比對看不到 trigger／步驟先後／矩陣，而 CI 的執行次序保證了 venv 先建好。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats`（19 條）守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 現在是 **622 條**；
-CI 另跑 **3 條** skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 **625 條**：
+`tests/env-equivalence.bats` 守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 的條數**以 `bats --count tests/`
+為準**；CI 另跑 skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 =
+`bats --count tests/` ＋ skill 自帶探針數：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|
@@ -330,7 +331,7 @@ CI 補上自我列舉的 shellcheck。
 bash 3.2 的覆蓋改由本機 `ENV-EQ-19` 接手（逐版本實跑 `scripts/ci/*.sh`）。
 **⚠️ 但這條只在「本機真的裝了 3.2」時有效**（本機 macOS 的 `/bin/bash` 就是 3.2，故 5.3.20＋3.2.57
 兩個版本都跑到）；**CI 兩 leg 已無 3.2**（ubuntu 是 5.x、macOS 已改用 brew bash 5），所以
-「CI 也能擋 3.2 專屬 bug」**不成立**——那是換取「macOS leg 跑得完 622 條」的必要取捨，已在此揭露。
+「CI 也能擋 3.2 專屬 bug」**不成立**——那是換取「macOS leg 跑得完 `bats tests/` 全套」的必要取捨，已在此揭露。
 
 ### 可選：dav-wiki 媒體提取的測試依賴
 
