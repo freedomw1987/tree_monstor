@@ -1,6 +1,6 @@
 # tree_monstor
 
-[![CI](https://github.com/apple/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/apple/tree_monstor/actions/workflows/ci.yml)
+[![CI](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml)
 
 `tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent 等）的**工作 SOP + skills**。
 `install.sh` 把它 expose 到 agent 的讀取路徑（全域或專案層），以 symlink 為主，改源檔即時生效。
@@ -11,6 +11,20 @@
 chmod +x install.sh        # 一次性（如果檔案沒執行權限）
 ./install.sh               # 全域裝給 Claude Code + Pi Agent
 ```
+
+## 本機開發前置（想在這個 repo 跑測試才需要）
+
+```bash
+brew install bash                                # macOS 內建 /bin/bash 是 3.2；測試要 5.x（ubuntu CI 即是）
+bash skills/regression-guard/PoC/setup-venv.sh   # 建 PoC/.venv（v2.1-jev-poc.bats 的 40 條需要）
+```
+
+少這兩步時本機會**大幅報紅且難以看懂**：缺 venv ⇒ 43 條紅；用 bash 3.2 ⇒ 部分 CJK 測試名被
+**靜默丟棄**（結尾會出現 `Executed N instead of expected M`，跑到的條數少於預期），
+而 CI 全綠 —— 最容易被誤判成「程式壞了」。兩者都不 skip，每條失敗會自己印出修復指令。
+
+bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clean clone 的預期紅燈數、
+單獨跑某個靜態鎖 → [docs/install-reference.md 開發 / 測試](docs/install-reference.md#開發--測試)。
 
 ## Usage
 

@@ -6,7 +6,8 @@
 - **狀態**：**待用戶驗收**。Gate 1–4 全綠；Gate 4 兩輪：Round-1 `approve-with-comments`（0 P0／2 P1／6 P2／9 P3）
   → 修正後 Round-2 **`OK with notes`（0 P0／0 P1／1 P2／7 P3）**，條件（P2-1 數字、P3-1/P3-2 文件）
   **已全部修完**；reviewer 明示「**不需再開第三輪**」。
-- **commit**：`1ec4aa1`（本批，`--amend` 後雜湊可能微幅變動，以 `git log -1` 為準）；前序未 push 鏈：`ef563f3`（item 1 行政清理）→ `b2a775b` → `fbccea1` → `6fd527a`（TMO-040）
+- **commit**：`1ec4aa1`（本批，`--amend` 後雜湊可能微幅變動，以 `git log -1` 為準）；
+  前序未 push 鏈：`ef563f3`（item 1 行政清理）→ `b2a775b` → `fbccea1` → `6fd527a`（TMO-040）
 
 ## 摘要
 
