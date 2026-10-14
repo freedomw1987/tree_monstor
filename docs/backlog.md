@@ -71,6 +71,8 @@
 | TMO-060 | **`--max-concurrency` 被當「總處理上限」用**（TMO-058 收尾揭露）：`process_batch` 原為 `if [[ $ok -ge $MAX_CONCURRENCY ]]; then break; fi`，語意應是「同時處理幾個」（平行度），實際卻變成「最多處理 N 個檔案」→ 第 N+1 個以後**靜默不處理**。TMO-058 已先把靜默丟檔改成誠實的 `⚠ 已達 --max-concurrency 上限（N），尚有 K 個未處理`（rc 仍 0）＋探針 AC-D25，但語意仍錯。**建議**：①若不做平行，就改名／改說明為「單次處理上限」並預設 0＝無限制；②或真的實作背景並發（`wait -n`，bash 4.3+）並把上限套在「同時運行數」。**§2.1 決策（2026-10-05，用戶選 A）**：正名為「單次批次上限」——新增 `--batch-limit <N>`（`--max-concurrency` 保留為**相容別名**），語意＝「一次最多**嘗試**處理 N 檔」，`0`＝無限制且**改為預設**（原預設 4＝任何 >4 檔批次都丟檔，是真 bug）；失敗檔亦計入額度；附帶①②③一併修（截斷額度改計嘗試數、dry-run 改印 `[DRY-RUN] 批次完成：…`、白名單略過要計數 WARN）。**不做**真並發（real API 未接上、無收益、bash 3.2 相容風險）。**本票已先補的**：`--max-concurrency 0`／非數字（`2x`）原本會「每檔都算截斷→零產出卻印 ✅ 回 0」或「`[[ ]]` 算術報錯後默默不限制」，TMO-058 已收緊為**限正整數**（否則 `exit 1`）＋探針 AC-D29。**附帶（同批次訊息家族，已於本票一併修）**：①截斷上限計的是**成功數**，失敗檔不佔額度（`--max-concurrency 1` 遇 1 失敗時實際會處理 2 檔）；②批次 `--dry-run`／空目錄仍印 `✅ 批次完成：N 個檔案`（rc 0），建議改 `[DRY-RUN] 批次完成：N 個檔案`；③批次靜默略過不符 mode 白名單的檔（單檔模式會 WARN），建議一併計數並 WARN。**注意**：AC-D11 只測單檔 | P3 | 3 | done (2026-10-05) | TMO-058 |
 | TMO-061 | **`install-reference.md` 的探針總數靠人工同步（同一票內就改過多次）**(TMO-058／TMO-060 收尾揭露）：每加／改一條探針，就要人工改 `docs/install-reference.md` 的 `bats tests/` 條數、CI 條數、clean clone 的 `N ok / 43 not ok`；TMO-058 內漂 4 次（600→611→612 等，backlog 列漏改 1 次）、TMO-060 內漂 2 次（612→615→622；615→618→625；569→572→579）。**建議**：①讓 `install-reference.md` 只寫「以 `bats --count tests/` 為準」並移除硬編數字；或②寫一條探針／CI 步驟自動校驗該檔的數字與實測一致（後者較重、但能保住「文件有數字」的可讀性）。**注意**：TMO-060 一票之內又同步 **2** 次（612→615→622；615→618→625；569→572→579），可見人工同步的成本。 | P3 | 1 | done (2026-10-05) | TMO-060 |
 | TMO-062 | **七支 dav-wiki 腳本第 2 行自述路徑過時**（TMO-057 V03 二審 P2-3 揭露）：`wiki-cross-ref.sh`、`wiki-extract-audio.sh`、`wiki-extract-video.sh`、`wiki-index.sh`、`wiki-media-describe.sh`、`wiki-merge-media.sh`、`wiki-ocr.sh` 第 2 行仍寫 `# tools/<name>.sh`，但 repo 根已無 `tools/` 目錄（實際在 `skills/dav-wiki/scripts/`）；sibling `wiki-extract-media.sh` 已在 TMO-025 修過。**修法**：`# tools/<name>.sh` → `# skills/dav-wiki/scripts/<name>.sh`，對齊 sibling。 | P3 | 1 | done (2026-10-05) | TMO-057 |
+| TMO-063 | **新 skill：`pptx-slim`（PPTX 就地減重）**（2026-10-05 用戶委託：「可以把上面的能力，寫為一個新 skills 嗎？」）→ **已完成**：從「2.9 GB 培訓 PPT → 418 MB（−86%）」實戰流程提煉；skill 本體（`SKILL.md` 62 行、5 段任務導航）+ 4 支工具（`pptx-probe.py` 偵察估數／`pptx-shrink-media.py` 轉碼含「壓完更大退回原檔」／`pptx-repack.py` 只換媒體逐 byte 重打包／`pptx-verify.py` 四關驗證）+ 共用模組 `pptx_common.py` + 子檔（`examples.md` 實測數字／`CHANGELOG.md`）；探針 2 支：`tests/restruct-pptx-slim.bats`（結構 9 條）與 `tests/pptx-slim.bats`（功能 11 條，含 12 支 mutant 證明驗證器咬得住）；README skill 數 11 → 12 | P2 | 8 | done (2026-10-05) | — |
+| TMO-064 | **pptx-slim 只減影片、圖片 139 MiB 全未動**（2026-10-05 TMO-063 收尾自省揭露）：實戰案檔 2,976.8 MiB 中圖片佔 139 MiB（含 29 MiB TIFF，PPT 內根本用不到的容器）；影片減完後圖片就是下一個大頭，但**縮圖／轉檔會改變像素**，與「非媒體 entry 逐 byte 原樣」紀律衝突，不能混進現行 repack。→ 候選做法：① 只做「無損重編碼」（PNG 重壓 + TIFF→PNG 但 rels 同步改名，需 G2b 放行媒體類圖片）；② 只做「超標圖片降採樣」並在 verify 加圖片專屬 gate；③ 明確不做、只寫進 SKILL 的殘餘風險。| P3 | 3 | todo | TMO-063 |
 
 > 📝 2026-10-05 ask-me：**TMO-035** 決策＝**改文件對齊現實**（`SKILL.md` 限制表該列改為
 > 「缺工具即停並提示安裝（`exit 4`）」），**不實作降級模式**；純文字修正、走 V03 二審後施工。
@@ -410,3 +412,66 @@
 > （V03.6 條件式放寬②，補償＝ENV-EQ-5 + 釘 bats）。
 > Reviewer：V03.6 二審 round E `f8f35524` = OK with notes（0 P0 / 1 P1 / 10 P2）P 項全修；round F 對 delta 另審；11 條突變全咬。
 > 已知殘餘：CI ubuntu bash 5.2 本機無法驗證（只有 3.2/5.3）；CI 釘版走 `git clone` 需網路；本機 `python3` 3.14 vs CI 3.12 尚未納入等價探針。
+
+## TMO-063 詳細（新 skill：pptx-slim — PPTX 就地減重）
+> ✅ 2026-10-05 完成 — 緣起：用戶委託把當日「澳門政府大模型業務培訓 deck 2.9 GB → 418 MB」的實作能力提煉成可重用 skill（命名 `pptx-slim`）。
+> 內容：**概念**＝不是 zip 壓縮，而是「就地減重」：偵察媒體佔比 → ffmpeg 轉碼影片（同容器同檔名）→ 只換 media 重打包（其他 entry 逐 byte 原樣）→ 四關驗證。
+> 四支工具與共用模組放 `scripts/`；實測數字、profile 選擇表、踩雷對策放 `examples.md`（主檔留 62 行以護 LLM 注意力）。
+> 紀律面：原檔零改動（永遠寫新檔）、檔名與容器不變、非媒體 entry 逐 byte 原樣、壓完更大就保留原檔、四關（CRC／entry 齊全**且非媒體 byte 相同**／rels 零斷鏈／時長漂移）缺一不得交件。
+> 探針設計：功能探針現場用 ffmpeg + python-pptx 造 fixture，並**種 12 支 mutant**
+> （Round-1 8 支：動到 XML、rels 斷鏈、媒體判定失效等；Round-2 再補 4 支：`--list` 建目錄、
+> `--only` 打錯詞靜默、G4 缺 entry 的兩種拆法）證明驗證器真的會紅，避免「跑完都說 OK」的假綠。
+> 建立過程中被探針抓到 3 個真問題（已修）：①全 KEPT 時輸出比原檔大（媒體保留原檔卻改用 ZIP_STORED）②媒體目錄缺圖片誤報 WARN ③`--crf 0` 硬塞 `-profile:v high` 直接失敗。
+> 已知殘餘：圖片壓縮（實測 139 MiB，含 29 MiB TIFF）尚未自動化，目前列為「加碼」手動項；CI 只有 ffmpeg + python-pptx，無法驗證 Windows PowerPoint 實開（最後一關仍須人工）。
+> **V03 二審**（dev-checker-loop Reviewer，2026-10-05）：verdict = `approve-with-comments`（P0 0、P1 1、P2 6、P3 9）。
+> **已修 P1**：G2b 的媒體判定只認影片 → 換掉的**圖片**會被誤報「非媒體被動過」（假紅），
+> 而文件把「壓圖片」寫成正式步驟；改用共用 `is_media()`（原本是死碼）並補 png fixture 回歸探針。
+> **已修 P2**：①`--media-dir` 空目錄／錯路徑會空過假綠（一支都比不到仍印 OK）→ 目錄不存在即 FAIL、
+> 必須至少比到一支；②`--only` 子字串超額選中（`media1` 連 media10–17 一起壓）→ 精確優先 + WARN 列出命中；
+> ③repack 靜默覆蓋已存在的 `--dst` → 新增 `--force`（預設拒絕）；④G2 改分塊串流比對（不再把 2.9 GB 級 entry
+> 讀進記憶體）、G4 一次性開 zip 並逐支刪暫存（峰值磁碟＝2 支最大影片）；⑤`check-ffmpeg-version.sh` 增第二組
+> 能力實測（pptx-slim 的 scale 表達式 + libx264 + aac + faststart）並同步 CONTRIBUTING 旗標清單；
+> ⑥「四關」定義在文件與腳本間漂移 → 文件對齊腳本 G1–G4，「播放器實開」明列為四關之外的最後一關。
+> **已修 P3**：`examples.md` 原檔 2,984 MiB → 2,976.8 MiB（＝3,121,443,653 bytes，輸出同步為
+> 418.4 MiB／438,735,945 bytes）；repack docstring 對齊真旗標（移除不存在的 `--store-media`）；
+> verify 支援 rels 的套件絕對路徑（`/ppt/...`，原本會誤判斷鏈）；`--list` 不再硬要 ffmpeg（只列規格只需 ffprobe）。
+> **突變驗證**（Round-1 修完自跑 8 條，全部如預期轉紅後還原、md5 逐 byte 相同）：G2b 恆真 → 功能探針 -4 紅；
+> rels 恆真 → -5 紅；「壓完更大保留原檔」失效 → -3 紅；repack 原檔保護移除 → -6 紅；
+> G2b 退回只認影片 → -7 紅（證明 P1 修法有回歸護欄）；G2c 的 `is_dir()` 護欄移除＋gate 恆真 → -8 紅；
+> repack `--force` 保護移除 → -9 紅；`pick_sources` 精確比對改回子字串 → -10 紅。
+> **探針變化**：功能 6 → **11** 條（新增 -7 圖片替換回歸／-8 `--media-dir` 空過／-9 repack 覆蓋保護／
+> -10 `--only` 精確優先／-11 G4 缺 entry 要自行判 FAIL）；結構探針 9 條不變；
+> ffmpeg 探針 7 → **8** 條（新增 FV-8：第一組可用但第二組失效必須單獨擋住）。
+> **Round-2 二審**（V03 完整性：Round-1 後又有實質改動）：verdict = `approve-with-comments`（P0 0／P1 0／P2 2／P3 11），
+> 確認 Round-1 的 1×P1／6×P2／9×P3 全數落地。
+> **已修 2 條 P2**：①`SKILL.md` 流程 Step 7 仍寫「三關」（其餘 4 處已改四關）→ 改「同上四關重跑」；
+> ②`check-ffmpeg-version.sh` 的第二組能力實測**沒有探針咬住**（整段刪掉 CI 仍綠＝防守漂移）→ 新增 `FV-8`
+> （假 ffmpeg 只讓 `scale=` 失敗）＋ `FV-7` 補靜態檢查 ＋ `ci.yml` 註解同步；FV-8 另以 3 支突變驗證
+> （訊息不含 `pptx-slim`／整段刪除／第一組失效）。
+> **已修 11 條 P3**（摘要）：數字漂移 5 處（CHANGELOG／backlog 的探針數與 mutant 數、主檔行數、四關措辭）；
+> 交件報告 4 處（把假紅寫成假綠、numstat 表頭合計與表格不符、守門組 skip 未交代、只引 `/tmp` 日誌）；
+> 文件完整性 3 處（`CONTRIBUTING` 缺 `python-pptx`、`examples.md` 的 MB→MiB、漏算 G4 暫存空間）；
+> 健壯性 4 處（`--only` 打錯詞會靜默丟掉 → 加 WARN；`--list` 不再建空的 `--out` 目錄；
+> G4 在輸出檔缺 entry 時改**自行判 FAIL**，不再抛 `KeyError` traceback）→ 功能探針 -10 擴充 2 個斷言、新增 -11。
+> **量測紀律**：全量 `bats tests/` = **645 條、644 ok、2 skip、1 紅**（MLG-7／8 skip：探針偵測不到本機
+> `markdownlint-cli2`；兩次全量跑的 1 紅分別是 `M6.3-e` 與 `M6.3-c`，皆屬既有 flaky 家族）；
+> 唯一紅是既有 flaky `M6.3-c`／`M6.3-e`（環境相依，單獨重跑 2/3 綠，非本票引入）；
+> `BATS_TEST_TIMEOUT` 會讓 4 條 nested 探針假紅（`ENV-EQ-11` 不設 timeout 單獨跑 1.011s 綠）→ 全量跑一律不設。
+
+## TMO-064 詳細（pptx-slim 圖片壓縮未自動化）
+
+**問題**：TMO-063 實戰把 2.9 GB 壓到 418 MB（−86%），但減掉的 2.5 GB 幾乎全是影片；同案檔的
+**139 MiB 圖片（含 29 MiB TIFF）完全沒動**。圖片不是壓不動，而是「壓圖片＝改像素」，
+與 pptx-slim 現行最高紀律「非媒體 entry 逐 byte 原樣、只有 media 才准換」正面衝突 —— 圖片在 zip 裡
+`ppt/media/imageN.png` 就是媒體，但改它會讓 G2b「非媒體 byte 相同」的語意變模糊，必須先決定紀律怎麼擴。
+
+**為什麼現在不做**：圖片只佔 4.7%（139／2,976.8 MiB），壓完預估再省 80–100 MiB（≈2–3%），
+ROI 遠低於影片；但**若未來案檔以圖片為主**（例如全是掃描圖的教材），這條就變成主戰場。
+
+**驗收標準（三選一，決策先於實作）**：
+1. 選「無損重編碼」→ AC：`pptx-verify.py` 新增圖片 gate（像素相同或 PSNR ≥ 門檻）＋ mutant 探針證明會紅；
+2. 選「有損降採樣」→ AC：新增 `--image-max-edge`／`--image-quality`，且 verify 必須**不再**宣稱非媒體 byte 相同，
+   而是宣稱「媒體允許改、XML 逐 byte 相同」；
+3. 選「不做」→ AC：`skills/pptx-slim/SKILL.md` 規則表新增一列「圖片不自動壓（殘餘風險）」，並在 `examples.md` 記預估可省量。
+
+**預估**：3 點（決策 0.5 + 實作 1.5 + 探針與 mutant 1）。

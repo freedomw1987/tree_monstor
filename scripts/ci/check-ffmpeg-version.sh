@@ -7,8 +7,9 @@
 #   ffmpeg 8 已移除 `-vsync`（本 repo 已全面改用 `-fps_mode`，見 AC-V11）。
 #   只驗版本號不夠（版本夠新也可能在 filter/flag 上有變動），所以本腳本驗兩層：
 #     ① 版本底線：>= 5.1（`-fps_mode` 自 ffmpeg 5.1 起取代 `-vsync`）
-#     ② 能力實測：真的用「本 repo 用到的旗標組合」跑一次 tiny transcode
-#        （`-vf select=.../showinfo` + `-fps_mode vfr` + `-f null -`，見 wiki-extract-video.sh extract_chapters）
+#     ② 能力實測：真的用「本 repo 用到的旗標組合」跑一次 tiny transcode，目前兩組：
+#        a) `-vf select=.../showinfo` + `-fps_mode vfr` + `-f null -`（見 wiki-extract-video.sh extract_chapters）
+#        b) pptx-slim 轉碼用的 `scale` 表達式 + libx264 + aac + `-movflags +faststart`
 #
 # 用法：scripts/ci/check-ffmpeg-version.sh
 # 環境：FFMPEG_BIN / FFPROBE_BIN（預設 ffmpeg / ffprobe；測試用假殼可覆寫）
@@ -55,6 +56,22 @@ cap_rc=$?
 if [[ $cap_rc -ne 0 ]]; then
     echo "$cap_out" >&2
     fail "ffmpeg $ver 無法執行本 repo 使用的旗標組合（-vf select/showinfo + -fps_mode vfr + -f null -），rc=$cap_rc"
+fi
+
+# 能力實測 ②：跟 pptx-slim 轉碼同一組旗標（編碼器／filter 改名時這裡會非 0）
+cap_dir="$(mktemp -d "${TMPDIR:-/tmp}/ffmpeg-cap.XXXXXX")" || fail "無法建立臨時目錄（TMPDIR=${TMPDIR:-/tmp}）"
+cap2_out="$("$FFMPEG_BIN" -hide_banner -nostdin -loglevel error -y \
+    -f lavfi -i "testsrc=duration=0.4:size=64x64:rate=10" \
+    -f lavfi -i "sine=frequency=440:duration=0.4" \
+    -vf "scale='if(gt(iw,ih),min(1920,iw),-2)':'if(gt(iw,ih),-2,min(1920,ih))'" \
+    -c:v libx264 -preset ultrafast -crf 28 -pix_fmt yuv420p -profile:v high \
+    -c:a aac -b:a 128k -ar 48000 -shortest -movflags +faststart \
+    "$cap_dir/cap.mp4" 2>&1)"
+cap2_rc=$?
+rm -rf "$cap_dir"
+if [[ $cap2_rc -ne 0 ]]; then
+    echo "$cap2_out" >&2
+    fail "ffmpeg $ver 無法執行 pptx-slim 使用的旗標組合（scale 表達式 + libx264 + aac + -movflags +faststart），rc=$cap2_rc"
 fi
 
 ffprobe_ver="$("$FFPROBE_BIN" -version 2>/dev/null | head -n1)"

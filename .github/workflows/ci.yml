@@ -67,8 +67,10 @@ jobs:
 
       - name: Verify ffmpeg version and flags
         # TMO-042：兩平台版本不同（apt ffmpeg 6.x / brew 8.x），ffmpeg 8 已移除 -vsync。
-        # 這步鎖「版本底線 5.1」+ 用本 repo 真的在用的旗標組合（-vf select/showinfo +
-        # -fps_mode vfr + -f null -）實測能力，缺一即紅。
+        # 這步鎖「版本底線 5.1」+ 用本 repo 真的在用的兩組旗標組合實測能力，缺一即紅：
+        #   ① -vf select/showinfo + -fps_mode vfr + -f null -（wiki 抽章節）
+        #   ② scale 表達式 + libx264 + aac + -movflags +faststart（pptx-slim 轉碼）
+        # 對應探針：tests/ffmpeg-version.bats（FV-4 鎖①、FV-8 單獨鎖②）。
         run: bash scripts/ci/check-ffmpeg-version.sh
 
       - name: Build PoC venv (httpx + PyYAML)

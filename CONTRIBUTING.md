@@ -14,13 +14,15 @@ sudo ./bats-core/install.sh /usr/local
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
 
-# 安裝媒體工具（AC-A* / AC-W* / AC-V* 等 26 條 ffmpeg 探針依賴，缺了會紅）
+# 安裝媒體工具（媒體探針的硬依賴：AC-A* / AC-W* / AC-V* 一組，加上 pptx-slim，缺了會紅）
 brew install ffmpeg poppler pandoc tesseract
 
 # ffmpeg 版本底線：>= 5.1（-fps_mode 自 5.1 起取代 -vsync）
 #   CI 兩平台實測：ubuntu-latest（apt，6.x）、macos-latest（brew，8.x）
 #   檢查方式：bash scripts/ci/check-ffmpeg-version.sh
 #     （①比版本底線 ②用本 repo 真的在用的旗標組合實測能力，缺一即 rc=1）
+#     ②目前兩組：wiki 抽章節（select/showinfo + -fps_mode vfr）
+#                pptx-slim 轉碼（scale 表達式 + libx264 + aac + -movflags +faststart）
 # 移除/改名清單（本 repo 已改用新寫法，勿再引入舊旗標）：
 #   -vsync        → 已於 ffmpeg 8 移除，改用 -fps_mode（AC-V11 靜態擋）
 #   （下一個移除的旗標無法預期 → 靠 check-ffmpeg-version.sh 的能力實測 +
@@ -28,12 +30,14 @@ brew install ffmpeg poppler pandoc tesseract
 
 # 確認 python3
 python3 --version
+# python-pptx：pptx-slim 探針（tests/pptx-slim.bats 造 fixture、verify G3b 開檔）的硬依賴
+python3 -m pip install python-pptx
 ```
 
 ### Linux (Ubuntu)
 
 ```bash
-# 安裝媒體工具（ffmpeg/ffprobe 是 26 條媒體探針的硬依賴）
+# 安裝媒體工具（ffmpeg/ffprobe 是多組媒體探針的硬依賴，缺了會紅）
 sudo apt-get update
 sudo apt-get install -y ffmpeg poppler-utils pandoc tesseract-ocr
 
@@ -43,6 +47,9 @@ sudo ./bats-core/install.sh /usr/local
 
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
+
+# python-pptx：pptx-slim 探針（tests/pptx-slim.bats 造 fixture、verify G3b 開檔）的硬依賴
+python3 -m pip install python-pptx
 ```
 
 ## 跑測試

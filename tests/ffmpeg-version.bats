@@ -128,6 +128,25 @@ make_fake_ffprobe() {
   }
 }
 
+# 造一個假的 ffmpeg：版本夠新、第一組旗標可用，但碰到 `scale=`（第二組＝pptx-slim）就失敗。
+# 用途：FV-4 的假殼（非 -version 一律 exit 1）在第一組就紅了，永遠走不到第二組；
+# 這支要把第二組能力實測單獨咬住，否則刪掉它（或改壞）沒有任何探針會紅。
+make_fake_ffmpeg_only_scale_fails() {
+  local path="$1" version_line="$2"
+  {
+    printf '#!/bin/sh\n'
+    printf 'if [ "$1" = "-version" ]; then\n'
+    printf '  echo "%s"\n' "$version_line"
+    printf '  exit 0\n'
+    printf 'fi\n'
+    printf 'for a in "$@"; do\n'
+    printf '  case "$a" in *scale=*) echo "Unknown filter/encoder (simulated)" >&2; exit 1;; esac\n'
+    printf 'done\n'
+    printf 'exit 0\n'
+  } > "$path"
+  chmod +x "$path"
+}
+
 @test "FV-7: CONTRIBUTING 寫明版本底線與 -vsync 移除清單" {
   grep -q '5\.1' "$CONTRIB" || { echo "FAIL: CONTRIBUTING 未寫 ffmpeg 版本底線 5.1" >&2; return 1; }
   grep -q -- '-vsync' "$CONTRIB" || { echo "FAIL: CONTRIBUTING 未寫 -vsync 移除說明" >&2; return 1; }
@@ -135,4 +154,21 @@ make_fake_ffprobe() {
     echo "FAIL: CONTRIBUTING 未說明版本檢查腳本" >&2
     return 1
   }
+  # 第二組（pptx-slim）也要在文件裡，否則貢獻者只知道 wiki 那一組
+  # （FV-8 已行為層咬住第二組；這行是靜態層的雙保險）
+  grep -q -- '-movflags +faststart' "$CONTRIB" || {
+    echo "FAIL: CONTRIBUTING 未列出 pptx-slim 轉碼旗標（-movflags +faststart）" >&2
+    return 1
+  }
+}
+
+@test "FV-8: 第一組可用、第二組（pptx-slim 的 scale 表達式）失效 → 必須單獨擋住" {
+  make_fake_ffmpeg_only_scale_fails "$FAKE_BIN/ffmpeg-noscale" "ffmpeg version 6.0 Copyright"
+  make_fake_ffprobe "$FAKE_BIN/ffprobe"
+  run env FFMPEG_BIN="$FAKE_BIN/ffmpeg-noscale" FFPROBE_BIN="$FAKE_BIN/ffprobe" bash "$CHECK"
+  [ "$status" -ne 0 ] || { echo "FAIL: 第二組旗標失效竟然通過" >&2; return 1; }
+  # 訊息必須指出是 pptx-slim 那一組（而不是第一組），否則診斷會指錯地方
+  [[ "$output" == *"pptx-slim"* ]] || { echo "FAIL: 失敗訊息未指出 pptx-slim 旗標組合：$output" >&2; return 1; }
+  [[ "$output" == *"旗標組合"* ]]
+  [[ "$output" != *"select/showinfo"* ]] || { echo "FAIL: 第一組也被判失敗（假殼設計錯）" >&2; return 1; }
 }

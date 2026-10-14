@@ -9,7 +9,7 @@
 #   1. CLEAN-POC-a — journeys/*.yaml 的 `source:` 必須能從 PoC/ 相對解析，且不得是絕對路徑
 #   2. CLEAN-POC-b — PoC journeys/fixtures 內不得出現 /Users/ 、/home/ 等機器特定路徑
 #   3. CLEAN-POC-c — 測試引用到的 fixtures/journeys 必須被 git 追蹤（clean clone 才拿得到）
-#   4. CLEAN-POC-d — CI 兩個平台都必須安裝 ffmpeg（26 條媒體探針依賴）
+#   4. CLEAN-POC-d — CI 兩個平台都必須安裝 ffmpeg（AC-A*/W*/V* 與 pptx-slim 等媒體探針依賴）
 #   5. CLEAN-POC-e — CI python-version 必須釘版（不得為浮動 3.x）
 #   6. CLEAN-POC-f — 所有 oracle 相關探針檔都要能在 CI 等價環境（無 key／無暖快取／.env 已封）整檔跑綠
 #   7. CLEAN-POC-g — CI 的 bash -n 必須用 glob 覆蓋全部 dav-wiki 腳本
@@ -113,7 +113,7 @@ POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
   linux_block=$(awk '/Install test dependencies \(Linux\)/,/^$/' "$f")
   mac_block=$(awk '/Install test dependencies \(macOS\)/,/^$/' "$f")
   [[ "$linux_block" == *ffmpeg* ]] || {
-    echo "FAIL: Linux 安裝步驟沒有 ffmpeg（AC-A*/W*/V* 共 26 條會紅）" >&2
+    echo "FAIL: Linux 安裝步驟沒有 ffmpeg（AC-A*/W*/V* 與 pptx-slim 等媒體探針會紅）" >&2
     return 1
   }
   [[ "$mac_block" == *ffmpeg* ]] || {
