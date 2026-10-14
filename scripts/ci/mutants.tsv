@@ -32,3 +32,16 @@ V-M12	skills/pptx-slim/scripts/pptx-verify.py	        bad = zf.testzip()	       
 FF-M1	scripts/ci/check-ffmpeg-version.sh	MIN_MAJOR=5	MIN_MAJOR=0  # MUTANT: 版本底線失效	tests/ffmpeg-version.bats	FV-2
 FF-M2	scripts/ci/check-ffmpeg-version.sh	if [[ $cap2_rc -ne 0 ]]; then	if [[ 0 -ne 0 ]]; then  # MUTANT: 第二組能力實測失效	tests/ffmpeg-version.bats	FV-8
 FF-M3	scripts/ci/check-ffmpeg-version.sh	    -vf "scale='if(gt(iw,ih),min(1920,iw),-2)':'if(gt(iw,ih),-2,min(1920,ih))'" \	    -vf null \  # MUTANT: 不再驗 scale 表達式	tests/ffmpeg-version.bats	FV-9
+DW-M1	skills/dav-wiki/scripts/wiki-extract-audio.sh	        exit "$EXIT_TOOLMISSING"	        exit 0  # MUTANT: 缺工具也回成功	tests/wiki-toolmissing-contract.bats	WTM-2
+DW-M2	skills/dav-wiki/scripts/wiki-extract-media.sh	    require_tool pdfimages "brew install poppler"	    : # MUTANT: poppler 檢查拿掉	tests/wiki-toolmissing-contract.bats	WTM-8
+DW-M3	skills/dav-wiki/scripts/wiki-extract-media.sh	        pptx) extract_pptx_images ;;	        pptx) extract_docx_images ;;  # MUTANT: pptx 走錯路徑	tests/wiki-toolmissing-contract.bats	WTM-9
+DW-M4	skills/dav-wiki/SKILL.md	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就降級**：該模組自動降級為純文字模式（MUTANT）	tests/wiki-toolmissing-contract.bats	WTM-5
+DW-M5	skills/dav-wiki/scripts/wiki-ocr.sh	EXIT_NOINPUT=2	EXIT_NOINPUT=2  # 缺必要工具（EXIT_TOOLMISSING）	tests/wiki-toolmissing-contract.bats	WTM-6
+DW-M6	skills/dav-wiki/scripts/wiki-cleanup.sh	PURGE=false	PURGE=true  # MUTANT: 預設變真刪除	tests/wiki-cleanup.bats	--yes 90 deprecated
+SM-M1	tests/helpers/test-env.bash	  sed -E \	  cat # MUTANT: 遮罩失效（直通）	tests/secret-masking.bats	SM-3
+SM-M2	scripts/ci/lint-probe-secrets.py	            if not MASK_CALL_FORM.search(code):	            if False:  # MUTANT: R2 停用	tests/secret-masking.bats	SM-5
+SM-M3	tests/poc-clean-clone.bats	load 'helpers/test-env'	mask_secrets() { cat; }  # MUTANT: 自己再定義一份	tests/secret-masking.bats	SM-1
+RG-M1	skills/regression-guard/runner-cheatsheet.md	jest --ci	jest --watch	tests/regression-guard-watch-mode.bats	documents the watch-mode rule
+RG-M2	docs/sop/gates.json	詳見 regression-guard SKILL.md	詳見 SKILL.md	tests/regression-guard-watch-mode.bats	GATES: gates.json Gate 3 notes mention watch-mode rule
+RG-M3	docs/sop/handbook/2.3-execution.md	| 通用保險 | 指令後加 `< /dev/null` 強制關 stdin |	| 通用保險 | 指令後請自行記得關掉 stdin |	tests/regression-guard-watch-mode.bats	HANDBOOK: 2.3-execution.md has the watch-mode warning section
+RG-M4	skills/regression-guard/SKILL.md	對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見本 skill 的 runner 對照表子檔。	tests/regression-guard-watch-mode.bats	CROSS: < /dev/null fallback reachable from all four documents

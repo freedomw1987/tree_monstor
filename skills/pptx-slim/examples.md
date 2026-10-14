@@ -129,8 +129,9 @@ fixture 實測數（2026-10-05，`tests/pptx-slim-images.bats` 現場造圖；�
    它原本多大就多大，不該被算成超標。
 2. **PSNR 在縮圖尺寸比**：降採樣是預期的（`--image-max-edge` 本來就要縮），把小圖放大回母帶再比會誤殺。
 
-覆蓋率：`tests/pptx-slim-images.bats` **21 條**（IMG-1 … IMG-21）、突變表 `scripts/ci/mutants.tsv` **26 支**
-（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）；突變測試在 CI 每次都跑，任何一支「咬不住」都會紅。
+覆蓋率：`tests/pptx-slim-images.bats` **21 條**（IMG-1 … IMG-21）、突變表 `scripts/ci/mutants.tsv` 內
+與本 skill 相關的 **26 支**（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）；突變測試在 CI 每次都跑，
+任何一支「咬不住」都會紅（同一張表另有 13 支其他護欄的突變，見 TMO-066）。
 
 ## 6. 為什麼「非媒體 entry 逐 byte 原樣」是鐵律
 

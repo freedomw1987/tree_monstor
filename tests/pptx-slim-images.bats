@@ -145,7 +145,7 @@ shrink_images() {
   before=$(file_size "$W/scan.tif")
   after=$(file_size "$W/enc-tif/image4.tiff")
   [ "$after" -lt "$((before / 2))" ] || {
-    echo "FAIL: TIFF 只從 $before 縮到 $after（不到 5 成）" >&2; return 1; }
+    echo "FAIL: TIFF 只從 $before 縮到 ${after}（不到 5 成）" >&2; return 1; }
   pixels_same "$W/scan.tif" "$W/enc-tif/image4.tiff"
 }
 
@@ -171,7 +171,7 @@ shrink_images() {
   # 4 張原圖都要在輸出目錄（檔名、副檔名一字不改）；影格的 poster 圖也會被處理，故不鎖總數
   local name
   for name in image1.png image2.png image3.jpg image4.tiff; do
-    [ -f "$W/enc-fmt/$name" ] || { echo "FAIL: 缺 $name（改到檔名了）" >&2; return 1; }
+    [ -f "$W/enc-fmt/$name" ] || { echo "FAIL: 缺 ${name}（改到檔名了）" >&2; return 1; }
   done
   python3 - "$W/enc-fmt" <<'PY'
 import sys

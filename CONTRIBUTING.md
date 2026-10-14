@@ -71,11 +71,12 @@ bats tests/wiki-cleanup.bats --filter "E1"
 ```
 
 ```bash
-# 跑突變測試（TMO-065）：在 working tree 的**副本**上把 26 支 mutant 逐一種回去，
+# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 39 支 mutant 逐一種回去，
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
-# 改了 skills/pptx-slim/scripts/ 的碼，就要同步更新 scripts/ci/mutants.tsv：
+# 改了表內任何目標檔的碼（pptx-slim 腳本、dav-wiki 腳本、regression-guard 的文件／gates.json），
+# 就要同步更新 scripts/ci/mutants.tsv：
 # 表的「原文」是整行精確比對，錨點對不上會直接 FAIL（不是 skip）；
 # 新增防呆／護欄時請補一列 mutant，否則 CI 不會知道你補的東西有沒有被測到。
 ```
@@ -146,8 +147,9 @@ wc -l skills/dav-wiki/SKILL.md
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
-6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 26 支
-   mutant 在副本上重跑一次，每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
+6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 39 支
+   mutant（pptx-slim 26 支＋dav-wiki／探針機密遮罩／regression-guard 13 支）在副本上重跑一次，
+   每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
    鎖住「這一步必須存在、必須跑全表（不得 `--list`／`--only`／`--no-baseline`）、不得被 `if:` 條件停用、不得 OR 短路或 `continue-on-error`」
 

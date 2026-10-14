@@ -757,6 +757,11 @@ PYEOF
 # → `skill-size-guard.bats SSG-3` 只在 macOS leg 紅；本機 bash 5 完全看不到（本機全綠 ≠ CI 全綠）。
 # 全 repo 同類寫法共 39 處已修（一律改 `${var}`，語意相同、變數名有邊界）。
 # 靜態鎖實作在 `scripts/ci/lint-shell-var-nonascii.py`（獨立檔，避免探針掃到自己的說明文字）。
+#
+# 盲點修正（2026-10-05 晚）：鎖原本只掃 `git ls-files`（已追蹤）→ **新檔在 commit 前是 untracked**，
+# 於是「本機全綠、push 後 CI 才紅」。TMO-064／065 的 `tests/pptx-slim-images.bats`（`$after（`、`$name（`）
+# 與 `tests/mutant-must-die.bats`（`$status）`）就是這樣溜進 commit 的（同日稍早另有「新檔缺檔尾換行」
+# 被 ENV-EQ-16 在 clean clone 咬到，同一個病）。改成 `git ls-files -co --exclude-standard`（含未追蹤、不含 gitignore）。
 @test "ENV-EQ-17: no shell or CI file puts a non-ASCII byte right after a variable expansion" {
   local lock="$REPO_ROOT/scripts/ci/lint-shell-var-nonascii.py"
   [ -f "$lock" ] || {

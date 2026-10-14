@@ -14,6 +14,10 @@
 用法：
   python3 scripts/ci/lint-shell-var-nonascii.py <repo_root>
   python3 scripts/ci/lint-shell-var-nonascii.py --self-test
+
+掃描範圍＝`git ls-files -co --exclude-standard`（已追蹤＋未追蹤但未被 gitignore 的 *.sh／*.bash／
+*.bats／*.yml／*.yaml）。刻意含未追蹤檔：新檔在 commit 前只有本機能檢查，只掃已追蹤就等於「本機全綠、
+CI 才紅」（這正是本鎖 2026-10-05 補上的盲點）。
 """
 
 import pathlib
@@ -34,8 +38,12 @@ MIN_FILES = 40
 
 def targets(root):
     root = pathlib.Path(root)
+    # `-co --exclude-standard`：含**未追蹤但未被 gitignore**的檔。
+    # 只用 `ls-files`（只列已追蹤）有盲點：新檔在 commit 前是 untracked → 本機全綠、
+    # 一 push 進 CI 才紅。2026-10-05 真實案例：`tests/pptx-slim-images.bats` 的
+    # `$after（`／`$name（` 與 `tests/mutant-must-die.bats` 的 `$status）` 就是這樣溜進 commit 的。
     out = subprocess.run(
-        ["git", "-C", str(root), "ls-files", *GLOBS],
+        ["git", "-C", str(root), "ls-files", "-co", "--exclude-standard", *GLOBS],
         capture_output=True,
         text=True,
         check=False,

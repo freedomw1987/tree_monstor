@@ -7,6 +7,11 @@
 #   把精確比對改成子字串，都不會有探針紅，也不會有人記得重跑那張清單。
 #   本檔把「那張清單」變成 CI 會跑的檢查（實作：scripts/ci/mutant-must-die.py + scripts/ci/mutants.tsv）。
 #
+# TMO-066：表擴到 39 支（+6 dav-wiki「缺工具不得降級」／+3 探針機密遮罩／+4 regression-guard
+#   TTY fail-fast 文件一致性）。dav-wiki 與 regression-guard 的護欄從「人工種過一次」變成 CI 每次跑。
+#   註：RG 原本還有一支「SKILL.md 把 **TTY fail-fast** 改成 fail-slow」——實測 mutant 活著：
+#   SKILL.md 內同字串另有兩處（規則表、對照表標題），單點改字不影響規則仍在 → 無害突變，不放進表。
+#
 # 本檔的關注點（不是「跑一次 mutant」而是「這支檢查本身可信」）：
 #   MMD-1 突變表的契約（欄位數、id 唯一、錨點唯一、探針名真的存在、覆蓋到決策所在的碼）
 #   MMD-2 真的在**副本**上突變（working tree 逐位元不變）而且 mutant 真的死
@@ -40,7 +45,7 @@ run_mmd() {
   printf '%s\n' "$output" | awk -F'\t' 'NF==4' > "$W/list.txt"
   local n
   n=$(grep -c . "$W/list.txt")
-  [ "$n" -ge 26 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 >= 26）→ 有人在偷偷刪表" >&2; return 1; }
+  [ "$n" -ge 39 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 >= 39）→ 有人在偷偷刪表" >&2; return 1; }
 
   local -a ids=() targets=()
   local line id target probe_file probe
@@ -66,6 +71,18 @@ run_mmd() {
   done
   printf '%s\n' "${targets[@]}" | grep -qF 'scripts/ci/check-ffmpeg-version.sh' ||
     { echo "FAIL: 突變表沒有覆蓋 scripts/ci/check-ffmpeg-version.sh" >&2; return 1; }
+
+  # TMO-066：其他 skill 的護欄也在表內（dav-wiki「缺工具不得降級」、regression-guard
+  # TTY fail-fast 文件一致性）。少了就紅，避免有人只保留 pptx-slim 那段而靜默丟掉別人的護欄。
+  local d
+  for d in skills/dav-wiki/scripts/wiki-extract-audio.sh \
+           skills/dav-wiki/scripts/wiki-extract-media.sh \
+           skills/dav-wiki/scripts/wiki-cleanup.sh \
+           skills/dav-wiki/SKILL.md \
+           skills/regression-guard/SKILL.md; do
+    printf '%s\n' "${targets[@]}" | grep -qF "$d" ||
+      { echo "FAIL: 突變表沒有覆蓋 ${d}（TMO-066 的跨 skill 護欄）" >&2; return 1; }
+  done
 
   # 錨點唯一性（在真檔上驗一次；這才是「表會隨程式碼腐化」的那道鎖）
   local field file
@@ -94,7 +111,7 @@ run_mmd() {
   # 造一張「無害突變」表：原文換成一樣的字串 → 碼沒變 → 探針必綠 → 必須被當成 survivor
   printf 'NOOP-1\tskills/pptx-slim/scripts/pptx-verify.py\t        bad = zf.testzip()\t        bad = zf.testzip()\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/noop.tsv"
   run_mmd --table "$W/noop.tsv"
-  [ "$status" -eq 1 ] || { echo "FAIL: 無害突變竟然回報成功（rc=$status）→ 這支檢查會永遠說 OK" >&2; return 1; }
+  [ "$status" -eq 1 ] || { echo "FAIL: 無害突變竟然回報成功（rc=${status}）→ 這支檢查會永遠說 OK" >&2; return 1; }
   [[ "$output" == *"還活著"* ]] || { echo "FAIL: 沒有回報 survivor" >&2; return 1; }
 }
 

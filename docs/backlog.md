@@ -73,7 +73,8 @@
 | TMO-062 | **七支 dav-wiki 腳本第 2 行自述路徑過時**（TMO-057 V03 二審 P2-3 揭露）：`wiki-cross-ref.sh`、`wiki-extract-audio.sh`、`wiki-extract-video.sh`、`wiki-index.sh`、`wiki-media-describe.sh`、`wiki-merge-media.sh`、`wiki-ocr.sh` 第 2 行仍寫 `# tools/<name>.sh`，但 repo 根已無 `tools/` 目錄（實際在 `skills/dav-wiki/scripts/`）；sibling `wiki-extract-media.sh` 已在 TMO-025 修過。**修法**：`# tools/<name>.sh` → `# skills/dav-wiki/scripts/<name>.sh`，對齊 sibling。 | P3 | 1 | done (2026-10-05) | TMO-057 |
 | TMO-063 | **新 skill：`pptx-slim`（PPTX 就地減重）**（2026-10-05 用戶委託：「可以把上面的能力，寫為一個新 skills 嗎？」）→ **已完成**：從「2.9 GB 培訓 PPT → 418 MB（−86%）」實戰流程提煉；skill 本體（`SKILL.md` 62 行、5 段任務導航）+ 4 支工具（`pptx-probe.py` 偵察估數／`pptx-shrink-media.py` 轉碼含「壓完更大退回原檔」／`pptx-repack.py` 只換媒體逐 byte 重打包／`pptx-verify.py` 四關驗證）+ 共用模組 `pptx_common.py` + 子檔（`examples.md` 實測數字／`CHANGELOG.md`）；探針 2 支：`tests/restruct-pptx-slim.bats`（結構 9 條）與 `tests/pptx-slim.bats`（功能 11 條，含 12 支 mutant 證明驗證器咬得住）；README skill 數 11 → 12 | P2 | 8 | done (2026-10-05) | — |
 | TMO-064 | **pptx-slim 只減影片、圖片 139 MiB 全未動**（2026-10-05 TMO-063 收尾自省揭露）→ **已完成**：新增 `pptx-shrink-images.py`（預設 `--mode lossless`＝PNG 重壓／TIFF deflate，像素逐點自證；`--mode lossy` 才限定長邊與品質）＋ `pptx-verify.py` 畫質關 G2d（`--image-mode` 觸發，不影響既有四關）；兩道護欄（格式／位深白名單 ＋ 像素自證）為不變式，做不到就退回原檔；圖片與影片共用同一 `--media-dir` 一次 repack。探針：`tests/pptx-slim-images.bats` **21 條**（含 G2d 正反兩面、PSNR 門檻雙向、長邊上限的「刻意保留豁免」對開兩支、壞圖 rc=3、純向量 deck 不適用、`--src`＝`--out` 被擋）＋ **11 支** mutant 全紅；`restruct-pptx-slim.bats` 腳本清單 4 → 5 | P3 | 3 | done (2026-10-05) | TMO-063 |
-| TMO-065 | **突變測試是一次性人工動作**（2026-10-05 TMO-063／064 收尾揭露）→ **已完成**：pptx-slim 的 26 支 mutant（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）原本靠手動種、手動驗，事後沒有任何檢查記得「這些 gate 曾經被證明咬得住」。新增 `scripts/ci/mutants.tsv`（每列＝目標檔＋整行原文＋替換＋探針檔＋探針名）＋ `scripts/ci/mutant-must-die.py`（在**副本**上套突變：`git ls-files -co --exclude-standard` → tmp 目錄 → 精確替換（錨點必須恰好 1 次，對不上＝FAIL 非 skip）→ 對應探針必須變紅；每支都先跑「未突變必須綠」的 baseline，否則「紅」只代表探針壞了；事後比對目標檔 md5 自證 working tree 零改動）＋ `tests/mutant-must-die.bats`（MMD-1..5：表的契約（門檻 26 支）／真的在副本上殺 mutant／mutant 活著要回報失敗／錨點腐化要大聲壞／CI 真的跑全表且不得用 shell 兩條直線的 OR 短路假綠，也不得 `--list`、`--only`、`--no-baseline`、`continue-on-error`）＋ CI 步驟 `Verify probes still kill mutants`。**第一次實跑就抓到 2 個真的空過**：①G1（新檔 CRC 壞掉）沒有任何探針咬得住 → 補 `tests/pptx-slim.bats` PPTX-SLIM-12（raw-patch 一個 STORED 媒體的 byte 令 central directory 的 CRC 對不上）；②FF-M3（把能力實測的 `-vf scale=...` 換成 `-vf null`）FV-8 照樣過 → 補 `tests/ffmpeg-version.bats` FV-9（把檢查腳本送的字串與 `scale_filter(1920)` 綁死） | P3 | 3 | done (2026-10-05) | TMO-063, TMO-064 |
+| TMO-065 | **突變測試是一次性人工動作**（2026-10-05 TMO-063／064 收尾揭露）→ **已完成**：pptx-slim 的 26 支 mutant（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）原本靠手動種、手動驗，事後沒有任何檢查記得「這些 gate 曾經被證明咬得住」。新增 `scripts/ci/mutants.tsv`（每列＝目標檔＋整行原文＋替換＋探針檔＋探針名）＋ `scripts/ci/mutant-must-die.py`（在**副本**上套突變：`git ls-files -co --exclude-standard` → tmp 目錄 → 精確替換（錨點必須恰好 1 次，對不上＝FAIL 非 skip）→ 對應探針必須變紅；每支都先跑「未突變必須綠」的 baseline，否則「紅」只代表探針壞了；事後比對目標檔 md5 自證 working tree 零改動）＋ `tests/mutant-must-die.bats`（MMD-1..5：表的契約（門檻 39 支；TMO-066 起含 dav-wiki／regression-guard）／真的在副本上殺 mutant／mutant 活著要回報失敗／錨點腐化要大聲壞／CI 真的跑全表且不得用 shell 兩條直線的 OR 短路假綠，也不得 `--list`、`--only`、`--no-baseline`、`continue-on-error`）＋ CI 步驟 `Verify probes still kill mutants`。**第一次實跑就抓到 2 個真的空過**：①G1（新檔 CRC 壞掉）沒有任何探針咬得住 → 補 `tests/pptx-slim.bats` PPTX-SLIM-12（raw-patch 一個 STORED 媒體的 byte 令 central directory 的 CRC 對不上）；②FF-M3（把能力實測的 `-vf scale=...` 換成 `-vf null`）FV-8 照樣過 → 補 `tests/ffmpeg-version.bats` FV-9（把檢查腳本送的字串與 `scale_filter(1920)` 綁死） | P3 | 3 | done (2026-10-05) | TMO-063, TMO-064 |
+| TMO-066 | **其他 skill 的護欄沒有 mutant**（TMO-065 限制①自陳）→ **已完成**：把兩個 skill 的人工驗證記錄裡可字串化重現的 13 支補進同一張表（26 → 39 支）——**dav-wiki 6 支**（缺 ffmpeg／poppler／python3 三條硬退 4 不得降級、限制表不得承諾降級為純文字、OCR 不得再宣稱 `exit 4`、`--purge` 預設不得真刪除）、**探針機密遮罩 3 支**（共用 `mask_secrets` 改直通、掃描器 R2 停用、探針自己重定義一份）、**regression-guard 4 支**（runner 對照表拿掉 `jest --ci`、gates.json Gate 3 拿掉 regression-guard 交叉引用、handbook 拿掉 `< /dev/null`、SKILL.md 拿掉對 runner 對照表的指標）；MMD-1 門檻 26 → 39，並把 dav-wiki／regression-guard 的目標檔列入「必須被覆蓋」清單 | P2 | 3 | done (2026-10-05) | TMO-065 |
 
 > 📝 2026-10-05 ask-me：**TMO-035** 決策＝**改文件對齊現實**（`SKILL.md` 限制表該列改為
 > 「缺工具即停並提示安裝（`exit 4`）」），**不實作降級模式**；純文字修正、走 V03 二審後施工。
@@ -517,7 +518,7 @@ PSNR 門檻失效／16-bit 護欄移除／原檔豁免移除／Pillow 例外直�
    錨點唯一／探針名真的存在／覆蓋到 5 支 py 與 ffmpeg 鎖）、真的在副本上殺 mutant 且 working tree 不變、
    **mutant 活著時必須回報失敗**（用「無害突變」表反向驗證，防工具永遠說 OK）、錨點腐化必須大聲壞、
    CI 真的在跑（不得 `|| true`）。
-4. CI 加一步 `Verify probes still kill mutants`（在 `bats tests/` 之後）：本機實測 26 支全跑完約 51 秒。
+4. CI 加一步 `Verify probes still kill mutants`（在 `bats tests/` 之後）：本機實測 26 支全跑完約 51 秒（TMO-066 擴到 39 支後約 55 秒）。
    第二輪再收緊：MMD-1 的表門檻 20 → 26；MMD-5 除了「不得 `|| true`」再咬**十種假綠**
    （`if: false`／`if: <條件>`／`continue-on-error: true`／`|| true`／`||true`／`--list`／`--only`／`--no-baseline`，
    外加 `run: echo …` 這種「只提到腳本名但沒真的叫」）—— 「有檔案但沒人叫」與「跑到 ≠ 跑過全表」
@@ -541,5 +542,40 @@ working tree 未變；`tests/mutant-must-die.bats` 5 條全綠；`bats tests/`�
 與全部 lint 皆綠。
 
 **限制（誠實揭露）**：①表只覆蓋 5 支 pptx-slim 的 py 與 ffmpeg 版本鎖 —— 其他 skill 的護欄還沒有 mutant，
-要覆蓋得逐支補列；②突變是**文字替換**，改不到的多行重構（例如整個函式搬位置）不在鎖內；
-③潔癖邊界：CI 每跑一次就重跑一次全表（約 51 秒／本機），這是「不腐化」的代價。
+要覆蓋得逐支補列（TMO-066 已補 dav-wiki 6 支、探針機密遮罩 3 支、regression-guard 4 支；其餘 skill 仍待補）；②突變是**文字替換**，改不到的多行重構（例如整個函式搬位置）不在鎖內；
+③潔癖邊界：CI 每跑一次就重跑一次全表（26 支時約 51 秒／本機；TMO-066 擴到 39 支後約 55 秒），這是「不腐化」的代價。
+
+## TMO-066 詳細（跨 skill 護欄補 mutant：dav-wiki + regression-guard）
+
+**問題**：TMO-065 把 pptx-slim 的 26 支 mutant 變成 CI 會跑的檢查，但表只覆蓋 pptx-slim。dav-wiki
+（缺工具不得降級、OCR 不得宣稱硬退 4、cleanup 預設不得真刪除）與 regression-guard（TTY fail-fast
+規則散在四個檔案）的護欄，仍只有「當時那次人工驗證」的記錄（TMO-035／053、v1.3 的 watch-mode 規則）。
+
+**決策（2026-10-05 實作完成）**：把人工驗證記錄裡**可字串化重現**的部分補進同一張表（26 → 39 支），
+不新增任何工具 —— 每支都跑同一套 harness：「未突變必須綠的 baseline → 突變必須紅 → md5 自證」。
+
+- **dav-wiki 6 支**：目標是 `wiki-extract-audio.sh`／`wiki-extract-media.sh`／`wiki-ocr.sh`／
+  `wiki-cleanup.sh`／`SKILL.md`，探針是 `wiki-toolmissing-contract.bats` 的 WTM-2／WTM-5／WTM-6／
+  WTM-8／WTM-9 與 `wiki-cleanup.bats` 的 `--yes 90 deprecated`。六支分別代表：缺 ffmpeg（audio 腳本）、
+  缺 poppler（pdf）、pptx 分支被改走 docx 路徑、限制表回寫「降級為純文字模式」、OCR 常數註解回寫
+  `EXIT_TOOLMISSING`／`必要工具缺失`、`PURGE=false` 改成預設真刪除。
+- **探針機密遮罩 3 支**：遮罩函式改直通（`sed -E` → `cat`）、掃描器 R2（檔內提到 `_load_api_key`
+  就必須有 `mask_secrets` 呼叫）停用、探針自己再定義一份 `mask_secrets`。
+- **regression-guard 4 支**：拿掉 runner 對照表的 `jest --ci`、拿掉 gates.json Gate 3 註記的
+  regression-guard 交叉引用、拿掉 handbook 的 `< /dev/null`、拿掉 SKILL.md 在 TTY fail-fast 段
+  對 runner 對照表的指標（最後這支咬的正是「四個檔案都要指得到」的 CROSS 探針）。
+
+**實跑抓到的事（和 TMO-065 一樣，這一步立刻有產出）**：
+
+- 候選裡有一支「SKILL.md 把 `**TTY fail-fast**` 改成 `**TTY fail-slow**`」→ **實測 mutant 活著**。
+  追下去才知道這不是探針的洞：同一個字串在 SKILL.md 還有兩處（規則表、對照表標題），單點改字後
+  規則仍然在檔內 → 探針綠是**正確**行為。結論：無害突變，不進表（已記在 `tests/mutant-must-die.bats` 檔頭）。
+  要「拿掉規則」得同時刪三處，那不是單行突變能表達的事。
+- 其餘 12 支一次就紅（含 5 支 WTM 全部紅），證明契約面（缺工具硬退 4、不得降級）的探針本來就咬得住。
+
+**驗收證據**：`python3 scripts/ci/mutant-must-die.py` → 39 支全紅（每支都有綠 baseline）＋ md5 自證
+working tree 未變；`tests/mutant-must-die.bats` 5 條全綠（MMD-1 門檻 39）。
+
+**限制（誠實揭露）**：①仍有 skill 沒有 mutant（dav-planner／dav-designer／dav-submitter／dav-reflection／
+dav-trust，以及 dav-wiki 的 cross-ref／cleanup 進階路徑）；②跨檔案一致性探針只能用「拿掉其中一份」的
+單點突變，咬不到「四份都寫錯但互相一致」的情境；③CI 每跑一次全表的成本上升：本機 39 支＋baseline 約 **55 秒**（原 26 支約 50 秒），單跑新增 13 支約 6.5 秒。
