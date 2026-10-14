@@ -22,6 +22,13 @@ VIDEO_EXT = {".mp4", ".mov", ".m4v", ".avi", ".wmv", ".mkv", ".webm", ".mpg", ".
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".gif", ".bmp", ".emf", ".wmf", ".svg", ".webp"}
 AUDIO_EXT = {".mp3", ".wav", ".m4a", ".aac", ".wma", ".flac"}
 
+# 圖片壓縮只碰「Pillow 能保證無損 round-trip」的格式；其餘（jpeg/gif/webp/emf/wmf/svg…）
+# 一律 SKIP 並在 log 說明原因 —— 「沒壓到」比「偷偷掉畫質」便宜太多。
+LOSSLESS_IMAGE_EXT = {".png", ".tif", ".tiff"}
+
+# 這些 mode 的像素 Pillow 一定保住；I;16 / F / CMYK（降位深、色版轉換）一律不碰。
+LOSSLESS_IMAGE_MODES = {"1", "L", "LA", "P", "RGB", "RGBA"}
+
 # PPTX / DOCX / XLSX 的媒體一律放在 ppt|word|xl/media/ 之下。本工具只認「media/」這一層。
 MEDIA_MARK = "/media/"
 
@@ -73,6 +80,110 @@ def category(name: str) -> str:
 
 def is_media(name: str) -> bool:
     return MEDIA_MARK in f"/{name}" and category(name) != "other"
+
+
+def match_only(names: list[str], only: str, what: str) -> list[str]:
+    """--only 的共用語意：**精確優先**，沒精確命中才退回子字串並 WARN，打錯詞要出聲。
+
+    為什麼不能只用子字串：`media1` 是 `media10`–`media17` 的前綴，純子字串會一次壓 8 支，
+    與「精準打擊」的用法完全相反（實測踩過）。
+    """
+    if not only:
+        return names
+    wanted = [w.strip() for w in only.split(",") if w.strip()]
+
+    def exact_hits(word: str) -> list[str]:
+        return [n for n in names if word in (n, Path(n).name, Path(n).stem)]
+
+    picked: list[str] = []
+    fuzzy: list[str] = []
+    fuzzy_words: list[str] = []
+    no_hit: list[str] = []
+    for word in wanted:
+        hits = exact_hits(word)
+        if hits:
+            picked.extend(hits)
+            continue
+        loose = [n for n in names if word in Path(n).stem]
+        if loose:
+            fuzzy.extend(loose)
+            fuzzy_words.append(word)
+        else:
+            no_hit.append(word)
+    if no_hit:
+        print(f"WARN: --only 有 {len(no_hit)} 個詞沒命中任何{what}：{', '.join(no_hit)}",
+              file=sys.stderr)
+    if fuzzy:
+        print(f"WARN: --only {'/'.join(fuzzy_words)} 沒有精確命中，改用子字串，命中 "
+              f"{len(set(fuzzy))} 支：{', '.join(sorted({Path(n).name for n in fuzzy}))}",
+              file=sys.stderr)
+    picked.extend(fuzzy)
+    if not picked:
+        print(f"FAIL: --only 指到不存在的{what}：{', '.join(wanted)}", file=sys.stderr)
+        raise SystemExit(1)
+    return [n for n in names if n in set(picked)]
+
+
+def pillow() -> tuple:
+    """延遲載入 Pillow：只有真的要碰圖片時才需要它（影片路徑不該被它擋住）。"""
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        die("缺 Pillow（python3 -m pip install Pillow）；圖片關需要它，或改用只壓影片的路徑", 2)
+    return Image, ImageOps
+
+
+def png_bit_depth(path: Path) -> int:
+    """讀 PNG IHDR 的 bit depth（0 = 不是 PNG）。
+
+    Pillow 讀 16-bit PNG 會**降位深**成 8-bit（肉眼看不出、但不再是無損），
+    只靠解碼後比像素是抓不到的 —— 所以必須直接看檔頭。
+    """
+    with path.open("rb") as fh:
+        head = fh.read(26)
+    if head[:8] != b"\x89PNG\r\n\x1a\n" or len(head) < 26:
+        return 0
+    return head[24]
+
+
+def pixel_bytes(img) -> bytes:
+    """把圖轉成固定 RGBA 序列（跨 mode 才能比）；alpha 與色版都算進「像素」。"""
+    return img.convert("RGBA").tobytes()
+
+
+def pixels_same(path_a: Path, path_b: Path) -> bool:
+    """兩張圖解碼後像素是否完全相同（無損宣稱的自證）。"""
+    Image, _ = pillow()
+    with Image.open(path_a) as ia, Image.open(path_b) as ib:
+        # n_frames 只有多幀外掛（GIF／TIFF／WEBP）才有：JPEG 之類要用 getattr 取預設 1，
+        # 否則單幀圖直接 AttributeError（實測踩過）
+        if ia.size != ib.size or getattr(ia, "n_frames", 1) != getattr(ib, "n_frames", 1):
+            return False
+        return pixel_bytes(ia) == pixel_bytes(ib)
+
+
+def psnr(path_a: Path, path_b: Path) -> float:
+    """兩張圖的 PSNR（dB）；完全相同回 inf，尺寸不同時把**大的那張縮到小的尺寸**再比。
+
+    為什麼是「縮到小的」而不是「把小圖放大回母帶尺寸」：母帶 → 1920 縮圖是合理的降採樣，
+    放大回去比等於在懲罰每一次縮圖。實測（見 examples.md）：同一張 1000x750 高頻圖縮到
+    400px 存 Q85，放大回母帶語意只有 24.8 dB（低於預設門檻 30 dB ＝ 誤殺），縮到小圖尺寸比
+    是 28.5 dB。
+    注意：PSNR 只比 RGB（alpha 不計），所以它是「有損模式」的輔助門檻，不是無損證明。
+    """
+    Image, _ = pillow()
+    import math
+    with Image.open(path_a) as ia, Image.open(path_b) as ib:
+        ref = ia.convert("RGB")
+        got = ib.convert("RGB")
+    if got.size != ref.size:
+        if ref.size[0] * ref.size[1] > got.size[0] * got.size[1]:
+            ref = ref.resize(got.size, Image.LANCZOS)
+        else:
+            got = got.resize(ref.size, Image.LANCZOS)
+    a, b = ref.tobytes(), got.tobytes()
+    mse = sum((x - y) ** 2 for x, y in zip(a, b)) / len(a)
+    return math.inf if mse == 0 else 10 * math.log10(255 ** 2 / mse)
 
 
 def zip_entries(path: Path) -> list[tuple[str, int, int]]:

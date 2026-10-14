@@ -91,7 +91,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | [`dav-trust`](skills/dav-trust/SKILL.md) | 信任模式：給大目標 + deadline 後自主跑完 5 階段 |
 | [`ask-me`](skills/ask-me/SKILL.md) | 逐題確認 trust 期間的待決擔憂，回寫 backlog |
 | [`dav-skill-creater`](skills/dav-skill-creater/SKILL.md) | 提煉 / 修改 skill，守住 5 段結構與 150 行上限 |
-| [`pptx-slim`](skills/pptx-slim/SKILL.md) | PPTX 就地減重：轉碼影片、只換媒體重打包、四關驗證 |
+| [`pptx-slim`](skills/pptx-slim/SKILL.md) | PPTX 就地減重：轉碼影片／重壓圖片、只換媒體重打包、四關驗證（含畫質關） |
 
 ## 進階
 

@@ -56,16 +56,16 @@ section() {
     echo "FAIL: 規則表不是 規則/例外/限制 三欄" >&2; return 1; }
 }
 
-@test "RESTRUCT-PPTX-SLIM: 流程提到的 4 支腳本真的存在且可執行" {
+@test "RESTRUCT-PPTX-SLIM: 流程提到的 5 支腳本真的存在且可執行（TMO-064 加圖片那支）" {
   local skill scripts n=0 name
   skill=$(skill_file)
   scripts="$REPO_ROOT/skills/pptx-slim/scripts"
-  for name in pptx-probe.py pptx-shrink-media.py pptx-repack.py pptx-verify.py; do
+  for name in pptx-probe.py pptx-shrink-media.py pptx-shrink-images.py pptx-repack.py pptx-verify.py; do
     grep -qF "$name" "$skill" || { echo "FAIL: SKILL.md 沒提到 $name" >&2; return 1; }
     [ -x "$scripts/$name" ] || { echo "FAIL: $name 不存在或不可執行" >&2; return 1; }
     n=$((n + 1))
   done
-  [ "$n" -eq 4 ] || { echo "FAIL: 只驗到 $n 支腳本" >&2; return 1; }
+  [ "$n" -eq 5 ] || { echo "FAIL: 只驗到 $n 支腳本" >&2; return 1; }
 }
 
 @test "RESTRUCT-PPTX-SLIM: 變動歷史存在，且完整歷史外移到同目錄 CHANGELOG.md" {

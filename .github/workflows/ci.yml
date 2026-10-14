@@ -86,6 +86,15 @@ jobs:
         # 守門探針：tests/env-equivalence.bats ENV-EQ-11。
         run: SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
 
+      - name: Verify probes still kill mutants
+        # TMO-065：突變測試自動化。人工種 mutant 只能在「當下那個 commit」證明探針咬得住；
+        # 之後有人把 gate 改成恒真、把護欄拿掉、把精確比對改成子字串，不會有探針紅，
+        # 也不會有人記得重跑那張清單。這步在**副本**上重跑整張表（scripts/ci/mutants.tsv），
+        # 每支 mutant 都必須讓對應探針變紅，且每支都有「未突變必須綠」的 baseline 對照
+        #（否則紅只代表探針壞了）。working tree 不會被碰到（腳本事後比對 md5 自證）。
+        # 守門探針：tests/mutant-must-die.bats（MMD-5 專門盯這一步有沒有被拿掉、或被改成假綠）。
+        run: python3 scripts/ci/mutant-must-die.py
+
       - name: ShellCheck every tracked shell file
         # NYH-6（2026-10-05 決策 A）：CI 過去完全沒跑 shellcheck，且下一步只 glob 硬編子集
         # → 「本機 Gate 2 全綠」不等於 CI 會擋。這裡與本機 Gate 2 用同一條自我列舉指令。

@@ -72,7 +72,8 @@
 | TMO-061 | **`install-reference.md` 的探針總數靠人工同步（同一票內就改過多次）**(TMO-058／TMO-060 收尾揭露）：每加／改一條探針，就要人工改 `docs/install-reference.md` 的 `bats tests/` 條數、CI 條數、clean clone 的 `N ok / 43 not ok`；TMO-058 內漂 4 次（600→611→612 等，backlog 列漏改 1 次）、TMO-060 內漂 2 次（612→615→622；615→618→625；569→572→579）。**建議**：①讓 `install-reference.md` 只寫「以 `bats --count tests/` 為準」並移除硬編數字；或②寫一條探針／CI 步驟自動校驗該檔的數字與實測一致（後者較重、但能保住「文件有數字」的可讀性）。**注意**：TMO-060 一票之內又同步 **2** 次（612→615→622；615→618→625；569→572→579），可見人工同步的成本。 | P3 | 1 | done (2026-10-05) | TMO-060 |
 | TMO-062 | **七支 dav-wiki 腳本第 2 行自述路徑過時**（TMO-057 V03 二審 P2-3 揭露）：`wiki-cross-ref.sh`、`wiki-extract-audio.sh`、`wiki-extract-video.sh`、`wiki-index.sh`、`wiki-media-describe.sh`、`wiki-merge-media.sh`、`wiki-ocr.sh` 第 2 行仍寫 `# tools/<name>.sh`，但 repo 根已無 `tools/` 目錄（實際在 `skills/dav-wiki/scripts/`）；sibling `wiki-extract-media.sh` 已在 TMO-025 修過。**修法**：`# tools/<name>.sh` → `# skills/dav-wiki/scripts/<name>.sh`，對齊 sibling。 | P3 | 1 | done (2026-10-05) | TMO-057 |
 | TMO-063 | **新 skill：`pptx-slim`（PPTX 就地減重）**（2026-10-05 用戶委託：「可以把上面的能力，寫為一個新 skills 嗎？」）→ **已完成**：從「2.9 GB 培訓 PPT → 418 MB（−86%）」實戰流程提煉；skill 本體（`SKILL.md` 62 行、5 段任務導航）+ 4 支工具（`pptx-probe.py` 偵察估數／`pptx-shrink-media.py` 轉碼含「壓完更大退回原檔」／`pptx-repack.py` 只換媒體逐 byte 重打包／`pptx-verify.py` 四關驗證）+ 共用模組 `pptx_common.py` + 子檔（`examples.md` 實測數字／`CHANGELOG.md`）；探針 2 支：`tests/restruct-pptx-slim.bats`（結構 9 條）與 `tests/pptx-slim.bats`（功能 11 條，含 12 支 mutant 證明驗證器咬得住）；README skill 數 11 → 12 | P2 | 8 | done (2026-10-05) | — |
-| TMO-064 | **pptx-slim 只減影片、圖片 139 MiB 全未動**（2026-10-05 TMO-063 收尾自省揭露）：實戰案檔 2,976.8 MiB 中圖片佔 139 MiB（含 29 MiB TIFF，PPT 內根本用不到的容器）；影片減完後圖片就是下一個大頭，但**縮圖／轉檔會改變像素**，與「非媒體 entry 逐 byte 原樣」紀律衝突，不能混進現行 repack。→ 候選做法：① 只做「無損重編碼」（PNG 重壓 + TIFF→PNG 但 rels 同步改名，需 G2b 放行媒體類圖片）；② 只做「超標圖片降採樣」並在 verify 加圖片專屬 gate；③ 明確不做、只寫進 SKILL 的殘餘風險。| P3 | 3 | todo | TMO-063 |
+| TMO-064 | **pptx-slim 只減影片、圖片 139 MiB 全未動**（2026-10-05 TMO-063 收尾自省揭露）→ **已完成**：新增 `pptx-shrink-images.py`（預設 `--mode lossless`＝PNG 重壓／TIFF deflate，像素逐點自證；`--mode lossy` 才限定長邊與品質）＋ `pptx-verify.py` 畫質關 G2d（`--image-mode` 觸發，不影響既有四關）；兩道護欄（格式／位深白名單 ＋ 像素自證）為不變式，做不到就退回原檔；圖片與影片共用同一 `--media-dir` 一次 repack。探針：`tests/pptx-slim-images.bats` **21 條**（含 G2d 正反兩面、PSNR 門檻雙向、長邊上限的「刻意保留豁免」對開兩支、壞圖 rc=3、純向量 deck 不適用、`--src`＝`--out` 被擋）＋ **11 支** mutant 全紅；`restruct-pptx-slim.bats` 腳本清單 4 → 5 | P3 | 3 | done (2026-10-05) | TMO-063 |
+| TMO-065 | **突變測試是一次性人工動作**（2026-10-05 TMO-063／064 收尾揭露）→ **已完成**：pptx-slim 的 26 支 mutant（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）原本靠手動種、手動驗，事後沒有任何檢查記得「這些 gate 曾經被證明咬得住」。新增 `scripts/ci/mutants.tsv`（每列＝目標檔＋整行原文＋替換＋探針檔＋探針名）＋ `scripts/ci/mutant-must-die.py`（在**副本**上套突變：`git ls-files -co --exclude-standard` → tmp 目錄 → 精確替換（錨點必須恰好 1 次，對不上＝FAIL 非 skip）→ 對應探針必須變紅；每支都先跑「未突變必須綠」的 baseline，否則「紅」只代表探針壞了；事後比對目標檔 md5 自證 working tree 零改動）＋ `tests/mutant-must-die.bats`（MMD-1..5：表的契約（門檻 26 支）／真的在副本上殺 mutant／mutant 活著要回報失敗／錨點腐化要大聲壞／CI 真的跑全表且不得用 shell 兩條直線的 OR 短路假綠，也不得 `--list`、`--only`、`--no-baseline`、`continue-on-error`）＋ CI 步驟 `Verify probes still kill mutants`。**第一次實跑就抓到 2 個真的空過**：①G1（新檔 CRC 壞掉）沒有任何探針咬得住 → 補 `tests/pptx-slim.bats` PPTX-SLIM-12（raw-patch 一個 STORED 媒體的 byte 令 central directory 的 CRC 對不上）；②FF-M3（把能力實測的 `-vf scale=...` 換成 `-vf null`）FV-8 照樣過 → 補 `tests/ffmpeg-version.bats` FV-9（把檢查腳本送的字串與 `scale_filter(1920)` 綁死） | P3 | 3 | done (2026-10-05) | TMO-063, TMO-064 |
 
 > 📝 2026-10-05 ask-me：**TMO-035** 決策＝**改文件對齊現實**（`SKILL.md` 限制表該列改為
 > 「缺工具即停並提示安裝（`exit 4`）」），**不實作降級模式**；純文字修正、走 V03 二審後施工。
@@ -463,15 +464,82 @@
 **問題**：TMO-063 實戰把 2.9 GB 壓到 418 MB（−86%），但減掉的 2.5 GB 幾乎全是影片；同案檔的
 **139 MiB 圖片（含 29 MiB TIFF）完全沒動**。圖片不是壓不動，而是「壓圖片＝改像素」，
 與 pptx-slim 現行最高紀律「非媒體 entry 逐 byte 原樣、只有 media 才准換」正面衝突 —— 圖片在 zip 裡
-`ppt/media/imageN.png` 就是媒體，但改它會讓 G2b「非媒體 byte 相同」的語意變模糊，必須先決定紀律怎麼擴。
+`ppt/media/imageN.png` 就是媒體，但改它會讓 G2b「非媒體 byte 相同」的語意變模糊。
 
-**為什麼現在不做**：圖片只佔 4.7%（139／2,976.8 MiB），壓完預估再省 80–100 MiB（≈2–3%），
-ROI 遠低於影片；但**若未來案檔以圖片為主**（例如全是掃描圖的教材），這條就變成主戰場。
+**決策（2026-10-05 實作完成）**：走「**預設無損、有損要自證**」這條，並與影片拆成**兩支腳本**
+（風險不同：影片掉質感在投影機上看不出，圖片掉畫質很明顯）：
 
-**驗收標準（三選一，決策先於實作）**：
-1. 選「無損重編碼」→ AC：`pptx-verify.py` 新增圖片 gate（像素相同或 PSNR ≥ 門檻）＋ mutant 探針證明會紅；
-2. 選「有損降採樣」→ AC：新增 `--image-max-edge`／`--image-quality`，且 verify 必須**不再**宣稱非媒體 byte 相同，
-   而是宣稱「媒體允許改、XML 逐 byte 相同」；
-3. 選「不做」→ AC：`skills/pptx-slim/SKILL.md` 規則表新增一列「圖片不自動壓（殘餘風險）」，並在 `examples.md` 記預估可省量。
+1. `--mode lossless`（預設）：只碰 PNG／TIFF 8-bit，重壓後**必須像素逐點相同**（Pillow 解碼比對），
+   否則退回原檔；16-bit PNG（IHDR 位深 ≠ 8）與 CMYK 等模式不符者**明示 SKIP 並說原因** ——
+   這一關只能看檔頭，因為「降位深」肉眼看不出、比對解碼後像素也抓不到。
+2. `--mode lossy`：`--image-max-edge`（預設 1920）＋ `--image-quality`（預設 85），PNG 可加 `--png-colors`。
+3. `pptx-verify.py` 加 **G2d 畫質關**（只有帶 `--image-mode` 才跑，既有四關語意不變）：
+   無損 ⇒ 像素完全相同；有損 ⇒ 長邊 ≤ 上限且 PSNR ≥ 門檻。
+4. repack 不動：圖片與影片共用同一 `--media-dir`（basename 對應），一次改完。
 
-**預估**：3 點（決策 0.5 + 實作 1.5 + 探針與 mutant 1）。
+**驗收證據**：`tests/pptx-slim-images.bats` **21 條**全綠（IMG-2/5 像素自證、IMG-3 位深護欄、IMG-4 JPEG 顯式 SKIP、
+IMG-6/7 有損上限與容器不變、IMG-9 與影片共用目錄一次 repack 四關含 G2d 全綠、IMG-10/11 畫質關正反兩面、
+IMG-12 保留原檔防呆、IMG-13 `--min-bytes`、**IMG-14/15 長邊上限的「刻意保留豁免」正反兩面**、IMG-16 壞圖 rc=3 不吐 traceback、
+IMG-17 `--png-colors` 真的量化、IMG-18 `--no-keep-original` 與預設的差別、**IMG-19 純向量 deck 走「不適用」分支**、
+**IMG-20 PSNR 在小圖尺寸比（門檻 27 dB 兩邊對開）**、IMG-21 `--src`＝`--out` 被擋）；突變 **11 支**（縮圖失效／無損白名單移除／G2d 恒真／
+PSNR 門檻失效／16-bit 護欄移除／原檔豁免移除／Pillow 例外直出／PSNR 尺寸正規化移除／src＝out 護欄移除／向量圖算進光柵／`--png-colors` 裝飾）
+全部 RED，證明探針咬得住。fixture 實測（`examples.md` §5 為準）：TIFF 1.7 MiB → 30 KiB（−98.2%）無損、PNG 8-bit 8.1 → 6.4 KiB（−20.8%）無損（
+那 139 MiB 的真 deck 圖片**仍未實跑**，屬尚未量測項）。
+
+**第二輪自審＋V03 二審（同一交付內）修正**（P0 0／P1 1／P2 4／P3 10）：
+
+- **P1 — `G2d` 把「刻意保留的原檔」算成超標**：有損模式的長邊上限原本一視同仁，但 `SKIP`（格式不符）、
+  `KEPT(not smaller)`、`--min-bytes`、`--only` 沒選到的圖**根本沒有重編**，尺寸自然可能超上限 → 會誤紅。
+  修法：**逐 byte 相同 ＝ 刻意保留，不計入上限**，detail 明示「N 張是刻意保留的原檔（不算超標）」；
+  同時補 IMG-14（不誤紅）與 IMG-15（真有重編又超標仍要紅）兩支對開探針 —— 只有一邊就會把咬合力整段豁免掉。
+- ② 畫質關只認**光柵圖**（`.svg`/`.emf`/`.wmf` 永遠解不開，純向量 deck 會被誤判「沒有圖片可檢查」→ 改走不適用）。
+- ③ `psnr()` 改在**縮圖尺寸**比：把小圖放大回母帶再比等於懲罰每一次降採樣（同一張合法縮圖舊語意 24.8 dB、新 28.5 dB）。
+- ④ 壞圖不再吐 traceback（接住 `OSError`/`ValueError` → rc=3）；⑤ `--src` 與 `--out` 同目錄直接擋（rc=1）；
+  ⑥ PNG 位深白名單放寬為精確映射安全的 1/2/4/8-bit；⑦ 文件補 alpha 限制。
+
+## TMO-065 詳細（突變測試自動化）
+
+**問題**：pptx-slim 有 26 支 mutant 證明「四關驗證器與各道防呆真的咬得住」，但那是**人工**種的 ——
+只有在寫下的那個 commit 被驗過一次。之後任何人把 `report.gate("G2b …", True, …)` 改成恒真、
+把 `if not args.no_keep_original and after >= before:` 拿掉、把 `--only` 的精確優先改回子字串，
+都不會有探針紅，也不會有人記得重跑那張清單。TMO-063／064 的收尾自省把這件事列為「一次性證明的債」。
+
+**決策（2026-10-05 實作完成）**：把 mutant 清單變成**檔案化、CI 會跑**的檢查：
+
+1. `scripts/ci/mutants.tsv`：26 列 × 6 欄（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）（id／目標檔／整行原文／替換／探針檔／探針名）。
+   原文用**整行精確比對**（含縮排）→ 程式碼一改，表就找不到錨點而 FAIL。
+2. `scripts/ci/mutant-must-die.py`：突變**只發生在 working tree 的副本**（
+   `git ls-files -co --exclude-standard` 忠實複製，含未 commit 的修改）→ 逐列替換 →
+   跑 `bats <探針檔> -f <探針名>` → 期望 **rc != 0**；跑完比對目標檔 md5 自證 working tree 零改動。
+   每列都先跑一次「未突變必須綠」的 baseline（按（探針檔, 探針名）快取），並且把
+   `ERROR: Found no tests`（bats 找不到測試）當失敗 —— 否則打錯探針名會被誤讀成「mutant 死亡」。
+3. `tests/mutant-must-die.bats`（MMD-1..5）把「這支檢查本身可信」也鎖住：表的契約（欄位數／id 唯一／
+   錨點唯一／探針名真的存在／覆蓋到 5 支 py 與 ffmpeg 鎖）、真的在副本上殺 mutant 且 working tree 不變、
+   **mutant 活著時必須回報失敗**（用「無害突變」表反向驗證，防工具永遠說 OK）、錨點腐化必須大聲壞、
+   CI 真的在跑（不得 `|| true`）。
+4. CI 加一步 `Verify probes still kill mutants`（在 `bats tests/` 之後）：本機實測 26 支全跑完約 51 秒。
+   第二輪再收緊：MMD-1 的表門檻 20 → 26；MMD-5 除了「不得 `|| true`」再咬**十種假綠**
+   （`if: false`／`if: <條件>`／`continue-on-error: true`／`|| true`／`||true`／`--list`／`--only`／`--no-baseline`，
+   外加 `run: echo …` 這種「只提到腳本名但沒真的叫」）—— 「有檔案但沒人叫」與「跑到 ≠ 跑過全表」
+   比沒有檢查更危險；第三輪（reviewer round-2 P1-1）補上 `if:` 這一種：一個 `if: false` 就能讓整步靜默消失，
+   而舊版只看 `|| true` 字面；檢查邏輯同時正規化空白與大小寫（`continue-on-error:true` 也咬），
+   並在自己的探針裡對十種假綠**逐一反向自測**（probe-of-the-probe：誤咬／恒綠都會紅）；
+   工具自身另修：存在性檢查移到 md5 之前、`PROBE_TIMEOUT` 900 → 300 秒（rc=124 逾時視為 harness 問題，不算 mutant 死亡）。
+
+**第一次實跑就抓到 2 個真的空過（這支檢查的價值就在這裡）**：
+
+- **G1 是空的**：`pptx-verify.py` 的 `bad = zf.testzip()` 改成 `bad = None` 之後，11 支探針全綠。
+  → 補 `tests/pptx-slim.bats` PPTX-SLIM-12：把輸出檔裡一個 ZIP_STORED 媒體 payload 翻一個 byte
+  （CRC 留在原處），斷言 verify 回 rc=1 且輸出含 `[FAIL] G1 新檔 CRC` 與壞 entry 名。
+- **FV-8 咬不住「把能力實測換成裝飾」**：第二組能力實測的 `-vf "scale='if(gt(iw,ih),…)'"` 換成 `-vf null`
+  之後 FV-8 照樣綠（假殼只會對「看到 `scale=`」失敗）。→ 補 `tests/ffmpeg-version.bats` FV-9：
+  直接比對檢查腳本送出的字串 == `pptx_common.scale_filter(1920)`，並要求 `-c:v libx264`／`-c:a aac`／
+  `-movflags +faststart`／`-pix_fmt yuv420p` 真的出現在檢查腳本裡。
+
+**驗收證據**：`python3 scripts/ci/mutant-must-die.py` → 26 支全紅（每支都有綠 baseline）＋ md5 自證
+working tree 未變；`tests/mutant-must-die.bats` 5 條全綠；`bats tests/`（665 條）、`bats skills/*/tests/*.bats`
+與全部 lint 皆綠。
+
+**限制（誠實揭露）**：①表只覆蓋 5 支 pptx-slim 的 py 與 ffmpeg 版本鎖 —— 其他 skill 的護欄還沒有 mutant，
+要覆蓋得逐支補列；②突變是**文字替換**，改不到的多行重構（例如整個函式搬位置）不在鎖內；
+③潔癖邊界：CI 每跑一次就重跑一次全表（約 51 秒／本機），這是「不腐化」的代價。

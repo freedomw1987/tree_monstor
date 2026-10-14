@@ -7,9 +7,11 @@
   G3 rels 零斷鏈 —— 每個關係指向的 part 真的存在（換名／換容器就是在這裡出事）
   G4 時長漂移   —— 影片長度不變（書籤、動畫觸發時點全靠它）
 
-  「四關」＝上面四關（G2 含 a 齊全／b 非媒體 byte 相同／c 媒體與 --media-dir 一致）；
+  「四關」＝上面四關（G2 含 a 齊全／b 非媒體 byte 相同／c 媒體與 --media-dir 一致／d 圖片像素）；
   「播放器實開」是四關**之外**的最後一關，要人在有 PowerPoint／LibreOffice 的機器跑。
   媒體比對分兩層：這裡用「大小 + 小檔深度比對」省 I/O，嚴格逐 byte 核對走 --media-dir（G2c）。
+  G2d（要給 --image-mode 才跑）才是「畫質有沒有掉」的證據：無損模式要求像素**完全相同**，
+  有損模式要求尺寸在上限內且 PSNR 不低於門檻 —— G2c 只證明「換上去的正是那批檔」。
 
 用法：
   python3 pptx-verify.py --src <original.pptx> --dst <new.pptx> [options]
@@ -36,12 +38,16 @@ from xml.etree import ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from pptx_common import (  # noqa: E402
+    IMAGE_EXT,
     VIDEO_EXT,
     die,
     extract_from,
     ffprobe_info,
     human_bytes,
     is_media,
+    pillow,
+    pixels_same,
+    psnr,
     require,
     stream_same,
     stream_same_file,
@@ -53,6 +59,11 @@ REL_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 # 媒體 entry：大小不同即視為換過；大小相同且 <= 此值才會真的逐 byte 比一次
 # （2.9 GB 級影片逐 byte 比對＝把兩份 GB 級媒體重讀一遍；嚴格核對走 G2c）
 MEDIA_DEEP_COMPARE_BYTES = 8 << 20
+# G2d 只認「Pillow 一定解得開的光柵圖」。IMAGE_EXT 含 .svg/.emf/.wmf 這些向量格式
+# （簡報貼圖常見，而且是成對出現）：它們永遠解不開，一張都算不進 checked，會讓
+# 「只有向量圖的 deck」反而 FAIL「沒有圖片可檢查」——那不是壓縮的問題。
+VECTOR_IMAGE_EXT = {".svg", ".emf", ".wmf"}
+RASTER_IMAGE_EXT = IMAGE_EXT - VECTOR_IMAGE_EXT
 
 
 class Report:
@@ -137,6 +148,79 @@ def check_media_dir(dst: Path, src_names: list[str], media_dir: Path, report: Re
 def media_names(names: list[str]) -> set[str]:
     """G4 時長關只認影片（圖片丟進 ffprobe 沒有意義）。"""
     return {n for n in names if is_media(n) and Path(n).suffix.lower() in VIDEO_EXT}
+
+
+def check_images(src: Path, dst: Path, mode: str | None, min_psnr: float,
+                 max_edge: int, report: Report) -> None:
+    """G2d：圖片畫質關（--image-mode 有給才跑）。
+
+    為什麼需要它：G2c 只證明「新檔的圖片 == 轉碼目錄那一批」，完全沒說「畫質有沒有掉」。
+    無損宣稱要靠像素逐點相同來證；有損要去量 PSNR 與尺寸上限，否則「壓了圖」等於黑箱。
+    """
+    if mode is None:
+        return
+    src_rows = {n for n, _, _ in zip_entries(src)}
+    dst_rows = {n for n, _, _ in zip_entries(dst)}
+    images = sorted(n for n in src_rows & dst_rows
+                    if is_media(n) and Path(n).suffix.lower() in RASTER_IMAGE_EXT)
+    if not images:
+        print("[INFO] G2d 沒有圖片可比（體積來源不是圖片）→ 這一關不適用")
+        return
+    pillow()
+    bad: list[str] = []
+    skipped: list[str] = []
+    kept = 0
+    checked = 0
+    with tempfile.TemporaryDirectory(prefix="pptx-verify-img-") as tmp, \
+            zipfile.ZipFile(src) as zs, zipfile.ZipFile(dst) as zd:
+        tmpdir = Path(tmp)
+        for name in images:
+            local_a = extract_from(zs, name, tmpdir / "a")
+            local_b = extract_from(zd, name, tmpdir / "b")
+            try:
+                if mode == "lossless":
+                    if not pixels_same(local_a, local_b):
+                        bad.append(f"{Path(name).name}（像素被動過）")
+                else:
+                    from PIL import Image  # pillow() 已確認可 import
+                    with Image.open(local_b) as ib:
+                        long_edge = max(ib.size)
+                    if max_edge and long_edge > max_edge:
+                        # 逐 byte 相同 ＝ 壓縮器刻意保留原檔（白名單 SKIP、KEPT 沒更小、
+                        # --min-bytes 太細張、--only 沒選到），尺寸本來就可能超上限；
+                        # 把它算成超標就是誤紅（探針 IMG-14 咬住這條）。
+                        # 真有重編過（bytes 不同）又超標，才算不符。
+                        if stream_same(zs, zd, name):
+                            kept += 1
+                        else:
+                            bad.append(f"{Path(name).name}（長邊 {long_edge} > {max_edge}）")
+                    else:
+                        got = psnr(local_a, local_b)
+                        if got < min_psnr:
+                            bad.append(f"{Path(name).name}（PSNR {got:.1f} dB < {min_psnr}）")
+            except Exception as exc:                    # 壞圖／Pillow 讀不了的格式
+                skipped.append(f"{Path(name).name}（{type(exc).__name__}）")
+            else:
+                checked += 1
+            local_a.unlink()
+            local_b.unlink()
+
+    if mode == "lossless":
+        want = "像素完全相同"
+    elif max_edge:
+        want = f"長邊 <= {max_edge} 且 PSNR >= {min_psnr} dB"
+    else:
+        want = f"PSNR >= {min_psnr} dB（未指定 --image-max-edge，不比長邊）"
+    detail = f"{len(images)} 張圖片中實際檢查 {checked} 張（要求：{want}）"
+    if kept:
+        detail += f"，{kept} 張是刻意保留的原檔（不算超標）"
+    if mode == "lossy" and checked and checked == kept:
+        detail += "；本次沒有任何圖片被重編（本關只證明沒掉畫質，不證明有壓縮）"
+    if skipped:
+        detail += f"，{len(skipped)} 張無法解碼（{', '.join(skipped[:3])}）"
+    if bad:
+        detail += f"，不符：{bad[:5]}"
+    report.gate("G2d 圖片關", checked > 0 and not bad, detail)
 
 
 def check_rels_and_slides(dst: Path, expect_slides: int | None, report: Report) -> None:
@@ -227,6 +311,10 @@ def main(argv: list[str]) -> int:
     p.add_argument("--tol", type=float, default=0.5)
     p.add_argument("--fast", action="store_true")
     p.add_argument("--expect-slides", type=int)
+    p.add_argument("--image-mode", choices=("lossless", "lossy"),
+                   help="圖片畫質關（lossless＝像素必須相同；lossy＝尺寸上限 + PSNR）")
+    p.add_argument("--image-psnr", type=float, default=30.0, help="有損模式的 PSNR 門檻（dB）")
+    p.add_argument("--image-max-edge", type=int, default=0, help="有損模式的長邊上限（0＝不檢查）")
     args = p.parse_args(argv)
 
     for path, label in ((args.src, "原檔"), (args.dst, "新檔")):
@@ -239,6 +327,8 @@ def main(argv: list[str]) -> int:
     check_crc(args.src, "原檔", args.fast, report)
     check_crc(args.dst, "新檔", False, report)
     check_entries(args.src, args.dst, args.media_dir, report)
+    check_images(args.src, args.dst, args.image_mode, args.image_psnr,
+                 args.image_max_edge, report)
     check_rels_and_slides(args.dst, args.expect_slides, report)
     check_durations(args.src, args.dst, args.tol, report)
 

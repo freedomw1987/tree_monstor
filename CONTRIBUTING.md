@@ -70,6 +70,16 @@ bats tests/wiki-cleanup.bats
 bats tests/wiki-cleanup.bats --filter "E1"
 ```
 
+```bash
+# 跑突變測試（TMO-065）：在 working tree 的**副本**上把 26 支 mutant 逐一種回去，
+# 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
+python3 scripts/ci/mutant-must-die.py
+# 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
+# 改了 skills/pptx-slim/scripts/ 的碼，就要同步更新 scripts/ci/mutants.tsv：
+# 表的「原文」是整行精確比對，錨點對不上會直接 FAIL（不是 skip）；
+# 新增防呆／護欄時請補一列 mutant，否則 CI 不會知道你補的東西有沒有被測到。
+```
+
 > ⚠️ **本機綠 ≠ CI 綠**：CI 是 clean clone，拿不到未版控的檔案，也**沒有 `OPENROUTER_API_KEY` 與暖快取**。
 > 若新增測試素材，必須真的 `git add`（`tests/poc-clean-clone.bats` 會擋）；
 > fixture 內也不得寫自己機器的絕對路徑。
@@ -136,6 +146,10 @@ wc -l skills/dav-wiki/SKILL.md
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
+6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 26 支
+   mutant 在副本上重跑一次，每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
+   證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
+   鎖住「這一步必須存在、必須跑全表（不得 `--list`／`--only`／`--no-baseline`）、不得被 `if:` 條件停用、不得 OR 短路或 `continue-on-error`」
 
 CI badge：見 [README.md](README.md) 頂部。
 

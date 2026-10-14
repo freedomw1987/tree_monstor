@@ -172,3 +172,26 @@ make_fake_ffmpeg_only_scale_fails() {
   [[ "$output" == *"旗標組合"* ]]
   [[ "$output" != *"select/showinfo"* ]] || { echo "FAIL: 第一組也被判失敗（假殼設計錯）" >&2; return 1; }
 }
+
+# 為什麼需要 FV-9：FV-8 的假殼「一看到 scale= 就失敗」，所以檢查腳本若把 scale 表達式換成
+# 別的、甚至整條 -vf 拿掉，FV-8 照樣會過 —— 第二組能力實測就退化成裝飾品。
+# 這條直接比對「檢查腳本送的字串」與「pptx-slim 真正送給 ffmpeg 的字串」是不是同一份。
+@test "FV-9: 第二組能力實測的字串 == pptx-slim 真正在用的旗標（不是裝飾）" {
+  local expr
+  expr=$(python3 -c "
+import sys
+sys.path.insert(0, '$REPO_ROOT/skills/pptx-slim/scripts')
+from pptx_common import scale_filter
+print(scale_filter(1920))
+")
+  [ -n "$expr" ] || { echo "FAIL: 取不到 scale_filter(1920) 的字串" >&2; return 1; }
+  grep -qF "$expr" "$CHECK" || {
+    echo "FAIL: 檢查腳本沒測到 pptx-slim 真的在用的 scale 表達式：$expr" >&2
+    return 1
+  }
+  # 轉碼那組的其他關鍵旗標也要真的被測到，否則「能力實測」只是名字對得上
+  local flag
+  for flag in '-c:v libx264' '-c:a aac' '-movflags +faststart' '-pix_fmt yuv420p'; do
+    grep -qF -- "$flag" "$CHECK" || { echo "FAIL: 檢查腳本沒測到 ${flag}" >&2; return 1; }
+  done
+}

@@ -292,3 +292,43 @@ PY
   [[ "$output" == *"[FAIL] G4 時長漂移"* ]]
   [[ "$output" != *"Traceback"* ]]
 }
+@test "PPTX-SLIM-12: verify 咬得住「新檔 CRC 壞掉」（mutant）" {
+  shrink_repack_verify 24 "$W/slim.pptx"
+  # 造一個「zip 讀得完但某個 entry 的 CRC 對不上」的檔：把 STORED 媒體 payload 改一個 byte，
+  # CRC 留在原處不動。這是 G1 存在的理由（開會才發現壞檔，代價最大），所以必須有探針咬住。
+  python3 - "$W/slim.pptx" "$W/bad-crc.pptx" <<'PY'
+import shutil
+import struct
+import sys
+from pathlib import Path
+
+src, dst = Path(sys.argv[1]), Path(sys.argv[2])
+shutil.copyfile(src, dst)
+buf = bytearray(dst.read_bytes())
+patched = None
+pos = 0
+while True:
+    pos = buf.find(b"PK\x03\x04", pos)
+    if pos < 0:
+        break
+    _sig, _ver, _flag, method, _t, _d, _crc, csize, usize, nlen, elen = struct.unpack_from(
+        "<IHHHHHIIIHH", buf, pos)
+    name = bytes(buf[pos + 30:pos + 30 + nlen]).decode("utf-8", "replace")
+    start = pos + 30 + nlen + elen
+    # 只挑 ZIP_STORED（method 0）的媒體：改 byte 不會壞掉 deflate 串流，CRC 一定對不上
+    if method == 0 and name.endswith(".mp4") and usize >= 4096 and csize == usize:
+        buf[start + usize // 2] ^= 0xFF
+        patched = name
+        break
+    pos += 4
+assert patched, "fixture 裡找不到 ZIP_STORED 的媒體可改（repack 的輸出應該都是 STORED）"
+dst.write_bytes(bytes(buf))
+print("patched", patched)
+PY
+  run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/bad-crc.pptx" --fast
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"[FAIL] G1 新檔 CRC"* ]]
+  # 不能只是「剛好壞掉」：G1 判準行要指出是哪個 entry
+  [[ "$output" == *"壞 entry"* ]]
+}
+

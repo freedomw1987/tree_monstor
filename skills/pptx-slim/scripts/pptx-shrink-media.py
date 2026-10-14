@@ -39,6 +39,7 @@ from pptx_common import (  # noqa: E402
     extract_member,
     ffprobe_info,
     human_bytes,
+    match_only,
     require,
     run,
     scale_filter,
@@ -71,43 +72,7 @@ def pick_sources(src: Path, only: str) -> list[str]:
     else:
         print(f"FAIL: --src 需為 .pptx 或目錄：{src}", file=sys.stderr)
         raise SystemExit(1)
-
-    if not only:
-        return names
-    wanted = [w.strip() for w in only.split(",") if w.strip()]
-
-    def exact_hits(word: str) -> list[str]:
-        return [n for n in names if word in (n, Path(n).name, Path(n).stem)]
-
-    picked: list[str] = []
-    fuzzy: list[str] = []
-    fuzzy_words: list[str] = []
-    no_hit: list[str] = []
-    for word in wanted:
-        hits = exact_hits(word)
-        if hits:
-            picked.extend(hits)
-            continue
-        # 沒精確命中才退回子字串：'media1' 會命中 media10–media17，必須先講清楚
-        loose = [n for n in names if word in Path(n).stem]
-        if loose:
-            fuzzy.extend(loose)
-            fuzzy_words.append(word)
-        else:
-            no_hit.append(word)
-    if no_hit:
-        # '--only media1,typo' 第二個詞打錯時不能靜默丟掉（不然以為壓了兩支、其實只有一支）
-        print(f"WARN: --only 有 {len(no_hit)} 個詞沒命中任何影片：{', '.join(no_hit)}",
-              file=sys.stderr)
-    if fuzzy:
-        print(f"WARN: --only {'/'.join(fuzzy_words)} 沒有精確命中，改用子字串，命中 "
-              f"{len(set(fuzzy))} 支：{', '.join(sorted({Path(n).name for n in fuzzy}))}",
-              file=sys.stderr)
-    picked.extend(fuzzy)
-    if not picked:
-        print(f"FAIL: --only 指到不存在的影片：{', '.join(wanted)}", file=sys.stderr)
-        raise SystemExit(1)
-    return [n for n in names if n in set(picked)]
+    return match_only(names, only, "影片")
 
 
 def encode_command(local: Path, dest: Path, args: argparse.Namespace) -> list[str]:
@@ -151,6 +116,10 @@ def process_one(local: Path, dest: Path, args: argparse.Namespace, rows: list[tu
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    if args.src.is_dir() and args.src.resolve() == args.out.resolve():
+        # 目錄模式最危險的誤用：來源目錄當成輸出目錄 ＝ 原地覆蓋原檔
+        print("FAIL: --out 不可與 --src 相同（會原地覆蓋原檔）", file=sys.stderr)
+        return 1
     # --list 只看規格（ffprobe）：不強迫裝 ffmpeg，免得「只想看一眼」也被工具鏈擋住
     names = pick_sources(args.src, args.only)
     require("ffprobe", "讀取規格" if args.list_only else "驗證時長")
