@@ -4,7 +4,7 @@
 > **對應 Backlog**: TMO-066（US 級，見 `docs/backlog.md`）；延伸 TMO-065 的突變測試自動化
 > **Sprint / Module**: tree_monstor 建置／CI 護欄（`scripts/ci/`）＋ 三個 skill 的契約面
 > **交付狀態**: ✅ 完成（39 支 mutant 全紅、全量 673 條探針 0 紅、markdownlint 137 檔 0 issue、
-> V03 二審 verdict = `<待填>`）
+> V03 二審 verdict = **未完成（兩次自動二審皆逾時未產出 verdict，詳見 §4.4）**
 
 ## 1. 這次完成什麼
 
@@ -155,7 +155,31 @@ rm tests/zz-tmp-untracked-check.bats
 
 ### 4.4 Gate 4（reviewer 二審，V03）
 
-`<待填：verdict ＋ 逐條處置>`
+**狀態：未完成（誠實記錄，不假裝已審）。**
+依 V03，本輪動了 skill 檔（`skills/pptx-slim/SKILL.md`／`CHANGELOG.md`／`examples.md`）＋
+探針（`tests/mutant-must-die.bats`）＋ CI 鎖（`scripts/ci/lint-shell-var-nonascii.py`），因此必須二審。實際發生：
+
+| 次 | 時間（UTC）| 結果 | 診斷 |
+|----|-----------|------|------|
+| 1（完整審查）| 19:02 → 19:32 | **逾時 30 分鐘未產出 verdict** | reviewer 做大量工具探索（log 523 KB）後停滯，已中斷 |
+| 2（有界：≤8 呼叫／15 分鐘）| 19:43 → 19:59 | **逾時 15 分鐘未產出 verdict** | run 統計 input 3,747／output 375 tokens、歷時 1,004 秒，只有讀檔沒有實質輸出 ⇒ 懷疑 provider 端太慢 |
+
+**因此本報告沒有 verdict 可引** ——「沒有結論」不能寫成「通過」。缺口的補位方式：
+
+1. 我做了一輪**自查**（非抽樣，見下方），把能量化的部分先釘住。
+2. 二審材料已備好：`/tmp/review-bundle-tmo066.md`（440 行，含完整 diff、13 列新突變、請審 7 條重點）——
+   使用者可直接人工審，或指定換一條 agent 路徑。
+3. 修復路徑（**待使用者裁示**）：① 換 `codex-exec`（本機 Codex CLI，唯讀）跑同一份有界 prompt；
+   ② `reviewer` 降 thinking（`:low`）再試一次；③ 接受缺口、記進 backlog 下一輪補審。
+
+**自查清單**（用 python 掃 `mutants.tsv` 全 39 列，不是抽樣）：
+
+```text
+rows: 39
+每列「原文」在目標檔的出現次數：全部 == 1（錨點唯一）
+每列探針名 regex 在探針檔命中的 @test 數：全部 == 1（無誤配、不會假死）
+沒有任何 no-op 列（原文 == 換成）
+```
 
 ## 5. 已知問題 / 限制
 
