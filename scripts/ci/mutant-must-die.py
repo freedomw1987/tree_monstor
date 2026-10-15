@@ -9,6 +9,10 @@
 （TMO-066）表後來從 26 支擴到 39 支：同一套 harness 再收了 dav-wiki（缺工具不得降級 6 支）、
   探針機密遮罩（3 支）與 regression-guard（TTY fail-fast 四檔一致 4 支）的護欄 ——
   它們在此之前同樣只是「人工驗過一次」，驗完就沒有任何檢查記得。
+  二審（verdict `request-changes`）後再 +1 → **40 支**：SM-M1 重寫（舊版掉續行反斜線，
+  死因是 rc=127 parse error 而非遮罩失效）、DW-M5 由「文字契約鎖」升級為真行為鎖
+  （收緊 `tests/wiki-ocr.bats` AC-O4／AC-O6 去驗 2／1）、新增 LK-M1（掃描器 `git ls-files -co` 改回 `-c`）。
+  二審 F3 也把「等價突變／重複列／空欄／欄數」變成載入期就會 FAIL 的契約。
 
 為什麼突變在 **temp copy** 上做（不是 working tree）：
   突變＝故意把碼改壞；若直接改 working tree，一旦中途中斷就會留下壞碼，
@@ -16,8 +20,11 @@
   working tree 從頭到尾沒被碰過，且本腳本仍會比對 md5 自證（雙重保險）。
 
 契約：
-  * 突變表每列的「原文」必須在目標檔內**恰好出現一次**（找不到＝FAIL，不是 skip）：
+  * 突變表每列的「原文」必須在目標檔內**恰好出現一次**（找不到或出現兩次＝FAIL，不是 skip）：
     程式碼一改，錨點就失效，這張表會大聲壞掉而不是靜默空過。
+  * 突變表的結構錯誤在**載入期**就擋下（不是等 55 秒後的 survivor 報告）：欄數不為 6、
+    必要欄位為空、原文＝換成（等價突變＝灌水列）、id 重複、同一（目標檔,原文,換成）重複列、
+    整張表空 —— 任一項都直接 FAIL（二審 F3）。
   * 每個 mutant 都先跑一次**未突變的 baseline**（每個 (探針檔, 探針名) 組合只跑一次）：
     baseline 必須綠，否則「紅」不代表突變被咬住，只代表探針本身壞了＝假信心。
   * 探針「找不到測試」也算失敗（`ERROR: Found no tests`）——否則打錯名字會被誤讀成 mutant 死亡。
@@ -90,6 +97,16 @@ class Mutant:
         if len(row) != 6:
             die(f"突變表第 {lineno} 列有 {len(row)} 欄（應為 6 欄，用 tab 分隔）")
         self.mid, self.target, self.find, self.replace, self.probe_file, self.probe = row
+        # `replace` 允許是空字串（＝合法的「刪掉這一行」突變），其餘五欄不可空 —— 空欄會讓
+        # `--list` 的行與 MMD-1 的統計對不上（4 欄減測）靜默失真。
+        for label, value in (("id", self.mid), ("目標檔", self.target), ("原文", self.find),
+                             ("探針檔", self.probe_file), ("探針名", self.probe)):
+            if not value:
+                die(f"突變表第 {lineno} 列的「{label}」是空的（六欄只有「換成」可空）")
+        # TMO-066 二審 F3：防「灌水列」——原文＝換成等於什麼都沒改（等價突變）。實跑時它會被當成
+        # survivor 而紅，但那是 55 秒之後的事；在載入期就擋掉，順便把死因講清楚。
+        if self.find == self.replace:
+            die(f"突變表第 {lineno} 列（{self.mid}）的『原文』與『換成』相同 → 等價突變（什麼都沒改）")
 
 
 def load_table(path: Path) -> list[Mutant]:
@@ -97,6 +114,7 @@ def load_table(path: Path) -> list[Mutant]:
         die(f"找不到突變表：{path}")
     rows: list[Mutant] = []
     seen: set[str] = set()
+    seen_mutations: set[tuple[str, str, str]] = set()
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
@@ -104,6 +122,13 @@ def load_table(path: Path) -> list[Mutant]:
         if mutant.mid in seen:
             die(f"突變表 id 重複：{mutant.mid}（第 {lineno} 列）")
         seen.add(mutant.mid)
+        # 同一個（目標檔、原文、換成）出現兩次＝同一支 mutant 換個 id 再填一次，
+        # 那就只是把「40 支」這個數字灌大（二審 F3：同探針名可重用墊數）。
+        # 注意：不同突變共用同一支探針是**合法的**（一個測試本來就可以咬多支 mutant）。
+        key = (mutant.target, mutant.find, mutant.replace)
+        if key in seen_mutations:
+            die(f"突變表重複列：{mutant.mid} 與前面的列同（目標檔、原文、換成）（第 {lineno} 列）")
+        seen_mutations.add(key)
         rows.append(mutant)
     if not rows:
         die(f"突變表是空的（{path}）→ 這支檢查會變成空過")

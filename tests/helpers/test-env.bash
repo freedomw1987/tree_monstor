@@ -134,9 +134,10 @@ refute_file_body_contains() {
 # 單一真相來源：探針檔不得自己再定義一份（靜態鎖 `scripts/ci/lint-probe-secrets.py`
 # 的 R4 ＋ `tests/secret-masking.bats` SM-1 都會擋）。
 mask_secrets() {
-  sed -E \
-    -e 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g' \
-    -e 's/([A-Za-z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Za-z0-9_]*)=[^[:space:]]*/\1=***MASKED***/g'
+  # 單行 sed 程式（兩條規則以 `;` 分隔）——刻意不拆成多行 `-e`：`SM-M1` 突變要用**一行**
+  # 把整段遮罩換成 `cat`（直通）。拆行時單行替換只會弄壞語法、留下 `-e: command not found`
+  # 噪音，死因就不純（2026-10-05 二審 F2 的修正）。
+  sed -E 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g; s/([A-Za-z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Za-z0-9_]*)=[^[:space:]]*/\1=***MASKED***/g'
 }
 
 # create_existing_claude_skills_dir

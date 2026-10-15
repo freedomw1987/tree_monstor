@@ -20,6 +20,7 @@
 CI 才紅」（這正是本鎖 2026-10-05 補上的盲點）。
 """
 
+import os
 import pathlib
 import re
 import subprocess
@@ -96,7 +97,34 @@ def self_test():
         assert violations([pos10]), "自我測試失敗：沒抓到多位數位置參數 $10（"
         assert not violations([esc]), "自我測試失敗：把轉義 \\$var（ 誤判成展開"
         assert violations([special]), "自我測試失敗：沒抓到特殊參數 $?（"
-    print("OK: 鎖自我測試通過（正反兩向＋位置／多位數位置／特殊參數＋轉義豁免＋註解豁免）")
+
+        # 掃描範圍契約（2026-10-05 二審 F4）：`targets()` 必須**含未追蹤但未被 gitignore** 的檔。
+        # 只掃已追蹤 ⇒ 新檔在 commit 前本機看不到（本鎖 2026-10-05 補的盲點）；這一節把它鎖起來，
+        # 以後誰把 `-co` 改回 `-c` 或拿掉 `--exclude-standard`，`ENV-EQ-17` 會直接紅。
+        repo = d / "repo"
+        repo.mkdir()
+        (repo / "tracked.sh").write_text('echo "$v（已追蹤）"\n')
+        (repo / "untracked.sh").write_text('echo "$v（未追蹤）"\n')
+        (repo / "ignored.sh").write_text('echo "$v（被 gitignore）"\n')
+        (repo / ".gitignore").write_text("ignored.sh\n")
+        ident = {
+            "GIT_AUTHOR_NAME": "ci",
+            "GIT_AUTHOR_EMAIL": "ci@example.com",
+            "GIT_COMMITTER_NAME": "ci",
+            "GIT_COMMITTER_EMAIL": "ci@example.com",
+        }
+        env = {**os.environ, **ident}
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True, env=env)
+        subprocess.run(["git", "add", "tracked.sh", ".gitignore"], cwd=repo, check=True, env=env)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "init", "--no-gpg-sign"], cwd=repo, check=True, env=env
+        )
+        scanned = {p.name for p in targets(repo)}
+        assert "tracked.sh" in scanned, "自我測試失敗：targets() 漏掉已追蹤檔"
+        assert "untracked.sh" in scanned, "自我測試失敗：targets() 漏掉未追蹤檔（= 2026-10-05 修掉的盲點）"
+        assert "ignored.sh" not in scanned, "自我測試失敗：targets() 把 gitignore 的檔也算了進來"
+
+    print("OK: 鎖自我測試通過（正反兩向＋位置／多位數位置／特殊參數＋轉義豁免＋註解豁免＋未追蹤檔納入）")
 
 
 def main(argv):

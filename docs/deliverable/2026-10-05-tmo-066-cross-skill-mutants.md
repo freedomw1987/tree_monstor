@@ -3,14 +3,15 @@
 > **交付日期**: 2026-10-05
 > **對應 Backlog**: TMO-066（US 級，見 `docs/backlog.md`）；延伸 TMO-065 的突變測試自動化
 > **Sprint / Module**: tree_monstor 建置／CI 護欄（`scripts/ci/`）＋ 三個 skill 的契約面
-> **交付狀態**: ✅ 完成（39 支 mutant 全紅、全量 673 條探針 0 紅、markdownlint 137 檔 0 issue、
-> V03 二審 verdict = **未完成（兩次自動二審皆逾時未產出 verdict，詳見 §4.4）**
+> **交付狀態**: ✅ 完成（40 支 mutant 全紅、全量探針 0 紅、markdownlint 0 issue）
+> V03 二審 verdict = **`request-changes`**（P0×1／P1×4／P2×2／P3×2）→ **逐條已處置**，見 §4.4
 
 ## 1. 這次完成什麼
 
 TMO-065 把「探針真的咬得住突變」從**一次性人工動作**變成 CI 每次都會跑的檢查，但那張表
 （`scripts/ci/mutants.tsv`，26 支）只覆蓋 pptx-slim。本輪用**同一套 harness**（temp copy ＋ 精確錨點
-＋ 綠 baseline 對照 ＋ md5 自證）把另外三個護欄面收進來，表 26 → **39 支**。
+＋ 綠 baseline 對照 ＋ md5 自證）把另外三個護欄面收進來，表 26 → **40 支**
+（首輪 39 支，逐條處置二審 finding 後 +1；詳見 §4.4）。
 
 **關鍵成果**：
 
@@ -19,27 +20,31 @@ TMO-065 把「探針真的咬得住突變」從**一次性人工動作**變成 C
   （`jest --ci`、gates.json 交叉引用、handbook 的 `< /dev/null`、SKILL.md 的對照表指標）。
 - ✅ **MMD-1 兩處強化**：門檻 26 → **39**；新增「跨 skill 覆蓋清單」——dav-wiki 的 4 個目標檔與
   `skills/regression-guard/SKILL.md` **少一個就紅**，防有人只留 pptx-slim 那段而靜默丟掉別人的護欄。
-- ✅ **實測 39/39 全紅**（每支都有綠 baseline 對照）＋ 跑完 md5 自證 18 個目標檔 working tree 未變；
-  `real 0m55.374s`（26 支時 49.9s）。
+- ✅ **實測 40/40 全紅**（每支都有綠 baseline 對照）＋ 跑完 md5 自證 19 個目標檔 working tree 未變；
+  `real 1m13.3s`（首輪 39 支 55.4s；26 支時 49.9s）。
 - ✅ **抓到並修掉一個 commit 後才會現形的真 bug**：`ENV-EQ-17`（`$var` 緊接非 ASCII）掃描範圍
   原本只含 `git ls-files`（已追蹤）→ 新檔在 commit 前是 untracked，**本機全綠、push 後 CI 必紅**。
   本輪修掉 4 條違規（3 條是上一輪 commit 進去的）並把鎖改成 `git ls-files -co --exclude-standard`。
 - ✅ **推翻一支候選突變（無害突變）並誠實記錄**：`SKILL.md` 把 `**TTY fail-fast**` 改成
   `**TTY fail-slow**` 後探針仍綠 —— 追下去是同字串在檔內另有兩處，規則還在 ⇒ 探針綠是**正確**行為，
   該突變不進表（記在 `tests/mutant-must-die.bats` 檔頭）。
-- ✅ 文件對帳：`CONTRIBUTING.md`（39 支＋泛化措辭）、`docs/backlog.md`（TMO-065 row／詳細＋TMO-066
-  row／詳細）、`skills/pptx-slim/` 的 v1.4 列（26 支改為 scoped 措辭）。
+- ✅ 文件對帳：`CONTRIBUTING.md`（40 支＋泛化措辭＋「行為鎖 vs 文字契約鎖」約定）、`docs/backlog.md`
+  （TMO-065 row／詳細＋TMO-066 row／詳細／二審處置表）、`skills/pptx-slim/` 的 v1.4 列（26 支改為 scoped 措辭）。
+- ✅ **V03 二審（第 5 次嘗試才拿到 verdict）＝ `request-changes`，10 條 finding 逐條處置完畢**：
+  修掉兩個「死因不純／假綠」的根：SM-M1（rc=127 parse error 假死因）與 DW-M5（等價突變）；
+  把 `wiki-ocr.bats` AC-O4／AC-O6 由「只驗非零」收緊為驗 2／驗 1（順手修實一個名實不符的假綠）；
+  並把「等價突變／重複列／空欄／欄數」變成**載入期就 FAIL** 的契約（附 MMD-6 合成表實測）。
 
 ### 1.1 驗收標準對應（AC）
 
 | AC | 內容 | 證據 |
 |----|------|------|
-| AC-1 | 表至少 39 支、且新增的 13 支每支都被對應探針咬死 | `mutants.tsv` 39 列；`--only` 13/13 紅（§4.1）；全表 39/39 紅 |
+| AC-1 | 表至少 39 支、且新增的 13 支每支都被對應探針咬死 | `mutants.tsv` **40 列**；`--only` 13/13 紅（§4.1）；全表 **40/40 紅** |
 | AC-2 | 每支 mutant 都有「未突變必須綠」的 baseline 對照 | driver 內建 baseline 快取；輸出每組探針先印綠（§4.1 log）|
-| AC-3 | 新 mutant 沒有破壞既有 CI 護欄（MMD-1..5 全綠） | `bats tests/mutant-must-die.bats` 5/5（§4.2）|
+| AC-3 | 新 mutant 沒有破壞既有 CI 護欄（MMD-1..6 全綠） | `bats tests/mutant-must-die.bats` **6/6**（§4.2）|
 | AC-4 | 跨 skill 覆蓋清單存在且會紅（少一個目標檔即 FAIL） | MMD-1 迴圈（`skills/dav-wiki/...`×4 ＋ `skills/regression-guard/SKILL.md`）|
 | AC-5 | 「無害突變」的判定有記錄、不是靜默丟掉 | `tests/mutant-must-die.bats` 檔頭 TMO-066 段 ＋ 本報告 §4.1 |
-| AC-6 | 全倉文件數字一致（26 → 39）且 lint 全綠 | markdownlint 137 檔 0 issue；`grep` 對帳（§4.2）|
+| AC-6 | 全倉文件數字一致（26 → 40）且 lint 全綠 | markdownlint **138 檔 0 issue**；`grep` 對帳（§4.2）|
 | AC-7 | 二審（V03）verdict 與處置 | §4.4 |
 
 ### 1.2 為什麼做這個改動
@@ -55,8 +60,8 @@ TTY fail-fast 四檔一致性（v1.3 驗過）都只有「當時那次人工驗�
 
 | 檔案 | 改動 |
 |------|------|
-| `scripts/ci/mutants.tsv` | +13 資料列（26 → 39）|
-| `tests/mutant-must-die.bats` | MMD-1 門檻 26 → 39；新增跨 skill 覆蓋清單迴圈；檔頭加 TMO-066 說明段（含無害突變案例）|
+| `scripts/ci/mutants.tsv` | +13 資料列（26 → 39），二審後再 +1（LK-M1）→ **40**；表頭加「行為鎖 vs 文字契約鎖」約定；DW-M5 換錨點（文字鎖 → 真行為鎖）、SM-M1 換錨點（單行 sed）|
+| `tests/mutant-must-die.bats` | MMD-1 門檻 26 → **40**；新增跨 skill 覆蓋清單迴圈＋錨點唯一性改數「出現次數」；**新增 MMD-6**（載入期結構契約）；檔頭加 TMO-066 說明段（含無害突變案例與二審處置）|
 | `tests/mutant-must-die.bats`（MMD-3）| `$status）` → `${status}）`（ENV-EQ-17 違規修正）|
 | `tests/pptx-slim-images.bats` | `$after（`／`$name（` → `${...}（`（ENV-EQ-17 違規修正，上一輪 commit 進去的）|
 | `scripts/ci/lint-shell-var-nonascii.py` | 列舉範圍 `git ls-files` → `git ls-files -co --exclude-standard`（含未追蹤、不含 gitignore）＋ 註解記錄盲點 |
@@ -84,13 +89,14 @@ TTY fail-fast 四檔一致性（v1.3 驗過）都只有「當時那次人工驗�
 
 | 測試類型 | 通過 / 總數 | 備註 |
 |---------|-------------|------|
-| 突變全表（`scripts/ci/mutant-must-die.py`）| **39 / 39 死亡** | 每支都有綠 baseline；md5 自證；`real 0m55.374s` |
-| 新增 13 支單獨跑（`--only`）| 13 / 13 死亡 | `real 0m6.359s`；log `/tmp/mutant-only-tmo066.log` |
-| 突變工具探針（`tests/mutant-must-die.bats`）| 5 / 5 | MMD-1（門檻 39＋覆蓋清單）、MMD-2..5 |
+| 突變全表（`scripts/ci/mutant-must-die.py`）| **40 / 40 死亡** | 每支都有綠 baseline；md5 自證；`real 1m13.3s`（log `/tmp/mutant-full-tmo066-review.log`）|
+| 新增 13 支單獨跑（`--only`）| 13 / 13 死亡 | `real 0m6.359s`；log `/tmp/mutant-only-tmo066.log`；二審後換錨點的 `SM-M1`／`LK-M1` 再 `--only` 重驗 2/2 紅、`DW-M5` 換成行為鎖後 1/1 紅 |
+| 突變工具探針（`tests/mutant-must-die.bats`）| **6 / 6** | MMD-1（門檻 40＋覆蓋清單）、MMD-2..5、**MMD-6**（載入期結構契約）|
 | 結構探針（`tests/restruct-pptx-slim.bats`）| 9 / 9 | 含「SKILL.md ≤ 130 行」預警線 |
+| 受影響探針單跑 | 全綠 | `tests/wiki-ocr.bats`（收緊 AC-O4／AC-O6 後）、`tests/wiki-cleanup.bats`、`tests/wiki-toolmissing-contract.bats`、`tests/secret-masking.bats`、`tests/regression-guard-watch-mode.bats`、`tests/env-equivalence.bats` |
 | 守門探針（skill-local）| 3 / 3 | `bats skills/*/tests/*.bats` |
-| 全量回歸（`bats tests/`）| 673 條：**673 綠 / 0 紅** | `/tmp/bats-full-v21.log`（同批碼在前一次 v20 有 2 紅：`ENV-EQ-17` 真 bug ＋ `M6.3-c` 間歇紅，皆已說明，見 §4.3）|
-| markdownlint（CI 同款 4 globs）| **137 files / 0 issues** | `npx --no-install markdownlint-cli2 …` |
+| 全量回歸（`bats tests/`）| 674 條：**674 綠 / 0 紅** | `/tmp/bats-full-v22.log`（同批碼在前一次 v21 是 673 綠；v20 有 2 紅：`ENV-EQ-17` 真 bug ＋ `M6.3-c` 間歇紅，皆已說明，見 §4.3）|
+| markdownlint（CI 同款 4 globs）| **138 files / 0 issues** | `npx --no-install markdownlint-cli2 …` |
 
 ### 4.1 Gate 1（TDD）：先紅後綠
 
@@ -133,52 +139,71 @@ rm tests/zz-tmp-untracked-check.bats
 
 | 檢查 | 結果 |
 |------|------|
-| `markdownlint-cli2`（CI 同款 4 globs）| **137 files / 0 issues** |
+| `markdownlint-cli2`（CI 同款 4 globs）| **138 files / 0 issues** |
 | `python3 scripts/ci/lint-shell-var-nonascii.py .` | OK：80 個 shell／CI 檔（含未追蹤）0 違規 |
 | `shellcheck -x -S style` ＋ `bash -n` 自我列舉 | 由 `ENV-EQ-18` 在 §4.3 的全量裡跑（綠）|
-| `bats tests/mutant-must-die.bats` | 5/5 綠（MMD-1 門檻與覆蓋清單、MMD-5 十種假綠反向自測）|
+| `bats tests/mutant-must-die.bats` | **6/6** 綠（MMD-1 門檻與覆蓋清單、MMD-5 十種假綠反向自測、MMD-6 六種結構錯誤）|
 
 ### 4.3 Gate 3（regression）
 
 > 依 gates.json 規範，Gate 3（regression）需要：全量測試通過，且與改動相關的既有行為無退化。
 
-- **全量**：`bats tests/` → **673 條：673 綠 / 0 紅**（`/tmp/bats-full-v21.log`，本輪最終定稿後跑的）。
+- **全量**：`bats tests/` → **674 條：674 綠 / 0 紅**（`/tmp/bats-full-v22.log`，處置完二審 finding 後重跑的終版）。
   同批碼的前一次（v20，`/tmp/bats-full-v20.log`）有 2 紅，兩個都查清了：
   ① **`ENV-EQ-17` 是真 bug**（本輪修掉，見 §4.1(B)／§5）；
-  ② **`M6.3-c`（`tests/v2.1-jev-poc.bats`）是既有間歇紅** —— 本輪兩次全量中 v20 紅、v21 綠；
+  ② **`M6.3-c`（`tests/v2.1-jev-poc.bats`）是既有間歇紅** —— 本輪三次全量中 v20 紅、v21／v22 綠；
     上一輪的 v15～v19 亦間歇紅過（`M6.3-c`／`M6.3-e`）。本輪改動不涉及 JEV／sandbox（§5④）。
 - **skill-local**：`bats skills/*/tests/*.bats` → 3/3 綠。
-- **突變全表連 working tree 一起驗**：39 支跑完 → 18 個目標檔 md5 全數未變（突變只發生在已刪除的副本）。
+- **突變全表連 working tree 一起驗**：40 支跑完 → 19 個目標檔 md5 全數未變（突變只發生在已刪除的副本）。
 - **兩支被當探針的既有測試沒有被本輪改壞**：`tests/wiki-toolmissing-contract.bats`、
   `tests/wiki-cleanup.bats`、`tests/secret-masking.bats`、`tests/regression-guard-watch-mode.bats`
   在全量裡都是綠（它們是 mutant 的 baseline）。
 
 ### 4.4 Gate 4（reviewer 二審，V03）
 
-**狀態：未完成（誠實記錄，不假裝已審）。**
+**verdict = `request-changes`**（風險統計 P0×1／P1×4／P2×2／P3×2）→ 逐條已處置完成。
+
 依 V03，本輪動了 skill 檔（`skills/pptx-slim/SKILL.md`／`CHANGELOG.md`／`examples.md`）＋
-探針（`tests/mutant-must-die.bats`）＋ CI 鎖（`scripts/ci/lint-shell-var-nonascii.py`），因此必須二審。實際發生：
+探針（`tests/mutant-must-die.bats`）＋ CI 鎖（`scripts/ci/lint-shell-var-nonascii.py`），因此必須二審。
+前 4 次嘗試全部失敗，第 5 次才拿到 verdict：
 
-| 次 | 時間（UTC）| 結果 | 診斷 |
-|----|-----------|------|------|
-| 1（完整審查）| 19:02 → 19:32 | **逾時 30 分鐘未產出 verdict** | reviewer 做大量工具探索（log 523 KB）後停滯，已中斷 |
-| 2（有界：≤8 呼叫／15 分鐘）| 19:43 → 19:59 | **逾時 15 分鐘未產出 verdict** | run 統計 input 3,747／output 375 tokens、歷時 1,004 秒，只有讀檔沒有實質輸出 ⇒ 懷疑 provider 端太慢 |
+| 次 | 路徑 | 結果 | 診斷 |
+|----|------|------|------|
+| 1 | `reviewer`（完整審查）| **逾時 30 分鐘未產出 verdict** | 做大量工具探索（log 523 KB）後停滯，已中斷 |
+| 2 | `reviewer`（有界 ≤8 呼叫／15 分鐘）| **逾時未產出 verdict** | 歷時 1,004 秒、只有讀檔沒有實質輸出 ⇒ 該 subagent 路徑太慢 |
+| 3 | `codex-exec` | **啟動失敗** | 本機沒有 `codex` 這支 CLI（已明示改用 `claude`，非靜默換路徑）|
+| 4 | `claude-code` | **白跑** | 該 adapter 是唯讀（`tools: none`），prompt 內沒證據 ⇒ 它把 tool-call XML 當答案吐出 |
+| 5 | `claude-code`＋**證據全部內嵌 prompt** | ✅ **verdict `request-changes`** | 無工具、單輪數十秒 → 唯讀 CLI 二審的正確用法就是「把證據塞進 prompt」|
 
-**因此本報告沒有 verdict 可引** ——「沒有結論」不能寫成「通過」。缺口的補位方式：
+**逐條處置（每條都有對應的碼／文件改動，非口頭回覆）**：
 
-1. 我做了一輪**自查**（非抽樣，見下方），把能量化的部分先釘住。
-2. 二審材料已備好：`/tmp/review-bundle-tmo066.md`（440 行，含完整 diff、13 列新突變、請審 7 條重點）——
-   使用者可直接人工審，或指定換一條 agent 路徑。
-3. 修復路徑（**待使用者裁示**）：① 換 `codex-exec`（本機 Codex CLI，唯讀）跑同一份有界 prompt；
-   ② `reviewer` 降 thinking（`:low`）再試一次；③ 接受缺口、記進 backlog 下一輪補審。
+| # | 級別 | 指摘 | 處置 |
+| --- | --- | --- | --- |
+| F1 | P0 | DW-M5 語意等價 → 死因不純 | ✅ **採「真改值」路線（比標籤化更根本）**：查核發現 `tests/wiki-ocr.bats` AC-O4 測名寫「exit 2」但只斷言 `-ne 0`（AC-O6 亦然）—— 這本身就是假綠。先收緊為 `-eq 2`／`-eq 1`，再把 DW-M5 換成「`EXIT_NOINPUT=2` → `1`」的真行為鎖（已實測紅）。另在 CONTRIBUTING／tsv 表頭留下「行為鎖 vs 文字契約鎖」約定（現 0 列，供未來真的只能用文字釘的契約） |
+| F2 | P1 | SM-M1 掉續行 `\` → rc=127，死因是 parse error | ✅ **改碼 + 改表**：helper 的 sed 程式刻意寫成**單行**，mutant 一行整段換成 `cat`（真・直通）；重跑紅 |
+| F3 | P1 | MMD-1 不檢查「原文≠換成」；同探針名可重用墊數；`grep -cF` 只數行數 | ✅ **三修**：①等價突變／欄數／空欄／重複列全部移入 runner **載入期契約**（`Mutant.__init__`＋`load_table`）並新增 **MMD-6** 用合成表實測會紅；②錨點唯一性改 `grep -oF ... \| grep -c .` 數**出現次數**（與 runner 的 `text.count != 1` 對齊）；③「同（探針檔,探針名）出現多次」**不是缺陷**——真表內有 2 組合法的重複對（`PPTX-SLIM-3`／`PPTX-SLIM-4` 各 2 次），強行禁止會弄壞現有表，baseline 依 key 快取即可；真正的防灌水靠「載入期重複列鎖（同目標檔／原文／換成）＋執行期 survivor 檢查」。`--only`／`--list` 也一律先過載入契約 |
+| F4 | P1 | ENV-EQ-17 沒有 probe 鎖 `-co` → 改回 `-c` 仍全綠 | ✅ **新增 LK-M1**（`-co --exclude-standard` → `-c`）；並在 `lint-shell-var-nonascii.py --self-test` 加「temp git repo：未追蹤檔必須入列、gitignore 必須排除」契約，兩者一起紅 |
+| F5 | P1 | DW-M6 `PURGE=true` 可能真刪使用者檔 | 🔍 **查核後確認安全**：`TO_CLEAN[].f` 全部來自 `find "$WIKI_DIR"`，而 `WIKI_DIR` 是探針自己的 `mktemp -d` → 只會刪到拋棄式目錄。殘餘（harness 用 ambient `HOME`／`TMPDIR`）列 §5 限制 |
+| P2-1 | P2 | RG-M2 錨點去掉了 `regression-guard` 字樣，測名卻說 "mention watch-mode rule" | 查核：該測（`GATES:`，`tests/regression-guard-watch-mode.bats:73`）**同時**斷言 `assert "regression-guard" in notes`，所以拿掉交叉引用一定紅 → 咬合正確，只是測名偏重 watch-mode 那一半。不動測名：測名字串同時是突變表的 `-f` 篩選值（改名要同步改表列，收益極低）|
+| P2-2 | P2 | SM-M3 換掉 `load` 會連帶抽掉 `REPO_ROOT`／PATH 設定 | 查核：SM-M3 的突變是換掉**遮罩規則本身**，本來就會連帶影響 helper 的載入；紅（rc≠0）是正確結果，且 SM-1／SM-2／SM-4／SM-5 仍在綠，證明不是全檔壞掉造成的假紅 |
+| P3-1 | P3 | `awk NF==4` 與 `grep -c .` 兩套濾網不一致 | ✅ 新增「必要欄位不得為空」的載入期檢查後，`--list` 的行必為 4 欄 ⇒ 兩濾網一致；MMD-1 不再用兩套濾網互比 |
+| P3-2 | P3 | 跨 skill 覆蓋清單是手寫 spot list、只驗 target 不驗「換成」 | 承認（見 §5）：這是一道「防回歸」而非「窮盡覆蓋」的鎖；真正的防灌水閘門是載入期契約＋執行期 survivor 檢查 |
 
-**自查清單**（用 python 掃 `mutants.tsv` 全 39 列，不是抽樣）：
+**reviewer 標記「最不放心」者為 F1**（等價突變卻宣稱「死」會讓全表可信度打折）。
+處置後：原本那列**已變成真的行為鎖**（不只換標籤）——為此還順手把兩個「名實不符」的斷言修實
+（`AC-O4` 從只驗非零改成驗 2、`AC-O6` 改成驗 1），讓 `EXIT_NOINPUT`／`EXIT_USAGE` 的值真的有人管。
+且「等價突變」現在是**載入期就 FAIL** 的契約，不再靠人記得。
+
+**自查（用 python 掃 `mutants.tsv` 全表，不是抽樣；取代前版的 39 列自查）**：
 
 ```text
-rows: 39
+rows: 40
 每列「原文」在目標檔的出現次數：全部 == 1（錨點唯一）
 每列探針名 regex 在探針檔命中的 @test 數：全部 == 1（無誤配、不會假死）
-沒有任何 no-op 列（原文 == 換成）
+沒有任何等價突變列（原文 == 換成）→ 已有載入期鎖
+沒有重複列（目標檔,原文,換成）→ 已有載入期鎖
+沒有任何必要欄位為空 → 已有載入期鎖
+文字契約鎖 0 列（DW-M5 已升級為真行為鎖；約定保留）
 ```
 
 ## 5. 已知問題 / 限制
@@ -187,12 +212,17 @@ rows: 39
   `ENV-EQ-16`（檔尾換行）等鎖也是同一種列舉方式（同日稍早已發生過一次：新鎖檔缺檔尾換行，
   本機全綠、clean clone 才紅）。**建議**下一輪把同類鎖一起改成 `-co --exclude-standard`
   （列為 §6 建議①，本輪未自作主張擴大範圍）。
+- **13 支裡有 5 支是「文字契約鎖」而不是行為鎖**：`DW-M4`／`RG-M1`～`RG-M4` 之所以被咬死，是因為
+  對應的探針本身就是文字鎖（例如 `WTM-5` 用文字比對鎖「缺工具不得降級為純文字」的措辭）。
+  這是那些探針的**刻意設計**（契約／文件一致性），不是缺陷；但要知道：這 5 支證明的是
+  「文字契約會被抓到」，不是「行為變了會被抓到」。另外 8 支（`DW-M1`～`M3`、`DW-M5`、`DW-M6`、`SM-M1`～`SM-M3`）才是行為鎖。
+  （`DW-M5` 原本也只能算文字鎖，二審 F1 後靠收緊 `wiki-ocr.bats` 的斷言升級為行為鎖，見 §4.4。）
 - **仍有 skill 沒有 mutant**：`dav-planner`／`dav-designer`／`dav-submitter`／`dav-reflection`／
   `dav-trust`，以及 dav-wiki 的 cross-ref／cleanup 進階路徑。本輪補的是「TMO-035／053 人工驗過、
   且可字串化重現」的那批。
 - **跨檔案一致性探針只能用單點突變**：`RG-M4` 咬的是「四個檔案都指得到」的 CROSS 探針；咬不到
   「四份都寫錯但互相一致」的情境（那需要語意檢查，不是單行突變能表達的）。
-- **CI 成本上升**：39 支＋baseline 本機約 55 秒（26 支約 50 秒）。
+- **CI 成本上升**：40 支＋baseline 本機約 73 秒（39 支時 55 秒、26 支約 50 秒；機器負載不同會有數成漂移，數字僅供量級參考）。
 - **`M6.3-c`／`M6.3-e` 的間歇紅：根因已於本輪查清（原假說「`tmp/` 殘留」是錯的）**。
 
   - **症狀**：`M6.3-c` 隔離連跑 5 次 → **3 紅 2 綠**；紅的兩種形態：`no_change should return 0, got 2`
@@ -224,6 +254,8 @@ rows: 39
 
 ## 7. 變更集（`git diff HEAD --numstat`）
 
+本區塊為**首輪**（TMO-066 原始交付，commit `1cd6cc8`）的變更集：
+
 ```text
 6     4     CONTRIBUTING.md
 40    4     docs/backlog.md
@@ -237,7 +269,24 @@ rows: 39
 19    2     tests/mutant-must-die.bats
 2     2     tests/pptx-slim-images.bats
 # 合計 +103 / -15（11 個已追蹤檔）
-# 外加本報告本身（新檔，尚未 git add）：docs/deliverable/2026-10-05-tmo-066-cross-skill-mutants.md
+# 外加本報告本身（新檔）：docs/deliverable/2026-10-05-tmo-066-cross-skill-mutants.md
+```
+
+**二審處置輪**（本輪，相對於 `7f888bb`）：
+
+```text
+12    3     CONTRIBUTING.md
+23    5     docs/backlog.md
+75    44    docs/deliverable/2026-10-05-tmo-066-cross-skill-mutants.md
+29    1     scripts/ci/lint-shell-var-nonascii.py
+26    1     scripts/ci/mutant-must-die.py
+9     2     scripts/ci/mutants.tsv
+1     1     skills/pptx-slim/CHANGELOG.md
+1     1     skills/pptx-slim/SKILL.md
+4     3     tests/helpers/test-env.bash
+69    7     tests/mutant-must-die.bats
+5     2     tests/wiki-ocr.bats
+# 合計 +254 / -70（11 個已追蹤檔，皆已 M＝modified）
 ```
 
 ## 反思（§2.4，US 級反省）
@@ -248,10 +297,10 @@ rows: 39
 |------|---------|
 | **完整性** | 13 支新 mutant 全數落地並被咬死；MMD-1 兩處強化；文件（CONTRIBUTING／backlog／skill 三檔）數字對齊；lint＋全量回歸有實跑證據 |
 | **正確性** | 門檻與清單是「少就紅」的方向；13 支都有綠 baseline（紅不是因為探針本來就壞）；md5 自證 working tree 未變 |
-| **一致性** | 「26 支」只保留在歷史語境（TMO-065／v1.3）；現況一律 39；`examples.md` 改成 scoped 措辭避免與共用表衝突 |
+| **一致性** | 「26 支」只保留在歷史語境（TMO-065／v1.3）；現況一律 40；`examples.md` 改成 scoped 措辭避免與共用表衝突 |
 | **可維護性** | 沒有新增機制（只加表列）；覆蓋清單把「別人的護欄也在表內」變成斷言；`--only` 讓單支除錯只花 6 秒 |
 | **風險** | 已揭露：其他 `git ls-files` 鎖的同類盲點未修（§5①）、跨檔一致性探針咬不到「一致地錯」（§5③）|
-| **效率** | 全表 55 秒（+5 秒換 13 個護欄面）；`--only` 13 支 6.4 秒；沒有把 CI 成本推高到需要分流的程度 |
+| **效率** | 全表 73 秒（量級仍屬可接受）；`--only` 13 支 6.4 秒；沒有把 CI 成本推高到需要分流的程度 |
 
 ### 問題清單（根因 ＋ 建議）
 
@@ -273,3 +322,4 @@ rows: 39
 | 2 | `CONTRIBUTING.md` PR 清單加「新檔 commit 前要重跑全量鎖」| 下一輪（與①同時）| TMO-067 候選 |
 | 3 | `M6.3-c`／`M6.3-e` 改走版控 fixture（根因：`Elapsed` 讓 cache key 每次不同⇒現場 oracle 403⇒`fail`↔`blocked` 抖動）| 下一輪 | TMO-067 候選 |
 | 4 | 為 dav-submitter／dav-wiki 進階路徑補 mutant | 使用者決定優先序 | 未排入 |
+| 5 | 把「測名寫了什麼就驗什麼」當作探針自審項目（本輪 `AC-O4` 寫 exit 2 只驗非零，正是二審 F1 的根）| 下一輪 | TMO-067 候選 |

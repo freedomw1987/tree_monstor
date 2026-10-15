@@ -71,7 +71,7 @@ bats tests/wiki-cleanup.bats --filter "E1"
 ```
 
 ```bash
-# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 39 支 mutant 逐一種回去，
+# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 40 支 mutant 逐一種回去，
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
@@ -147,11 +147,20 @@ wc -l skills/dav-wiki/SKILL.md
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
-6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 39 支
-   mutant（pptx-slim 26 支＋dav-wiki／探針機密遮罩／regression-guard 13 支）在副本上重跑一次，
+6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 40 支
+   mutant（pptx-slim 26 支＋dav-wiki／探針機密遮罩／regression-guard／掃描器範圍鎖 14 支）在副本上重跑一次，
    每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
    鎖住「這一步必須存在、必須跑全表（不得 `--list`／`--only`／`--no-baseline`）、不得被 `if:` 條件停用、不得 OR 短路或 `continue-on-error`」
+
+   **突變的兩種性質（TMO-066 二審後明文化）**：表裡的列分兩類，寫 report 時不要混為一談——
+     - **行為鎖**：改的是「程式做了什麼」（回傳值／分支／旗標），證明「行為變了會被咬到」。
+     - **文字契約鎖**：該處沒有任何探針鎖「值」，只鎖「檔案不得再出現某字串」。這類列在「換成」欄
+       一律加註 `MUTANT(text-lock):`（可用 `grep 'MUTANT(text-lock)' scripts/ci/mutants.tsv` 列出）。
+       它證明的是「文字契約會被抓到」，**不是**「行為變了會被抓到」。
+
+   （目前表內**文字契約鎖 0 列**：唯一一列 DW-M5 在 TMO-066 收尾時改成真行為鎖——
+   代價是先把 `wiki-ocr.bats` 的 `AC-O4`/`AC-O6` 由「只驗非零」收緊成驗 2／驗 1。）
 
 CI badge：見 [README.md](README.md) 頂部。
 

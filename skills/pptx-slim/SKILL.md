@@ -61,7 +61,7 @@ description: 減少 PPTX 檔體積而不破壞內容 — 偵察媒體佔比、ff
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|--------|
-| v1.4 | 2026-10-05 | 突變表計數措辭校準：`examples.md` 的「`scripts/ci/mutants.tsv` **26 支**」改為「與本 skill 相關的 26 支」 | TMO-066 把同一張表擴到 **39 支**（新增的 13 支是 dav-wiki／探針機密遮罩／regression-guard 的護欄）；表是共用的，不標範圍會讓本 skill 的讀者把 39 支都當成 PPTX 管線的覆蓋率 |
+| v1.4 | 2026-10-05 | 突變表計數措辭校準：`examples.md` 的「`scripts/ci/mutants.tsv` **26 支**」改為「與本 skill 相關的 26 支」 | TMO-066 把同一張表擴到 **40 支**（13 支是 dav-wiki／探針機密遮罩／regression-guard 的護欄，二審後再加 1 支掃描器範圍鎖）；表是共用的，不標範圍會讓本 skill 的讀者把 40 支都當成 PPTX 管線的覆蓋率 |
 | v1.3 | 2026-10-05 | 突變測試自動化：`scripts/ci/mutants.tsv`（26 支）＋ `scripts/ci/mutant-must-die.py`（在副本上套突變，每支都要讓對應探針變紅、每支都有綠 baseline 對照）＋ CI 步驟；功能探針 11 → 12（G1 CRC 壞檔）、ffmpeg 探針 8 → 9、圖片探針 13 → 21 | TMO-065：人工種 mutant 只證明「當下那個 commit」咬得住，之後把 gate 改成恒真不會有人知道；自動化第一次跑就抓到 G1 與 FV-8 兩個真空過 |
 | v1.2 | 2026-10-05 | 新增圖片管線（`pptx-shrink-images.py` + `--image-mode` 畫質關）＋ `match_only()` 共用化；圖片與影片可共用同一 `--media-dir` 一次 repack | TMO-064：影片壓完後圖片（139 MiB，含 29 MiB TIFF）成為第二大來源，卻只能手動處理 |
 | v1.1 | 2026-10-05 | V03 二審（兩輪）修正：媒體判定改用共用 `is_media()`（換圖片不再誤報非媒體被動過）、`--media-dir` 空過改 FAIL、`--only` 精確優先且打錯詞要 WARN、repack 預設不覆蓋輸出、G2/G4 改分塊串流（省記憶體）、`--list` 不建輸出目錄、四關措辭對齊腳本 | Reviewer 兩輪共 1 個 P1、8 個 P2、20 個 P3：空過假綠、記憶體、旗標鎖、第二組能力實測無探針咬住 |

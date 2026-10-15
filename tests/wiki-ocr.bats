@@ -67,7 +67,9 @@ teardown() {
 # === AC-O4: 不存在的輸入 ===
 @test "AC-O4: missing input → exit 2" {
   run "$TOOL" --input "/nonexistent/foo.png" --output-json "$WORK/ocr.json"
-  [ "$status" -ne 0 ]
+  # 測名寫 exit 2 就別只驗「不等於 0」：只驗非零的話，`EXIT_NOINPUT=2` 改成 1 也不會有人發現
+  # （TMO-066 二審 F1：DW-M5 原本只能當「文字契約鎖」，收緊後它才是真的行為鎖）。
+  [ "$status" -eq 2 ]
 }
 
 # === AC-O5: --help ===
@@ -80,7 +82,8 @@ teardown() {
 # === AC-O6: 沒給 --input ===
 @test "AC-O6: missing --input → exit 1" {
   run "$TOOL" --output-json "$WORK/ocr.json"
-  [ "$status" -ne 0 ]
+  # 同理：測名寫 exit 1，就驗 exit 1（`EXIT_USAGE=1` 是契約，不是實作細節）。
+  [ "$status" -eq 1 ]
 }
 
 # === AC-O7: 輸出 JSON 結構 ===
