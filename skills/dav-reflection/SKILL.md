@@ -22,8 +22,8 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 | 情境 | 觸發 |
 |------|------|
 | User Story 完成驗收 | ✅ Agent 自動 |
-| Sprint 結束 | ✅ Agent + 用戶 |
-| Module 交付 | ✅ Agent + 用戶 |
+| Sprint 結束 | ✅ Agent + 用戶（trust mode 進行中：Agent 自動）|
+| Module 交付 | ✅ Agent + 用戶（trust mode 進行中：Agent 自動）|
 | 純提問 / 還沒執行任務 | ❌ 不觸發 |
 | 任務部分完成 | ❌ 等完成後再觸發 |
 
@@ -73,10 +73,14 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 
 ### Step 5：跟用戶確認 Action Items
 
-- **動作**：列出哪些立即處理、哪些放入下個 Sprint；Sprint / Module 級別必有用戶參與
+> ⚠️ **trust mode 進行中不適用本步**（trust 內不得中途停下問用戶）：
+> Action Items 一律寫進 `docs/backlog.md`；需用戶決策的事項寫進 need-you-help 檔，
+> 交由用戶在 trust 結束後逐題回覆（見同套 dav-trust skill，需同套安裝）。
+
+- **動作**：列出哪些立即處理、哪些放入下個 Sprint；Sprint / Module 級別必有用戶參與（trust mode 進行中除外）
 - **為什麼**：用戶最終決策，避免 Agent 自行決定優先級
-- **產出**：對話中明示「待用戶確認 Action Items」
-- **證據**：對話有「待確認」字樣
+- **產出**：對話中明示「待用戶確認 Action Items」（trust mode 進行中：改記 need-you-help 檔）
+- **證據**：對話有「待確認」字樣（trust mode 進行中：need-you-help 檔有對應條目）
 
 ## 規則 / 例外 / 限制
 
@@ -85,7 +89,7 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 | 反思必含 6 維度檢查 | N/A | 不可跳過維度 |
 | 每個 ❌ 必含「根因 + 建議」 | N/A | 不可只標 ❌ 不解釋 |
 | 問題必轉化為 Backlog item | 「已知但本 sprint 不修」可記 Action Items 內 | 不留在對話 |
-| Sprint / Module 必有用戶參與 | US 級別 Agent 自動 | 不可越權 |
+| Sprint / Module 必有用戶參與 | US 級別 Agent 自動 | 不可越權（trust mode 進行中除外：改記 need-you-help 檔）|
 | 反思併入 deliverable.md（v2.0）| v1.7.1 / v1.8 / v1.9 存量獨立反思檔保留 | 未來不寫獨立檔 |
 | US 級別反省要輕量 | Sprint / Module 可深度 | US 不做架構層級反省 |
 | **jev 軟性降級**（v2.1 新增）| N/A | jev-use 未安裝時跳過 jev 步驟、繼續原本反省、不中斷流程 |
@@ -96,6 +100,10 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 | **M-Step 3 必跑探針**（v2.1 新增，B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/restruct-dav-reflection.bats` 全綠 |
 
 ## 變動歷史
+
+| 版本 | 日期 | 變動 | 為什麼 |
+|------|------|------|--------|
+| v2.2 | 2026-10-23 | Step 5 加 trust 例外（trust mode 進行中：改記 need-you-help 檔）+ 規則列「Sprint / Module 必有用戶參與」例外欄 + 觸發時機表 Sprint / Module 列加註 | trust 內不得中途停下問用戶（TMO-067）；V03 Reviewer 二審結論見全域 handbook changelog v2.10 |
 
 完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
 

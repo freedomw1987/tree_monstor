@@ -3,6 +3,57 @@
 > 本檔是 AGENTS.md §3 的詳細內容。引用：`[§3 CHANGELOG](./sop/handbook/changelog.md)`
 >
 > 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
+>
+> ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
+> 與 `AGENTS.md` §2 標題的 **SOP 版本號**（不同軌）不是同一個序號 —— 兩者不可互相比較大小。
+
+## v2.10 — 2026-10-23
+
+**本版異動**：§2.0 登錄 trust mode 為第三條 SOP 路徑（執行段），並同步 §2.6 一般任務章節的例外條款
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | ---- |
+| **P0** | `AGENTS.md` §2.0 任務類型表 | 新增「信任模式（trust mode）」列 → 執行段（§2.3 → §2.5）；規劃 / 設計屬啟動前置條件 |
+| **P0** | `AGENTS.md` §2.0 判斷責任歸屬 | 新增 trust 條：走執行段；§2.1 / §2.2 屬啟動前置條件（需用戶互動、trust 內不跑）；啟動判準見 dav-trust preflight 子檔 |
+| **P1** | `docs/sop/handbook/2.6-general-task.md` | 檔頭 + 升級觸發器表下方新增「trust mode 進行中不適用本節 / 上表升級觸發器不套用」例外；升級判斷改由 trust-log 與 need-you-help 承載 |
+| **P1** | `docs/sop/handbook/2.1-planning.md` + `2.2-design.md` | 兩章節各加例外 blockquote「本節僅適用於非 trust 的開發編程任務路徑；規劃 / 設計是 trust 啟動前置條件」 |
+| **P1** | `docs/sop/handbook/2.3-execution.md` | 三種策略表後加例外 blockquote：`ask_user` 策略 / fallback 在 trust 進行中不適用（改記 trust-log + need-you-help）；`gates.json` schema 不變 |
+| **P1** | `docs/sop/handbook/2.4-reflection.md` + `skills/dav-reflection/SKILL.md` | 加 trust 例外：「Sprint / Module 必須有用戶參與確認」在 trust 進行中不適用（Action Items 一律寫 backlog；待決事項寫 need-you-help）|
+| **P1** | `tests/restruct-agents-md.bats` | 新增 8 條探針（§2.0 trust 列含負向斷言不得含 §2.1 / §2.2、判斷責任歸屬區塊前置條件、§2.6 例外完整片語、一般任務列仍在、§2.1 / §2.2 trust 提示、§2.3 ask_user 例外、§2.4 用戶參與例外、changelog v2.10 + 二審結論節）+ 改寫 1 條（守 SOP 現行版本 v2.1）|
+| **P2** | `AGENTS.md` §2 標題 + 變動歷史 | §2 SOP 流程 v2.0 → v2.1、變動歷史加 v2.1 列（欄位名改「SOP 版本」、合併 v2.0 重號兩列）|
+
+**二審結論（V03 Reviewer）**：
+
+| 輪次 | 結論 | 處置 |
+|------|------|------|
+| 第 1 輪 | ⚠️ approve with comments（3 P1 / 9 P2），現狀不可合併 | P1：§2.0「不開例外」矛盾句未修（trust 與 dev task 無優先序）、本檔二審結論節懸空引用、TMO-067 仍 `todo`；P2：一般任務條款未加 trust 限定、§2.6 違規處理未排除、範例對照未註 trust、pointer 指向偏、README 未列第三路徑、§2.1 / §2.2 章節無 trust 提示、版本序號混淆、探針 ② 弱 / ③ 鬆、「本次未動」清單不完整 → **全修** |
+| 第 2 輪 | ⚠️ approve with comments（1 P1 / 8 P2），現狀不可合併 | **P1**：trust 真正會跑的 §2.3（`ask_user` 策略）與 §2.4（用戶參與確認 = Reflection Gate 通過條件）無 trust 例外 → 死鎖；P2：探針數字錯、changelog 敘述低估、skill 三處仍寫「待補」、缺 changelog 守護探針、條列順序與優先序不一致、探針會咬證據未示範、deliverable v2.0 易誤讀 → **全修** |
+| 第 3 輪 | ⚠️ approve with comments（1 P1 / 9 P2），現狀不可合併 | **P1**：§2.4 的「operational 條款」（通過條件 5、「假裝通過」清單、Sprint/Module 觸發時機與 Step 5 動作/產出/證據）未就地例外 → 依字面仍會被判「假裝通過」→ 死鎖；P2：AGENTS.md §2.3 無 trust 例外摘要、§2.7 升級條款仍指向 §2.1、dav-reflection 未登錄變動歷史 + 無守護探針、§2.0 表列順序、§2.6 範例第二列、§2.0 探針守護缺口、缺第 3 輪登錄、缺 deliverable → **全修**；依第 3 輪 reviewer 指示「修完可逕行合併、不需再排一輪二審（僅需補貼修後綠燈輸出）」結案 |
+
+**探針「會咬」實測**（突變 → 必須紅，做完還原）：
+
+| 突變 | 預期 | 實測 |
+|------|------|------|
+| 刪掉 §2.0 表「一般任務」列 | 探針「general-task row still present」紅 | ✅ 紅 |
+| trust 列的 SOP 欄改成含 §2.1 | 探針「trust mode registered as third path」紅 | ✅ 紅 |
+| §2.1 只出現在「舉例」欄 | 限欄後不誤紅 | ✅ 全綠 |
+
+**決策紀錄**：
+
+- **為什麼要改**：dav-trust v2.3 把「規劃 / 設計」從 trust 的執行階段改成**啟動前置條件**（兩者強制用戶互動、
+  與 trust「中途不問用戶」互斥）；但 AGENTS.md §2.0 仍寫「開發編程任務 → 一律走完整 SOP，不開例外」
+  → agent 先讀 AGENTS.md 時會在 trust 內跑 §2.1 / §2.2，回到「啟動即注定卡死」（TMO-067）
+- **為什麼不寫成「例外」而是「第三條路徑」**：trust 不是「一般任務的例外」，它有**自己的入口條件**
+  （大目標 + deadline + 既有 backlog / 設計），與前兩類任務的分類維度不同 → 開一列更誠實
+- **§2.6 為何要加例外**：§2.6 的「溝通 & 思考（問用戶）」與「自動升級觸發器（停下等用戶確認）」
+  與 trust 直接互斥 → 不加例外，agent 在一般任務分支誤判時會在 trust 內停下問用戶
+- **本次未動**：`dav-planner` / `dav-designer`（trust 內本來就不跑它們）、`gates.json`（4 Gate 定義與 schema 不變；
+  trust 例外寫在 §2.3 handbook，不改 schema）、`docs/sop/handbook/2.5-submission.md`（無強制用戶確認步驟）、
+  `docs/system-design.md`（歷史設計文件，非 SOP 規範）
+- **下次升版待辦（避免漏改）**：SOP 版本字串 `v2.1` 目前硬編於 `AGENTS.md`（§2 標題 + 變動歷史）與
+  `tests/restruct-agents-md.bats`（守版探針）共 3 處 → 下次升版需同步，並考慮改為動態取版號
+
+---
 
 ## v2.9 — 2026-09-26
 

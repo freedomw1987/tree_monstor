@@ -69,6 +69,19 @@ load 'helpers/test-env'
 # Rules / exceptions / limits
 # ---------------------------------------------------------------------------
 
+@test "RESTRUCT-DAV-REFLECTION: trust mode exception present" {
+  local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
+  # trust 內不得中途停下問用戶 → Step 5「跟用戶確認 Action Items」必須有例外，否則死鎖
+  grep -qF "trust mode 進行中不適用本步" "$skill" || {
+    echo "FAIL: dav-reflection Step 5 should state trust-mode exception" >&2
+    return 1
+  }
+  grep -qF "need-you-help" "$skill" || {
+    echo "FAIL: dav-reflection should route trust-mode decisions to need-you-help" >&2
+    return 1
+  }
+}
+
 @test "RESTRUCT-DAV-REFLECTION: rules section exists" {
   local skill="$REPO_ROOT/skills/dav-reflection/SKILL.md"
   assert_file_contains "$skill" "## 規則"
