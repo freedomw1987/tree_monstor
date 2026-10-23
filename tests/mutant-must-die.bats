@@ -18,7 +18,7 @@
 #   MMD-3 mutant 活著時必須回報失敗（否則整支檢查是假綠：工具自己永遠說 OK）
 #   MMD-4 錨點腐化（程式碼改了、表沒改）必須大聲失敗，不是靜默空過
 #   MMD-5 CI 真的在跑它（不是「有檔案但沒人叫」的孤兒檢查）
-#   MMD-6 突變表的結構錯誤（欄數／空欄／等價突變／id 重複／重複列／空表）在**載入期**就要擋下
+#   MMD-6 突變表的結構錯誤（欄數／空欄／等價突變／id 重複／重複列／空表／語法壞掉）在**載入期**就要擋下
 #
 # TMO-066 二審（claude-code，verdict = request-changes）後追加：
 #   * DW-M5：原本只能當「文字契約鎖」（咬 WTM-6 的『檔案不得出現 EXIT_TOOLMISSING』）；
@@ -29,7 +29,20 @@
 #     現在 helper 的 sed 程式刻意寫成**單行**，mutant 才能一行換成 `cat`（真・直通）。
 #   * 新增 LK-M1：把掃描器的 `git ls-files -co --exclude-standard` 改回 `-c`（＝untracked 盲點回歸）；
 #     搭配 `lint-shell-var-nonascii.py --self-test` 新增的「未追蹤檔必須入列」契約，兩者一起紅。
-#   * 表 39 → 42 支。
+#
+# 【第 2 輪 V03 二審（reviewer subagent、verdict = request-changes）後追加】
+#   * 二審 #1（P1）：LK-M1 原本的『換成』在**行中**錨點尾接 `# MUTANT: ...` → 註解吞掉該行
+#     後面還有的 `*GLOBS],` → `SyntaxError: '[' was never closed`。突變確實紅了，但死因是
+#     parse error、不是 ENV-EQ-17 的「掃描範圍必須含未追蹤檔」→ 這一列零證據力（＝ round-1 F2
+#     的同一型態）。修法兩層：①該列拿掉行尾註解，改成乾淨的 `"-c", "--exclude-standard",`
+#     （理由寫在列上方的註解行）；②**根治**＝runner 新增載入期「語法哨兵」（`SYNTAX_LANGS`／
+#     `check_mutated_syntax`）：先靜態套用『換成』，再用 `compile()`／`bash -n`／`json.loads`
+#     檢查語法，壞掉就 die —— 任何「靠語法壞掉才紅」的列連載入都過不了（MMD-6 ⑦ 用合成表實測）。
+#   * 二審 #2（P2）：CONTRIBUTING／表頭原寫「文字契約鎖 0 列」，但 DW-M4 與 RG-M1..RG-M4 明明
+#     是文件／資料契約列 → 分類改為**可機械判定**（目標檔是否為程式碼），並把數字寫成查得到的。
+#   * 二審 #3（P3）：deliverable 誤寫 `--list` 印 6 欄（實為 4 欄）→ 已更正。
+#
+#   * 表 39 → 43 支（TMO-066 二審收尾；dav-trust v2.4 再 +3 支：DT-M1..M3）。
 #
 # Usage:
 #   bats tests/mutant-must-die.bats
@@ -134,7 +147,7 @@ run_mmd() {
   [[ "$output" == *"還活著"* ]] || { echo "FAIL: 沒有回報 survivor" >&2; return 1; }
 }
 
-@test "MMD-6: 突變表結構錯誤（欄數／空欄／等價突變／id 重複／重複列／空表）必須在載入期就擋下" {
+@test "MMD-6: 突變表結構錯誤（欄數／空欄／等價突變／id 重複／重複列／空表／語法壞掉）必須在載入期就擋下" {
   local anchor='        bad = zf.testzip()'
   # ① 欄數 5
   printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\ta\tb\tc\n' > "$W/cols.tsv"
@@ -175,6 +188,16 @@ run_mmd() {
   run_mmd --table "$W/duprow.tsv" --list
   [ "$status" -ne 0 ] || { echo "FAIL: 同一個突變拆成兩列竟然通過" >&2; return 1; }
   [[ "$output" == *"重複列"* ]] || { echo "FAIL: 沒指出重複列（${output}）" >&2; return 1; }
+
+  # ⑦ 「語法壞掉型」假死因（第 2 輪二審 #1：LK-M1 的行中錨點尾加 `#` 吞掉後半行）——
+  #   突變會紅，但紅在 parse error，不是它宣稱要證的語意 → 載入期語法哨兵必須先擋。
+  local py_anchor='"ls-files", "-co", "--exclude-standard",'
+  printf 'MUT-A\tscripts/ci/lint-shell-var-nonascii.py\t%s\t"ls-files", "-c",  # 吞掉後半行\ttests/env-equivalence.bats\tENV-EQ-17\n' \
+    "$py_anchor" > "$W/badsyntax.tsv"
+  run_mmd --table "$W/badsyntax.tsv" --list
+  [ "$status" -ne 0 ] || { echo "FAIL: 語法壞掉的列竟然通過（這一列會變成假死因）" >&2; return 1; }
+  [[ "$output" == *"語法壞掉"* ]] ||
+    { echo "FAIL: 沒指出是語法壞掉的假死因（${output}）" >&2; return 1; }
 }
 
 @test "MMD-4: 錨點腐化（碼改了、表沒改）必須大聲失敗，不是靜默空過" {

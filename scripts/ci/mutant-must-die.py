@@ -13,6 +13,11 @@
   死因是 rc=127 parse error 而非遮罩失效）、DW-M5 由「文字契約鎖」升級為真行為鎖
   （收緊 `tests/wiki-ocr.bats` AC-O4／AC-O6 去驗 2／1）、新增 LK-M1（掃描器 `git ls-files -co` 改回 `-c`）。
   二審 F3 也把「等價突變／重複列／空欄／欄數」變成載入期就會 FAIL 的契約。
+  **第 2 輪二審（verdict `request-changes`）後**：上面那支 LK-M1 本身被抓到是「假死因」——
+  錨點是行中片段，『換成』尾的 `# MUTANT: …` 把該行後面還有的 `*GLOBS],` 吞掉 →
+  `SyntaxError: '[' was never closed`（紅是紅，但紅在 parse error，對「掃描範圍要含未追蹤檔」
+  零證據力）；同一型態的 round-1 F2（SM-M1 rc=127）也是。所以除了修那一列，還加了**語法哨兵**
+  （見下），把這整類假死因變成載入期 FAIL。
 
 為什麼突變在 **temp copy** 上做（不是 working tree）：
   突變＝故意把碼改壞；若直接改 working tree，一旦中途中斷就會留下壞碼，
@@ -27,6 +32,11 @@
     整張表空 —— 任一項都直接 FAIL（二審 F3）。
   * 每個 mutant 都先跑一次**未突變的 baseline**（每個 (探針檔, 探針名) 組合只跑一次）：
     baseline 必須綠，否則「紅」不代表突變被咬住，只代表探針本身壞了＝假信心。
+  * 「靠語法壞掉才紅」也 FAIL（**語法哨兵**，`SYNTAX_LANGS`×`check_mutated_syntax`）：載入期先靜態
+    套用『換成』，再對 `.py` 跑 `compile()`、`.sh`／`.bash` 跑 `bash -n`、`.json` 跑 `json.loads`，
+    語法壞掉直接 die。原因：突變若把目標檔弄成 parse error，它會「紅」但死因與要證的語意無關
+    （round-1 F2 配 rc=127、第 2 輪 #1 配 SyntaxError）→ 這種列等於沒有證據力。
+    ⚠️ 實務提醒：**行中錨點**（該行後面還有內容）的『換成』不可加尾端 `#` 註解。
   * 探針「找不到測試」也算失敗（`ERROR: Found no tests`）——否則打錯名字會被誤讀成 mutant 死亡。
   * 探針**逾時（rc=124）不算 mutant 死亡**：逾時可能是環境問題，把它當「咬住了」
     就是假綠，所以另立狀態並 FAIL。
@@ -46,6 +56,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -54,6 +65,11 @@ import tempfile
 from pathlib import Path
 
 NO_TESTS_MARK = "ERROR: Found no tests"
+# 「換成」欄若把目標檔弄成語法錯誤，突變雖然會紅，但死因是 parse error 而不是我們要證的語意
+# ——這種「假死因」等於這一列沒有證據力。兩個實例：round-1 F2（SM-M1 掉續行反斜線 →
+# `-e: command not found`）與本輪 #1（LK-M1 在**行中**錨點尾加 `#` → 註解吞掉後半行的
+# `*GLOBS],` → `SyntaxError: '[' was never closed`）。一律在載入期就擋掉。
+SYNTAX_LANGS = {".py": "python", ".sh": "shell", ".bash": "shell", ".json": "json"}
 PROBE_TIMEOUT = 300                 # 實測單支探針 1-2 秒；300s 已經是「環境壞了」的量級
 PROBE_TIMEOUT_RC = 124              # subprocess timeout 的回傳碼
 
@@ -109,7 +125,55 @@ class Mutant:
             die(f"突變表第 {lineno} 列（{self.mid}）的『原文』與『換成』相同 → 等價突變（什麼都沒改）")
 
 
-def load_table(path: Path) -> list[Mutant]:
+def syntax_problem(rel: str, text: str) -> str:
+    """檢查「突變後」的檔案內容語法；回傳錯誤訊息（空字串＝通過或不必檢查）。"""
+    lang = SYNTAX_LANGS.get(Path(rel).suffix)
+    if lang == "python":
+        try:
+            compile(text, rel, "exec")
+        except SyntaxError as exc:
+            return f"SyntaxError: {exc.msg}（第 {exc.lineno} 行）"
+    elif lang == "shell":
+        with tempfile.NamedTemporaryFile("w", suffix=Path(rel).suffix, delete=False,
+                                         encoding="utf-8") as fh:
+            fh.write(text)
+            tmp = fh.name
+        try:
+            done = subprocess.run(["bash", "-n", tmp], capture_output=True, text=True, check=False)
+            if done.returncode != 0:
+                tail = [ln for ln in done.stderr.strip().splitlines() if ln.strip()]
+                return tail[-1] if tail else "bash -n 失敗"
+        finally:
+            os.unlink(tmp)
+    elif lang == "json":
+        try:
+            json.loads(text)
+        except json.JSONDecodeError as exc:
+            return f"JSONDecodeError: {exc.msg}（第 {exc.lineno} 行）"
+    return ""
+
+
+def check_mutated_syntax(m: Mutant, root: Path, lineno: int) -> None:
+    """載入期就把「語法壞掉型」的假死因擋掉（見 SYNTAX_LANGS 註解）。
+
+    只檢查語法可機械判定的目標檔（.py／.sh／.bash／.json）；`.md`／`.tsv` 等文字／資料檔
+    沒有語法概念，其「文字契約鎖」性質另在 CONTRIBUTING 分類說明。
+    """
+    if Path(m.target).suffix not in SYNTAX_LANGS:
+        return
+    src = root / m.target
+    if not src.is_file():
+        return                      # 目標檔不存在由 main 的 missing 檢查負責
+    text = src.read_text(encoding="utf-8")
+    if m.find not in text:
+        return                      # 錨點失效由 MMD-4／執行期負責，這裡只判語法
+    problem = syntax_problem(m.target, text.replace(m.find, m.replace))
+    if problem:
+        die(f"突變表第 {lineno} 列（{m.mid}）的『換成』會讓目標檔語法壞掉 → 假死因"
+            f"（就算紅了也不算咬住）：{problem}")
+
+
+def load_table(path: Path, root: Path) -> list[Mutant]:
     if not path.is_file():
         die(f"找不到突變表：{path}")
     rows: list[Mutant] = []
@@ -129,6 +193,7 @@ def load_table(path: Path) -> list[Mutant]:
         if key in seen_mutations:
             die(f"突變表重複列：{mutant.mid} 與前面的列同（目標檔、原文、換成）（第 {lineno} 列）")
         seen_mutations.add(key)
+        check_mutated_syntax(mutant, root, lineno)
         rows.append(mutant)
     if not rows:
         die(f"突變表是空的（{path}）→ 這支檢查會變成空過")
@@ -183,7 +248,7 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     root = repo_root()
     table = args.table or (root / "scripts/ci/mutants.tsv")
-    mutants = load_table(table)
+    mutants = load_table(table, root)
     if args.only:
         wanted = [w.strip() for w in args.only.split(",") if w.strip()]
         mutants = [m for m in mutants if m.mid in wanted]

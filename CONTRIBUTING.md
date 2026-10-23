@@ -153,14 +153,30 @@ wc -l skills/dav-wiki/SKILL.md
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
    鎖住「這一步必須存在、必須跑全表（不得 `--list`／`--only`／`--no-baseline`）、不得被 `if:` 條件停用、不得 OR 短路或 `continue-on-error`」
 
-   **突變的兩種性質（TMO-066 二審後明文化）**：表裡的列分兩類，寫 report 時不要混為一談——
-     - **行為鎖**：改的是「程式做了什麼」（回傳值／分支／旗標），證明「行為變了會被咬到」。
-     - **文字契約鎖**：該處沒有任何探針鎖「值」，只鎖「檔案不得再出現某字串」。這類列在「換成」欄
-       一律加註 `MUTANT(text-lock):`（可用 `grep 'MUTANT(text-lock)' scripts/ci/mutants.tsv` 列出）。
-       它證明的是「文字契約會被抓到」，**不是**「行為變了會被抓到」。
+   **突變的兩種性質（TMO-066 二審後明文化）**：分類不看註解、看**目標檔類型**（機械可判定）：
+     - **行為鎖**：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 突變改的是「程式做了什麼」
+       （回傳值／分支／旗標），證明「行為變了會被咬到」，死因必須是語意差。
+     - **文件／資料契約鎖**：目標檔是 `.md`／`.json` 等 → 探針只斷言檔案文字（例如
+       `refute_file_contains`「這個字串不得再出現」）。它證明「文字契約會被抓到」，
+       **不是**「行為變了會被抓到」。
 
-   （目前表內**文字契約鎖 0 列**：唯一一列 DW-M5 在 TMO-066 收尾時改成真行為鎖——
-   代價是先把 `wiki-ocr.bats` 的 `AC-O4`/`AC-O6` 由「只驗非零」收緊成驗 2／驗 1。）
+   數目用這兩行自查（數字會隨表成長變動，記得同樣用這兩行重查；本行為最近一次查得的值）：
+
+```bash
+awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 行為鎖 35
+awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 文件／資料契約鎖 5
+```
+
+   另有 `MUTANT(text-lock):` 前綴慣例，只給「目標檔是程式、卻只想鎖文字」的罕見情況用。
+   數它要用下面這一行（直接 `grep` 會命中表頭註解段，數出來不為 0）：
+
+```bash
+awk -F'\t' '$1 !~ /^#/ && /MUTANT\(text-lock\)/' scripts/ci/mutants.tsv | wc -l   # 目前 0
+```
+
+   注意：**沒有「行為鎖」身份就沒有註解豁免權**——「換成」欄若讓目標檔語法壞掉（parse error），
+   突變紅了也不算咬住（死因與語意無關），runner 在載入期就會用 `SYNTAX_LANGS` 的語法哨兵擋掉，
+   這一類列連 `--list` 都過不了（`tests/mutant-must-die.bats` MMD-6 ⑦ 實測）。
 
 CI badge：見 [README.md](README.md) 頂部。
 

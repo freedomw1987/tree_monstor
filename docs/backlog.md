@@ -597,5 +597,31 @@ dav-trust，以及 dav-wiki 的 cross-ref／cleanup 進階路徑）；②跨檔�
 | F5 | P1 | DW-M6 `PURGE=true` 可能真刪使用者檔 | **查核後確認安全**：`TO_CLEAN[].f` 全部來自 `find "$WIKI_DIR"`，而 `WIKI_DIR` 是探針自己的 `mktemp -d`；已寫入 deliverable §5 |
 | P2-1 | P2 | RG-M2 錨點去掉了 `regression-guard`，與測名對不上 | 見 deliverable §4.4（附查核結果） |
 | P2-2 | P2 | SM-M3 換掉 `load` 會連帶抽掉 `REPO_ROOT`/PATH 設定 | 見 deliverable §4.4（附查核結果） |
-| P3-1 | P3 | `awk NF==4` 與 `grep -c .` 兩濾網不一致 | 欄數契約進載入期後，`--list` 每行必為 6 欄 ⇒ `awk NF==4`（只取 4 欄者）不再會漏掉壞列；MMD-1 **不再自寫第二套結構檢查**（避免與 runner 漂移），結構類改由 MMD-6 拿合成表實測 |
+| P3-1 | P3 | `awk NF==4` 與 `grep -c .` 兩濾網不一致 | 欄數契約進載入期後，`--list` 每行必為 **4 欄**（id／目標檔／探針檔／探針名；表本身仍是 6 欄）⇒ `awk NF==4` 不再會漏掉壞列；MMD-1 **不再自寫第二套結構檢查**（避免與 runner 漂移），結構類改由 MMD-6 拿合成表實測。⚠️ 第 2 輪二審 #3 抓到：本表原寫「每行必為 6 欄」＝**寫錯**（`--list` 是 4 欄），照它去改 `awk` 會弄壞 MMD-1，已更正 |
 | P3-2 | P3 | 跨 skill 清單是手寫 spot list、只驗 target | 已在 deliverable §4.4 明寫此為已知邊界 |
+
+### TMO-066 二審處置（第 2 輪：只審「處置 delta」）
+
+第 1 輪二審看的是**修正前**的版本；本輪處置動到／新增了鎖（`AC-O4`／`AC-O6` 收緊、MMD-6、LK-M1、
+two mutants 換錨點），這些 delta 未經二審 → 再跑一次 V03（`reviewer` subagent，可自行讀 repo／跑唯讀
+指令來反驗證；verdict = **`request-changes`**）。三條 finding 與處置：
+
+| # | 級別 | 指摘 | 處置 |
+| --- | --- | --- | --- |
+| 1 | P1 | 本輪新增的 **LK-M1 是假死因**：錨點是**行中**片段，『換成』尾接 `# MUTANT: …` 吞掉該行後面的 `*GLOBS],` → `SyntaxError: '[' was never closed`（rc=1），ENV-EQ-17 一次都沒跑到 ⇒ 這一列對「掃描範圍必須含未追蹤檔」**零證據力**（＝ round-1 F2 同一型態）| **兩層修**：①該列拿掉行尾註解，改成乾淨的 `"ls-files", "-c", "--exclude-standard",`（理由改寫在列上方註解行），現已實測「死在 self-test 的 untracked 斷言」；②**根治**＝runner 新增載入期**語法哨兵**（`SYNTAX_LANGS`／`check_mutated_syntax`）：靜態套用『換成』後用 `compile()`／`bash -n`／`json.loads` 檢查目標檔語法，壞掉直接 `die` ⇒ 任何「靠語法壞掉才紅」的列連 `--list` 都過不了；MMD-6 ⑦ 用合成表實測 |
+| 2 | P2 | `CONTRIBUTING.md`／表頭寫「文字契約鎖 **0 列**」，但 DW-M4 與 RG-M1..RG-M4 是文件／資料契約列；提供的 `grep 'MUTANT(text-lock)'` 配方回 0 筆 ⇒ 用一個查得到的指令證明一件不成立的事 | **分類改為可機械判定**（看目標檔類型，不看註解）：行為鎖＝目標檔 `.py`／`.sh`／`.bash`／`.bats`；文件／資料契約鎖＝`.md`／`.json` 等（**數目請用 CONTRIBUTING 內那兩行 `awk` 現場查**，別抄快照數字——表會成長）；附兩行 `awk` 自查指令；`MUTANT(text-lock):` 前綴降到「目標檔是程式但只想鎖文字」的罕見情況|
+| 3 | P3 | deliverable §4.4 的 P3-1 寫「`--list` 每行必為 6 欄」（實為 4 欄）| 已更正（deliverable §4.4 ＋本表 P3-1 列），並補「表本身仍是 6 欄」以免又混淆 |
+
+### TMO-067（候選：尚未開票）
+
+TMO-066 收尾時撞到、但屬於另一個問題的兩件（都是「探針自己不可靠」的同一個大方向）：
+
+1. **`M6.3-c` 間歇紅（約 1/3 機率）的真因**：`tests/` 全量跑時偶發紅，追下去是
+   `skills/regression-guard/PoC/jev_oracle.py` 的 `_state_text()` 把 `Elapsed: {elapsed_ms} ms`
+   也算進 state → 每次 content hash 不同 → cache 永遠 miss → 真的打 OpenRouter → 無 key 時 403 →
+   被歸類成 blocked → 判 regression → rc=2。**修法方向**：把非決定性欄位（elapsed／timestamp）從
+   state 抽掉，或給 cache key 明確的 normalize 步驟。
+2. **「測名寫了什麼就驗什麼」的自審項目**：TMO-066 二審 F1 的根因就是探針名寫「exit 2」但只斷言
+   「非零」（AC-O4／AC-O6）——這種名實不符本身就是假綠，也讓 mutant 只看得到「有紅」而看不出
+   「紅在什麼」。**修法方向**：寫一條靜態鎖（例如：測名內出現 `exit N` 時，該 test body 必須斷言
+   `-eq N`），或以 checklist 納入 `dav-skill-creater`／`regression-guard`。
