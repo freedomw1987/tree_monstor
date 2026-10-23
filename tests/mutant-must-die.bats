@@ -9,6 +9,9 @@
 #
 # TMO-066：表擴到 39 支（+6 dav-wiki「缺工具不得降級」／+3 探針機密遮罩／+4 regression-guard
 #   TTY fail-fast 文件一致性）；二審後再 +1 → 40 支。dav-wiki 與 regression-guard 的護欄從「人工種過一次」變成 CI 每次跑。
+# TMO-070：表再 +7（QD-M1..QD-M6 安裝器護欄／RG-M5 oracle payload 跨行程穩定性）→ 50 支。
+#   同時把 MMD-1 的「只列到 >= 40 支」收緊成「**恰好 50 支**」——舊門檻下，刪掉本次新增的 7 列
+#   仍剩 43 支 ≥ 40 → 全綠，等於新護欄可以被靜默刪掉而無人知覺（reviewer P1 F1）。
 #   註：RG 原本還有一支「SKILL.md 把 **TTY fail-fast** 改成 fail-slow」——實測 mutant 活著：
 #   SKILL.md 內同字串另有兩處（規則表、對照表標題），單點改字不影響規則仍在 → 無害突變，不放進表。
 #
@@ -70,7 +73,7 @@ run_mmd() {
   printf '%s\n' "$output" | awk -F'\t' 'NF==4' > "$W/list.txt"
   local n
   n=$(grep -c . "$W/list.txt")
-  [ "$n" -ge 40 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 >= 40）→ 有人在偷偷刪表" >&2; return 1; }
+  [ "$n" -eq 50 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 50；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
 
   local -a ids=() targets=()
   local line id target probe_file probe
@@ -107,6 +110,18 @@ run_mmd() {
            skills/regression-guard/SKILL.md; do
     printf '%s\n' "${targets[@]}" | grep -qF "$d" ||
       { echo "FAIL: 突變表沒有覆蓋 ${d}（TMO-066 的跨 skill 護欄）" >&2; return 1; }
+  done
+
+  # TMO-070：安裝器護欄與 oracle 穩定性護欄也要在表內（QD-M1..QD-M6、RG-M5）。
+  # 用整行比對（grep -x）而不是子字串——「install.sh」是「lib/install/logging.sh」的子字串，
+  # 用子字串比對會讓這個檢查形同虛設。
+  local q
+  for q in lib/install/symlink.sh \
+           lib/install/logging.sh \
+           install.sh \
+           skills/regression-guard/PoC/journey_runner.py; do
+    printf '%s\n' "${targets[@]}" | grep -qxF "$q" ||
+      { echo "FAIL: 突變表沒有覆蓋 ${q}（TMO-070 的新護欄）" >&2; return 1; }
   done
 
   # 註：欄數／等價突變／id 重複屬 runner 的載入契約（`Mutant.__init__`），由 MMD-6 以合成表實測紅；

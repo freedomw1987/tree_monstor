@@ -97,7 +97,7 @@ dry-run **不寫任何檔案**，而且**不說謊**：
 | 2 | `approve-with-comments` | P1-1、P2-1～P2-10 | 全數處置 |
 | 3 | **`approve`** | P2-A～P2-D（非阻斷） | 4 條全部折進本次變更 |
 
-**第 1 輪**
+### 第 1 輪
 
 - **F1**（P0 級）：使用者自有 `~/.qoder/AGENTS.md` 實體檔會讓 `ensure_symlink` 回傳 1 → `set -e` **中斷整個安裝**。
   且 qoder 已在預設清單 → 連只想裝 Claude／Pi 的使用者都會踩到。全域層改用 `ensure_symlink_if_absent`。
@@ -108,7 +108,7 @@ dry-run **不寫任何檔案**，而且**不說謊**：
 - **F6**：新探針未 `git add` → ENV-EQ-15/16 掃不到 → 已追蹤。
 - **F7**：dry-run 的 skills trace 與真實的 per-skill merge 不符 → dry-run 改印真實計畫。
 
-**第 2 輪**
+### 第 2 輪
 
 - **P1-1**：文件專案層 Pi 樹寫成 `.pi/AGENTS.md`（實作是 `.pi/agent/`）→ 改正。
 - **P2-1**：文件殘留 `~/.pi/AGENTS.md` → 改正。
@@ -122,7 +122,7 @@ dry-run **不寫任何檔案**，而且**不說謊**：
 - **P2-9**：dry-run 印假成功訊息 → `log_dry` 分流。
 - **P2-10**：bash 3.2 的安全性宣稱沒有任何 CI 腿咬得到 → 新增 ENV-EQ-20。
 
-**第 3 輪（非阻斷建議，亦全數折入）**
+### 第 3 輪（非阻斷建議，亦全數折入）
 
 - **P2-A**：`ENV-EQ-20` 只在「給了 `--agent`」時跑，**沒**真的踩到它宣稱要保護的「`AGENT_REQ` 空陣列」路徑
   → 每個 bash 版本再補一次「不給 `--agent`」的執行。

@@ -51,12 +51,31 @@ make_us_m63_before() {
   mkdir -p "$REPO_ROOT/tmp"
   rm -f $BATS_TEST_TMPDIR/US-M63-before.json
   # journey 為 blocked → run_journey.py 回 rc=2（有寫出 JSON，但非 0）→ 只吞 rc，必驗檔真的產出
-  "$PY" "$POC_DIR/run_journey.py" "$POC_DIR/journeys/US-M63.yaml" \
+  m63_hermetic_env "$PY" "$POC_DIR/run_journey.py" "$POC_DIR/journeys/US-M63.yaml" \
     --json-output $BATS_TEST_TMPDIR/US-M63-before.json >/dev/null 2>&1 || true
   if [ ! -s $BATS_TEST_TMPDIR/US-M63-before.json ]; then
     echo "FAIL: baseline fixture 未產出（$BATS_TEST_TMPDIR/US-M63-before.json）" >&2
     return 1
   fi
+}
+
+# ─── M6.3 系列：完全離線且可重現 ─────────────────────────────────────────
+# M6.3 的核心斷言是「patch 與 AC 無關 → 重跑後 verdict 分布不變 → 判 no_change」，
+# 前提是 **baseline 跑與 sandbox 重跑兩次的 verdict 分布一模一樣**。三件事會破壞它：
+#   ① oracle 打得到網路 → 結果隨當下 API 狀態浮動（本機 key 有效時更會每次不同）
+#   ② 本機 PoC/cache/ 有殘留命中 → 哪一次命中會隨 elapsed 變（見 journey_runner.stable_step_offset）
+#   ③ PoC/.env 或 ~/.claude/.../PoC/.env 裡的 key
+# 解法：三件事全斷 → oracle 只吃得到**版控**的 cache-fixtures/ → 兩次跑必定一致。
+#   JEV_CACHE_DIR  → 版控 fixture 目錄（唯一可命中的來源）
+#   JEV_ENV_FILE   → /dev/null（TMO-045 的 seam：等效「本機沒有任何 .env」）
+#   -u OPENROUTER_API_KEY → 拔掉環境變數來源的 key
+# 沒有這段時，M6.3-c / M6.3-e 會間歇性紅（baseline 與重跑只有一邊命中快取 →
+# verdict 分布差一步 → re_validate 判 regression → rc=2）。
+m63_hermetic_env() {
+  env -u OPENROUTER_API_KEY \
+    JEV_CACHE_DIR="$POC_DIR/cache-fixtures" \
+    JEV_ENV_FILE=/dev/null \
+    "$@"
 }
 
 make_m62_batch_report() {
@@ -984,7 +1003,7 @@ def hello():
     return "world"
 EOF
   make_us_m63_before
-  run "$PY" sandbox_runner.py \
+  run m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "world"' \
@@ -1017,7 +1036,7 @@ def hello():
     return "unrelated-text-for-no-change-test"
 EOF
   make_us_m63_before
-  run "$PY" sandbox_runner.py \
+  run m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "unrelated-text-for-no-change-test"' \
@@ -1045,7 +1064,7 @@ foo = "x"
 foo = "x"
 EOF
   make_us_m63_before
-  run "$PY" sandbox_runner.py \
+  run m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'foo = "x"' \
@@ -1081,7 +1100,7 @@ EOF
   # sandbox 目錄名以 . 開頭（`.sandbox-*`）→ 必用 ls -a，否則永遠數到 0（探針會空過）
   before_count=$(ls -a "$REPO_ROOT/tmp/" 2>/dev/null | grep -c "^\.sandbox-US-M63" || true)
   local out
-  out=$("$PY" sandbox_runner.py \
+  out=$(m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "x"' \
@@ -1113,7 +1132,7 @@ def hello():
 EOF
   make_us_m63_before
   local out
-  out=$("$PY" sandbox_runner.py \
+  out=$(m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$sample" \
     --old 'return "x"' \
@@ -1171,7 +1190,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   cd "$POC_DIR"
   local sample="$POC_DIR/fixtures/US-M63-missing-test.py"
   echo 'def x(): return "x"' > "$sample"
-  run "$PY" sandbox_runner.py \
+  run m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/nonexistent-before.json \
     --file "$sample" \
     --old 'return "x"' \
@@ -1198,7 +1217,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   local outside="$BATS_TEST_TMPDIR/outside-sample.py"
   printf 'def hello():\n    return "world"\n' > "$outside"
   make_us_m63_before
-  run "$PY" sandbox_runner.py \
+  run m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "$outside" \
     --old 'return "world"' \
@@ -1234,7 +1253,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   local target="$REPO_ROOT/tmp/$sentinel"
   printf 'def hello():\n    return "world"\n' > "$target"
   make_us_m63_before
-  run "$PY" sandbox_runner.py \
+  run m63_hermetic_env "$PY" sandbox_runner.py \
     --before $BATS_TEST_TMPDIR/US-M63-before.json \
     --file "../../../tmp/$sentinel" \
     --old 'return "world"' \
@@ -1265,6 +1284,105 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
   [ -z "$leaked" ] || {
     echo "FAIL: 複本逃出 sandbox：" >&2
     echo "$leaked" >&2
+    return 1
+  }
+}
+
+@test "M6.3-m: stable_step_offset is stable across PYTHONHASHSEED (no process-randomized hash)" {
+  need_poc_venv
+  cd "$POC_DIR"
+  # TMO-070 根因鎖：舊實作 `elapsed = 500 + (hash(step.id) % 1500)` 用內建 hash()，
+  # 而 Python 對 str 的 hash() 受 PYTHONHASHSEED 預設隨機化 → 每個行程的 elapsed_ms
+  # 都不同 → oracle payload（含 `Elapsed: N ms`）不同 → cache key 每跑必變 → 快取永遠
+  # miss → 分佈漂移 → M6.3-c／M6.3-e 誤判 regression。
+  # 這支探針用**兩個明確不同的 PYTHONHASHSEED** 比較 → 退回舊實作必紅（不靠運氣）。
+  local out0 out1
+  out0=$(PYTHONHASHSEED=0 "$PY" -c "
+import journey_runner
+print(journey_runner.stable_step_offset('US-M63-AC01-s1'))
+")
+  out1=$(PYTHONHASHSEED=12345 "$PY" -c "
+import journey_runner
+print(journey_runner.stable_step_offset('US-M63-AC01-s1'))
+")
+  [ -n "$out0" ] && [ -n "$out1" ] || {
+    echo "FAIL: stable_step_offset 沒有輸出（${out0} / ${out1}）" >&2
+    return 1
+  }
+  [ "$out0" = "$out1" ] || {
+    echo "FAIL: stable_step_offset 隨 PYTHONHASHSEED 變動（${out0} vs ${out1}）→ oracle payload 不穩" >&2
+    return 1
+  }
+  # 與已知值綁死：offset 1229 → elapsed_ms 1729 → cache key bbfaa5bfe583507a
+  [ "$out0" = "1229" ] || {
+    echo "FAIL: stable_step_offset('US-M63-AC01-s1') 應為 1229（elapsed 1729），got $out0" >&2
+    return 1
+  }
+}
+
+@test "M6.3-n: US-M63 step-1 oracle cache key equals the version-controlled fixture name" {
+  need_poc_venv
+  cd "$POC_DIR"
+  # 把「程式」與「離線 fixture」綁在一起：改了 stable_step_offset、payload 組法或
+  # AC 文字 → cache key 會變 → 版控 fixture 再也命不中（探針紅 → 逼人重錄 fixture）。
+  # 這是 M6.3 離線化的最後一環：沒有它，fixture 命不中就會默默去打網路。
+  local key
+  key=$(m63_hermetic_env "$PY" -c "
+import sys, pathlib
+sys.path.insert(0, '.')
+import jev_oracle
+_orig = jev_oracle._load_cache
+def _spy(k):
+    print('KEY=' + k)
+    return _orig(k)
+jev_oracle._load_cache = _spy
+from run_journey import _load_journey
+from ac_schema import parse_story_file
+from journey_runner import run_dry
+journey = _load_journey(pathlib.Path('journeys/US-M63.yaml'))
+src = (pathlib.Path(journey.source)).resolve()
+story = parse_story_file(src)
+run_dry(journey, story.acs, stale_test=False, story_id=journey.journey_id)
+" 2>/dev/null | grep -m1 '^KEY=' | cut -d= -f2)
+  [ -n "$key" ] || {
+    echo "FAIL: 沒算到 US-M63 step-1 的 cache key（payload 組法可能壞了）" >&2
+    return 1
+  }
+  [ "$key" = "bbfaa5bfe583507a" ] || {
+    echo "FAIL: cache key 應為 bbfaa5bfe583507a（= 版控 fixture 檔名），got $key" >&2
+    echo "  修法：重錄 skills/regression-guard/PoC/cache-fixtures/<新 key>.json 並更新 README 索引" >&2
+    return 1
+  }
+  assert_path_is_file "$POC_DIR/cache-fixtures/bbfaa5bfe583507a.json"
+
+  # ── TMO-070 reviewer P2（F2）：把「結果分布不變式」也鎖住 ──
+  # 之前只綁「cache key == fixture 檔名」；fixture 內容被改（verdict fail→pass）
+  # 或 journey step 數被改（15→14），所有探針仍會綠，README 寫的
+  # 「step 1 命中 fail、其餘 blocked → 分布 {fail: 1, blocked: 14}」會悄悄失真。
+  # 這裡把它變成兩條硬斷言：① fixture 內的 verdict 必須是 fail；
+  # ② 實際跑出來的 baseline 必須是 15 筆、其中 1 筆 fail + 14 筆 blocked。
+  local fixture_verdict
+  fixture_verdict=$("$PY" -c "
+import json
+d = json.load(open('$POC_DIR/cache-fixtures/bbfaa5bfe583507a.json'))
+print(d['raw_response']['answers']['verdict']['choice'])
+")
+  [ "$fixture_verdict" = "fail" ] || {
+    echo "FAIL: fixture 內的 verdict 應為 fail（step 1 命中 fail 是 M6.3 的分布前提），got $fixture_verdict" >&2
+    return 1
+  }
+
+  make_us_m63_before
+  local dist
+  dist=$(m63_hermetic_env "$PY" -c "
+import json
+d = json.load(open('$BATS_TEST_TMPDIR/US-M63-before.json'))
+recs = d['records']
+blocked = sum(1 for r in recs if r.get('blocked'))
+print('%s|%s|%s' % (len(recs), d['verdict_counts'].get('fail', 0), blocked))
+")
+  [ "$dist" = "15|1|14" ] || {
+    echo "FAIL: US-M63 baseline 分布應為 15 筆 / fail=1 / blocked=14（step 1 命中版控 fixture、其餘無 key 被擋），got $dist" >&2
     return 1
   }
 }

@@ -228,6 +228,16 @@ def make_copy(root: Path, dest: Path) -> int:
         copied += 1
     # 讓副本自己有 .git：部分探針用 `git rev-parse --show-toplevel` 找 repo root
     subprocess.run(["git", "init", "-q"], cwd=dest, check=False)
+    # PoC 專用 venv 是 gitignored → 上面那輪複製不會帶進來。但需要 venv 的探針
+    # （M6.3 系列走 need_poc_venv）會在副本裡直接紅 → baseline 紅 → 整個突變套件死。
+    # 把原 venv 以 symlink 掛進副本：venv 是自解相對的（bin/python → base python，
+    # site-packages 由 pyvenv.cfg 定位），從任何路徑掛過去都可用。
+    venv_rel = "skills/regression-guard/PoC/.venv"
+    venv_src = root / venv_rel
+    venv_dst = dest / venv_rel
+    if venv_src.is_dir() and not venv_dst.exists():
+        venv_dst.parent.mkdir(parents=True, exist_ok=True)
+        venv_dst.symlink_to(venv_src.resolve(), target_is_directory=True)
     return copied
 
 

@@ -57,7 +57,6 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 > 讀不到使用者層的 `~/.qoder/AGENTS.md`；但 **Qoder CLI 會讀 `~/.qoder/AGENTS.md`**。
 > 所以要給 IDE 用請跑 `./install.sh --local`（或 `--target <專案>`）；
 > skills 兩種 scope 都能用（`~/.qoder/skills/` / `<專案>/.qoder/skills/`）。
-
 > 完整旗標（`--no-agents-dir`、`--source`、`--version` 等）與所有細節 →
 > [docs/install-reference.md](docs/install-reference.md)
 

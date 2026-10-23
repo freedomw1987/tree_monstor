@@ -235,7 +235,7 @@ description: |
 > | `<project>/AGENTS.md`（指向別處的 symlink） | 跳過 + 警告（不修、不刪） |
 > | `~/.qoder/skills`（指向你自己 skill 目錄的 symlink） | 不合併、不替換 + 警告 |
 > | `~/.qoder/skills/<name>`（指向別處的 symlink） | 跳過 + 警告（**不**重新指向、不刪），其他 skill 照常安裝 |
-
+>
 > ⚠️ 與 Claude／Pi 路徑的差異：Claude／Pi 的同名 skill 若是指向別處的 symlink，
 > 會被「repair」成指向本 repo；**Qoder 路徑不會**——你的 symlink 一律保留，
 > 安裝器只會警告並提示手動處理。
