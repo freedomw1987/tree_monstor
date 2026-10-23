@@ -442,17 +442,29 @@ M4 — Self-Evolution
 
 ### 5.2 全域安裝後
 
-```
-~/.pi/skills/
-└── dav-wiki/                        # symlink 到源碼
+> 路徑已於 TMO-069 對齊現行實作（Pi 早年的 `~/.pi/AGENTS.md` / `~/.pi/skills/` 是**錯的位置**，
+> pi 會靜默忽略；現行為 `~/.pi/agent/`）。
 
-~/.pi/AGENTS.md                      # 包含 SOP，含 dav-skill-creater 引用
+```
+~/.pi/agent/
+├── AGENTS.md                         # symlink → <source>/AGENTS.md（含 SOP，含 dav-skill-creater 引用）
+└── skills/
+    └── dav-wiki/                     # per-skill symlink 到源碼
+
+~/.qoder/
+├── AGENTS.md                         # symlink → <source>/AGENTS.md（Qoder CLI 使用者層記憶）
+├── skills/                           # per-skill symlink（merge，保留使用者原有 skills）
+└── agents/                           # per-file symlink（subagents；來源存在時才會裝）
 ```
 
 ### 5.3 Skill 安裝路徑
-跟 M1 install.sh 一致：symlink `tree_monstor/skills/dav-wiki/` → `~/.pi/skills/dav-wiki/`
+跟 M1 install.sh 一致：per-skill symlink `tree_monstor/skills/dav-wiki/` → `~/.pi/agent/skills/dav-wiki/`
+（Qoder 對應 `~/.qoder/skills/dav-wiki/`；專案層為 `<project>/.qoder/skills/<name>/`）。
 
 無需修改 install.sh（M1 的 per-skill symlink 機制已覆蓋）。
+
+> Qoder 專屬的「不覆寫使用者內容」規則見 [docs/install-reference.md](install-reference.md)
+> （`~/.qoder/AGENTS.md` 與 `~/.qoder/skills/` 皆只 merge、不覆寫）。
 
 ---
 

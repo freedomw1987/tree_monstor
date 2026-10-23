@@ -37,7 +37,7 @@ description: |
 
 | 旗標 | 說明 |
 |---|---|
-| `--agent <claude\|pi>` | 只裝給單一 agent（可重複；預設兩個都裝） |
+| `--agent <claude\|pi\|qoder\|all>` | 只裝給指定 agent（可重複；預設全部都裝）。名字錯了會直接 exit 2（不再默默略過） |
 | `--no-agents-dir` | 不裝到 `.agents/` 本機副本 |
 
 ### Source（選擇性）
@@ -77,11 +77,14 @@ description: |
 ### Examples
 
 ```bash
-# 最常見：全域裝給 Claude Code + Pi Agent
+# 最常見：全域裝給 Claude Code + Pi Agent + Qoder
 ./install.sh
 
 # 只裝給 Claude Code
 ./install.sh --agent claude
+
+# 只裝給 Qoder（IDE 使用者記得改用 --local / --target）
+./install.sh --agent qoder
 
 # 裝到當前專案（給整個 repo 用）
 ./install.sh --local
@@ -114,14 +117,19 @@ description: |
 ```text
 ~/.claude/
 ├── CLAUDE.md        ← wrapper，用 @ 引用 tree_monstor 的 AGENTS.md / SOUL.md
-├── skills → ~/path/tree_monstor/skills   (symlink)
+├── skills/          ← per-skill symlink（merge，保留你原有的 skills）
 └── sop/             ← gates.json / gates.schema.json / handbook/*.md（per-file symlinks）
 
 ~/.pi/
-├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink)
-├── SOUL.md   → ~/path/tree_monstor/SOUL.md     (symlink)
-├── skills    → ~/path/tree_monstor/skills      (symlink)
-└── sop/      ← 同 ~/.claude/sop/（gates + handbook，per-file symlinks）
+├── agent/
+│   ├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink)
+│   └── skills/   ← per-skill symlink（merge，保留你原有的 skills）
+└── sop/          ← 同 ~/.claude/sop/（gates + handbook，per-file symlinks）
+
+~/.qoder/
+├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink，Qoder CLI 使用者層記憶)
+├── skills/   ← per-skill symlink（merge，保留你原有的 skills）
+└── agents/   ← per-file symlink（subagents；來源存在時才會裝）
 
 ~/.agents/tree_monstor/   ← 完整副本（排除 .obsidian/.git/.DS_Store）
 ├── AGENTS.md
@@ -133,17 +141,35 @@ description: |
 
 ```text
 <project>/
+├── AGENTS.md → <tree_monstor>/AGENTS.md   (symlink；Qoder CLI 與 IDE 都讀)
 ├── .claude/
 │   ├── CLAUDE.md
-│   ├── skills → <tree_monstor>/skills
-│   └── sop/   ← gates + handbook symlinks
-├── .pi/
-│   ├── AGENTS.md → <tree_monstor>/AGENTS.md
-│   ├── SOUL.md   → <tree_monstor>/SOUL.md
-│   ├── skills    → <tree_monstor>/skills
+│   ├── skills/   ← per-skill symlink（merge，保留你原有的 skills）
 │   └── sop/      ← gates + handbook symlinks
+├── .pi/
+│   ├── agent/
+│   │   ├── AGENTS.md → <tree_monstor>/AGENTS.md
+│   │   └── skills/   ← per-skill symlink（merge，保留你原有的 skills）
+│   └── sop/      ← gates + handbook symlinks
+├── .qoder/
+│   ├── skills/   ← per-skill symlink（Qoder IDE 與 CLI 都讀）
+│   └── agents/   ← per-file symlink
 └── .agents/tree_monstor/
 ```
+
+> **Qoder 的 scope 差異（重要）**：
+>
+> | 路徑 | Qoder CLI | Qoder IDE |
+> |---|---|---|
+> | `~/.qoder/AGENTS.md` | ✅ 讀 | ❌ 不讀（IDE 只在工作區搜 `**/AGENTS.md`） |
+> | `<project>/AGENTS.md` | ✅ 讀 | ✅ 讀 |
+> | `~/.qoder/skills/` | ✅ 讀 | ❌ 不讀 |
+> | `<project>/.qoder/skills/` | ✅ 讀 | ✅ 讀 |
+>
+> 所以：**要給 IDE 用 → 跑 `--local` / `--target <專案>`**；
+> 只要 CLI 的使用者層記憶 → `--global` 即可。
+> 專案層的 `AGENTS.md` 若已經存在（專案自己擁有的），安裝器**不會覆寫**，
+> 會印出警告並提示你手動合併。
 
 ---
 
@@ -153,7 +179,7 @@ description: |
 
 | 安裝方式 | 優點 | 用途 |
 |---|---|---|
-| **Symlink**（`~/.claude/skills`、`~/.pi/AGENTS.md` 等） | 改源檔即時生效，零重複 | 主要給 agent 讀 |
+| **Symlink**（`~/.claude/skills`、`~/.pi/agent/AGENTS.md` 等） | 改源檔即時生效，零重複 | 主要給 agent 讀 |
 | **本機 copy**（`~/.agents/tree_monstor/`） | 符合 Claude Code 官方慣例 | 給 IDE、工具列舉用 |
 
 ### 冪等（Idempotent）
@@ -194,6 +220,25 @@ description: |
 - `~/.claude/CLAUDE.md` 含 `tree-monstor-loader:DO-NOT-EDIT` marker → 才刪
 - `~/.claude/user-notes.md`（你自己建的）→ **不動**
 - `~/.agents/tree_monstor/` → 刪
+- `~/.qoder/AGENTS.md` / `<project>/AGENTS.md` → **只刪「指向本 repo」的 symlink**；
+  你自己寫的 AGENTS.md（或指向別處的 symlink）→ **不動**
+- `~/.qoder/skills/<name>` → 只刪指向本 repo 的 per-skill symlink；
+  你自己的 skill → **不動**
+
+> **安裝時也不會動你的東西**（Qoder 路徑）：
+>
+> | 你已有的東西 | 安裝器的行為 |
+> |---|---|
+> | `~/.qoder/AGENTS.md`（自己寫的檔案） | 跳過 + 警告，提示你手動合併（**不會**讓安裝中斷） |
+> | `~/.qoder/AGENTS.md`（指向別處的 symlink） | 跳過 + 警告（不修、不刪） |
+> | `<project>/AGENTS.md`（自己寫的檔案） | 跳過 + 警告，提示你手動合併 |
+> | `<project>/AGENTS.md`（指向別處的 symlink） | 跳過 + 警告（不修、不刪） |
+> | `~/.qoder/skills`（指向你自己 skill 目錄的 symlink） | 不合併、不替換 + 警告 |
+> | `~/.qoder/skills/<name>`（指向別處的 symlink） | 跳過 + 警告（**不**重新指向、不刪），其他 skill 照常安裝 |
+
+> ⚠️ 與 Claude／Pi 路徑的差異：Claude／Pi 的同名 skill 若是指向別處的 symlink，
+> 會被「repair」成指向本 repo；**Qoder 路徑不會**——你的 symlink 一律保留，
+> 安裝器只會警告並提示手動處理。
 
 ### 排除規則
 

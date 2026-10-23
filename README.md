@@ -2,14 +2,14 @@
 
 [![CI](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml)
 
-`tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent 等）的**工作 SOP + skills**。
+`tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent、Qoder 等）的**工作 SOP + skills**。
 `install.sh` 把它 expose 到 agent 的讀取路徑（全域或專案層），以 symlink 為主，改源檔即時生效。
 
 ## Quick Start
 
 ```bash
 chmod +x install.sh        # 一次性（如果檔案沒執行權限）
-./install.sh               # 全域裝給 Claude Code + Pi Agent
+./install.sh               # 全域裝給 Claude Code + Pi Agent + Qoder
 ```
 
 ## 本機開發前置（想在這個 repo 跑測試才需要）
@@ -37,7 +37,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | `--global` | 裝到 `$HOME`（**預設**） |
 | `--local` | 裝到當前目錄 |
 | `--target <path>` | 裝到指定路徑 |
-| `--agent <claude\|pi>` | 只裝給單一 agent（可重複；預設兩個都裝） |
+| `--agent <claude\|pi\|qoder\|all>` | 只裝給指定 agent（可重複；預設全部都裝） |
 | `--uninstall` | 卸載（只刪腳本自己建的檔案/連結） |
 | `--dry-run` | 只印計畫，不實際執行 |
 | `--claude-skills-mode <merge\|replace\|skip>` | `~/.claude/skills` 已存在時的策略（預設 `merge`，保留你原有 skills） |
@@ -47,10 +47,16 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 ```bash
 ./install.sh --agent claude     # 只裝 Claude Code
+./install.sh --agent qoder      # 只裝 Qoder
 ./install.sh --local            # 裝到當前專案
 ./install.sh --dry-run          # 先預覽會做什麼
 ./install.sh --uninstall        # 卸載全域安裝
 ```
+
+> **Qoder 使用者注意**：Qoder 的 **IDE 只讀專案層 `AGENTS.md`**（在工作區內搜尋 `**/AGENTS.md`），
+> 讀不到使用者層的 `~/.qoder/AGENTS.md`；但 **Qoder CLI 會讀 `~/.qoder/AGENTS.md`**。
+> 所以要給 IDE 用請跑 `./install.sh --local`（或 `--target <專案>`）；
+> skills 兩種 scope 都能用（`~/.qoder/skills/` / `<專案>/.qoder/skills/`）。
 
 > 完整旗標（`--no-agents-dir`、`--source`、`--version` 等）與所有細節 →
 > [docs/install-reference.md](docs/install-reference.md)
