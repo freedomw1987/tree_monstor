@@ -126,7 +126,7 @@ load 'helpers/test-env'
   return 0
 }
 
-@test "RESTRUCT-AGENTS-MD: dev-task row + priority order still present in 2.0" {
+@test "RESTRUCT-AGENTS-MD: dev-task row and priority order present in 2.0" {
   local f="$REPO_ROOT/AGENTS.md"
   local sec
   sec=$(awk '/^### §2\.0/{f=1;next} /^### /{f=0} f' "$f")
@@ -206,7 +206,7 @@ load 'helpers/test-env'
     return 1; }
 }
 
-@test "RESTRUCT-AGENTS-MD: SOP changelog records v2.10 + review verdict" {
+@test "RESTRUCT-AGENTS-MD: SOP changelog records v2.10 and review verdict" {
   local c="$REPO_ROOT/docs/sop/handbook/changelog.md"
   grep -qF "## v2.10 — 2026-10-23" "$c" || {
     echo "FAIL: changelog should record the v2.10 entry" >&2; return 1; }

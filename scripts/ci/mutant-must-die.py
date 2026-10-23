@@ -9,7 +9,7 @@
 （TMO-066）表後來從 26 支擴到 39 支：同一套 harness 再收了 dav-wiki（缺工具不得降級 6 支）、
   探針機密遮罩（3 支）與 regression-guard（TTY fail-fast 四檔一致 4 支）的護欄 ——
   它們在此之前同樣只是「人工驗過一次」，驗完就沒有任何檢查記得。
-  二審（verdict `request-changes`）後再 +1 → **40 支**：SM-M1 重寫（舊版掉續行反斜線，
+  二審（verdict `request-changes`）後再 +1 → **42 支**：SM-M1 重寫（舊版掉續行反斜線，
   死因是 rc=127 parse error 而非遮罩失效）、DW-M5 由「文字契約鎖」升級為真行為鎖
   （收緊 `tests/wiki-ocr.bats` AC-O4／AC-O6 去驗 2／1）、新增 LK-M1（掃描器 `git ls-files -co` 改回 `-c`）。
   二審 F3 也把「等價突變／重複列／空欄／欄數」變成載入期就會 FAIL 的契約。

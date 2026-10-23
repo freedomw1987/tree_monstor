@@ -29,7 +29,7 @@
 #     現在 helper 的 sed 程式刻意寫成**單行**，mutant 才能一行換成 `cat`（真・直通）。
 #   * 新增 LK-M1：把掃描器的 `git ls-files -co --exclude-standard` 改回 `-c`（＝untracked 盲點回歸）；
 #     搭配 `lint-shell-var-nonascii.py --self-test` 新增的「未追蹤檔必須入列」契約，兩者一起紅。
-#   * 表 39 → 40 支。
+#   * 表 39 → 42 支。
 #
 # Usage:
 #   bats tests/mutant-must-die.bats

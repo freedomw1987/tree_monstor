@@ -121,7 +121,7 @@ load 'helpers/test-env'
   done
   # 子檔同步守門（第 1 輪 examples.md:109 同類殘留即漏網）
   local f
-  for f in examples.md time-anchor.md preflight.md; do
+  for f in examples.md time-anchor.md preflight.md resume.md; do
     local sub="$REPO_ROOT/skills/dav-trust/$f"
     local subbody
     subbody=$(awk '/^## 變動歷史/{f=1;next} /^## /{f=0} f && /^\| v[0-9]/{next} {print}' "$sub")
@@ -213,12 +213,81 @@ load 'helpers/test-env'
   assert_file_contains "$pf" "互動原型"
 }
 
-@test "RESTRUCT-DAV-TRUST: change history keeps at most 3 entries (v2.4 外移規範)" {
+@test "RESTRUCT-DAV-TRUST: change history keeps at most 3 entries (v2.4 rule)" {
   local skill="$REPO_ROOT/skills/dav-trust/SKILL.md"
   local n
   n=$(awk '/^## 變動歷史/{f=1;next} /^## /{f=0} f && /^\| v[0-9]/' "$skill" | wc -l | tr -d ' ')
   [ "$n" -le 3 ] || {
     echo "FAIL: 變動歷史 has $n entries (>3)" >&2; return 1; }
+  [ "$n" -ge 1 ] || {
+    echo "FAIL: 變動歷史 should have at least one entry" >&2; return 1; }
+}
+
+@test "RESTRUCT-DAV-TRUST: resume subfile exists with contract" {
+  local rs="$REPO_ROOT/skills/dav-trust/resume.md"
+  assert_path_is_file "$rs"
+  # 續跑契約：必須能從 trust-log 檔頭還原錨點 + 處理「已過 deadline」情境
+  assert_file_contains "$rs" "DEADLINE_TS"
+  assert_file_contains "$rs" "進度錨點"
+  assert_file_contains "$rs" "已過 deadline"
+  # 叫停契約：必須寫明行為序列與結束標記
+  assert_file_contains "$rs" "叫停"
+  assert_file_contains "$rs" "Trust Mode 已結束"
+  # 欄位名（checkpoint 契約的四個欄位）
+  local fld
+  for fld in "PHASE" "DONE" "NEXT" "UPDATED_AT"; do
+    assert_file_contains "$rs" "$fld"
+  done
+  # 掏空即紅（dav-wiki TMO-033 模式）：非空白行下限
+  local lines
+  lines=$(grep -c '[^[:space:]]' "$rs")
+  [ "$lines" -ge 40 ] || {
+    echo "FAIL: resume.md looks gutted (only $lines non-blank lines)" >&2
+    return 1
+  }
+}
+
+@test "RESTRUCT-DAV-TRUST: resume.md is tracked by git" {
+  git -C "$REPO_ROOT" ls-files --error-unmatch skills/dav-trust/resume.md >/dev/null 2>&1 || {
+    echo "FAIL: skills/dav-trust/resume.md must be tracked by git" >&2
+    return 1
+  }
+}
+
+@test "RESTRUCT-DAV-TRUST: main skill registers resume and stop rules" {
+  local skill="$REPO_ROOT/skills/dav-trust/SKILL.md"
+  # 規則表列全名（這兩個字串只出現在規則表；用泛字串會被變動歷史列餵飽 = 假綠）
+  assert_file_contains "$skill" "**中斷後續跑**"
+  assert_file_contains "$skill" "**用戶叫停立即收斂**"
+  # 規則表區段內必須真的出現（避免只存在於別處）
+  local rules
+  rules=$(awk '/^## 規則/{f=1} /^## 底線/{f=0} f' "$skill")
+  echo "$rules" | grep -qF "中斷後續跑" || {
+    echo "FAIL: rules section should register the resume rule" >&2; return 1; }
+  echo "$rules" | grep -qF "用戶叫停立即收斂" || {
+    echo "FAIL: rules section should register the stop rule" >&2; return 1; }
+  # 叫停必須分「結束 / 暫停」兩種語意（否則主檔與 resume.md 對「停」的定義相反）
+  echo "$rules" | grep -qF "暫停" || {
+    echo "FAIL: rules section should distinguish pause from end" >&2; return 1; }
+  assert_file_contains "$skill" "Trust Mode 已暫停"
+  # Step 1 產出必含進度錨點（沒有它 = 中斷後無從續跑）；區段限定，避免被變動歷史列餵飽
+  local s1
+  s1=$(awk '/^### Step 1/{f=1} /^### Step 2/{f=0} f' "$skill")
+  echo "$s1" | grep -qF "進度錨點" || {
+    echo "FAIL: Step 1 output should require writing the progress anchor" >&2; return 1; }
+  echo "$s1" | grep -qF "PHASE" || {
+    echo "FAIL: Step 1 output should list anchor fields" >&2; return 1; }
+}
+
+@test "RESTRUCT-DAV-TRUST: trust-log checkpoint carries progress anchor" {
+  local ta="$REPO_ROOT/skills/dav-trust/time-anchor.md"
+  assert_file_contains "$ta" "進度錨點"
+  # 欄位名也要守（只斷言「進度錨點」四字 = 過寬，探針咬不住）
+  local fld
+  for fld in "PHASE" "DONE" "NEXT" "UPDATED_AT"; do
+    assert_file_contains "$ta" "$fld"
+  done
+  assert_file_contains "$ta" "trust-log **檔頭**"
 }
 
 @test "RESTRUCT-DAV-TRUST: preflight subfile exists" {
@@ -235,7 +304,7 @@ load 'helpers/test-env'
   assert_file_contains "$skill" "need-you-help.md"
 }
 
-@test "RESTRUCT-DAV-TRUST: end-of-trust rule preserved (§9 equivalent)" {
+@test "RESTRUCT-DAV-TRUST: end-of-trust rule preserved (exit phrase)" {
   local skill="$REPO_ROOT/skills/dav-trust/SKILL.md"
   # v2.0: any of "退出 trust", "Trust Mode 已結束", "退出 Trust Mode"
   if grep -qF "退出 trust" "$skill"; then return 0; fi
