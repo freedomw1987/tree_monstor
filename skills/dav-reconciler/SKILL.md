@@ -118,6 +118,22 @@ python3 <安裝後的 skill 目錄>/scripts/check-doc-drift.py --root .
   run: python3 <skill 目錄>/scripts/check-doc-drift.py --root . --from-date 2026-10-26 --require-window-checks
 ```
 
+## Gate 定義（本節是 single source 之一；定義本體＝`docs/sop/handbook/2.3-execution.md` 的「Gate 4.5 需求對帳」段）
+
+> **進本 Gate 時必須在對話引用下表的 `mandatory_phrase`；不引用＝視為 gate 未觸發**（屬「偽裝通過」，依 SOP 的違規回報規則處理）。
+### Gate 4.5 需求對帳（§2.3 尾段子關卡）
+
+> Gate 4.5 是**內嵌子關卡**，不進 `docs/sop/gates.json`（該檔的 gate `id` 受 schema 限制，
+> 只允許整數編號的四大 Gate）。它的定義本體在 `docs/sop/handbook/2.3-execution.md` 的
+> 「Gate 4.5 需求對帳」段（本節為該段的 skill 端鏡像；`tests/gate-in-skill.bats` 鎖兩邊一致）。
+
+| 欄位 | 內容 |
+|------|------|
+| pass_criteria | ① 對帳表覆蓋錨點的全部 R-ID（覆蓋率 100%）② 由未參與實作的獨立 subagent 執行（降級須標註）③ 對帳結果帶入交付摘要，且交付狀態與對帳結果一致 |
+| required_evidence | ① 需求對帳表（落在目標專案的 reconcile 目錄）② 未參與實作的 subagent 對帳原文回傳 ③ 交付摘要的「需求對帳」段與覆蓋率 |
+| fail_action | 不可進入 §2.4 反省 |
+| mandatory_phrase | 依 §2.3 規範，Gate 4.5 (需求對帳) 需要：對帳表覆蓋全部 R-ID + 獨立 subagent 對帳原文 + 交付狀態與對帳結果一致，並在對話貼出對帳表與覆蓋率。|
+
 ## 變動歷史
 
 完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。

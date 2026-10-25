@@ -106,6 +106,22 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 506 行），見 [`jev-oracle.md`](./jev-oracle.md)。
 
+## Gate 定義（本節是 single source 之一；機器可讀副本 `docs/sop/gates.json`）
+
+> **進本 Gate 時必須在對話引用下表的 `mandatory_phrase`；不引用＝視為 gate 未觸發**（屬「偽裝通過」，依 SOP 的違規回報規則處理）。
+### Gate 3 regression gate
+
+| 欄位 | 內容 |
+|------|------|
+| pass_criteria | ① 探針埋好（記錄關鍵 state / 行為 / boundary）② 完整測試套件跑過 |
+| required_evidence | ① 修改前 baseline（完整測試套件 output，含 pass/fail 計數）② 修改後 output（完整測試套件 output）③ Diff 對比（既有測試結果一致 + 新探針如預期觸發）|
+| fail_action | 不可聲稱『做完了』 |
+| mandatory_phrase | 依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 完整測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。|
+
+> 機器可讀副本：`docs/sop/gates.json`（`tests/gate-in-skill.bats` 鎖兩邊逐條一致）。
+>
+> 測試指令必須禁用 interactive / watch 模式（詳見上方 TTY fail-fast 對照表）。
+
 ## 變動歷史
 
 完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。

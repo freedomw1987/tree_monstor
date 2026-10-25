@@ -90,15 +90,46 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 - **dev-checker-loop** → TDD 開發-校驗循環
 - **regression-guard** → Gate 3 跑測試（禁用 watch 模式）
 
+## Gate 定義（本節是 single source 之一；機器可讀副本 `docs/sop/gates.json`）
+
+> 本節涵蓋 `name`／`pass_criteria`／`required_evidence`／`fail_action`／`mandatory_phrase` 五欄
+> （`notes` 與 `remediation` 仍在 `gates.json` 與 handbook 2.3）。
+> **進本 Gate 時必須在對話引用下表的 `mandatory_phrase`；不引用＝視為 gate 未觸發**（屬「偽裝通過」，依 SOP 的違規回報規則處理）。
+> 2026-10-26 起 AGENTS.md 不再內嵌 SOP / Gate 表（只留「你是誰 + 萬事原則」）→
+> Gate 的定義改由**承載它的 skill** 負責，讓 skill 自足。`tests/gate-in-skill.bats` 鎖兩份一致。
+
+### Gate 1 TDD gate
+
+| 欄位 | 內容 |
+|------|------|
+| pass_criteria | ① 測試可運行　② 看到「先紅後綠」（失敗 → 通過）|
+| required_evidence | ① 測試執行指令（如 pytest / bats / npm test）② 失敗輸出（修改實作前的測試失敗訊息截錄）③ 通過輸出（修改實作後的測試通過訊息截錄）|
+| fail_action | 不可寫實作 code |
+| mandatory_phrase | 依 gates.json 規範，Gate 1 (TDD) 需要：測試先紅後綠，並在對話貼出「測試執行指令 + 失敗輸出 + 通過輸出」。|
+
+> 純文件 / 配置改動可豁免，但須在交付摘要註明「無 TDD 需求」。
+
+### Gate 2 lint / syntax gate
+
+| 欄位 | 內容 |
+|------|------|
+| pass_criteria | 對應語言的 linter 0 error / 0 warning |
+| required_evidence | linter 完整 output（不可只說「過了」）|
+| fail_action | 不可繼續寫更多 code |
+| mandatory_phrase | 依 gates.json 規範，Gate 2 (lint / syntax) 需要：對應語言的 linter 0 error / 0 warning，並在對話貼出 linter 完整 output。|
+
+> Gate 2 沒有專屬 skill（`gates.json` 的 `trigger_skill: null`）→ 由本 skill 承載。
+> bash/sh → shellcheck；python → ruff check 或 `python -m py_compile`；其他語言用對應工具。
+
 ## 變動歷史
 
 完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-10-05 | 流程 6 步／觸發時機壓成表格、移除重複段（149 → 105 行） | TMO-046：主檔行數預檢（150 上限） |
 | v2.1 | 2026-09-26 | 重結構為「任務導航」+ 純文字引用 | TMO-009 階段 8：LLM 注意力優化 + skill 獨立搬動 |
 | v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-| v2.2 | 2026-10-05 | 流程 6 步／觸發時機壓成表格、移除重複段（149 → 105 行） | TMO-046：主檔行數預檢（150 上限） |
 
 **交叉引用（純文字）**：
 - 測試結構示例 → 同套本 skill 子檔（`./examples.md`）

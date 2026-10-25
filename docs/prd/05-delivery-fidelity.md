@@ -3,7 +3,7 @@
 **版本**：v1.0
 **日期**：2026-10-26
 **Backlog**：TMO-071 / TMO-072 / TMO-073
-**SOP 版本**：v2.2（四道大 Gate 定義不動；新增 §2.3 內嵌子關卡「Gate 4.5 需求對帳」）
+**SOP 版本**：v2.2（當時值；該版本號軌已於 2026-10-26 隨 `AGENTS.md` §2 移除。四道大 Gate 定義不動；新增 §2.3 內嵌子關卡「Gate 4.5 需求對帳」）
 **階段數**：3 階段（錨點 → 對帳 → 探針），每階段獨立可交付
 
 ---
@@ -216,16 +216,16 @@
 | `skills/dav-reconciler/`（新） | SKILL.md（≤150 行）+ `reconcile-format.md` + `examples.md` | 新建 |
 | `docs/sop/handbook/2.3-execution.md` | 新增「Gate 4.5 需求對帳」段落 | V03 二審 |
 | `docs/sop/handbook/2.4-reflection.md` | 前置說明（對帳 → 反省） | V03 二審 |
-| `AGENTS.md` §2.3 | Gate 速查表加 Gate 4.5 一列 | V03 二審 |
+| `AGENTS.md` §2.3（已於 2026-10-26 移除）| Gate 速查表加 Gate 4.5 一列 | V03 二審 |
 | `docs/sop/gates.json` | **不動**（見 §7 ADR-D1） | — |
 | `docs/ac/README.md` | 命名規範補 `TMO-<nnn>` 形式（本次新 AC 檔用此形） | — |
 | `scripts/ci/check-doc-drift.sh` + `tests/doc-drift.bats` + `.github/workflows/ci.yml` | 探針與 CI | Gate 1/2/3 |
 
-### 主檔行數預檢（V03.5）
+### 主檔行數預檢（原 V03.5；2026-10-26 起併入 `AGENTS.md` §1.5 的 V03）
 
 | 檔 | 現況 | 預估 | 上限 |
 |----|------|------|------|
-| `AGENTS.md` | 112 行 | **121 行**（實際） | 150 |
+| `AGENTS.md` | 112 行 | **121 行**（當時實際；現 35 行）| 150 |
 | `skills/dav-planner/SKILL.md` | 129 行 | **140 行**（實際） | 150 |
 | `skills/dav-submitter/SKILL.md` | 現況 | +6 | 150 |
 | `skills/dav-reconciler/SKILL.md` | 新建 | **120 行**（實際） | 150 |
@@ -254,11 +254,13 @@
 - **背景**：`docs/sop/gates.json` 的 schema 限定 gate `id` 符合 `^gate-[0-9]+$`（整數），而「需求對帳」是排在 Gate 4 之後、
   §2.4 之前的**子關卡**，不是第五道大 Gate。gates.json v1.1.0 曾移除 Gate 5（RSI 機制歸檔）——那是「整道 Gate 從流程上消失」，
   與本案的「在同一階段內加一道子關卡」性質不同。
-- **決策**：Gate 4.5 定義寫在 `docs/sop/handbook/2.3-execution.md`（§2.3 內嵌子關卡），並在 `AGENTS.md` §2.3 速查表加一行
-  （標明「§2.3 子關卡，非 gates.json 項」）。`gates.json` 本次**不動**。
-- **代價**：`gates.json` 不再是「所有關卡的 single source of truth」——四道大 Gate 仍是 SSOT，子關卡的 SSOT 在 handbook §2.3。
+- **決策**：Gate 4.5 定義寫在 `docs/sop/handbook/2.3-execution.md`（§2.3 內嵌子關卡）。`gates.json` 本次**不動**。
+  （2026-10-26 更新：`AGENTS.md` 已不再內嵌 Gate 速查表，Gate 4.5 的登記點改為 handbook §2.3 ＋ `skills/dav-reconciler/SKILL.md`）
+- **代價**：`gates.json` 不再是「所有關卡的 single source of truth」。
+  （2026-10-26 更新：四道大 Gate 的**定義本體**已改由各自承載它的 skill 負責，`gates.json` 為機器可讀副本；
+  子關卡的定義本體在 handbook §2.3。）
   接受此代價：動 schema（放寬 id 格式）代價更高，且會讓「Gate 5 曾被移除」的歷史更難辨識。
-- **影響**：AGENTS.md §2.3 速查表 + handbook §2.3 必須同步（V03 二審項）。
+- **影響**：handbook §2.3 + 承載它的 `skills/dav-reconciler/SKILL.md` 必須同步（V03 二審項；2026-10-26 起 AGENTS.md 不再內嵌速查表）。
 
 ### ADR-D2：對帳表獨立成 `docs/reconcile/<US-ID>-reconcile.md`
 
@@ -307,7 +309,7 @@
 
 - [x] `skills/dav-reconciler/` 主檔 ≤150 行（120 行）、frontmatter 齊全、5 段導航、純文字引用
 - [x] 對帳表格式 + 硬門檻規則已登錄（dav-submitter v2.5 + `template.md` §3.1）
-- [x] handbook §2.3 / §2.4 + AGENTS.md §2.3 已登錄 Gate 4.5（`gates.json` 刻意不動，見 ADR-D1）
+- [x] handbook §2.3 / §2.4 已登錄 Gate 4.5（`gates.json` 刻意不動，見 ADR-D1）；2026-10-26 起改由 `skills/dav-reconciler/SKILL.md` 承載
 - [x] `bats tests/restruct-dav-reconciler.bats` 綠（16 條）
 
 ### 階段 3（TMO-073）

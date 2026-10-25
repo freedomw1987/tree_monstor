@@ -1,11 +1,42 @@
 # §3 CHANGELOG（SOP 異動紀錄）
 
-> 本檔是 AGENTS.md §3 的詳細內容。引用：`[§3 CHANGELOG](./sop/handbook/changelog.md)`
+> 本檔是 SOP 的異動紀錄（2026-10-26 起 `AGENTS.md` 已不再內嵌 SOP 與變動歷史）。引用：`[CHANGELOG](./sop/handbook/changelog.md)`
 >
-> 追蹤 AGENTS.md §2 SOP 的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
+> 追蹤 SOP（handbook ＋ 各 skill）的所有重大異動，便於 audit 與回溯。每筆異動需註明版本號、日期、變更內容與原因。
 >
 > ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
-> 與 `AGENTS.md` §2 標題的 **SOP 版本號**（不同軌）不是同一個序號 —— 兩者不可互相比較大小。
+> 與舊 `AGENTS.md` §2 標題的 **SOP 版本號**（已於 v2.14 隨 §2 移除）不是同一個序號 —— 兩者不可互相比較大小。
+
+## v2.14 — 2026-10-26
+
+**本版異動**：把 SOP 從 `AGENTS.md` 移出 —— AGENTS.md 只留「你是誰 + 萬事原則 + 3 條行為紀律」；
+Gate 的**定義**改由各自承載它的 skill 負責，讓 skill 自足；並新增探針鎖兩份一致。
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | --- |
+| **P0** | `AGENTS.md` 121 → 35 行 | 刪 §2 SOP 全部（§2.0 分流表／§2.3 Gate 速查表／§2.x 索引／變動歷史）。保留 §1 萬事原則（SOUL 7 條須逐字在場，有探針）＋ §1.5 三條行為紀律（V01／V02／V03）。**預設不再強制跑流程** |
+| **P0** | Gate 定義進各自的 skill | `tdd-test-writer` 收 Gate 1 TDD ＋ Gate 2 lint（gate-2 無專屬 skill）；`regression-guard` 收 Gate 3；`dev-checker-loop` 收 Gate 4；`dav-reconciler` 收 Gate 4.5。每節含 name／pass_criteria／required_evidence／fail_action／mandatory_phrase |
+| **P1** | 新增 `markdownlint-guard.bats` **MLG-10／MLG-10b** | 掃**全部 git 追蹤檔**（不用副檔名白名單——白名單會漏 `.bash`／`.tsv`／`.jsonc`／`.ts`／無副檔名檔）必須能嚴格 UTF-8 解碼；二進位以兩層跳過（① 已知二進位副檔名前置過濾 ② 解碼失敗且前 8KB 含 NUL）；`scanned ≥ 150` 防空過；MLG-10b 內建自證（壞檔必紅／好檔必綠／含 NUL 不誤報）。**為什麼要**：本次用 `sed` 做多檔數字替換時把 `changelog.md` 一行打成非法 UTF-8，而 markdownlint（0 issues）與 `bats tests/`（全綠）**都攔不到** → 會靜默出貨 |
+| **P0** | 新增 `tests/gate-in-skill.bats` | 鎖「skill 內的 Gate 定義 == `gates.json` 逐條一致」（gate-1..4）＋「Gate 4.5 的 mandatory_phrase 與 handbook 2.3 一字不差」；含比對器自證（5 個欄位各掉一輪必紅、完整版必綠、`gates.json` 欄位被清空必紅）。另新增 `agents-md.bats` TD-017 AC-4／AC-4b：live 文件不得再導向已移除的 §2（① 同行寬鬆 pattern ② **區段式**：標題點名 AGENTS.md → 區段內任何 §2 皆違規 ③ 每個 glob 家族各自非空 ＋ AC-4b 五情境自證；含 `README`／`CONTRIBUTING`）|
+| **P1** | 交叉引用修正 **17 個檔案** | handbook 7 章自我描述改「SOP §2.X」；handbook 2.1／2.2／2.6 的 trust 與分流交叉引用改指 `skills/dav-trust/preflight.md`；`dav-planner/SKILL.md` 的「§2.0 啟動後」；`docs/system-design.md`；`editor-guide.md` 的 V03.5 同源；PRD 05；`docs/ac/` 的 `.md`＋`.html`；`docs/reconcile/TMO-072`／`TMO-073`；**`README.md`**；**`CONTRIBUTING.md`** |
+| **P1** | 補回原 TD-016 的義務 | 「進入每個 Gate 時必須在對話引用該 Gate 的 `mandatory_phrase`；不引用＝視為 gate 未觸發（偽裝通過，§2.7 違規）」寫進 handbook 2.3「Agent 必做動作」＋ 4 支 Gate skill 的 Gate 段各一行（原本只放在 AGENTS.md §2.3，搬走後無家）|
+| **P1** | V03 補回原有子句 | 新 §1.5 V03 補回「具名 `/skill:dev-checker-loop`」「風險分級 ＋ 跨 SOP 一致性檢查」「用戶可明說『跳過 Reviewer』直接批准」＋「探針（`tests/**/*.bats`）修改比照辦理」；原 V03.6 的「條件放寬」三定義移入 `skills/dav-skill-creater/editor-guide.md` |
+| **P1** | `gates.json`／`gates.schema.json` 描述更新 | 原寫「AGENTS.md §2.3 會自動引用」→ 改為「Gate 定義另外落在各自的 skill；本檔為機器可讀副本，兩邊都要改」 |
+| **P1** | 探針調整（皆為強化，**無一放寬**） | `agents-md.bats`：TD-017 AC-1 上限 200 → **60** 行；TD-017 AC-2 改「不再內嵌 Gate 表＋須指名 4 支承載 skill」；TD-018 AC-6 改「AGENTS.md 自足」；SOUL-3 段落範圍不綁 §1.5 節名；SKILL-REF-2 改掃全 repo 文件面的 `/skill:` 引用（原版已成 0 迭代空過）。`restruct-dav-reconciler.bats` RECON-012 改「Gate 4.5 登記在承載它的 skill」 |
+
+**數字變化**：`AGENTS.md` 121 → **35 行**；`tests/*.bats` 42 → 43 檔、探針 646 → **654** 支；
+4 支 skill 行數 105／133／129／128 → 136／149／146／144（皆 ≤ 150）；改動檔 **36** 個（4 A／32 M／**0 D**）；**門檻一個都沒放寬**。
+
+> 口徑說明：探針數 = `bats --count tests/`。
+
+**決策紀錄**：
+- **SOP 只是從 AGENTS.md 移出，不是刪掉 SOP**：handbook／`gates.json`／5 個 SOP skill／`install.sh` 的 sop 安裝
+  **全部原地保留**。改變的是「預設」，需要時才由 skill 自己觸發
+- **Gate 定義跟著 skill 走**：skill 被觸發時就看得到「什麼叫通過、要貼什麼證據、不通過會怎樣」
+- **不禁用第二份定義，改用探針鎖一致**：`gates.json` 保留為機器可讀副本（install 會裝、schema 會驗）
+- **V03 保留一條**：15 處 skill 引用 V03（改 SOP／skill 必走二審）。它不是流程步驟，是規範修改的品質紀律 → 留在 §1.5 一行
+
+**前置**：V03 Reviewer 二審（見交付摘要）
 
 ## v2.13 — 2026-10-26
 
@@ -400,6 +431,7 @@ v1.2 的集合等值會把它判為違規 → **mutant 死**。這支 mutant 正
   而 Gate 4.5 是排在 Gate 4 之後、§2.4 之前的**子關卡**，不是第五道大 Gate。gates.json v1.1.0 曾移除
   Gate 5（RSI 機制歸檔）——那是「整道 Gate 從流程上消失」，與本案性質不同。
   **代價**：gates.json 對「子關卡」不再 SSOT（四道大 Gate 仍是）→ 已在 ADR-D1 與 handbook 明文化。
+  【事後註記 2026-10-26 v2.14：四道大 Gate 的**定義本體**已改由各自承載它的 skill 負責，`gates.json` 為機器可讀副本。】
 - **為什麼對帳狀態要有第 4 種「已作廢」**：規劃階段允許「需求被砍掉」（R-ID 不可刪），
   若對帳只有 3 種狀態，被砍的需求會永遠卡住交付 → 死結。加「已作廢」後：仍須列出（不可省略），
   但不列入交付狀態判定。
@@ -449,8 +481,8 @@ v1.2 的集合等值會把它判為違規 → **mutant 死**。這支 mutant 正
 - **本次未動**：`dav-planner` / `dav-designer`（trust 內本來就不跑它們）、`gates.json`（4 Gate 定義與 schema 不變；
   trust 例外寫在 §2.3 handbook，不改 schema）、`docs/sop/handbook/2.5-submission.md`（無強制用戶確認步驟）、
   `docs/system-design.md`（歷史設計文件，非 SOP 規範）
-- **下次升版待辦（避免漏改）**：SOP 版本字串 `v2.2` 目前硬編於 `AGENTS.md`（§2 標題 + 變動歷史）與
-  `docs/prd/05-delivery-fidelity.md` 共 3 處 → 下次升版需同步
+- **下次升版待辦（避免漏改）**：SOP 版本字串 `v2.2` 當時硬編於 `AGENTS.md`（§2 標題 + 變動歷史）與
+  `docs/prd/05-delivery-fidelity.md` 共 3 處。**2026-10-26 更新：`AGENTS.md` 的 2 處已隨 §2 移除，只剩 PRD 05 1 處。**
   （原註記提到的守版探針 `tests/restruct-agents-md.bats` 已於 v2.13 隨 meta 探針減法刪除）
 
 ---
