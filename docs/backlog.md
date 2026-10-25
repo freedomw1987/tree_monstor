@@ -76,6 +76,8 @@
 | TMO-065 | **突變測試是一次性人工動作**（2026-10-05 TMO-063／064 收尾揭露）→ **已完成**：pptx-slim 的 26 支 mutant（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）原本靠手動種、手動驗，事後沒有任何檢查記得「這些 gate 曾經被證明咬得住」。新增 `scripts/ci/mutants.tsv`（每列＝目標檔＋整行原文＋替換＋探針檔＋探針名）＋ `scripts/ci/mutant-must-die.py`（在**副本**上套突變：`git ls-files -co --exclude-standard` → tmp 目錄 → 精確替換（錨點必須恰好 1 次，對不上＝FAIL 非 skip）→ 對應探針必須變紅；每支都先跑「未突變必須綠」的 baseline，否則「紅」只代表探針壞了；事後比對目標檔 md5 自證 working tree 零改動）＋ `tests/mutant-must-die.bats`（MMD-1..5：表的契約（門檻 39 支；TMO-066 起含 dav-wiki／regression-guard）／真的在副本上殺 mutant／mutant 活著要回報失敗／錨點腐化要大聲壞／CI 真的跑全表且不得用 shell 兩條直線的 OR 短路假綠，也不得 `--list`、`--only`、`--no-baseline`、`continue-on-error`）＋ CI 步驟 `Verify probes still kill mutants`。**第一次實跑就抓到 2 個真的空過**：①G1（新檔 CRC 壞掉）沒有任何探針咬得住 → 補 `tests/pptx-slim.bats` PPTX-SLIM-12（raw-patch 一個 STORED 媒體的 byte 令 central directory 的 CRC 對不上）；②FF-M3（把能力實測的 `-vf scale=...` 換成 `-vf null`）FV-8 照樣過 → 補 `tests/ffmpeg-version.bats` FV-9（把檢查腳本送的字串與 `scale_filter(1920)` 綁死） | P3 | 3 | done (2026-10-05) | TMO-063, TMO-064 |
 | TMO-066 | **其他 skill 的護欄沒有 mutant**（TMO-065 限制①自陳）→ **已完成**：把兩個 skill 的人工驗證記錄裡可字串化重現的 13 支補進同一張表（26 → 40 支；二審後再 +1）——**dav-wiki 6 支**（缺 ffmpeg／poppler／python3 三條硬退 4 不得降級、限制表不得承諾降級為純文字、OCR 不得再宣稱 `exit 4`、`--purge` 預設不得真刪除）、**探針機密遮罩 3 支**（共用 `mask_secrets` 改直通、掃描器 R2 停用、探針自己重定義一份）、**regression-guard 4 支**（runner 對照表拿掉 `jest --ci`、gates.json Gate 3 拿掉 regression-guard 交叉引用、handbook 拿掉 `< /dev/null`、SKILL.md 拿掉對 runner 對照表的指標）；**掃描器範圍鎖 1 支（二審 F4）**（`lint-shell-var-nonascii.py` 的 `git ls-files -co --exclude-standard` 改回 `-c`）；MMD-1 門檻 26 → 40，並把 dav-wiki／regression-guard 的目標檔列入「必須被覆蓋」清單 | P2 | 3 | done (2026-10-05) | TMO-065 |
 | TMO-068 | **dav-trust 缺「中斷續跑 / 用戶叫停」機制**（2026-10-23 dav-trust v2.3 交付報告 §7 自陳）→ **已修**（2026-10-23）：新增 `skills/dav-trust/resume.md`（續跑決策樹 / checkpoint 契約 / 叫停 7 步行為序列 / 邊界）+ trust-log 檔頭「進度錨點」（PHASE / DONE / NEXT / UPDATED_AT）+ 主檔規則表 2 列（「中斷後續跑」「用戶叫停立即收斂」）+ `time-anchor.md` 欄位規範 + `examples.md` §8 實戰範例；探針 `tests/restruct-dav-trust.bats` 23 → 27 條（含「掏空即紅」與「resume.md 已入版控」）；並登記 3 支 mutant（`scripts/ci/mutants.tsv` DT-M1/DT-M2/DT-M3）證明探針真的會咬；V03 Reviewer 二審 2 輪（皆 ❌：第 1 輪 1 P0 / 5 P1 / 13 P2、第 2 輪 3 P1 / 9 P2）全數處置，結論見 `skills/dav-trust/CHANGELOG.md`「v2.4 二審結論」節| P1 | 3 | done (2026-10-23) | — |
+| TMO-069 | **install.sh 不支援 Qoder**（2026-10-23 用戶委託：「install.sh 可以為 qoder 都安裝」）→ **已修**（2026-10-23）：① `install.sh` 的 agent 白名單與預設清單加入 `qoder`（`--agent` 可重複、支援 `all`、未知名稱直接 `exit 2`）；② 新增 `lib/install/agents.sh::install_qoder()`——全域裝 `~/.qoder/AGENTS.md`（Qoder CLI 使用者層記憶）＋ `~/.qoder/skills/<name>` per-skill merge；專案層裝 `<project>/AGENTS.md` ＋ `<project>/.qoder/skills/<name>`（CLI 與 IDE 都讀）；③ 新增 `ensure_symlink_if_absent()` 與 Qoder 專屬守衛——使用者自有的 `AGENTS.md`／`skills`（**含指向別處的 symlink**）一律不覆寫、不 repair，只警告；④ 新增 `uninstall_qoder()` ＋ `remove_symlink_to()`——卸載只刪「指向本 repo」的 symlink；⑤ 探針 `tests/install-qoder.bats` 31 條 ＋ `tests/env-equivalence.bats` ENV-EQ-20 1 條（install.sh 必須在每個本機 bash 版本下跑得過，含 macOS 內建 bash 3.2）；⑥ Gate 4 reviewer **三輪**（`request-changes` → `approve-with-comments` → `approve`），三輪共 21 條發現全數處置（完整審查軌跡見交付 `docs/deliverable/2026-10-23-tmo-069-qoder-support.md`）；⑦ 已知限制：**Qoder IDE 不讀使用者層 `~/.qoder/AGENTS.md`**（IDE 只在工作區搜 `**/AGENTS.md`），IDE 使用者須跑 `--local` / `--target`；全域安裝時腳本會主動提示此點 | P1 | 3 | done (2026-10-23) | — |
+| TMO-070 | **M6.3-c／M6.3-e 間歇紅的真因是 process-randomized `hash()`**（TMO-066 收尾記為「候選：尚未開票」，當時的推測是「把 elapsed／timestamp 從 state 抽掉」→ **推測有誤**）→ **已修**（2026-10-23）：① 真因在 `skills/regression-guard/PoC/journey_runner.py` 的 `elapsed = 500 + (hash(step.id) % 1500)`——Python 對 str 的 `hash()` 受 `PYTHONHASHSEED` 隨機化影響，**每個行程都不同** → `elapsed_ms` 每次不同 → oracle payload（含 `Elapsed: N ms`）每次不同 → `jev_oracle._cache_key()` 每次 miss → 真正打網路／分佈漂移 → `re_validate._classify()` 誤判 `regression`（rc=2）；修法＝新增 `stable_step_offset()`（`hashlib.sha256(step_id).digest()` 前 4 bytes % 1500），`mock_observe()`／`ac_aware_observe()` 皆改用它；② M6.3 系列 10 處 oracle 呼叫全數改走 `m63_hermetic_env()`（`env -u OPENROUTER_API_KEY` ＋ `JEV_CACHE_DIR=$POC_DIR/cache-fixtures` ＋ `JEV_ENV_FILE=/dev/null`）→ 完全離線、不碰本機暖快取與 `.env`，約 0.1 秒跑完（原會打 3 次網路重試 ≈ 4.6 秒）；③ 新增版控離線 fixture `skills/regression-guard/PoC/cache-fixtures/bbfaa5bfe583507a.json`（US-M63 step 1，verdict=fail，elapsed_ms=1729）＋ README 索引與重錄流程；④ 補 **7 支 mutant**（`scripts/ci/mutants.tsv` QD-M1..QD-M6 ＝ Qoder 安全契約：foreign symlink 不得被重新指向、per-skill `protect_foreign` 不得失效、使用者實體 `AGENTS.md` 不得被刪、未知 `--agent` 必須 `exit 2`、卸載不得刪 foreign symlink、dry-run 不得寫檔；RG-M5 ＝ `stable_step_offset()` 退回內建 `hash()` 必須被 M6.3-m 咬住）——全表 43 → **50 支全死**；⑤ 新增兩條**確定性**探針（M6.3-m：兩個不同 `PYTHONHASHSEED` 下 offset 必須相同且等於 1229；M6.3-n：US-M63 step-1 的 cache key 必須等於版控 fixture 檔名 `bbfaa5bfe583507a`）——把「根因修正」從「靠不 flake 間接證明」升級為「改回去必紅」；⑥ 突變 harness 加一項：副本內 symlink 原 PoC venv（gitignored → 原本進不了副本 → 需 venv 的探針 baseline 會紅）；⑦ `CONTRIBUTING.md` 新增「改共用程式碼的兩條規則」（共用 helper 的守衛行為→**加參數不改共用預設**；會進 oracle payload 的欄位→**必須跨行程穩定**）並更新 mutant 數字；⑧ **收尾（2026-10-24）**：實作階段新寫的 2 行 `echo "…（$out1）"` 把 `$out1` 緊接全形括號 → 被本專案自己的守門 **ENV-EQ-17** 咬住（bash 3.2 + UTF-8 locale 吞首位元組）→ 改 `${out1}`（2 處），並補交付報告 `docs/deliverable/2026-10-24-tmo-070-jev-flake-root-cause.md`；驗收：`bats tests/` **735 ok / 0 not ok**、突變 harness **50 支全死**、Gate 2 全綠 | P1 | 3 | done (2026-10-23 實作，2026-10-24 收尾) | TMO-066 |
 | TMO-071 | **需求錨點檔（`docs/req/<US-ID>-requirement.md`）** — 解決「用戶原話在多文件 pipeline 中被 AI 改寫後失真」：新增框架可攜的需求錨點檔（`## 用戶原話（唯讀）` + `## 澄清後驗收句` 兩段式），dav-planner 產 US 時同步生成；原話區為唯讀約定（後續階段只讀不改）；存量 US 不回補 | P1 | 3 | done (2026-10-26) | — |
 | TMO-072 | **需求對帳機制（新 skill `dav-reconciler`）** — 解決「最終成果對不上需求」：由**未參與實作的獨立 subagent** 拿（需求錨點 + 最終變更清單）產出「需求對帳表」（每條需求 → 實作位置 / 遺漏 / 偏離原因）；對帳有遺漏或偏離時**硬門檻**：不得宣稱「✅ 完成」，只能標「⚠️ 部分完成」並列出待補；觸發點在 §2.4 反省之前 | P1 | 5 | done (2026-10-26) | TMO-071 |
 | TMO-073 | **文件漂移探針（8 類字面對帳 D1..D8）** — 解決「同一件事多份文件各說各話」：新增可攜 CI 腳本 `scripts/ci/check-doc-drift.sh` + 探針 `tests/doc-drift.bats`（含突變測試），檢查 ①`docs/ac/*.md` 狀態 vs backlog 狀態 ②AC 編號連續且唯一（AC01..ACn） ③PRD 追溯矩陣 ID ⊆ backlog ID ④deliverable 提到的檔案真的存在 ⑤`ac/*.md` 與 `ac/*.html` 狀態一致 ⑥AC 範本 ↔ 需求錨點對應 ⑦對帳表 R-ID 覆蓋 + 狀態值合法 + 已交付必對帳 ⑧交付摘要對帳段 ↔ 權威對帳表一致；存量不一致項進白名單豁免（不誤紅） | P2 | 5 | done (2026-10-26) | TMO-071 |
@@ -602,9 +604,37 @@ dav-trust，以及 dav-wiki 的 cross-ref／cleanup 進階路徑）；②跨檔�
 | F5 | P1 | DW-M6 `PURGE=true` 可能真刪使用者檔 | **查核後確認安全**：`TO_CLEAN[].f` 全部來自 `find "$WIKI_DIR"`，而 `WIKI_DIR` 是探針自己的 `mktemp -d`；已寫入 deliverable §5 |
 | P2-1 | P2 | RG-M2 錨點去掉了 `regression-guard`，與測名對不上 | 見 deliverable §4.4（附查核結果） |
 | P2-2 | P2 | SM-M3 換掉 `load` 會連帶抽掉 `REPO_ROOT`/PATH 設定 | 見 deliverable §4.4（附查核結果） |
-| P3-1 | P3 | `awk NF==4` 與 `grep -c .` 兩濾網不一致 | 欄數契約進載入期後，`--list` 每行必為 6 欄 ⇒ `awk NF==4`（只取 4 欄者）不再會漏掉壞列；MMD-1 **不再自寫第二套結構檢查**（避免與 runner 漂移），結構類改由 MMD-6 拿合成表實測 |
+| P3-1 | P3 | `awk NF==4` 與 `grep -c .` 兩濾網不一致 | 欄數契約進載入期後，`--list` 每行必為 **4 欄**（id／目標檔／探針檔／探針名；表本身仍是 6 欄）⇒ `awk NF==4` 不再會漏掉壞列；MMD-1 **不再自寫第二套結構檢查**（避免與 runner 漂移），結構類改由 MMD-6 拿合成表實測。⚠️ 第 2 輪二審 #3 抓到：本表原寫「每行必為 6 欄」＝**寫錯**（`--list` 是 4 欄），照它去改 `awk` 會弄壞 MMD-1，已更正 |
 | P3-2 | P3 | 跨 skill 清單是手寫 spot list、只驗 target | 已在 deliverable §4.4 明寫此為已知邊界 |
 
+### TMO-066 二審處置（第 2 輪：只審「處置 delta」）
+
+第 1 輪二審看的是**修正前**的版本；本輪處置動到／新增了鎖（`AC-O4`／`AC-O6` 收緊、MMD-6、LK-M1、
+two mutants 換錨點），這些 delta 未經二審 → 再跑一次 V03（`reviewer` subagent，可自行讀 repo／跑唯讀
+指令來反驗證；verdict = **`request-changes`**）。三條 finding 與處置：
+
+| # | 級別 | 指摘 | 處置 |
+| --- | --- | --- | --- |
+| 1 | P1 | 本輪新增的 **LK-M1 是假死因**：錨點是**行中**片段，『換成』尾接 `# MUTANT: …` 吞掉該行後面的 `*GLOBS],` → `SyntaxError: '[' was never closed`（rc=1），ENV-EQ-17 一次都沒跑到 ⇒ 這一列對「掃描範圍必須含未追蹤檔」**零證據力**（＝ round-1 F2 同一型態）| **兩層修**：①該列拿掉行尾註解，改成乾淨的 `"ls-files", "-c", "--exclude-standard",`（理由改寫在列上方註解行），現已實測「死在 self-test 的 untracked 斷言」；②**根治**＝runner 新增載入期**語法哨兵**（`SYNTAX_LANGS`／`check_mutated_syntax`）：靜態套用『換成』後用 `compile()`／`bash -n`／`json.loads` 檢查目標檔語法，壞掉直接 `die` ⇒ 任何「靠語法壞掉才紅」的列連 `--list` 都過不了；MMD-6 ⑦ 用合成表實測 |
+| 2 | P2 | `CONTRIBUTING.md`／表頭寫「文字契約鎖 **0 列**」，但 DW-M4 與 RG-M1..RG-M4 是文件／資料契約列；提供的 `grep 'MUTANT(text-lock)'` 配方回 0 筆 ⇒ 用一個查得到的指令證明一件不成立的事 | **分類改為可機械判定**（看目標檔類型，不看註解）：行為鎖＝目標檔 `.py`／`.sh`／`.bash`／`.bats`；文件／資料契約鎖＝`.md`／`.json` 等（**數目請用 CONTRIBUTING 內那兩行 `awk` 現場查**，別抄快照數字——表會成長）；附兩行 `awk` 自查指令；`MUTANT(text-lock):` 前綴降到「目標檔是程式但只想鎖文字」的罕見情況|
+| 3 | P3 | deliverable §4.4 的 P3-1 寫「`--list` 每行必為 6 欄」（實為 4 欄）| 已更正（deliverable §4.4 ＋本表 P3-1 列），並補「表本身仍是 6 欄」以免又混淆 |
+
+### TMO-067（候選：尚未開票）
+
+TMO-066 收尾時撞到、但屬於另一個問題的兩件（都是「探針自己不可靠」的同一個大方向）：
+
+1. **`M6.3-c` 間歇紅（約 1/3 機率）的真因**（**TMO-066 當時的推測已於 2026-10-23 被證偽並修正，見 TMO-070**）：
+   `tests/` 全量跑時偶發紅。**真因不是** `_state_text()` 把 `Elapsed: {elapsed_ms} ms` 算進 state
+   （那只是 payload 組法，不是病灶），而是 `journey_runner.py` 用內建 `hash(step.id)` 產生
+   `elapsed_ms`——`PYTHONHASHSEED` 預設隨機化 → **每個行程的 elapsed 都不同** → payload／cache key
+   每跑必變 → 快取永遠 miss → 真的打 OpenRouter → 無 key 時 403 → 被歸類成 blocked → 判 regression →
+   rc=2。**修法**（TMO-070 採用）：讓 `elapsed_ms` **跨行程穩定**（sha256 前綴）＋ 探針完全離線
+   （`JEV_CACHE_DIR` 指向版控 fixture、`JEV_ENV_FILE=/dev/null`、`-u OPENROUTER_API_KEY`）。
+   附帶教訓：**會進 oracle payload 的欄位一律不得用 process-randomized 值**（已寫入 `CONTRIBUTING.md`）。
+2. **「測名寫了什麼就驗什麼」的自審項目**：TMO-066 二審 F1 的根因就是探針名寫「exit 2」但只斷言
+   「非零」（AC-O4／AC-O6）——這種名實不符本身就是假綠，也讓 mutant 只看得到「有紅」而看不出
+   「紅在什麼」。**修法方向**：寫一條靜態鎖（例如：測名內出現 `exit N` 時，該 test body 必須斷言
+   `-eq N`），或以 checklist 納入 `dav-skill-creater`／`regression-guard`。
 ---
 
 ## TMO-071 詳細（需求錨點檔）

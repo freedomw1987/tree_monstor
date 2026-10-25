@@ -2,11 +2,23 @@
 #
 # 欄位：id \t 目標檔 \t 原文（必須在目標檔內恰好出現一次）\t 換成 \t 探針檔 \t 探針名
 #
-# 性質兩種（TMO-066 二審後明文化）：**行為鎖**改的是程式行為；**文字契約鎖**只鎖「檔案不得再出現
-#   某字串」，這類列的「換成」欄一律加 `MUTANT(text-lock):` 前綴，可用
-#   `grep 'MUTANT(text-lock)' scripts/ci/mutants.tsv` 列出。
-#   （表內目前 **0 列**：唯一的 DW-M5 已改成真行為鎖——收緊 `tests/wiki-ocr.bats` AC-O4
-#     去驗 `EXIT_NOINPUT` 的值之後，「改值」也咬得住了。約定保留給以後真的只能用文字釘的契約。）
+# 性質兩種（TMO-066 二審後明文化）：分類看**目標檔類型**（可機械判定，不看註解）——
+#   * 行為鎖：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 死因必須是語意差。
+#   * 文件／資料契約鎖：目標檔是 `.md`／`.json` 等，探針只斷言檔案文字。
+#   查到現在有幾列（本表：行為鎖 42＋文件／資料契約鎖 8＝50；再加 TMO-071/072/073 的 5 支＝55）：
+#     awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
+#     awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
+#   ⚠️ 增刪列之後要**重新算一次**並把上面那行的數字改掉（數字過期＝文件與實作不符）。
+#   另保留 `MUTANT(text-lock):` 前綴慣例（只給「目標檔是程式、卻只想鎖文字」的罕見情況）。
+#   ⚠️ 注意：直接 `grep 'MUTANT(text-lock)'` 會命中本註解段本身，**不是 0 筆**（就是上一版
+#   寫錯的地方）——要數「資料列」必須排除 `#` 開頭的行：
+#     awk -F'\t' '$1 !~ /^#/ && /MUTANT\(text-lock\)/' scripts/ci/mutants.tsv | wc -l   → 目前 0
+#   注意：**任何列的「換成」都不得讓目標檔語法壞掉**。語法壞 → 突變雖然紅，但死因是 parse error
+#   而不是語意（round-1 F2 的 SM-M1、二審 #1 的 LK-M1 都是這型態）→ 這種列零證據力。
+#   runner 載入期會用 `SYNTAX_LANGS`／`check_mutated_syntax` 靜態套用『換成』再跑
+#   `compile()`／`bash -n`／`json.loads`，壞掉直接 die（`tests/mutant-must-die.bats` MMD-6 ⑦ 實測）。
+#   ⚠️ 因此**行中錨點**（該行後面還有內容）的「換成」不可加尾端 `#` 註解——註解會吞掉行尾。
+#   要寫理由請像下面 LK-M1 那樣另起一行 `#` 註解。
 #
 # 為什麼要有這張表：手動種 mutant 只能在當下證明「探針真的咬得住」，
 # 下次有人把 gate 改成恒真、把護欄拿掉，沒有人會知道。這張表把它變成 CI 會跑的檢查。
@@ -51,10 +63,20 @@ RG-M1	skills/regression-guard/runner-cheatsheet.md	jest --ci	jest --watch	tests/
 RG-M2	docs/sop/gates.json	詳見 regression-guard SKILL.md	詳見 SKILL.md	tests/regression-guard-watch-mode.bats	GATES: gates.json Gate 3 notes mention watch-mode rule
 RG-M3	docs/sop/handbook/2.3-execution.md	| 通用保險 | 指令後加 `< /dev/null` 強制關 stdin |	| 通用保險 | 指令後請自行記得關掉 stdin |	tests/regression-guard-watch-mode.bats	HANDBOOK: 2.3-execution.md has the watch-mode warning section
 RG-M4	skills/regression-guard/SKILL.md	對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見本 skill 的 runner 對照表子檔。	tests/regression-guard-watch-mode.bats	CROSS: < /dev/null fallback reachable from all four documents
-LK-M1	scripts/ci/lint-shell-var-nonascii.py	"ls-files", "-co", "--exclude-standard",	"ls-files", "-c",  # MUTANT: 掃描退回只列已追蹤（＝TMO-064/065 的 untracked 盲點回歸）	tests/env-equivalence.bats	ENV-EQ-17
+# LK-M1：這裡刻意**不加**行尾 `# MUTANT: ...` 註解 —— 錨點是**行中**片段（該行後面還有
+#   `*GLOBS],`），加註解會把後半行吞掉 → SyntaxError 假死因（TMO-066 二審 #1）。
+#   載入期語法哨兵（`SYNTAX_LANGS`）現在會直接擋下這類「靠語法壞掉才紅」的列。
+LK-M1	scripts/ci/lint-shell-var-nonascii.py	"ls-files", "-co", "--exclude-standard",	"ls-files", "-c", "--exclude-standard",	tests/env-equivalence.bats	ENV-EQ-17
 DT-M1	skills/dav-trust/SKILL.md	| **用戶叫停立即收斂**（v2.4 新增）| N/A | 先分流：「結束」→ 收斂 + `🏁 Trust Mode 已結束` + 退出身份；「暫停」→ 收斂 + `⏸️ Trust Mode 已暫停（可續跑）` + **不輸出結束標記、不退出身份**（序列見 resume.md §4）|	| **叫停處理**（v2.4 新增）| N/A | 先分流：「結束」→ 收斂 + `🏁 Trust Mode 已結束` + 退出身份；「暫停」→ 收斂 + `⏸️ Trust Mode 已暫停（可續跑）` + **不輸出結束標記、不退出身份**（序列見 resume.md §4）|	tests/restruct-dav-trust.bats	RESTRUCT-DAV-TRUST: main skill registers resume and stop rules
 DT-M2	skills/dav-trust/time-anchor.md	**進度錨點（v2.4）**：trust-log **檔頭**另需一行 `> 進度錨點: PHASE=…、DONE=…、NEXT=…、UPDATED_AT=…`，	MUTANT(text-lock): （進度錨點規範整行移除）	tests/restruct-dav-trust.bats	RESTRUCT-DAV-TRUST: trust-log checkpoint carries progress anchor
 DT-M3	skills/dav-trust/SKILL.md	- **產出**：對話中明示「Trust Mode 啟動 + START_TS + DEADLINE_TS」＋trust-log 檔頭寫進度錨點（PHASE / DONE / NEXT / UPDATED_AT）；拒絕啟動時輸出拒絕話術	- **產出**：對話中明示「Trust Mode 啟動 + START_TS + DEADLINE_TS」；拒絕啟動時輸出拒絕話術  # MUTANT(text-lock): 啟動時不寫進度錨點	tests/restruct-dav-trust.bats	RESTRUCT-DAV-TRUST: main skill registers resume and stop rules
+QD-M1	lib/install/symlink.sh	    if [[ "$current" != "$(abs_path "$target")" ]]; then	    if [[ "$current" == "$(abs_path "$target")" ]]; then  # MUTANT: 條件反轉 → foreign symlink 會被 repair（不得重新指向）	tests/install-qoder.bats	QODER-17
+QD-M2	lib/install/symlink.sh	    if [[ "$protect_foreign" -eq 1 ]]; then	    if [[ "$protect_foreign" -eq 0 ]]; then  # MUTANT: 條件反轉 → protect_foreign 失效（foreign per-skill symlink 會被重新指向）	tests/install-qoder.bats	QODER-31
+QD-M3	lib/install/symlink.sh	    log_warn "target exists and is not a symlink, skipping (will not overwrite): $link"	    rm -f "$link"  # MUTANT: 保護被拿掉 → 直接刪掉使用者自有的 AGENTS.md	tests/install-qoder.bats	QODER-16
+QD-M4	install.sh	          if [[ $agent_known -eq 0 ]]; then	          if [[ $agent_known -ne 0 ]]; then  # MUTANT: 條件反轉 → 未知 agent 靜默略過（必須 exit 2）	tests/install-qoder.bats	QODER-15
+QD-M5	install.sh	  if [[ "$current" == "$expected" ]] || [[ "$current" == "$(abs_path "$expected")" ]]; then	  if true; then  # MUTANT: 不驗 symlink target 就刪（會刪掉使用者自己的 symlink）	tests/install-qoder.bats	QODER-17
+QD-M6	lib/install/logging.sh	  if [[ ${DRY_RUN:-0} -eq 1 ]]; then	  if false; then  # MUTANT: dry-run 也真的執行 → 會寫檔	tests/install-qoder.bats	QODER-23
+RG-M5	skills/regression-guard/PoC/journey_runner.py	    return int.from_bytes(digest[:4], "big") % 1500	    return hash(step_id) % 1500  # MUTANT: 退回內建 hash() → PYTHONHASHSEED 隨機化 → payload/cache key 每跑必變	tests/v2.1-jev-poc.bats	M6.3-m
 DD-M1	skills/dav-reconciler/scripts/check-doc-drift.py	self.report("D6", stem, f"缺需求錨點檔 docs/req/{stem}-requirement.md")	pass  # MUTANT: D6 缺錨點檢查失效	tests/doc-drift.bats	DOC-DRIFT-017: D6 catches missing requirement anchor
 DR-M1	skills/dav-reconciler/reconcile-format.md	| 🚫 已作廢 | 該需求句已被取消（規劃階段標註「已作廢」）→ **不列入交付狀態判定**，但**必須列出**（不可省略）|		tests/restruct-dav-reconciler.bats	RECON-007: exactly four allowed status values are defined
 DR-M2	skills/dav-reconciler/reconcile-format.md	| ✅ 已實作 | 需求句的**全部條件**都能在變更清單裡找到對應實作，且有可驗證的證據 |	| ✅ 已實作 🟡 暫緩 | 需求句的**全部條件**都能在變更清單裡找到對應實作，且有可驗證的證據 |	tests/restruct-dav-reconciler.bats	RECON-007: exactly four allowed status values are defined

@@ -24,7 +24,9 @@ readonly VERSION="0.1.0"
 MODE="global"          # global | local | target
 TARGET_DIR=""          # set when MODE=target
 SOURCE_DIR=""          # set via --source or auto-detected
-AGENTS=("claude" "pi") # default: both
+AGENTS=("claude" "pi" "qoder")  # default: every supported agent
+AGENT_REQ=()           # explicitly requested agents (--agent); may be empty
+AGENT_REQ_ALL=0        # 1 = --agent all was given
 INSTALL_AGENTS_DIR=1   # 1 = yes, 0 = no
 UNINSTALL=0
 DRY_RUN=0
@@ -37,6 +39,7 @@ CLAUDE_SKILLS_MODE="merge"  # merge | replace | skip
 # 改這些變數就能影響全部 install.sh / uninstall 邏輯
 readonly DIR_CLAUDE=".claude"
 readonly DIR_PI=".pi"
+readonly DIR_QODER=".qoder"
 readonly DIR_AGENTS=".agents"
 
 # Loader marker 用來識別被本腳本管理的檔案
@@ -44,9 +47,8 @@ readonly LOADER_MARKER="tree-monstor-loader:DO-NOT-EDIT-START"
 # shellcheck disable=SC2034  # 目前未使用：保留為 loader 格式的單一來源（實際字串在 lib/install/agents.sh 的 heredoc）
 readonly LOADER_END_MARKER="tree-monstor-loader:DO-NOT-EDIT-END"
 
-# 已知 agent 列表（驗證用）
-# shellcheck disable=SC2034  # 目前未使用：保留為 agent 白名單的單一來源
-readonly KNOWN_AGENTS=("claude" "pi")
+# 已知 agent 列表（驗證用；也是 `--agent all` 的展開來源）
+readonly KNOWN_AGENTS=("claude" "pi" "qoder")
 
 # ---------- Source the lib/ helpers ----------
 # Order matters: logging first (others depend on it), then paths/symlink,
@@ -78,7 +80,8 @@ ${C_BOLD}Scope (pick one):${C_RESET}
   --target <path>     Install to a specific directory
 
 ${C_BOLD}Selection:${C_RESET}
-  --agent <claude|pi> Limit to a single agent (repeatable, default: both)
+  --agent <claude|pi|qoder|all>
+                     Limit to specific agent(s); repeatable (default: all)
   --no-agents-dir     Skip the local ~/.agents/ copy
 
 ${C_BOLD}Source:${C_RESET}
@@ -101,9 +104,10 @@ ${C_BOLD}Claude skills mode (when ~/.claude/skills already exists):${C_RESET}
                                      skip    = leave ~/.claude/skills untouched
 
 ${C_BOLD}Examples:${C_RESET}
-  ./install.sh                          # Global install for both agents
+  ./install.sh                          # Global install for all agents
   ./install.sh --local                  # Project-level install
   ./install.sh --agent claude           # Only Claude Code
+  ./install.sh --agent qoder            # Only Qoder
   ./install.sh --target ~/proj/foo      # Specific directory
   ./install.sh --dry-run                # Preview what would happen
   ./install.sh --uninstall --local      # Remove project-level install
@@ -122,7 +126,27 @@ parse_args() {
       --global)   MODE="global" ;;
       --local)    MODE="local" ;;
       --target)   MODE="target"; TARGET_DIR="${2:-}"; [[ -z "$TARGET_DIR" ]] && { log_err "--target requires a path"; exit 2; }; shift ;;
-      --agent)    AGENTS=("${2:-}"); [[ -z "${AGENTS[0]}" ]] && { log_err "--agent requires a name"; exit 2; }; shift ;;
+      --agent)
+        agent_arg="${2:-}"
+        [[ -z "$agent_arg" ]] && { log_err "--agent requires a name"; exit 2; }
+        if [[ "$agent_arg" == "all" ]]; then
+          AGENT_REQ_ALL=1
+        else
+          # Fail fast on an unknown name: silently skipping would look like
+          # "installed, but nothing happened" (TMO-069).
+          agent_known=0
+          for agent_k in "${KNOWN_AGENTS[@]}"; do
+            if [[ "$agent_k" == "$agent_arg" ]]; then agent_known=1; break; fi
+          done
+          if [[ $agent_known -eq 0 ]]; then
+            log_err "Unknown agent: $agent_arg"
+            log_err "Known agents: ${KNOWN_AGENTS[*]} (or 'all')"
+            exit 2
+          fi
+          AGENT_REQ+=("$agent_arg")
+        fi
+        shift
+        ;;
       --no-agents-dir) INSTALL_AGENTS_DIR=0 ;;
       --source)   SOURCE_DIR="${2:-}"; [[ -z "$SOURCE_DIR" ]] && { log_err "--source requires a path"; exit 2; }; shift ;;
       --uninstall) UNINSTALL=1 ;;
@@ -167,6 +191,11 @@ resolve_source() {
     log_err "Source directory not found: $SOURCE_DIR"
     exit 2
   fi
+  # Normalize to an absolute path (same mechanism as abs_path, so it always
+  # agrees with the symlink targets we create). The symlink targets we create
+  # are always absolute, so keeping SOURCE_DIR absolute lets uninstall
+  # recognise our own symlinks even when the user passes a relative --source.
+  SOURCE_DIR="$(abs_path "$SOURCE_DIR")"
   if [[ ! -f "$SOURCE_DIR/AGENTS.md" ]] || [[ ! -f "$SOURCE_DIR/SOUL.md" ]] || [[ ! -d "$SOURCE_DIR/skills" ]]; then
     log_err "Source must contain AGENTS.md, SOUL.md, and skills/"
     log_err "Got: $SOURCE_DIR"
@@ -188,6 +217,38 @@ resolve_target_root() {
       [[ -d "$TARGET_ROOT" ]] || { log_err "Target directory does not exist: $TARGET_ROOT"; exit 2; }
       ;;
   esac
+}
+
+# resolve_agents(): turn the explicit --agent requests into the final
+# AGENTS list. Called after parse_args.
+#   - no --agent      -> keep the default (every supported agent)
+#   - --agent all    -> every supported agent
+#   - --agent <x>... -> exactly those (duplicates collapse)
+#
+# NOTE on bash 3.2 (macOS default): expanding an EMPTY array under `set -u`
+# is an error there. The loop below only runs when AGENT_REQ is non-empty
+# (guarded by ${#AGENT_REQ[@]}), and the inner dedup only touches ${AGENTS[*]}
+# after we know it has at least one element — both keep bash 3.2 happy.
+resolve_agents() {
+  if [[ $AGENT_REQ_ALL -eq 1 ]]; then
+    AGENTS=("${KNOWN_AGENTS[@]}")
+    return 0
+  fi
+
+  if [[ ${#AGENT_REQ[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  AGENTS=()
+  local a
+  for a in "${AGENT_REQ[@]}"; do
+    if [[ ${#AGENTS[@]} -gt 0 ]]; then
+      case " ${AGENTS[*]} " in
+        *" $a "*) continue ;;
+      esac
+    fi
+    AGENTS+=("$a")
+  done
 }
 
 # ---------- Confirmation ----------
@@ -253,6 +314,24 @@ print_plan() {
           log_plan "$TARGET_ROOT/.pi/sop/*.json (per-file symlinks into docs/sop/)"
         fi
         ;;
+      qoder)
+        # Qoder scope differs by mode:
+        #   - global: ~/.qoder/AGENTS.md is Qoder CLI's user-level memory.
+        #     (The IDE does NOT read it — the IDE only searches the
+        #     workspace for **/AGENTS.md.)
+        #   - local/target: <project>/AGENTS.md is read by BOTH the CLI and
+        #     the IDE. Never overwrite a project-owned file there.
+        if [[ "$MODE" == "global" ]]; then
+          log_plan "$TARGET_ROOT/.qoder/AGENTS.md -> $SOURCE_DIR/AGENTS.md (Qoder CLI user-level memory)"
+        else
+          log_plan "$TARGET_ROOT/AGENTS.md -> $SOURCE_DIR/AGENTS.md (project scope; skipped if the project already owns it)"
+        fi
+        # Skills live in <root>/skills/<name>/SKILL.md at BOTH scopes.
+        log_plan "$TARGET_ROOT/.qoder/skills/ (merge: per-skill symlinks)"
+        if [[ -d "$SOURCE_DIR/agents" ]]; then
+          log_plan "$TARGET_ROOT/.qoder/agents/*.md (merge: per-agent symlinks)"
+        fi
+        ;;
     esac
   done
   if [[ $INSTALL_AGENTS_DIR -eq 1 ]]; then
@@ -272,6 +351,9 @@ do_uninstall() {
         ;;
       pi)
         uninstall_pi
+        ;;
+      qoder)
+        uninstall_qoder
         ;;
       *) log_warn "Unknown agent '$agent' — skipping"; ;;
     esac
@@ -482,14 +564,53 @@ uninstall_pi() {
   uninstall_subagents
 }
 
-# uninstall_subagents: remove symlinks we created in ~/.agents/.
+# remove_symlink_to <path> <expected_target>
+# Remove <path> ONLY when it is a symlink pointing at <expected_target>.
+# Safer than remove_managed_path(…, symlink), which deletes ANY symlink:
+# a user-owned symlinked AGENTS.md must survive our uninstall.
+remove_symlink_to() {
+  local p="$1"
+  local expected="$2"
+
+  if [[ ! -L "$p" ]]; then
+    return 0
+  fi
+
+  local current
+  current="$(readlink "$p")"
+  if [[ "$current" == "$expected" ]] || [[ "$current" == "$(abs_path "$expected")" ]]; then
+    run rm "$p"
+    log_ok "removed symlink: $p"
+  else
+    log_warn "skipping symlink (not ours): $p -> $current"
+  fi
+}
+
+uninstall_qoder() {
+  local qoder_root="$TARGET_ROOT/${DIR_QODER}"
+  # User-level AGENTS.md (global scope only) — only remove it when it points
+  # at our source, never a user's own symlink.
+  remove_symlink_to "$qoder_root/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
+  # Project-level AGENTS.md (local / target scope) — same rule.
+  if [[ "$MODE" != "global" ]]; then
+    remove_symlink_to "$TARGET_ROOT/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
+  fi
+  # Skills are merged per-skill into <qoder_root>/skills/ — remove only the
+  # symlinks that point into our source, leaving the user's own skills.
+  remove_merged_skills "$qoder_root/skills" "$SOURCE_DIR/skills"
+  # Subagents live in <qoder_root>/agents/.
+  uninstall_subagents "$qoder_root/agents"
+}
+
+# uninstall_subagents: remove symlinks we created in ~/.agents/ (or in an
+# explicit destination dir, used by uninstall_qoder).
 # Only removes symlinks pointing into our SOURCE_DIR/agents/ (safe against
 # user-owned subagents, mirrors remove_merged_skills() pattern).
 uninstall_subagents() {
   local src_agents_dir="$SOURCE_DIR/agents"
   [[ -d "$src_agents_dir" ]] || return 0
 
-  local dst_agents_dir="$TARGET_ROOT/${DIR_AGENTS}"
+  local dst_agents_dir="${1:-$TARGET_ROOT/${DIR_AGENTS}}"
   [[ -d "$dst_agents_dir" ]] || return 0
 
   shopt -s nullglob
@@ -526,6 +647,7 @@ main() {
   parse_args "$@"
   resolve_source
   resolve_target_root
+  resolve_agents
 
   log_info "Source : $SOURCE_DIR"
   log_info "Mode   : $MODE"
@@ -557,6 +679,9 @@ main() {
       pi)
         install_pi
         install_sop "$TARGET_ROOT/${DIR_PI}"
+        ;;
+      qoder)
+        install_qoder
         ;;
       *)      log_warn "Unknown agent '$agent' — skipping"; ;;
     esac

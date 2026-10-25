@@ -3,13 +3,14 @@
 #
 # Source this from install.sh. Defines:
 #   - ensure_symlink <link_path> <target_path>
+#   - ensure_symlink_if_absent <link_path> <target_path>
 #   - ensure_merged_skill <link_path> <target_path>
 #   - ensure_merged_skills_into <src_skills_dir> <dst_skills_dir>
 #   - ensure_file <path> <content>
 #
 # Requires:
 #   log_info / log_ok / log_warn / log_err (from logging.sh)
-#   run (from logging.sh)
+#   run / log_dry (from logging.sh)
 #   abs_path (from paths.sh)
 #   DRY_RUN (0 or 1)
 
@@ -43,18 +44,65 @@ ensure_symlink() {
   [[ -d "$parent" ]] || run mkdir -p "$parent"
 
   run ln -s "$target_abs" "$link"
-  log_ok "symlink created: $link -> $target_abs"
+  if [[ ${DRY_RUN:-0} -eq 1 ]]; then
+    log_dry "would create symlink: $link -> $target_abs"
+  else
+    log_ok "symlink created: $link -> $target_abs"
+  fi
 }
 
-# ensure_merged_skill <link_path> <target_path>
+# ensure_symlink_if_absent <link_path> <target_path>
+# Same as ensure_symlink, except it NEVER clobbers a path that we did not
+# create: when the target slot is taken by something else, we log a warning
+# (with the manual fix) and return 0.
+#
+# Two kinds of "something else" are protected:
+#   - a real file/dir (e.g. a client project that owns <project>/AGENTS.md)
+#   - a symlink pointing somewhere else (e.g. AGENTS.md -> docs/AGENTS.md)
+# Only a symlink that already points at our target is managed (idempotent).
+#
+# Why this exists: the Qoder project scope reads <project>/AGENTS.md, but a
+# client project very often owns that file already. Overwriting it would
+# silently destroy the project's own instructions, so the installer must
+# skip instead (and tell the user what to do by hand).
+# REGRESSION-GUARD PROBE: symlink-if-absent
+ensure_symlink_if_absent() {
+  local link="$1"
+  local target="$2"
+
+  if [[ -L "$link" ]]; then
+    local current
+    current="$(readlink "$link")"
+    if [[ "$current" != "$(abs_path "$target")" ]]; then
+      log_warn "target is a symlink to something else, skipping (will not overwrite): $link -> $current"
+      log_warn "  manual step: merge '$target' into '$link' by hand"
+      return 0
+    fi
+  elif [[ -e "$link" ]]; then
+    log_warn "target exists and is not a symlink, skipping (will not overwrite): $link"
+    log_warn "  manual step: merge '$target' into '$link' by hand (or delete '$link' and re-run)"
+    return 0
+  fi
+
+  ensure_symlink "$link" "$target"
+}
+
+# ensure_merged_skill <link_path> <target_path> [protect_foreign]
 # Place a per-skill symlink at <link_path> pointing to <target_path>.
 # Idempotent: existing symlink pointing to target is left alone; pointing
 # elsewhere is repaired; existing non-symlink (user-owned skill) is
 # preserved with a warning.
+#
+# protect_foreign=1 (used by the Qoder path): a symlink pointing somewhere
+# else is treated as user-owned — it is NEVER repointed or deleted, only
+# warned about. Rationale: the Qoder skill slot may already hold one of the
+# user's own symlinked skills; silently repointing it would destroy their
+# setup. (The Claude/Pi paths keep the historical "repair" behaviour.)
 # REGRESSION-GUARD PROBE: merged-skill
 ensure_merged_skill() {
   local link="$1"
   local target="$2"
+  local protect_foreign="${3:-0}"
   local target_abs
   target_abs="$(abs_path "$target")"
 
@@ -70,10 +118,19 @@ ensure_merged_skill() {
       log_ok "merge OK: $link -> $target_abs"
       return 0
     fi
+    if [[ "$protect_foreign" -eq 1 ]]; then
+      log_warn "merge: symlink points somewhere else, skipping (will not overwrite): $link (-> $current)"
+      log_warn "  manual step: point '$link' at '$target_abs' by hand (or remove it and re-run)"
+      return 0
+    fi
     log_warn "merge: wrong-target symlink, repairing: $link ($current -> $target_abs)"
     run rm "$link"
     run ln -s "$target_abs" "$link"
-    log_ok "merged: $link -> $target_abs"
+    if [[ ${DRY_RUN:-0} -eq 1 ]]; then
+      log_dry "would merge: $link -> $target_abs"
+    else
+      log_ok "merged: $link -> $target_abs"
+    fi
     return 0
   fi
 
@@ -83,20 +140,27 @@ ensure_merged_skill() {
   fi
 
   run ln -s "$target_abs" "$link"
-  log_ok "merged: $link -> $target_abs"
+  if [[ ${DRY_RUN:-0} -eq 1 ]]; then
+    log_dry "would merge: $link -> $target_abs"
+  else
+    log_ok "merged: $link -> $target_abs"
+  fi
 }
 
-# ensure_merged_skills_into <src_skills_dir> <dst_skills_dir>
+# ensure_merged_skills_into <src_skills_dir> <dst_skills_dir> [protect_foreign]
 # Merge a tree_monstor skills directory into an existing real directory
 # at <dst_skills_dir>, by creating per-skill symlinks at the file level.
 # - If <dst_skills_dir> is a symlink: defer to ensure_symlink (whole-tree).
 # - If <dst_skills_dir> does not exist: defer to ensure_symlink (create).
 # - If <dst_skills_dir> is a regular file or block device: error out.
 # - If <dst_skills_dir> is a real directory: per-skill merge.
+# - protect_foreign=1: per-skill symlinks that point elsewhere are left
+#   alone (never repointed) — see ensure_merged_skill.
 # REGRESSION-GUARD PROBE: merged-skills-into
 ensure_merged_skills_into() {
   local src_skills="$1"
   local dst_skills="$2"
+  local protect_foreign="${3:-0}"
 
   if [[ -L "$dst_skills" ]] || [[ ! -e "$dst_skills" ]]; then
     # Already a symlink, or doesn't exist yet — use the standard tree-level
@@ -124,7 +188,7 @@ ensure_merged_skills_into() {
     # Capture pre/post state to count actually-new symlinks.
     local existed=0
     [[ -e "$dst_skills/$skill_name" ]] && existed=1
-    ensure_merged_skill "$dst_skills/$skill_name" "$skill_path"
+    ensure_merged_skill "$dst_skills/$skill_name" "$skill_path" "$protect_foreign"
     [[ $existed -eq 0 ]] && merged=$((merged + 1))
   done
   shopt -u nullglob

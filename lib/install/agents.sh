@@ -4,17 +4,20 @@
 # Source this from install.sh. Defines:
 #   - install_claude
 #   - install_pi
-#   - install_subagents
+#   - install_qoder
+#   - install_subagents [dst_agents_dir]
 #
 # Requires:
 #   log_info / log_ok / log_warn / log_err (from logging.sh)
-#   run / log_dry (from logging.sh)
-#   ensure_symlink / ensure_merged_skills_into / ensure_file (from symlink.sh)
+#   run / log_dry / log_plan (from logging.sh)
+#   ensure_symlink / ensure_symlink_if_absent / ensure_merged_skills_into /
+#   ensure_file (from symlink.sh)
 #   install_sop (from sop.sh)
+#   abs_path (from paths.sh)
 #
 # Reads/writes:
-#   TARGET_ROOT, SOURCE_DIR, DIR_CLAUDE, DIR_PI, DIR_AGENTS, VERSION,
-#   CLAUDE_SKILLS_MODE, AGENTS
+#   TARGET_ROOT, SOURCE_DIR, DIR_CLAUDE, DIR_PI, DIR_QODER, DIR_AGENTS,
+#   VERSION, CLAUDE_SKILLS_MODE, AGENTS, MODE
 
 # REGRESSION-GUARD PROBE: claude-install
 install_claude() {
@@ -106,6 +109,66 @@ install_pi() {
   install_subagents
 }
 
+# REGRESSION-GUARD PROBE: qoder-install
+# Installs tree_monstor for Qoder.
+#
+# Layout (verified against Qoder CLI + IDE docs and the local install):
+#   - Skills:    <root>/skills/<name>/SKILL.md   (user scope AND project scope)
+#   - AGENTS.md: global  -> ~/.qoder/AGENTS.md   (Qoder CLI user-level memory)
+#                project -> <project>/AGENTS.md  (read by BOTH CLI and IDE)
+#   - Subagents: <root>/agents/<name>.md
+#
+# Scope differences that matter:
+#   - Qoder IDE does NOT read a user-level AGENTS.md (it only searches the
+#     workspace for **/AGENTS.md). So the global AGENTS.md symlink serves
+#     the Qoder CLI, while the IDE needs a project-level install
+#     (--local / --target). We say so out loud instead of silently
+#     installing something the IDE ignores.
+#   - Project scope must never clobber a project-owned AGENTS.md, so we
+#     use ensure_symlink_if_absent() there.
+install_qoder() {
+  log_info "Installing for Qoder..."
+  local qoder_root="$TARGET_ROOT/${DIR_QODER}"
+  [[ -d "$qoder_root" ]] || run mkdir -p "$qoder_root"
+
+  if [[ "$MODE" == "global" ]]; then
+    # Qoder CLI user-level memory. The user may already own
+    # ~/.qoder/AGENTS.md (Qoder documents it as the CLI memory file), so we
+    # never clobber it — and we never abort the install because of it.
+    ensure_symlink_if_absent "$qoder_root/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
+    log_info "note: Qoder IDE only reads project-level AGENTS.md — use --local/--target for the IDE."
+  else
+    # Project scope: Qoder CLI and IDE both read <project>/AGENTS.md.
+    # Never overwrite a project-owned file.
+    ensure_symlink_if_absent "$TARGET_ROOT/AGENTS.md" "$SOURCE_DIR/AGENTS.md"
+  fi
+
+  # Skills: merge per-skill symlinks (same model as Claude Code / Pi).
+  # Pre-create the dir so ensure_merged_skills_into() takes the per-skill
+  # merge path instead of a tree-level symlink (which would shadow any
+  # skill the user adds later).
+  local skills_dir="$qoder_root/skills"
+  if [[ -L "$skills_dir" ]] && [[ "$(readlink "$skills_dir")" != "$(abs_path "$SOURCE_DIR/skills")" ]]; then
+    # The user pointed their own skills dir here. Replacing the link would
+    # hide their own skills from Qoder — warn and leave it alone.
+    log_warn "$skills_dir is a symlink to something else, not merging into it (will not overwrite)"
+    log_warn "  manual step: copy our skills into your own skills dir, or remove the symlink and re-run"
+  elif [[ ${DRY_RUN:-0} -eq 1 ]]; then
+    # Dry-run: the dir does not exist yet, so ensure_merged_skills_into()
+    # would fall back to a whole-tree symlink and print a misleading trace.
+    # Print the real plan instead (per-skill symlinks).
+    log_plan "$skills_dir/ (merge: per-skill symlinks)"
+  else
+    [[ -d "$skills_dir" ]] || run mkdir -p "$skills_dir"
+    # protect_foreign=1：slots 裡若已有「指向別處」的 symlink（例如使用者自己的
+    # skill symlink），一律跳過並警告，絕不重新指向（見 ensure_merged_skill）。
+    ensure_merged_skills_into "$SOURCE_DIR/skills" "$skills_dir" 1
+  fi
+
+  # Subagents: per-file symlinks into <qoder_root>/agents/<name>.md.
+  install_subagents "$qoder_root/agents"
+}
+
 # REGRESSION-GUARD PROBE: subagent-install
 # Installs tree_monstor's subagents to ~/.agents/<name>.md
 # (user-scope). pi-subagents discovers them automatically; they take
@@ -115,6 +178,9 @@ install_pi() {
 #   - Source: $SOURCE_DIR/agents/<name>.md
 #   - Target: $TARGET_ROOT/.agents/<name>.md  (symlink)
 #
+# Optional arg 1 = destination dir (defaults to $TARGET_ROOT/.agents);
+# used by install_qoder() to target <qoder_root>/agents instead.
+#
 # Conflicts: if a non-symlink file already exists at the target, we skip
 # with a warning (preserves user-owned subagents, mirroring skill merge).
 install_subagents() {
@@ -123,7 +189,7 @@ install_subagents() {
     return 0
   fi
 
-  local dst_agents_dir="$TARGET_ROOT/${DIR_AGENTS}"
+  local dst_agents_dir="${1:-$TARGET_ROOT/${DIR_AGENTS}}"
   [[ -d "$dst_agents_dir" ]] || run mkdir -p "$dst_agents_dir"
 
   shopt -s nullglob

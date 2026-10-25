@@ -71,7 +71,7 @@ bats tests/wiki-cleanup.bats --filter "E1"
 ```
 
 ```bash
-# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 40 支 mutant 逐一種回去，
+# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 50 支 mutant 逐一種回去，
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
@@ -147,20 +147,36 @@ wc -l skills/dav-wiki/SKILL.md
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
-6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 40 支
-   mutant（pptx-slim 26 支＋dav-wiki／探針機密遮罩／regression-guard／掃描器範圍鎖 14 支）在副本上重跑一次，
+6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 50 支
+   mutant（pptx-slim 23 支＋dav-wiki／安裝器（Qoder）／探針機密遮罩／regression-guard／掃描器範圍鎖 27 支）在副本上重跑一次，
    每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
    鎖住「這一步必須存在、必須跑全表（不得 `--list`／`--only`／`--no-baseline`）、不得被 `if:` 條件停用、不得 OR 短路或 `continue-on-error`」
 
-   **突變的兩種性質（TMO-066 二審後明文化）**：表裡的列分兩類，寫 report 時不要混為一談——
-     - **行為鎖**：改的是「程式做了什麼」（回傳值／分支／旗標），證明「行為變了會被咬到」。
-     - **文字契約鎖**：該處沒有任何探針鎖「值」，只鎖「檔案不得再出現某字串」。這類列在「換成」欄
-       一律加註 `MUTANT(text-lock):`（可用 `grep 'MUTANT(text-lock)' scripts/ci/mutants.tsv` 列出）。
-       它證明的是「文字契約會被抓到」，**不是**「行為變了會被抓到」。
+   **突變的兩種性質（TMO-066 二審後明文化）**：分類不看註解、看**目標檔類型**（機械可判定）：
+     - **行為鎖**：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 突變改的是「程式做了什麼」
+       （回傳值／分支／旗標），證明「行為變了會被咬到」，死因必須是語意差。
+     - **文件／資料契約鎖**：目標檔是 `.md`／`.json` 等 → 探針只斷言檔案文字（例如
+       `refute_file_contains`「這個字串不得再出現」）。它證明「文字契約會被抓到」，
+       **不是**「行為變了會被抓到」。
 
-   （目前表內**文字契約鎖 0 列**：唯一一列 DW-M5 在 TMO-066 收尾時改成真行為鎖——
-   代價是先把 `wiki-ocr.bats` 的 `AC-O4`/`AC-O6` 由「只驗非零」收緊成驗 2／驗 1。）
+   數目用這兩行自查（數字會隨表成長變動，記得同樣用這兩行重查；本行為最近一次查得的值）：
+
+```bash
+awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 行為鎖 42
+awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 文件／資料契約鎖 8
+```
+
+   另有 `MUTANT(text-lock):` 前綴慣例，只給「目標檔是程式、卻只想鎖文字」的罕見情況用。
+   數它要用下面這一行（直接 `grep` 會命中表頭註解段，數出來不為 0）：
+
+```bash
+awk -F'\t' '$1 !~ /^#/ && /MUTANT\(text-lock\)/' scripts/ci/mutants.tsv | wc -l   # 目前 0
+```
+
+   注意：**沒有「行為鎖」身份就沒有註解豁免權**——「換成」欄若讓目標檔語法壞掉（parse error），
+   突變紅了也不算咬住（死因與語意無關），runner 在載入期就會用 `SYNTAX_LANGS` 的語法哨兵擋掉，
+   這一類列連 `--list` 都過不了（`tests/mutant-must-die.bats` MMD-6 ⑦ 實測）。
 
 CI badge：見 [README.md](README.md) 頂部。
 
@@ -178,6 +194,34 @@ CI badge：見 [README.md](README.md) 頂部。
 - markdown：遵守 `.markdownlint.json` 規則（MD013=120, MD022/MD032/MD040 等禁用）
 - YAML frontmatter：`docs/wiki/` 文件需含 `keywords` 欄位（3-5 個）
 - Skill 文件：SKILL.md ≤ 150 行，超出需在附件引用
+
+## 改共用程式碼的兩條規則
+
+### 1. 共用 helper 的守衛行為 → 加參數，不改共用預設
+
+同一支 helper 需要**依呼叫端不同**的守衛行為時（例：`ensure_merged_skill()` 遇到「使用者自有
+symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做法是**加一個明確參數**
+（`protect_foreign`），**不是**直接改 helper 的共用預設。
+
+- 理由：共用預設一改，**所有**呼叫端行為同時變，reviewer 與 regression 難以分辨
+  「這是預期變更」還是「順手改壞」。
+- 新參數的預設值必須**維持舊行為**（如 `${3:-0}`），沒跟著改的呼叫端不受影響。
+- 新參數必須有**兩種值各一支探針**：既有預設路徑（回歸）＋ 新路徑（新行為）。
+  只測新值＝舊的呼叫端沒人守護。
+- 守衛行為（會不會覆寫／刪掉使用者自有內容）最好也**各補一支 mutation row**，
+  證明「守衛被拿掉 → 探針會紅」（見上方突變測試段）。
+
+### 2. 會進 oracle payload 的欄位必須跨 process 穩定
+
+任何會進入 oracle payload 的欄位（cache key、request body、hash 輸入）**不得**使用
+`hash()`／`random`／時間戳／PID 等 process-randomized 值——`PYTHONHASHSEED` 預設隨機，
+`hash()` 每個 process 都不同，會讓 baseline 與重跑的分佈不一致 → 誤判成 regression。
+
+- 要用「亂數感」就改用**跨 process 穩定**的雜湊（如 `hashlib.sha256(step_id).digest()` 取前 N bytes）。
+- oracle 的 fixture 必須**版控**（`PoC/cache-fixtures/`），且探針要完全離線：
+  `env -u OPENROUTER_API_KEY` ＋ `JEV_CACHE_DIR=<fixture dir>` ＋ `JEV_ENV_FILE=/dev/null`。
+- 改了 payload 組法（欄位、順序、雜湊）→ cache key 會變 → **要重錄 fixture**，
+  並同步更新 `PoC/cache-fixtures/README.md` 的索引。
 
 ## 工具
 

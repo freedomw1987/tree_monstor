@@ -9,6 +9,7 @@ Journey Runner (Dry-Run) — 跑 journey YAML → 每步 mock observe → Jev or
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -38,6 +39,26 @@ class ObservedState:
     history: list[dict] = field(default_factory=list)
 
 
+def stable_step_offset(step_id: str) -> int:
+    """回一個**跨行程穩定**的 step 偏移量（0..1499）。
+
+    為什麼不能用內建 `hash()`：Python 對 str 的 `hash()` 預設開 PYTHONHASHSEED 隨機化，
+    同一個 step.id 在不同行程會得到不同的值 → `elapsed_ms` 每次跑都不一樣 →
+    oracle payload（含 Elapsed 行）每次都不一樣 → `jev_oracle._cache_key()` 每次都 miss →
+    journey 每一步都要真的打網路 → 結果會隨「當下網路／快取狀態」浮動。
+
+    這個不穩定是 M6.3-c / M6.3-e 這類「patch 無關 → 應判 no_change」探針的 flake 來源：
+    baseline 跑與 sandbox 重跑兩次的 verdict 分布只要有一邊差一步，re_validate 就會
+    判成 regression（rc=2）→ 探針紅。改用 sha256 前綴 → 同一 step 永遠同一偏移 →
+    payload 穩定 → 快取可命中 → before/after 兩次跑的觀察結果一致。
+
+    （註：`cache-fixtures/README.md` 宣稱「payload 不含機器路徑 → 同一份 run json 在任何機器
+    命中同一筆」，內建 hash() 的隨機化會讓這句話不成立。）
+    """
+    digest = hashlib.sha256(step_id.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], "big") % 1500
+
+
 def mock_observe(step: Step, prev: ObservedState | None, story_id: str = "") -> ObservedState:
     """
     乾跑模擬：根據 step.action 回一個假的觀察。
@@ -45,7 +66,7 @@ def mock_observe(step: Step, prev: ObservedState | None, story_id: str = "") -> 
     注意：sig 會隨 action 變（點擊 / 跳轉都改 URL）— stale-test 另用 mock_observe_static。
     """
     base_url = prev.url if prev else "https://example.com"
-    elapsed = 500 + (hash(step.id) % 1500)
+    elapsed = 500 + stable_step_offset(step.id)
 
     if step.action == "setup_state":
         return ObservedState(
@@ -159,7 +180,7 @@ def ac_aware_observe(step: Step, prev: ObservedState | None, story_id: str = "")
     """比 mock_observe 聰明：用 AC-aware fixture 模擬「對應 AC 通過時」應該看到的 state。
     M5：fixture 從 fixtures/<story_id>.yaml 讀（config-driven）。"""
     base_url = prev.url if prev else "https://example.com"
-    elapsed = 500 + (hash(step.id) % 1500)
+    elapsed = 500 + stable_step_offset(step.id)
     fixtures = _load_fixture(story_id) if story_id else {}
     fixture = _get_fixture_for_ac(fixtures, step.verifying_ac)
 

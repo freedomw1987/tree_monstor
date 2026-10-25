@@ -189,17 +189,30 @@ _probe_files() {
           case "$stripped" in
             *"return 1"*) continue ;;
           esac
+          # fail-fast 的兩種排版都要認：
+          #   (a) [[ ... ]] || {            ← 同一行
+          #   (b) [[ ... ]] ||               ← || 在行尾、{ 換行
+          #       { echo ...; return 1; }
+          local opens_block=0
           case "$stripped" in
-            *"|| {"*|*"&& {"*)
-              if awk -v s="$n" '
-                    NR>s { t=$0; sub(/^[ \t]+/, "", t)
-                           if (t ~ /^}/) exit
-                           if (t ~ /return 1/) { found=1; exit } }
-                    END { exit(found ? 0 : 1) }' "$file"; then
-                continue
-              fi
+            *"|| {"*|*"&& {"*) opens_block=1 ;;
+            *"||"|*"&&")
+              local nxtline
+              nxtline=$(sed -n "$((n + 1))p" "$file" 2>/dev/null | sed 's/^[[:space:]]*//')
+              case "$nxtline" in
+                "{"*) opens_block=1 ;;
+              esac
               ;;
           esac
+          if [ "$opens_block" -eq 1 ]; then
+            if awk -v s="$n" '
+                  NR>s { t=$0; sub(/^[ \t]+/, "", t)
+                         if (t ~ /^}/) exit
+                         if (t ~ /return 1/) { found=1; exit } }
+                  END { exit(found ? 0 : 1) }' "$file"; then
+              continue
+            fi
+          fi
           # 位於 test body 的最後一句 → 安全
           local after
           after=$(awk -v s="$n" 'NR>s && NF{print; exit}' "$file")

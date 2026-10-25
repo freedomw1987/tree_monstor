@@ -1,0 +1,68 @@
+{
+  "raw_response": {
+    "model": "typesafe/jev-1.13-20260917",
+    "answers": {
+      "verdict": {
+        "type": "choice",
+        "choice": "fail",
+        "probabilities": {
+          "flaky": 0,
+          "pass": 0.01,
+          "fail": 0.76,
+          "over_assertion": 0.23
+        },
+        "confidence": 0.68
+      },
+      "severity": {
+        "type": "score",
+        "score": 0.97,
+        "legend": {
+          "0": "Cosmetic: wording, spacing, color, copy — user can still complete the flow",
+          "1": "Minor: one extra step needed but user can still reach goal",
+          "2": "Major: blocks a happy-path user flow; user gives up or calls support",
+          "3": "Critical: data loss, payment error, security breach, account lockout"
+        },
+        "probabilities": {
+          "0": 0.5,
+          "1": 0.12,
+          "2": 0.28,
+          "3": 0.1
+        },
+        "confidence": 0.03
+      },
+      "is_real_bug": {
+        "type": "noul",
+        "noul": 0.13
+      }
+    },
+    "usage": {
+      "input_tokens": 826,
+      "output_tokens": 82,
+      "cost": 3.4692e-05
+    },
+    "id": "gen-dec-1791189543-B9ct9iwUgmwaSZlZes3m",
+    "provider": "TypeSafe"
+  },
+  "context": {
+    "ac_id": "US-M63-AC01",
+    "story_id": "US-M63",
+    "given": "patch 素材 + 目標 repo 路徑",
+    "when": "`sandbox_runner.py` 在 `--sandbox` 模式啟動",
+    "then": "建立 `tmp/.sandbox-<ts>/` 隔離工作目錄（copy fixture + journey + source file）",
+    "additional_and": [
+      "自動備份所有會被 patch 的檔案到 `<sandbox>/.pre-patch/`",
+      "結束時不論成功失敗都 cleanup 隔離目錄（不留垃圾）"
+    ],
+    "observed_url": "https://example.com",
+    "observed_status": 200,
+    "observed_body_excerpt": "[setup for US-M63-AC01] ",
+    "observed_user_message": "",
+    "elapsed_ms": 1729,
+    "history": [
+      {
+        "step": "US-M63-AC01-s1",
+        "state": "setup"
+      }
+    ]
+  }
+}

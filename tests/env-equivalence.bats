@@ -890,3 +890,71 @@ PYEOF
   #     就不會有 3.2 覆蓋；CI 的 macOS leg 改用 bash 5 後亦同（已揭露於 install-reference.md）。
   echo "OK: $n 支護欄腳本 × $vcount 個本機 bash 版本（locale=${loc}）共 $ran 次皆 rc=0 且有輸出" >&2
 }
+
+# ENV-EQ-20（TMO-069 Gate 4 二審 P2-10）：install.sh 必須在「每一個本機 bash 版本」下都跑得過。
+# 起因：macOS 內建 /bin/bash 是 3.2，而 install.sh 的 `--agent` 解析會碰到「set -u 下的空陣列」——
+#       bash 3.2 對「展開空陣列元素」會報 unbound variable（bash 4.4+ 才修好）。
+#       CI 的 macOS leg 裝了 bash 5 且 PATH 優先，所以沒有任何一條 CI 腿會用 3.2 咬到它；
+#       這條把「只有 3.2 才會炸」的風險搬回本機咬（與 ENV-EQ-2／ENV-EQ-19 同一套路）。
+@test "ENV-EQ-20: install.sh runs clean under every local bash version" {
+  local vers="$BATS_TEST_TMPDIR/bash-versions.tsv"
+  collect_bash_versions "$vers" || {
+    echo "FAIL: 收不到任何可用的 bash（環境異常）" >&2
+    return 1
+  }
+  local vcount
+  vcount=$(grep -c . "$vers")
+  [ "$vcount" -ge 1 ] || { echo "FAIL: 版本清單是空的（collect_bash_versions 壞了）" >&2; return 1; }
+  echo "  本機 bash 版本清單（$vcount 個）：$(cut -f1 "$vers" | tr '\n' ' ')" >&2
+
+  local home v bin rc out ran=0
+  while IFS=$'\t' read -r v bin; do
+    home="$BATS_TEST_TMPDIR/home-$v"
+    mkdir -p "$home"
+
+    # (1) 不給 --agent：AGENT_REQ 是「空陣列」——這正是 bash 3.2 會炸的那條路
+    #     （bash 4.4+ 才修好「set -u 下展開空陣列元素」）
+    if out=$(env -i \
+        HOME="$home" \
+        PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+        TERM="xterm" \
+        NO_COLOR="1" \
+        "$bin" "$REPO_ROOT/install.sh" --global --no-agents-dir --yes 2>&1); then rc=0; else rc=$?; fi
+    if [ "$rc" -ne 0 ]; then
+      echo "FAIL: bash $v 跑 install.sh（不給 --agent）→ rc=$rc" >&2
+      printf '%s\n' "$out" | head -8 >&2
+      return 1
+    fi
+    if [ ! -L "$home/.qoder/AGENTS.md" ]; then
+      echo "FAIL: bash ${v}（不給 --agent）沒有產生 ~/.qoder/AGENTS.md symlink" >&2
+      return 1
+    fi
+
+    # (2) --agent 重複（去重）：兩個相同名稱只能算一次
+    home="$BATS_TEST_TMPDIR/home-dedup-$v"
+    mkdir -p "$home"
+    if out=$(env -i \
+        HOME="$home" \
+        PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+        TERM="xterm" \
+        NO_COLOR="1" \
+        "$bin" "$REPO_ROOT/install.sh" --global --agent qoder --agent qoder \
+        --no-agents-dir --yes 2>&1); then rc=0; else rc=$?; fi
+    if [ "$rc" -ne 0 ]; then
+      echo "FAIL: bash $v 跑 install.sh（--agent 重複）→ rc=$rc" >&2
+      printf '%s\n' "$out" | head -8 >&2
+      return 1
+    fi
+    if [ ! -L "$home/.qoder/AGENTS.md" ]; then
+      echo "FAIL: bash ${v}（--agent 重複）沒有產生 ~/.qoder/AGENTS.md symlink" >&2
+      return 1
+    fi
+    ran=$((ran + 1))
+  done < "$vers"
+
+  [ "$ran" -eq "$vcount" ] || {
+    echo "FAIL: 只跑了 $ran 次，預期 $vcount 次 → 有版本沒跑到" >&2
+    return 1
+  }
+  echo "OK: install.sh 在 $vcount 個本機 bash 版本下皆 rc=0 且安裝成功" >&2
+}
