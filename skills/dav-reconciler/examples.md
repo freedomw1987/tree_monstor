@@ -1,6 +1,6 @@
 # Dav Reconciler — 實戰範例
 
-> 本檔示範「一次真的對帳」長什麼樣。範例資料取自 tree_monstor 自身的 TMO-069/070/071（框架層工作）。
+> 本檔示範「一次真的對帳」長什麼樣。範例資料取自 tree_monstor 自身的 TMO-071/072/073（框架層工作）。
 
 ---
 
@@ -19,7 +19,7 @@
 | 需求 ID | 需求句（摘要） | 狀態 | 實作位置 | 證據 | 備註 |
 |---------|---------------|------|---------|------|------|
 | R1 | 產出機制做成框架級能力 | ✅ 已實作 | skills/dav-reconciler/SKILL.md:1 | tests/restruct-dav-reconciler.bats RECON-001 | |
-| R2 | 本 repo 先跑驗證 | ✅ 已實作 | docs/req/TMO-069-requirement.md:1 | bats tests/doc-drift.bats | |
+| R2 | 本 repo 先跑驗證 | ✅ 已實作 | docs/req/TMO-071-requirement.md:1 | bats tests/doc-drift.bats | |
 | R3 | 原文區唯讀 | ✅ 已實作 | skills/dav-planner/backlog-rules.md §4.7 | DOC-DRIFT-002 | |
 
 ## 結論

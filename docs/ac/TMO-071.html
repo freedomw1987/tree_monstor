@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TMO-071 文件漂移探針 — AC 範本</title>
+  <title>TMO-071 需求錨點檔 — AC 範本</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1.5em; line-height: 1.7; color: #222; background: #fff; }
     h1 { border-bottom: 2px solid #333; padding-bottom: 0.3em; margin-top: 1.5em; }
@@ -16,30 +16,26 @@
   </style>
 </head>
 <body>
-  <h1>TMO-071 文件漂移探針（8 類字面對帳 D1..D8）</h1>
+  <h1>TMO-071 需求錨點檔（docs/req/<US-ID>-requirement.md）</h1>
   <blockquote>對應 Backlog: TMO-071 | 最後更新: 2026-10-26 | 狀態: done (2026-10-26)</blockquote>
   <h2>背景</h2>
-  <p>實例：`docs/ac/US-M71.md` 狀態仍是 PENDING，但它對應的 TMO-021 在 backlog 已是 done —— 同一件事兩份文件各說各話。這類「字面層漂移」不需要 AI 判斷，可以用機械化探針抓住，成本低、可進 CI、能擋退化。本 US 做 8 類字面對帳。</p>
+  <p>多文件 pipeline（需求 → backlog → AC → PRD → 測試 → 實作 → deliverable）中，同一句需求被 AI 改寫 4～5 遍，每遍掉一層；最上游的「用戶原話」沒有被保存成資產，最後只存在於對話記憶裡。本 US 建立「需求錨點檔」：把用戶原話逐字保存，作為整條鏈的根節點，後續階段一律以它為準。</p>
   <h2>Given / When / Then</h2>
-  <div class="ac-item"><strong>AC01</strong><br>    <strong>Given</strong> 任一專案的 `docs/ac/*.md` 與 `docs/backlog.md`<br>    <strong>When</strong> 跑 `scripts/ci/check-doc-drift.sh`<br>    <strong>Then</strong> 檢查 8 類：①AC 範本狀態 vs backlog 狀態 ②AC 編號連續且唯一（AC01..ACn） ③PRD 追溯矩陣 ID ⊆ backlog ID ④deliverable 提到的檔案真的存在 ⑤`ac/*.md` 與 `ac/*.html` 狀態一致 ⑥AC 範本 ↔ 需求錨點對應關係</div>
-  <div class="ac-item"><strong>AC02</strong><br>    <strong>Given</strong> 存量專案有已知不一致項<br>    <strong>When</strong> 跑檢查<br>    <strong>Then</strong> 該項被白名單豁免且**輸出說明為豁免**（不得靜默跳過）</div>
-  <div class="ac-item"><strong>AC03</strong><br>    <strong>Given</strong> 有人把 AC 範本狀態改成 done 但 backlog 沒改<br>    <strong>When</strong> 跑檢查<br>    <strong>Then</strong> rc≠0 且指出是哪一筆 ID（抓得到）</div>
-  <div class="ac-item"><strong>AC04</strong><br>    <strong>Given</strong> 探針本身被破壞<br>    <strong>When</strong> 跑突變測試<br>    <strong>Then</strong> 對應探針必須變紅（證明不是假綠）</div>
-  <div class="ac-item"><strong>AC05</strong><br>    <strong>Given</strong> CI workflow<br>    <strong>When</strong> 檢視 yaml<br>    <strong>Then</strong> 有一個步驟真的呼叫該檢查腳本<br>    <strong>And</strong> 不得 `continue-on-error` / `|| true`</div>
+  <div class="ac-item"><strong>AC01</strong><br>    <strong>Given</strong> 任一新 US 由 dav-planner 產出<br>    <strong>When</strong> 規劃完成<br>    <strong>Then</strong> 同步產生 `docs/req/<US-ID>-requirement.md`<br>    <strong>And</strong> 檔案含 `## 用戶原話（唯讀）` 與 `## 澄清後驗收句` 兩段<br>    <strong>And</strong> 兩段皆非空</div>
+  <div class="ac-item"><strong>AC02</strong><br>    <strong>Given</strong> 錨點檔已存在<br>    <strong>When</strong> 執行階段（設計／實作／對帳）讀取<br>    <strong>Then</strong> 只讀不寫「用戶原話」段<br>    <strong>And</strong> 需要引用需求時以原話為準，不得引用 AI 改寫版</div>
+  <div class="ac-item"><strong>AC03</strong><br>    <strong>Given</strong> 一個 US 有 AC 範本檔<br>    <strong>When</strong> 跑 `tests/doc-drift.bats`<br>    <strong>Then</strong> 檢查 AC 範本存在 ↔ 錨點檔存在的對應關係<br>    <strong>And</strong> 存量 US 缺錨點檔時不得因此紅（白名單機制）</div>
   <h2>DoD</h2>
   <ul>
-    <li class="dod-item">☐ AC01 / AC02 / AC03 / AC04 / AC05 全綠</li>
-    <li class="dod-item">☐ `scripts/ci/check-doc-drift.sh` 可攜（`--root` 指向目標專案）</li>
-    <li class="dod-item">☐ `tests/doc-drift.bats` 探針含突變測試</li>
-    <li class="dod-item">☐ 白名單檔 `docs/ci/drift-whitelist.txt`（每行含理由）</li>
-    <li class="dod-item">☐ CI workflow 加步驟且不得假綠</li>
+    <li class="dod-item">☐ AC01 / AC02 / AC03 全綠</li>
+    <li class="dod-item">☐ dav-planner skill 已明列「產 US 時同步產錨點檔」規則（純文字引用，不綁死路徑）</li>
+    <li class="dod-item">☐ 錨點檔兩段式結構有範例檔（`docs/req/` 內至少 1 份）</li>
+    <li class="dod-item">☐ `bats tests/doc-drift.bats` 全綠</li>
     <li class="dod-item">☐ backlog 標 TMO-071 done</li>
   </ul>
   <h2>風險</h2>
   <ul>
-    <li>AC 摘要 vs 標題「同字」比對可能對格式變動過敏 → 比對前先正規化空白與標點</li>
-    <li>追溯矩陣 ID ⊆ backlog 只保證「不引用幽靈 ID」，抓不到「漏引用」</li>
-    <li>deliverable 檔案存在性檢查對相對路徑書寫方式敏感 → 需明確路徑解析規則</li>
+    <li>唯讀區塊靠約定而非機械鎖（雜湊鎖會擋 legit 的需求澄清更新）</li>
+    <li>存量 US 不回補 → 覆蓋率從 0% 起步，需在 deliverable 誠實揭露</li>
   </ul>
 </body>
 </html>

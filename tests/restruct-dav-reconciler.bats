@@ -2,7 +2,7 @@
 #
 # tests/restruct-dav-reconciler.bats
 #
-# Regression guards for TMO-070: dav-reconciler skill（需求對帳機制）
+# Regression guards for TMO-072: dav-reconciler skill（需求對帳機制）
 # + Gate 4.5 登錄（handbook §2.3 / AGENTS.md §2.3 / dav-submitter / dav-reflection）
 #
 # 設計依據：docs/prd/05-delivery-fidelity.md FR-02

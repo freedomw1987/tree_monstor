@@ -2,7 +2,7 @@
 
 **版本**：v1.0
 **日期**：2026-10-26
-**Backlog**：TMO-069 / TMO-070 / TMO-071
+**Backlog**：TMO-071 / TMO-072 / TMO-073
 **SOP 版本**：v2.2（四道大 Gate 定義不動；新增 §2.3 內嵌子關卡「Gate 4.5 需求對帳」）
 **階段數**：3 階段（錨點 → 對帳 → 探針），每階段獨立可交付
 
@@ -40,9 +40,9 @@
 
 | 階段 | 內容 | Backlog | SP |
 |------|------|---------|-----|
-| 階段 1 | 需求錨點檔格式 + dav-planner 產出規則 | TMO-069 | 3 |
-| 階段 2 | `dav-reconciler` skill + 對帳表格式 + 硬門檻 + 交付狀態降級規則 | TMO-070 | 5 |
-| 階段 3 | `check-doc-drift.sh` + `tests/doc-drift.bats` + CI 步驟 | TMO-071 | 5 |
+| 階段 1 | 需求錨點檔格式 + dav-planner 產出規則 | TMO-071 | 3 |
+| 階段 2 | `dav-reconciler` skill + 對帳表格式 + 硬門檻 + 交付狀態降級規則 | TMO-072 | 5 |
+| 階段 3 | `check-doc-drift.sh` + `tests/doc-drift.bats` + CI 步驟 | TMO-073 | 5 |
 
 ### Out of Scope（明確不做，避免膨脹）
 
@@ -56,7 +56,7 @@
 
 ---
 
-## FR-01：需求錨點檔（TMO-069）
+## FR-01：需求錨點檔（TMO-071）
 
 ### 檔案契約
 
@@ -104,7 +104,7 @@
 
 ---
 
-## FR-02：需求對帳（TMO-070）
+## FR-02：需求對帳（TMO-072）
 
 ### 觸發點與順序
 
@@ -158,7 +158,7 @@
 
 ---
 
-## FR-03：文件漂移探針（TMO-071）
+## FR-03：文件漂移探針（TMO-073）
 
 ### 腳本
 
@@ -236,9 +236,9 @@
 
 | FR | User Story | 對應畫面 | 原型檔案 | 狀態 |
 |----|-----------|----------|----------|------|
-| FR-01 需求錨點檔 | TMO-069 | N/A（無 UI：純文件契約）| N/A | ✅ 已實作（2026-10-26）|
-| FR-02 需求對帳 | TMO-070 | N/A（無 UI：CLI / 對話產出）| N/A | ✅ 已實作（2026-10-26）|
-| FR-03 漂移探針 | TMO-071 | N/A（無 UI：CI 腳本）| N/A | ✅ 已實作（2026-10-26）|
+| FR-01 需求錨點檔 | TMO-071 | N/A（無 UI：純文件契約）| N/A | ✅ 已實作（2026-10-26）|
+| FR-02 需求對帳 | TMO-072 | N/A（無 UI：CLI / 對話產出）| N/A | ✅ 已實作（2026-10-26）|
+| FR-03 漂移探針 | TMO-073 | N/A（無 UI：CI 腳本）| N/A | ✅ 已實作（2026-10-26）|
 
 > **畫面 / 原型 N/A 的理由**：本模組全為 CLI + Markdown + CI 腳本，無任何使用者介面或互動原型需求
 > （DoD-Lite 僅指 Happy path；此處連 Happy path 畫面都不存在）。依 dav-designer Step 2 / Step 5 規則，
@@ -297,20 +297,20 @@
 
 ## DoD
 
-### 階段 1（TMO-069）
+### 階段 1（TMO-071）
 
-- [x] `docs/req/` 至少 1 份範例錨點檔，4 段結構齊全、R-ID 連續（實際產 3 份：TMO-069/070/071）
+- [x] `docs/req/` 至少 1 份範例錨點檔，4 段結構齊全、R-ID 連續（實際產 3 份：TMO-071/072/073）
 - [x] dav-planner 規則已登錄（純文字引用，不綁死路徑）→ `skills/dav-planner/SKILL.md` v2.7 + `backlog-rules.md` §4.7
 - [x] `bats tests/doc-drift.bats` 相關探針綠（DOC-DRIFT-001..007）
 
-### 階段 2（TMO-070）
+### 階段 2（TMO-072）
 
 - [x] `skills/dav-reconciler/` 主檔 ≤150 行（120 行）、frontmatter 齊全、5 段導航、純文字引用
 - [x] 對帳表格式 + 硬門檻規則已登錄（dav-submitter v2.5 + `template.md` §3.1）
 - [x] handbook §2.3 / §2.4 + AGENTS.md §2.3 已登錄 Gate 4.5（`gates.json` 刻意不動，見 ADR-D1）
 - [x] `bats tests/restruct-dav-reconciler.bats` 綠（16 條）
 
-### 階段 3（TMO-071）
+### 階段 3（TMO-073）
 
 - [x] `scripts/ci/check-doc-drift.sh` rc 契約正確、8 類檢查皆能抓到（DOC-DRIFT-009..037）
 - [x] `tests/doc-drift.bats` 全綠（37 條，含突變測試 + mutant 表登錄 DD-M1 / DD-M2 / DD-M3 / DR-M1）

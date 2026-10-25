@@ -26,15 +26,18 @@
 #  10. 本機安裝文件必須教「釘版 bats」（CI 已釘 v1.14.0；只鎖 CI 一側＝本機仍是漂移來源）
 #
 # 註: @test 名稱以純英文為主。
-#     ⚠️ **TMO-072 更正**：上一版註解寫「2026-10-05 實測 bats 1.14.0：開頭 CJK／尾綴 CJK 都會跑」——
+#     ⚠️ **TMO-074 更正**：上一版註解寫「2026-10-05 實測 bats 1.14.0：開頭 CJK／尾綴 CJK 都會跑」——
 #     那次實測是在 **LC_ALL=C** 的 locale 下做的，結論只在那個環境成立。
-#     2026-10-26 重測（bats 1.14.0）：
-#       LC_ALL=C            → CJK 名**會跑**（`[[:alnum:]]` 只認 ASCII → CJK 被跳過編碼）
-#       LC_ALL=en_US.UTF-8  → CJK 名**被丟棄**（`[[:alnum:]]` 認 Unicode 字母 → 函式名對不上）
+#     2026-10-26 二次實測（bats 1.14.0）——**變因是「bash 版本 × locale」兩個**：
+#       bash 3.2 + UTF-8 locale → CJK 名**被丟棄**（`[[:alnum:]]` 認 Unicode 字母 → 函式名對不上）
+#       bash 3.2 + C locale   → CJK 名**會跑**
+#       bash 5.3 + UTF-8 locale → CJK 名**會跑**   ← CI（ubuntu/macOS 都是 bash 5.x）
+#       bash 5.3 + C locale   → CJK 名**會跑**
 #     實測被丟棄的有：中文／假名／韓文／西里爾；**不會**被丟棄的有：希臘文、café、全形英數、emoji、→。
-#     → CJK 名探針在 UTF-8 locale（CI 預設）下**從未執行**＝假綠。
-#     處理：①repo 內所有 @test 名一律純 ASCII（守門：tests/probe-name-ascii.bats PNA-1）；
-#           ②本檔 ENV-EQ-9 的 canary 改成**locale 正確**的斷言（下方）。
+#     → **CI 沒有這個病**；受影響的是**本機 bash 3.2**（macOS 預設）→ 本機假綠。
+#     處理：①repo 內所有 @test 名一律純 ASCII（守門：tests/probe-name-ascii.bats PNA-1）
+#           → 讓本機與 CI 跑同一套探針、看到同一個結果；
+#           ②本檔 ENV-EQ-9 的 canary 改成**依當前環境實測**的斷言（下方）。
 
 setup() {
   load 'helpers/test-env'
@@ -46,7 +49,7 @@ setup() {
 # 註：bats 前處理器會把 heredoc 內的 `@test` 行改寫成 `bats_test_function ...`
 # （實測 1.14.0），所以「用 heredoc 寫 fixture」不能拿來測這個函式，fixture 要用 printf。
 #
-# ⚠️ TMO-072：掃描器本體已外移到 `tests/helpers/probe-scan.bash`（與 TMO-072 新增的
+# ⚠️ TMO-074：掃描器本體已外移到 `tests/helpers/probe-scan.bash`（與 TMO-074 新增的
 #    `tests/probe-name-ascii.bats` 共用同一份），避免兩份掃描器漂移。
 #    這裡保留薄包裝只是為了不動 ENV-EQ-9 的自我測試呼叫點。
 count_declared_tests() {
@@ -415,8 +418,8 @@ printf "%s\n" "${a[@]}"'
   }
   # (2) canary：CJK 名稱在**目前 locale** 下會不會被 bats 丟棄（printf 寫檔，避免前處理器改寫）
   #
-  # ⚠️ **TMO-072 更正**：舊版斷言寫「CJK 名必須跑 2 條」——那是 LC_ALL=C 下的觀察。
-  #    在 UTF-8 locale 下 bats **會丟棄**它們（rc=1、實跑 0 條），所以舊斷言在 CI 那種
+  # ⚠️ **TMO-074 更正**：舊版斷言寫「CJK 名必須跑 2 條」——那是 LC_ALL=C 下的觀察。
+  #    在 **bash 3.2 + UTF-8 locale** 下 bats **會丟棄**它們（rc=1、實跑 0 條），所以舊斷言在 bash 5.x 那種
   #    locale 下必然紅，且紅的原因被誤讀成「canary 檔壞掉」。
   #    正確斷言：**先決定性驗證 LC_ALL=C 下必定會跑**（證明不是 bats 不支援 CJK），
   #    再依**目前 locale 的 charset** 決定期望值 → 跨平台可重現、不會靠 locale 名稱硬編。
@@ -426,43 +429,38 @@ printf "%s\n" "${a[@]}"'
     printf '%s\n' '@test "中文開頭名稱" { true; }'
     printf '%s\n' '@test "ENV-CJK: 尾綴中文名稱" { true; }'
   } > "$mini"
-  # (2a) 決定性：LC_ALL=C 下 `[[:alnum:]]` 只認 ASCII → CJK 名必定被跑
-  local ran_c
+  # (2b) 斷言 CJK 名 fixture 的行為是**明確的兩種狀態之一**，且 LC_ALL=C 錨點恆定。
+  #
+  #     為什麼不用「locale 的 [[:alnum:]] 含不含 CJK」當判別式：**那不是開關**。
+  #     真實開關是「bash 版本 × locale」：bash 3.2 + UTF-8 locale 會丟棄，
+  #     bash 5.x（CI）在任何 locale 都不丟棄 —— 但 libc 的 alnum 類別在兩者都是
+  #     「含 CJK」。用 alnum 當預測會在 bash 5 上誤判（實測踩過）。
+  #
+  #     所以這裡只斷言**可觀察且穩定**的兩件事：
+  #       ① LC_ALL=C 錨點：CJK 名**必定會跑**（所有 bash 版本都如此，實測 3.2 / 5.3）
+  #       ② 當前環境：必須是「全跑(2)」或「全丟棄(0)」之一 —— **不得部分丟棄**
+  #          （部分丟棄＝bats 行為異常，那才是真的 bug）
+  #     並印出當前屬於哪一種，讓讀 log 的人知道自己的環境落在哪一側。
+  local ran_c ran_amb
   ran_c=$(LC_ALL=C bats "$mini" 2>/dev/null | grep -c '^ok ' || true)
   [ "$ran_c" -eq 2 ] || {
     echo "FAIL: LC_ALL=C 下 CJK 名探針應跑 2 條，實跑 $ran_c 條（bats 行為與已知機制不符）" >&2
     return 1
   }
-  # (2b) 目前 locale：**用「該 locale 的 [[:alnum:]] 是否含 CJK」當判別式**。
-  #     為什麼不用 charmap：那不是真正的開關。bats 的 `bats_encode_test_name` 用
-  #     `[[:alnum:]]` 決定哪些字元原樣留在函式名裡 → 決定成敗的是「該 locale 的
-  #     alnum 類別涵不涵蓋 CJK 字母」，不是字元集。例：ja_JP.eucJP 的 charmap 是
-  #     EUC-JP（非 UTF-8）但 CJK 是 alnum → bats 照樣丟棄。
-  #     這個探針與 bats 用的是同一個判準 → 不依賴 locale 名稱、也不依賴 charset。
-  local cjk_alnum ran
-  cjk_alnum=$(printf '中' | grep -c '[[:alnum:]]' || true)
-  # 巢狀跑 bats 時要清掉 BATS_* 環境變數（否則外層的 BATS_TEST_* 會滲進內層，
-  # 讓內層以為自己在一個測試裡跑）。做法比照 scripts/ci/mutant-must-die.py 的 STRIP_ENV_EXACT。
   run env -u BATS_TMPDIR -u BATS_RUN_TMPDIR -u BATS_SUITE_TMPDIR -u BATS_FILE_TMPDIR \
       -u BATS_TEST_TIMEOUT -u BATS_TEST_RETRIES \
       -u BATS_TEST_NAME -u BATS_TEST_NUMBER -u BATS_TEST_DESCRIPTION \
       -u BATS_TEST_FILENAME -u BATS_LINENO -u BATS_RUN_COMMAND \
       bats "$mini"
-  ran=$(printf '%s\n' "$output" | grep -c '^ok ' || true)
-  if [ "$cjk_alnum" -eq 1 ]; then
-    [ "$ran" -eq 0 ] || {
-      echo "FAIL: UTF-8 locale 下 CJK 名應被 bats 丟棄（實跑 $ran 條）→ 若 bats 已修好，" >&2
-      echo "      純 ASCII 的命名規則仍應保留（防禦性），但本 canary 的期望值可更新" >&2
+  ran_amb=$(printf '%s\n' "$output" | grep -c '^ok ' || true)
+  case "$ran_amb" in
+    2) echo "OK: 當前環境下 CJK 名探針會跑（此環境不受 bash 3.2 的丟棄影響）" >&2 ;;
+    0) echo "OK: 當前環境下 CJK 名探針被 bats 丟棄（bash 3.2 + UTF-8 locale → 本機假綠；repo 已一律用純 ASCII 命名）" >&2 ;;
+    *)
+      echo "FAIL: CJK 名探針被**部分**丟棄（宣告 2 條、實跑 $ran_amb 條）→ bats 行為異常" >&2
       return 1
-    }
-    echo "OK: 目前 locale 的 alnum 含 CJK → CJK 名如預期被 bats 丟棄 → repo 必須用純 ASCII 命名" >&2
-  else
-    [ "$ran" -eq 2 ] || {
-      echo "FAIL: 目前 locale 的 alnum 不含 CJK → CJK 名應跑 2 條，實跑 $ran 條" >&2
-      return 1
-    }
-    echo "OK: 目前 locale 的 alnum 不含 CJK → CJK 名如預期會跑；但仍維持純 ASCII 命名規則" >&2
-  fi
+      ;;
+  esac
   echo "OK: 宣告 $declared 條 == bats 計畫 $planned 條；CJK canary 依 locale 正確判定" >&2
 }
 

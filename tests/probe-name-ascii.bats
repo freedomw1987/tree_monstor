@@ -2,32 +2,40 @@
 #
 # tests/probe-name-ascii.bats
 #
-# TMO-072：守「bats 探針不會被靜默丟棄」。
+# TMO-074：守「bats 探針不會被靜默丟棄」。
 #
 # 病因（2026-10-26 實測確認，bats 1.14.0）：
-#   bats 前處理器把 @test 名稱編成 bash 函式名時，用的是 `[[:alnum:]]`——
-#   在 **UTF-8 locale** 下這個類別會匹配到 Unicode 字母（中文／假名／韓文／西里爾…），
-#   那些字元被**原樣**留在函式名裡 → 函式對不上 → bats 報
+#   bats 前處理器把 @test 名稱編成 bash 函式名時，用的是 `[[:alnum:]]`。
+#   在 **bash 3.2**（macOS 預設 /bin/bash）**且 UTF-8 locale** 下，這個類別會匹配到
+#   Unicode 字母（中文／假名／韓文／西里爾…），那些字元被**原樣**留在函式名裡 →
+#   函式對不上 → bats 報
 #     `bats: unknown test name` + `bats warning: Executed N instead of expected M tests`
 #   → **該支探針從未被執行**，但 `bats --count` **仍把它算進去** → 報表看起來全綠（**假綠**）。
 #
-#   為什麼是 locale 相依（同一支探針在不同環境結果相反）：
-#     LC_ALL=C          → `[[:alnum:]]` 只認 ASCII → 中文被跳過編碼 → **探針會跑**
-#     LC_ALL=en_US.UTF-8→ `[[:alnum:]]` 認 Unicode 字母 → **探針被丟棄**
-#   實測：teст / テスト / 테스트 / 中文 → UTF-8 locale 下全被丟棄；
+#   ⚠️ **變因是「bash 版本 × locale」兩個，不是只有 locale**（2026-10-26 二次實測更正）：
+#     bash 3.2 + UTF-8 locale → 中文名被丟棄（假綠）   ← 本機 macOS 預設
+#     bash 3.2 + C locale   → 中文名會跑
+#     bash 5.3 + UTF-8 locale → 中文名會跑              ← **CI 的 ubuntu/macOS 都是 bash 5.x**
+#     bash 5.3 + C locale   → 中文名會跑
+#   → **CI（bash 5.x）並沒有這個病**；受影響的是**本機 bash 3.2 的開發者**。
+#     （這正是 docs/deliverable/2026-10-23-dav-trust-v2.4-resume-and-stop.md §7 當年寫的
+#      「在 bash 3.2 本機上，23 支探針檔的守護會被靜默丟棄」——本機當時的根因描述是對的。）
+#
+#   實測：тест / テスト / 테스트 / 中文 → bash 3.2 + UTF-8 下全被丟棄；
 #        而希臘文、café、全形英數、emoji、→、中文標點 → **不會**被丟棄。
 #   → 動工前（2026-10-26 量測）：**21 個探針檔共 134 支**探針名含非 ASCII 字元，
-#     在 UTF-8 locale（CI 預設）下從未執行。
+#     其中約 104 支在**本機 bash 3.2** 下從未執行（CI 的 bash 5.x 正常執行）。
 #
-# 本探針的策略：**預防**（靜態、locale 與環境無關）為主，
-#   runtime 的「偵測」則交給 bats 自己的 exit code（探針被丟棄時 bats rc=1，CI 不會綠）。
+# 本探針的策略：**預防**（靜態、與 locale／bash 版本都無關）為主 ——
+#   讓「本機 bash 3.2」與「CI bash 5.x」**跑同一套探針、看到同一個結果**。
 #
 # 「bats 到底會不會丟棄 CJK 名」的**機制 canary**歸 `tests/env-equivalence.bats` ENV-EQ-9 所有
 # （那裡同時有 repo 普查）；本檔只負責「repo 的命名政策 + 掃描器本身的正確性」。
 #
-# 另外 PNA-4 守的是**斷言會不會真的生效**（TMO-072 的第二層教訓）：
-#   bats 在 `set -e` 下，**獨立的 `[[ ... ]]` 失敗不會中止 test body**（只有最後一個
-#   命令的狀態決定結果）→ 夾在中間的 `[[ ]]` 斷言等於沒有。
+# 另外 PNA-4 守的是**斷言會不會真的生效**（TMO-074 的第二層教訓）：
+#   **bash 3.2** 下，獨立的 `[[ ... ]]` 失敗**不會中止 test body**（只有最後一個命令的
+#   狀態決定結果）→ 夾在中間的 `[[ ]]` 斷言等於沒有 → 本機假綠。
+#   （bash 5.x 會中止 → 同一支探針在 CI 是對的、在本機是錯的 → 又是環境相依的假綠。）
 #   實測（bats 1.14.0 / bash）：
 #     [[ abc == xyz ]]; echo reached   -> reached（rc 0，沒中止）
 #     [ abc = xyz ];    echo reached   -> 中止（rc 1）
@@ -57,14 +65,14 @@ _probe_files() {
       [ -n "$name" ] || continue
       scanned_names=$((scanned_names + 1))
       if printf '%s\n' "$name" | LC_ALL=C grep -q '[^[:print:]]'; then
-        echo "VIOLATION: $(basename "$file") 探針名含非 ASCII 字元 → bats 在 UTF-8 locale 下會靜默丟棄它：" >&2
+        echo "VIOLATION: $(basename "$file") 探針名含非 ASCII 字元 → bash 3.2 + UTF-8 locale 下 bats 會靜默丟棄它（本機假綠）：" >&2
         echo "    $name" >&2
         violations=$((violations + 1))
       fi
     done < <(probe_declared_names "$file")
   done < <(_probe_files)
   [ "$violations" -eq 0 ] || {
-    echo "FAIL: $violations 支探針的名稱含非 ASCII 字元（在 UTF-8 locale 下從未執行 → 假綠）" >&2
+    echo "FAIL: $violations 支探針的名稱含非 ASCII 字元（在 bash 3.2 + UTF-8 locale 下從未執行 → 假綠）" >&2
     echo "修法：把測試名改成純 ASCII（保留原有的 <ID>: <說明> 結構，說明翻成英文）" >&2
     return 1
   }
@@ -139,7 +147,7 @@ _probe_files() {
 
 
 @test "PNA-4: every standalone [[ ]] assertion is fail-fast (or a conditional)" {
-  # TMO-072 的第二層教訓：獨立的 `[[ ... ]]` 斷言在 bats 裡**失敗不會中止 test body**
+  # TMO-074 的第二層教訓：獨立的 `[[ ... ]]` 斷言在 bats 裡**失敗不會中止 test body**
   # （只有最後一個命令的狀態決定結果）→ 夾在中間的斷言等於沒有，探針會「假綠」。
   #
   # 實測（bats 1.14.0）：

@@ -14,7 +14,7 @@
 #     - 引號狀態跨行保存；交叉污染只會造成「大聲紅」（多算/少算都比對得出來），
 #       不會靜默。
 #
-# 為什麼「名稱」比「數量」重要（TMO-072）：
+# 為什麼「名稱」比「數量」重要（TMO-074）：
 #   bats 1.14 在 **UTF-8 locale** 下會**靜默丟棄**名稱含 CJK 等 Unicode 字母的 @test
 #   （`bats: unknown test name` → "Executed N instead of expected M" → rc=1）。
 #   但 `bats --count` **仍把它算進去** → 光比數量抓不到，必須看**名稱本身**。

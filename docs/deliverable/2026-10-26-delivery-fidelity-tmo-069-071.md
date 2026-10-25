@@ -1,4 +1,4 @@
-# 交付 — TMO-069/070/071：Delivery Fidelity（需求錨點 + 需求對帳 + 文件漂移探針）
+# 交付 — TMO-071/072/073：Delivery Fidelity（需求錨點 + 需求對帳 + 文件漂移探針）
 
 > 日期：2026-10-26 ｜ 範圍：`docs/req/`（新）+ `docs/reconcile/`（新）+ `skills/dav-reconciler/`（新）
 > + `skills/dav-planner/` + `skills/dav-submitter/` + `skills/dav-reflection/` + `docs/sop/handbook/{2.3,2.4,2.5,changelog}`
@@ -28,16 +28,16 @@
 
 ## 2. 做了什麼
 
-### 2.1 需求錨點（TMO-069）— 把用戶原話變成資產
+### 2.1 需求錨點（TMO-071）— 把用戶原話變成資產
 
 | 產物 | 內容 |
 |------|------|
 | `docs/req/<US-ID>-requirement.md`（新）| 4 段固定結構：標頭 + `## 用戶原話（唯讀）` + `## 澄清後驗收句` + `## 變更歷史`；需求句以 **R-ID**（R1..Rn）編號，跨檔追溯的唯一鍵 |
 | `skills/dav-planner/SKILL.md` v2.7 | 產 US 必產錨點檔（產出物 3 → 4 檔）|
 | `skills/dav-planner/backlog-rules.md` §4.7 | 錨點檔格式契約 + R-ID 規則（連續 / 唯一 / 一對一 / 唯讀 / 不可刪）+ 5 項自我檢查 |
-| `docs/req/TMO-069~071-requirement.md`（新）| 本次三個 US 的錨點（原話逐字保存）|
+| `docs/req/TMO-071~073-requirement.md`（新）| 本次三個 US 的錨點（原話逐字保存）|
 
-### 2.2 需求對帳（TMO-070）— 讓「對不對得上」由第三方判定
+### 2.2 需求對帳（TMO-072）— 讓「對不對得上」由第三方判定
 
 | 產物 | 內容 |
 |------|------|
@@ -48,12 +48,12 @@
 | `skills/dav-submitter/` v2.5 | Step 4.5 帶入對帳結論；`template.md` §3.1 需求對帳段；**硬門檻**（未對上 → 不得標「✅ 完成」）|
 | `skills/dav-reflection/` v2.3 | 規則表加「需求對帳先於反省」|
 | `docs/sop/handbook/2.5-submission.md` | 官方模板統一為 `**交付狀態**` 三值 + 補「3.1 需求對帳」段（原本與 `dav-submitter/template.md` 互斥）|
-| `docs/reconcile/TMO-069~071-reconcile.md`（新）| 本次三個 US 的對帳表（**獨立對帳者原文**）|
+| `docs/reconcile/TMO-071~073-reconcile.md`（新）| 本次三個 US 的對帳表（**獨立對帳者原文**）|
 
 > **`gates.json` 本次刻意不動**：schema 的 gate `id` 只允許 `^gate-[0-9]+$`（整數），
 > Gate 4.5 是子關卡不是第五道大 Gate → 定義寫在 handbook §2.3（見 PRD-05 ADR-D1，探針反向鎖住）。
 
-### 2.3 文件漂移探針（TMO-071）— 字面層漂移進 CI
+### 2.3 文件漂移探針（TMO-073）— 字面層漂移進 CI
 
 | 產物 | 內容 |
 |------|------|
@@ -80,8 +80,8 @@
 
 ### 2.5 本次機制的「自我套用」（dogfooding）
 
-+ 需求錨點：`docs/req/TMO-069-requirement.md`、`TMO-070-requirement.md`、`TMO-071-requirement.md`（本次訪談原話逐字）
-+ 對帳表：`docs/reconcile/TMO-069-reconcile.md`、`TMO-070-reconcile.md`、`TMO-071-reconcile.md`（**獨立 subagent 產出，非執行者自評**）
++ 需求錨點：`docs/req/TMO-071-requirement.md`、`TMO-072-requirement.md`、`TMO-073-requirement.md`（本次訪談原話逐字）
++ 對帳表：`docs/reconcile/TMO-071-reconcile.md`、`TMO-072-reconcile.md`、`TMO-073-reconcile.md`（**獨立 subagent 產出，非執行者自評**）
 + 交付摘要：本檔（含 §3.1 需求對帳段）
 
 ## 3. 驗證
@@ -98,19 +98,19 @@
 ## 3.1 需求對帳
 
 > 對帳者：`evidence-auditor` subagent（Gate 4.5 獨立對帳者，**未參與實作**）｜對帳時間：2026-10-26｜對帳輪次：第 6 輪
-> 對帳表：`docs/reconcile/TMO-069-reconcile.md`、`docs/reconcile/TMO-070-reconcile.md`、`docs/reconcile/TMO-071-reconcile.md`
+> 對帳表：`docs/reconcile/TMO-071-reconcile.md`、`docs/reconcile/TMO-072-reconcile.md`、`docs/reconcile/TMO-073-reconcile.md`
 > 覆蓋率：7/7（R-ID 全覆蓋，無漏列）
 > 狀態值依 `skills/dav-reconciler/reconcile-format.md` §4（4 種）；比對時已正規化 emoji 變體選擇符（U+FE0F）
 
 | 需求 ID | US | 需求句（摘要） | 對帳狀態 | 實作位置 | 證據 |
 |---------|----|---------------|---------|---------|------|
-| R1 | TMO-069 | 落差必須被機制化處理，可見、可驗、不可藏 | ✅ 已實作 | `skills/dav-reconciler/` + `skills/dav-planner/backlog-rules.md` §4.7 | DOC-DRIFT-001..037；DD-M1..DD-M3；**端到端對抗測試**（假「✅ 完成」→ rc=1 被 D8 攔下）|
-| R2 | TMO-069 | 機制須框架級（安裝後即可用）且先在本 repo 落地 | ✅ 已實作 | `skills/dav-reconciler/scripts/check-doc-drift.py`（隨 skill 安裝）| DOC-DRIFT-008/009/021/022/034/036/037 |
-| R3 | TMO-069 | 錨點檔 4 段結構 + 原話唯讀 + R-ID 化 | ✅ 已實作 | `docs/req/TMO-069~071-requirement.md`；`backlog-rules.md` §4.7 | DOC-DRIFT-001..004 |
-| R1 | TMO-070 | 落差必須由獨立第三方判定（不得自評自證）| ✅ 已實作 | `skills/dav-reconciler/SKILL.md` Step 2 + 規則表 | RECON-009/011/012 |
-| R2 | TMO-070 | 未對上不得宣告「✅ 完成」 | ✅ 已實作 | `dav-submitter` v2.5 + `template.md` §3.1 + `2.5-submission.md` + handbook §2.3 | RECON-010；DOC-DRIFT-028/031；**DD-M3 mutant**（gaps 分支改 `if False:` → 紅）|
-| R1 | TMO-071 | 字面不一致必須機械化抓出 | ✅ 已實作 | `check-doc-drift.py`（D1..D8）+ CI 步驟 | DOC-DRIFT-008..037 |
-| R2 | TMO-071 | 8 類字面對帳 + 帶理由的白名單、不得誤紅 | ✅ 已實作 | `check-doc-drift.py`；`docs/ci/drift-whitelist.txt`；`tests/doc-drift.bats` | DOC-DRIFT-011..037（DOC-DRIFT-035 數字區間分支已實測綠；036/037 為 `--from-date` fail-closed）|
+| R1 | TMO-071 | 落差必須被機制化處理，可見、可驗、不可藏 | ✅ 已實作 | `skills/dav-reconciler/` + `skills/dav-planner/backlog-rules.md` §4.7 | DOC-DRIFT-001..037；DD-M1..DD-M3；**端到端對抗測試**（假「✅ 完成」→ rc=1 被 D8 攔下）|
+| R2 | TMO-071 | 機制須框架級（安裝後即可用）且先在本 repo 落地 | ✅ 已實作 | `skills/dav-reconciler/scripts/check-doc-drift.py`（隨 skill 安裝）| DOC-DRIFT-008/009/021/022/034/036/037 |
+| R3 | TMO-071 | 錨點檔 4 段結構 + 原話唯讀 + R-ID 化 | ✅ 已實作 | `docs/req/TMO-071~073-requirement.md`；`backlog-rules.md` §4.7 | DOC-DRIFT-001..004 |
+| R1 | TMO-072 | 落差必須由獨立第三方判定（不得自評自證）| ✅ 已實作 | `skills/dav-reconciler/SKILL.md` Step 2 + 規則表 | RECON-009/011/012 |
+| R2 | TMO-072 | 未對上不得宣告「✅ 完成」 | ✅ 已實作 | `dav-submitter` v2.5 + `template.md` §3.1 + `2.5-submission.md` + handbook §2.3 | RECON-010；DOC-DRIFT-028/031；**DD-M3 mutant**（gaps 分支改 `if False:` → 紅）|
+| R1 | TMO-073 | 字面不一致必須機械化抓出 | ✅ 已實作 | `check-doc-drift.py`（D1..D8）+ CI 步驟 | DOC-DRIFT-008..037 |
+| R2 | TMO-073 | 8 類字面對帳 + 帶理由的白名單、不得誤紅 | ✅ 已實作 | `check-doc-drift.py`；`docs/ci/drift-whitelist.txt`；`tests/doc-drift.bats` | DOC-DRIFT-011..037（DOC-DRIFT-035 數字區間分支已實測綠；036/037 為 `--from-date` fail-closed）|
 
 + 覆蓋率：7/7（100%）
 + 對帳者：未參與實作的獨立 subagent（非降級路徑）
@@ -130,17 +130,17 @@
 
 | # | 待補項 | 級別 | 誰來做 | 第 6 輪狀態 |
 |---|--------|------|--------|-------------|
-| 1 | ~~**TMO-069 R1 仍為 ⚠**：「不可藏」的最後一環（端到端：真實 deliverable 被 D8 攔／放行）~~ | — | — | **已閉合**：本輪以**真實交付摘要**做對抗測試（改「✅ 完成」→ rc=1，D8 點名 2 個 gap）+ 真實 repo rc=0 |
-| 2 | ~~**TMO-071 R2 仍為 ⚠**：D4 數字區間分支（DOC-DRIFT-035）~~ | — | — | **已閉合**：DOC-DRIFT-035 存在且**實測綠**（`bats tests/doc-drift.bats` → 37/37 綠） |
+| 1 | ~~**TMO-071 R1 仍為 ⚠**：「不可藏」的最後一環（端到端：真實 deliverable 被 D8 攔／放行）~~ | — | — | **已閉合**：本輪以**真實交付摘要**做對抗測試（改「✅ 完成」→ rc=1，D8 點名 2 個 gap）+ 真實 repo rc=0 |
+| 2 | ~~**TMO-073 R2 仍為 ⚠**：D4 數字區間分支（DOC-DRIFT-035）~~ | — | — | **已閉合**：DOC-DRIFT-035 存在且**實測綠**（`bats tests/doc-drift.bats` → 37/37 綠） |
 | 3 | ~~**V03 第 2 輪二審 verdict 缺席**~~ | — | — | **已閉合**：`docs/sop/handbook/changelog.md` v2.11「二審結論」表**同時有第 1 / 第 2 輪兩列**（＋「第 2 輪處置明細」16 項）；原為第 5 輪交付時的過期敘述，已刪 |
 | 4 | 未在**第二個專案**實跑過漂移檢查（只在本 repo 跑過）| P2 | 推廣時補 | 仍待補（不屬本 US 驗收條件，已揭露）|
 | 5 | 「用戶原話」唯讀靠**約定**（無機械鎖）；無探針能偵測下游改寫原話段 | P2 | 已揭露的設計取捨 | 仍待補（已揭露的設計取捨）|
-| 6 | 存量 US 未回補錨點（覆蓋率從 0% 起步）| P3 | 依 TMO-069 決策不回補 | 仍待補（依 TMO-069 決策不回補）|
+| 6 | 存量 US 未回補錨點（覆蓋率從 0% 起步）| P3 | 依 TMO-071 決策不回補 | 仍待補（依 TMO-071 決策不回補）|
 | 7 | 「唯讀」與「已作廢」的語意在 `docs/deliverable/2026-09-28-…` 歷史檔仍留舊敘述（歷史交付 append-only，不回改）| P3 | 不回改 | 仍待補（歷史交付 append-only，不回改）|
-| 8 | **D5 只比 md/html 的「狀態」、不比內文** → 同檔內「5 類 vs 8 類」這類內文漂移抓不到（本輪實際發生於 `docs/ac/TMO-071.html` → 已直接修正）；補 D9 屬**新增 scope** | P2 | 另開 US | **本輪揭露**（設計邊界）|
+| 8 | **D5 只比 md/html 的「狀態」、不比內文** → 同檔內「5 類 vs 8 類」這類內文漂移抓不到（本輪實際發生於 `docs/ac/TMO-073.html` → 已直接修正）；補 D9 屬**新增 scope** | P2 | 另開 US | **本輪揭露**（設計邊界）|
 | 9 | ~~**狀態值詞彙表只認 4 個已知 emoji** → 全新 emoji 的第 5 種狀態值不被 RECON-007 擋~~ | — | — | **已閉合**：依 V03 Reviewer 第 2 輪建議改為**結構式 + 集合等值 + 跨檔守護**（`check-doc-drift.py` 的 `VALID_STATUS` ↔ 規格檔 §4 一致性）+ 新增 **RECON-016** 反向自測 + **mutant DR-M2** |
 | 10 | **mutant harness 在截斷多位元組字元時會 UnicodeDecodeError 崩潰**（`text=True` 嚴格解碼）→ 整張表中止 → 其餘 mutant 從未被驗（**既存缺陷**，本輪跑全表才浮現）| P2 | — | **已閉合**（改 `errors="replace"`；rc 才是判定依據）|
-| 11 | ~~**TMO-072**：bats 1.14 靜默跳過「測試名含中文」的 `@test` → 探針從未執行（假綠溫床）→ CI 的「Verify probes still kill mutants」步驟**紅**~~ | — | — | **已閉合**（2026-10-26 動工）：① **21 個探針檔共 134 支**探針名改為純 ASCII（保留 ID 前綴；`mutants.tsv` 的 ASCII ID 仍對得上）→ 計畫數 == 執行數 == 760、`unknown test name` 0 筆；②新增 `tests/helpers/probe-scan.bash` + `tests/probe-name-ascii.bats`（PNA-1～PNA-4）作守門；③ENV-EQ-9 的 canary 改成 locale 正確的斷言（→ **ENV-EQ-9 從紅轉綠**）；④連帶修掉 **181 個**「獨立 `[[ ]]` 斷言失敗不會中止 test body」的假綠 → **6 支原本守不住的 mutant 全部轉死**，**全表 48 支 mutant 首次全死**（動工前整表 UnicodeDecodeError 崩潰）|
+| 11 | ~~**TMO-074**：bats 1.14 在 **bash 3.2**（macOS 預設）+ UTF-8 locale 下靜默丟棄名稱含 CJK 的 `@test` → 探針從未執行（**本機**假綠；CI 的 bash 5.x 不受影響）~~ | — | — | **已閉合**（2026-10-26）：①**21 個探針檔共 134 支**探針名改為純 ASCII（保留 ID 前綴；`mutants.tsv` 的 ASCII ID 仍對得上）→ 計畫數 == 執行數 == 760、`unknown test name` 0 筆；②新增 `tests/helpers/probe-scan.bash` + `tests/probe-name-ascii.bats`（PNA-1～PNA-4）作守門；③ENV-EQ-9 的 canary 改成與環境無關的斷言（→ **ENV-EQ-9 從紅轉綠**）；④連帶修掉 **181 個**「獨立 `[[ ]]` 斷言在 bash 3.2 下不會中止 test body」的假綠→ **本機 bash 3.2 下原本守不住的 6 支 mutant 全部轉死**，全表 **48 支 mutant 跑完**（本機 bash 3.2 動工前整表崩潰）|
 
 ## 6. 反思
 
@@ -153,7 +153,7 @@
 | 效率 | ⚠️ | 六輪對帳 + 兩輪二審的往返成本高；對帳 subagent 與 reviewer **皆無 shell 執行能力** → 其「指令實際輸出」欄位全靠 supervisor 補跑（本輪已補並在表中標明出處）|
 | 誠實 | ✅ | 本輪**主動改正了 3 處自己的失真宣稱**（v2.11 的「實測 4 支全死」當時未發生／changelog 把未實作的 P2-3 寫成已完成／RECON-016 初版是空轉的反向自測）——這些若不對帳就會一路留到交付 |
 
-**Action Items**（已寫入本檔第 5 節；TMO-072 已於 2026-10-26 閉合）：
+**Action Items**（已寫入本檔第 5 節；TMO-074 已於 2026-10-26 閉合）：
 
 1. 補 D9（md ↔ html 內文關鍵數字同步）以關閉「同檔內 5 類 vs 8 類」那類盲區（P2）
 2. 在第二個專案實跑一次漂移檢查（P2）
@@ -163,5 +163,5 @@
 | 面向 | 內容 |
 |------|------|
 | **驗收方式** | `bats tests/doc-drift.bats tests/restruct-dav-reconciler.bats tests/restruct-zero-cross-read.bats`（應 59 綠）；`bash scripts/ci/check-doc-drift.sh`（應 rc=0）；`python3 scripts/ci/mutant-must-die.py --only DD-M1,DD-M2,DD-M3,DR-M1,DR-M2`（應 5 支全死）|
-| **預估時間** | 補 D9（md ↔ html 內文同步）：約 1 小時；TMO-072 已完成 |
-| **風險提示** | ①`gates.json` 未動 → 若其他專案只看 gates.json 會以為沒有 Gate 4.5（handbook §2.3 有寫，但門檻位階較弱）；②D8 的「交付摘要 ↔ 權威對帳表」比對要求交付摘要內嵌**完整** R-ID 表，模板外的自訂格式會誤紅；③D8 只比 (R-ID, 狀態)、不比「實作位置」「證據」欄 → 證據欄漂移**結構上不可見**（本輪實際發生並已修）；④TMO-072 閉合後，repo 內**所有**探針都真的會執行——那 134 支從未跑過的探針一旦真的跑，可能揭露更多既存失敗（本次實測：沒有，全套失敗數 46 → 46 不變）|
+| **預估時間** | 補 D9（md ↔ html 內文同步）：約 1 小時；TMO-074 已完成 |
+| **風險提示** | ①**TMO-074 的病只影響本機 bash 3.2**（CI 的 bash 5.x 正常）→ 已閉合；②`gates.json` 未動 → 若其他專案只看 gates.json 會以為沒有 Gate 4.5（handbook §2.3 有寫，但門檻位階較弱）；③D8 的「交付摘要 ↔ 權威對帳表」比對要求交付摘要內嵌**完整** R-ID 表，模板外的自訂格式會誤紅；④D8 只比 (R-ID, 狀態)、不比「實作位置」「證據」欄 → 證據欄漂移**結構上不可見**（本輪實際發生並已修）；④TMO-074 閉合後，repo 內**所有**探針都真的會執行——那 134 支從未跑過的探針一旦真的跑，可能揭露更多既存失敗（本次實測：沒有，全套失敗數 46 → 46 不變）|

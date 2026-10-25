@@ -30,7 +30,7 @@ tree_monstor/
 ├── M2 — SOP Infrastructure          [✅ Sprint 02]
 ├── M3 — Knowledge Management        [✅ Sprint 03]
 ├── M4 — Self-Evolution (RSI)        [🚨 **已歸檔移除 2026-09-22**]
-└── M5 — Delivery Fidelity           [✅ 已落地 2026-10-26 — TMO-069/070/071]
+└── M5 — Delivery Fidelity           [✅ 已落地 2026-10-26 — TMO-071/072/073]
 ```
 
 ### 2.2 模組職責矩陣
@@ -53,7 +53,7 @@ tree_monstor/
 **M4 ↔ M1↔M2**：🚨 **已歸檔移除 2026-09-22** — 原 M4 走 `rsi-sync.sh` 把新版 SOP 同步到所有已裝專案
 **M4 ↔ 跨專案**：🚨 **已歸檔移除 2026-09-22** — 原 M4 觀察模式只在已裝 tree_monstor 的專案觸發
 
-### 2.4 M5 — Delivery Fidelity 詳細設計（TMO-069 / 070 / 071）
+### 2.4 M5 — Delivery Fidelity 詳細設計（TMO-071 / 070 / 071）
 
 > 目的：讓「用戶需求 → 交付成果」這條鏈上的落差**可見、可驗、不可藏**。
 
