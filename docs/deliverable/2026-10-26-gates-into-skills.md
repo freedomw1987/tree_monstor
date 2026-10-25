@@ -54,7 +54,7 @@
 |---------|---------|
 | `AGENTS.md` | 121 → 35 行。刪 §2 全部；保留 §1 萬事原則（逐字）＋ §1.5 V01／V02／V03 |
 | `skills/tdd-test-writer/SKILL.md` | 105 → 136 行：新增「## Gate 定義」段（Gate 1 TDD ＋ Gate 2 lint／syntax）|
-| `skills/regression-guard/SKILL.md` | 133 → 149 行：新增 Gate 3 regression 定義 |
+| `skills/regression-guard/SKILL.md` | 133 → **149** 行：新增 Gate 3 regression 定義。（後續 TMO-077 同日再瘦身至 **120 行**——把「流程（5 步）」由 39 行重排為表格，語意不減）|
 | `skills/dav-reconciler/SKILL.md` | 128 → 144 行：新增 Gate 4.5 需求對帳 定義（single source 指 handbook 2.3）|
 | `docs/sop/gates.json` | `description` 由「AGENTS.md §2.3 會自動引用」改為「定義另外落在各自的 skill；本檔為機器可讀副本，兩邊都要改」|
 | `docs/sop/gates.schema.json` | 同上（英文 `description`）|
@@ -158,7 +158,7 @@
 | `markdownlint-cli2` | 0 issues（**檔數隨新增 `.md` 變動，故不寫死**；本輪實跑 119 檔）|
 | `markdownlint-guard.bats` **MLG-10／10b（新）** | 11/11 綠（含 2 支新支）|
 | 4 支 probe linter ＋ 2 支 shell checker | 全 OK |
-| `check-skill-size.sh` | 13 個 SKILL.md 皆 ≤ 150 行（最長 **149**：`regression-guard`）|
+| `check-skill-size.sh` | 13 個 SKILL.md 皆 ≤ 150 行（最長 **148**：`dav-skill-creater`）|
 
 **探針改動（全部為強化，無一放寬）**：
 
@@ -193,7 +193,6 @@
 | **MLG-10 的 NUL 安全閥有理論假陰**：若一個**文字**檔被損毀到同時含 NUL，會被當成二進位跳過。目前 repo 無此型檔；要收緊需改用「NUL 比例」或副檔名雙條件 | P3 | 本文件 §5；`tests/markdownlint-guard.bats` `_utf8_check()` |
 | **`BINARY_EXT` 前置過濾理論上會跳過同名文字檔**（例如有人把純文字命名為 `x.pdf`）：目前 repo 無此類追蹤檔 | P3 | 同上 |
 | **AC-4 掃描器有兩個已知邊界**（刻意保留，不補）：① `## …AGENTS.md` → `### 子標題`（標題不含 AGENTS.md）→ 裸 `§2` 會漏抓（「任何層級標題都重算旗標」的必然副作用）② `## 變動歷史` 段內的 live 指引會被豁免。目前 repo 無此型真違規；要收緊需改用標題縮排棧 | P3 | 本文件 §4；`tests/agents-md.bats` `_ac4_scan()` |
-| **`regression-guard` 主檔已到 149 行**（上限 150，只餘 1 行）：本次新增 Gate 定義＋真正的 `gates.json` 指標後逼近上限，下次任何新增都必須先外移子檔 | P3 | 本文件 §4；`skills/dav-skill-creater/editor-guide.md` 的行數規範 |
 | **「skill 自足」只涵蓋 5 欄**：`notes` 與 `remediation`（失敗後策略）仍在 `gates.json` 與 handbook 2.3，沒有進 skill | P3 | 本文件 §1；`tests/gate-in-skill.bats` 的比對器只鎖 5 欄 |
 | **skill 內新增了跨目錄「指名」引用**（`docs/sop/gates.json` ×6、`docs/sop/handbook/2.3-execution.md` ×2、`tests/gate-in-skill.bats` ×4（皆為**出現次數**口徑））：它們避開了探針的讀取動詞表（「機器可讀副本 X」不是讀取指令），但 `editor-guide.md` 的 v2.2 規則本意是「不放指向 `docs/` 內具體檔案的引用」。屬已知落差，非斷鏈 | P3 | 本文件 §5；`tests/restruct-zero-cross-read.bats` |
 | **skill 內的新指標是 repo-relative**：`docs/sop/gates.json` / `docs/sop/handbook/...` 在 skill 全域安裝後（gates 落在 `~/.pi/sop/`）不解析。既有同型前例：`skills/dav-reflection/template.md` | P3 | 本文件 §5；四個 Gate 段的指標行 |

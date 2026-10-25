@@ -31,42 +31,13 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 ## 流程（5 步）
 
-### Step 1：開發時埋入探針（含 Module prefix）
-
-- **動作**：在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)`
-  埋入測試點；**`name` 必含 Module prefix**（如 `M01-user-login-returns-correct-data`，其中 `M01` 為 system-design.md 定義的 Module 代碼）
-- **為什麼**：探針讓後續測試 / 排錯 checker agent 能根據報錯和測試記錄驗證；Module prefix 讓探針可按 Module 跑、CI 可選只跑某 Module
-- **產出**：源代碼內含探針（帶 Module prefix）
-- **證據**：探針命名具體（避免 `test1`） + 探針名稱含 Module 代碼
-
-### Step 2：環境變量配置（含 REGRESSION_MODULE）
-
-- **動作**：設定 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` /
-  `REGRESSION_REPORT_PATH=./report.json` / **`REGRESSION_MODULE=M01`（可選，限定只跑某 Module）**
-- **為什麼**：環境變量控制探針開關 + 輸出格式 + 失敗處理 + Module 範圍
-- **產出**：shell 環境變量或 .env 檔
-- **證據**：`echo $REGRESSION_MODE` 顯示正確值 + `echo $REGRESSION_MODULE` 顯示 Module 代碼（若設定）
-
-### Step 3：自動運行（禁用 watch / interactive）⭐
-
-- **動作**：執行測試指令，但**禁用 watch / interactive 模式**（見下方規則表）
-- **為什麼**：agent shell 在 TTY 偵測上是模糊的；watch mode 會卡住等 stdin，整個 session 凍結
-- **產出**：測試輸出（文本 + JSON 報告）
-- **證據**：測試一次性跑完退出，不卡住
-
-### Step 4：失敗時 Agent 自動修正
-
-- **動作**：讀取 `suggestion` 欄位 → 分析 → 修代碼 → 重跑
-- **為什麼**：自動化修正循環、避免人為介入延遲
-- **產出**：修正後代碼 + 重跑結果
-- **證據**：第二輪跑全部通過
-
-### Step 5：通過驗證
-
-- **動作**：確認所有探針通過、報告寫入 `REGRESSION_REPORT_PATH`
-- **為什麼**：留下 audit trail、供 Gate 4 Reviewer 讀
-- **產出**：report.json / report.txt
-- **證據**：report 檔存在 + summary 顯示 0 failed
+| Step | 動作 | 為什麼 | 產出 / 證據 |
+|------|------|--------|-------------|
+| 1 埋探針 | 在關鍵代碼位置用 `probe(name, actual, expected)` / `assert(condition, message)` / `describe(name, fn)` 埋測試點；**`name` 必含 Module prefix**（如 `M01-user-login-returns-correct-data`，`M01` 為 `system-design.md` 定義的 Module 代碼）| 讓後續測試與**排錯** checker agent 能依報錯與**測試記錄**驗證；Module prefix 讓探針可按 Module 跑、CI 可只跑某 Module | 源碼內含探針（帶 Module prefix）；命名具體（避免 `test1`）＋名稱含 Module 代碼 |
+| 2 環境變量 | 設 `REGRESSION_MODE=true` / `REGRESSION_OUTPUT=both` / `REGRESSION_STRICT=true` / `REGRESSION_REPORT_PATH=./report.json` / `REGRESSION_MODULE=M01`（可選，限定只跑某 Module）| 環境變量控制探針開關＋輸出格式＋失敗處理＋Module 範圍 | shell env 或 `.env` 檔；`echo $REGRESSION_MODE` 顯示正確值 ＋ `echo $REGRESSION_MODULE` 顯示 Module 代碼（若設定）|
+| 3 自動運行 ⭐ | 執行測試指令，**禁用 watch / interactive 模式**（見下方規則表與 `runner-cheatsheet.md`）| agent shell 的 TTY 偵測模糊；watch mode 會卡住等 stdin、整個 session 凍結 | 文本＋JSON 報告；測試一次性跑完退出、不卡住 |
+| 4 失敗自動修正 | 讀 `suggestion` 欄位 → 分析 → 修代碼 → 重跑 | 自動化修正循環、避免人為介入延遲 | 修正後代碼＋重跑結果；第二輪全部通過 |
+| 5 通過驗證 | 確認所有探針通過、報告寫入 `REGRESSION_REPORT_PATH` | 留下 audit trail、供 Gate 4 Reviewer 讀 | `report.json` / `report.txt`；report 檔存在且 summary 顯示 0 failed |
 
 ## 規則 / 例外 / 限制
 
