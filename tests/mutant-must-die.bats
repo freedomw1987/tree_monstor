@@ -77,7 +77,7 @@ run_mmd() {
   printf '%s\n' "$output" | awk -F'\t' 'NF==4' > "$W/list.txt"
   local n
   n=$(grep -c . "$W/list.txt")
-  [ "$n" -eq 55 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 55；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
+  [ "$n" -eq 56 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 56；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
 
   local -a ids=() targets=()
   local line id target probe_file probe
