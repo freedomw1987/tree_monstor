@@ -18,8 +18,9 @@
 #     bash 5.3 + UTF-8 locale → 中文名會跑              ← **CI 的 ubuntu/macOS 都是 bash 5.x**
 #     bash 5.3 + C locale   → 中文名會跑
 #   → **CI（bash 5.x）並沒有這個病**；受影響的是**本機 bash 3.2 的開發者**。
-#     （這正是 docs/deliverable/2026-10-23-dav-trust-v2.4-resume-and-stop.md §7 當年寫的
-#      「在 bash 3.2 本機上，23 支探針檔的守護會被靜默丟棄」——本機當時的根因描述是對的。）
+#     （這正是 2026-10-23 dav-trust v2.4「resume / stop」那輪交付摘要 §7 當年寫的
+#      「在 bash 3.2 本機上，23 支探針檔的守護會被靜默丟棄」——本機當時的根因描述是對的；
+#      該交付摘要已於 2026-10-26 減法刪除，內容保留在 git history。）
 #
 #   實測：тест / テスト / 테스트 / 中文 → bash 3.2 + UTF-8 下全被丟棄；
 #        而希臘文、café、全形英數、emoji、→、中文標點 → **不會**被丟棄。

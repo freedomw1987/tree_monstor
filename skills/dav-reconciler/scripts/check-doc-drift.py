@@ -219,6 +219,9 @@ class Checker:
         self.violations = []
         self.exempted = []
         self.checks = 0
+        # D8 專用計數：窗內交付摘要中「引用得到 docs/req/ 錨點」的支數。
+        # 與 self.checks 分開，才能回答「D8 到底檢查了幾件」（見 check_deliverable_window）。
+        self.reconcile_checked = 0
 
     def report(self, kind, key, message):
         entry = f"{kind}#{key}"
@@ -355,6 +358,7 @@ class Checker:
             if not us_ids:
                 continue
             self.checks += 1
+            self.reconcile_checked += 1
             section = sections_with(text, "需求對帳")
             if not section.strip():
                 self.report("D8", doc.name, f"對應有需求錨點的 US（{', '.join(us_ids)}）但交付摘要缺「需求對帳」段")
@@ -386,6 +390,58 @@ class Checker:
                 self.report("D8", doc.name, f"對帳有未對上的項目（{', '.join(gaps)}）但交付狀態標為「✅ 完成」")
             if "對帳降級" in text and declared.startswith("✅"):
                 self.report("D8", doc.name, "標註「對帳降級」但交付狀態仍標「✅ 完成」（降級不得宣告通過）")
+
+    # --- D4/D8 的「機制真的還在檢查」守護（fail-closed）--------------------
+    def check_deliverable_window(self, from_date=None, required=False):
+        """D4/D8 的檢查件數不得為 0 —— 否則那條硬門檻已經失效卻看起來是綠的。
+
+        為什麼需要這個：若 `docs/deliverable/` 內**沒有任何一支**落在 from-date 窗內的
+        交付摘要，D4（交付摘要提到的檔案真的存在）與 D8（交付摘要的對帳段 vs 權威對帳表）
+        的檢查件數會是 0 → 腳本照跑、rc=0，但「對帳有 gap 不得宣告 ✅ 完成」這條硬門檻
+        **實際上已經不會被觸發**。這就是典型的「掃不到就 skip」假綠。
+
+        判準（fail-closed）：
+        - `docs/deliverable/` **目錄不存在** → 這個專案根本沒用這套機制 → 不適用、不報。
+        - **目錄存在**（連空的都算）→ 這個專案宣告要用這套機制 → 窗內必須至少有一支交付摘要；
+          0 件時 `required=True` 報違規（rc=1），否則只印警告（供可攜腳本在一般專案上使用）。
+        - **窗內有件、且 `docs/req/` 存在** → 這些交付摘要必須至少有一支引用得到 `docs/req/`
+          錨點，否則 D8 的檢查件數仍是 0（「窗內有件」只保證 D4 有件可查，不保證 D8）。
+          沒有第二條，「有件但沒有一支帶錨點」就會是同一種靜默失效。
+
+        注意：本方法必須在 `check_deliverable_reconcile()` **之後**呼叫（它要讀後者的計數）。
+        """
+        deliv_dir = self.root / "docs" / "deliverable"
+        if not deliv_dir.is_dir():
+            return
+        docs = sorted(deliv_dir.glob("*.md"))
+        in_window = [d for d in docs if not from_date or d.name[:10] >= from_date]
+        if in_window:
+            req_dir = self.root / "docs" / "req"
+            if req_dir.is_dir() and self.reconcile_checked == 0:
+                msg = (
+                    f"窗內有 {len(in_window)} 支交付摘要、且 docs/req/ 存在，但沒有任何一支"
+                    "引用得到 docs/req/ 錨點 → D8（交付摘要對帳段 vs 權威對帳表）的檢查件數為 0，"
+                    "「對帳有 gap 不得宣告 ✅ 完成」這條硬門檻等於失效（不得靜默放行）"
+                )
+                if required:
+                    self.report("D8", "no-reconcile-in-window", msg)
+                else:
+                    print(f"WARNING D8: {msg}")
+            return
+        if docs:
+            msg = (
+                f"docs/deliverable/ 有 {len(docs)} 支交付摘要，但沒有一支落在 from-date"
+                f"（{from_date}）窗內 → D4/D8 的檢查件數為 0，硬門檻等於失效（不得靜默放行）"
+            )
+        else:
+            msg = (
+                "docs/deliverable/ 目錄存在卻沒有任何交付摘要 → D4/D8 的檢查件數為 0，"
+                "硬門檻等於失效（不得靜默放行）"
+            )
+        if required:
+            self.report("D4", "no-in-window-deliverable", msg)
+        else:
+            print(f"WARNING D4/D8: {msg}")
 
     # --- D4：交付摘要提到的檔案 -------------------------------------------
     def check_deliverables(self, from_date=None):
@@ -449,13 +505,19 @@ def load_whitelist(path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="文件漂移檢查（D1..D6）")
+    ap = argparse.ArgumentParser(description="文件漂移檢查（D1..D8）")
     ap.add_argument("--root", default=".", help="目標專案根目錄（預設：目前目錄）")
     ap.add_argument("--whitelist", default=None, help="白名單檔（預設：<root>/docs/ci/drift-whitelist.txt）")
     ap.add_argument(
         "--from-date",
         default=DEFAULT_FROM_DATE,
         help=f"D4 只檢查日期 >= 此值的交付摘要（預設 {DEFAULT_FROM_DATE}，即機制生效日）",
+    )
+    ap.add_argument(
+        "--require-window-checks",
+        action="store_true",
+        help="嚴格模式：docs/deliverable/ 有交付摘要但沒有一支落在 from-date 窗內時視為違規（rc=1）。"
+             "不開則只印警告（供可攜使用）。",
     )
     args = ap.parse_args()
 
@@ -494,6 +556,10 @@ def main():
     checker.check_prd(backlog_rows)
     checker.check_reconcile(backlog_rows)
     checker.check_deliverable_reconcile(from_date=args.from_date)
+    # 順序不可調換：window 檢查要讀 reconcile 的計數（見 check_deliverable_window）
+    checker.check_deliverable_window(
+        from_date=args.from_date, required=args.require_window_checks
+    )
     checker.check_deliverables(from_date=args.from_date)
 
     for kind, key, reason in checker.exempted:

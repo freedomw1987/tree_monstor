@@ -15,3 +15,7 @@ D6#US-M81#存量 US（2026-09-28 建立），錨點機制 2026-10-26 才存在�
 #
 # D1 = AC 範本狀態 vs backlog 該 US 狀態
 D1#US-101#docs/ac/README.md 的教學範例（非真實 backlog 列），backlog 裡沒有 US-101 這筆
+#
+# D4 = 交付摘要提到的檔案真的存在
+# 2026-10-26 減法：該交付摘要記載的 meta 探針 restruct-agents-md.bats 已隨本次減法刪除
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:tests/restruct-agents-md.bats#2026-10-26 減法：meta 探針 restruct-agents-md.bats 已刪除（歷史交付摘要為 append-only，不回改）

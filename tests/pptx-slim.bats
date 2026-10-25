@@ -363,3 +363,20 @@ PY
     echo 'FAIL: tests/pptx-slim.bats:362: assertion failed' >&2; return 1; }
 }
 
+
+# ── 契約：SKILL.md 流程點名的 5 支腳本必須存在且可執行 ────────────────────────
+# 原 tests/restruct-pptx-slim.bats（2026-10-26 減法刪除）守的就是這條；
+# 它**不是**「文字存在」型斷言，而是「SKILL.md 的文件 ↔ 磁碟上的可執行檔」契約：
+# 文件寫了 5 支腳本、使用者照著打卻 permission denied，是產品層故障。
+# 注意：這支測試不需要 fixture，但仍共用 setup（bats 不支援 per-test setup 開銷豁免）。
+@test "PPTX-SLIM-CONTRACT: the 5 scripts named by SKILL.md exist and are executable" {
+  local skill="$REPO_ROOT/skills/pptx-slim/SKILL.md"
+  [ -f "$skill" ] || { echo "FAIL: 缺 $skill" >&2; return 1; }
+  local n=0 name
+  for name in pptx-probe.py pptx-shrink-media.py pptx-shrink-images.py pptx-repack.py pptx-verify.py; do
+    grep -qF "$name" "$skill" || { echo "FAIL: SKILL.md 沒提到 $name" >&2; return 1; }
+    [ -x "$SCRIPTS/$name" ] || { echo "FAIL: $name 不存在或不可執行（SKILL.md 說有這支）" >&2; return 1; }
+    n=$((n + 1))
+  done
+  [ "$n" -eq 5 ] || { echo "FAIL: 只驗到 $n 支腳本（清單被削弱）" >&2; return 1; }
+}

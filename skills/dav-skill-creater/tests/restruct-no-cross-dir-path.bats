@@ -60,3 +60,44 @@ setup() {
   fi
   [ "$violations" -eq 0 ]
 }
+
+# 以下兩支接手原 repo 級探針的守護（`tests/restruct-retro-plain-text.bats` 已於
+# 2026-10-26 減法刪除；同型檢查原本在 5 支 per-skill meta 探針重複）：
+# skill 的 SKILL.md 不得用 monorepo 專屬的 `](docs/…)` 相對連結、也不得用
+# Obsidian `[[…]]` 指向跨目錄（skill 可離線讀、不綁定 monorepo）。
+
+@test "no skill SKILL.md links into monorepo docs/ via markdown" {
+  local violations=0
+  local scanned=0
+  for f in "$SKILLS_DIR"/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    scanned=$((scanned + 1))
+    if grep -qE '\]\(docs/' "$f"; then
+      echo "VIOLATION: $f links into monorepo docs/ (skill must stay self-contained)" >&2
+      violations=$((violations + 1))
+    fi
+  done
+  if [ "$scanned" -eq 0 ]; then
+    echo "FAIL: 在 $SKILLS_DIR 掃不到任何 SKILL.md（scanned=0）→ 探針空過，root 可能指錯" >&2
+    return 1
+  fi
+  [ "$violations" -eq 0 ]
+}
+
+@test "no skill SKILL.md uses Obsidian cross-directory wikilink" {
+  local violations=0
+  local scanned=0
+  for f in "$SKILLS_DIR"/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    scanned=$((scanned + 1))
+    if grep -qE '\[\[(.*\.\./|docs/)' "$f"; then
+      echo "VIOLATION: $f has Obsidian cross-directory wikilink" >&2
+      violations=$((violations + 1))
+    fi
+  done
+  if [ "$scanned" -eq 0 ]; then
+    echo "FAIL: 在 $SKILLS_DIR 掃不到任何 SKILL.md（scanned=0）→ 探針空過，root 可能指錯" >&2
+    return 1
+  fi
+  [ "$violations" -eq 0 ]
+}

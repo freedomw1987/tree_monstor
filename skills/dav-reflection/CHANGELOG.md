@@ -1,5 +1,7 @@
 # Dav Reflection — CHANGELOG
 
+> **2026-10-26 減法**：與本 skill 對應的 meta 探針（`tests/restruct-*.bats`）已刪除——
+> meta 探針只驗「文字存在」，對產品事實無驗證力。下方歷史條目保留原樣（歷史記錄不回改）。
 > 本檔為 dav-reflection 的完整變動歷史。引用：`SKILL.md` 變動歷史章節
 >
 > 從 SKILL.md v2.1 起，變動歷史外移到本檔；主檔只保留最近 3 條以節省 LLM 注意力。

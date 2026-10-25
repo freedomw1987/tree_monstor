@@ -819,3 +819,233 @@ PY
     return 1
   }
 }
+
+# ---------------------------------------------------------------------------
+# 反假綠守護：D4/D8 的「檢查件數不得為 0」
+#
+# 2026-10-26 減法：docs/deliverable/ 的歷史交付摘要被清空到只剩少數幾支。
+# 若「窗內（from-date 之後）一支都沒有」，D4（交付摘要提到的檔案真的存在）與
+# D8（交付摘要的對帳段 vs 權威對帳表）的**檢查件數就是 0** → 腳本照跑、rc=0，
+# 但「未對上不得宣告 ✅ 完成」那條硬門檻**已經不會被觸發**——典型的假綠。
+#
+# 因此新增 `--require-window-checks` 嚴格模式：窗內 0 件 → rc=1。
+# 可攜預設（不帶 flag）維持「只印警告」語意，避免打斷一般專案的使用。
+# ---------------------------------------------------------------------------
+
+@test "DOC-DRIFT-039: strict mode fails closed when the from-date window has no deliverable" {
+  local root="$BATS_TEST_TMPDIR/d4nowindow"
+  _make_fixture "$root"
+  mv "$root/docs/deliverable/2026-10-26-demo.md" "$root/docs/deliverable/2026-01-01-old.md"
+  run bash "$DRIFT_SCRIPT" --root "$root" --require-window-checks
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 窗內 0 件時嚴格模式必須 rc=1（不可靜默放行），實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "no-in-window-deliverable" || {
+    echo "FAIL: 應明確報出 no-in-window-deliverable（讓人看得出是哪個機制沒在跑）" >&2
+    echo "$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-040: strict mode stays green when the window has a deliverable" {
+  local root="$BATS_TEST_TMPDIR/d4windowok"
+  _make_fixture "$root"
+  run bash "$DRIFT_SCRIPT" --root "$root" --require-window-checks
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 窗內有交付摘要時嚴格模式應 rc=0，實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "no-in-window-deliverable"; then
+    echo "FAIL: 不該出現 no-in-window-deliverable" >&2
+    echo "$output" >&2
+    return 1
+  fi
+}
+
+@test "DOC-DRIFT-041: the real repo keeps at least one in-window deliverable (D4/D8 must have work to do)" {
+  # 真實 repo 的守護：窗內（from-date 之後）至少要有一支交付摘要，
+  # 否則 CI 的 D4/D8 等於「掃不到就 skip」——綠，但什麼都沒驗。
+  run bash "$DRIFT_SCRIPT" --root "$REPO_ROOT" --require-window-checks
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 真實 repo 應 rc=0，實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "no-in-window-deliverable"; then
+    echo "FAIL: 真實 repo 的 D4/D8 檢查件數為 0（硬門檻靜默失效）" >&2
+    echo "$output" >&2
+    return 1
+  fi
+  # 負向斷言不足以守護：目錄整包消失時 check_deliverable_window() 直接 return
+  # （連 WARNING 都不印）→ 上面兩條都成立、仍為綠。故必須正向斷言「機制真的有東西可查」。
+  [ -d "$REPO_ROOT/docs/deliverable" ] || {
+    echo "FAIL: docs/deliverable/ 目錄不見了 → D4/D8 變 0 件卻不報（假綠）" >&2
+    return 1
+  }
+  compgen -G "$REPO_ROOT/docs/deliverable/20*.md" >/dev/null || {
+    echo "FAIL: docs/deliverable/ 內沒有任何 20*.md 交付摘要 → D4/D8 0 件（假綠）" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-042: strict mode fails closed when docs/deliverable/ exists but holds no deliverable" {
+  # 目錄存在 = 這個專案宣告要用交付摘要機制；裡面卻一支都沒有（含被刪光的情境）
+  # → D4/D8 的檢查件數為 0，硬門檻靜默失效 → 嚴格模式必須 rc=1。
+  local root="$BATS_TEST_TMPDIR/d4emptydir"
+  _make_fixture "$root"
+  rm -f "$root"/docs/deliverable/*.md
+  run bash "$DRIFT_SCRIPT" --root "$root" --require-window-checks
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 交付摘要目錄存在但無任何交付摘要時，嚴格模式必須 rc=1（不可靜默放行），實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "no-in-window-deliverable" || {
+    echo "FAIL: 應明確報出 no-in-window-deliverable" >&2
+    echo "$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-043: a project without docs/deliverable/ is not flagged (mechanism not in use)" {
+  # 反向：專案根本沒用這套機制 → 不適用、不報（避免對外可攜模式誤擋一般專案）
+  local root="$BATS_TEST_TMPDIR/d4nodelivdir"
+  _make_fixture "$root"
+  rm -rf "$root/docs/deliverable"
+  run bash "$DRIFT_SCRIPT" --root "$root" --require-window-checks
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 沒有 docs/deliverable/ 的專案不該被判定違規，實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "no-in-window-deliverable"; then
+    echo "FAIL: 不該出現 no-in-window-deliverable" >&2
+    echo "$output" >&2
+    return 1
+  fi
+}
+
+@test "DOC-DRIFT-044: wrapper auto-enables strict mode when no --root is given" {
+  # 這個分支是本次最核心的新機制：沒有它，CI 回到「窗內 0 件 → 掃不到就 skip → rc=0」的假綠。
+  # 其他探針都自帶 --root（或自帶 --require-window-checks），刪掉 wrapper 這個分支它們**不會轉紅**
+  # → 所以必須有一支探針直接打「不帶 --root」這條路徑。
+  cd "$REPO_ROOT"
+  run bash "$DRIFT_SCRIPT" --from-date 2999-01-01
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: wrapper 未自動開嚴格模式（本 repo 窗內 0 件卻 rc=$status → 假綠回歸）" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "no-in-window-deliverable" || {
+    echo "FAIL: 應報出 no-in-window-deliverable" >&2
+    echo "$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-045: wrapper stays portable when --root is given (external project is not blocked)" {
+  # 反向：對外使用（--root <別的專案>）不得誤開嚴格模式 → 否則會擋住不相干的專案。
+  run bash "$DRIFT_SCRIPT" --root "$REPO_ROOT" --from-date 2999-01-01
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 有 --root 時不該強制嚴格模式（對外可攜語意），實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "no-in-window-deliverable"; then
+    echo "FAIL: 可攜模式不該報 no-in-window-deliverable（應只印 WARNING）" >&2
+    echo "$output" >&2
+    return 1
+  fi
+  echo "$output" | grep -q "WARNING D4/D8" || {
+    echo "FAIL: 可攜模式應印 WARNING D4/D8 提醒（不能靜默）" >&2
+    echo "$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-046: wrapper also treats --root=<path> as an external project" {
+  # `--root=<p>` 與 `--root <p>` 是兩種寫法；漏掉等號形會把外部專案誤判成「本 repo」而擋掉。
+  run bash "$DRIFT_SCRIPT" "--root=$REPO_ROOT" --from-date 2999-01-01
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: --root=<p> 形式不該誤開嚴格模式，實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "no-in-window-deliverable"; then
+    echo "FAIL: --root=<p> 形式不該報 no-in-window-deliverable" >&2
+    echo "$output" >&2
+    return 1
+  fi
+}
+
+@test "DOC-DRIFT-047: CI's drift step must not pass --root (else the fail-closed branch never runs)" {
+  # 為什麼要這條：wrapper 只在「完全沒有 --root／--root=」時才自動加上 --require-window-checks。
+  # 也就是說，把 CI 那行改成 `--root .` 就會讓嚴格模式**悄悄關掉**，
+  # 而 DOC-DRIFT-022（step 存在、無假綠樣式）／041（帶 --require-window-checks 的探針）／
+  # 044／045／046（wrapper 分支存在）**全部仍然綠** → 沒有一支證明 CI 真的走到那個分支。
+  # 這正是「新機制的開關本身也需要守護」的另一半（第三輪 P1 的同型洞）。
+  local ci="$REPO_ROOT/.github/workflows/ci.yml"
+  [ -f "$ci" ] || { echo "FAIL: 找不到 $ci" >&2; return 1; }
+  local runs
+  runs=$(grep -nE '^[[:space:]]*run:.*check-doc-drift\.sh' "$ci" || true)
+  [ -n "$runs" ] || { echo "FAIL: CI 找不到呼叫 check-doc-drift.sh 的 run: 行" >&2; return 1; }
+  # 兩種合法寫法：① 不帶 --root → wrapper 自動加嚴格模式（DOC-DRIFT-044 守住那個分支）
+  #              ② 帶 --root 但**明寫** --require-window-checks
+  # 不合法：帶 --root 又沒明寫 → wrapper 判定「外部專案」→ 嚴格模式靜默關閉。
+  # 逐行判定（不是把多行串成一份再 grep 一次）：CI 有多行時，
+  # 「A 行帶 --root 沒明寫」不會被「B 行明寫了」掩蓋過去。
+  # token 邊界用 (^|[[:space:]]) 錨定，避免把 --whitelist /tmp/--root=x.txt 這種「值裡含 --root」誤判。
+  local line bad=""
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    printf '%s' "$line" | grep -qE -- '(^|[[:space:]])--root(=|[[:space:]]|$)' || continue
+    printf '%s' "$line" | grep -q -- '--require-window-checks' && continue
+    bad="$bad
+$line"
+  done <<< "$runs"
+  [ -z "$bad" ] || {
+    echo "FAIL: CI 的漂移檢查帶了 --root 卻沒明寫 --require-window-checks → wrapper 不會自動開嚴格模式，D4/D8 守護靜默失效：" >&2
+    printf '%s\n' "$bad" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-048: in-window deliverable without any docs/req anchor still fails closed" {
+  # 「窗內有件」只保證 D4 有件可查，**不保證 D8**。
+  # 若窗內交付摘要沒有一支引用得到 docs/req/ 錨點，D8 的檢查件數仍是 0
+  # → 「對帳有 gap 不得宣告 ✅ 完成」這條硬門檻等於失效，但整個腳本照樣 rc=0。
+  local root="$BATS_TEST_TMPDIR/no_anchor"
+  _make_fixture "$root"
+  # 把交付摘要裡的 DEMO-001 換成一個沒有 docs/req 錨點的 ID → D8 檢查件數歸零
+  sed -i.bak 's/DEMO-001/DEMO-999/g' "$root/docs/deliverable/2026-10-26-demo.md"
+  rm -f "$root/docs/deliverable/2026-10-26-demo.md.bak"
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26 --require-window-checks
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 窗內有件但無任何 docs/req 錨點時，D8 應 fail-closed（rc=1），實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q 'DRIFT D8 no-reconcile-in-window' || {
+    echo "FAIL: 應報 DRIFT D8 no-reconcile-in-window" >&2
+    echo "$output" >&2
+    return 1
+  }
+  # 反向：不帶 --require-window-checks 時只印 WARNING（可攜語意），不得靜默
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  echo "$output" | grep -q 'WARNING D8' || {
+    echo "FAIL: 可攜模式應印 WARNING D8（不能靜默）" >&2
+    echo "$output" >&2
+    return 1
+  }
+  # 反向二：正常 fixture（交付摘要引用得到錨點）不得誤報 → 這條守住「偵測器不是一律紅」
+  local ok_root="$BATS_TEST_TMPDIR/with_anchor"
+  _make_fixture "$ok_root"
+  run bash "$DRIFT_SCRIPT" --root "$ok_root" --from-date 2026-10-26 --require-window-checks
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 正常 fixture（有錨點）竟紅 → 偵測器誤報：$output" >&2
+    return 1
+  }
+}

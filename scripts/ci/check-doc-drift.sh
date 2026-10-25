@@ -25,4 +25,20 @@ if [[ ! -f "$IMPL" ]]; then
   exit 2
 fi
 
+# 嚴格模式：檢查**本 repo 自己**時（未指定 --root），要求 docs/deliverable/ 至少有一支
+# 落在 from-date 窗內的交付摘要 —— 否則 D4/D8 的檢查件數為 0，「未對上不得宣告 ✅ 完成」
+# 那條硬門檻會靜默失效（假綠）。對外（--root <別的專案>）維持可攜語意，只印警告。
+# 判定要涵蓋 `--root <p>` 與 `--root=<p>` 兩種寫法，漏了等號形會誤把外部專案擋掉。
+# 逐個引數比對（不用 `"$*"` 子字串）：否則 `--whitelist /tmp/--root=x.txt` 這類
+# 「值裡剛好含 --root」的引數會誤命中，反而把 fail-closed 靜默關掉。
+want_root=0
+for _a in "$@"; do
+  case "$_a" in
+    --root|--root=*) want_root=1 ;;
+  esac
+done
+if [ "$want_root" -eq 0 ]; then
+  set -- --require-window-checks "$@"
+fi
+
 exec python3 "$IMPL" "$@"

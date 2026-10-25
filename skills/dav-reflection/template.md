@@ -2,11 +2,15 @@
 
 本文件提供三種級別（User Story / Sprint / Module）的反省報告模板，Agent 產出報告時請參考。
 
+> **v2.0 起：不再寫獨立檔案。** 反省報告的內容併進交付摘要的「## 反思」末段
+> （見 `docs/sop/handbook/2.5-submission.md` 與 `skills/dav-submitter/template.md`）。
+> 下方各級別模板因此是「**該併進交付摘要的段落內容**」，不是「要存進某個路徑的檔案」。
+
 ---
 
 ## User Story 級別反省報告
 
-**檔案位置**：`docs/reflection/us-<us-id>-reflection.md`
+**併入位置**：交付摘要的「## 反思」末段（US 級別）
 
 ```markdown
 # US-<US-ID> 反省報告
@@ -49,7 +53,7 @@
 
 ## Sprint 級別反省報告
 
-**檔案位置**：`docs/reflection/sprint-<number>-reflection.md`
+**併入位置**：交付摘要的「## 反思」末段（Sprint 級別）
 
 ```markdown
 # Sprint <Number> 反省報告
@@ -127,7 +131,7 @@
 
 ## Module 級別反省報告
 
-**檔案位置**：`docs/reflection/module-<module-name>-reflection.md`
+**併入位置**：交付摘要的「## 反思」末段（Module 級別）
 
 ```markdown
 # Module <Name> 反省報告

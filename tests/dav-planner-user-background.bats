@@ -86,10 +86,4 @@ load 'helpers/test-env'
   assert_file_contains "$bl" "用戶背景收集"
 }
 
-@test "PRD: docs/prd/02-dav-planner-user-background.md exists" {
-  local prd="$REPO_ROOT/docs/prd/02-dav-planner-user-background.md"
-  [[ -f "$prd" ]] || {
-    echo "FAIL: $prd does not exist" >&2
-    return 1
-  }
-}
+
