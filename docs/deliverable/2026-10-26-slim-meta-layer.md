@@ -4,9 +4,10 @@
 > **對應 Backlog**: TMO-075
 > **Sprint / Module**: 框架自我管理層（meta layer）
 > **交付狀態**: ✅ 完成（TMO-075「第一刀」範圍內 8 項 AC 全部達成）
-> - 六輪 V03 Reviewer 二審 + Gate 4 checker 的**每一項阻擋點都已修完**；第一～五輪 verdict 見 §3.1～§3.3，第六輪見 §3.4
+> - 七輪 V03 Reviewer 二審 + Gate 4 checker 的**每一項阻擋點都已修完**；verdict 逐輪見 §3.1～§3.5
 >   （第三輪 checker 曾判 `需修復`，其 1 P1 + 5 P2 已全修）
-> - 第四輪之後新增的 6 支探針與文字修正，逐輪經後續複審確認（見 §3.2、§3.3、§3.4）
+> - **最終兩輪（第六、七輪）皆 `approve-with-comments`、P0/P1/P2 = 0**；第七輪只剩 8 項 P3（計數／措辭），已全修
+> - 第四輪之後新增的 6 支探針與文字修正，逐輪經後續複審確認（見 §3.2～§3.5）
 > - 本次**未**達成的更大目標（框架／產品行數比仍約 1:4）已誠實列在 §5，不屬 TMO-075 範圍
 
 ## 1. 這次完成什麼
@@ -118,7 +119,7 @@
 | AC-5 | 守護機制一件沒少、**門檻一個都沒放寬** | ✅ | mutant 55 支全死；`gates.json` 未動；四道 Gate 未動；`.bats` 地板維持 40 |
 | AC-6 | 零死引用 | ✅ | 58 個刪除路徑全 repo 掃描 → **0 處可執行引用**（`scripts/` / `tests/` / `.github/` 全無；`skills/` 只剩刪除註記文字）；其餘為歷史記錄型提及（`docs/sop/handbook/changelog.md` 4 處、`skills/*/CHANGELOG.md`、`skills/dav-wiki/SKILL.md`）＋ `docs/ci/drift-whitelist.txt` 的**機器讀取豁免列**（刻意保留，非斷鏈） |
 | AC-7 | 全量測試全綠 | ✅ | `bats tests/` → 1..646，646 綠 / 0 紅 / 0 skip |
-| AC-8 | Reviewer 二審 | ✅ | 第一輪 `request-changes`（7 阻擋點）、第二輪 `request-changes`（3 P1 + 4 P2）、第三輪 `approve-with-comments`（3 P2）＋ Gate 4 checker `需修復`（1 P1 + 5 P2）、第四輪 `approve-with-comments`（Reviewer 0 P0/0 P1/0 P2/6 P3；checker 0 P0/0 P1/2 P2/3 P3）、第五輪 `approve-with-comments`（Reviewer 0 P0/0 P1/1 P2/3 P3；checker 0 P0/0 P1/2 P2/5 P3）、**第六輪 `approve-with-comments`（Reviewer 0 P0/0 P1/2 P2/4 P3；checker 0 P0/0 P1/3 P2/3 P3）** → 全部已修（見 §3.1～§3.4） |
+| AC-8 | Reviewer 二審 | ✅ | 第一輪 `request-changes`（7 阻擋點）、第二輪 `request-changes`（3 P1 + 4 P2）、第三輪 `approve-with-comments`（3 P2）＋ Gate 4 checker `需修復`（1 P1 + 5 P2）、第四輪 `approve-with-comments`（Reviewer 0 P0/0 P1/0 P2/6 P3；checker 0 P0/0 P1/2 P2/3 P3）、第五輪 `approve-with-comments`（Reviewer 0 P0/0 P1/1 P2/3 P3；checker 0 P0/0 P1/2 P2/5 P3）、第六輪 `approve-with-comments`（Reviewer 0/0/2/4；checker 0/0/3/3）、**第七輪 `approve-with-comments`（Reviewer 0 P0/0 P1/0 P2/8 P3；checker 0 P0/0 P1/0 P2/8 P3）** → 全部已修（見 §3.1～§3.5） |
 
 ### 3.1 需求對帳（Reviewer 阻擋點 ↔ 修正）
 
@@ -242,6 +243,32 @@
 | F6 | 新 fail-closed 只保證 **D4** 有件可查；窗內有件但無任何交付摘要引用得到 `docs/req/` 錨點時，**D8** 仍可能是 0 件而全綠 | `check_deliverable_window()` 補第二個條件（`docs/req/` 存在且窗內有件時，`reconcile_checked` 必須 ≥ 1）＋ `DOC-DRIFT-048`（壞／好 fixture 雙向）；已用副本 mutation 驗證會轉紅 | ✅ 已修正 |
 
 - 對帳表: 本節（上表）｜對帳者: Reviewer subagent（V03 第六輪）＋ checker subagent（Gate 4 第六輪）｜覆蓋率: 7 / 7（100%）
+
+### 3.5 第七輪複審（並行雙角色）— 收斂輪
+
+| 角色 | Verdict | P0 | P1 | P2 | P3 |
+|------|---------|----|----|----|----|
+| V03 Reviewer 二審 | `approve-with-comments` | 0 | 0 | **0** | 8 |
+| Gate 4 checker | `approve-with-comments` | 0 | 0 | **0** | 8 |
+
+> 兩角色都獨立寫下「依收斂判準（只剩 P3）→ 可合併」。本輪的程式變更（`check_deliverable_window()` 第二條件、
+> `main()` 呼叫順序調換、`DOC-DRIFT-047/048`）被逐條驗證為正確，且「順序顛倒會怎樣」也確認是**大聲紅**而非誤紅
+> （`DOC-DRIFT-041` 會咬住）。
+
+**第七輪 findings 對帳（8 條 P3，皆為計數／措辭／文件覆蓋，已全修）**：
+
+| # | Finding | 處理 |
+|---|---------|------|
+| F1 / P3-1 | `TMO-073-reconcile.md` 探針計數仍寫 45 / `039..046` / 45-45（本輪 +2 支後為 47） | 全數改 47 / `039..048` / 47-47；`TMO-071-reconcile.md` 的「37 支」補「該 US 交付當時值」 |
+| F2 / P3-2 | §2.2 仍寫「新增 8 支探針 039..046」，與 §1 的「+10」矛盾；且漏列第三種 fail-closed 情境 | 改 10 支 / `039..048`；補「窗內有件但無錨點引用 → D8 零檢查件」 |
+| F3 / P3-3 | `ci.yml` 註解仍為 `DOC-DRIFT-008..046` | 改 `008..048` |
+| F4 | live PRD `05-delivery-fidelity.md` 仍寫「37 條」 | 改為**不寫死條數**（避免每加探針就要回頭改） |
+| F5 | §3.2 表仍寫「同 dav-trust / dav-planner 既有做法」（dav-planner 已無此守護） | 改「同 dav-trust 做法」 |
+| F6 / P3-7 | `skills/dav-reconciler/SKILL.md` 的 CLI 表未列 `--require-window-checks`，CI 範例也只教可攜模式 | 參數表補一列；CI 範例改「方式 A（wrapper，自動嚴格）/ 方式 B（直呼 python，須自己帶 flag）」 |
+| F7 / P3-5 | `DOC-DRIFT-047` 把多行串成一次 grep → 可能被另一行掩蓋，且「值裡含 `--root`」會誤判 | 改**逐行**判定 + token 邊界錨定；mutation 驗證「帶 `--root` 沒明寫」必紅、「帶 `--root` 且明寫」必綠 |
+| F8 / P3-6 | `/tmp/slim/06-edits.py` 的舊 edit 會把第六輪新增的 D8 第二條件與呼叫順序一起退回 | 檔頭註解點名此風險；另 §5 記錄「D8 訊號粒度是『有無錨點』而非『錨點有無 R-ID』」這個既有設計邊界（本 repo 由 `DOC-DRIFT-003` 擋住） |
+
+- 對帳表: 本節（上表）｜對帳者: Reviewer subagent（V03 第七輪）＋ checker subagent（Gate 4 第七輪）｜覆蓋率: 8 / 8（100%）
 
 ## 4. 測試結果
 
