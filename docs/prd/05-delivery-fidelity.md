@@ -313,7 +313,7 @@
 ### 階段 3（TMO-073）
 
 - [x] `scripts/ci/check-doc-drift.sh` rc 契約正確、8 類檢查皆能抓到（DOC-DRIFT-009..037）
-- [x] `tests/doc-drift.bats` 全綠（37 條，含突變測試 + mutant 表登錄 DD-M1 / DD-M2 / DD-M3 / DR-M1）
+- [x] `tests/doc-drift.bats` 全綠（含突變測試 + mutant 表登錄 DD-M1 / DD-M2 / DD-M3 / DR-M1；**不寫死條數**，避免每次加探針就要回來改一次）
 - [x] CI 步驟存在且不得假綠（DOC-DRIFT-022 守護；CI 顯式帶 `--from-date` 讓門檻放寬可見）
 
 ### 整體

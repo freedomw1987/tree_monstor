@@ -1,5 +1,7 @@
 # Pptx Slim — CHANGELOG
 
+> **2026-10-26 減法**：與本 skill 對應的 meta 探針（`tests/restruct-*.bats`）已刪除——
+> meta 探針只驗「文字存在」，對產品事實無驗證力。下方歷史條目保留原樣（歷史記錄不回改）。
 > 本檔為 pptx-slim 的完整變動歷史。引用：`SKILL.md` 變動歷史章節
 >
 > 主檔只保留最近幾條以節省 LLM 注意力；細節與實測數字在 `examples.md`。

@@ -197,4 +197,4 @@ fi
 | **jev 不取代主動校驗** | N/A | jev 只能輔助；主動校驗仍必跑、不可省略 |
 | **小 Module 跳過校驗前 jev 快篩**（輕量路徑 S2）| 大 Module（≥5 檔）才觸發 | 避免小任務過度 jev API call 成本 |
 | **jev 內部失敗 fallback**（S3）| N/A | jev 內部錯誤（API key / 網路 / 拋例外）視同不可用、走軟性降級、不 fail-fast |
-| **M-Step 3 必跑探針**（B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/restruct-dev-checker-loop.bats` 全綠 |
+| **M-Step 3 必跑探針**（B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/` 全綠 |

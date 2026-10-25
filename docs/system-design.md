@@ -292,7 +292,6 @@ M4 — Self-Evolution
 │   ├── handbook/2.8-rsi-evolution.md  # RSI 完整 SOP
 │   └── rsi-log.md                     # 自我改進日誌
 │
-└── docs/prd/04-self-evolution.md      # 本模組 PRD
 ```
 
 ### 4.3 完整 RSI 流程圖

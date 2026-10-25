@@ -112,7 +112,7 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 ## 變動歷史
 
 完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條 + v2.0 首版錨點
-（`tests/restruct-dav-wiki.bats` 需要）以節省 LLM 注意力。
+（慣例；原 `tests/restruct-dav-wiki.bats` 要求，該 meta 探針已於 2026-10-26 減法刪除）以節省 LLM 注意力。
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|

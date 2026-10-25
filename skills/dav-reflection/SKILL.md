@@ -97,7 +97,7 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 | **jev 不取代 LLM 評分**（v2.1 新增）| N/A | jev 只能輔助；LLM 評分仍必跑、不一致時 LLM 為準 |
 | **US 級別 jev 只打 2 維度**（v2.1 新增，輕量路徑 S2）| Sprint / Module 級別打全部 6 維度 | 避免 US 級別過重 |
 | **jev 內部失敗 fallback**（v2.1 新增，S3）| N/A | jev 內部錯誤視同不可用、走軟性降級、不 fail-fast |
-| **M-Step 3 必跑探針**（v2.1 新增，B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/restruct-dav-reflection.bats` 全綠 |
+| **M-Step 3 必跑探針**（v2.1 新增，B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/` 全綠 |
 | **需求對帳先於反省**（v2.3 新增）| 本次 US 無需求錨點（存量任務）| 反省必須建立在「已對帳」的前提上；對帳未過時反省只能記錄缺口、不得把未完成項當成已完成來反省 |
 
 ## 變動歷史

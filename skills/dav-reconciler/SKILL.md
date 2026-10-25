@@ -96,6 +96,7 @@ python3 <安裝後的 skill 目錄>/scripts/check-doc-drift.py --root .
 | `--root <專案根>` | 要檢查的專案根目錄（預設：目前目錄）|
 | `--whitelist <檔>` | 白名單檔（預設：`<root>/docs/ci/drift-whitelist.txt`）|
 | `--from-date YYYY-MM-DD` | 交付摘要檢查的生效日（回溯舊交付會大量假紅）|
+| `--require-window-checks` | **fail-closed 嚴格模式**：`docs/deliverable/` 存在時，窗內必須有交付摘要，且至少要有一支引用得到 `docs/req/` 錨點（否則 D4/D8 的檢查件數為 0＝硬門檻靜默失效）→ rc=1。本 repo 的 `scripts/ci/check-doc-drift.sh` 在未指定 `--root` 時會**自動**加上它；帶 `--root` 即視為外部專案、只印 `WARNING`（可攜語意）|
 
 **rc 契約**：`0` 無違規（含全部被白名單豁免）｜`1` 有違規｜`2` 用法 / 環境錯誤（fail-closed）
 
@@ -107,8 +108,14 @@ python3 <安裝後的 skill 目錄>/scripts/check-doc-drift.py --root .
 ### CI 範例
 
 ```yaml
+# 方式 A（推薦）：用 wrapper —— 未帶 --root 時自動開嚴格模式（本 repo 的做法）
 - name: Verify no document drift
-  run: python3 <skill 目錄>/scripts/check-doc-drift.py --root . --from-date 2026-10-26
+  run: bash scripts/ci/check-doc-drift.sh --from-date 2026-10-26
+
+# 方式 B：直接呼叫 python —— 這時**必須自己**帶 --require-window-checks，
+#         否則等同只拿 warning 模式，fail-closed 不會生效
+- name: Verify no document drift
+  run: python3 <skill 目錄>/scripts/check-doc-drift.py --root . --from-date 2026-10-26 --require-window-checks
 ```
 
 ## 變動歷史
