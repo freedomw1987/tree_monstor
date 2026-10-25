@@ -7,6 +7,27 @@
 > ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
 > 與舊 `AGENTS.md` §2 標題的 **SOP 版本號**（已於 v2.14 隨 §2 移除）不是同一個序號 —— 兩者不可互相比較大小。
 
+## v2.15 — 2026-10-26
+
+**本版異動**：TMO-074 的 PNA-4 探針**效能修正**（掃描器重寫）＋ 補守門缺口。
+**判定規則一個都冇放寬** —— PNA-4 嘅判定邏輯與原版**逐條等價**（45 個真實探針檔逐行 diff 0 差異；
+fuzz 200 檔 + 1000 檔對照 0 差異，1866 = 1866 violations）。
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | ---- |
+| 效能 | `tests/helpers/probe-scan.bash` 新增 `probe_find_standalone_assertions` | PNA-4 由「逐行 fork awk/sed」（repo 13,660 行 × 約 2.5 fork ≈ 35,000 次 process spawn）改為**每檔一個 awk 行程** → PNA-4 **94,612ms → 855ms**（量測：`bats --timing tests/probe-name-ascii.bats`）；整個 `bats tests/ skills/` 約 380s → 2m42s–3m23s（受機器負載影響，故不寫死單一數字） |
+| 守門 | `tests/probe-name-ascii.bats` 新增 `PNA-4b` canary ＋ PNA-4 加 `scanned_files >= 40` | 第 2 輪二審 P1：新掃描器零 canary + PNA-4 零防空過下限 → 掃描器壞咗就**永久靜默綠**。canary 用 `printf` 寫 15 行 fixture（唔可以用 heredoc：bats 前處理器會改寫 `@test`），覆蓋規則 ① ② ④ ⑤ ⑥b ⑦ 七條；`scanned_files` 下限擋**檔案列舉漂移**，canary 擋**sc描描器壞掉**，兩者缺一不可 |
+| CI | `scripts/ci/mutants.tsv` 新增 `PNA-M1` | 令掃描器「永遠 skip」嘅突變 → 必須令 `PNA-4b` 轉紅；全表 **56 支全部死亡**（每支都有綠 baseline 對照） |
+| 計數 | `scripts/ci/mutants.tsv` 檔頭 ＋ `tests/mutant-must-die.bats` ＋ `CONTRIBUTING.md` | mutant 表＝46 支行為鎖 ＋ 10 支文件／資料契約鎖 ＝ 56 支；三處原本各寫各的（同一套 awk 指令兩個答案）→ 已統一。⚠️ `CONTRIBUTING.md` 嘅過期數字**改前已存在**，非本次引入 |
+| 記錄 | `docs/backlog.md` TMO-078 | 開票記錄 PNA-4 兩項技術債：縮排 `}` 嘅 latent 假紅（正解係 brace-depth 追蹤，屬語意變更 → 須另走 V03）＋ `probe_strip_comment`／`probe_code_lines` 死碼清理 |
+
+**教訓（值得留低）**：
+① **shell `case` 嘅 glob（尾端錨定）≠ awk regex（任意位置）** —— fuzz 捉到初版 3 處唔等價，方向全部係**漏報（假綠）**。
+② **守門自己也必須先證明自己會咬** —— 手動突變實證：掃描器壞 → `PNA-4b` 轉紅、而 `PNA-4` 照綠（＝假綠路徑真實存在）。
+③ **同一件事唔可以多份文件各說各話** —— 同一套 awk 指令，檔頭寫一套、`CONTRIBUTING.md` 寫另一套。
+
+> 二審過程見下方「TMO-074 的 V03 二審結論（Reviewer）」表第 1／2／3 輪。
+
 ## v2.14 — 2026-10-26
 
 **本版異動**：把 SOP 從 `AGENTS.md` 移出 —— AGENTS.md 只留「你是誰 + 萬事原則 + 3 條行為紀律」；
@@ -224,6 +245,7 @@ CI 的 bash 5.x 下本來就能跑完）。
 | 輪次 | Verdict | 摘要與處置 |
 |------|---------|------------|
 | 第 1 輪 | ⚠️ approve with comments（0 P0 / 1 P1 / 6 P2 / 6 P3）| **P1**：Reviewer 質疑「`[ ]` 會中止、`[[ ]]` 不會中止」的不對稱是**量測環境混用** → **已用同檔對照實驗排除**（T1~T5 放在同一個 .bats、同一環境、每例最後一個命令都是 `true`：T1 `[ ]` 紅、T2 `[[ ]]` 綠、T3 `false` 紅）→ Reviewer 的前提不成立，但**其結論「裸 `[ ]` 中段斷言也不安全」因此也不成立**（`[ ]` 確實會中止 → 安全）。**P2**：①`\|\|`/`&&` 豁免過寬 → 已收緊（PNA-4 重寫，連 `\|\|` 鏈也抓）；②fail-fast 訊息行號漂移 → 已用 `fix_line_numbers.py` 重算（182 筆全對）；③新檔 untracked → CI 的 `git ls-files` 系列守門與 shellcheck 尚未蓋到 → **併入合併前檢查清單**（本分支所有新檔都還沒 add，非本次獨有）；④ENV-EQ-9 canary 用 `charmap` 當代理是錯的代理 → 已改用**「該 locale 的 `[[:alnum:]]` 是否含 CJK」**（與 bats 內部 `bats_encode_test_name` 同一判準）；⑤同一件事四處四個數字 → 已統一為「動工前 21 個探針檔共 134 支」；⑥V03 未閉環 → 本節即為二審紀錄。**P3**：PNA-4 的 `if/elif` 豁免是不可達死碼 → 已刪；PNA-4 不跳 heredoc → 已改用 heredoc 感知的 `probe_code_lines`；巢狀 bats 未清 `BATS_` 前綴的環境變數 → 已清；PNA-1/2/4 缺「掃到幾個」下限 → 已補（防空過）。 |
+| 第 2 輪 | ⚠️ approve with comments（0 P0 / 1 P1 / 6 P2）| **背景**：PNA-4 掃描器由「逐行 fork awk/sed」（repo 13,660 行 × 約 2.5 fork ≈ 35,000 次 process spawn）改為**每檔一個 awk 行程** → PNA-4 由 **94,612ms → 855ms**（量測：`bats --timing tests/probe-name-ascii.bats`），整個 `bats tests/ skills/` 由約 380s → 2m42s–3m23s（受機器負載影響，故不寫死單一數字）。**等價性**：45 個真實探針檔逐行 diff 0 差異；fuzz 200 檔 + 1000 檔（多 seed／未閉合引號／各種 heredoc 變體）0 差異（1866 = 1866 violations）。⚠️ fuzz 途中捉到初版 3 處 **shell glob vs awk regex 語意唔等價**——① shell 的 `case` glob 要求邏輯運算子喺**行尾**，awk regex 只要求「包含」②「test body 最後一句」原版用**未剝空白**嘅原行 ③ heredoc 偵測嘅引號狀態原版**跨行保留**——**方向全部係漏報（假綠）**，已全部修正。**教訓：shell `case` 嘅 glob（尾端錨定）≠ awk regex（任意位置）**。**P1**：新掃描器零 canary + PNA-4 零防空過下限 → 掃描器壞咗就**永久靜默綠**（repo 自己踩過同一個坑：TMO-074 嗰輪改 `while read` 漏改 `done < "$file"` → 整支守門空轉仍報綠）→ 已補 `PNA-4b` canary（用 `printf` 寫 fixture，唔可以用 heredoc：bats 前處理器會改寫 `@test`）＋ PNA-4 `scanned_files >= 40` 下限 ＋ `mutants.tsv` 加 `PNA-M1`（令掃描器永遠 skip → must die）。**手動突變實證**：掃描器壞 → PNA-4b 轉紅、而 PNA-4 照綠（＝第 1 輪 P1 描述嘅假綠路徑真實存在，現已被咬住）。**P2**（今輪處理）：① `CONTRIBUTING.md` 5 個數字（50/27/42/8）過期 → 已同步 56/33/46/10（**改前已過期**，非本 diff 引入；同一套 awk 指令兩個答案 = repo 最痛嘅「同一件事多份文件各說各話」）② fixture 副檔名由 `.bats` 改為 `.fixture`（萬一 TMPDIR 指去 repo 內，PNA-4 自己嘅 glob 會掃到 → 假紅）③ fixture 補 3 條規則案例（規則②整行註解／⑥b 跨行 fail-fast 區塊／⑦ `}` 結尾豁免）→ **期望字串不變**④「沿用」→「**複製自**」（awk 內無法叫 bash function，實為複製；改一處要同步另一處）⑤「逐條等價」收窄成**有證據範圍**＋貼返 ①~⑧ 逐條對照表⑥ `mutants.tsv` 檔頭加「**探針名欄係 regex**」（`bats -f` 係無錨定 regex 搜尋；括號會變 capture group → `ERROR: Found no tests` → die(rc=2)；而 MMD-1 只做 `grep -qF` → 攔唔到）⑦ 數字口徑統一（標明量測指令同範圍）⑧ `probe-scan.bash` 檔頭函式清單補全（5 支）＋死碼標明「目前冇呼叫點」⑨ 記錄語法哨兵盲點（`bash -n` 唔 parse 內嵌 awk → 日後「改壞 awk」型 mutant 會係假死因）。**門檻一個都沒放寬**：PNA-4 嘅判定規則與原版逐條等價；`scanned_files >= 40` 同 PNA-1/PNA-2 一致（本表早前已明文「.bats 檔數地板維持原本的 40」）。**刻意不做的兩件事**：①「縮排嘅 `}` 算唔算 test body 最後一句」——原版 glob 要求 `}` 喺**行首**，縮排嘅 `}` 會被當 violation（latent 假紅）；**唔可以用「剝空白」修**（咁樣會令真違規變 pass = 條件放寬 = 假綠），正解係 brace-depth 追蹤 → **已開票 TMO-078、另走 V03**；②死碼 `probe_strip_comment`／`probe_code_lines` 全刪（≈70 行，會擴大 diff）→ 已標明「目前冇呼叫點」，清死碼屬另一輪（已併入 TMO-078）。 |
 
 > **本輪自己也踩到同一個坑（假綠）**：PNA-4 改用 heredoc 感知掃描器時，我改了 `while read` 卻忘了改底部的
 > `done < "$file"` → **整支守門變成空轉卻回報綠**。是「突變測試」（把一個 fail-fast 還原成裸 `[[ ]]`

@@ -2,10 +2,20 @@
 #
 # 欄位：id \t 目標檔 \t 原文（必須在目標檔內恰好出現一次）\t 換成 \t 探針檔 \t 探針名
 #
+# ⚠️ **「探針名」欄係 regex，唔係字面比對**（runner 用 `bats <探針檔> -f <探針名>`，
+#    `bats -f` 係**無錨定 regex 搜尋**）→ 探針名**不得含 regex metacharacter**
+#    （`. * + ? ( ) [ ] { } ^ $ | \`）。特別係**括號**：`(canary)` 會被當 capture group →
+#    匹配唔到任何測試 → runner 印 `ERROR: Found no tests` → die(rc=2)。
+#    ⚠️ MMD-1 只做 `grep -qF` 字面比對 → **攔唔到**呢個錯（只喺真正跑 mutant 時先爆）。
+#    → 命名時用純文字（字母／數字／空白／冒號／連字號），唔好用括號。
+#    ⚠️ 存量例外：RG-M5 嘅探針名 `M6.3-m` 含 `.`（`.` 喺 regex 內只當萬用字元，匹配無害，
+#       而且 `grep -qF` 係字面比對 → 揀「含括號」嗰種錯先會出事）。新命名一律唔好加括號。
+#
 # 性質兩種（TMO-066 二審後明文化）：分類看**目標檔類型**（可機械判定，不看註解）——
 #   * 行為鎖：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 死因必須是語意差。
 #   * 文件／資料契約鎖：目標檔是 `.md`／`.json` 等，探針只斷言檔案文字。
-#   查到現在有幾列（本表：行為鎖 45＋文件／資料契約鎖 10＝55）：
+#   查到現在有幾列（行為鎖 46＋文件／資料契約鎖 10＝56；其中 TMO-071/072/073 再 +5
+#   —— DD-M1..DD-M3／DR-M1／DR-M2；PNA-M1 為 TMO-074 掃描器重寫時補嘅 PNA-4b canary 對應條目）：
 #     awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
 #     awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
 #   ⚠️ 增刪列之後要**重新算一次**並把上面那行的數字改掉（數字過期＝文件與實作不符）。
@@ -19,6 +29,11 @@
 #   `compile()`／`bash -n`／`json.loads`，壞掉直接 die（`tests/mutant-must-die.bats` MMD-6 ⑦ 實測）。
 #   ⚠️ 因此**行中錨點**（該行後面還有內容）的「換成」不可加尾端 `#` 註解——註解會吞掉行尾。
 #   要寫理由請像下面 LK-M1 那樣另起一行 `#` 註解。
+#   ⚠️ **語法哨兵嘅盲點**：`bash -n` 只 parse shell，**唔 parse 內嵌喺單引號入面嘅 awk 程式**。
+#     → `.bash` 檔內嵌嘅 awk 程式若被改壞，哨兵**攔唔到**；該 mutant 會「紅」，但死因係
+#       awk parse error（而非要證嘅語意差）→ 呢類列零證據力。PNA-M1 本身**唔受影響**
+#       （佢改嘅係合法 awk，只係令掃描器唔再報 → 死因係語意差）。
+#     → 日後若要加「改壞 awk 程式」型 mutant，**唔可以**靠 bash -n 當哨兵，要另設 awk 語法檢查。
 #
 # 為什麼要有這張表：手動種 mutant 只能在當下證明「探針真的咬得住」，
 # 下次有人把 gate 改成恒真、把護欄拿掉，沒有人會知道。這張表把它變成 CI 會跑的檢查。
@@ -82,3 +97,4 @@ DR-M1	skills/dav-reconciler/reconcile-format.md	| 🚫 已作廢 | 該需求句�
 DR-M2	skills/dav-reconciler/reconcile-format.md	| ✅ 已實作 | 需求句的**全部條件**都能在變更清單裡找到對應實作，且有可驗證的證據 |	| ✅ 已實作 🟡 暫緩 | 需求句的**全部條件**都能在變更清單裡找到對應實作，且有可驗證的證據 |	tests/restruct-dav-reconciler.bats	RECON-007: exactly four allowed status values are defined
 DD-M2	skills/dav-reconciler/scripts/check-doc-drift.py	                if missing:	                if False:  # MUTANT: D7 覆蓋率檢查失效	tests/doc-drift.bats	DOC-DRIFT-024: D7 catches a reconcile table that misses an R-ID
 DD-M3	skills/dav-reconciler/scripts/check-doc-drift.py	            if gaps and declared.startswith("✅"):	            if False:  # MUTANT: D8 狀態矛盾檢查失效	tests/doc-drift.bats	DOC-DRIFT-028: D8 catches a deliverable claiming success while the reconcile has gaps
+PNA-M1	tests/helpers/probe-scan.bash	        if (s !~ /^\[\[/) continue	        if (s !~ /^\[\[/) continue; if (s ~ /^\[\[/) continue	tests/probe-name-ascii.bats	PNA-4b: the standalone-assertion scanner bites
