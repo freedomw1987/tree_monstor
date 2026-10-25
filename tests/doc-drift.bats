@@ -172,7 +172,10 @@ import sys
 path = pathlib.Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 if sys.argv[2] not in text:
-    print(f"WARN: pattern not found in {path}: {sys.argv[2]!r}", file=sys.stderr)
+    # 不能只 WARN：靠這個 helper 做突變的探針（050／052／053…）在 pattern 漂掉後
+    # 會退化成「對未突變 fixture 斷言 rc=0」而靜默綠。
+    print(f"FAIL: pattern not found in {path}: {sys.argv[2]!r}", file=sys.stderr)
+    sys.exit(1)
 path.write_text(text.replace(sys.argv[2], sys.argv[3]), encoding="utf-8")
 PY
 }
@@ -242,6 +245,7 @@ EOF
   cat > "$root/docs/deliverable/2026-10-26-demo.md" <<'EOF'
 # demo
 
+> **對應 Backlog**: DEMO-001
 > **交付狀態**: ✅ 完成
 
 ## 變更清單
@@ -1048,4 +1052,190 @@ $line"
     echo "FAIL: 正常 fixture（有錨點）竟紅 → 偵測器誤報：$output" >&2
     return 1
   }
+}
+
+@test "DOC-DRIFT-049: a body-only mention of another US must not enroll it in D8" {
+  # 為什麼要這條：D8 原本把「全文任何 ID token 且該 ID 有需求錨點」都納入對帳 → 交付摘要只要
+  # 順帶提到別的 US（檔名、歷史、依賴）就會被要求比對那張權威表 → 假紅。
+  # 實際被絆 3 次（被迫在交付摘要裡不能寫出別的 US ID）。2026-10-26 收窄成「只認標題區」。
+  local root="$BATS_TEST_TMPDIR/body_only"
+  _make_fixture "$root"
+  # 造第二個 US（有需求錨點＋權威表），但**只在交付摘要正文**提到它
+  cp "$root/docs/req/DEMO-001-requirement.md" "$root/docs/req/DEMO-002-requirement.md"
+  cp "$root/docs/reconcile/DEMO-001-reconcile.md" "$root/docs/reconcile/DEMO-002-reconcile.md"
+  cat >> "$root/docs/deliverable/2026-10-26-demo.md" <<'MD'
+
+## 附註
+
+- 本輪順帶提到 DEMO-002（僅供參考，不是本摘要交付的 US）
+- 也提一下 `docs/reconcile/DEMO-002-reconcile.md` 這個檔名
+MD
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 正文順帶提到別的 US 竟被納入 D8 對帳（假紅）：$output" >&2
+    return 1
+  }
+  if echo "$output" | grep -q "DRIFT D8"; then
+    echo "FAIL: 不應對正文提到的 US 報 D8：$output" >&2
+    return 1
+  fi
+}
+
+@test "DOC-DRIFT-050: header shorthand (DEMO-001/002) enrolls every listed US" {
+  # 標題區的簡寫（本 repo 慣例：`# 交付 — TMO-071/072/073`）必須展開成每個 ID，
+  # 否則權威表只會載入第一個 → 假紅（真實案例：2026-10-26-delivery-fidelity 那份）。
+  local root="$BATS_TEST_TMPDIR/shorthand"
+  _make_fixture "$root"
+  cp "$root/docs/req/DEMO-001-requirement.md" "$root/docs/req/DEMO-002-requirement.md"
+  cp "$root/docs/reconcile/DEMO-001-reconcile.md" "$root/docs/reconcile/DEMO-002-reconcile.md"
+  sed -i.bak 's/^> \*\*對應 Backlog\*\*: DEMO-001$/> **對應 Backlog**: DEMO-001\/002/' \
+    "$root/docs/deliverable/2026-10-26-demo.md"
+  rm -f "$root/docs/deliverable/2026-10-26-demo.md.bak"
+  # 內嵌表補上 DEMO-002 的 R1（權威表兩張都是 R1 ✅）→ 應綠
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "| R1 | demo | ✅ 已實作 | docs/ac/DEMO-001.md:1 | demo probe |" \
+    "| R1 | demo | ✅ 已實作 | docs/ac/DEMO-001.md:1 | demo probe |
+| R1 | demo2 | ✅ 已實作 | docs/ac/DEMO-002.md:1 | demo probe |"
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 標題區簡寫未展開（只載入第一個 US 的權威表）→ 假紅：$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-051: header with no anchored US falls back to whole-text scan (no layout bypass)" {
+  # 收窄成「只認標題區」之後，必須留回退：否則把 `對應 Backlog` 那行搬到第一個 `##` 之後
+  # 就能讓 D8 靜默略過該檔 —— 等於用排版繞過硬門檻。
+  # 回退只在標題區**沒有 US 形態的 ID**（前綴由 `docs/req/*-requirement.md` 推導）時才發生
+  # （所以 049 的「標題宣告 A、正文提 B」仍只認 A；054 的裝飾 token 也不會擋掉回退）。
+  local root="$BATS_TEST_TMPDIR/fallback"
+  _make_fixture "$root"
+  # 移除標題區的宣告，改成放在第一個 `##` 之後
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "> **對應 Backlog**: DEMO-001
+" ""
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "## 變更清單" "## 變更清單
+
+- 本摘要對應 DEMO-001"
+  # 造一個 D8 該抓的矛盾：權威表 ✅、內嵌表 ⚠️
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" "✅ 已實作" "⚠️ 部分實作"
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 標題區沒宣告就整檔略過（可用排版繞過 D8 硬門檻），實際 rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "DRIFT D8" || {
+    echo "FAIL: 應報 DRIFT D8：$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-052: header range shorthand (DEMO-001~002) expands to every US" {
+  # 本 repo 路徑慣用波浪號區間（`docs/req/TMO-071~073-requirement.md`）。
+  # 標題若寫 `# 交付 — DEMO-001~002` 而未展開，權威表只會載入第一個 → 假紅。
+  local root="$BATS_TEST_TMPDIR/range"
+  _make_fixture "$root"
+  cp "$root/docs/req/DEMO-001-requirement.md" "$root/docs/req/DEMO-002-requirement.md"
+  cp "$root/docs/reconcile/DEMO-001-reconcile.md" "$root/docs/reconcile/DEMO-002-reconcile.md"
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "# demo" "# demo — DEMO-001~002"
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "> **對應 Backlog**: DEMO-001
+" ""
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "| R1 | demo | ✅ 已實作 | docs/ac/DEMO-001.md:1 | demo probe |" \
+    "| R1 | demo | ✅ 已實作 | docs/ac/DEMO-001.md:1 | demo probe |
+| R1 | demo2 | ✅ 已實作 | docs/ac/DEMO-002.md:1 | demo probe |"
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 標題區的 ~ 區間未展開（只載入第一個 US 的權威表）→ 假紅：$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-053: header declaring a US without an anchor must not fall back to whole-text scan" {
+  # fallback 的條件必須是「標題區**連一個 ID token 都沒有**」，不能是「標題區沒有帶錨點的 US」。
+  # 後者會在「標題宣告的 US 沒有 docs/req/ 錨點」時退掃全文，把正文順帶提到的帶錨點 US 拉進對帳
+  # → 重現本票要消滅的假紅。現成**同形**檔：docs/deliverable/2026-10-26-slim-meta-layer.md（標題宣告
+  # 無錨點的 TMO-075）；真正的假紅還需該檔正文再裸提一個**帶錨點**的 US（目前 repo 內無此例）。
+  local root="$BATS_TEST_TMPDIR/noanchor_head"
+  _make_fixture "$root"
+  # DEMO-002 有錨點，且它的權威表有 **2 列**（R1/R2）→ 一旦被拉進對帳，內嵌表（只有 R1）就會對不上
+  cp "$root/docs/req/DEMO-001-requirement.md" "$root/docs/req/DEMO-002-requirement.md"
+  cp "$root/docs/reconcile/DEMO-001-reconcile.md" "$root/docs/reconcile/DEMO-002-reconcile.md"
+  _replace_in_file "$root/docs/reconcile/DEMO-002-reconcile.md" \
+    "| R1 | demo | ✅ 已實作 | docs/ac/DEMO-001.md:1 | demo probe | |" \
+    "| R1 | demo | ✅ 已實作 | docs/ac/DEMO-001.md:1 | demo probe | |
+| R2 | demo2 | ✅ 已實作 | docs/ac/DEMO-002.md:1 | demo probe | |"
+  # 標題區宣告一個**沒有** docs/req 錨點的 US（DEMO-999），正文再裸提 DEMO-002
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "> **對應 Backlog**: DEMO-001" "> **對應 Backlog**: DEMO-999"
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "## 變更清單" "## 變更清單
+
+- 順帶提到 DEMO-002（不是本摘要交付的 US）"
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: 標題宣告無錨點 US 時退掃全文，把正文的帶錨點 US 拉進對帳（假紅）：$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-054: a decorative token in the header must not block the fallback" {
+  # 這支打的是 fallback 的**區辨分支**：標題有 token，但那個 token 的前綴不在
+  # `docs/req/*-requirement.md` 裡（`P2-1`／`AC-1`／`FR-03` 這類裝飾 token）。
+  # 若回退條件誤用「標題區有沒有**任何** ID token」，裝飾 token 就會擋掉回退
+  # → 該檔 D8 靜默略過（＝用排版繞過硬門檻的另一種形態）。
+  local root="$BATS_TEST_TMPDIR/decor"
+  _make_fixture "$root"
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "> **對應 Backlog**: DEMO-001" "> **相關**: P2-1（裝飾 token，不是 US）"
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" \
+    "## 變更清單" "## 變更清單
+
+- 本摘要對應 DEMO-001"
+  _replace_in_file "$root/docs/deliverable/2026-10-26-demo.md" "✅ 已實作" "⚠️ 部分實作"
+  run bash "$DRIFT_SCRIPT" --root "$root" --from-date 2026-10-26
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 標題的裝飾 token 擋掉了回退，D8 靜默略過該檔（排版繞過）：rc=$status" >&2
+    echo "$output" >&2
+    return 1
+  }
+  echo "$output" | grep -q "DRIFT D8" || {
+    echo "FAIL: 應報 DRIFT D8：$output" >&2
+    return 1
+  }
+}
+
+@test "DOC-DRIFT-055: the submitter template declares its US before the first '##' heading" {
+  # D8 的新規則（2026-10-26）是「只認標題區宣告的 US」。那個規則的**隱含依賴**是
+  # `dav-submitter` 模板把 `> **對應 Backlog**: …` 放在第一個 `##` 之前 —— 沒有探針在守這件事。
+  # 若模板哪天把該行移到 `##` 之後，所有照模板寫的交付摘要都會落到「標題區沒宣告」
+  # → 靠 fallback 掃全文（暫時不會紅，但等於新規則失效）。
+  local tpl="$REPO_ROOT/skills/dav-submitter/template.md"
+  [ -f "$tpl" ] || { echo "FAIL: 缺 $tpl" >&2; return 1; }
+  # 注意：**只看 fenced code block 內**的模板本體 —— 模板檔自己的 `## 模板正文` 是外層標題，
+  # 不是交付摘要的標題區（第一版探針看錯範圍，對真實模板誤報）。
+  run python3 - "$tpl" <<'PY'
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+m = re.search(r"```markdown\n(.*?)\n```", text, re.S)
+if not m:
+    print("FAIL: 找不到 ```markdown fenced 模板區塊"); sys.exit(1)
+body = m.group(1).split("\n")
+decl = next((i for i, l in enumerate(body) if l.startswith("> **對應 Backlog**")), None)
+head = next((i for i, l in enumerate(body) if l.startswith("## ")), None)
+if decl is None:
+    print("FAIL: 模板本體沒有 `> **對應 Backlog**` 行"); sys.exit(1)
+if head is None:
+    print("FAIL: 模板本體沒有 `## ` 標題"); sys.exit(1)
+if decl > head:
+    print(f"FAIL: 模板本體的 `對應 Backlog`（第 {decl+1} 行）在第一個 `## `（第 {head+1} 行）之後 → 交付摘要會落到 fallback")
+    sys.exit(1)
+print(f"OK: 模板本體的對應 Backlog 在第 {decl+1} 行，第一個 ## 在第 {head+1} 行")
+PY
+  [ "$status" -eq 0 ] || { echo "$output" >&2; return 1; }
+  [[ "$output" == *"OK:"* ]] || { echo "FAIL: 預期 OK：$output" >&2; return 1; }
 }

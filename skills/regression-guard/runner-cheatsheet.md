@@ -3,7 +3,7 @@
 > 本檔為 regression-guard 的「主流 runner TTY fail-fast 對照表」章節（v2.1 累積）。
 > 引用：`SKILL.md` 對應章節
 >
-> 從 SKILL.md v2.9 起，本檔獨立。理由：對照表 37 行屬於「執行前才查」，不在「skill 用法」主流程上。
+> 從 SKILL.md v2.9 起，本檔獨立。理由：拆檔當時 對照表 37 行屬於「執行前才查」，不在「skill 用法」主流程上。
 
 ## 主流 runner TTY fail-fast 對照表
 
