@@ -82,10 +82,13 @@ POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force --yes     # 非互動（腳�
 ## 怎麼跑（真 API）
 
 ```bash
-# .env 三個地方可以放，自動找到：
-#   1. PoC/.env
-#   2. ~/.claude/skills/regression-guard/PoC/.env
-#   3. export OPENROUTER_API_KEY=...
+# API key 放 ~/.zshrc（**本機正規來源**），唔好版控任何 key：
+#   echo 'export OPENROUTER_API_KEY="sk-or-v1-..."' >> ~/.zshrc && source ~/.zshrc
+#   ⚠️ ~/.zshrc 只喺互動 shell 讀；非互動 shell 請改用 ~/.zshenv（zsh 唯一全 shell 都讀嘅檔）。
+#   ⚠️ CI 唔讀本機檔 → 用 secrets.OPENROUTER_API_KEY。
+#
+# 程式讀取順序：環境變數 → PoC/.env → ~/.claude/skills/regression-guard/PoC/.env
+# （前兩者係後備；JEV_ENV_FILE=/dev/null 可令「完全冇 .env」）
 
 .venv/bin/python example_run.py           # 走 oracle，cache hit 就 hit
 .venv/bin/python journey_gen.py \
@@ -129,7 +132,7 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
 | Confidence + severity + verdict probabilities 完整呈現 | ✅ |
 | End-of-run summary（count by verdict + avg severity）| ✅ |
 | 真 API 打接 + 介面正確（/api/alpha/decisions）| ✅ |
-| 三層 API key 自動讀取（env / PoC/.env / ~/.claude/.../PoC/.env）| ✅ |
+| API key 自動讀取（環境變數為主；PoC/.env 等為後備）＋ `JEV_MODEL` 可切換模型 | ✅ |
 
 ## M2 完成的證據
 

@@ -86,9 +86,10 @@
 | TMO-075 | 砍掉框架 meta 自我管理層（第一刀）：刪 meta 探針與歷史產物、補 D4/D8 守護 | P1 | 8 | done (2026-10-26) | — |
 | TMO-076 | SOP 移出 AGENTS.md：只留萬事原則；Gate 定義改由各自的 skill 承載 | P1 | 5 | done (2026-10-26) | TMO-075 |
 | TMO-077 | 文件數字漂移無探針守護：live 文件的自述數字會過期，改用探針重算比對 | P2 | 5 | done (2026-10-26) | TMO-076 |
-| TMO-078 | PNA-4 掃描器兩項技術債：①「縮排嘅 `}` 算唔算 test body 最後一句」——原版 glob 要求 `}` 喺**行首**，縮排嘅 `}` 會被當 violation（latent 假紅）；**唔可以用「剝前導空白」修**（會令真違規變 pass = 條件放寬 = 假綠），正解係 brace-depth 追蹤（屬語意變更 → 須另走 V03 + 另配 canary）②`tests/helpers/probe-scan.bash` 嘅 `probe_strip_comment`／`probe_code_lines` 自 PNA-4 改用單 awk 行程後已無呼叫點（邏輯已複製入 `probe_find_standalone_assertions`）→ 清死碼 | P2 | 3 | todo | TMO-074 |
+| TMO-078 | PNA-4 掃描器兩項技術債：①「縮排嘅 `}` 算唔算 test body 最後一句」——原版 glob 要求 `}` 喺**行首**，縮排嘅 `}` 會被當 violation（latent 假紅）；**唔可以用「剝前導空白」修**（會令真違規變 pass = 條件放寬 = 假綠），正解係**行首 `}` = test body 收尾**嘅 forward-scan 代理（V03 二審裁定：唔使真係計 brace depth，只需「行首 `}`」呢個原判準本身已在用嘅假設；屬語意變更 → 須另走 V03 + 另配 canary；殘餘邊界見 TMO-079）②`tests/helpers/probe-scan.bash` 嘅 `probe_strip_comment`／`probe_code_lines` 自 PNA-4 改用單 awk 行程後已無呼叫點（邏輯已複製入 `probe_find_standalone_assertions`）→ 清死碼 | P2 | 3 | done (2026-10-26) | TMO-074 |
+| TMO-079 | PNA-4 規則⑦ 嘅殘餘邊界：行首 `}` 之後如果仲有 code（例如 `} \|\| {`）會被豁免。V03 二審裁定保留原語意（超集性質優先），理由：行首 `}` 喺 .bats 入面**必然**係關 test body，而 `} \|\| {` 喺 function 定義位置係**語法錯誤** → 實際唔可能出現。但若日後有人寫出非標準縮排嘅 .bats，呢個洞可能變成真·假綠 → 需要時用真 brace-depth 追蹤取代 | P2 | 2 | todo | TMO-078 |
 
-> **本檔現況（2026-10-26）**：上表 78 列中 **77 列已完成／已跳過**，另有 **1 列未決**（TMO-078 PNA-4 掃描器技術債）。
+> **本檔現況（2026-10-26）**：上表 79 列中 **78 列已完成／已跳過**，另有 **1 列未決**（TMO-079 PNA-4 規則⑦ 殘餘邊界）。
 > 每一列的「詳細」段已移除（純歷史記錄，完整內容見 git history：
 > `git log -p -- docs/backlog.md`）。要查某張票的原始設計，請用該 TMO ID 查 git。
 >
