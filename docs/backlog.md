@@ -76,6 +76,10 @@
 | TMO-065 | **突變測試是一次性人工動作**（2026-10-05 TMO-063／064 收尾揭露）→ **已完成**：pptx-slim 的 26 支 mutant（11 圖片／12 影片與打包／3 ffmpeg 版本鎖）原本靠手動種、手動驗，事後沒有任何檢查記得「這些 gate 曾經被證明咬得住」。新增 `scripts/ci/mutants.tsv`（每列＝目標檔＋整行原文＋替換＋探針檔＋探針名）＋ `scripts/ci/mutant-must-die.py`（在**副本**上套突變：`git ls-files -co --exclude-standard` → tmp 目錄 → 精確替換（錨點必須恰好 1 次，對不上＝FAIL 非 skip）→ 對應探針必須變紅；每支都先跑「未突變必須綠」的 baseline，否則「紅」只代表探針壞了；事後比對目標檔 md5 自證 working tree 零改動）＋ `tests/mutant-must-die.bats`（MMD-1..5：表的契約（門檻 39 支；TMO-066 起含 dav-wiki／regression-guard）／真的在副本上殺 mutant／mutant 活著要回報失敗／錨點腐化要大聲壞／CI 真的跑全表且不得用 shell 兩條直線的 OR 短路假綠，也不得 `--list`、`--only`、`--no-baseline`、`continue-on-error`）＋ CI 步驟 `Verify probes still kill mutants`。**第一次實跑就抓到 2 個真的空過**：①G1（新檔 CRC 壞掉）沒有任何探針咬得住 → 補 `tests/pptx-slim.bats` PPTX-SLIM-12（raw-patch 一個 STORED 媒體的 byte 令 central directory 的 CRC 對不上）；②FF-M3（把能力實測的 `-vf scale=...` 換成 `-vf null`）FV-8 照樣過 → 補 `tests/ffmpeg-version.bats` FV-9（把檢查腳本送的字串與 `scale_filter(1920)` 綁死） | P3 | 3 | done (2026-10-05) | TMO-063, TMO-064 |
 | TMO-066 | **其他 skill 的護欄沒有 mutant**（TMO-065 限制①自陳）→ **已完成**：把兩個 skill 的人工驗證記錄裡可字串化重現的 13 支補進同一張表（26 → 40 支；二審後再 +1）——**dav-wiki 6 支**（缺 ffmpeg／poppler／python3 三條硬退 4 不得降級、限制表不得承諾降級為純文字、OCR 不得再宣稱 `exit 4`、`--purge` 預設不得真刪除）、**探針機密遮罩 3 支**（共用 `mask_secrets` 改直通、掃描器 R2 停用、探針自己重定義一份）、**regression-guard 4 支**（runner 對照表拿掉 `jest --ci`、gates.json Gate 3 拿掉 regression-guard 交叉引用、handbook 拿掉 `< /dev/null`、SKILL.md 拿掉對 runner 對照表的指標）；**掃描器範圍鎖 1 支（二審 F4）**（`lint-shell-var-nonascii.py` 的 `git ls-files -co --exclude-standard` 改回 `-c`）；MMD-1 門檻 26 → 40，並把 dav-wiki／regression-guard 的目標檔列入「必須被覆蓋」清單 | P2 | 3 | done (2026-10-05) | TMO-065 |
 | TMO-068 | **dav-trust 缺「中斷續跑 / 用戶叫停」機制**（2026-10-23 dav-trust v2.3 交付報告 §7 自陳）→ **已修**（2026-10-23）：新增 `skills/dav-trust/resume.md`（續跑決策樹 / checkpoint 契約 / 叫停 7 步行為序列 / 邊界）+ trust-log 檔頭「進度錨點」（PHASE / DONE / NEXT / UPDATED_AT）+ 主檔規則表 2 列（「中斷後續跑」「用戶叫停立即收斂」）+ `time-anchor.md` 欄位規範 + `examples.md` §8 實戰範例；探針 `tests/restruct-dav-trust.bats` 23 → 27 條（含「掏空即紅」與「resume.md 已入版控」）；並登記 3 支 mutant（`scripts/ci/mutants.tsv` DT-M1/DT-M2/DT-M3）證明探針真的會咬；V03 Reviewer 二審 2 輪（皆 ❌：第 1 輪 1 P0 / 5 P1 / 13 P2、第 2 輪 3 P1 / 9 P2）全數處置，結論見 `skills/dav-trust/CHANGELOG.md`「v2.4 二審結論」節| P1 | 3 | done (2026-10-23) | — |
+| TMO-069 | **需求錨點檔（`docs/req/<US-ID>-requirement.md`）** — 解決「用戶原話在多文件 pipeline 中被 AI 改寫後失真」：新增框架可攜的需求錨點檔（`## 用戶原話（唯讀）` + `## 澄清後驗收句` 兩段式），dav-planner 產 US 時同步生成；原話區為唯讀約定（後續階段只讀不改）；存量 US 不回補 | P1 | 3 | done (2026-10-26) | — |
+| TMO-070 | **需求對帳機制（新 skill `dav-reconciler`）** — 解決「最終成果對不上需求」：由**未參與實作的獨立 subagent** 拿（需求錨點 + 最終變更清單）產出「需求對帳表」（每條需求 → 實作位置 / 遺漏 / 偏離原因）；對帳有遺漏或偏離時**硬門檻**：不得宣稱「✅ 完成」，只能標「⚠️ 部分完成」並列出待補；觸發點在 §2.4 反省之前 | P1 | 5 | done (2026-10-26) | TMO-069 |
+| TMO-071 | **文件漂移探針（8 類字面對帳 D1..D8）** — 解決「同一件事多份文件各說各話」：新增可攜 CI 腳本 `scripts/ci/check-doc-drift.sh` + 探針 `tests/doc-drift.bats`（含突變測試），檢查 ①`docs/ac/*.md` 狀態 vs backlog 狀態 ②AC 編號連續且唯一（AC01..ACn） ③PRD 追溯矩陣 ID ⊆ backlog ID ④deliverable 提到的檔案真的存在 ⑤`ac/*.md` 與 `ac/*.html` 狀態一致 ⑥AC 範本 ↔ 需求錨點對應 ⑦對帳表 R-ID 覆蓋 + 狀態值合法 + 已交付必對帳 ⑧交付摘要對帳段 ↔ 權威對帳表一致；存量不一致項進白名單豁免（不誤紅） | P2 | 5 | done (2026-10-26) | TMO-069 |
+| TMO-072 | **bats 1.14 會靜默跳過「測試名含中文」的 `@test`**（既存病，2026-10-26 TMO-069/070/071 開發期間實測發現）→ 14 個探針檔共 **105 支**中文測試名從未被執行（bats 報 `unknown test name` 後靜默略過，計數仍顯示通過）→ **假綠溫床**。已修 `tests/restruct-zero-cross-read.bats` 的 3 支（ASCII 化後立刻抓到新 skill 違規）；其餘 102 支待處理（改 ASCII 名 + 補「宣告數 vs 實跑數」守門，見 `tests/env-equivalence.bats` ENV-EQ-9 既有 canary，它正是為此而設但自身失敗）| P1 | 3 | todo | — |
 | TMO-067 | **全域 SOP 未登錄 trust 這條第三路徑**（2026-10-05 dav-trust v2.3 P0 修正時揭露，V03 二審第 4 輪 P1-1）→ **已修**（2026-10-23）：① `AGENTS.md` §2.0 任務類型表新增「信任模式（trust mode）」列（執行段 §2.3 → §2.5；規劃 / 設計屬啟動前置條件）+ 判斷責任歸屬新增優先序（trust > 開發 > 一般）；② `docs/sop/handbook/2.6-general-task.md` 增列 trust 例外（不適用本節 / 升級觸發器不套用 / 違規處理不適用）+ §2.1 / §2.2 章節加 trust 提示 + §2.3（`ask_user` 策略不適用）+ §2.4（用戶參與確認不適用）加例外 + `skills/dav-reflection` Step 5 加 trust 例外；③ 探針 `tests/restruct-agents-md.bats` 10 → **18** 條（新增 8 條 + 改寫 1 條，含「會咬」突變實測）；④ 依 V03 走 Reviewer 二審（結論見 `docs/sop/handbook/changelog.md` v2.10 二審結論節）| P1 | 3 | done (2026-10-23) | — |
 
 > 📝 2026-10-05 ask-me：**TMO-035** 決策＝**改文件對齊現實**（`SKILL.md` 限制表該列改為
@@ -138,6 +142,7 @@
 > **狀態定義**（單一來源）：`todo` = 已描述、尚未開工（TMO-026 之後的新票，**非** trust mode 未結項）；`doing (日期)` = 進行中；`done (日期)` =
 > 已交付；`blocked (原因)` = 被外部條件卡住；`待決（NYH-n）` = 決策已上呈 `docs/need-you-help.md` 第 n 項，等用戶裁決（round F P2-5 補定義）。
 > 注：`tests/backlog-trust-mode-completion.bats:48`（BACKLOG-005）禁止 trust mode 期間的票停在 `pending`；本表新票一律用 `todo`，不修改該探針。
+> 相容舊值（漂移檢查腳本的 `STATUS_VALUE` 一併接受，僅為相容存量文件，不新增語意）：`pending` / `in_progress` / `deferred` / `cancelled` / `進行中` / `待辦`。
 
 ---
 
@@ -599,3 +604,73 @@ dav-trust，以及 dav-wiki 的 cross-ref／cleanup 進階路徑）；②跨檔�
 | P2-2 | P2 | SM-M3 換掉 `load` 會連帶抽掉 `REPO_ROOT`/PATH 設定 | 見 deliverable §4.4（附查核結果） |
 | P3-1 | P3 | `awk NF==4` 與 `grep -c .` 兩濾網不一致 | 欄數契約進載入期後，`--list` 每行必為 6 欄 ⇒ `awk NF==4`（只取 4 欄者）不再會漏掉壞列；MMD-1 **不再自寫第二套結構檢查**（避免與 runner 漂移），結構類改由 MMD-6 拿合成表實測 |
 | P3-2 | P3 | 跨 skill 清單是手寫 spot list、只驗 target | 已在 deliverable §4.4 明寫此為已知邊界 |
+
+---
+
+## TMO-069 詳細（需求錨點檔）
+
+- **對應 Module**: M00（框架層，跨專案可攜）
+- **預估時間**: 3 SP
+- **AC**:
+  - **AC-1** (Given-When-Then): Given 任一新 US 由 dav-planner 產出 When 規劃完成 Then 同步產生 `docs/req/<US-ID>-requirement.md`，內容含「用戶原話（唯讀）」與「澄清後驗收句」兩段
+  - **AC-2** (Given-When-Then): Given 錨點檔已存在 When 執行階段（設計／實作／對帳）讀取 Then 僅讀不寫該檔的「用戶原話」段
+  - **AC-3** (DoD): 探針 `tests/doc-drift.bats` 至少有 1 條驗「AC 範本存在 ↔ 錨點檔存在」的對應關係
+  - **AC-4** (DoD): 存量 US 不回補（不得因缺錨點檔而紅），只在「新規劃產出」時要求
+- **依賴**: —
+- **驗收方式**: `bats tests/doc-drift.bats` 全綠；`docs/req/` 內每個檔有兩段且非空
+- **為什麼這個優先**: P1 — 這是整條對帳鏈的根節點，沒有它，對帳只能對「AI 自己的改寫」
+
+### TMO-069 設計決策（訪談結論）
+
+- 用戶原話區**唯讀**：不靠機械雜湊鎖，靠「後續階段不得寫入」的約定 + 對帳時以原話為準
+- 檔案位置 `docs/req/`（專案端，框架 skill 只寫「monorepo 對應的 docs/req/」不綁死路徑）
+- 存量 US 不回補（避免一次性大爆炸；白名單機制見 TMO-071）
+
+---
+
+## TMO-070 詳細（需求對帳機制 dav-reconciler）
+
+- **對應 Module**: M00（框架層）
+- **預估時間**: 5 SP
+- **AC**:
+  - **AC-1** (Given-When-Then): Given 一個 US 已完成實作 When 進入 §2.4 反省前 Then 由**未參與實作的獨立 subagent** 產出「需求對帳表」
+  - **AC-2** (Given-When-Then): Given 對帳表有「未實作」或「偏離」項 When 產出交付摘要 Then 狀態**不得**標「✅ 完成」，只能標「⚠️ 部分完成」並列出待補項
+  - **AC-3** (Given-When-Then): Given 對帳表全數對上 When 產出交付摘要 Then 可標「✅ 完成」，且 deliverable 含「需求對帳」段
+  - **AC-4** (DoD): 對帳表格式固定（需求句 → 實作位置 / 狀態 / 說明），可被 TMO-071 探針檢查
+  - **AC-5** (DoD): 規範修改走 V03 Reviewer 二審（gates.json / handbook / skill / AGENTS.md 皆屬 SOP 檔）
+- **依賴**: TMO-069
+- **驗收方式**: `bats tests/restruct-dav-reconciler.bats` 全綠；`bats tests/doc-drift.bats` 全綠
+- **為什麼這個優先**: P1 — 這是唯一能直接量出「成果對不上需求」的機制
+
+### TMO-070 設計決策（訪談結論）
+
+- **觸發點**：§2.4 反省**之前**（先對帳再反省，順序有意義：對帳是事實比對，反省是觀點）
+- **不新增 gates.json 的 gate 編號**（v1.1.0 曾移除 Gate 5 RSI，歷史包袱風險）→ 設計為 §2.3 尾段的
+  「Gate 4.5 需求對帳」子關卡，寫進 handbook 2.3 + AGENTS.md §2.3 速查表
+- **執行者獨立性**：由未參與實作的 subagent 執行（避免自證清白）
+- **可攜性**：skill 檔放 `skills/dav-reconciler/`，安裝後其他專案可用；執行時讀「monorepo 對應的 docs/req/ + docs/deliverable/」
+
+---
+
+## TMO-071 詳細（文件漂移探針 8 類 D1..D8）
+
+- **對應 Module**: M00
+- **預估時間**: 5 SP
+- **AC**:
+  - **AC-1** (Given-When-Then): Given 任一專案的 `docs/ac/*.md` When 跑 `scripts/ci/check-doc-drift.sh` Then 檢查 8 類：
+    ①AC 狀態 vs backlog 狀態 ②AC 編號連續且唯一（AC01..ACn） ③PRD 追溯矩陣 ID ⊆ backlog ID
+    ④deliverable 提到的檔案存在 ⑤`ac/*.md` 與 `ac/*.html` 狀態一致 ⑥AC 範本 ↔ 需求錨點對應
+    ⑦對帳表 R-ID 覆蓋 + 狀態值合法 + 已交付必對帳 ⑧交付摘要對帳段 ↔ 權威對帳表一致
+  - **AC-2** (Given-When-Then): Given 存量專案有已知不一致項 When 跑檢查 Then 該項被白名單豁免且**輸出說明為豁免**（不得靜默跳過）
+  - **AC-3** (Given-When-Then): Given 有人把 AC 範本狀態從 PENDING 改成 done 但 backlog 沒改 When 跑檢查 Then rc≠0（抓得到）
+  - **AC-4** (DoD): 探針含**突變測試**（故意破壞 → 必須變紅），證明不是假綠
+  - **AC-5** (DoD): CI workflow 有一個步驟真的呼叫它，且不得 `continue-on-error` / `|| true`
+- **依賴**: TMO-069
+- **驗收方式**: `bats tests/doc-drift.bats` 全綠；`bash scripts/ci/check-doc-drift.sh` 於本 repo rc=0
+- **為什麼這個優先**: P2 — 機械化護欄，成本低但需先有 TMO-069 的檔案結構
+
+### TMO-071 設計決策（訪話結論）
+
+- 8 類全做（字面層，D1..D8），但**不**加「需求覆蓋率門檻」（避免存量 US 一片紅）
+- 白名單機制：檔案 `docs/ci/drift-whitelist.txt`（每行一條，含理由）；豁免必須輸出說明
+- 探針與腳本寫成可攜（`--root` 參數指向目標專案），其他專案可直接取用

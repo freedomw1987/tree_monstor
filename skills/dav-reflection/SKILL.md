@@ -98,11 +98,13 @@ description: 在 SOP「自我反省」階段使用。分層級（US / Sprint / M
 | **US 級別 jev 只打 2 維度**（v2.1 新增，輕量路徑 S2）| Sprint / Module 級別打全部 6 維度 | 避免 US 級別過重 |
 | **jev 內部失敗 fallback**（v2.1 新增，S3）| N/A | jev 內部錯誤視同不可用、走軟性降級、不 fail-fast |
 | **M-Step 3 必跑探針**（v2.1 新增，B3）| 純錯字修正例外 | 改檔後必跑 `bats tests/restruct-dav-reflection.bats` 全綠 |
+| **需求對帳先於反省**（v2.3 新增）| 本次 US 無需求錨點（存量任務）| 反省必須建立在「已對帳」的前提上；對帳未過時反省只能記錄缺口、不得把未完成項當成已完成來反省 |
 
 ## 變動歷史
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|--------|
+| v2.3 | 2026-10-26 | 規則表加「需求對帳先於反省」：§2.3 尾段的 Gate 4.5 對帳產物是反省的前提；對帳未過時不得把未完成項當成已完成來反省 | TMO-070：反省若建立在未經驗證的「已完成」前提上，會把落差洗成「已反思」|
 | v2.2 | 2026-10-23 | Step 5 加 trust 例外（trust mode 進行中：改記 need-you-help 檔）+ 規則列「Sprint / Module 必有用戶參與」例外欄 + 觸發時機表 Sprint / Module 列加註 | trust 內不得中途停下問用戶（TMO-067）；V03 Reviewer 二審結論見全域 handbook changelog v2.10 |
 
 完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。

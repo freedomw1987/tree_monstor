@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TMO-069 需求錨點檔 — AC 範本</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1.5em; line-height: 1.7; color: #222; background: #fff; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 0.3em; margin-top: 1.5em; }
+    h2 { color: #2c5282; margin-top: 2em; border-left: 4px solid #4299e1; padding-left: 0.5em; }
+    blockquote { color: #666; font-style: italic; border-left: 4px solid #ccc; padding-left: 1em; margin: 1em 0; }
+    .ac-item { background: #f7fafc; padding: 1em 1.2em; margin: 1em 0; border-left: 4px solid #4299e1; border-radius: 0 4px 4px 0; }
+    .ac-item strong { color: #2c5282; margin-right: 0.3em; }
+    .dod-item { padding: 0.4em 0; font-size: 1.05em; }
+    @media print { body { max-width: 100%; margin: 0; padding: 1em; } .ac-item { page-break-inside: avoid; background: transparent; } a { color: #000; border-bottom: none; } }
+  </style>
+</head>
+<body>
+  <h1>TMO-069 需求錨點檔（docs/req/<US-ID>-requirement.md）</h1>
+  <blockquote>對應 Backlog: TMO-069 | 最後更新: 2026-10-26 | 狀態: done (2026-10-26)</blockquote>
+  <h2>背景</h2>
+  <p>多文件 pipeline（需求 → backlog → AC → PRD → 測試 → 實作 → deliverable）中，同一句需求被 AI 改寫 4～5 遍，每遍掉一層；最上游的「用戶原話」沒有被保存成資產，最後只存在於對話記憶裡。本 US 建立「需求錨點檔」：把用戶原話逐字保存，作為整條鏈的根節點，後續階段一律以它為準。</p>
+  <h2>Given / When / Then</h2>
+  <div class="ac-item"><strong>AC01</strong><br>    <strong>Given</strong> 任一新 US 由 dav-planner 產出<br>    <strong>When</strong> 規劃完成<br>    <strong>Then</strong> 同步產生 `docs/req/<US-ID>-requirement.md`<br>    <strong>And</strong> 檔案含 `## 用戶原話（唯讀）` 與 `## 澄清後驗收句` 兩段<br>    <strong>And</strong> 兩段皆非空</div>
+  <div class="ac-item"><strong>AC02</strong><br>    <strong>Given</strong> 錨點檔已存在<br>    <strong>When</strong> 執行階段（設計／實作／對帳）讀取<br>    <strong>Then</strong> 只讀不寫「用戶原話」段<br>    <strong>And</strong> 需要引用需求時以原話為準，不得引用 AI 改寫版</div>
+  <div class="ac-item"><strong>AC03</strong><br>    <strong>Given</strong> 一個 US 有 AC 範本檔<br>    <strong>When</strong> 跑 `tests/doc-drift.bats`<br>    <strong>Then</strong> 檢查 AC 範本存在 ↔ 錨點檔存在的對應關係<br>    <strong>And</strong> 存量 US 缺錨點檔時不得因此紅（白名單機制）</div>
+  <h2>DoD</h2>
+  <ul>
+    <li class="dod-item">☐ AC01 / AC02 / AC03 全綠</li>
+    <li class="dod-item">☐ dav-planner skill 已明列「產 US 時同步產錨點檔」規則（純文字引用，不綁死路徑）</li>
+    <li class="dod-item">☐ 錨點檔兩段式結構有範例檔（`docs/req/` 內至少 1 份）</li>
+    <li class="dod-item">☐ `bats tests/doc-drift.bats` 全綠</li>
+    <li class="dod-item">☐ backlog 標 TMO-069 done</li>
+  </ul>
+  <h2>風險</h2>
+  <ul>
+    <li>唯讀區塊靠約定而非機械鎖（雜湊鎖會擋 legit 的需求澄清更新）</li>
+    <li>存量 US 不回補 → 覆蓋率從 0% 起步，需在 deliverable 誠實揭露</li>
+  </ul>
+</body>
+</html>

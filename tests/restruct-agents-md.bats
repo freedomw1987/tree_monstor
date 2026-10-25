@@ -42,13 +42,13 @@ load 'helpers/test-env'
 @test "RESTRUCT-AGENTS-MD: SOP version references current version" {
   local f="$REPO_ROOT/AGENTS.md"
   assert_file_contains "$f" "## 變動歷史"
-  # 現行 SOP 版本必在主檔可見（v2.1；v2.0 保留於歷史列）
-  awk '/^## 變動歷史/,EOF' "$f" | grep -qE "v2\.1" || {
-    echo "FAIL: 變動歷史 should reference current SOP version v2.1" >&2
+  # 現行 SOP 版本必在主檔可見（v2.2；v2.1 保留於歷史列）
+  awk '/^## 變動歷史/,EOF' "$f" | grep -qE "v2\.2" || {
+    echo "FAIL: 變動歷史 should reference current SOP version v2.2" >&2
     return 1
   }
-  grep -qF "§2 SOP 流程（v2.1）" "$f" || {
-    echo "FAIL: AGENTS.md section header should state current SOP version v2.1" >&2
+  grep -qF "§2 SOP 流程（v2.2）" "$f" || {
+    echo "FAIL: AGENTS.md section header should state current SOP version v2.2" >&2
     return 1
   }
 }
@@ -212,6 +212,31 @@ load 'helpers/test-env'
     echo "FAIL: changelog should record the v2.10 entry" >&2; return 1; }
   grep -qF "二審結論（V03 Reviewer）" "$c" || {
     echo "FAIL: changelog v2.10 should carry a review-verdict section" >&2; return 1; }
+}
+
+@test "RESTRUCT-AGENTS-MD: Gate 4.5 is registered in AGENTS.md and handbook 2.3" {
+  local f="$REPO_ROOT/AGENTS.md"
+  local h="$REPO_ROOT/docs/sop/handbook/2.3-execution.md"
+  grep -qF "Gate 4.5" "$f" || {
+    echo "FAIL: AGENTS.md should list Gate 4.5 in the gate quick-reference" >&2; return 1; }
+  grep -qF "Gate 4.5" "$h" || {
+    echo "FAIL: handbook 2.3 should register Gate 4.5" >&2; return 1; }
+  # Gate 4.5 刻意不進 gates.json（schema 限制），但 mandatory_phrase 必須在 handbook 裡
+  grep -qF "mandatory_phrase" "$h" || {
+    echo "FAIL: handbook 2.3 should carry the Gate 4.5 mandatory_phrase" >&2; return 1; }
+  [ -f "$REPO_ROOT/docs/sop/gates.json" ] || {
+    echo "FAIL: gates.json 不存在（反向鎖會假綠）" >&2; return 1; }
+  grep -qF "Gate 4.5" "$REPO_ROOT/docs/sop/gates.json" && {
+    echo "FAIL: gates.json should NOT contain Gate 4.5 (ADR-D1: schema only allows integer gate ids)" >&2; return 1; }
+  return 0
+}
+
+@test "RESTRUCT-AGENTS-MD: SOP changelog records v2.11 and review verdict" {
+  local c="$REPO_ROOT/docs/sop/handbook/changelog.md"
+  grep -qF "## v2.11 — 2026-10-26" "$c" || {
+    echo "FAIL: changelog should record the v2.11 entry" >&2; return 1; }
+  grep -qF "二審結論（V03 Reviewer）" "$c" || {
+    echo "FAIL: changelog v2.11 should carry a review-verdict section" >&2; return 1; }
 }
 
 @test "RESTRUCT-AGENTS-MD: change history section exists" {

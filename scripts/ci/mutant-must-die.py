@@ -9,7 +9,7 @@
 （TMO-066）表後來從 26 支擴到 39 支：同一套 harness 再收了 dav-wiki（缺工具不得降級 6 支）、
   探針機密遮罩（3 支）與 regression-guard（TTY fail-fast 四檔一致 4 支）的護欄 ——
   它們在此之前同樣只是「人工驗過一次」，驗完就沒有任何檢查記得。
-  二審（verdict `request-changes`）後再 +1 → **42 支**：SM-M1 重寫（舊版掉續行反斜線，
+  二審（verdict `request-changes`）後再 +1 → **48 支**（TMO-069/070/071 再 +5：DD-M1 / DD-M2 / DD-M3 / DR-M1 / DR-M2）：SM-M1 重寫（舊版掉續行反斜線，
   死因是 rc=127 parse error 而非遮罩失效）、DW-M5 由「文字契約鎖」升級為真行為鎖
   （收緊 `tests/wiki-ocr.bats` AC-O4／AC-O6 去驗 2／1）、新增 LK-M1（掃描器 `git ls-files -co` 改回 `-c`）。
   二審 F3 也把「等價突變／重複列／空欄／欄數」變成載入期就會 FAIL 的契約。
@@ -123,7 +123,7 @@ def load_table(path: Path) -> list[Mutant]:
             die(f"突變表 id 重複：{mutant.mid}（第 {lineno} 列）")
         seen.add(mutant.mid)
         # 同一個（目標檔、原文、換成）出現兩次＝同一支 mutant 換個 id 再填一次，
-        # 那就只是把「40 支」這個數字灌大（二審 F3：同探針名可重用墊數）。
+        # 那就只是把「48 支」這個數字灌大（二審 F3：同探針名可重用墊數）。
         # 注意：不同突變共用同一支探針是**合法的**（一個測試本來就可以咬多支 mutant）。
         key = (mutant.target, mutant.find, mutant.replace)
         if key in seen_mutations:

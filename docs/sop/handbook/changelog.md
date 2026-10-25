@@ -7,6 +7,237 @@
 > ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
 > 與 `AGENTS.md` §2 標題的 **SOP 版本號**（不同軌）不是同一個序號 —— 兩者不可互相比較大小。
 
+## v2.12 — 2026-10-26
+
+**本版異動**：Gate 4.5 第 6 輪需求對帳 —— 補正 v2.11 的**失真紀錄**、修正 RECON-007 探針解析器（BSD grep 交替分支上限）、
+修掉 `--from-date` 的 **fail-open** 缺口、關閉 v2.11 二審指出的 RECON-007 覆蓋盲點
+
+### 第 6 輪對帳 → 補正 v2.11 的失真紀錄
+
+**為什麼**：v2.11 記載「實測 4 支 mutant 全死」，但**當時並未真的觀察到**——RECON-007 v1.0 的解析器在
+macOS/BSD grep 上本身是壞的（baseline 紅）→ `mutant-must-die.py` 的 baseline 迴圈 `die()` → **整個表中止** →
+DD-M1..DD-M3 / DR-M1 四支守護一直是**失效狀態**。v2.11 同節的「探針『會咬』實測」表（DR-M1 列
+`✅ 紅（baseline 綠 → 突變 rc=1）`）與「登錄 4 支 mutant（實測 4 支全死）」同屬當時未發生的宣稱。
+**這正是本專案要解的病（同一件事多份文件各說各話、宣稱與實況不符）在自己的 changelog 裡重現。**
+
+### 探針修正（依 V03.6 走 Reviewer 二審）
+
+| 探針 | 問題 | 修正 | 判定 |
+|------|------|------|------|
+| RECON-007（`tests/restruct-dav-reconciler.bats`）| v1.0 用 `grep -oE '(✅\|⚠️\|❌\|🚫) …'`：BSD grep 2.6 的 ERE **交替分支上限為 2** → 4 分支只吐出前 2 個（❌ / 🚫 被吞）→ count 只數出 2 種 → 探針紅 | 改用 python3 逐行 + `re.finditer().group(0)` 解析（明確 UTF-8 讀檔、Unicode 語意、兩平台一致）| **不是門檻放寬**：同一 regex、同一 4 種門檻、同一缺值斷言，僅換解析器（predicate 逐位元組未變）|
+| DOC-DRIFT-036/037（`tests/doc-drift.bats`，新增）| `--from-date` 未驗證格式：比對用**字串**比較（`doc.name[:10] < from_date`）→ 傳入 `"bad-date"` 會讓**所有**交付摘要被跳過 → 檢查範圍靜默縮成空集 → **D8 硬門檻被一個 typo 關掉** → 假綠 | `--from-date` 改用 `datetime.strptime` 驗證（格式 + 日期存在性），不合法 → **rc=2**（fail-closed）| **收緊**（新增 fail-closed 契約），非放寬 |
+
+### 實測證據（V03.6 要求：修改前 fail / 修改後 pass）
+
+```
+# RECON-007 修改前（BSD grep 2.6.0-FreeBSD，實測）
+$ printf '%s\n' "$sec" | grep -oE '(✅|⚠️|❌|🚫) [^ |（(]+' | sort -u
+✅ 已實作
+⚠️ 部分實作                     ← 只數出 2 種（❌ / 🚫 被交替上限吞掉）
+not ok 1 RECON-007: exactly four allowed status values are defined
+#   `count=$(printf '%s\n' "$values" | grep -c . )' failed
+
+# RECON-007 修改後
+ok 1 RECON-007: exactly four allowed status values are defined
+
+# 交替分支數 vs 抓到幾種（實測，證明是分支數而非字串長度／locale／跨行）
+(✅) → 1 種 ｜ (✅|⚠️) → 2 種 ｜ (✅|⚠️|❌) → 2 種 ｜ (✅|⚠️|❌|🚫) → 2 種
+(a|b|c|d)（純 ASCII）→ 4 種（正常）｜ LC_ALL=C 與 en_US.UTF-8 結果相同（非 locale 問題）
+
+# mutant 守護（修好後才第一次真的跑完）
+$ python3 scripts/ci/mutant-must-die.py --only DD-M1,DD-M2,DD-M3,DR-M1
+baseline（未突變，必須綠）：4 組 → 4 組全綠
+突變（每支都必須紅）：DD-M1 / DD-M2 / DD-M3 / DR-M1 → 4 支全死
+OK: 4 支 mutant 全部死亡（每支都有綠 baseline 對照）
+```
+
+### 第 6 輪對帳 → v2.11 二審指出的 RECON-007 覆蓋盲點（P2-3）
+
+RECON-007 只認 4 個**已知** emoji → 全新 emoji 的第 5 種狀態值（如 `🟡 暫緩`）**不被擋**
+（已實測：加該列後 RECON-007 仍綠）。**此盲點在舊實作同樣存在，非本版引入。**
+
+**本版實作（V03 Reviewer 第 2 輪 P2-1 / P2-2 / P2-3 的建議，非最初提案的「掃 emoji」）**：
+
+| 面向 | v1.1 | v1.2（本版） |
+|------|------|------|
+| 取值 | regex 只認 4 個已知 emoji | **結構式**：以「表頭第一欄 == 狀態」定位 §4 狀態表，取資料列第一欄 |
+| 比對 | `grep -qF` **子字串** | **集合等值**（`✅ 已實作 🟡 暫緩` 不再被誤判為合法）|
+| 跨檔 | 無 | **跨檔守護**：規格檔 §4 ↔ `check-doc-drift.py` 的 `VALID_STATUS` 必須一致 |
+| 反向自測 | 無 | **RECON-016**（新增）：兩個突變情境都必須讓解析結果改變 |
+
+> **為什麼不用「掃所有 emoji 開頭儲存格」**（Reviewer 第 2 輪 P2-2 的實測反駁）：
+> 同一份文件裡「emoji 開頭儲存格」≠「狀態值」—— `reconcile-format.md` §3 欄位定義表就用
+> 單獨的 `✅` 當「必填」標記（5 處）、§2 範例表也有。若掃 emoji，往 §4 加一列**說明性** emoji
+> （例如 `| 📌 備註 | … |`）就會讓**合法檔案**變紅（假紅）。結構式沒有這個風險。
+
+**新增 mutant DR-M2**：把 §4 某一整格變成 `| ✅ 已實作 🟡 暫緩 | … |`
+→ 舊的 `grep -qF` 子字串比對**會漏掉**（count 仍 4 且子字串命中）→ **在 v1.1 下這支 mutant 會活著**；
+v1.2 的集合等值會把它判為違規 → **mutant 死**。這支 mutant 正是「子字串比對不可用」的證據。
+
+> **邊界（已揭露，非缺陷）**：D7（`check-doc-drift.py` 的 `VALID_STATUS`）本來就能抓到**對帳表裡**的
+> 非法狀態值；RECON-007 守的是**規格檔** `reconcile-format.md` 本身。兩者守不同對象，互補。
+> 本版的**跨檔守護**讓這兩份詞彙表副本**不會各說各話**。
+
+### 第 6 輪對帳 → 順手修掉的自證漂移（本專案自己的病）
+
+| # | 漂移 | 處置 |
+|---|------|------|
+| 1 | `docs/ac/TMO-071.html:22` 寫「本 US 做 **5 類**字面對帳」，同檔 :19 / :24 寫 **8 類** → **同一檔自相矛盾**（正是 D5 只比狀態、不比內文的盲區）| 統一為 8 類 |
+| 2 | 交付摘要 §2.3 產物表寫「`tests/doc-drift.bats`（新，**31 條**）」，§3 驗證表寫「**35/35 綠**」→ 同一檔自相矛盾 | 統一為實際數（37 條） |
+| 3 | 交付摘要 §5 待辦 #3「**V03 第 2 輪二審 verdict 缺席**」→ changelog v2.11 **同時有第 1 / 第 2 輪兩列**（＋「第 2 輪處置明細」16 項）→ 宣稱不實 | 刪除該待辦（已閉合）|
+| 4 | 交付摘要 §3.1 證據欄漏列 DOC-DRIFT-034 / 035（D8 只比 (R-ID, 狀態)、不比證據欄 → 證據欄漂移**結構上不可見**）| 補列；並把此盲區寫入對帳表備註 |
+| 5 | `tests/mutant-must-die.bats` docstring「表 39 → **42** 支 → 47 支」→ 實算 39 + 4 = **43** | 改為 43 |
+
+### 二審結論（V03 Reviewer）
+
+| 輪次 | Verdict | 摘要 |
+|------|---------|------|
+| 第 1 輪（RECON-007 解析器修正）| ⚠️ approve with comments（0 P0 / 0 P1 / 3 P2 / 4 P3）| **P2-1**：探針內嵌根因註解寫錯機制（宣稱「否定字元類吃掉換行」→ 跨行黏 token；grep 逐行比對，**不可能**跨行）→ 必改成實測機制；**P2-2**：v2.11 的「實測 4 支全死」為當時未發生的宣稱 → 必補正（→ 本版 v2.12）；**P2-3**：全新 emoji 第 5 種狀態值不被擋（舊實作同樣漏）→ 建議改為數所有 emoji 開頭儲存格；**P3-1**：註解「與 parse_reconcile_rows 同一語意」不精確（後者 norm_emoji 去 U+FE0F，本探針要求位元組一致）；**P3-2**：`m` shadowing；**P3-3**：缺 python3 時診斷訊息原始（建議 fail-closed 前置檢查）；**P3-4**：缺反向自測 |
+| 第 2 輪（RECON-007 v1.2：結構式 + 集合等值 + 跨檔守護）| ⚠️ approve with comments（0 P0 / 1 P1 / 3 P2 / 5 P3）| **P1**：changelog v2.12 把「尚未實作」的 P2-3 寫成已完成（且同段自相矛盾：「本版改為…」vs「已實測仍綠」）→ 合併前必修（→ 本版已依 Reviewer 建議改成**結構式 + 跨檔**並實作，changelog 同步改正）；**P2-1**：沿用 `grep -qF` 子字串比對會留假綠（`✅ 已實作 🟡 暫緩` 仍綠）→ 必須集合等值；**P2-2**：「emoji 開頭」在本文件不是狀態值的可靠 proxy（§3 用單獨 ✅ 當「必填」標記 5 處）→ 掃 emoji 會假紅；**P2-3**：P2-1 註解的根因規則與其對照組互相矛盾；**P3-1**：`parse_reconcile_rows` 的描述與程式碼不符；**P3-2~P3-5**：§4 終止式建議用 `^## \d`（§2 的 fenced code 內有 `## 對帳表`/`## 結論`）、`\p{So}` 在 Python stdlib 不支援、Unicode 版本漂移風險、缺「會咬住」證據（反向自測 + mutant）|
+
+> **P2-1 的修正**：執行者依 Reviewer 要求重做根因實測（3 種 locale × 4 種交替分支數 × ASCII 對照組），
+> 確認真實機制＝**BSD grep 2.6 的 ERE 交替分支上限為 2**（與字串長度、locale、跨行皆無關），
+> 並已把實測證據寫入探針註解。同時加 `command -v python3` fail-closed 前置檢查（P3-3）、改 `m` → `mm`（P3-2）。
+> **P3-1 的修正**：原註解寫「`parse_reconcile_rows` 會 norm_emoji() 去掉 U+FE0F」——**經實讀程式碼確認該說法錯誤**
+> （`parse_reconcile_rows` 本身**不**呼叫 norm_emoji；norm_emoji 是在比對端 D7/D8/deliverable_status 才套用；
+> 且其前綴集是 `("✅","⚠","❌","🚫")`，其中 `"⚠"` **不含** U+FE0F）→ 該段描述已刪除（v1.2 重寫時一併移除）。
+>
+> **P3-4 的修正**：新增 **RECON-016**（反向自測，見上）。
+>
+> **第 2 輪的處置**：①P1 → 依 Reviewer 建議**放棄「掃 emoji」提案**，改為**結構式 + 集合等值 + 跨檔守護**並**實作完成**，
+> changelog 該段同步改正（原寫法已刪）；②P2-1 → 集合等值（`sorted(vals) != sorted(CANON)`）；
+> ③P2-2 → 結構式（表頭第一欄 ==「狀態」）；④P3-2 → 邊界改用 `^## \d`；
+> ⑤P3-4 → **反向自測 RECON-016**（兩個突變情境）+ **新增 mutant DR-M2**。
+>
+> ⚠️ **執行者在實作 RECON-016 時自己踩到同一個坑**：初版用全檔 `str.replace("| ✅ 已實作 |", …, 1)` 做突變，
+> 但「`| ✅ 已實作 |`」在 §2 的 fenced 範例（line 27）**先於** §4 狀態表（line 56）出現 → 突變改到 §2、
+> §4 根本不變 → 反向自測**變成空轉（假綠）**。已改為**只在 §4 區段內** mutate、且與**基準值**比較。
+> 這印證了「探針本身要先證明自己會咬」——正是 RECON-016 存在的理由。
+>
+> **另一項本輪才浮現的既存缺陷（非本 US 範圍，已揭露）**：跑**整張** mutant 表時，harness 在
+> `subprocess.run(..., text=True)` 嚴格解碼 bats 輸出 → 突變把**多位元組字元截斷**時輸出含不合法 UTF-8
+> → `UnicodeDecodeError` → **整個 harness 崩潰**（其餘 mutant 從未被驗）。
+> 剩下的失敗真因＝**TMO-072**（bats 1.14 在 UTF-8 locale 下靜默丟棄名稱含 CJK 的 `@test` → **21 個探針檔共 134 支**探針從未執行），
+> 屬**已存在的 P1 backlog 項**（`docs/backlog.md` TMO-072，todo），不在本 US 驗收範圍。
+> 註：`tests/doc-drift.bats` 與 `tests/restruct-dav-reconciler.bats` 的測試名**全為 ASCII**（0 支中文名）
+> → **不影響本輪 7 條需求句的對帳判定**。
+
+---
+
+## v2.11 — 2026-10-26
+
+**本版異動**：§2.3 新增「Gate 4.5 需求對帳」子關卡（Delivery Fidelity 機制：需求錨點 → 獨立 subagent 對帳 → 交付狀態硬門檻）
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | ---- |
+| **P0** | `skills/dav-reconciler/`（新 skill）| 需求對帳機制：輸入＝需求錨點 + 最終變更清單（**刻意不給實作自述**）；輸出＝需求對帳表（覆蓋全部 R-ID）；狀態 4 種（已實作／部分實作／未實作／已作廢）；硬門檻＝未全數對上不得標「✅ 完成」|
+| **P0** | `skills/dav-planner/`（v2.7 + `backlog-rules.md` §4.7）| 產 US 必產需求錨點檔 `docs/req/<US-ID>-requirement.md`（4 段固定結構 + R-ID 連續唯一 + 原話區唯讀）|
+| **P0** | `docs/sop/handbook/2.3-execution.md` | 新增「Gate 4.5 需求對帳」段落（位置 / 輸入 / 輸出 / 通過條件 / 不通過後果 / mandatory_phrase / 定位說明 / trust 例外）|
+| **P1** | `skills/dav-submitter/`（v2.5 + `template.md` §3.1）| 交付模板加「需求對帳」段；Step 4.5 帶入對帳結論；硬門檻（對帳未過 → 不得標「✅ 完成」）|
+| **P1** | `skills/dav-reflection/`（v2.3）| 規則表加「需求對帳先於反省」（反省不得建立在未經驗證的「已完成」前提上）|
+| **P1** | `docs/sop/handbook/2.4-reflection.md` | 前置條件 blockquote（先對帳再反省）|
+| **P1** | `AGENTS.md` §2.3 | 速查表加 Gate 4.5 一列（標明「§2.3 子關卡，非 gates.json 項」）；標題改「4 大 Gate + Gate 4.5 子關卡」；TD-016 補 Gate 4.5 的 mandatory_phrase 位置；§2 版本 v2.1 → v2.2 + 變動歷史加 v2.2 列 |
+| **P1** | `skills/dav-reconciler/scripts/check-doc-drift.py` + `scripts/ci/check-doc-drift.sh`（wrapper）+ `docs/ci/drift-whitelist.txt` + `.github/workflows/ci.yml` | 文件漂移檢查 8 類（D1..D8）：AC 狀態 vs backlog / AC 編號連續唯一 / PRD 追溯矩陣幽靈 ID / 交付摘要引用不存在的檔案 / md 與 html 狀態一致 / AC ↔ 需求錨點 / 對帳表 R-ID 覆蓋 / 交付摘要對帳段與狀態一致；白名單 fail-closed（缺理由 → rc=2、全類豁免 → rc=2）；**實作放在 skill 內**（隨安裝到位，目標專案可用）|
+| **P2** | `docs/ac/US-M62` / `US-M63` / `US-M71` / `US-M81`（md + html）| 修正被新探針抓出的**真實漂移**：狀態 PENDING → done、backlog 引用舊格式 → 實際 ID（TMO-019 / TMO-020）|
+| **P2** | `docs/prd/05-delivery-fidelity.md` + `docs/system-design.md` §2.4 + `docs/DESIGN.md` §8 | 新模組 M5 — Delivery Fidelity 的 PRD / 架構 / 介面契約（含 3 條 ADR）|
+| **P2** | `tests/doc-drift.bats`（37 條）+ `tests/restruct-dav-reconciler.bats`（16 條）| 新探針（含 rc 契約、白名單 fail-closed、CI 接線守護、from-date 雙向驗證、跨平台改檔輔助）|
+| **P2** | `scripts/ci/mutants.tsv` | 登錄 **4 支** mutant（DD-M1 / DD-M2 / DD-M3 / DR-M1）證明新護欄真的會咬（**當時並未真的觀察到**——RECON-007 v1.0 解析器在 BSD grep 上本身壞掉、baseline 紅 → `mutant-must-die.py` 整表中止 → 四支守護實際上是失效狀態；**首次真正實測 4 支全死在 v2.12（見 v2.12 實測證據）**）|
+
+**二審結論（V03 Reviewer）**：
+
+| 輪次 | 結論 | 處置 |
+|------|------|------|
+| 第 1 輪 | ❌ request-changes（1 P0 / 4 P1 / 10 P2 / 5 P3），現狀不可合併 | **P0**：新探針用 macOS-only 的 `sed -i ''` → Ubuntu CI 腿會紅（4 條探針失效）；**P1**：CI 接線無探針守護、全域 changelog / SOP 版本未登錄且冒用已發布的 v2.1、CHANGELOG 預先宣告「二審通過」、新機制未自我套用（無對帳表 / deliverable）；**P2**：AC 與實作不同字、5 類 vs 6 類、狀態詞彙表與 backlog 定義不符、ac README 未補 TMO 形式、HTML 連結文字矛盾、作廢 R-ID 與 3 種狀態死結、D4 只固化放寬未證明會檢查、未登錄 mutants.tsv、DESIGN 宣稱不存在的檢查、PRD 自身狀態未更新；**P3**：AGENTS 標題與 mandatory_phrase 敘述、❌ 未完成不可達、範例過時、審查產物落在 docs/、DOC-DRIFT-007 無空集合守護 → **全修**（處置見下表）|
+| 第 2 輪 | ❌ request-changes（1 P0 / 3 P1 / 6 P2 / 6 P3），現狀不可合併 | **P0**：`skills/dav-reconciler/SKILL.md` 的「專案端」標記讓既有探針 `restruct-zero-cross-read.bats` 轉紅（Gate 3 失敗）→ 已改「目標專案」；**P1**：DOC-DRIFT-029 未孤立（宣稱已修但 fixture 未改）、權威對帳表與交付摘要對殘餘缺口的描述互相矛盾、第 2 輪 verdict 缺席（迴圈引用）；**P2**：backlog 宣稱不存在的檢查、html 重複純文字 ID、DOC-DRIFT-022 的 CI 假綠守護視窗有洞、dav-submitter 變動歷史 4 條超上限、PRD / 交付摘要數字過時；**P3**：emoji 未正規化回傳值、mutant docstring 算式、狀態詞彙別名未登錄、gates.json 反向鎖缺檔假綠、交付摘要用不存在的簡寫路徑、DESIGN 訊息樣式與實輸出不符 → **全修**（處置見下表）|
+
+**本輪處置明細**（第 1 輪 20 項全部處置）：
+
+| # | 級別 | 指摘 | 處置 |
+|---|------|------|------|
+| 1 | P0 | `sed -i ''` 在 Ubuntu 腿失效 | 改用跨平台 python3 改檔輔助 `_replace_in_file`（4 處全改）|
+| 2 | P1 | CI 接線無守護 | 新增 DOC-DRIFT-022（鎖 CI 步驟存在 + 禁 `continue-on-error` / `\|\| true`）|
+| 3 | P1 | 全域 changelog / SOP 版本未登錄、冒用 v2.1 | SOP v2.1 → **v2.2**；本檔加 v2.11 條目 + 二審結論節；`2.3` / `2.4` 標註改 v2.2；`tests/restruct-agents-md.bats` 同步（並加 v2.11 與 Gate 4.5 兩條新探針）|
+| 4 | P1 | CHANGELOG 預先宣告「二審通過」 | 改寫為真實 verdict（第 1 輪 request-changes → 已修 → 第 2 輪見本節）|
+| 5 | P1 | 新機制未自我套用 | 本次即以新機制完成自己：產 3 份對帳表 + 本次 deliverable（含 §3.1 需求對帳段）|
+| 6 | P2 | AC 與實作不同字（②同字比對）| 統一改為「AC 編號連續且唯一」|
+| 7 | P2 | 5 類 vs 6 類 | 全域統一（PRD / AC / backlog / system-design / DESIGN / CI）；**第 2 輪後再統一為 8 類（D1..D8）**（對帳第 2 輪要求：新增 D7 / D8 也要同步）|
+| 8 | P2 | 狀態詞彙表不符 | `STATUS_VALUE` 擴充為 backlog.md 宣告的單一來源詞彙（todo/doing/done/blocked/待決…）；本批新列改用 `doing (2026-10-26)` |
+| 9 | P2 | ac README 未補 TMO 形式 | 已補（`US-<編號>` 與 `TMO-<nnn>` 兩種形式並存，探針以檔名 stem 為 key）|
+| 10 | P2 | HTML 連結文字矛盾 | US-M62 / US-M63 的 html 連結文字改為對應 ID |
+| 11 | P2 | 作廢 R-ID 與 3 種狀態死結 | 對帳狀態擴為 **4 種**（加 🚫 已作廢；列出但不列入交付狀態判定）；planner / reconciler / 探針三處同步 |
+| 12 | P2 | D4 只固化放寬 | 新增 DOC-DRIFT-023（`--from-date` 拉早 → 範圍內交付**會**被檢查）；CI 步驟顯式帶 `--from-date` |
+| 13 | P2 | 未登錄 mutants.tsv | 登錄 DD-M1 / DR-M1（實測：baseline 綠 → 突變紅 → 2 支全死）|
+| 14 | P2 | DESIGN 宣稱不存在的檢查 | 刪除誤導句，改為指 deliverable 模板 §3.1 |
+| 15 | P2 | PRD 自身狀態未更新 | 追溯矩陣改「✅ 已實作」+ DoD 逐項勾選 |
+| 16 | P3 | AGENTS 標題 / mandatory_phrase 敘述 | 標題改「4 大 Gate + Gate 4.5 子關卡」；TD-016 補例外說明 |
+| 17 | P3 | ❌ 未完成不可達 | 門檻表補「全數 ❌ → 可標 ❌ 未完成」|
+| 18 | P3 | 範例過時 | `examples.md` 範例 B 改為中性示範缺口 |
+| 19 | P3 | 審查產物落在 docs/ | 移出 repo（改放暫存目錄）|
+| 20 | P3 | DOC-DRIFT-007 無空集合守護 | 已補 `count > 0` 守護 |
+
+**第 2 輪處置明細**（第 2 輪 16 項全部處置）：
+
+| # | 級別 | 指摘 | 處置 |
+|---|------|------|------|
+| 21 | P0 | 新 skill 讓 `restruct-zero-cross-read.bats` 轉紅 | `skills/dav-reconciler/SKILL.md` 4 處「專案端」→「目標專案」；**同時發現該探針 3 支測試名含中文被 bats 1.14 靜默跳過** → 改 ASCII 名讓它們真的跑（跑出即抓到上項違規）|
+| 22 | P1 | DOC-DRIFT-029 未孤立 | fixture 改為「權威表與內嵌表都 ⚠️ + 舊欄位名」→ 唯一紅因 = gaps 分支；加負向斷言 |
+| 23 | P1 | 對帳表 ↔ 交付摘要敘述矛盾 | 三份對帳表依最新一輪對帳判定重寫；交付摘要 §5 對齊 |
+| 24 | P1 | 第 2 輪 verdict 缺席 | 本節補第 2 輪列（並修正第 1 輪處置 #4 的懸空引用）|
+| 25 | P2 | backlog 宣稱不存在的檢查 | 主表列舉補 ⑦⑧；詳細 AC-1 ② 改「AC 編號連續且唯一」|
+| 26 | P2 | html 重複純文字 ID | `US-M62.html` / `US-M63.html` 刪掉 anchor 前重複的純文字 ID |
+| 27 | P2 | DOC-DRIFT-022 守護視窗有洞 | 改「從 `- name:` 起算 + 剝註解 + 轉小寫比對」，並加 DOC-DRIFT-034 反向自測 |
+| 28 | P2 | dav-submitter 變動歷史超 3 條 | 刪 v2.1 列（v2.0 起完整條目在 CHANGELOG）|
+| 29 | P2 | PRD / 交付摘要數字過時 | PRD 行數預檢改實際值（120/121/140）；交付摘要 §3 改 14 項檢查；簡寫路徑改實際檔名 |
+| 30 | P3 | emoji 未正規化回傳值 | `deliverable_status()` 回傳值套 `norm_emoji()` |
+| 31 | P3 | mutant docstring 算式 | 「+5」→「+4」 |
+| 32 | P3 | 狀態詞彙別名未登錄 | backlog 狀態定義段補列相容舊值（`pending` / `in_progress` / `deferred` / `cancelled` / `進行中` / `待辦`）|
+| 33 | P3 | gates.json 反向鎖缺檔假綠 | `restruct-agents-md.bats` 加 `[ -f gates.json ]` 前置檢查 |
+| 34 | P3 | 交付摘要用不存在的簡寫路徑 | 改實際檔名；D4 的 `~` 區間簡寫改由 `expand_paths()` 展開（不靠檔名碰巧不含 `~`）|
+| 35 | P3 | DESIGN 訊息樣式與實輸出不符 | §8.4 改成貼腳本實際輸出樣式 |
+| 36 | P2 | D4 路徑簡寫誤判（對帳第 4 輪）| `expand_paths()`：`X.md/.html` → `X.html`；`X-069~071.md` → 編號區間展開；新增 DOC-DRIFT-032 / 033 |
+
+**Gate 4.5 需求對帳的第一次實戰**（本機制的首度自我套用，5 輪獨立對帳）：
+
+| 輪次 | 對帳結果 | 處置 |
+|------|----------|------|
+| 第 1 輪 | 5 ✅ / 2 ⚠ | 指出 7 條缺口（無「對帳表 R-ID 覆蓋」探針、無「交付狀態 ↔ 對帳結果」機械檢查、未自我套用、install 部署面、白名單 2 項、changelog 宣稱與實況不符、PRD 未更新）→ 全修（新增 D7 / D8）|
+| 第 2 輪 | 5 ✅ / 2 ⚠ | 抓出 **N1**：D8 讀不到官方模板的 `**交付狀態**` 欄位 → 硬門檻在真實路徑上是假綠；另抓 N2（兩份官方交付模板互斥）→ 已修（欄位名統一 + D8 改讀權威表）|
+| 第 3 輪 | 5 ✅ / 2 ⚠ | 抓出**位元組級落差**（`⚠️` 的 U+FE0F 差異 → 照 spec 寫的對帳表會被判「狀態值不合法」）、D8 以 R-ID 為全域鍵（多 US 交付摘要誤紅）、2 支探針未孤立 → 全修（`norm_emoji()` + 多重集比對 + 孤立性斷言）|
+| 第 4 輪 | 5 ✅ / 2 ⚠ | 抓出「宣稱已修但 fixture 未改」（DOC-DRIFT-029 仍不孤立）、D4 路徑簡寫仍誤判、交付摘要用了不存在的簡寫路徑 → 全修（`expand_paths()` + 探針 032/033/035）|
+| 第 5 輪（終審）| 5 ✅ / 2 ⚠ | 029/030 已孤立、R-ID 作用域已修、emoji 已正規化、敘述數字已收斂；殘餘＝D4 數字區間分支的探針本輪才補（DOC-DRIFT-035）待複核、端到端需可執行證據 → **交付狀態依硬門檻 = ⚠️ 部分完成**，backlog 三列維持 `doing` |
+
+> **這段歷史本身就是機制的價值證據**：本次交付被自己的機制擋在「⚠️ 部分完成」，而不是被寫成「✅ 完成」——
+> 這正是 `dav-reconciler` 規則要的效果（自己宣稱已修的 4 處被獨立對帳者逐條抓出）。
+
+**探針「會咬」實測**（突變 → 必須紅）：
+
+> ⚠️ **v2.12 更正**：本表 4 列的「✅ 紅（baseline 綠 → 突變 rc=1）」是**當時並未真的觀察到**的宣稱——
+> RECON-007 v1.0 的解析器在 macOS/BSD grep 上本身是壞的（baseline 紅）→ `mutant-must-die.py` 的
+> baseline 迴圈 `die()` → **整個表中止** → 下表 4 支（含 DD-M1..M3）實際上**一次都沒被跑到**。
+> 修好 RECON-007 後才**第一次真的跑完**（4 baseline 全綠 + 4 支全死）→ 見 **v2.12 實測證據**。
+
+| 突變 | 預期 | 實測 |
+|------|------|------|
+| DD-M1：`check-doc-drift.py` 的 D6 報錯改成 `pass` | DOC-DRIFT-017 紅 | ✅ 紅（baseline 綠 → 突變 rc=1）— **首次真實觀察於 v2.12** |
+| DD-M2：D7 覆蓋率檢查改成 `if False:` | DOC-DRIFT-024 紅 | ✅ 紅（baseline 綠 → 突變 rc=1）— **首次真實觀察於 v2.12** |
+| DD-M3：D8 狀態矛盾檢查改成 `if False:` | DOC-DRIFT-028 紅 | ✅ 紅（baseline 綠 → 突變 rc=1）— **首次真實觀察於 v2.12** |
+| DR-M1：刪掉 `reconcile-format.md` 的「🚫 已作廢」狀態列 | RECON-007 紅 | ✅ 紅（baseline 綠 → 突變 rc=1）— **首次真實觀察於 v2.12** |
+
+**決策紀錄**：
+
+- **為什麼 Gate 4.5 不進 `gates.json`**：該檔的 schema 限定 gate `id` 符合 `^gate-[0-9]+$`（整數），
+  而 Gate 4.5 是排在 Gate 4 之後、§2.4 之前的**子關卡**，不是第五道大 Gate。gates.json v1.1.0 曾移除
+  Gate 5（RSI 機制歸檔）——那是「整道 Gate 從流程上消失」，與本案性質不同。
+  **代價**：gates.json 對「子關卡」不再 SSOT（四道大 Gate 仍是）→ 已在 ADR-D1 與 handbook 明文化。
+- **為什麼對帳狀態要有第 4 種「已作廢」**：規劃階段允許「需求被砍掉」（R-ID 不可刪），
+  若對帳只有 3 種狀態，被砍的需求會永遠卡住交付 → 死結。加「已作廢」後：仍須列出（不可省略），
+  但不列入交付狀態判定。
+- **為什麼 D4 只檢 from-date 之後的交付**：歷史交付宣稱的檔案多已刪 / 改名，回溯檢查必假紅；
+  「當下寫的宣稱必須成立」是合理原則。**這是門檻放寬**（V03.6 定義 ①②）→ 已加反向探針證明
+  範圍內的交付會被檢查，且 CI 步驟顯式帶 `--from-date` 讓放寬在 log 可見；延長 from-date 視為放寬，需再走 V03。
+
+---
+
 ## v2.10 — 2026-10-23
 
 **本版異動**：§2.0 登錄 trust mode 為第三條 SOP 路徑（執行段），並同步 §2.6 一般任務章節的例外條款

@@ -130,6 +130,15 @@ jobs:
       - name: Verify Python heredoc syntax
         run: bash scripts/ci/check-python-heredocs.sh
 
+      - name: Verify no document drift (D1-D8)
+        # 抓「同一件事在多份文件之間各說各話」（D1..D8）：
+        #   D1 AC 狀態 vs backlog｜D2 AC 編號連續唯一｜D3 追溯矩陣幽靈 ID｜D4 交付摘要引用不存在的檔案
+        #   D5 md/html 狀態一致｜D6 AC 缺需求錨點｜D7 對帳表 R-ID 覆蓋｜D8 交付摘要對帳段與狀態一致
+        # 守門探針：tests/doc-drift.bats（DOC-DRIFT-008..031，含 rc 契約與白名單 fail-closed）。
+        # 不得加 continue-on-error / || true（否則就是假綠）。
+        # --from-date 顯式帶出（門檻放寬要看得見；延長此值視為門檻放寬，需再走 V03）
+        run: bash scripts/ci/check-doc-drift.sh --from-date 2026-10-26
+
   lint-only:
     name: Markdown lint
     runs-on: ubuntu-latest

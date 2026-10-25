@@ -76,7 +76,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 ## Skills
 
-12 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
+13 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
 
 | Skill | 一句話 |
 |---|---|
@@ -87,6 +87,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | [`dev-checker-loop`](skills/dev-checker-loop/SKILL.md) | Gate 4：dev / checker 雙 subagent 循環校驗 |
 | [`dav-reflection`](skills/dav-reflection/SKILL.md) | §2.4 反省：US / Sprint / Module 六維度反思 |
 | [`dav-submitter`](skills/dav-submitter/SKILL.md) | §2.5 提交：交付摘要 + Markdown 詳錄 |
+| [`dav-reconciler`](skills/dav-reconciler/SKILL.md) | Gate 4.5 需求對帳：獨立 subagent 拿需求錨點逐條比對成果；未對上不得宣告完成 |
 | [`dav-wiki`](skills/dav-wiki/SKILL.md) | 文件知識庫化：PDF / 網頁 / OCR / 字幕 → Markdown |
 | [`dav-trust`](skills/dav-trust/SKILL.md) | 信任模式：給大目標 + deadline 後自主跑完 SOP 執行段（執行 → 反省 → 提交；規劃 / 設計須啟動前完成；支援中斷續跑 / 用戶叫停）|
 | [`ask-me`](skills/ask-me/SKILL.md) | 逐題確認 trust 期間的待決擔憂，回寫 backlog |

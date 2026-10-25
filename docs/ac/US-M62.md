@@ -1,8 +1,8 @@
 # US-M62 AC 範本 — regression-guard M6.2 patch + re-validate 閉環
 
-> 對應 Backlog: [US-M62 in docs/backlog.md](../backlog.md)
+> 對應 Backlog: TMO-019
 > 最後更新: 2026-09-28
-> 狀態: PENDING
+> 狀態: done (2026-09-28)
 
 ## 背景
 

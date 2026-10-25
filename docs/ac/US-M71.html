@@ -17,7 +17,7 @@
 </head>
 <body>
   <h1>US-M71 regression-guard M7 flaky 整合 + gh pr comment — AC 範本</h1>
-  <blockquote>對應 Backlog: TMO-021 | 最後更新: 2026-09-28 | 狀態: PENDING</blockquote>
+  <blockquote>對應 Backlog: TMO-021 | 最後更新: 2026-09-28 | 狀態: done (2026-09-28)</blockquote>
 
   <h2>背景</h2>
   <p>TMO-020 已建 <code>flaky_check.py</code> 能量測 journey 穩定性，但「跑多次」很貴、且結果沒自動整合進 batch_report。本 US 做兩件事：<strong>flaky 整合進 batch_report</strong>（跑 1 次 pipeline 的同時，額外跑 2 次算 flaky_likelihood 併入 overall_health 維度）<strong>gh pr comment</strong>（CI 在 PR 上自動推 fix_proposal + 信心度報告 + 建議）。</p>

@@ -26,6 +26,10 @@
 
 通用命名：`docs/ac/<US-ID>.md` 與 `docs/ac/<US-ID>.html`，其中 `<US-ID>` 是 backlog.md 中該 User Story 的 ID（如 `US-101`、`US-102`、`DE-201`）。
 
+> **`<US-ID>` 兩種形式都算**（同一 repo 內並存，探針以「檔名 stem」為 key 對應，不做前綴假設）：
+> `US-<編號>`（如 `US-101`）與 `TMO-<nnn>`（如 `TMO-069`，backlog 主表用的 ID 形式）。
+> **AC 檔的 key 必須與 backlog 該列的 ID 相同**；AC 檔內另以「對應 Backlog: `<ID>`」標明它對應哪一列。
+
 範本（抽象語法）：`docs/ac/US-XXX.md` 與 `docs/ac/US-XXX.html`。
 
 ## 生成規則

@@ -1,8 +1,8 @@
 # US-M63 AC 範本 — regression-guard M6.3 互動式 sandbox
 
-> 對應 Backlog: [US-M63 in docs/backlog.md](../backlog.md)
+> 對應 Backlog: TMO-020
 > 最後更新: 2026-09-28
-> 狀態: PENDING
+> 狀態: done (2026-09-28)
 
 ## 背景
 

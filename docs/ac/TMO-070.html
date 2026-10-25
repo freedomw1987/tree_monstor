@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TMO-070 需求對帳機制 — AC 範本</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1.5em; line-height: 1.7; color: #222; background: #fff; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 0.3em; margin-top: 1.5em; }
+    h2 { color: #2c5282; margin-top: 2em; border-left: 4px solid #4299e1; padding-left: 0.5em; }
+    blockquote { color: #666; font-style: italic; border-left: 4px solid #ccc; padding-left: 1em; margin: 1em 0; }
+    .ac-item { background: #f7fafc; padding: 1em 1.2em; margin: 1em 0; border-left: 4px solid #4299e1; border-radius: 0 4px 4px 0; }
+    .ac-item strong { color: #2c5282; margin-right: 0.3em; }
+    .dod-item { padding: 0.4em 0; font-size: 1.05em; }
+    @media print { body { max-width: 100%; margin: 0; padding: 1em; } .ac-item { page-break-inside: avoid; background: transparent; } a { color: #000; border-bottom: none; } }
+  </style>
+</head>
+<body>
+  <h1>TMO-070 需求對帳機制（新 skill dav-reconciler）</h1>
+  <blockquote>對應 Backlog: TMO-070 | 最後更新: 2026-10-26 | 狀態: done (2026-10-26)</blockquote>
+  <h2>背景</h2>
+  <p>使用者回報的核心問題：「用戶提出需求，到最後 AI 出來的成果對不上」。目前流程裡，交付摘要是由執行任務的同一個 Agent 自我敘述，等於自己評自己，沒有任何第三方比對「原始需求 ↔ 最終成果」。本 US 引入獨立對帳：未參與實作的 subagent 拿需求錨點與最終變更清單做比對，並以硬門檻擋下未對上的成果。</p>
+  <h2>Given / When / Then</h2>
+  <div class="ac-item"><strong>AC01</strong><br>    <strong>Given</strong> 一個 US 已完成實作<br>    <strong>When</strong> 進入 §2.4 反省之前<br>    <strong>Then</strong> 由**未參與實作的獨立 subagent** 產出「需求對帳表」<br>    <strong>And</strong> 對帳輸入＝需求錨點（docs/req/）+ 最終變更清單<br>    <strong>And</strong> 對帳輸出逐條覆蓋每一句需求</div>
+  <div class="ac-item"><strong>AC02</strong><br>    <strong>Given</strong> 對帳表有「未實作」或「偏離」項<br>    <strong>When</strong> 產出交付摘要<br>    <strong>Then</strong> 狀態**不得**標「✅ 完成」<br>    <strong>And</strong> 只能標「⚠️ 部分完成」並列出待補項</div>
+  <div class="ac-item"><strong>AC03</strong><br>    <strong>Given</strong> 對帳表逐條對上<br>    <strong>When</strong> 產出交付摘要<br>    <strong>Then</strong> 可標「✅ 完成」<br>    <strong>And</strong> deliverable 含「需求對帳」段（需求句 → 實作位置 → 狀態）</div>
+  <div class="ac-item"><strong>AC04</strong><br>    <strong>Given</strong> 本次工作修改了 SOP 檔（gates.json / handbook / skill / AGENTS.md）<br>    <strong>When</strong> 收工<br>    <strong>Then</strong> 依 V03 走 Reviewer 二審並附風險分級<br>    <strong>And</strong> 二審結論寫進 changelog</div>
+  <h2>DoD</h2>
+  <ul>
+    <li class="dod-item">☐ AC01 / AC02 / AC03 / AC04 全綠</li>
+    <li class="dod-item">☐ 新 skill `skills/dav-reconciler/`（主檔 ≤150 行 + 純文字交叉引用）</li>
+    <li class="dod-item">☐ handbook §2.3 登錄「Gate 4.5 需求對帳」子關卡（不新增 gates.json gate 編號）</li>
+    <li class="dod-item">☐ AGENTS.md §2.3 速查表同步（主檔行數預檢：≤150）</li>
+    <li class="dod-item">☐ `bats tests/restruct-dav-reconciler.bats` 全綠</li>
+    <li class="dod-item">☐ backlog 標 TMO-070 done</li>
+  </ul>
+  <h2>風險</h2>
+  <ul>
+    <li>「未參與實作」的 subagent 在單 agent 環境不可得 → 需退化成自我對帳並在 deliverable 標明降級</li>
+    <li>對帳品質取決於 subagent 給的上下文（需明確告知：只看錨點 + diff，不看實作過程的自述）</li>
+    <li>硬門檻會讓過去標「✅ 完成」的任務重新被標「⚠️」→ 屬預期收緊，非迴歸</li>
+  </ul>
+</body>
+</html>

@@ -81,7 +81,7 @@ skill_files() {
   done < <(skill_files)
 }
 
-@test "ZERO-CROSS-READ: 動詞表抽取器自我測試（TMO-036，禁空過）" {
+@test "ZERO-CROSS-READ: read-verb extractor self-test (TMO-036, must not be vacuous)" {
   # 正向：grep / 讀取 必須被動詞表咬到（否則本檔的 docs/ 規則就是空過）
   printf '%s\n' '先 grep `docs/concepts/`' | grep -qE "$READ_VERBS \`?docs/" || {
     echo "FAIL: 動詞表咬不到「grep docs/」" >&2; return 1; }
@@ -104,7 +104,7 @@ skill_files() {
     echo "FAIL: 只列舉到 $n 個 SKILL.md（< 11）＝掃描覆蓋退化（硬編或列舉壞掉）" >&2; return 1; }
 }
 
-@test "ZERO-CROSS-READ: 專案端標記不得濫用（只能貼在 docs/ 讀取引用行）" {
+@test "ZERO-CROSS-READ: runtime-path marker must not be abused (only on docs/ read lines)" {
   while IFS= read -r rel; do
     local abs="$REPO_ROOT/$rel"
     local hit
@@ -139,7 +139,7 @@ skill_files() {
   }
 }
 
-@test "ZERO-CROSS-READ: 專案端標記不得用來豁免本 repo 自己的 docs（真 runtime 路徑才能豁免）" {
+@test "ZERO-CROSS-READ: runtime-path marker must not exempt this repo own docs (real runtime paths only)" {
   # round E P2-7：上一條只保證「標記貼在 docs/ 讀取行」，擋不住濫用——
   # 任何 `讀 docs/backlog.md（專案端）` 都會被放行，於是規則被繞過。
   # 這條把「本 repo 自己的 docs 根」列為不可豁免者；`docs/need-you-help.md`、

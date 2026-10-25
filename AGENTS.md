@@ -33,9 +33,9 @@
 
 詳見 [`docs/sop/handbook/changelog.md`](docs/sop/handbook/changelog.md) 對應的 V01/V02/V03 條目。
 
-## §2 SOP 流程（v2.1）
+## §2 SOP 流程（v2.2）
 
-> **當前版本**：v2.1（最後更新 2026-10-23，trust mode 登錄為第三路徑；詳見 [CHANGELOG](docs/sop/handbook/changelog.md)）。
+> **當前版本**：v2.2（最後更新 2026-10-26，§2.3 新增「Gate 4.5 需求對帳」子關卡；詳見 [CHANGELOG](docs/sop/handbook/changelog.md)）。
 
 ### §2.0 SOP 適用範圍
 
@@ -55,7 +55,7 @@
 
 > ⚠️ v1.5 修正：§2.0 表格只負責「分類入口」；具體怎麼做、是否升級、何時停下問用戶，**全部以 §2.6 為準**（trust mode 依 dav-trust preflight 子檔的啟動判準）。不要看 §2.0 表格誤判為「一般任務可隨意自主」。
 
-### §2.3 執行（核心 — 4 Gate 速查表）
+### §2.3 執行（核心 — 4 大 Gate + Gate 4.5 子關卡 速查表）
 
 完整 Gate 定義（含每個 gate 的 `pass_criteria` / `required_evidence` / `fail_action` / `mandatory_phrase`）見
 [`docs/sop/gates.json`](docs/sop/gates.json)（single source of truth）。
@@ -66,11 +66,19 @@
 | **Gate 2** | lint / syntax gate | 語言對應工具 |
 | **Gate 3** | regression gate | `/skill:regression-guard` |
 | **Gate 4** | reviewer gate | `/skill:dev-checker-loop` + **playwright-cli**（UI 任務必跑） |
+| **Gate 4.5** | 需求對帳 gate（§2.3 尾段**子關卡**，非 gates.json 項）| `/skill:dav-reconciler`（需同套安裝）|
 
 > **⚠️ Agent 必須做的動作**（TD-016）：進到每個 Gate 時，必須在對話中明確引用該 Gate 的 `mandatory_phrase`（在 `gates.json` 內，例如「依 gates.json 規範，Gate
 > 1 (TDD) 需要：測試先紅後綠，並在對話貼出 測試執行指令 + 失敗輸出 + 通過輸出」）。**不引用 = 視為 gate 未觸發**（偽裝通過 SOP §2.7 違規）。
+>
+> **例外**：Gate 4.5（需求對帳）的 `mandatory_phrase` **不在 `gates.json`**（該檔只登錄四大 Gate），位於
+> [`docs/sop/handbook/2.3-execution.md`](docs/sop/handbook/2.3-execution.md) 的「Gate 4.5 需求對帳」段落。
 
 詳細 fail-fast 心法見 [`docs/sop/handbook/2.3-execution.md`](docs/sop/handbook/2.3-execution.md)。
+
+⚠️ **Gate 4.5（需求對帳）**：四道大 Gate 驗「做得對不對」，Gate 4.5 驗「做的是不是用戶要的」——
+交付摘要原本由執行者自述（自己評自己），Gate 4.5 改由**未參與實作的獨立 subagent** 拿需求錨點逐條比對。
+對帳有「部分實作／未實作」時，交付狀態**不得**標「✅ 完成」。詳見 handbook §2.3。
 
 > ⚠️ **trust mode 進行中**：Gate 失敗時的 `ask_user` 策略**不適用**（trust 內不得中途停下問用戶）；
 > 改記 trust-log（代答）+ need-you-help 檔（待用戶回覆），見 §2.3 handbook。
@@ -106,6 +114,7 @@
 
 | SOP 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.2 | 2026-10-26 | §2.3 新增「Gate 4.5 需求對帳」子關卡（需求錨點 → 獨立 subagent 對帳 → 交付狀態硬門檻）；§2.3 速查表加一列 + 標題改「4 大 Gate + Gate 4.5 子關卡」；TD-016 補「Gate 4.5 的 mandatory_phrase 在 handbook §2.3」 | TMO-069/070/071：使用者回報「用戶提出需求，最後 AI 出來的成果對不上」；四道大 Gate 驗「做得對不對」，沒有任何一關驗「做的是不是用戶要的」→ 交付摘要因為由執行者自述（自己評自己）而無法暴露落差。**`gates.json` 本次刻意不動**（schema 的 gate id 只允許整數編號；見 PRD-05 ADR-D1）；V03 Reviewer 二審結論見 CHANGELOG v2.11 二審結論節 |
 | v2.1 | 2026-10-23 | §2.0 登錄 trust mode 第三路徑（執行段 §2.3 → §2.5；§2.1 / §2.2 為啟動前置條件）+ §2.1 / §2.2 / §2.3 / §2.4 / §2.6 / §2.7 增列 trust 例外（§2.3 `ask_user` 策略不適用、§2.4 用戶參與確認不適用）| dav-trust v2.3 把規劃 / 設計改為啟動前置條件，與「開發編程任務一律走完整 SOP、不開例外」分歧（TMO-067）；V03 Reviewer 二審：第 1 輪 ⚠️（3 P1 / 9 P2）→ 已修；第 2 輪 ⚠️（1 P1 / 8 P2）→ 已修；第 3 輪 ⚠️（1 P1 / 9 P2）→ 已修，結論見 CHANGELOG v2.10 二審結論節 |
 | v2.0 | 2026-09-26 | 重結構為「任務導航」（TL;DR / §1 原則 / §1.5 紀律 / §2 SOP / §2.x 索引 / 變動歷史）＋ SOP 版本 v1.5 → v2.0（文件產出物精簡）| TMO-009 階段 5：LLM 注意力優化；TMO-008 減法 |
 | v1.5 | 2026-09-23 | 修正 §2.0/§2.6 升級規則立場矛盾 | 用戶決策 |

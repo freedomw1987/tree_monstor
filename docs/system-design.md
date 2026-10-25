@@ -29,7 +29,8 @@ tree_monstor/
 ├── M1 — Installer & Distribution     [✅ Sprint 01-02]
 ├── M2 — SOP Infrastructure          [✅ Sprint 02]
 ├── M3 — Knowledge Management        [✅ Sprint 03]
-└── M4 — Self-Evolution (RSI)        [🚨 **已歸檔移除 2026-09-22**]
+├── M4 — Self-Evolution (RSI)        [🚨 **已歸檔移除 2026-09-22**]
+└── M5 — Delivery Fidelity           [✅ 已落地 2026-10-26 — TMO-069/070/071]
 ```
 
 ### 2.2 模組職責矩陣
@@ -40,6 +41,7 @@ tree_monstor/
 | **M2** SOP Infra | SOP 規範 / Gate 規則 | 不管業務邏輯 | AGENTS.md / gates.json / skill 定義 |
 | **M3** Knowledge | 知識提取 / 概念演進 / 交叉引用 | 不管 agent runtime | docs/wiki / docs/concepts |
 | **M4** Self-Evolution | 🚨 **已歸檔移除 2026-09-22** — RSI 觀察 / 聚合 / 提案 / 審批 / 合併 / 同步 | （已移除）| （已移除） |
+| **M5** Delivery Fidelity | 需求錨點（產出）/ 需求對帳（驗收）/ 文件漂移探針（防線） | 不改業務邏輯、不改執行段 | 專案端 docs/req/、docs/reconcile/、CI 步驟 |
 
 ### 2.3 模組介面契約
 
@@ -50,6 +52,45 @@ tree_monstor/
 **M2 ↔ M4**：🚨 **已歸檔移除 2026-09-22** — 原 M2 的 gates.json 加 Gate 5 (RSI gate)；M2 的 AGENTS.md 加 §2.8 handbook + V03 紀律
 **M4 ↔ M1↔M2**：🚨 **已歸檔移除 2026-09-22** — 原 M4 走 `rsi-sync.sh` 把新版 SOP 同步到所有已裝專案
 **M4 ↔ 跨專案**：🚨 **已歸檔移除 2026-09-22** — 原 M4 觀察模式只在已裝 tree_monstor 的專案觸發
+
+### 2.4 M5 — Delivery Fidelity 詳細設計（TMO-069 / 070 / 071）
+
+> 目的：讓「用戶需求 → 交付成果」這條鏈上的落差**可見、可驗、不可藏**。
+
+#### 2.4.1 三道防線的資料流
+
+```
+  用戶原話（對話）
+        │  dav-planner（§2.1，唯一產生者）
+        ▼
+  錨點檔 docs/req/<US-ID>-requirement.md      ← FR-01（根節點：R-ID 化）
+        │  （下游只讀；澄清只寫「澄清後驗收句」）
+        ├──────────────► docs/backlog.md → docs/ac/<US-ID>.md → docs/prd/*.md → 測試 → 實作
+        │                                                              │
+        │                                     Gate 4.5 需求對帳 ←────┘
+        │                                     （獨立 subagent；只拿錨點 + diff）
+        ▼                                     ▼
+  對帳表 docs/reconcile/<US-ID>-reconcile.md ──► 交付摘要（狀態降級規則）
+                                                      │
+  CI：check-doc-drift.sh（8 類字面對帳 D1..D8）◄─────────────┘
+```
+
+#### 2.4.2 元件與契約
+
+| 元件 | 型別 | 介面契約 |
+|------|------|----------|
+| 錨點檔 | 文件（專案端）| 4 段固定結構；R-ID 連續唯一；「用戶原話」段唯讀 |
+| 對帳 skill | skill（框架端）| 輸入＝錨點 + 變更清單；輸出＝對帳表（含全部 R-ID）；狀態限 4 值 |
+| 漂移檢查腳本 | CLI（框架端，可攜）| `check-doc-drift.sh --root <專案>`；rc 0/1/2；輸出 DRIFT / WHITELIST 行 |
+
+#### 2.4.3 邊界與不做的事
+
+| 邊界 | 說明 |
+|------|------|
+| M5 不改執行段 | §2.3 的四道大 Gate 不變；M5 只在尾段加一道**子關卡**（Gate 4.5）|
+| M5 不判斷語意 | 「這段程式碼有沒有滿足需求」交給獨立 subagent；機械層只保證**覆蓋率與格式** |
+| M5 不回補存量 | 存量 US 缺錨點 → 豁免（WHITELIST），覆蓋率從 0% 起步並誠實揭露 |
+| M5 不進 gates.json | gate id 受 schema 限制（`^gate-[0-9]+$`），見 PRD-05 §7 ADR-D1 |
 
 ---
 
