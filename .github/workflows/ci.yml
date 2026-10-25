@@ -134,7 +134,7 @@ jobs:
         # 抓「同一件事在多份文件之間各說各話」（D1..D8）：
         #   D1 AC 狀態 vs backlog｜D2 AC 編號連續唯一｜D3 追溯矩陣幽靈 ID｜D4 交付摘要引用不存在的檔案
         #   D5 md/html 狀態一致｜D6 AC 缺需求錨點｜D7 對帳表 R-ID 覆蓋｜D8 交付摘要對帳段與狀態一致
-        # 守門探針：tests/doc-drift.bats（DOC-DRIFT-008..048，含 rc 契約、白名單 fail-closed、
+        # 守門探針：tests/doc-drift.bats（DOC-DRIFT-008..055，含 rc 契約、白名單 fail-closed、
         # D4/D8 日期窗 0 件的 fail-closed 與 wrapper 自動啟用嚴格模式）。
         # 不得加 continue-on-error / || true（否則就是假綠）。
         # --from-date 顯式帶出（門檻放寬要看得見；延長此值視為門檻放寬，需再走 V03）

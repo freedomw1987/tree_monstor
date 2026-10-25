@@ -351,10 +351,56 @@ class Checker:
             if from_date and doc.name[:10] < from_date:
                 continue
             text = read(doc)
-            us_ids = sorted({
-                m.group(0) for m in re.finditer(r"\b[A-Z][A-Za-z0-9]*-[A-Za-z0-9-]+\b", text)
-                if (req_dir / f"{m.group(0)}-requirement.md").exists()
-            })
+            # 只把「**標題區**宣告要交付的 US」納入對帳，不把正文提到的其他 US 也算進來。
+            #
+            # 為什麼要收窄（2026-10-26）：原本是「全文任何 ID token 且該 ID 有需求錨點」就納入。
+            # 這讓「交付摘要順帶提到別的 US 的檔名/歷史」也會被要求比對那張權威表 → 假紅。
+            # 實際被絆 3 次（被迫在交付摘要裡**不能寫出**別的 US ID，只能改寫成描述性文字）。
+            # 標題區＝第一個 `## ` 標題之前（本 repo 慣例：`> **對應 Backlog**: TMO-xxx`，
+            # 或 H1 直接寫 `# 交付 — TMO-071/072/073`）。
+            head = text.split("\n## ", 1)[0]
+            def _ids_in(chunk: str) -> set[str]:
+                out: set[str] = set()
+                # 區間 `TMO-071~073`（本 repo 路徑慣用形）→ 展開。
+                # 邊界（刻意）：只支援**兩段**區間（`A-001~003~005` 只展開前兩段）、
+                # 上限 201 個（超過會靜默截斷）—— 兩者在本 repo 都無實際形態。
+                #
+                for m in re.finditer(r"\b([A-Z][A-Za-z0-9]*-)(\d+)~(\d+)\b", chunk):
+                    pre, a, b = m.group(1), int(m.group(2)), int(m.group(3))
+                    for k in range(a, min(b, a + 200) + 1):
+                        out.add(f"{pre}{k:0{len(m.group(2))}d}")
+                # 簡寫 `TMO-071/072/073` → 展開
+                for m in re.finditer(r"\b([A-Z][A-Za-z0-9]*-)(\d+)((?:/\d+)+)", chunk):
+                    out.add(m.group(1) + m.group(2))
+                    for extra in m.group(3).split("/"):
+                        if extra:
+                            out.add(m.group(1) + extra)
+                for m in re.finditer(r"\b[A-Z][A-Za-z0-9]*-[A-Za-z0-9-]+\b", chunk):
+                    out.add(m.group(0))
+                return out
+
+            # 「US 前綴」由 `docs/req/*-requirement.md` 的檔名推導（`TMO-071-…` → `TMO`）。
+            # 為什麼不用固定的 `ID_TOKEN`：那個常數是寫給 AC/backlog 用的，
+            # 換一個專案（或測試 fixture 的 `DEMO-`）就會失效。
+            us_prefixes = {f.name.split("-")[0] for f in req_dir.glob("*-requirement.md")}
+            head_tokens = _ids_in(head)
+            head_declares_us = any(tok.split("-")[0] in us_prefixes for tok in head_tokens)
+            us_ids = sorted(i for i in head_tokens
+                            if (req_dir / f"{i}-requirement.md").exists())
+            if not head_declares_us:
+                # 回退：標題區**完全沒有 US 形態的 ID** 時才掃全文。
+                #
+                # 為什麼要這個 fallback：否則「把 `對應 Backlog` 那行搬到第一個 `##` 之後」
+                # 就能讓 D8 靜默略過該檔（用排版繞過硬門檻）。
+                #
+                # 為什麼條件不是「沒有**帶錨點**的 ID」：若標題宣告的是沒有 `docs/req/`
+                # 錨點的 US（實例：TMO-075），用後者會退掃全文、把正文順帶提到的帶錨點 US
+                # 拉進對帳 → 重現本機制要消滅的假紅。
+                #
+                # 為什麼條件不是「沒有任何 ID token」：那會讓一個**裝飾 token**
+                # （`P2-1`／`AC-1`／`FR-03`）就能擋掉回退，等於復活同一種排版繞過。
+                us_ids = sorted(i for i in _ids_in(text)
+                                if (req_dir / f"{i}-requirement.md").exists())
             if not us_ids:
                 continue
             self.checks += 1

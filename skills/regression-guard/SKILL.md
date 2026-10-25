@@ -56,26 +56,26 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 ## 主流 runner TTY fail-fast 對照表
 
-對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。
+對照表（43 行）+ TTY 通用保險 + Fail-fast 自檢，見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。
 
 ## API 合約 + 環境變量
 
-`probe` / `assert` / `describe` 三個 API + `REGRESSION_MODE` 等 4 個環境變量（30 行），見 [`api-contract.md`](./api-contract.md)。
+`probe` / `assert` / `describe` 三個 API + `REGRESSION_MODE` 等 4 個環境變量（37 行），見 [`api-contract.md`](./api-contract.md)。
 
 ## 輸出格式
 
-文本輸出範例 + JSON 報告 schema（28 行），見 [`output-format.md`](./output-format.md)。
+文本輸出範例 + JSON 報告 schema（32 行），見 [`output-format.md`](./output-format.md)。
 
 ## 探針命名 + 粒度控制
 
-命名最佳實踐 + 3 級粒度對照（16 行），見 [`probe-naming.md`](./probe-naming.md)。
+命名最佳實踐 + 3 級粒度對照（28 行），見 [`probe-naming.md`](./probe-naming.md)。
 
 ## Jev Oracle 補充（進階）
 
 > 這章是**可選章節**：預設 regression-guard 流程（Steps 1-4 + 上述全部規則）對多数項目已足夠。
 > 只有在「柔性 AC / 真假 bug 混淆 / Confidence-gated 自動行動」等場景才需要。
 
-完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 506 行），見 [`jev-oracle.md`](./jev-oracle.md)。
+完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 511 行），見 [`jev-oracle.md`](./jev-oracle.md)。
 
 ## Gate 定義（本節是 single source 之一；機器可讀副本 `docs/sop/gates.json`）
 

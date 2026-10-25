@@ -77,7 +77,7 @@ SM-M3	tests/poc-clean-clone.bats	load 'helpers/test-env'	mask_secrets() { cat; }
 RG-M1	skills/regression-guard/runner-cheatsheet.md	jest --ci	jest --watch	tests/regression-guard-watch-mode.bats	documents the watch-mode rule
 RG-M2	docs/sop/gates.json	詳見 regression-guard SKILL.md	詳見 SKILL.md	tests/regression-guard-watch-mode.bats	GATES: gates.json Gate 3 notes mention watch-mode rule
 RG-M3	docs/sop/handbook/2.3-execution.md	| 通用保險 | 指令後加 `< /dev/null` 強制關 stdin |	| 通用保險 | 指令後請自行記得關掉 stdin |	tests/regression-guard-watch-mode.bats	HANDBOOK: 2.3-execution.md has the watch-mode warning section
-RG-M4	skills/regression-guard/SKILL.md	對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	對照表（37 行）+ TTY 通用保險 + Fail-fast 自檢，見本 skill 的 runner 對照表子檔。	tests/regression-guard-watch-mode.bats	CROSS: < /dev/null fallback reachable from all four documents
+RG-M4	skills/regression-guard/SKILL.md	見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	見本 skill 的 runner 對照表子檔。	tests/regression-guard-watch-mode.bats	CROSS: < /dev/null fallback reachable from all four documents
 # LK-M1：這裡刻意**不加**行尾 `# MUTANT: ...` 註解 —— 錨點是**行中**片段（該行後面還有
 #   `*GLOBS],`），加註解會把後半行吞掉 → SyntaxError 假死因（TMO-066 二審 #1）。
 #   載入期語法哨兵（`SYNTAX_LANGS`）現在會直接擋下這類「靠語法壞掉才紅」的列。

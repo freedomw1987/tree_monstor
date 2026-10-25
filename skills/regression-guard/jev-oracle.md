@@ -3,7 +3,7 @@
 > 本檔為 regression-guard 的「Jev Oracle 補充」+「CI 整合補充」章節（v2.2-v2.8 累積）。
 > 引用：`SKILL.md` 對應章節
 >
-> 從 SKILL.md v2.9 起，本檔獨立。理由：Jev Oracle 506 行 + CI 整合 30 行 = 536 行屬於「進階 / 可選」，不在「skill 基本用法」主流程上。
+> 從 SKILL.md v2.9 起，本檔獨立。理由：拆檔當時 Jev Oracle 506 行 + CI 整合 30 行 = 536 行屬於「進階 / 可選」，不在「skill 基本用法」主流程上。
 >
 > ⚠️ **本檔是**可選章節**：預設 regression-guard 流程（Steps 1-4 + 上述全部規則）對多数項目已足夠。只有在下列**特殊場景**下，才需要用 Jev oracle 加一層語意判定。
 

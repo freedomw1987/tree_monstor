@@ -148,7 +148,7 @@ wc -l skills/dav-wiki/SKILL.md
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
 6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 56 支
-   mutant（pptx-slim 23 支＋dav-wiki／安裝器（Qoder）／探針機密遮罩／regression-guard／掃描器範圍鎖 33 支）在副本上重跑一次，
+   mutant 在副本上重跑一次（各類分佈見該檔本身——手寫明細會漂，交給 `awk` 自查），
    每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
    鎖住「這一步必須存在、必須跑全表（不得 `--list`／`--only`／`--no-baseline`）、不得被 `if:` 條件停用、不得 OR 短路或 `continue-on-error`」

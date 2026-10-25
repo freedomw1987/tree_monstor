@@ -85,10 +85,10 @@
 | TMO-067 | 全域 SOP 未登錄 trust 這條第三路徑（2026-10-05 dav-trust v2.3 P0… | P1 | 3 | done (2026-10-23) | — |
 | TMO-075 | 砍掉框架 meta 自我管理層（第一刀）：刪 meta 探針與歷史產物、補 D4/D8 守護 | P1 | 8 | done (2026-10-26) | — |
 | TMO-076 | SOP 移出 AGENTS.md：只留萬事原則；Gate 定義改由各自的 skill 承載 | P1 | 5 | done (2026-10-26) | TMO-075 |
-| TMO-077 | 文件數字漂移無探針守護：交付摘要／changelog 內的自述數字會過期，目前無人守 | P2 | 5 | todo | TMO-076 |
+| TMO-077 | 文件數字漂移無探針守護：live 文件的自述數字會過期，改用探針重算比對 | P2 | 5 | done (2026-10-26) | TMO-076 |
 | TMO-078 | PNA-4 掃描器兩項技術債：①「縮排嘅 `}` 算唔算 test body 最後一句」——原版 glob 要求 `}` 喺**行首**，縮排嘅 `}` 會被當 violation（latent 假紅）；**唔可以用「剝前導空白」修**（會令真違規變 pass = 條件放寬 = 假綠），正解係 brace-depth 追蹤（屬語意變更 → 須另走 V03 + 另配 canary）②`tests/helpers/probe-scan.bash` 嘅 `probe_strip_comment`／`probe_code_lines` 自 PNA-4 改用單 awk 行程後已無呼叫點（邏輯已複製入 `probe_find_standalone_assertions`）→ 清死碼 | P2 | 3 | todo | TMO-074 |
 
-> **本檔現況（2026-10-26）**：上表 78 列中 **76 列已完成／已跳過**，另有 **2 列未決**（TMO-077 文件數字漂移守護、TMO-078 PNA-4 掃描器技術債）。
+> **本檔現況（2026-10-26）**：上表 78 列中 **77 列已完成／已跳過**，另有 **1 列未決**（TMO-078 PNA-4 掃描器技術債）。
 > 每一列的「詳細」段已移除（純歷史記錄，完整內容見 git history：
 > `git log -p -- docs/backlog.md`）。要查某張票的原始設計，請用該 TMO ID 查 git。
 >

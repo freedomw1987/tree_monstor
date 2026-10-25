@@ -59,9 +59,18 @@ Gate 的**定義**改由各自承載它的 skill 負責，讓 skill 自足；並
 
 **前置**：V03 Reviewer 二審（見交付摘要）
 
-**後續（同日 TMO-077）**：`regression-guard/SKILL.md` 149 → **120 行**
-（把「## 流程（5 步）」由 5 個 `###` 子段 39 行重排為單一表格，語意不減；
-脫離 130–149 預警區、重拿 30 行餘裕）。並開 TMO-077「文件數字漂移無探針守護」。
+**後續（同日 TMO-077）**：
+① `regression-guard/SKILL.md` 149 → **120 行**（「## 流程（5 步）」由 5 個 `###` 子段 39 行
+   重排為單一表格，語意不減；脫離 130–149 預警區、重拿 30 行餘裕）。
+② 新增 `tests/doc-facts.bats`（`DOC-FACTS-1/2`）：**live 文件的自述數字必須等於實況**。
+   只掃 `README.md`／`CONTRIBUTING.md`／`skills/*/SKILL.md`（`docs/deliverable/`、`changelog.md`、
+   `*/CHANGELOG.md`、`docs/backlog.md` 是歷史快照 → 一律不掃）；`## 變動歷史` 段內的列也跳過。
+   守 4 類事實：主檔自述行數、子檔自述行數、`N 個 skill`、`N 支 mutant`（皆以 `wc -l`／
+   `ls -d skills/*/`／`mutants.tsv` 資料列數重算）。含 5 情境內建自證。
+   **首次跑就抓到 6 處真實漂移**（`regression-guard` 4 個子檔行數 37／30／28／16 →
+   43／37／32／28；`CONTRIBUTING.md` 2 處 mutant 總數 50 → 55（合併 master 後為 56））。
+③ `scripts/ci/mutants.tsv` 的 `RG-M4` 錨點由「含行數的整行」改為「不含行數的指標句」——
+   原本行數一改，mutant 就會因「錨點找不到」而中止（本次真的踩到）。
 
 ## v2.13 — 2026-10-26
 
