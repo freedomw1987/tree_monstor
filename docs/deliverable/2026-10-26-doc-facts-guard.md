@@ -22,8 +22,8 @@
 | 同上 → `api-contract.md` | 30 行 | **37** |
 | 同上 → `output-format.md` | 28 行 | **32** |
 | 同上 → `probe-naming.md` | 16 行 | **28** |
-| `CONTRIBUTING.md:74` | 50 支 mutant | **55** |
-| `CONTRIBUTING.md:150` | 50 支 | **55** |
+| `CONTRIBUTING.md:74` | 50 支 mutant | **55**（合併 master 後為 56）|
+| `CONTRIBUTING.md:150` | 50 支 | **55**（合併 master 後為 56）|
 | 同上 → `jev-oracle.md` | 506 行 | **511**（這處是第一版 pattern 漏掉的——「共 506 行）」沒有 `（` 開頭；放寬後才抓到）|
 
 ### 順帶修掉的缺陷：D8 的「提到就算」粒度（同一主題的阻礙）
@@ -76,7 +76,7 @@
 | 檔案路徑 | 改動內容 |
 |---------|---------|
 | `skills/regression-guard/SKILL.md` | **5 個**子檔自述行數更正：`runner-cheatsheet` 37→43、`api-contract` 30→37、`output-format` 28→32、`probe-naming` 16→28、`jev-oracle` 506→511 |
-| `CONTRIBUTING.md` | 2 處 mutant 總數 50 → **55**；並把手寫的分類明細（23／27）改成指向 `mutants.tsv` |
+| `CONTRIBUTING.md` | 2 處 mutant 總數 50 → **55**（合併 master 後 56）；並把手寫的分類明細改成「用 `awk` 自查」 |
 | `skills/regression-guard/jev-oracle.md` | 檔頭 line 6 的拆檔理由標為「拆檔當時」（歷史理由敘述，非現況宣稱）；另 4 個兄弟子檔同步 |
 | `scripts/ci/mutants.tsv` | `RG-M4` 的錨點由「含行數的整行」改為「不含行數的指標句」——行數一改 mutant 就會因錨點找不到而中止（本次真的踩到）|
 | `.github/workflows/ci.yml` | 探針註解範圍 `DOC-DRIFT-008..048` → `008..054` |
@@ -110,8 +110,8 @@
 | AC-2 | 守護會咬（不是裝飾）| ✅ | 首次跑抓到 **6 處真實漂移**（放寬 pattern 後第 7 處）；`DOC-FACTS-2` **5 情境**內建自證 |
 | AC-3 | 歷史快照不被誤掃 | ✅ | 只掃 README／CONTRIBUTING／`skills/*/SKILL.md`；`## 變動歷史` 段內**表格列**跳過（段後現況行仍受檢）|
 | AC-4 | 不假咬 | ✅ | 只守單位詞無歧義的 4 類；`docs/install-reference.md` 的「你自裝的 69 個 skills」不在掃描集 |
-| AC-5 | 門檻一個都沒放寬 | ✅ | MMD-1 仍 `-eq 55`；`.bats` 檔數地板仍 5 處 `-ge 40`（另有 1 處 `-ge 40` 數的是 `resume.md` 非空白行）；`mutants.tsv` 仍 55 列 |
-| AC-6 | 全量測試全綠 | ✅ | `bats tests/` → **1..663，663 ok / 0 not ok / 0 skip** |
+| AC-5 | 門檻一個都沒放寬 | ✅ | MMD-1 仍 `-eq 56`（合併 master 後）；`.bats` 檔數地板仍 5 處 `-ge 40`（另有 1 處 `-ge 40` 數的是 `resume.md` 非空白行）；`mutants.tsv` 56 列 |
+| AC-6 | 全量測試全綠 | ✅ | `bats tests/` → **1..664，664 ok / 0 not ok / 0 skip** |
 | AC-7 | 順帶修掉 D8 的「提到就算」假紅（含回退與簡寫展開）| ✅ | `check-doc-drift.py` 只認標題區；`DOC-DRIFT-049`～`055` 各以 mutation 驗證會紅 |
 | AC-8 | Reviewer 二審 | ⏳ | 見 §3.2 |
 
@@ -158,19 +158,27 @@
   R2 證據欄錯引情境 ①／④。並採納 advisory：新增 `DOC-DRIFT-055` 鎖「`dav-submitter` 模板的
   `對應 Backlog` 必須在模板本體（fenced 區塊）的第一個 `##` 之前」——那是 D8 新規則的隱含依賴。
 
+- **第 6 輪（合併前）**：`master` 在我工作期間被**另一條工作線**推進了 3 個 commit
+  （PNA-4 掃描器效能優化 94.6s→0.86s ＋ 開 TMO-078），且**改了 4 個與本票重疊的檔案**
+  （`CONTRIBUTING.md`、`docs/backlog.md`、`docs/sop/handbook/changelog.md`、`scripts/ci/mutants.tsv`）。
+  合併後 3 處衝突已解：突變表取 master 的 **56 支**（含新增 `PNA-M1`）、`CONTRIBUTING.md` 同步 56 支
+  並把分類明細改成「用 `awk` 自查」（不再手寫會漂的數字）、`backlog.md` 保留我的 **TMO-077 done**
+  與 master 的 **TMO-078 todo**（78 列／77 完成／1 未決）。
+  合併後全量 `bats tests/` = **664**（本票淨 +9：`doc-facts` +2、`doc-drift` +7）。
+
 ## 4. 測試結果
 
 | 項目 | 結果 |
 |------|------|
-| 回歸測試（全量 bats） | **663 / 663**；0 not ok、0 skip |
+| 回歸測試（全量 bats） | **664 / 664**；0 not ok、0 skip |
 | `tests/doc-facts.bats`（新） | 2 / 2 綠（`DOC-FACTS-2` 內含 5 情境）|
 | `tests/doc-drift.bats` | **54 / 54** 綠（含新 `DOC-DRIFT-049`～`055`）|
-| `python3 scripts/ci/mutant-must-die.py` | 55 支全死（`RG-M4` 錨點更新後仍會死）|
+| `python3 scripts/ci/mutant-must-die.py` | **56** 支全死（`RG-M4` 錨點更新後仍會死）|
 | `bash scripts/ci/check-doc-drift.sh` | rc=0、無 DRIFT、7 豁免 |
 | `markdownlint-cli2` | 122 檔 0 issues（檔數隨新增 `.md` 變動，不寫死）|
 | `check-skill-size.sh` | 13 支 ≤ 150（最長 148）|
 | 4 支 probe linter | 全 OK |
-| `bats tests/` 總數 | 654 → **663**（+9：`doc-facts` +2、`doc-drift` +7）|
+| `bats tests/` 總數 | 655 → **664**（+9：`doc-facts` +2、`doc-drift` +7）|
 
 **新增探針的突變驗證**（`DOC-FACTS-2` 內建）：
 
