@@ -487,7 +487,7 @@ M4 — Self-Evolution
 
 ```
 ~/.pi/agent/
-├── AGENTS.md                         # symlink → <source>/AGENTS.md（含 SOP，含 dav-skill-creater 引用）
+├── AGENTS.md                         # symlink → <source>/AGENTS.md（行為準則；SOP 全文在 docs/sop/handbook/）
 └── skills/
     └── dav-wiki/                     # per-skill symlink 到源碼
 
@@ -546,7 +546,7 @@ M4 — Self-Evolution
 
 ## 9. 參考資料
 
-- [AGENTS.md §2 SOP](../AGENTS.md) — 5 階段流程
+- [docs/sop/handbook/](../docs/sop/handbook/) — SOP 各階段（按需查；AGENTS.md 自 2026-10-26 起只留行為準則與萬事原則）
 - [Google Stitch DESIGN.md](https://stitch.withgoogle.com/docs/design-md/specification/) — frontmatter 格式
 - [Obsidian Wiki Links](https://help.obsidian.md/Linking/Internal+links) — `[[xxx]]` 語法
 - [JSON Schema Draft 07](https://json-schema.org/draft-07/json-schema-release-notes.html) — Schema 規範

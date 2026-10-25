@@ -60,23 +60,30 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 > 完整旗標（`--no-agents-dir`、`--source`、`--version` 等）與所有細節 →
 > [docs/install-reference.md](docs/install-reference.md)
 
-## 工作流程：看 AGENTS.md
+## 行為準則與流程
 
-安裝後 agent 會讀到 [`AGENTS.md`](AGENTS.md)，那是整套 SOP 的入口：
+安裝後 agent 會讀到 [`AGENTS.md`](AGENTS.md) —— **它只講「你是誰、怎麼跟你合作」**：
 
 | 章節 | 內容 |
 |---|---|
 | §1 萬事原則 | 行為基礎：誠實、負責、有承擔、Think Big |
-| §1.5 提問紀律 | V01 一次一問、V02 方案必標推薦、V03 SOP 修改走 Reviewer 二審 |
-| §2.0 任務分類 | 開發任務走完整 SOP；一般任務走 §2.6 輕量流程；trust mode 走 §2.3→§2.5 執行段 |
-| §2.1 – §2.5 | 規劃 → 設計 → 執行（4 Gate）→ 反省 → 提交 |
-| §2.3 | 4 Gate 速查：TDD / lint / regression / reviewer |
-| §2.7 | 違規回報（fail-fast 防線） |
+| §1.5 行為紀律 | V01 一次一問、V02 方案必標推薦、V03 改規範走 Reviewer 二審 |
+
+**流程與 Gate 不在 `AGENTS.md`** —— 它們寫在**各自的 skill** 裡，被觸發時才讀：
+
+| Gate | 承載 skill |
+|---|---|
+| Gate 1 TDD / Gate 2 lint | [skills/tdd-test-writer](skills/tdd-test-writer/) |
+| Gate 3 regression | [skills/regression-guard](skills/regression-guard/) |
+| Gate 4 reviewer | [skills/dev-checker-loop](skills/dev-checker-loop/) |
+| Gate 4.5 需求對帳 | [skills/dav-reconciler](skills/dav-reconciler/) |
+
+**沒有指定要用哪道 Gate 時，預設就是直接做**（不跑流程、不建 backlog、不寫交付摘要）。
 
 深入閱讀：
 
-- Handbook 全文：[docs/sop/handbook/](docs/sop/handbook/)
-- Gate 定義（single source of truth）：[docs/sop/gates.json](docs/sop/gates.json)
+- SOP handbook 全文：[docs/sop/handbook/](docs/sop/handbook/)（按需查，非必讀）
+- Gate 定義（機器可讀副本；定義本體在各自的 skill）：[docs/sop/gates.json](docs/sop/gates.json)
 - 安裝後會以 symlink 出現在 `~/.pi/sop/` 與 `~/.claude/sop/`（gates + handbook）
 
 ## Skills

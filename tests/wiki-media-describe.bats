@@ -388,7 +388,7 @@ teardown() {
 # ---------- AC-D29: 上限旗標非法值 → rc=1（TMO-060：`0` 改為合法＝無限制） ----------
 # TMO-058 時鎖的是「0／2x 皆非法」。TMO-060 重定義語意後 `0`＝無限制（合法），
 # 故拒收方向改壓在 -1／2x／1.5（覆蓋面比原本更廣，且要求新的精確訊息）；
-# 「0 必須被接受」由 AC-D32 正面鎖。← V03.6 申報的條件放寬項：0 由 fail 改為 pass。
+# 「0 必須被接受」由 AC-D32 正面鎖。← 原 V03.6（現併入 AGENTS.md §1.5 的 V03）申報的條件放寬項：0 由 fail 改為 pass。
 @test "AC-D29: invalid --batch-limit or --max-concurrency -> rc=1 with no batch success" {
   mkdir -p "$WORK/batch-mc"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-mc/"

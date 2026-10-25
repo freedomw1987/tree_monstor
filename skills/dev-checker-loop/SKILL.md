@@ -28,7 +28,8 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 
 ## 流程（5 步）
 
-> **⚠️ V03.5 主檔行數預警（v2.4 新增）**：本主檔已瘦身至 < 130 行（綠區）；下次再加功能必先外移到 `workflow.md` 子檔，避免觸發 130 上限。
+> **⚠️ 主檔行數預警**：本主檔目前 **146 行**（落在 130–149 預警區，尚未觸 150 上限）；
+> 下次再加功能請先外移到 `workflow.md` 子檔。（原標籤 V03.5 已於 2026-10-26 併入 `AGENTS.md` §1.5 的 V03。）
 
 ### Step 0：可用性偵測（v2.4 新增）
 
@@ -107,6 +108,22 @@ dev-checker-loop v2.2 起支援 **Module 級派工**。Module 定義在 `docs/sy
 | **用戶手動終止** | 由用戶決定何時停止 |
 | **所有任務完成** | backlog 為空且所有狀態為「已完成」 |
 | **循環上限** | 任一問題超過 20 次循環仍未解決則中斷 |
+
+## Gate 定義（本節是 single source 之一；機器可讀副本 `docs/sop/gates.json`）
+
+> **進本 Gate 時必須在對話引用下表的 `mandatory_phrase`；不引用＝視為 gate 未觸發**（屬「偽裝通過」，依 SOP 的違規回報規則處理）。
+### Gate 4 reviewer gate
+
+| 欄位 | 內容 |
+|------|------|
+| pass_criteria | ① checker subagent 回傳『沒找到更多問題』② playwright-cli E2E 全綠（含截圖證據，UI 任務必跑）|
+| required_evidence | ① checker subagent 原文回傳 ② playwright test 報告路徑 + 截圖路徑（若有 UI）|
+| fail_action | 不可進入 §2.4 反省 |
+| mandatory_phrase | 依 gates.json 規範，Gate 4 (reviewer) 需要：checker 回傳『沒找到更多問題』+ playwright-cli E2E 全綠（含截圖），並在對話貼出 checker subagent 原文回傳。|
+
+> 機器可讀副本：`docs/sop/gates.json`（`tests/gate-in-skill.bats` 鎖兩邊逐條一致）。
+>
+> 純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示「無 UI 故不適用」及理由。
 
 ## 變動歷史
 

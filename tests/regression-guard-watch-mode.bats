@@ -9,7 +9,7 @@
 #   1. skills/regression-guard/SKILL.md      (the skill body: 規則條款)
 #   2. skills/regression-guard/runner-cheatsheet.md (v2.9 拆檔: runner 對照表 +
 #      Fail-fast 自檢 + `< /dev/null` 保險)
-#   3. docs/sop/gates.json                   (Gate 3 definition, single source)
+#   3. docs/sop/gates.json                   (Gate 3 definition, machine-readable copy)
 #   4. docs/sop/handbook/2.3-execution.md    (the human-readable explanation)
 #
 # If any of these drop the rule, an agent may invoke a watch-mode test runner
@@ -56,7 +56,7 @@ setup() {
   }
 }
 
-# ---------- gates.json (Gate 3 single source) ----------
+# ---------- gates.json (Gate 3 machine-readable copy; definition body lives in regression-guard SKILL.md) ----------
 @test "GATES: gates.json Gate 3 notes mention watch-mode rule" {
   local f="$REPO_ROOT/docs/sop/gates.json"
   # Use python so we get a real JSON parse + path navigation

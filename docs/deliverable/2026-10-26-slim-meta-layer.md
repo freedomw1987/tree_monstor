@@ -276,7 +276,7 @@
 |---------|-------------|------|
 | 回歸測試（全量 bats） | 646 / 646 | baseline 794 / 794；刪除的是 meta 探針，**0 個 skip、0 個 not ok** |
 | 突變測試（mutant） | 55 / 55 全死 | `scripts/ci/mutants.tsv` 未動；MMD-1 門檻 `[ "$n" -eq 55 ]` 未放寬 |
-| 文件漂移（D1..D8） | 15 項檢查 / 7 項豁免 | `bash scripts/ci/check-doc-drift.sh` → rc=0（嚴格模式） |
+| 文件漂移（D1..D8） | 15 項檢查 / 7 項豁免（當時值）| `bash scripts/ci/check-doc-drift.sh` → rc=0（嚴格模式） |
 | Markdown lint | 0 issues | `markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"` |
 | 其他 CI 腳本 | 全綠 | check-skill-size（13 個 SKILL.md ≤ 150 行）、check-python-heredocs、check-ffmpeg-version、4 支 probe linter |
 

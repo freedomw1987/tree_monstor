@@ -144,3 +144,111 @@ setup() {
     return 1
   fi
 }
+
+# ---------- MLG-10：文字檔必須是合法 UTF-8（損毀位元組不得靜默出貨）----------
+# 為什麼要這條：TMO-076 用 `sed` 做多檔數字替換時，把 `docs/sop/handbook/changelog.md`
+# 的一行打成非法 UTF-8（`149／146` → 0xbc8f…）。markdownlint 報 0 issues、
+# `bats tests/` 全綠 —— **兩個既有守護都攔不到**，會靜默出貨。所以補這支。
+#
+# 範圍：**全部 git 追蹤檔**（不再用副檔名白名單 —— 白名單會漏掉 `.bash`／`.tsv`／`.jsonc`／`.ts`／
+# 無副檔名檔）。二進位檔以「嚴格解碼失敗 **且** 前 8KB 含 NUL」判定後跳過；
+# 損毀的「文字」不含 NUL，所以仍會被抓到。
+_utf8_check() {
+  python3 - "$1" "${2:-git}" "${3:-}" <<'PYEOF'
+import pathlib
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1])
+mode = sys.argv[2]                      # "git" | "paths"
+paths_file = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else None
+
+if mode == "git":
+    try:
+        out = subprocess.run(["git", "-C", str(root), "ls-files"],
+                             capture_output=True, text=True, check=True).stdout
+    except Exception as e:
+        print(f"FAIL: 無法列出 git 追蹤檔（{e}）")
+        sys.exit(1)
+    rels = [l for l in out.splitlines() if l.strip()]
+else:
+    rels = [l for l in pathlib.Path(paths_file).read_text(encoding="utf-8").splitlines() if l.strip()]
+
+# 已知二進位副檔名先跳過（有些小檔如 fixtures 的 sample.pdf 前 8KB 不含 NUL，單靠 NUL 啟發式會誤報）。
+BINARY_EXT = {".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp",
+              ".pptx", ".docx", ".xlsx", ".zip", ".gz", ".tar", ".woff", ".woff2",
+              ".ttf", ".otf", ".eot", ".mp4", ".mp3", ".wav", ".mov", ".so",
+              ".dylib", ".dll", ".pyc", ".class", ".jar", ".bin"}
+
+bad = []
+scanned = 0
+for rel in rels:
+    p = root / rel
+    if not p.is_file() or p.suffix.lower() in BINARY_EXT:
+        continue
+    scanned += 1
+    try:
+        p.read_bytes().decode("utf-8")
+    except UnicodeDecodeError as e:
+        # 安全閥：前 8KB 有 NUL 位元組 → 視為二進位檔（合法），不算違規。
+        # 損毀的「文字」不會含 NUL，所以 ¼ 這類依然會被抓到。
+        try:
+            head = p.read_bytes()[:8192]
+        except OSError:
+            bad.append(f"{rel}: {e}")
+            continue
+        if b"\x00" in head:
+            continue
+        bad.append(f"{rel}: {e}")
+
+# 空過地板只適用 git 模式（fixture 模式只有 2 檔）。實際 repo 約 260 個追蹤檔。
+if mode == "git" and scanned < 150:
+    print(f"FAIL: 只掃到 {scanned} 個檔案（< 150；期望 ~260）→ 掃描範圍悄悄縮小，不得空過")
+    sys.exit(1)
+if mode == "paths" and scanned < 1:
+    print("FAIL: paths 模式掃到 0 檔（清單壞了）")
+    sys.exit(1)
+if bad:
+    print(f"FAIL: {len(bad)} 個文字檔不是合法 UTF-8：")
+    for b in bad:
+        print("  -", b)
+    sys.exit(1)
+print(f"OK: {scanned} 個文字檔皆為合法 UTF-8")
+PYEOF
+}
+
+@test "MLG-10: every tracked text file decodes as strict UTF-8" {
+  run _utf8_check "$REPO_ROOT"
+  [ "$status" -eq 0 ] || {
+    echo "$output" >&2
+    return 1
+  }
+  [[ "$output" == *"OK:"* ]] || {
+    echo "FAIL: 預期 OK 訊息，實際：$output" >&2
+    return 1
+  }
+}
+
+@test "MLG-10b: the UTF-8 checker itself bites (bad bytes must be red, clean must be green)" {
+  # 對照 GATE-SKILL-3／AC-4b：新守護要有**內建 fixture 自證**，否則「會不會咬」只存在於一次性手測。
+  local tmp="$BATS_TEST_TMPDIR/utf8"
+  mkdir -p "$tmp"
+  printf 'hello 中文\n' > "$tmp/ok.md"
+  printf 'hello 中文\n' > "$tmp/bad.md"
+  printf '%s\n' ok.md bad.md > "$tmp/list.txt"
+
+  run _utf8_check "$tmp" paths "$tmp/list.txt"
+  [ "$status" -eq 0 ] || { echo "FAIL: 乾淨 fixture 竟紅（假咬）：$output" >&2; return 1; }
+
+  # 塞入非法序列（模擬 sed 打壞全形斜線的尾段）
+  printf '\xbc\x8f' >> "$tmp/bad.md"
+  run _utf8_check "$tmp" paths "$tmp/list.txt"
+  [ "$status" -ne 0 ] || { echo "FAIL: 損毀位元組竟通過（守護空過）" >&2; return 1; }
+  [[ "$output" == *"bad.md"* ]] || { echo "FAIL: 應點名 bad.md：$output" >&2; return 1; }
+
+  # 真二進位（含 NUL）必須被安全閥跳過，不得誤報
+  printf '\x00\x01\x02binary' > "$tmp/bin.dat"
+  printf '%s\n' ok.md bin.dat > "$tmp/list2.txt"
+  run _utf8_check "$tmp" paths "$tmp/list2.txt"
+  [ "$status" -eq 0 ] || { echo "FAIL: 含 NUL 的二進位檔被誤報：$output" >&2; return 1; }
+}

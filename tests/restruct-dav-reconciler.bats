@@ -3,7 +3,7 @@
 # tests/restruct-dav-reconciler.bats
 #
 # Regression guards for TMO-072: dav-reconciler skill（需求對帳機制）
-# + Gate 4.5 登錄（handbook §2.3 / AGENTS.md §2.3 / dav-submitter / dav-reflection）
+# + Gate 4.5 登錄（handbook §2.3 / dav-reconciler SKILL.md / dav-submitter / dav-reflection）
 #
 # 設計依據：docs/prd/05-delivery-fidelity.md FR-02
 #
@@ -352,12 +352,31 @@ PYMUT
   }
 }
 
-@test "RECON-012: AGENTS.md gate quick-reference lists Gate 4.5" {
+@test "RECON-012: Gate 4.5 is registered in its owning skill (AGENTS.md no longer embeds the gate table)" {
+  # 2026-10-26：AGENTS.md 不再內嵌 SOP / Gate 速查表（只留「你是誰 + 萬事原則」）
+  # → Gate 4.5 的登記點改為 handbook §2.3（RECON-011）＋**承載它的 skill**（dav-reconciler）。
+  # 本條鎖「承載點真的在 skill 裡」，並防止有人把速查表又貼回 AGENTS.md 造成兩份定義。
   local agents="$REPO_ROOT/AGENTS.md"
-  grep -qF "Gate 4.5" "$agents" || {
-    echo "FAIL: AGENTS.md §2.3 速查表未列 Gate 4.5" >&2
+  local skill="$REPO_ROOT/$SKILL_DIR/SKILL.md"
+  grep -qF "Gate 4.5" "$skill" || {
+    echo "FAIL: dav-reconciler SKILL.md 未登記 Gate 4.5（它現在是承載點）" >&2
     return 1
   }
+  grep -qF "需求對帳" "$skill" || {
+    echo "FAIL: dav-reconciler SKILL.md 未登記「需求對帳」" >&2
+    return 1
+  }
+  grep -qF "dav-reconciler" "$agents" || {
+    echo "FAIL: AGENTS.md 未指名 Gate 4.5 的承載 skill dav-reconciler" >&2
+    return 1
+  }
+  # 負向：AGENTS.md 可以「提到」Gate（指路），但不得內嵌定義欄位。
+  # （純字串 "Gate 4.5" 不算違規 —— 一句指標是有用的；違規的是把定義表貼回來。）
+  if grep -qE 'mandatory_phrase|pass_criteria|required_evidence' "$agents"; then
+    echo "FAIL: AGENTS.md 又內嵌了 Gate 定義欄位（定義應留在 skill）" >&2
+    grep -nE 'mandatory_phrase|pass_criteria|required_evidence' "$agents" >&2
+    return 1
+  fi
 }
 
 @test "RECON-013: dav-reflection states that reconcile runs before reflection" {

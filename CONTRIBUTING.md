@@ -231,11 +231,12 @@ symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做�
 
 ## Sprint / SOP
 
-本專案遵循 SOP（`docs/sop/`），每個 Sprint 走：
+本專案有一條 SOP（`docs/sop/`），但**不是每個任務都要走**。需要時走：
 1. **規劃** (dav-planner)
 2. **設計** (dav-designer)
 3. **執行** (4 Gate: TDD / lint / regression / reviewer)
 4. **反省** (dav-reflection)
 5. **提交** (dav-submitter)
 
-詳見 `AGENTS.md` §2 與各 `skills/*/SKILL.md`。
+Gate 的定義在**各自的 skill**（`tdd-test-writer` / `regression-guard` / `dev-checker-loop` / `dav-reconciler`），
+完整說明見 [`docs/sop/handbook/`](docs/sop/handbook/)。`AGENTS.md` 只放行為準則，不含流程。
