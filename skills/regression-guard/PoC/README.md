@@ -88,7 +88,7 @@ POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force --yes     # 非互動（腳�
 #   ⚠️ CI 唔讀本機檔 → 用 secrets.OPENROUTER_API_KEY。
 #
 # 程式讀取順序：環境變數 → PoC/.env → ~/.claude/skills/regression-guard/PoC/.env
-# （前兩者係後備；JEV_ENV_FILE=/dev/null 可令「完全冇 .env」）
+# （**後兩者**係後備；JEV_ENV_FILE=/dev/null 可令「完全冇 .env」）
 
 .venv/bin/python example_run.py           # 走 oracle，cache hit 就 hit
 .venv/bin/python journey_gen.py \

@@ -178,7 +178,7 @@ def generate_journey(story, *, model: str | None = None,
 
     # ── 2. 並行跑（每個 call 獨立；唯一共享資源係 cache 目录，唔同 key = 唔同檔）──
     results: dict[tuple[str, str], dict] = {}
-    errors: list[tuple[str, BaseException]] = []
+    errors: list[tuple[str, Exception]] = []
     if specs:
         with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(specs)))) as ex:
             futures = {
