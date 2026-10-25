@@ -34,7 +34,7 @@
 #   * 新增 LK-M1：把掃描器的 `git ls-files -co --exclude-standard` 改回 `-c`（＝untracked 盲點回歸）；
 #     搭配 `lint-shell-var-nonascii.py --self-test` 新增的「未追蹤檔必須入列」契約，兩者一起紅。
 #   * 表 39 → 43 支（TMO-066 二審收尾；dav-trust v2.4 再 +3 支：DT-M1..M3）。
-#   * 再 +12 支 → **55 支**（TMO-071/072/073：DD-M1..DD-M3 / DR-M1 / DR-M2；
+#   * 再 +12 支 → **55 支**（TMO-071/072/073：DD-M1..DD-M3 / DR-M1 / DR-M2；再 +PNA-M1 → **56 支**；
 #     TMO-069 Qoder 安裝：QD-M1..QD-M6；TMO-070 jev 間歇紅：RG-M5）。
 #
 # 【第 2 輪 V03 二審（reviewer subagent、verdict = request-changes）後追加】

@@ -40,8 +40,9 @@
 
 新增 6 支探針：`DOC-DRIFT-049`（正文提到別的 US 不得納入）、`DOC-DRIFT-050`（標題區 `/` 簡寫必須展開）、
 `DOC-DRIFT-051`（把宣告搬到 `##` 之後＝用排版繞過必紅）、`DOC-DRIFT-052`（`~` 區間必須展開）、
-`DOC-DRIFT-053`（標題宣告**無錨點** US 時不得退掃全文）、`DOC-DRIFT-054`（標題的**裝飾 token** 不得擋掉回退）；
-6 支都以副本 mutation 驗證會紅。
+`DOC-DRIFT-053`（標題宣告**無錨點** US 時不得退掃全文）、`DOC-DRIFT-054`（標題的**裝飾 token** 不得擋掉回退）、
+`DOC-DRIFT-055`（`dav-submitter` 模板的 `對應 Backlog` 必須早於模板本體的第一個 `##`）；
+7 支都以副本 mutation 驗證會紅。
 
 ### 設計（刻意保守：寧可少守，也不要假咬）
 
@@ -77,10 +78,12 @@
 |---------|---------|
 | `skills/regression-guard/SKILL.md` | **5 個**子檔自述行數更正：`runner-cheatsheet` 37→43、`api-contract` 30→37、`output-format` 28→32、`probe-naming` 16→28、`jev-oracle` 506→511 |
 | `CONTRIBUTING.md` | 2 處 mutant 總數 50 → **55**（合併 master 後 56）；並把手寫的分類明細改成「用 `awk` 自查」 |
-| `skills/regression-guard/jev-oracle.md` | 檔頭 line 6 的拆檔理由標為「拆檔當時」（歷史理由敘述，非現況宣稱）；另 4 個兄弟子檔同步 |
+| `skills/regression-guard/jev-oracle.md` | 檔頭 line 6 的拆檔理由標為「拆檔當時」（歷史理由敘述，非現況宣稱）|
+| `skills/regression-guard/{runner-cheatsheet,api-contract,output-format,probe-naming}.md` | 同上：4 個兄弟子檔的檔頭行數標為「拆檔當時」|
+| `skills/regression-guard/SKILL.md` | 5 個子檔的自述行數更正為 43／37／32／28／511；另「流程（5 步）」149 → 120 行的重排（前一張票 TMO-077 前置的「修 149 行」）|
 | `scripts/ci/mutants.tsv` | `RG-M4` 的錨點由「含行數的整行」改為「不含行數的指標句」——行數一改 mutant 就會因錨點找不到而中止（本次真的踩到）|
-| `.github/workflows/ci.yml` | 探針註解範圍 `DOC-DRIFT-008..048` → `008..054` |
-| `docs/backlog.md` | TMO-077 → `done`；現況註記改回「77 列全部已完成或已跳過」|
+| `.github/workflows/ci.yml` | 探針註解範圍 `DOC-DRIFT-008..048` → `008..055` |
+| `docs/backlog.md` | TMO-077 → `done`；現況註記改「78 列／77 完成／1 未決」（TMO-078 是 master 那條線開的）|
 | `docs/sop/handbook/changelog.md` | v2.14 的「後續（同日 TMO-077）」註記補上本守護的說明與首次抓到的 6 處漂移 |
 | `skills/dav-reconciler/scripts/check-doc-drift.py` | D8 的 US 納入規則由「全文任何 ID」收窄為「標題區宣告的 US」；標題區 `/` 與 `~` 簡寫展開；標題區**沒有 US 形態的 ID**（前綴由 `docs/req/*-requirement.md` 檔名推導）時才回退全文——「有任何 ID token 就不回退」會被裝飾 token（`P2-1`）復活排版繞過 |
 | `tests/doc-drift.bats` | 新增 `DOC-DRIFT-049`～`055`；fixture 的交付摘要補 `對應 Backlog` 標頭（對齊真實慣例）|
@@ -110,7 +113,7 @@
 | AC-2 | 守護會咬（不是裝飾）| ✅ | 首次跑抓到 **6 處真實漂移**（放寬 pattern 後第 7 處）；`DOC-FACTS-2` **5 情境**內建自證 |
 | AC-3 | 歷史快照不被誤掃 | ✅ | 只掃 README／CONTRIBUTING／`skills/*/SKILL.md`；`## 變動歷史` 段內**表格列**跳過（段後現況行仍受檢）|
 | AC-4 | 不假咬 | ✅ | 只守單位詞無歧義的 4 類；`docs/install-reference.md` 的「你自裝的 69 個 skills」不在掃描集 |
-| AC-5 | 門檻一個都沒放寬 | ✅ | MMD-1 仍 `-eq 56`（合併 master 後）；`.bats` 檔數地板仍 5 處 `-ge 40`（另有 1 處 `-ge 40` 數的是 `resume.md` 非空白行）；`mutants.tsv` 56 列 |
+| AC-5 | 門檻一個都沒放寬 | ✅ | MMD-1 仍 `-eq 56`（合併 master 後）；`-ge 40` 地板共 7 處：4 處數探針／`.bats` 檔數、2 處數掃描檔數（master 的 PNA-4 新增）、1 處數 `resume.md` 非空白行；`mutants.tsv` 56 列 |
 | AC-6 | 全量測試全綠 | ✅ | `bats tests/` → **1..664，664 ok / 0 not ok / 0 skip** |
 | AC-7 | 順帶修掉 D8 的「提到就算」假紅（含回退與簡寫展開）| ✅ | `check-doc-drift.py` 只認標題區；`DOC-DRIFT-049`～`055` 各以 mutation 驗證會紅 |
 | AC-8 | Reviewer 二審 | ⏳ | 見 §3.2 |
@@ -122,7 +125,7 @@
 | 需求 ID | 需求句（摘要） | 狀態 | 實作位置 | 證據 | 備註 |
 |---------|---------------|------|---------|------|------|
 | R1 | live 文件的自述數字必須與實況一致，且由探針重算而非人工維護（含內建自證、門檻零放寬）| ✅ 已實作 | `tests/doc-facts.bats` | `DOC-FACTS-1` 綠、首次跑抓到 6 處漂移；`DOC-FACTS-2` 5 情境自證 | — |
-| R2 | 歷史快照（deliverable／changelog／backlog）不得被誤掃 | ✅ 已實作 | 同上（掃描集與 `## 變動歷史` 段排除）| `DOC-FACTS-2` 情境 ③b（歷史表格列跳過／段後現況行仍受檢）＋掃描集不含 deliverable／changelog／backlog | — |
+| R2 | 歷史快照（deliverable／changelog／backlog）不得被誤掃；且用戶原話「修 149 行」那條要真做完 | ✅ 已實作 | 同上（掃描集與 `## 變動歷史` 段排除）| `DOC-FACTS-2` 情境 ③b（歷史表格列跳過／段後現況行仍受檢）＋掃描集不含 deliverable／changelog／backlog；`regression-guard/SKILL.md` 149 → 120 行重排 | — |
 
 > 權威對帳表：`docs/reconcile/TMO-077-reconcile.md`（由未參與實作的 subagent 產出）
 
@@ -153,7 +156,7 @@
 
 - **第 5 輪**：Reviewer `approve-with-comments`（**P0/P1/P2 = 0**，可合併）；checker `request-changes`（P2×1）。
   P2 與 Reviewer 的 P3 是同一組：**本輪新增 054 後，交付摘要的衍生數字沒同步**（§1「5 支」、
-  §2.2「049～053」、§7.1「+7／+5」；實為 6 支、049～055、+8／+6），以及 `ci.yml:137` 的
+  §2.2「049～053」、§7.1「+7／+5」；實為 7 支、049～055、+9／+7），以及 `ci.yml:137` 的
   `008..053` 少一號。另修：051 的註解仍寫第 2 輪被推翻的條件、053 的「現成觸發檔」實例不成立、
   R2 證據欄錯引情境 ①／④。並採納 advisory：新增 `DOC-DRIFT-055` 鎖「`dav-submitter` 模板的
   `對應 Backlog` 必須在模板本體（fenced 區塊）的第一個 `##` 之前」——那是 D8 新規則的隱含依賴。
@@ -231,7 +234,7 @@
 | - | --- | --- | --- |
 | 1 | UX/UI 一致性 | N/A | 無 UI 變更 |
 | 2 | RWD 響應式設計 | N/A | 同上 |
-| 3 | 技術債 | ✅ | 清了 7 處真實漂移；新增 1 支守護（淨 **+8** 支探針：`doc-facts` +2、`doc-drift` +6）|
+| 3 | 技術債 | ✅ | 清了 7 處真實漂移；新增 1 支守護（淨 **+9** 支探針：`doc-facts` +2、`doc-drift` +7）|
 | 4 | 可維護性 | ✅ | 事實集集中在單一檔、有檔頭表格說明；擴充有明確路徑 |
 | 5 | 測試完整性 | ✅ | 新守護有 5 情境內建自證；門檻零放寬 |
 | 6 | 文件一致性 | ✅ | 7 處漂移修正；歷史快照明確排除 |

@@ -68,7 +68,7 @@ Gate 的**定義**改由各自承載它的 skill 負責，讓 skill 自足；並
    守 4 類事實：主檔自述行數、子檔自述行數、`N 個 skill`、`N 支 mutant`（皆以 `wc -l`／
    `ls -d skills/*/`／`mutants.tsv` 資料列數重算）。含 5 情境內建自證。
    **首次跑就抓到 6 處真實漂移**（`regression-guard` 4 個子檔行數 37／30／28／16 →
-   43／37／32／28；`CONTRIBUTING.md` 2 處 mutant 總數 50 → 55）。
+   43／37／32／28；`CONTRIBUTING.md` 2 處 mutant 總數 50 → 55（合併 master 後為 56））。
 ③ `scripts/ci/mutants.tsv` 的 `RG-M4` 錨點由「含行數的整行」改為「不含行數的指標句」——
    原本行數一改，mutant 就會因「錨點找不到」而中止（本次真的踩到）。
 
