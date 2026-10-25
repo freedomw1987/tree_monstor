@@ -111,7 +111,7 @@ _probe_files() {
 
 @test "PNA-3: scanner extracts real test names and ignores heredoc bodies" {
   # 掃描器的自我測試（形狀一律用 printf 逐行寫——用 heredoc 寫會被 bats 前處理器改寫）。
-  local st="$BATS_TEST_TMPDIR/scanner-self-test.bats"
+  local st="$BATS_TEST_TMPDIR/scanner-self-test.fixture"
   {
     printf '%s\n' '#!/usr/bin/env bats'
     printf '%s\n' '@test "real one" { true; }'
@@ -171,68 +171,96 @@ _probe_files() {
   #   ① if / elif / while / until 的條件式（那是安全的條件語境）
   #   ② guard clause（|| continue / || break / && continue …）——那是「跳過」不是「斷言」
   #   ③ 位於 test body 的**最後一句**（bats 取最後一個命令的狀態 → 會失敗）
-  local file line n violations=0 shown=0
+  # 效能（2026-10-26）：原本呢支係「逐行 fork awk/sed」——repo 13,660 行 × 約 2.5 fork
+  # ≈ 35,000 次 process spawn → 單呢支探針要 94.6 秒（bats --timing 實測）。
+  # 改成 `probe_find_standalone_assertions`：**每個檔案一個 awk 行程**，檔案內容讀進
+  # 陣列後喺 awk 內完成全部判斷（heredoc 感知 / 剝註解 / guard clause / fail-fast 區塊
+  # / 最後一句）→ 45 個探針檔全部掃完 0.745 秒（快 127 倍），判斷結果逐檔一致。
+  # 判斷規則逐條對應原本的規格（見 tests/helpers/probe-scan.bash 內該函式的說明）。
+  local file n stripped violations=0 shown=0 scanned_files=0
   while IFS= read -r file; do
     [ -f "$file" ] || continue
-    # 用 heredoc 感知的掃描器：heredoc 內的示範碼**不是真的探針語句** → 不能當斷言掃
-    while IFS=$'\t' read -r n line; do
-      local stripped
-      stripped=$(printf '%s\n' "$line" | probe_strip_comment /dev/stdin | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      case "$stripped" in
-        \[\[*)
-          # guard clause → 安全
-          case "$stripped" in
-            *"|| continue"*|*"|| break"*|*"|| return"*|*"|| exit"*|*"&& continue"*|*"&& break"*) continue ;;
-          esac
-          # fail-fast 慣例：同行有 return 1，或本行的 `|| {` 區塊內有 return 1
-          # ⚠️ 區塊必須**屬於這個斷言**：不能往前看太多行，否則會誤把「下一個斷言的
-          #    fail-fast 區塊」當成自己的 → 漏報。所以以區塊結尾的 `}` 為界。
-          case "$stripped" in
-            *"return 1"*) continue ;;
-          esac
-          # fail-fast 的兩種排版都要認：
-          #   (a) [[ ... ]] || {            ← 同一行
-          #   (b) [[ ... ]] ||               ← || 在行尾、{ 換行
-          #       { echo ...; return 1; }
-          local opens_block=0
-          case "$stripped" in
-            *"|| {"*|*"&& {"*) opens_block=1 ;;
-            *"||"|*"&&")
-              local nxtline
-              nxtline=$(sed -n "$((n + 1))p" "$file" 2>/dev/null | sed 's/^[[:space:]]*//')
-              case "$nxtline" in
-                "{"*) opens_block=1 ;;
-              esac
-              ;;
-          esac
-          if [ "$opens_block" -eq 1 ]; then
-            if awk -v s="$n" '
-                  NR>s { t=$0; sub(/^[ \t]+/, "", t)
-                         if (t ~ /^}/) exit
-                         if (t ~ /return 1/) { found=1; exit } }
-                  END { exit(found ? 0 : 1) }' "$file"; then
-              continue
-            fi
-          fi
-          # 位於 test body 的最後一句 → 安全
-          local after
-          after=$(awk -v s="$n" 'NR>s && NF{print; exit}' "$file")
-          case "$after" in
-            \}*) continue ;;
-          esac
-          violations=$((violations + 1))
-          if [ "$shown" -lt 10 ]; then
-            echo "VIOLATION: $file:$n 獨立 [[ ]] 斷言沒有 fail-fast（失敗會被靜默忽略 → 假綠）：" >&2
-            echo "    $stripped" >&2
-            shown=$((shown + 1))
-          fi
-          ;;
-      esac
-    done < <(probe_code_lines "$file")
+    scanned_files=$((scanned_files + 1))
+    while IFS=$'\t' read -r n stripped; do
+      [ -n "$n" ] || continue
+      violations=$((violations + 1))
+      if [ "$shown" -lt 10 ]; then
+        echo "VIOLATION: $file:$n 獨立 [[ ]] 斷言沒有 fail-fast（失敗會被靜默忽略 → 假綠）：" >&2
+        echo "    $stripped" >&2
+        shown=$((shown + 1))
+      fi
+    done < <(probe_find_standalone_assertions "$file")
   done < <(_probe_files)
+  # 防空過（P1-1，2026-10-26）：**檔案列舉漂移**（glob 壞掉 → 掃到 0 個檔 → violations=0 → 報綠）
+  # → 用「掃到幾個」嘅下限擋（同 PNA-1/PNA-2 一致）。
+  # ⚠️ 注意分工：**呢個下限擋唔到掃描器本身壞掉**（awk 出錯時迴圈照跑、scanned_files 照 45、
+  #    violations=0 → 仍然綠）。擋 scanner 壞嘅係 **PNA-4b canary**（同一支函式對已知 fixture
+  #    斷言）——兩者缺一不可，唔可以互相代替。
+  [ "$scanned_files" -ge 40 ] || {
+    echo "FAIL: 只掃到 $scanned_files 個探針檔（<40）→ 掃描範圍可能壞了（防空過）" >&2
+    return 1
+  }
   [ "$violations" -eq 0 ] || {
     echo "FAIL: $violations 個獨立 [[ ]] 斷言沒有 fail-fast（bats 裡失敗不會中止 → 假綠）" >&2
     echo "修法：改成 [[ ... ]] || { echo 'FAIL: <file>:<line>: assertion failed' >&2; return 1; }" >&2
     return 1
   }
+}
+
+@test "PNA-4b: the standalone-assertion scanner bites" {
+  # 防空過（P1-1，2026-10-26）：PNA-4 本身**只會喺 repo 出現真違規時變紅**；
+  # 若 `probe_find_standalone_assertions` 壞掉（awk syntax error / 邏輯改壞），
+  # 它會冇輸出 → violations=0 → **報綠** → 守門靜默失效。
+  # repo 自己踩過同一個坑（docs/sop/handbook/changelog.md：TMO-074 嗰輪改 `while read`
+  # 漏改 `done < "$file"` → 整支守門空轉仍報綠，靠突變測試先捉到）→ **守門自己也必須
+  # 先證明自己會咬**。
+  #
+  # 這支用 `printf` 逐行寫 fixture（**唔可以用 heredoc**：bats 前處理器會把 heredoc 內的
+  # `@test` 行改寫成 `bats_test_function`，fixture 會壞）。
+  # Fixture 副檔名用 `.fixture`（唔用 `.bats`）：萬一 TMPDIR 指去 repo 內（例如 repo/tests/），
+  # PNA-4 自己嘅 glob（tests/*.bats）就會掃到呢個 fixture → 假紅。副檔名唔影響掃描器。
+  # Fixture 內容（行號如右）：
+  #   3  [[ ... ]] || { echo F >&2; return 1; }   → 安全（規則⑤ 同行 fail-fast）
+  #   5  [[ ... ]]                                  → **必然 violation**（裸斷言，後面唔係 }）
+  #   7  [[ ... ]]（heredoc 內容）                  → 安全（規則① heredoc 感知）
+  #   9  [[ ... ]] || continue                      → 安全（規則④ guard clause）
+  #  10  # [[ ... ]]（整行註解）                    → 安全（規則② 剝註解）
+  #  11  [[ ... ]] || ＋ 12 { ...; return 1; }      → 安全（規則⑥b 跨行 fail-fast 區塊）
+  #  14  [[ ... ]] ＋ 15 }（行首）                  → 安全（規則⑦ test body 最後一句）
+  # → 期望掃描器**恰好**報 1 個 violation，且行號 = 5。
+  # ⚠️ 新增嘅安全案例一律放喺行 5 **之後**，否則 violation 嘅行號會飄 → 期望字串要跟住改。
+  local st="$BATS_TEST_TMPDIR/pna4b-fixture.fixture"
+  {
+    printf '%s\n' '#!/usr/bin/env bats'
+    printf '%s\n' '@test "canary" {'
+    printf '%s\n' '  [[ "$a" == "b" ]] || { echo F >&2; return 1; }'
+    printf '%s\n' '  echo between'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '  cat > /dev/null <<'"'"'BODY'"'"''
+    printf '%s\n' '  [[ "$heredoc" == "x" ]]'
+    printf '%s\n' 'BODY'
+    printf '%s\n' '  [[ "$a" == "b" ]] || continue'
+    printf '%s\n' '  # [[ "$a" == "b" ]]'
+    printf '%s\n' '  [[ "$a" == "b" ]] ||'
+    printf '%s\n' '  { echo F >&2; return 1; }'
+    printf '%s\n' '  echo tail'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '}'
+  } > "$st"
+
+  local out expected
+  out=$(probe_find_standalone_assertions "$st")
+  # 期望輸出**恰好**係「行號 5 + 該行內容」——
+  # 一條斷言同時證明：① 恰好一個 violation ② 行號係 5（裸斷言）
+  # ③ 其餘 6 個安全案例（行 3/7/9/10/11/14）都**冇**被報。
+  # ⚠️ 用 printf 組期望值（printf 會把 \t 轉成真 tab）；唔可以直接寫 "5\t..." ——
+  #    bash 雙引號入面 \t 唔係跳脫字元（會留成反斜線+t），咁就永遠 match 唔到（死斷言）。
+  expected=$(printf '5\t%s' '[[ "$a" == "b" ]]')
+  [ "$out" = "$expected" ] || {
+    echo "FAIL: 掃描器對已知 fixture 的輸出唔等於期望值 → 掃描器壞咗（或規則被改壞）" >&2
+    echo "  期望: $(printf '%q' "$expected")" >&2
+    echo "  實際: $(printf '%q' "$out")" >&2
+    return 1
+  }
+  return 0
 }
