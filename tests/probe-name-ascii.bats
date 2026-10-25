@@ -171,6 +171,10 @@ _probe_files() {
   #   ① if / elif / while / until 的條件式（那是安全的條件語境）
   #   ② guard clause（|| continue / || break / && continue …）——那是「跳過」不是「斷言」
   #   ③ 位於 test body 的**最後一句**（bats 取最後一個命令的狀態 → 會失敗）
+  #      ——判準三步：①下一個非空行若以**行首** `}` 開頭 → 豁免（與原判準逐字一致）
+  #        ②否則若係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，直到遇到行首 `}` → 豁免
+  #        ③一旦遇到其他 code → 唔豁免
+  #      含「內層 `{ ... }` 區塊收尾」嗰種情況（TMO-078 語意修正，見 helper 註解）
   # 效能（2026-10-26）：原本呢支係「逐行 fork awk/sed」——repo 13,660 行 × 約 2.5 fork
   # ≈ 35,000 次 process spawn → 單呢支探針要 94.6 秒（bats --timing 實測）。
   # 改成 `probe_find_standalone_assertions`：**每個檔案一個 awk 行程**，檔案內容讀進
@@ -258,6 +262,58 @@ _probe_files() {
   expected=$(printf '5\t%s' '[[ "$a" == "b" ]]')
   [ "$out" = "$expected" ] || {
     echo "FAIL: 掃描器對已知 fixture 的輸出唔等於期望值 → 掃描器壞咗（或規則被改壞）" >&2
+    echo "  期望: $(printf '%q' "$expected")" >&2
+    echo "  實際: $(printf '%q' "$out")" >&2
+    return 1
+  }
+  return 0
+}
+
+@test "PNA-4c: the inner-block last-statement rule" {
+  # TMO-078：規則⑦ 原本只睇「**下一個**非空行係行首 `}`」→ 內層 `{ ... }` 區塊嘅
+  # 最後一句會被誤判成 violation（**latent 假紅** —— 該斷言其實係 test body 嘅
+  # 最後一個命令，bats 會攞到佢嘅狀態 → 其實安全）。
+  #
+  # 新判準三步：① **下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準逐字一致）
+  # ② 否則若佢係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，直到遇到行首 `}` → 豁免
+  # ③ 一旦遇到其他 code → 唔豁免（照報 violation）。
+  # → 係舊判準嘅**超集** → 舊判準豁免嘅全部照樣豁免，**唔可能新增 violation**。
+  #
+  # 呢支用兩個案例**同時**鎖住兩個方向：
+  #   案例 A（行 4）：內層區塊收尾之後**仲有其他 code** → 必須**照報**（真違規，
+  #                   唔可以因為「下一行係 `}`」就放過 → 防止條件放寬）
+  #   案例 B（行 10）：內層區塊**就係** test body 嘅最後一個命令 → 必須**唔報**（假紅修正）
+  local st="$BATS_TEST_TMPDIR/pna4c-fixture.fixture"
+  {
+    printf '%s\n' '#!/usr/bin/env bats'
+    printf '%s\n' '@test "case A: inner block then more code" {'
+    printf '%s\n' '  {'
+    printf '%s\n' '    [[ "$a" == "b" ]]'
+    printf '%s\n' '  }'
+    printf '%s\n' '  echo after'
+    printf '%s\n' '}'
+    printf '%s\n' '@test "case B: inner block is the last command" {'
+    printf '%s\n' '  {'
+    printf '%s\n' '    [[ "$a" == "b" ]]'
+    printf '%s\n' '  }'
+    printf '%s\n' '}'
+    printf '%s\n' '@test "case C: closing brace with trailing comment" {'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '} # end of test'
+    printf '%s\n' '@test "case D: closing brace with semicolon" {'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '};'
+  } > "$st"
+
+  local out expected
+  out=$(probe_find_standalone_assertions "$st")
+  # 期望：**恰好**一個 violation，行號 = 4（案例 A）。
+  # 案例 B（行 10）／C（行 14）／D（行 18）**唔應該**被報 →
+  # 若新判準錯判成「豁免案例 A」就會變成空輸出 → 紅；
+  # 若錯判成「把案例 B/C/D 當違規」就會變成多行 → 亦紅。
+  expected=$(printf '4\t%s' '[[ "$a" == "b" ]]')
+  [ "$out" = "$expected" ] || {
+    echo "FAIL: 規則⑦ 嘅輸出唔等於期望值（案例 A 行 4 應報、案例 B 行 10 應唔報）" >&2
     echo "  期望: $(printf '%q' "$expected")" >&2
     echo "  實際: $(printf '%q' "$out")" >&2
     return 1

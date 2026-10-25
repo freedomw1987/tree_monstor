@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 # tests/helpers/probe-scan.bash
 #
-# 掃描 .bats 檔裡「bats 真的會當成 @test 的宣告」——**共 5 支**：
-#   - probe_declared_names <file>：逐行印出每個 @test 宣告的**測試名稱**      ← 有呼叫者
-#   - probe_declared_count <file>：印出宣告數                              ← 有呼叫者
-#   - probe_strip_comment <file>：印出剝掉行尾註解後的每一行                ← **目前冇呼叫點**
-#   - probe_code_lines <file>：印出「不在 heredoc 內」嘅行號+內容            ← **目前冇呼叫點**
-#   - probe_find_standalone_assertions <file>：印出「無 fail-fast 嘅獨立 [[ ]] 斷言」← 有呼叫者
+# 掃描 .bats 檔裡「bats 真的會當成 @test 的宣告」——**共 3 支**：
+#   - probe_declared_names <file>：逐行印出每個 @test 宣告的**測試名稱**
+#   - probe_declared_count <file>：印出宣告數
+#   - probe_find_standalone_assertions <file>：印出「無 fail-fast 嘅獨立 [[ ]] 斷言」
 #
-# ⚠️ `probe_strip_comment` 同 `probe_code_lines` 自 PNA-4 改用單 awk 行程後**冇咗呼叫點**
-#    （其邏輯已複製入 `probe_find_standalone_assertions` 內）。保留佢哋係為咗唔擴大 diff，
-#    但**唔再係 PNA-4 嘅權威實作**；將來要改 heredoc 偵測或剝註解邏輯，**改新函式嗰份**。
-#    清死碼屬另一輪（**目前未開票**；見 docs/backlog.md TMO-078），唔喺效能改動內做。
+# TMO-078：原本仲有 `probe_strip_comment`（剝註解）同 `probe_code_lines`（heredoc 感知
+# 行號）兩支——PNA-4 改用單 awk 行程後佢哋**冇咗呼叫點**（邏輯已複製入
+# `probe_find_standalone_assertions` 內）→ 已刪，避免「兩份實作、遲早漂移」。
 #
 # 為什麼需要這支（不只是 grep @test）：
 #   bats 前處理器會把 heredoc 內的 `@test` 行改寫成 `bats_test_function ...`
@@ -27,33 +24,6 @@
 #   （`bats: unknown test name` → "Executed N instead of expected M" → rc=1）。
 #   但 `bats --count` **仍把它算進去** → 光比數量抓不到，必須看**名稱本身**。
 
-# 去掉行尾註解（**引號感知**）。
-# ⚠️ **目前冇呼叫點**（PNA-4 改用單 awk 行程後，其剝註解邏輯已複製入
-#    `probe_find_standalone_assertions` 內）。保留作參考；改邏輯要兩邊同步。
-# 為什麼不能用 `sed 's/#.*$//'`：字串裡的 '#' 會被誤當成註解起點——
-# 例如 `[[ "$output" != *"# skip"* ]] || {` 會被砍成 `[[ "$output" != *"`。
-# shell 的規則是：'#' 只有在**詞首**（行首或前一個字元是空白）且**不在引號內**才是註解。
-probe_strip_comment() {
-  awk '
-    function strip(line,   i, c, nch, in_d, in_s, out, sq) {
-      sq = sprintf("%c", 39)   # 單引號（用字元碼避開外層 shell 的引號衝突）
-      nch = length(line); out = ""; in_d = 0; in_s = 0
-      for (i = 1; i <= nch; i++) {
-        c = substr(line, i, 1)
-        if (c == "\\" && (in_d || in_s)) { out = out c substr(line, i + 1, 1); i++; continue }
-        if (c == "\"" && !in_s) { in_d = !in_d; out = out c; continue }
-        if (c == sq && !in_d) { in_s = !in_s; out = out c; continue }
-        if (c == "#" && !in_d && !in_s) {
-          if (i == 1 || substr(line, i - 1, 1) ~ /[ \t]/) return out
-          out = out c; continue
-        }
-        out = out c
-      }
-      return out
-    }
-    { print strip($0) }
-  ' "$1"
-}
 
 # 印出每個 @test 宣告的名稱（每行一個）。
 probe_declared_names() {
@@ -111,45 +81,6 @@ probe_declared_count() {
   probe_declared_names "$1" | wc -l | tr -d ' '
 }
 
-# 印出「不在 heredoc 內」的行號（每行一個行號 + 該行內容，用 TAB 分隔）。
-# ⚠️ **目前冇呼叫點**（PNA-4 改用單 awk 行程後，其 heredoc 感知邏輯已複製入
-#    `probe_find_standalone_assertions` 內）。保留作參考；改邏輯要兩邊同步。
-# 為什麼需要：掃描「某種斷言寫法」的守門（例如 PNA-4）時，heredoc 內的示範碼
-# **不是真的探針語句**——把它當成真斷言會假紅。ENV-EQ-9 的 census 已經有同樣的考量。
-probe_code_lines() {
-  awk '
-    BEGIN { skip = 0; q = "" }
-    {
-      if (skip) { if ($0 == tag) skip = 0; next }
-      nch = length($0); i = 1; found = 0; pos = 0
-      while (i <= nch) {
-        c = substr($0, i, 1)
-        if (q == "") {
-          if (c == "'"'"'") { q = "'"'"'"; i++; continue }
-          if (c == "\"") { q = "\""; i++; continue }
-          if (c == "\\") { i += 2; continue }
-          if (c == "<" && substr($0, i + 1, 1) == "<") { found = 1; pos = i; break }
-        } else if (q == "'"'"'") {
-          if (c == "'"'"'") q = ""
-        } else {
-          if (c == "\\") { i += 2; continue }
-          if (c == "\"") q = ""
-        }
-        i++
-      }
-      if (found) {
-        rest = substr($0, pos)
-        if (match(rest, /^<<-?[[:space:]]*["\047]?[A-Za-z_][A-Za-z0-9_-]*["\047]?([[:space:]]*$|[[:space:]]+[0-9]*[>&|])/)) {
-          t = substr(rest, RSTART, RLENGTH)
-          sub(/[[:space:]]*[0-9]*[>&|].*$/, "", t)
-          gsub(/<<-?[[:space:]]*/, "", t); gsub(/["\047]/, "", t)
-          tag = t; skip = 1
-        }
-      }
-      print NR "\t" $0
-    }
-  ' "$1"
-}
 
 # ─── PNA-4 掃描器：獨立的 [[ ]] 斷言有冇 fail-fast ─────────────────────
 #
@@ -169,9 +100,9 @@ probe_code_lines() {
 #     整個 `bats tests/ skills/` 總時間**唔寫死**（受機器負載影響，本機量到 2m42s–3m23s 幾個值）。
 #
 # 判斷規則與原本逐行版的**逐條對照**（左 = 原本 shell `case` glob，右 = 現版 awk regex）：
-#   ① 只看不在 heredoc 內的行        ← 複製自 probe_code_lines（⚠️ 唔係「沿用」：兩份實作，
-#                                        改其中一份**必須**同步另一份）
-#   ② 剝掉行尾註解（引號感知）        ← 複製自 probe_strip_comment 的 strip()（同上，兩份）
+#   ① 只看不在 heredoc 內的行        ← 邏輯源自舊 `probe_code_lines`（TMO-078 已刪；
+#                                        而家**淨得呢一份實作**，唔存在漂移風險）
+#   ② 剝掉行尾註解（引號感知）        ← 邏輯源自舊 `probe_strip_comment`（同上，已刪）
 #   ③ `[[ ... ]]` 開頭才算獨立斷言    ← case "$s" in \[\[*   ≡   s !~ /^\[\[/
 #   ④ guard clause → 安全             ← *"|| continue"* 等（包含）  ≡  /\|\| continue/ 等（包含）
 #   ⑤ 同行有 `return 1` → 安全        ← *"return 1"*（包含）          ≡  /return 1/（包含）
@@ -179,19 +110,38 @@ probe_code_lines() {
 #      `||` / `&&` **行尾** + 下一行開頭 `{` → 開區塊
 #                                   ← *"||"* / *"&&"*（**行尾錨定**）≡ /\|\|$/ / /&&$/
 #      區塊內（以 `}` 為界）有 `return 1` → 安全
-#   ⑦ 之後第一個非空行**以 `}` 開頭（行首，冇前導空白）** → 安全
-#                                   ← after=$(awk 'NR>s && NF{print; exit}')（**原行，未剝空白**）
+#   ⑦ 斷言係 test body 嘅最後一個命令 → 安全：
+#      ① **下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準逐字一致）
+#      ② 否則若佢係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，
+#         直到遇到行首 `}`（= test body 收尾）→ 豁免
+#      ③ 一旦遇到其他 code → 唔豁免（照報 violation）
+#                                   ← 原版：after=$(awk 'NR>s && NF{print; exit}')（**原行，未剝空白**）
 #                                     + case "$after" in \}*  ≡  after ~ /^\}/
+#                                     （**TMO-078 語意修正**：見下面「規則⑦ 嘅語意修正」段）
 #   ⑧ 以上都不中 → 記一個 violation
 #
-# 等價範圍：**在已驗證嘅輸入集合上**與原本逐行版逐條等價
-#   - 45 個真實探針檔：逐行 diff 0 差異（violations 0 = 0）
-#   - fuzz 200 檔（隨機樣板）：0 差異
-#   - fuzz 1000 檔（多 seed + 未閉合引號 / 各種 heredoc 變體）：0 差異（1866 = 1866）
-#   - 10 個針對性 edge case ＋ PNA-4b 嘅 7 條規則案例：一致
-# ⚠️ 已知刻意差異（唯一一處）：heredoc 內容 strip 一次過做（純效能，唔影響判定結果）。
-# ⚠️ 已知**未**等價嘅方面（唔喺本次範圍，見 PNA-4 規格例外③）：縮排嘅 `}` 唔算
-#    「test body 最後一句」——呢個係**原版既有行為**，刻意保留（改成認縮排 = 條件放寬 = 假綠）。
+# 等價範圍（TMO-078 規則⑦ 修正**之後**）：
+#   - 45 個真實探針檔：舊規則 vs 新規則 → **新增 violation = 0**（repo 本身 0 = 0）
+#   - fuzz 200 檔 + 1000 檔（多 seed + 未閉合引號 / 各種 heredoc 變體）：
+#     舊 2222 / 新 2213 → **新增 = 0**，少報嘅 9 個全部屬「內層區塊收尾」family
+#   - 9 個針對性 edge case（`}` + 行尾註解 / `} else {` / `};` / 雙 `}` / 縮排 body `}` 等）：一致
+#   - 10 個 edge case ＋ PNA-4b 嘅 7 條規則案例 ＋ PNA-4c 嘅 4 個案例：一致
+# ⚠️ **已知刻意差異（兩處，唔係「唯一一處」）**：
+#   ① heredoc 內容 strip 一次過做（純效能，唔影響判定結果）
+#   ② **規則⑦ 刻意放寬**：原本「下一個非空行係行首 `}`」→ 現在多豁免「內層 `{ ... }`
+#      區塊收尾」呢一類（原本會被誤判成 violation = latent 假紅）。
+#      → 方向係**少報**（豁免更多），**唔會**新增 violation → 守門唔會變寬鬆到放過真違規。
+# ⚠️ **規則⑦ 嘅語意修正（TMO-078，2026-10-26）**：
+#    原版規則⑦：「**下一個**非空行係行首 `}`」→ 內層 `{ ... }` 區塊嘅最後一句會被
+#    誤判成 violation（**latent 假紅** —— 該斷言其實係 test body 嘅最後一個命令，
+#    bats 會攞到佢嘅狀態 → 其實安全）。
+#    新判準三步：① **下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準逐字一致）
+#    ② 否則若佢係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，直到遇到行首 `}` → 豁免
+#    ③ 一旦遇到其他 code → 唔豁免（照報 violation）。
+#    → 新判準係**舊判準嘅超集**（舊判準豁免嘅全部照樣豁免）→ **唔可能新增 violation**。
+#    ⚠️ **唔可以用「剝前導空白就算數」嘅 naive 修法** —— 咁樣會令
+#       「內層區塊收尾之後仲有其他 code」嘅**真違規**變成 pass = 條件放寬 = 假綠。
+#       新判準要求「中間全部都係純收尾行」正正就係為咗擋住呢個方向。
 #
 # ⚠️ 2026-10-26 修正：初版用 awk regex 直譯 shell 的 `case` glob，語意**唔等價**，
 #    fuzz（200 個隨機樣板）捉到 31 個檔案唔一致，而且**方向係漏報（假綠）**。
@@ -291,12 +241,31 @@ probe_find_standalone_assertions() {
           }
           if (found) continue
         }
-        # ⑦ 之後第一個非空行以 } 開頭 → 位於 test body 最後一句 → 安全
-        after = ""
+        # ⑦ 斷言係 test body 嘅最後一個命令 → 安全
+        #    判準（2026-10-26 TMO-078，經 V03 二審修正）：
+        #      ① **下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準**完全一致**）
+        #      ② 否則若佢係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，
+        #         直到遇到行首 `}`（= test body 收尾）→ 豁免
+        #      ③ 一旦遇到其他 code → 唔豁免（照報 violation）
+        #
+        #    ⚠️ **超集性質（關鍵不變量）**：①令「下一個非空行係行首 `}`」呢個判斷
+        #       **同原判準逐字一致** → 原判準豁免嘅全部照樣豁免 → **唔可能新增 violation**。
+        #       （第一版寫成「t 必須恰好等於 `}`」→ `} # end of test` 會被誤報 = 假紅迴歸；
+        #        V03 二審 P1-1 捉到，已修正。）
+        #    ⚠️ 已知邊界（非本輪範圍，記於 backlog TMO-079）：行首 `}` 之後如果仲有 code
+        #       （例如 `} || {`）會被豁免 —— 但 `}` 喺行首喺 .bats 入面**必然**係關 test body，
+        #       `} || {` 喺 function 定義位置係**語法錯誤** → 實際唔可能出現。
+        found_body_close = 0
         for (j = i + 1; j <= n; j++) {
-          if (L[j] ~ /[^ \t]/) { after = L[j]; break }
+          if (L[j] ~ /[^ \t]/) {
+            # ① 行首 `}` → 同原判準一致，直接收尾（豁免）
+            if (L[j] ~ /^\}/) { found_body_close = 1; break }
+            # ② 縮排嘅收尾行 → 繼續向後行
+            t = strip(L[j]); sub(/^[[:space:]]*/, "", t); sub(/[[:space:]]*$/, "", t)
+            if (t != "}" && t != "};") break      # ③ 其他 code → 唔豁免
+          }
         }
-        if (after ~ /^\}/) continue
+        if (found_body_close) continue
         # ⑧ violation
         print i "\t" s
       }

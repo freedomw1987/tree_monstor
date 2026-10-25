@@ -7,6 +7,40 @@
 > ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
 > 與舊 `AGENTS.md` §2 標題的 **SOP 版本號**（已於 v2.14 隨 §2 移除）不是同一個序號 —— 兩者不可互相比較大小。
 
+## v2.16 — 2026-10-26
+
+**本版異動**：TMO-078 兩項技術債清埋（PNA-4 規則⑦ 語意修正 ＋ 清死碼），
+另加 Gate 3/4 嘅 `journey_gen` 並行化 ＋ `JEV_MODEL` 可配置 ＋ API key 來源統一。
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | ---- |
+| 效能 | `skills/regression-guard/PoC/journey_generator.py` | 每條 AC 嘅 complexity + action_plan 兩個 Jev call 原本**完全串行**（4 條 AC = 8 個 round trip，實測 US-M63 合計 **43.4 秒**，單個 call 慢到 14 秒）。但 8 個 call **互相獨立** → 改成 `ThreadPoolExecutor` 並行 → 總時間由「各個 latency 加埋」變「最慢嗰個」。實測（模擬 3s/call）：**24.0s → 3.0s（8.0x）**。⚠️ **刻意唔改 payload 形狀**（model/state/questions 逐字不變）→ `_cache_key()` 出嚟嘅 key 不變 → 既有 cache 仍然命中（離線可驗證）；唔用「一個 request 問兩條題」嘅 batch 方案（嗰個會改 payload → 成批 cache miss） |
+| 效能 | `skills/regression-guard/PoC/jev_oracle.py` `_save_cache` | 改成**原子寫**（寫 `.tmp` 再 `os.replace`）——並行後讀取方可能喺 write_text 寫到一半時讀到 → JSON 解析失敗 |
+| 可配置 | `jev_oracle.resolve_model()` ＋ `JEV_MODEL` env | OpenRouter 嘅模型目錄會改（`typesafe/jev-1.13` 已唔喺 catalog，只剩 `typesafe/jev-router`），而**改 code 唔係好方法** → 加 `JEV_MODEL` env override。⚠️ 未設 env 時必須**完全等同**舊值（model 字串係 cache key 嘅一部分 → 改咗就成批 cache miss） |
+| 探針 | `tests/helpers/probe-scan.bash` 規則⑦（TMO-078） | 原判準只睇「**下一個**非空行係行首 `}`」→ 內層 `{ ... }` 區塊嘅最後一句會被誤判成 violation（**latent 假紅**；該斷言其實係 test body 嘅最後一個命令 → bats 攞到佢嘅狀態 → 安全）。新判準三步：①**下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準逐字一致）②否則若係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，直到遇到行首 `}` → 豁免 ③一旦遇到其他 code → 唔豁免。**新判準係舊判準嘅超集** → 舊判準豁免嘅全部照樣豁免 → **唔可能新增 violation**。⚠️ 唔可以用「剝前導空白就算數」嘅 naive 修法（會令真違規變 pass = 條件放寬 = 假綠） |
+| 探針 | `tests/probe-name-ascii.bats` 新增 `PNA-4c` | canary 鎖住新規則⑦嘅**四個方向**：案例 A（內層區塊收尾之後仲有 code → 必須**照報**）＋ 案例 B（內層區塊就係 test body 最後一個命令 → 必須**唔報**）＋ 案例 C（行首 `}` + 行尾註解 → 必須**唔報**）＋ 案例 D（`};` → 必須**唔報**） |
+| 探針 | `scripts/ci/mutants.tsv` 新增 `PNA-M2` | 突變規則⑦嘅 walk（`break` → `continue`）→ 必須令 `PNA-4c` 轉紅。全表 **57 支全部死亡** |
+| 清理 | `tests/helpers/probe-scan.bash` | 刪死碼 `probe_strip_comment`／`probe_code_lines`（PNA-4 改用單 awk 行程後已無呼叫點；保留兩份實作 = 遲早漂移）。helper 由 5 支減到 **3 支** |
+| 文件 | `skills/regression-guard/PoC/.env.example` ＋ `README.md` ＋ `jev_oracle._load_api_key` docstring | API key 來源統一：本機**正規來源係 `~/.zshrc`** 嘅 `export OPENROUTER_API_KEY=...`（→ 環境變數），repo 不版控任何 key；兩個 `.env` 檔只係**後備**。⚠️ `~/.zshrc` 只喺**互動** shell 讀 → 非互動 shell（`zsh -c`、CI、IDE task runner）請改用 `~/.zshenv`（zsh 唯一全 shell 都讀嘅檔）；CI 唔讀本機檔 → 用 `secrets.OPENROUTER_API_KEY` |
+
+**等價性證據**：45 個真實探針檔 舊規則 vs 新規則 → **0 新增 violation**（repo 本身 0 = 0）；
+fuzz 1200 檔 → 舊 2217 / 新 2210，**新增 = 0**，少報 7 個全部屬「內層區塊收尾」family。
+
+> 註：`M7-flaky` 經量測後**唔需要改**——因為 cache 命中，額外 2 次 run 各只係 ~11ms，
+> 成本 ×3 只喺 cache 冷時出現。而 Gate 4（dev-checker-loop）嘅慢，主因係每輪迭代要跑
+> `bats tests/` 全套 → 已經由 PNA-4 效能修正（380s → 160s）解決。
+
+### TMO-078 的 V03 二審結論（Reviewer）
+
+| 輪次 | Verdict | 摘要與處置 |
+|------|---------|------------|
+| 第 1 輪 | ⛔ **BLOCK**（0 P0 / 3 P1 / 6 P2 / 3 P3）| **P1-1（真·假紅迴歸）**：規則⑦ 新判準寫成「`t` 必須恰好等於 `}` 或 `};`」→ `} # end of test`（行首 `}` + 行尾註解）會被誤報；舊判準對同一行係**豁免** → **新判準唔係舊判準嘅超集**，違反三處寫住嘅「0 新增 violation」不變量。**已修**：改成 ①**先**判「行首 `}`」（與原判準逐字一致）②否則若係純收尾行 → 繼續向後行 ③遇其他 code → 唔豁免 → **超集性質恢復**。**P1-2（文件 ≠ 實作）**：三處寫「之後**所有**非空行都係純收尾行且**最後一個**係行首 `}`」，但實作 `break` 喺**第一個**行首 `}` 就停 → **已改字同實作一致**。**P1-3（backlog 結構壞）**：Reviewer 讀到嘅係 review 中途快照；當時 tree 已被**另一條平行工作線**（TMO-077）用 `git stash` + merge 改寫 → 現行樹經覆核**結構正常**（TMO-077／078 相鄰、現況行在表後、markdownlint 0 issues），**唔係本 diff 造成**。**P2**：①`mutant-must-die.bats` 註解未提 PNA-M2 → 已補 ②`.env.example` 自相矛盾（「所有 shell 都攞到」← 錯，`~/.zshrc` 只喺互動 shell 讀）→ 已改 ③v2.16 缺 Reviewer 紀錄 → 即本節 ④`PNA-4c` 未覆蓋 `}` + 行尾註解／`};` → 已加案例 C／D ⑤TMO-078 票文寫「brace-depth 追蹤」但實作係 forward-scan 代理 → 已改寫 + 殘餘邊界開 **TMO-079** ⑥`journey_generator.py` 未用嘅 `import os` → 已刪。**P3**：`except BaseException` → `Exception`（唔包 KeyboardInterrupt）；退避加 **jitter**（8 路並行易撞 429）；`_save_cache` 加 `finally` 清 `.tmp` 殘檔 |
+| 第 2 輪 | ⚠️ approve with notes（0 P0 / 1 P1 / 6 P2 / 3 P3）| **P1-1 確認已修**：Reviewer 手推 ①分支同原判準**逐字等價**（原 `after` 都係未剝空白嘅原行）②`NF` vs `[^ \t]` 等價（POSIX awk blank = space/tab；CRLF 一致）③「舊豁免 ⟹ 第一個非空行以 `}` 開頭 ⟹ 新版①必然命中」→ **無『舊豁免／新報 violation』情況**，**超集性質成立**。**P1-2 處置只做咗 2/5 處**——3 處仍寫舊語意（`probe-scan.bash:133`、`probe-name-ascii.bats:174`、`:275`；其中 `:275` 係 PNA-4c **自己嘅規格段**，但同檔案例 C 斷言「`} # end of test` 必須唔報」→ **同一檔內規格與斷言互相矛盾**）→ **已補**（三處改成 ①②③ 措辭）。**P1-3 經覆核唔成立**（Reviewer 讀到嘅係 review 中途快照；tree 已被另一條平行工作線用 `git stash` + merge 改寫；現行樹表格連續、TMO-077/078/079 相鄰、markdownlint 0 issues）。**P2**：②「等價範圍」段已被規則⑦ 放寬打破（仍寫『刻意差異唯一一處』）→ 已改（兩處）③README「前兩者係後備」→「**後兩者**」④`mutant-must-die.bats:38` 自相矛盾（「→57 支；再 +PNA-M1 → 56 支」）→ 已改 ⑤changelog 只寫案例 A+B，實際 A/B/C/D → 已改 ⑥TMO-079 殘餘邊界描述窄咗（漏咗「行首 `}` 亦可能係 `setup()`／`teardown()` 函數收尾」→ 更實際嘅假綠面）→ 已補。**P2-7 canary 方向缺口**：PNA-4c 欠「之後**搵唔到**行首 `}` → 必須照報」案例（若改成「行到 EOF 就豁免」，兩個 canary 都唔會紅）→ **改動探針須另走 V03** → 已開 **TMO-080**。**P3**：v2.15 仍寫「brace-depth 追蹤」→ 加指向 v2.16；`mutants.tsv` 檔頭未提 PNA-M2 → 已提；`journey_generator.py` 型別註解仍 `BaseException` → 已改 `Exception`。 |
+
+**超集性質驗證（修 P1-1 後）**：45 個真實探針檔 ＋ fuzz 1200 檔 ＋ 9 個針對樣板
+（`}` + 行尾註解／`} else {`／`};`／雙 `}`／縮排 body `}`／搵唔到行首 `}` 等）
+→ **新增 violation = 0**（舊 2222 / 新 2213，少報嘅 9 個全部屬「內層區塊收尾」family）。
+
 ## v2.15 — 2026-10-26
 
 **本版異動**：TMO-074 的 PNA-4 探針**效能修正**（掃描器重寫）＋ 補守門缺口。
@@ -19,7 +53,7 @@ fuzz 200 檔 + 1000 檔對照 0 差異，1866 = 1866 violations）。
 | 守門 | `tests/probe-name-ascii.bats` 新增 `PNA-4b` canary ＋ PNA-4 加 `scanned_files >= 40` | 第 2 輪二審 P1：新掃描器零 canary + PNA-4 零防空過下限 → 掃描器壞咗就**永久靜默綠**。canary 用 `printf` 寫 15 行 fixture（唔可以用 heredoc：bats 前處理器會改寫 `@test`），覆蓋規則 ① ② ④ ⑤ ⑥b ⑦ 七條；`scanned_files` 下限擋**檔案列舉漂移**，canary 擋**sc描描器壞掉**，兩者缺一不可 |
 | CI | `scripts/ci/mutants.tsv` 新增 `PNA-M1` | 令掃描器「永遠 skip」嘅突變 → 必須令 `PNA-4b` 轉紅；全表 **56 支全部死亡**（每支都有綠 baseline 對照） |
 | 計數 | `scripts/ci/mutants.tsv` 檔頭 ＋ `tests/mutant-must-die.bats` ＋ `CONTRIBUTING.md` | mutant 表＝46 支行為鎖 ＋ 10 支文件／資料契約鎖 ＝ 56 支；三處原本各寫各的（同一套 awk 指令兩個答案）→ 已統一。⚠️ `CONTRIBUTING.md` 嘅過期數字**改前已存在**，非本次引入 |
-| 記錄 | `docs/backlog.md` TMO-078 | 開票記錄 PNA-4 兩項技術債：縮排 `}` 嘅 latent 假紅（正解係 brace-depth 追蹤，屬語意變更 → 須另走 V03）＋ `probe_strip_comment`／`probe_code_lines` 死碼清理 |
+| 記錄 | `docs/backlog.md` TMO-078 | 開票記錄 PNA-4 兩項技術債：縮排 `}` 嘅 latent 假紅（屬語意變更 → 須另走 V03；⚠️ 當時寫「正解係 brace-depth 追蹤」，**最終實作係 forward-scan 代理**，見 v2.16 ＋ TMO-078 票文）＋ `probe_strip_comment`／`probe_code_lines` 死碼清理 |
 
 **教訓（值得留低）**：
 ① **shell `case` 嘅 glob（尾端錨定）≠ awk regex（任意位置）** —— fuzz 捉到初版 3 處唔等價，方向全部係**漏報（假綠）**。

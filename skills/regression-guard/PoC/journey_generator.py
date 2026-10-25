@@ -12,13 +12,17 @@ from __future__ import annotations
 
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 import httpx
 import yaml
 
-from jev_oracle import _load_api_key, _post_with_retry, OPENROUTER_URL, _cache_key, _save_cache, _load_cache
+from jev_oracle import (
+    _load_api_key, _post_with_retry, OPENROUTER_URL,
+    _cache_key, _save_cache, _load_cache, resolve_model,
+)
 
 THIS_DIR = Path(__file__).parent
 JOURNEYS_DIR = THIS_DIR / "journeys"
@@ -144,13 +148,55 @@ def _ask_jev_single_question(state: str, questions: dict, model: str, ctx_label:
     return payload
 
 
-def generate_journey(story, *, model: str = "typesafe/jev-1.13") -> Journey:
+def generate_journey(story, *, model: str | None = None,
+                     max_workers: int = 8) -> Journey:
     """
     主入口：對一個 ParsedStory 跑 Jev 兩階段 → 產 Journey。
+
+    **並行化（2026-10-26）**：原本每條 AC 嘅 complexity + action_plan 兩個 call
+    **完全串行**跑 → 4 條 AC = 8 個 round trip（實測 US-M63：8 個 call 合計 **43.4 秒**，
+    單個 call 慢到 14 秒）。但呢 8 個 call **互相獨立**（每個只依賴自己嗰條 AC 嘅
+    Given/When/Then）→ 可以全部並行 → 總時間由「各個 latency 加埋」變成「最慢嗰個」。
+
+    ⚠️ **唔改 payload 形狀** —— model / state / questions 三個欄位同改前逐字一樣
+       → `_cache_key()` 出嚟嘅 key 唔變 → 既有 cache 仍然命中（離線可驗證）。
+       （唔好用「一個 request 問兩條題」嘅 batch 方案：嗰個會改 payload → 成批 cache miss。）
+
+    `meta["calls"]` 嘅**順序保持不變**（AC 順序，每條 AC 先 complexity 後 action_plan），
+    即係並行化唔影響 journey YAML 嘅可重現性。
     """
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    model = resolve_model(model)
 
+    # ── 1. 先列齊所有 call 規格（呢個順序 = 輸出順序）──
+    specs: list[tuple] = []
+    for ac in story.acs:
+        state = _state_for_ac(story.story_id, ac)
+        specs.append((ac, "complexity", state, COMPLEXITY_QUESTION, f"complexity/{ac.ac_id}"))
+        specs.append((ac, "action_plan", state, ACTION_PLAN_QUESTION, f"action/{ac.ac_id}"))
+
+    # ── 2. 並行跑（每個 call 獨立；唯一共享資源係 cache 目录，唔同 key = 唔同檔）──
+    results: dict[tuple[str, str], dict] = {}
+    errors: list[tuple[str, Exception]] = []
+    if specs:
+        with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(specs)))) as ex:
+            futures = {
+                ex.submit(_ask_jev_single_question, state, q, model, label): (ac.ac_id, phase)
+                for ac, phase, state, q, label in specs
+            }
+            for fut in as_completed(futures):
+                key = futures[fut]
+                try:
+                    results[key] = fut.result()
+                except Exception as e:   # noqa: BLE001 — 收集全部錯誤先報；
+                                          # ⚠️ 唔用 BaseException（會包埋 KeyboardInterrupt）
+                    errors.append((f"{key[0]}/{key[1]}", e))
+    if errors:
+        detail = "; ".join(f"{k}: {e}" for k, e in errors)
+        raise RuntimeError(f"Jev call 失敗（{len(errors)}/{len(specs)} 個）：{detail}")
+
+    # ── 3. 依原順序組出 steps + meta ──
     steps: list[Step] = []
     meta = {
         "story_id": story.story_id,
@@ -160,9 +206,8 @@ def generate_journey(story, *, model: str = "typesafe/jev-1.13") -> Journey:
     }
 
     for ac in story.acs:
-        state = _state_for_ac(story.story_id, ac)
         # Call 1: complexity
-        c1 = _ask_jev_single_question(state, COMPLEXITY_QUESTION, model, f"complexity/{ac.ac_id}")
+        c1 = results[(ac.ac_id, "complexity")]
         meta["calls"].append({
             "ac_id": ac.ac_id, "phase": "complexity",
             "latency_ms": c1.get("latency_ms", 0),
@@ -173,7 +218,7 @@ def generate_journey(story, *, model: str = "typesafe/jev-1.13") -> Journey:
         complexity = max(0, min(3, complexity))
 
         # Call 2: action plan
-        c2 = _ask_jev_single_question(state, ACTION_PLAN_QUESTION, model, f"action/{ac.ac_id}")
+        c2 = results[(ac.ac_id, "action_plan")]
         meta["calls"].append({
             "ac_id": ac.ac_id, "phase": "action_plan",
             "latency_ms": c2.get("latency_ms", 0),
