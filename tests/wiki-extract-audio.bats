@@ -88,7 +88,8 @@ teardown() {
 @test "AC-A6: --help" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage" ]]
+  [[ "$output" =~ "Usage" ]] || {
+    echo 'FAIL: tests/wiki-extract-audio.bats:91: assertion failed' >&2; return 1; }
 }
 
 # === AC-A7: manifest.json 產出 ===
@@ -105,13 +106,13 @@ teardown() {
 }
 
 # === AC-A8: 沒給 --input ===
-@test "AC-A8: missing --input → exit 1" {
+@test "AC-A8: missing --input -> exit 1" {
   run "$TOOL" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
 
 # === AC-A9: 不支援的格式 ===
-@test "AC-A9: input dir → manifest aggregation" {
+@test "AC-A9: input dir -> manifest aggregation" {
   echo "fake" > "$WORK/fake.xyz"
   run "$TOOL" --input "$WORK/fake.xyz" --output-dir "$WORK/out"
   # 接受 0 或非 0，不要 crash

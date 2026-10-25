@@ -106,18 +106,22 @@ shrink_images() {
   [ "$status" -eq 0 ]
 }
 
-@test "PPTX-SLIM-IMG-1: --list 列得出規格，且不會建輸出目錄" {
+@test "PPTX-SLIM-IMG-1: --list prints the specs and creates no output directory" {
   run python3 "$SCRIPTS/pptx-shrink-images.py" --src "$W/deck.pptx" --out "$W/enc-list" --list
   [ "$status" -eq 0 ]
-  [[ "$output" == *"1200x900"* ]]
-  [[ "$output" == *"640x480"* ]]
+  [[ "$output" == *"1200x900"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:112: assertion failed' >&2; return 1; }
+  [[ "$output" == *"640x480"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:114: assertion failed' >&2; return 1; }
   [ ! -d "$W/enc-list" ]
 }
 
-@test "PPTX-SLIM-IMG-2: 8-bit PNG 無損重壓 → 變小且像素逐點相同" {
+@test "PPTX-SLIM-IMG-2: lossless recompress of an 8-bit PNG shrinks it with identical pixels" {
   shrink_images "$W/enc-ls" --mode lossless
-  [[ "$output" == *"image1.png"* ]]
-  [[ "$output" == *"ENCODED"* ]]
+  [[ "$output" == *"image1.png"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:121: assertion failed' >&2; return 1; }
+  [[ "$output" == *"ENCODED"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:123: assertion failed' >&2; return 1; }
   [ "$(file_size "$W/enc-ls/image1.png")" -lt "$(file_size "$W/png8.png")" ]
   pixels_same "$W/png8.png" "$W/enc-ls/image1.png"
   # 對照組：來源真的帶 ICC（不然這條會恒真），輸出必須也帶著
@@ -125,21 +129,23 @@ shrink_images() {
   [ "$(has_icc "$W/enc-ls/image1.png")" = "yes" ]
 }
 
-@test "PPTX-SLIM-IMG-3: 16-bit PNG 被護欄擋下（明示 SKIP，且原檔照抄）" {
+@test "PPTX-SLIM-IMG-3: a 16-bit PNG is skipped by the guard and copied verbatim" {
   shrink_images "$W/enc-16" --mode lossless
-  [[ "$output" == *"16-bit"* ]]
+  [[ "$output" == *"16-bit"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:134: assertion failed' >&2; return 1; }
   cmp -s "$W/png16.png" "$W/enc-16/image2.png" || {
     echo "FAIL: 16-bit PNG 被動過（位深掉了）" >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-4: lossless 對 JPEG 明示 SKIP（無損不可能，不偷偷有損）" {
+@test "PPTX-SLIM-IMG-4: lossless on JPEG is skipped explicitly (never silently lossy)" {
   shrink_images "$W/enc-jpg" --mode lossless
-  [[ "$output" == *"JPEG 無損重編不可能"* ]]
+  [[ "$output" == *"JPEG 無損重編不可能"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:142: assertion failed' >&2; return 1; }
   cmp -s "$W/photo.jpg" "$W/enc-jpg/image3.jpg" || {
     echo "FAIL: JPEG 在 lossless 模式被有損重編" >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-5: TIFF 無損改 deflate → 省 5 成以上且像素相同" {
+@test "PPTX-SLIM-IMG-5: lossless TIFF to deflate saves over 50% with identical pixels" {
   shrink_images "$W/enc-tif" --mode lossless
   local before after
   before=$(file_size "$W/scan.tif")
@@ -149,7 +155,7 @@ shrink_images() {
   pixels_same "$W/scan.tif" "$W/enc-tif/image4.tiff"
 }
 
-@test "PPTX-SLIM-IMG-6: lossy 的 --image-max-edge 是硬上限（真的縮圖）" {
+@test "PPTX-SLIM-IMG-6: lossy --image-max-edge is a hard cap (the image is really resized)" {
   shrink_images "$W/enc-edge" --mode lossy --image-max-edge 800 --image-quality 80
   # 只對「真的重編」的圖片要求上限：KEPT/SKIP 是刻意保留原檔，尺寸本來就可能超標。
   # （實測踩過：testsrc 的 1200x900 PNG 縮到 800x600 反而沒比較小，那張被 KEPT，
@@ -166,7 +172,7 @@ shrink_images() {
   [ "$(long_edge "$W/enc-edge/image4.tiff")" -eq 800 ]
 }
 
-@test "PPTX-SLIM-IMG-7: lossy 不換容器（檔名與魔術數字都不變）" {
+@test "PPTX-SLIM-IMG-7: lossy keeps the container (filename and magic bytes unchanged)" {
   shrink_images "$W/enc-fmt" --mode lossy --image-max-edge 400
   # 4 張原圖都要在輸出目錄（檔名、副檔名一字不改）；影格的 poster 圖也會被處理，故不鎖總數
   local name
@@ -188,20 +194,23 @@ if bad:
 PY
 }
 
-@test "PPTX-SLIM-IMG-8: --only 精確命中；打錯詞要出聲（WARN）" {
+@test "PPTX-SLIM-IMG-8: --only matches exactly and a typo still warns" {
   shrink_images "$W/enc-only" --only "image1.png" --mode lossless
-  [[ "$output" == *"待處理 1 張"* ]]
+  [[ "$output" == *"待處理 1 張"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:199: assertion failed' >&2; return 1; }
   [ -f "$W/enc-only/image1.png" ]
   [ ! -f "$W/enc-only/image4.tiff" ]
 
   run python3 "$SCRIPTS/pptx-shrink-images.py" --src "$W/deck.pptx" \
     --out "$W/enc-only2" --only "image1.png,imageNOPE" --mode lossless
   [ "$status" -eq 0 ]
-  [[ "$output" == *"WARN"* ]]
-  [[ "$output" == *"imageNOPE"* ]]
+  [[ "$output" == *"WARN"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:207: assertion failed' >&2; return 1; }
+  [[ "$output" == *"imageNOPE"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:209: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-9: 圖片與影片共用同一媒體目錄 → 一次 repack、四關含 G2d 全綠" {
+@test "PPTX-SLIM-IMG-9: images and video share one media dir and one repack passes all four gates" {
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck.pptx" --out "$W/enc-mix"
   [ "$status" -eq 0 ]
   shrink_images "$W/enc-mix" --mode lossless
@@ -220,13 +229,17 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/mix.pptx" \
     --media-dir "$W/enc-mix" --image-mode lossless --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[PASS] G2b"* ]]
-  [[ "$output" == *"[PASS] G2c"* ]]
-  [[ "$output" == *"[PASS] G2d"* ]]
-  [[ "$output" == *"四關全綠"* ]]
+  [[ "$output" == *"[PASS] G2b"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:232: assertion failed' >&2; return 1; }
+  [[ "$output" == *"[PASS] G2c"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:234: assertion failed' >&2; return 1; }
+  [[ "$output" == *"[PASS] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:236: assertion failed' >&2; return 1; }
+  [[ "$output" == *"四關全綠"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:238: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-10: G2d 咬得住畫質變化（lossy 產物用 lossless 驗必須紅）" {
+@test "PPTX-SLIM-IMG-10: G2d catches a quality change (lossy output verified losslessly must be red)" {
   shrink_images "$W/enc-guard" --mode lossy --image-max-edge 400 --image-quality 60
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/lossy.pptx" \
     --media-dir "$W/enc-guard"
@@ -235,11 +248,13 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/lossy.pptx" \
     --image-mode lossless --fast
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FAIL] G2d"* ]]
-  [[ "$output" == *"像素被動過"* ]]
+  [[ "$output" == *"FAIL] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:251: assertion failed' >&2; return 1; }
+  [[ "$output" == *"像素被動過"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:253: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-11: G2d 的 PSNR 門檻咬得住（同一個檔，門檻高紅、門檻低綠）" {
+@test "PPTX-SLIM-IMG-11: the G2d PSNR threshold bites (same file, high threshold red, low threshold green)" {
   shrink_images "$W/enc-q5" --mode lossy --image-quality 5 --image-max-edge 4000
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/q5.pptx" \
     --media-dir "$W/enc-q5"
@@ -248,31 +263,36 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/q5.pptx" \
     --image-mode lossy --image-psnr 35 --fast
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FAIL] G2d"* ]]
-  [[ "$output" == *"PSNR"* ]]
+  [[ "$output" == *"FAIL] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:266: assertion failed' >&2; return 1; }
+  [[ "$output" == *"PSNR"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:268: assertion failed' >&2; return 1; }
 
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/q5.pptx" \
     --image-mode lossy --image-psnr 20 --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[PASS] G2d"* ]]
+  [[ "$output" == *"[PASS] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:274: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-12: 已壓過的圖再壓一次不會變大（保留原檔防呆）" {
+@test "PPTX-SLIM-IMG-12: recompressing an already-compressed image never grows it" {
   shrink_images "$W/enc-mix2" --mode lossless
   run python3 "$SCRIPTS/pptx-shrink-images.py" --src "$W/enc-mix2" --out "$W/enc-again" \
     --mode lossless
   [ "$status" -eq 0 ]
-  [[ "$output" == *"KEPT(not smaller)"* ]]
+  [[ "$output" == *"KEPT(not smaller)"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:283: assertion failed' >&2; return 1; }
   [ "$(file_size "$W/enc-again/image1.png")" -le "$(file_size "$W/enc-mix2/image1.png")" ]
 }
 
-@test "PPTX-SLIM-IMG-13: --min-bytes 讓小圖整批不動（不寫 log、不建半成品）" {
+@test "PPTX-SLIM-IMG-13: --min-bytes leaves small images untouched (no log, no half-written output)" {
   shrink_images "$W/enc-min" --mode lossless --min-bytes 10000000
-  [[ "$output" == *"小於 --min-bytes"* ]]
+  [[ "$output" == *"小於 --min-bytes"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:290: assertion failed' >&2; return 1; }
   [ ! -f "$W/enc-min/image-log.tsv" ]
 }
 
-@test "PPTX-SLIM-IMG-14: lossy 的長邊上限不誤殺刻意保留的原檔（G2d 要綠）" {
+@test "PPTX-SLIM-IMG-14: the lossy long-edge cap does not flag an intentionally kept original" {
   # 只壓 image1.png；image3.jpg / image4.tiff 是 1000x750（> 800）但維持原樣。
   # 「刻意保留（KEPT／SKIP／沒選到）」不是「重編後超標」，把它算進硬上限就是誤紅。
   shrink_images "$W/enc-keep" --mode lossy --image-max-edge 800 --image-quality 80 --only image1.png
@@ -282,11 +302,13 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/keep.pptx" \
     --media-dir "$W/enc-keep" --image-mode lossy --image-max-edge 800 --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[PASS] G2d"* ]]
-  [[ "$output" == *"保留的原檔"* ]]
+  [[ "$output" == *"[PASS] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:305: assertion failed' >&2; return 1; }
+  [[ "$output" == *"保留的原檔"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:307: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-15: 真的重編過又超上限 → G2d 必須紅（豁免沒吃掉咬合力）" {
+@test "PPTX-SLIM-IMG-15: a genuinely re-encoded file over the cap must make G2d red" {
   mkdir -p "$W/enc-big"
   # 用 Pillow 把同一張圖以「同尺寸、不同 bytes、低壓縮」重存 = 重編了卻沒縮到上限
   python3 - "$W/deck.pptx" "$W/enc-big" <<'PY'
@@ -311,20 +333,24 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/big.pptx" \
     --image-mode lossy --image-max-edge 800 --fast
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FAIL] G2d"* ]]
-  [[ "$output" == *"長邊 1200 > 800"* ]]
+  [[ "$output" == *"FAIL] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:336: assertion failed' >&2; return 1; }
+  [[ "$output" == *"長邊 1200 > 800"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:338: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-16: 壞圖（內容不是圖）→ rc=3 且不吐 traceback" {
+@test "PPTX-SLIM-IMG-16: a corrupt image (not an image) gives rc=3 and no traceback" {
   mkdir -p "$W/badimg"
   printf 'this is not an image' > "$W/badimg/image1.png"
   run python3 "$SCRIPTS/pptx-shrink-images.py" --src "$W/badimg" --out "$W/badout" --mode lossless
   [ "$status" -eq 3 ]
-  [[ "$output" == *"圖片處理失敗"* ]]
-  [[ "$output" != *"Traceback"* ]]
+  [[ "$output" == *"圖片處理失敗"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:347: assertion failed' >&2; return 1; }
+  [[ "$output" != *"Traceback"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:349: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-17: --png-colors 真的量化 PNG（變調色板、省更多）" {
+@test "PPTX-SLIM-IMG-17: --png-colors really quantizes the PNG (palette mode, smaller output)" {
   shrink_images "$W/enc-pal" --mode lossy --png-colors 16 --image-max-edge 4000
   [ "$(awk -F'\t' '$1=="image1.png"{print $4}' "$W/enc-pal/image-log.tsv")" = "ENCODED" ]
   python3 - "$W/enc-pal/image1.png" <<'PY'
@@ -341,7 +367,7 @@ PY
   [ "$(file_size "$W/enc-pal/image1.png")" -lt "$(file_size "$W/png8.png")" ]
 }
 
-@test "PPTX-SLIM-IMG-18: 預設保留沒更小的原檔；--no-keep-original 才會硬換" {
+@test "PPTX-SLIM-IMG-18: by default a non-smaller original is kept; only --no-keep-original replaces it" {
   shrink_images "$W/enc-nk1" --mode lossy --image-max-edge 800 --image-quality 80
   shrink_images "$W/enc-nk2" --mode lossy --image-max-edge 800 --image-quality 80 --no-keep-original
   [ "$(awk -F'\t' '$1=="image1.png"{print $4}' "$W/enc-nk1/image-log.tsv")" = "KEPT(not smaller)" ]
@@ -350,7 +376,7 @@ PY
   [ "$(file_size "$W/enc-nk2/image1.png")" -gt "$(file_size "$W/png8.png")" ]
 }
 
-@test "PPTX-SLIM-IMG-19: 只有向量圖（Pillow 解不開）不是壓縮問題 → G2d 明示不適用" {
+@test "PPTX-SLIM-IMG-19: a vector-only image (Pillow cannot open it) is not a compression problem" {
   python3 - "$W" <<'PY'
 import sys
 import zipfile
@@ -370,11 +396,13 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/vec-only.pptx" --dst "$W/vec-only.pptx" \
     --image-mode lossless --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"G2d 沒有圖片可比"* ]]
-  [[ "$output" != *"FAIL] G2d"* ]]
+  [[ "$output" == *"G2d 沒有圖片可比"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:399: assertion failed' >&2; return 1; }
+  [[ "$output" != *"FAIL] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:401: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-20: PSNR 在縮圖尺寸比（不把縮圖放大回母帶 → 不誤殺降採樣）" {
+@test "PPTX-SLIM-IMG-20: PSNR is compared at the resized dimensions (no upscaling back to the master)" {
   shrink_images "$W/enc-img20" --mode lossy --image-max-edge 400 --image-quality 85 \
     --only image3.jpg
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/img20.pptx" \
@@ -385,14 +413,16 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/img20.pptx" \
     --image-mode lossy --image-max-edge 400 --image-psnr 27 --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[PASS] G2d"* ]]
+  [[ "$output" == *"[PASS] G2d"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:416: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-IMG-21: --src 與 --out 相同時直接擋（不原地覆蓋原圖）" {
+@test "PPTX-SLIM-IMG-21: identical --src and --out is rejected (no in-place overwrite)" {
   mkdir -p "$W/same"
   cp "$W/png8.png" "$W/same/image1.png"
   run python3 "$SCRIPTS/pptx-shrink-images.py" --src "$W/same" --out "$W/same" --mode lossless
   [ "$status" -eq 1 ]
-  [[ "$output" == *"不可與 --src 相同"* ]]
+  [[ "$output" == *"不可與 --src 相同"* ]] || {
+    echo 'FAIL: tests/pptx-slim-images.bats:425: assertion failed' >&2; return 1; }
   cmp -s "$W/png8.png" "$W/same/image1.png"
 }

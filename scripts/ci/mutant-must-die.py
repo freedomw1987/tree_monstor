@@ -170,8 +170,16 @@ def run_probe(copy_dir: Path, probe_file: str, probe: str) -> tuple[int, str]:
     env = {k: v for k, v in os.environ.items()
            if k not in STRIP_ENV_EXACT and not k.startswith("BATS_TEST_")}
     try:
+        # 為什麼用 errors="replace" 而不是 text=True（嚴格解碼）：
+        #   突變的本質就是「把檔案改成壞的」——若被截斷的字串切在**多位元組字元中間**
+        #   （例如中文、emoji），探針輸出就會含**不合法**的 UTF-8 位元組序列。
+        #   嚴格解碼會在此時丟 UnicodeDecodeError → 整個 harness **崩潰**，
+        #   讓「mutant 該死的紅」變成「harness 自己壞掉」→ 整張表中止（其餘 mutant 從未被驗）。
+        #   這不是放寬判定：rc 才是判定依據，輸出只是拿來印出「mutant 死了」的證據；
+        #   把無法解碼的位元組換成 U+FFFD 不影響 rc，也不影響 baseline/mutant 的對照邏輯。
         done = subprocess.run(["bats", probe_file, "-f", probe], cwd=copy_dir,
-                              capture_output=True, text=True, env=env, timeout=PROBE_TIMEOUT)
+                              capture_output=True, encoding="utf-8", errors="replace",
+                              env=env, timeout=PROBE_TIMEOUT)
     except FileNotFoundError:
         die("找不到 bats（請先安裝並放進 PATH）")
     except subprocess.TimeoutExpired:

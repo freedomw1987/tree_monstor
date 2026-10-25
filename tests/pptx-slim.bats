@@ -60,35 +60,42 @@ shrink_repack_verify() {
   [ "$status" -eq 0 ]
 }
 
-@test "PPTX-SLIM-1: probe 讀得出媒體佔比與影片規格（--specs）" {
+@test "PPTX-SLIM-1: the probe reads the media ratio and video specs (--specs)" {
   run python3 "$SCRIPTS/pptx-probe.py" "$W/deck.pptx" --top 5
   [ "$status" -eq 0 ]
-  [[ "$output" == *"分類"* ]]
-  [[ "$output" == *"video"* ]]
+  [[ "$output" == *"分類"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:66: assertion failed' >&2; return 1; }
+  [[ "$output" == *"video"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:68: assertion failed' >&2; return 1; }
 
   run python3 "$SCRIPTS/pptx-probe.py" "$W/deck.pptx" --specs
   [ "$status" -eq 0 ]
   # 不只看標題：要真的抓到兩支影片的顯示尺寸（640x360 / 320x180）
-  [[ "$output" == *"640x360"* ]]
-  [[ "$output" == *"320x180"* ]]
+  [[ "$output" == *"640x360"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:74: assertion failed' >&2; return 1; }
+  [[ "$output" == *"320x180"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:76: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-2: shrink + repack 真的變小，且非媒體逐 byte 相同" {
+@test "PPTX-SLIM-2: shrink plus repack really shrinks and non-media stays byte-identical" {
   shrink_repack_verify 24 "$W/slim.pptx"
   [ "$(file_size "$W/slim.pptx")" -lt "$(file_size "$W/deck.pptx")" ]
 
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/slim.pptx" \
     --media-dir "$W/enc-24" --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[PASS] G2b"* ]]
-  [[ "$output" == *"四關全綠"* ]]
+  [[ "$output" == *"[PASS] G2b"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:87: assertion failed' >&2; return 1; }
+  [[ "$output" == *"四關全綠"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:89: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-3: 壓完更大就保留原檔（--crf 0 無損），輸出大小與原檔一致" {
+@test "PPTX-SLIM-3: a larger result keeps the original (--crf 0 lossless) and matches its size" {
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck.pptx" --out "$W/enc-0" --crf 0
   [ "$status" -eq 0 ]
   # 防呆必須在「轉碼那一步」就生效（不能等到 repack 才處理）：逐支退回原檔，不是留著更大的檔
-  [[ "$output" == *"KEPT(bigger)"* ]]
+  [[ "$output" == *"KEPT(bigger)"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:97: assertion failed' >&2; return 1; }
 
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/keep.pptx" --media-dir "$W/enc-0"
   [ "$status" -eq 0 ]
@@ -96,10 +103,11 @@ shrink_repack_verify() {
 
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/keep.pptx" --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"被替換的媒體檔數：0"* ]]
+  [[ "$output" == *"被替換的媒體檔數：0"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:106: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-4: verify 咬得住「非媒體被動過」（mutant）" {
+@test "PPTX-SLIM-4: verify catches tampered non-media files (mutant)" {
   python3 - "$W" <<'PY'
 import sys
 import zipfile
@@ -115,10 +123,11 @@ with zipfile.ZipFile(work / "deck.pptx") as zin, zipfile.ZipFile(work / "bad-xml
 PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/bad-xml.pptx" --fast
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FAIL] G2b"* ]]
+  [[ "$output" == *"FAIL] G2b"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:126: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-5: verify 咬得住「rels 斷鏈」（mutant）" {
+@test "PPTX-SLIM-5: verify catches broken rels chains (mutant)" {
   python3 - "$W" <<'PY'
 import sys
 import zipfile
@@ -143,18 +152,20 @@ with zipfile.ZipFile(work / "deck.pptx") as zin, zipfile.ZipFile(work / "bad-rel
 PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/bad-rels.pptx" --fast
   [ "$status" -ne 0 ]
-  [[ "$output" == *"FAIL] G3a"* ]]
+  [[ "$output" == *"FAIL] G3a"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:155: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-6: repack 拒絕覆蓋原檔（--dst = --src 必須紅）" {
+@test "PPTX-SLIM-6: repack refuses to overwrite the original (--dst equal to --src must be red)" {
   mkdir -p "$W/enc-x"
   cp "$W/v1.mp4" "$W/enc-x/media1.mp4"
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/deck.pptx" --media-dir "$W/enc-x"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"不可與 --src 相同"* ]]
+  [[ "$output" == *"不可與 --src 相同"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:164: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-7: 換掉圖片不被誤判成「非媒體被動過」（回歸：P1 假紅）" {
+@test "PPTX-SLIM-7: a replaced image is not misreported as tampered non-media (regression: P1 false red)" {
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck.pptx" --out "$W/enc-img" --crf 24
   [ "$status" -eq 0 ]
   # 目錄裡多放一張「重壓過的」圖片：repack 會把影片與圖片一起換掉
@@ -167,26 +178,31 @@ PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/reimg.pptx" \
     --media-dir "$W/enc-img" --fast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[PASS] G2b"* ]]
-  [[ "$output" == *"[PASS] G2c"* ]]
-  [[ "$output" == *"image1.png"* ]]
+  [[ "$output" == *"[PASS] G2b"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:181: assertion failed' >&2; return 1; }
+  [[ "$output" == *"[PASS] G2c"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:183: assertion failed' >&2; return 1; }
+  [[ "$output" == *"image1.png"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:185: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-8: --media-dir 空目錄／錯路徑必須紅（不可空過）" {
+@test "PPTX-SLIM-8: an empty or wrong --media-dir must be red (no silent pass)" {
   shrink_repack_verify 24 "$W/slim2.pptx"
   mkdir -p "$W/empty"
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/slim2.pptx" \
     --media-dir "$W/empty" --fast
   [ "$status" -eq 1 ]
-  [[ "$output" == *"[FAIL] G2c"* ]]
+  [[ "$output" == *"[FAIL] G2c"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:195: assertion failed' >&2; return 1; }
 
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/slim2.pptx" \
     --media-dir "$W/no-such-dir" --fast
   [ "$status" -eq 2 ]
-  [[ "$output" == *"不是目錄"* ]]
+  [[ "$output" == *"不是目錄"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:201: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-9: repack 預設不覆蓋已存在的 --dst（要 --force）" {
+@test "PPTX-SLIM-9: repack does not overwrite an existing --dst by default (needs --force)" {
   mkdir -p "$W/enc-y"
   cp "$W/v1.mp4" "$W/enc-y/media1.mp4"
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/out.pptx" --media-dir "$W/enc-y"
@@ -194,14 +210,15 @@ PY
 
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/out.pptx" --media-dir "$W/enc-y"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"已存在"* ]]
+  [[ "$output" == *"已存在"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:213: assertion failed' >&2; return 1; }
 
   run python3 "$SCRIPTS/pptx-repack.py" --src "$W/deck.pptx" --dst "$W/out.pptx" \
     --media-dir "$W/enc-y" --force
   [ "$status" -eq 0 ]
 }
 
-@test "PPTX-SLIM-10: --only 精確優先（media1 不會連 media10 一起選）" {
+@test "PPTX-SLIM-10: --only prefers exact matches (media1 does not also select media10)" {
   # 真實案檔是 media1..media17：'media1' 正好是 media10-17 的前綴
   cp "$W/v1.mp4" "$W/media1.mp4"
   cp "$W/v2.mp4" "$W/media10.mp4"
@@ -236,17 +253,23 @@ PY
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck10.pptx" --out "$W/enc-only" \
     --only media1 --list
   [ "$status" -eq 0 ]
-  [[ "$output" == *"待處理 1 支：media1.mp4"* ]]
-  [[ "$output" != *"media10.mp4"* ]]
-  [[ "$output" != *"改用子字串"* ]]
+  [[ "$output" == *"待處理 1 支：media1.mp4"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:256: assertion failed' >&2; return 1; }
+  [[ "$output" != *"media10.mp4"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:258: assertion failed' >&2; return 1; }
+  [[ "$output" != *"改用子字串"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:260: assertion failed' >&2; return 1; }
 
   # 反面：真的沒有精確命中時才退回子字串，且必須把命中哪幾支講出來
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck10.pptx" --out "$W/enc-any" \
     --only media --list
   [ "$status" -eq 0 ]
-  [[ "$output" == *"待處理 2 支"* ]]
-  [[ "$output" == *"改用子字串"* ]]
-  [[ "$output" == *"media10.mp4"* ]]
+  [[ "$output" == *"待處理 2 支"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:267: assertion failed' >&2; return 1; }
+  [[ "$output" == *"改用子字串"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:269: assertion failed' >&2; return 1; }
+  [[ "$output" == *"media10.mp4"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:271: assertion failed' >&2; return 1; }
 
   # --list 是「先看不跑」：不得留下空的 --out 目錄（副作用）
   [ ! -d "$W/enc-only" ]
@@ -256,17 +279,20 @@ PY
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck10.pptx" --out "$W/enc-typo" \
     --only media1,typo --list
   [ "$status" -eq 0 ]
-  [[ "$output" == *"待處理 1 支：media1.mp4"* ]]
-  [[ "$output" == *"沒命中任何影片：typo"* ]]
+  [[ "$output" == *"待處理 1 支：media1.mp4"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:282: assertion failed' >&2; return 1; }
+  [[ "$output" == *"沒命中任何影片：typo"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:284: assertion failed' >&2; return 1; }
 
   # 全部沒命中仍然要 FAIL（維持既有契約）
   run python3 "$SCRIPTS/pptx-shrink-media.py" --src "$W/deck10.pptx" --out "$W/enc-none" \
     --only typo --list
   [ "$status" -eq 1 ]
-  [[ "$output" == *"指到不存在的影片"* ]]
+  [[ "$output" == *"指到不存在的影片"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:291: assertion failed' >&2; return 1; }
 }
 
-@test "PPTX-SLIM-11: dst 缺一支影片時 G4 要自己判 FAIL（不是 KeyError traceback）" {
+@test "PPTX-SLIM-11: a missing video in dst makes G4 decide FAIL itself (not a KeyError traceback)" {
   shrink_repack_verify 24 "$W/slim.pptx"
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/slim.pptx"
   [ "$status" -eq 0 ]
@@ -287,12 +313,15 @@ with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w") as zout:
 PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/broken.pptx"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"[FAIL] G2a"* ]]
+  [[ "$output" == *"[FAIL] G2a"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:316: assertion failed' >&2; return 1; }
   # 重點：G4 自己要印判準行，不能讓 zipfile.KeyError 把後面的關卡炸掉
-  [[ "$output" == *"[FAIL] G4 時長漂移"* ]]
-  [[ "$output" != *"Traceback"* ]]
+  [[ "$output" == *"[FAIL] G4 時長漂移"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:319: assertion failed' >&2; return 1; }
+  [[ "$output" != *"Traceback"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:321: assertion failed' >&2; return 1; }
 }
-@test "PPTX-SLIM-12: verify 咬得住「新檔 CRC 壞掉」（mutant）" {
+@test "PPTX-SLIM-12: verify catches a corrupted CRC in the new file (mutant)" {
   shrink_repack_verify 24 "$W/slim.pptx"
   # 造一個「zip 讀得完但某個 entry 的 CRC 對不上」的檔：把 STORED 媒體 payload 改一個 byte，
   # CRC 留在原處不動。這是 G1 存在的理由（開會才發現壞檔，代價最大），所以必須有探針咬住。
@@ -327,8 +356,10 @@ print("patched", patched)
 PY
   run python3 "$SCRIPTS/pptx-verify.py" --src "$W/deck.pptx" --dst "$W/bad-crc.pptx" --fast
   [ "$status" -eq 1 ]
-  [[ "$output" == *"[FAIL] G1 新檔 CRC"* ]]
+  [[ "$output" == *"[FAIL] G1 新檔 CRC"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:359: assertion failed' >&2; return 1; }
   # 不能只是「剛好壞掉」：G1 判準行要指出是哪個 entry
-  [[ "$output" == *"壞 entry"* ]]
+  [[ "$output" == *"壞 entry"* ]] || {
+    echo 'FAIL: tests/pptx-slim.bats:362: assertion failed' >&2; return 1; }
 }
 

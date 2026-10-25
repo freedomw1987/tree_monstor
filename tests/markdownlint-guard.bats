@@ -21,7 +21,7 @@ setup() {
   LINT_GLOBS=('skills/**/*.md' 'docs/**/*.md' 'tests/**/*.md' '*.md')
 }
 
-@test "MLG-1: ci.yml 有 Markdown lint job，且真的執行 markdownlint-cli2" {
+@test "MLG-1: ci.yml has a Markdown lint job and it really runs markdownlint-cli2" {
   [ -f "$CI_YML" ] || { echo "FAIL: 找不到 $CI_YML" >&2; return 1; }
   grep -q '^    name: Markdown lint' "$CI_YML" || {
     echo "FAIL: ci.yml 沒有名為 'Markdown lint' 的 job" >&2; return 1; }
@@ -29,7 +29,7 @@ setup() {
     echo "FAIL: ci.yml 的 lint job 沒跑 markdownlint-cli2" >&2; return 1; }
 }
 
-@test "MLG-2: lint job 不得是假綠（無 continue-on-error、無 || true）" {
+@test "MLG-2: the lint job must not be a fake green (no continue-on-error, no || true)" {
   # 只看真 YAML 內容：剝掉註解行，否則「說明用的註解」會自我命中（探針自我匹配）
   local code
   code=$(grep -vE '^[[:space:]]*#' "$CI_YML")
@@ -51,7 +51,7 @@ setup() {
   fi
 }
 
-@test "MLG-3: lint step 的 glob 覆蓋 skills / docs / tests(含 fixture) / 根目錄" {
+@test "MLG-3: the lint step glob covers skills, docs, tests (with fixtures) and the repo root" {
   local runline
   runline=$(grep -F 'markdownlint-cli2 "skills/**/*.md"' "$CI_YML")
   [[ -n "$runline" ]] || { echo "FAIL: 找不到 lint step 的執行行" >&2; return 1; }
@@ -67,7 +67,7 @@ setup() {
     echo "FAIL: tests/fixtures 內沒有 .md，glob 覆蓋宣稱無法驗證" >&2; return 1; }
 }
 
-@test "MLG-4: .markdownlint-cli2.jsonc 排除 .venv 與 node_modules" {
+@test "MLG-4: .markdownlint-cli2.jsonc excludes .venv and node_modules" {
   [ -f "$MDLINT_CLI2" ] || { echo "FAIL: 找不到 $MDLINT_CLI2" >&2; return 1; }
   grep -q '\.venv' "$MDLINT_CLI2" || {
     echo "FAIL: 未排除 .venv（PoC venv 會灌入假錯誤）" >&2; return 1; }
@@ -75,7 +75,7 @@ setup() {
     echo "FAIL: 未排除 node_modules" >&2; return 1; }
 }
 
-@test "MLG-5: MD013 上限鎖 120，且表格 / 程式碼區塊 / 標題豁免設定不得消失" {
+@test "MLG-5: MD013 is locked at 120 and the table/code-block/heading exemptions stay" {
   grep -q '"line_length": 120' "$MDLINT_CFG" || {
     echo "FAIL: MD013 line_length 不再是 120（放寬規則≠清債）" >&2; return 1; }
   grep -q '"tables": false' "$MDLINT_CFG" || {
@@ -86,14 +86,14 @@ setup() {
     echo "FAIL: MD013 headings 豁免設定消失" >&2; return 1; }
 }
 
-@test "MLG-6: CONTRIBUTING 文件化本地 lint 指令與 120 欄政策" {
+@test "MLG-6: CONTRIBUTING documents the local lint command and the 120-column policy" {
   grep -q 'markdownlint-cli2' "$CONTRIB" || {
     echo "FAIL: CONTRIBUTING 沒寫本地 lint 指令" >&2; return 1; }
   grep -q '120' "$CONTRIB" || {
     echo "FAIL: CONTRIBUTING 沒寫 120 欄政策" >&2; return 1; }
 }
 
-@test "MLG-7: 本機實跑 markdownlint-cli2 於 repo 全範圍必須 0 錯" {
+@test "MLG-7: running markdownlint-cli2 over the whole repo reports 0 issues" {
   command -v markdownlint-cli2 >/dev/null 2>&1 || \
     skip "本機未安裝 markdownlint-cli2（CI 由阻擋式 Markdown lint job 保證）"
   cd "$REPO_ROOT"
@@ -102,7 +102,7 @@ setup() {
     echo "FAIL: markdownlint 有錯，輸出見上" >&2; return 1; }
 }
 
-@test "MLG-8: fixture 的 markdown 真的在 lint 範圍內（不得被 ignore 掉）" {
+@test "MLG-8: fixture markdown really is inside the lint scope (not ignored away)" {
   local sample
   sample=$(find "$REPO_ROOT/tests/fixtures" -name '*.md' -print -quit)
   [[ -n "$sample" ]] || { echo "FAIL: fixture 無 .md" >&2; return 1; }
@@ -130,7 +130,7 @@ setup() {
   }
 }
 
-@test "MLG-9: lint job 不得被停用（不得有 if: 阻斷式條件）" {
+@test "MLG-9: the lint job must not be disabled (no blocking if: condition)" {
   # reviewer round B P2-3 缺口：job/step 掛 `if: false` 沒有任何一條會抓到。
   # lint 是「文件債清零」的執行者，必須無條件跑；任何 if: 條件（含 ${{ … }} 條件式）
   # 都讓阻擋性變成不保證 → 一律視為停用。

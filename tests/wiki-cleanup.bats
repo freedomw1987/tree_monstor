@@ -77,15 +77,19 @@ teardown() {
 @test "wiki-cleanup: --help" {
     run "$WIKI_CLEANUP" --help
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "Usage:" ]]
-    [[ "$output" =~ "--older-than" ]]
-    [[ "$output" =~ "--dry-run" ]]
+    [[ "$output" =~ "Usage:" ]] || {
+      echo 'FAIL: tests/wiki-cleanup.bats:80: assertion failed' >&2; return 1; }
+    [[ "$output" =~ "--older-than" ]] || {
+      echo 'FAIL: tests/wiki-cleanup.bats:82: assertion failed' >&2; return 1; }
+    [[ "$output" =~ "--dry-run" ]] || {
+      echo 'FAIL: tests/wiki-cleanup.bats:84: assertion failed' >&2; return 1; }
 }
 
 @test "wiki-cleanup: --dry-run" {
     run "$WIKI_CLEANUP" --target "$TEST_ROOT/docs" --dry-run --older-than 90
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "Dry-run" ]] || [[ "$output" =~ "dry-run" ]] || [[ "$output" =~ "[INFO]" ]]
+    [[ "$output" =~ "Dry-run" ]] || [[ "$output" =~ "dry-run" ]] || [[ "$output" =~ "[INFO]" ]] || {
+      echo 'FAIL: tests/wiki-cleanup.bats:91: assertion failed' >&2; return 1; }
     # 檔案還在原位置
     [ -f "$TEST_ROOT/docs/wiki/frontend/2025-09/old-react-pattern.md" ]
     # 沒有 _deprecated/
@@ -191,7 +195,7 @@ teardown() {
     [ ! -d "$TEST_ROOT/docs/wiki/_deprecated" ]
 }
 
-@test "E2 wiki-cleanup: deprecated_at=2026-02 → 2026-Q1" {
+@test "E2 wiki-cleanup: deprecated_at=2026-02 to 2026-Q1" {
     # 重建 fixture 用 2026 年 Q1 / Q3 日期（Q4 在 11 月，避免被 age 過濾）
     mkdir -p "$TEST_ROOT/docs/wiki/frontend/2026-02" "$TEST_ROOT/docs/wiki/frontend/2026-08"
     cat > "$TEST_ROOT/docs/wiki/frontend/2026-02/test-q1.md" <<EOF

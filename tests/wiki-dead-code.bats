@@ -35,7 +35,7 @@ find_dead_functions() {
     done
 }
 
-@test "WDC-1: dav-wiki 腳本無「定義但從未引用」的死函式" {
+@test "WDC-1: dav-wiki scripts have no dead functions (defined but never referenced)" {
   # 防空過：先確認真的掃到足夠的函式（掃描邏輯失效時不得安靜變綠）
   local total=0
   local f
@@ -66,7 +66,7 @@ find_dead_functions() {
   fi
 }
 
-@test "WDC-2: 掃描器本身咬得住死函式（種一個假死函式必須變紅）" {
+@test "WDC-2: the scanner itself catches dead functions (a planted one must turn red)" {
   # 反向驗證：在臨時複本種一個從未被呼叫的函式，find_dead_functions 必須回報它
   local tmp="$BATS_TEST_TMPDIR/dead-fn-sample.sh"
   printf '#!/usr/bin/env bash\nnever_called_fn() {\n  echo hi\n}\nused_fn() {\n  echo ok\n}\nused_fn\n' > "$tmp"

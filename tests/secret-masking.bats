@@ -17,7 +17,7 @@ load 'helpers/test-env'
 HELPER="$REPO_ROOT/tests/helpers/test-env.bash"
 SCANNER="$REPO_ROOT/scripts/ci/lint-probe-secrets.py"
 
-@test "SM-1: mask_secrets 只有一份定義（共用 helper），其他檔不得自己再定義" {
+@test "SM-1: mask_secrets has exactly one definition (shared helper); no file redefines it" {
   assert_file_contains "$HELPER" "mask_secrets()"
   local f n=0
   # 用檔案系統列舉（不用 git ls-files）：新寫、還沒 commit 的探針檔也要被掃到，
@@ -43,26 +43,33 @@ SCANNER="$REPO_ROOT/scripts/ci/lint-probe-secrets.py"
   }
 }
 
-@test "SM-2: 靜態鎖 lint-probe-secrets.py 全綠（含防空過）" {
+@test "SM-2: the static lint-probe-secrets.py check is green (including no-silent-pass)" {
   run python3 "$SCANNER" "$REPO_ROOT"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OK:"* ]]
-  [[ "$output" == *"0 violation"* ]]
+  [[ "$output" == *"OK:"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:49: assertion failed' >&2; return 1; }
+  [[ "$output" == *"0 violation"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:51: assertion failed' >&2; return 1; }
   # 標記數是人工複核錙點（標記的真實語意見掃描器 docstring：它只能擋「標在無關行」）
   # 註：斷言字串刻意拆開（"SECRET-"*"OK 標記"）——否則本行自己就含標記字面，會被鎖 4 咬。
-  [[ "$output" == *"SECRET-"*"OK 標記"* ]]
+  [[ "$output" == *"SECRET-"*"OK 標記"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:55: assertion failed' >&2; return 1; }
 }
 
-@test "SM-3: mask_secrets 真的會遮（sk- 前綴 / KEY= 指派），乾淨文字不動" {
+@test "SM-3: mask_secrets really masks (sk- prefix, KEY= assignment) and leaves clean text alone" {
   run bash -c 'source "$1"; mask_secrets <<< "OPENROUTER_API_KEY=sk-or-v1-abc123def456 x=y"' _ "$HELPER"  # SECRET-OK: 假值
   [ "$status" -eq 0 ]
-  [[ "$output" != *"abc123def456"* ]]
-  [[ "$output" != *"sk-or-v1-"* ]]  # SECRET-OK: 斷言的**樣式**（字面掃描用），非真 key
-  [[ "$output" == *"MASKED"* ]]
-  [[ "$output" == *"x=y"* ]]
+  [[ "$output" != *"abc123def456"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:62: assertion failed' >&2; return 1; }
+  [[ "$output" != *"sk-or-v1-"* ]] || {  # SECRET-OK: 斷言的**樣式**（字面掃描用），非真 key
+    echo 'FAIL: tests/secret-masking.bats:64: assertion failed' >&2; return 1; }
+  [[ "$output" == *"MASKED"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:66: assertion failed' >&2; return 1; }
+  [[ "$output" == *"x=y"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:68: assertion failed' >&2; return 1; }
 }
 
-@test "SM-4: 反向實測——讓 CLEAN-POC-i 真的失敗，bats 輸出不得含密鑰" {
+@test "SM-4: reverse test - when CLEAN-POC-i really fails the bats output must not leak the secret" {
   # 造一棵假 tree：**真探針檔** + 共用 helper + 假 .venv python shim。
   # shim 模擬 `_load_api_key()` 的來源順序（JEV_ENV_FILE 覆寫整份清單；
   # 否則讀 $HOME/.claude/... 的 .env）——這樣就 venv-free 也能跑到真 FAIL 訊息。
@@ -97,14 +104,18 @@ SHIM
   # ① 失敗路徑真的走到（否則這條探針在測空氣）
   [ "$status" -ne 0 ]
   # ② FAIL 訊息真的有把被測輸出印出來（證明下面那條「不含密鑰」不是真空通過）
-  [[ "$output" == *"值已遮罩"* ]]
-  [[ "$output" == *"MASKED"* ]]
+  [[ "$output" == *"值已遮罩"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:107: assertion failed' >&2; return 1; }
+  [[ "$output" == *"MASKED"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:109: assertion failed' >&2; return 1; }
   # ③ 密鑰不得外洩
-  [[ "$output" != *"DEADBEEF"* ]]
-  [[ "$output" != *"sk-or-v1-"* ]]  # SECRET-OK: 斷言的樣式字面，非真 key
+  [[ "$output" != *"DEADBEEF"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:112: assertion failed' >&2; return 1; }
+  [[ "$output" != *"sk-or-v1-"* ]] || {  # SECRET-OK: 斷言的樣式字面，非真 key
+    echo 'FAIL: tests/secret-masking.bats:114: assertion failed' >&2; return 1; }
 }
 
-@test "SM-5: 掃描器真的會咬（合成違規）+ 空樹防空過" {
+@test "SM-5: the scanner really bites (synthetic violation) and an empty tree cannot pass silently" {
   local tree="$BATS_TEST_TMPDIR/synth"
   mkdir -p "$tree/tests/helpers"
   cat > "$tree/tests/leaky.bats" <<'EOF'
@@ -115,14 +126,18 @@ SHIM
 EOF
   run python3 "$SCANNER" "$tree"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"leaky.bats"* ]]
-  [[ "$output" == *"mask_secrets"* ]]
-  [[ "$output" == *"_load_api_key"* ]]
+  [[ "$output" == *"leaky.bats"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:129: assertion failed' >&2; return 1; }
+  [[ "$output" == *"mask_secrets"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:131: assertion failed' >&2; return 1; }
+  [[ "$output" == *"_load_api_key"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:133: assertion failed' >&2; return 1; }
 
   # 防空過：抽取器什麼都沒掃到時必須紅（不得靜默全綠）
   local empty="$BATS_TEST_TMPDIR/empty"
   mkdir -p "$empty"
   run python3 "$SCANNER" "$empty"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"防空過"* ]]
+  [[ "$output" == *"防空過"* ]] || {
+    echo 'FAIL: tests/secret-masking.bats:141: assertion failed' >&2; return 1; }
 }

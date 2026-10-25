@@ -49,7 +49,7 @@ run_mmd() {
   run python3 "$MMD" "$@"
 }
 
-@test "MMD-1: 突變表契約（欄位齊、id 唯一、錨點唯一、探針名存在、覆蓋到決策碼）" {
+@test "MMD-1: mutant table contract (fields complete, unique ids, unique anchors, probe exists)" {
   [ -x "$MMD" ] || { echo "FAIL: $MMD 不存在或不可執行" >&2; return 1; }
   run_mmd --list
   [ "$status" -eq 0 ]
@@ -111,7 +111,7 @@ run_mmd() {
   done <<< "$(grep -v '^#' "$TABLE" | cut -f1,2,3)"
 }
 
-@test "MMD-2: mutant 真的死在副本上，working tree 逐位元不變" {
+@test "MMD-2: the mutant really dies on the copy and the working tree stays byte-identical" {
   local before after
   before=$(cd "$REPO_ROOT" && git status --porcelain | sort)
   run_mmd --only IMG-M3,FF-M2
@@ -119,13 +119,14 @@ run_mmd() {
   # 兩支都要真的紅，不能只是「跑完沒報錯」
   [ "$(printf '%s\n' "$output" | grep -c 'mutant 死了')" -eq 2 ] ||
     { echo "FAIL: 沒有兩支 mutant 死亡紀錄" >&2; return 1; }
-  [[ "$output" == *"OK:"* ]]
+  [[ "$output" == *"OK:"* ]] || {
+    echo 'FAIL: tests/mutant-must-die.bats:122: assertion failed' >&2; return 1; }
   # 副本外掛載點：working tree 不能被動到（工具自己也自證，這裡獨立再驗一次）
   after=$(cd "$REPO_ROOT" && git status --porcelain | sort)
   [ "$before" = "$after" ] || { echo "FAIL: mmd 動到了 working tree" >&2; return 1; }
 }
 
-@test "MMD-3: mutant 活著時整支檢查必須回報失敗（否則它是假綠）" {
+@test "MMD-3: a surviving mutant must make the whole check fail (otherwise it is a fake green)" {
   # 造一張「無害突變」表：改動真實發生、但對受測行為沒影響 → 探針必綠 → 必須被當成 survivor。
   # （不可用「原文＝換成」當無害案例：那叫等價突變，載入期就被擋掉了，見 MMD-6。）
   printf 'NOOP-1\tskills/pptx-slim/scripts/pptx-verify.py\t        bad = zf.testzip()\t        bad = zf.testzip()  # MUTANT: 無害改動（只加註解，行為不變）\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/noop.tsv"
@@ -134,7 +135,7 @@ run_mmd() {
   [[ "$output" == *"還活著"* ]] || { echo "FAIL: 沒有回報 survivor" >&2; return 1; }
 }
 
-@test "MMD-6: 突變表結構錯誤（欄數／空欄／等價突變／id 重複／重複列／空表）必須在載入期就擋下" {
+@test "MMD-6: a malformed mutant table is rejected at load time" {
   local anchor='        bad = zf.testzip()'
   # ① 欄數 5
   printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\ta\tb\tc\n' > "$W/cols.tsv"
@@ -177,7 +178,7 @@ run_mmd() {
   [[ "$output" == *"重複列"* ]] || { echo "FAIL: 沒指出重複列（${output}）" >&2; return 1; }
 }
 
-@test "MMD-4: 錨點腐化（碼改了、表沒改）必須大聲失敗，不是靜默空過" {
+@test "MMD-4: a stale anchor (code changed, table not) must fail loudly, not pass silently" {
   printf 'ROT-1\tskills/pptx-slim/scripts/pptx-verify.py\tTHIS_ANCHOR_DOES_NOT_EXIST_ANYWHERE\tx\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/rot.tsv"
   run_mmd --table "$W/rot.tsv"
   [ "$status" -ne 0 ]
@@ -218,7 +219,7 @@ fake_ci() {
   [ -z "${2:-}" ] || printf '        %s\n' "$2"
 }
 
-@test "MMD-5: CI 真的跑全表（不得 || true／continue-on-error／if:／--list／--only／--no-baseline）" {
+@test "MMD-5: CI really runs the whole table (no || true, continue-on-error, if:, --list, --only, --no-baseline)" {
   run ci_runs_full_table "$CI_YML"
   [ "$status" -eq 0 ] || { echo "FAIL: 真的 ci.yml 沒通過檢查：$output" >&2; return 1; }
 

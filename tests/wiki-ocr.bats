@@ -53,7 +53,7 @@ teardown() {
 }
 
 # === AC-O3: 沒裝 tesseract → mock 降級（不崩潰）===
-@test "AC-O3: tesseract missing → mock fallback" {
+@test "AC-O3: tesseract missing -> mock fallback" {
   # 我們不真的移除 tesseract，而是測試 --force-mock 旗標
   run "$TOOL" --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
               --output-json "$WORK/ocr.json" \
@@ -65,7 +65,7 @@ teardown() {
 }
 
 # === AC-O4: 不存在的輸入 ===
-@test "AC-O4: missing input → exit 2" {
+@test "AC-O4: missing input -> exit 2" {
   run "$TOOL" --input "/nonexistent/foo.png" --output-json "$WORK/ocr.json"
   # 測名寫 exit 2 就別只驗「不等於 0」：只驗非零的話，`EXIT_NOINPUT=2` 改成 1 也不會有人發現
   # （TMO-066 二審 F1：DW-M5 原本只能當「文字契約鎖」，收緊後它才是真的行為鎖）。
@@ -76,11 +76,12 @@ teardown() {
 @test "AC-O5: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage" ]]
+  [[ "$output" =~ "Usage" ]] || {
+    echo 'FAIL: tests/wiki-ocr.bats:79: assertion failed' >&2; return 1; }
 }
 
 # === AC-O6: 沒給 --input ===
-@test "AC-O6: missing --input → exit 1" {
+@test "AC-O6: missing --input -> exit 1" {
   run "$TOOL" --output-json "$WORK/ocr.json"
   # 同理：測名寫 exit 1，就驗 exit 1（`EXIT_USAGE=1` 是契約，不是實作細節）。
   [ "$status" -eq 1 ]

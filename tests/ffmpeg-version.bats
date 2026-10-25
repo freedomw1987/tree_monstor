@@ -46,14 +46,15 @@ make_fake_ffprobe() {
   chmod +x "$path"
 }
 
-@test "FV-1: 本機 ffmpeg 版本與旗標組合通過檢查（且印出版本）" {
+@test "FV-1: local ffmpeg version and flag combo pass the check (and print the version)" {
   [ -x "$CHECK" ]
   run bash "$CHECK"
   [ "$status" -eq 0 ] || {
     echo "FAIL: 本機 ffmpeg 未通過版本/能力檢查：$output" >&2
     return 1
   }
-  [[ "$output" == *"OK: ffmpeg "* ]]
+  [[ "$output" == *"OK: ffmpeg "* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:56: assertion failed' >&2; return 1; }
   # 防空過：版本號必須解析得出來且 >= 5.1
   local ver major minor
   ver=$(printf '%s' "$output" | sed -n 's/^OK: ffmpeg \([0-9][0-9.]*\).*/\1/p')
@@ -66,53 +67,60 @@ make_fake_ffprobe() {
   }
 }
 
-@test "FV-2: 太舊的 ffmpeg（4.4.2）必須被擋且說明原因" {
+@test "FV-2: an ffmpeg that is too old (4.4.2) must be blocked with a reason" {
   make_fake_ffmpeg "$FAKE_BIN/ffmpeg-old" \
     "ffmpeg version 4.4.2 Copyright (c) 2000-2021 the FFmpeg developers"
   make_fake_ffprobe "$FAKE_BIN/ffprobe"
   run env FFMPEG_BIN="$FAKE_BIN/ffmpeg-old" FFPROBE_BIN="$FAKE_BIN/ffprobe" bash "$CHECK"
   [ "$status" -ne 0 ] || { echo "FAIL: 舊版 ffmpeg 竟然通過" >&2; return 1; }
-  [[ "$output" == *"太舊"* ]]
-  [[ "$output" == *"4.4.2"* ]]
+  [[ "$output" == *"太舊"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:76: assertion failed' >&2; return 1; }
+  [[ "$output" == *"4.4.2"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:78: assertion failed' >&2; return 1; }
 }
 
-@test "FV-3: 5.0（差一個 minor）也要擋（底線是 5.1 不是 5）" {
+@test "FV-3: 5.0 (one minor below) must also be blocked (the floor is 5.1, not 5)" {
   make_fake_ffmpeg "$FAKE_BIN/ffmpeg-50" "ffmpeg version 5.0 Copyright"
   make_fake_ffprobe "$FAKE_BIN/ffprobe"
   run env FFMPEG_BIN="$FAKE_BIN/ffmpeg-50" FFPROBE_BIN="$FAKE_BIN/ffprobe" bash "$CHECK"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"太舊"* ]]
+  [[ "$output" == *"太舊"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:87: assertion failed' >&2; return 1; }
 }
 
-@test "FV-4: 版本夠新但旗標組合失效 → 必須擋（能力層，不只比版本號）" {
+@test "FV-4: new enough version but broken flag combo must be blocked (capability, not just version)" {
   # 版本 6.0 看起來沒問題，但實際跑我們的旗標組合時失敗
   make_fake_ffmpeg "$FAKE_BIN/ffmpeg-noflag" "ffmpeg version 6.0 Copyright"
   make_fake_ffprobe "$FAKE_BIN/ffprobe"
   run env FFMPEG_BIN="$FAKE_BIN/ffmpeg-noflag" FFPROBE_BIN="$FAKE_BIN/ffprobe" bash "$CHECK"
   [ "$status" -ne 0 ] || { echo "FAIL: 旗標失效竟然通過" >&2; return 1; }
-  [[ "$output" == *"旗標組合"* ]]
+  [[ "$output" == *"旗標組合"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:97: assertion failed' >&2; return 1; }
 }
 
-@test "FV-5: 缺 ffmpeg / ffprobe 要擋（不是只比版本）" {
+@test "FV-5: a missing ffmpeg or ffprobe must be blocked (not only the version)" {
   make_fake_ffprobe "$FAKE_BIN/ffprobe"
   run env FFMPEG_BIN="$BATS_TEST_TMPDIR/does-not-exist" FFPROBE_BIN="$FAKE_BIN/ffprobe" \
       bash "$CHECK"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"找不到 ffmpeg"* ]]
+  [[ "$output" == *"找不到 ffmpeg"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:106: assertion failed' >&2; return 1; }
 
   make_fake_ffmpeg "$FAKE_BIN/ffmpeg-ok" "ffmpeg version 6.0 Copyright"
   run env FFMPEG_BIN="$FAKE_BIN/ffmpeg-ok" FFPROBE_BIN="$BATS_TEST_TMPDIR/no-ffprobe" \
       bash "$CHECK"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"找不到 ffprobe"* ]]
+  [[ "$output" == *"找不到 ffprobe"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:113: assertion failed' >&2; return 1; }
 }
 
-@test "FV-6: CI 在 test job 內跑這個檢查，且不是 || true 假綠" {
+@test "FV-6: CI runs this check in the test job and it is not a || true fake green" {
   local block
   block=$(awk '/name: Verify ffmpeg version and flags/{flag=1} flag{print} /^      - name:/&&flag&&!/Verify ffmpeg version and flags/{exit}' "$CI_YML")
   # 防空過：真的要抓到含該腳本的 step（含 name 行）
   [[ -n "$block" ]] || { echo "FAIL: ci.yml 找不到跑 check-ffmpeg-version.sh 的 step" >&2; return 1; }
-  [[ "$block" == *"check-ffmpeg-version.sh"* ]]
+  [[ "$block" == *"check-ffmpeg-version.sh"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:122: assertion failed' >&2; return 1; }
   if printf '%s' "$block" | grep -q '|| true'; then
     echo "FAIL: 該 step 有 '|| true'（假綠）" >&2
     return 1
@@ -147,7 +155,7 @@ make_fake_ffmpeg_only_scale_fails() {
   chmod +x "$path"
 }
 
-@test "FV-7: CONTRIBUTING 寫明版本底線與 -vsync 移除清單" {
+@test "FV-7: CONTRIBUTING documents the version floor and the -vsync removal list" {
   grep -q '5\.1' "$CONTRIB" || { echo "FAIL: CONTRIBUTING 未寫 ffmpeg 版本底線 5.1" >&2; return 1; }
   grep -q -- '-vsync' "$CONTRIB" || { echo "FAIL: CONTRIBUTING 未寫 -vsync 移除說明" >&2; return 1; }
   grep -q 'check-ffmpeg-version\.sh' "$CONTRIB" || {
@@ -162,21 +170,22 @@ make_fake_ffmpeg_only_scale_fails() {
   }
 }
 
-@test "FV-8: 第一組可用、第二組（pptx-slim 的 scale 表達式）失效 → 必須單獨擋住" {
+@test "FV-8: first combo works but second (pptx-slim scale expression) fails -> blocked separately" {
   make_fake_ffmpeg_only_scale_fails "$FAKE_BIN/ffmpeg-noscale" "ffmpeg version 6.0 Copyright"
   make_fake_ffprobe "$FAKE_BIN/ffprobe"
   run env FFMPEG_BIN="$FAKE_BIN/ffmpeg-noscale" FFPROBE_BIN="$FAKE_BIN/ffprobe" bash "$CHECK"
   [ "$status" -ne 0 ] || { echo "FAIL: 第二組旗標失效竟然通過" >&2; return 1; }
   # 訊息必須指出是 pptx-slim 那一組（而不是第一組），否則診斷會指錯地方
   [[ "$output" == *"pptx-slim"* ]] || { echo "FAIL: 失敗訊息未指出 pptx-slim 旗標組合：$output" >&2; return 1; }
-  [[ "$output" == *"旗標組合"* ]]
+  [[ "$output" == *"旗標組合"* ]] || {
+    echo 'FAIL: tests/ffmpeg-version.bats:180: assertion failed' >&2; return 1; }
   [[ "$output" != *"select/showinfo"* ]] || { echo "FAIL: 第一組也被判失敗（假殼設計錯）" >&2; return 1; }
 }
 
 # 為什麼需要 FV-9：FV-8 的假殼「一看到 scale= 就失敗」，所以檢查腳本若把 scale 表達式換成
 # 別的、甚至整條 -vf 拿掉，FV-8 照樣會過 —— 第二組能力實測就退化成裝飾品。
 # 這條直接比對「檢查腳本送的字串」與「pptx-slim 真正送給 ffmpeg 的字串」是不是同一份。
-@test "FV-9: 第二組能力實測的字串 == pptx-slim 真正在用的旗標（不是裝飾）" {
+@test "FV-9: the second capability probe string equals the flags pptx-slim really uses" {
   local expr
   expr=$(python3 -c "
 import sys

@@ -138,7 +138,7 @@ load 'helpers/test-env'
   }
 }
 
-@test "RESTRUCT-DAV-WIKI: 子檔內容錨點（掏空即紅，TMO-033）" {
+@test "RESTRUCT-DAV-WIKI: sub-file content anchor (emptying it must be red, TMO-033)" {
   local dir="$REPO_ROOT/skills/dav-wiki"
   # TMO-033：原本只鎖「指標指向的檔案存在」→ 子檔被掏空（只剩標題）仍綠。
   # ① 通用鎖：每個被指到的子檔都要有實質內容（非空白行 ≥ 8）

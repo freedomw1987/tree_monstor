@@ -45,7 +45,7 @@ teardown() {
     rm -rf "$TEST_ROOT"
 }
 
-@test "cross-ref: doc tag 100% keyword →" {
+@test "cross-ref: doc tag 100% keyword match" {
     cat > new-doc.json <<EOF
 {
   "tags": ["react", "ssr", "performance"],
@@ -55,10 +55,11 @@ EOF
     run "$CROSS_REF" _index.json new-doc.json
     [ "$status" -eq 0 ]
     # doc-a (100% tag 重疊 + keywords "streaming" 重疊) 應被推薦
-    [[ "$output" =~ "doc-a" ]]
+    [[ "$output" =~ "doc-a" ]] || {
+      echo 'FAIL: tests/wiki-cross-ref.bats:58: assertion failed' >&2; return 1; }
 }
 
-@test "cross-ref: tag 0% → python vs react" {
+@test "cross-ref: tag 0% resolves python vs react" {
     cat > new-doc.json <<EOF
 {
   "tags": ["python", "django", "orm"],
@@ -83,7 +84,7 @@ EOF
     ! [[ "$output" =~ "doc-c" ]]
 }
 
-@test "cross-ref: tag 100% keyword →" {
+@test "cross-ref: tag 100% keyword match" {
     cat > new-doc.json <<EOF
 {
   "tags": ["react", "ssr"],
@@ -108,7 +109,7 @@ EOF
     ! [[ "$output" =~ "doc-b" ]]
 }
 
-@test "cross-ref: tag 50% + keyword →" {
+@test "cross-ref: tag 50% plus keyword match" {
     # new doc: react, ssr, performance (3 tags)
     # doc-d: react, performance (2 tags) → 重疊 2/3 = 67% ≥ 50% ✓
     # doc-d keywords: streaming, ssr → 與 new doc 完全相同 → 推薦
@@ -120,10 +121,11 @@ EOF
 EOF
     run "$CROSS_REF" _index.json new-doc.json
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "doc-d" ]]
+    [[ "$output" =~ "doc-d" ]] || {
+      echo 'FAIL: tests/wiki-cross-ref.bats:124: assertion failed' >&2; return 1; }
 }
 
-@test "cross-ref: tag 33% (< 50%) →" {
+@test "cross-ref: tag 33% (below 50%) falls back" {
     # new doc: react, ssr, performance, rendering, state (5 tags)
     # doc-d: react, performance → 重疊 2/5 = 40% < 50% ✗
     cat > new-doc.json <<EOF
@@ -172,7 +174,8 @@ EOF
 @test "cross-ref: --help" {
     run "$CROSS_REF" --help
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "Usage:" ]]
+    [[ "$output" =~ "Usage:" ]] || {
+      echo 'FAIL: tests/wiki-cross-ref.bats:177: assertion failed' >&2; return 1; }
 }
 
 # === 邊緣案例（E5-E7） ===

@@ -140,7 +140,7 @@
 | 8 | **D5 只比 md/html 的「狀態」、不比內文** → 同檔內「5 類 vs 8 類」這類內文漂移抓不到（本輪實際發生於 `docs/ac/TMO-071.html` → 已直接修正）；補 D9 屬**新增 scope** | P2 | 另開 US | **本輪揭露**（設計邊界）|
 | 9 | ~~**狀態值詞彙表只認 4 個已知 emoji** → 全新 emoji 的第 5 種狀態值不被 RECON-007 擋~~ | — | — | **已閉合**：依 V03 Reviewer 第 2 輪建議改為**結構式 + 集合等值 + 跨檔守護**（`check-doc-drift.py` 的 `VALID_STATUS` ↔ 規格檔 §4 一致性）+ 新增 **RECON-016** 反向自測 + **mutant DR-M2** |
 | 10 | **mutant harness 在截斷多位元組字元時會 UnicodeDecodeError 崩潰**（`text=True` 嚴格解碼）→ 整張表中止 → 其餘 mutant 從未被驗（**既存缺陷**，本輪跑全表才浮現）| P2 | — | **已閉合**（改 `errors="replace"`；rc 才是判定依據）|
-| 11 | **TMO-072**：bats 1.14 在 UTF-8 locale 下靜默丟棄名稱含 CJK 的 `@test` → 探針從未執行（假綠溫床）→ CI 的「Verify probes still kill mutants」步驟**紅**（既存缺陷，本輪才浮現）| P1 | 已立 backlog TMO-072 | **仍待補**（不在本 US 範圍）；註：`tests/doc-drift.bats` / `tests/restruct-dav-reconciler.bats` 測試名全為 ASCII → **不影響本輪 7 條需求句的判定** |
+| 11 | ~~**TMO-072**：bats 1.14 靜默跳過「測試名含中文」的 `@test` → 探針從未執行（假綠溫床）→ CI 的「Verify probes still kill mutants」步驟**紅**~~ | — | — | **已閉合**（2026-10-26 動工）：① **21 個探針檔共 134 支**探針名改為純 ASCII（保留 ID 前綴；`mutants.tsv` 的 ASCII ID 仍對得上）→ 計畫數 == 執行數 == 760、`unknown test name` 0 筆；②新增 `tests/helpers/probe-scan.bash` + `tests/probe-name-ascii.bats`（PNA-1～PNA-4）作守門；③ENV-EQ-9 的 canary 改成 locale 正確的斷言（→ **ENV-EQ-9 從紅轉綠**）；④連帶修掉 **181 個**「獨立 `[[ ]]` 斷言失敗不會中止 test body」的假綠 → **6 支原本守不住的 mutant 全部轉死**，**全表 48 支 mutant 首次全死**（動工前整表 UnicodeDecodeError 崩潰）|
 
 ## 6. 反思
 
@@ -153,16 +153,15 @@
 | 效率 | ⚠️ | 六輪對帳 + 兩輪二審的往返成本高；對帳 subagent 與 reviewer **皆無 shell 執行能力** → 其「指令實際輸出」欄位全靠 supervisor 補跑（本輪已補並在表中標明出處）|
 | 誠實 | ✅ | 本輪**主動改正了 3 處自己的失真宣稱**（v2.11 的「實測 4 支全死」當時未發生／changelog 把未實作的 P2-3 寫成已完成／RECON-016 初版是空轉的反向自測）——這些若不對帳就會一路留到交付 |
 
-**Action Items**（已寫入本檔第 5 節；並已立 backlog TMO-072）：
+**Action Items**（已寫入本檔第 5 節；TMO-072 已於 2026-10-26 閉合）：
 
-1. TMO-072：102 支中文測試名被 bats 靜默跳過 → ASCII 化 + 補「宣告數 vs 實跑數」守門（P1，**CI 的 mutant 步驟目前紅**）
-2. 補 D9（md ↔ html 內文關鍵數字同步）以關閉「同檔內 5 類 vs 8 類」那類盲區（P2）
-3. 在第二個專案實跑一次漂移檢查（P2）
+1. 補 D9（md ↔ html 內文關鍵數字同步）以關閉「同檔內 5 類 vs 8 類」那類盲區（P2）
+2. 在第二個專案實跑一次漂移檢查（P2）
 
 ## 7. 建議的下一步
 
 | 面向 | 內容 |
 |------|------|
 | **驗收方式** | `bats tests/doc-drift.bats tests/restruct-dav-reconciler.bats tests/restruct-zero-cross-read.bats`（應 59 綠）；`bash scripts/ci/check-doc-drift.sh`（應 rc=0）；`python3 scripts/ci/mutant-must-die.py --only DD-M1,DD-M2,DD-M3,DR-M1,DR-M2`（應 5 支全死）|
-| **預估時間** | TMO-072 處理（102 支探針 ASCII 化 + 守門）：約 2～4 小時；補 D9（md ↔ html 內文同步）：約 1 小時|
-| **風險提示** | ①`gates.json` 未動 → 若其他專案只看 gates.json 會以為沒有 Gate 4.5（handbook §2.3 有寫，但門檻位階較弱）；②D8 的「交付摘要 ↔ 權威對帳表」比對要求交付摘要內嵌**完整** R-ID 表，模板外的自訂格式會誤紅；③D8 只比 (R-ID, 狀態)、不比「實作位置」「證據」欄 → 證據欄漂移**結構上不可見**（本輪實際發生並已修）；|
+| **預估時間** | 補 D9（md ↔ html 內文同步）：約 1 小時；TMO-072 已完成 |
+| **風險提示** | ①`gates.json` 未動 → 若其他專案只看 gates.json 會以為沒有 Gate 4.5（handbook §2.3 有寫，但門檻位階較弱）；②D8 的「交付摘要 ↔ 權威對帳表」比對要求交付摘要內嵌**完整** R-ID 表，模板外的自訂格式會誤紅；③D8 只比 (R-ID, 狀態)、不比「實作位置」「證據」欄 → 證據欄漂移**結構上不可見**（本輪實際發生並已修）；④TMO-072 閉合後，repo 內**所有**探針都真的會執行——那 134 支從未跑過的探針一旦真的跑，可能揭露更多既存失敗（本次實測：沒有，全套失敗數 46 → 46 不變）|

@@ -56,7 +56,7 @@ section() {
     echo "FAIL: 規則表不是 規則/例外/限制 三欄" >&2; return 1; }
 }
 
-@test "RESTRUCT-PPTX-SLIM: 流程提到的 5 支腳本真的存在且可執行（TMO-064 加圖片那支）" {
+@test "RESTRUCT-PPTX-SLIM: all 5 scripts named by the flow exist and are executable (TMO-064)" {
   local skill scripts n=0 name
   skill=$(skill_file)
   scripts="$REPO_ROOT/skills/pptx-slim/scripts"
@@ -68,7 +68,7 @@ section() {
   [ "$n" -eq 5 ] || { echo "FAIL: 只驗到 $n 支腳本" >&2; return 1; }
 }
 
-@test "RESTRUCT-PPTX-SLIM: 變動歷史存在，且完整歷史外移到同目錄 CHANGELOG.md" {
+@test "RESTRUCT-PPTX-SLIM: the change history exists and is moved to CHANGELOG.md beside it" {
   local skill
   skill=$(skill_file)
   assert_file_contains "$skill" "## 變動歷史"
@@ -85,7 +85,7 @@ section() {
   [ -z "$hits" ] || { echo "FAIL: 出現跨目錄 markdown 連結：" >&2; echo "$hits" >&2; return 1; }
 }
 
-@test "RESTRUCT-PPTX-SLIM: SKILL.md 行數 <= 130（150 硬上限的預警線）" {
+@test "RESTRUCT-PPTX-SLIM: SKILL.md is at most 130 lines (early warning below the hard 150 limit)" {
   local lines
   lines=$(wc -l < "$(skill_file)" | tr -d ' ')
   [ "$lines" -le 130 ] || {

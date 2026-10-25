@@ -10,7 +10,75 @@
 ## v2.12 — 2026-10-26
 
 **本版異動**：Gate 4.5 第 6 輪需求對帳 —— 補正 v2.11 的**失真紀錄**、修正 RECON-007 探針解析器（BSD grep 交替分支上限）、
-修掉 `--from-date` 的 **fail-open** 缺口、關閉 v2.11 二審指出的 RECON-007 覆蓋盲點
+修掉 `--from-date` 的 **fail-open** 缺口、關閉 v2.11 二審指出的 RECON-007 覆蓋盲點、**並完成 TMO-072（假綠溫床）**
+
+### TMO-072：bats 1.14 在 UTF-8 locale 下靜默丟棄 CJK 名的探針
+
+**病因（實測確認，非推論）**：bats 的 `bats_encode_test_name` 用 `[[:alnum:]]` 決定哪些字元**原樣**留在 bash 函式名裡。
+該類別在 **UTF-8 locale** 下會匹配 Unicode 字母（中文／假名／韓文／西里爾）→ 函式名對不上 → bats 報
+`bats: unknown test name` + `Executed N instead of expected M` → **該支探針從未被執行**；
+但 `bats --count` **仍把它算進去** → 報表看起來全綠。
+
+| 環境 | CJK 名探針 |
+|------|-----------|
+| `LC_ALL=C` | **會跑**（`[[:alnum:]]` 只認 ASCII → CJK 被跳過編碼）|
+| `LC_ALL=en_US.UTF-8` | **被丟棄**（＝本 bug 的成因；CI 預設就是這種）|
+
+（希臘文／café／全形英數／emoji／→ **不受影響**。）
+
+**動工前**（2026-10-26 量測）：**21 個探針檔共 134 支**探針名含非 ASCII → 在 UTF-8 locale 下從未執行。
+
+**處置**：
+
+| # | 動作 | 證據 |
+|---|------|------|
+| 1 | 134 支探針改名為**純 ASCII**（保留 `<ID>: <說明>` 結構與 ID 前綴，說明翻英文）| 計畫數 == 執行數 == **760**；`unknown test name` 0 筆；`instead of expected` 0 筆 |
+| 2 | 新增 `tests/helpers/probe-scan.bash`（引號/heredoc 感知的共用掃描器）| 每個 .bats 檔：掃描器計數 == `bats --count`（PNA-2 釘住）|
+| 3 | 新增 `tests/probe-name-ascii.bats`：PNA-1 命名政策／PNA-2 交叉比對／PNA-3 掃描器自測／PNA-4 斷言 fail-fast | PNA-4 突變測試：把一個 fail-fast 還原成裸 `[[ ]]` → 轉紅並指名檔案行號 |
+| 4 | ENV-EQ-9 的 canary 改成 **locale 正確**的斷言（舊版斷言「CJK 名必須跑 2 條」是 `LC_ALL=C` 下的觀察 → 在 UTF-8 locale 下必然紅，且紅的原因被誤讀成「canary 檔壞掉」）| ENV-EQ-9 從紅轉綠（baseline 47 → **46**）|
+
+#### 連帶挖出並修掉的第二層假綠（比本 bug 更嚴重）
+
+**實測發現**：bats（與純 bash）之下，**獨立的 `[[ ... ]]` 斷言失敗不會中止 test body** —— 只有**最後一個**命令的狀態決定結果：
+
+```
+[[ abc == xyz ]]; echo reached   → reached（rc 0，沒中止）
+[ abc = xyz ];    echo reached   → 中止（rc 1）
+false;             echo reached   → 中止（rc 1）
+```
+
+→ **夾在中間的 `[[ ]]` 斷言等於沒有**。實例：`tests/ffmpeg-version.bats` FV-2 在 `MIN_MAJOR=5 → 0` 的突變下**仍綠**，
+因為它的核心斷言 `[[ "$output" == *"太舊"* ]]` 夾在中間、失敗被靜默忽略。
+
+**處置**：把 **181 個**獨立 `[[ ]]` 改成 repo 既有的 fail-fast 慣例：
+
+```bash
+[[ ... ]] || {
+  echo 'FAIL: <file>:<line>: assertion failed' >&2; return 1; }
+```
+
+> **兩個刻意的設計**（都是被現有工具逼出來的）：
+> ① **不把運算式嵌進訊息**、且**拆成兩行**——`scripts/ci/lint-probe-secrets.py` 的 R3 規則是**行級**的
+> （同一行同時出現 `FAIL` 與 `$output`/`$out`/`$result` 且無 `mask_secrets` → 判成外洩）。
+> 兩行式正是本 repo 既有慣例。
+> ② **行尾註解（含 `SECRET-OK:` 標記）一律保留**——掉了會讓秘密掃描器誤判成「出現真 key 前綴」。
+
+**效果**：**6 支原本「守不住」的 mutant 全部轉死**（IMG-M2／V-M7／V-M10／FF-M1／SM-M1／SM-M2）。
+這 6 支的探針正是那 134 支「從未執行」的其中之一 → **它們從來沒有被驗證過**。
+全表 **48 支 mutant 全部死亡**（動工前整表 `UnicodeDecodeError` 崩潰、從未跑完）。
+
+> **失敗數沒有變**：改寫 181 個斷言後，全套失敗數 **46 → 46，失敗集合完全不變**——
+> 表示那些斷言本來就都成立，只是**沒有被強制**。這是「假綠」的典型樣貌：報表綠，但護欄其實沒扣住。
+
+### TMO-072 的 V03 二審結論（Reviewer）
+
+| 輪次 | Verdict | 摘要與處置 |
+|------|---------|------------|
+| 第 1 輪 | ⚠️ approve with comments（0 P0 / 1 P1 / 6 P2 / 6 P3）| **P1**：Reviewer 質疑「`[ ]` 會中止、`[[ ]]` 不會中止」的不對稱是**量測環境混用** → **已用同檔對照實驗排除**（T1~T5 放在同一個 .bats、同一環境、每例最後一個命令都是 `true`：T1 `[ ]` 紅、T2 `[[ ]]` 綠、T3 `false` 紅）→ Reviewer 的前提不成立，但**其結論「裸 `[ ]` 中段斷言也不安全」因此也不成立**（`[ ]` 確實會中止 → 安全）。**P2**：①`\|\|`/`&&` 豁免過寬 → 已收緊（PNA-4 重寫，連 `\|\|` 鏈也抓）；②fail-fast 訊息行號漂移 → 已用 `fix_line_numbers.py` 重算（182 筆全對）；③新檔 untracked → CI 的 `git ls-files` 系列守門與 shellcheck 尚未蓋到 → **併入合併前檢查清單**（本分支所有新檔都還沒 add，非本次獨有）；④ENV-EQ-9 canary 用 `charmap` 當代理是錯的代理 → 已改用**「該 locale 的 `[[:alnum:]]` 是否含 CJK」**（與 bats 內部 `bats_encode_test_name` 同一判準）；⑤同一件事四處四個數字 → 已統一為「動工前 21 個探針檔共 134 支」；⑥V03 未閉環 → 本節即為二審紀錄。**P3**：PNA-4 的 `if/elif` 豁免是不可達死碼 → 已刪；PNA-4 不跳 heredoc → 已改用 heredoc 感知的 `probe_code_lines`；巢狀 bats 未清 `BATS_` 前綴的環境變數 → 已清；PNA-1/2/4 缺「掃到幾個」下限 → 已補（防空過）。 |
+
+> **本輪自己也踩到同一個坑（假綠）**：PNA-4 改用 heredoc 感知掃描器時，我改了 `while read` 卻忘了改底部的
+> `done < "$file"` → **整支守門變成空轉卻回報綠**。是「突變測試」（把一個 fail-fast 還原成裸 `[[ ]]`
+> 必須轉紅）把它抓出來的 → **守門自己也必須先證明自己會咬**。
 
 ### 第 6 輪對帳 → 補正 v2.11 的失真紀錄
 
@@ -117,6 +185,7 @@ v1.2 的集合等值會把它判為違規 → **mutant 死**。這支 mutant 正
 > **另一項本輪才浮現的既存缺陷（非本 US 範圍，已揭露）**：跑**整張** mutant 表時，harness 在
 > `subprocess.run(..., text=True)` 嚴格解碼 bats 輸出 → 突變把**多位元組字元截斷**時輸出含不合法 UTF-8
 > → `UnicodeDecodeError` → **整個 harness 崩潰**（其餘 mutant 從未被驗）。
+> 已改 `errors="replace"`（rc 才是判定依據，輸出只是證據）→ 崩潰變成可診斷的失敗。
 > 剩下的失敗真因＝**TMO-072**（bats 1.14 在 UTF-8 locale 下靜默丟棄名稱含 CJK 的 `@test` → **21 個探針檔共 134 支**探針從未執行），
 > 屬**已存在的 P1 backlog 項**（`docs/backlog.md` TMO-072，todo），不在本 US 驗收範圍。
 > 註：`tests/doc-drift.bats` 與 `tests/restruct-dav-reconciler.bats` 的測試名**全為 ASCII**（0 支中文名）

@@ -51,8 +51,10 @@ setup() {
   [ "$first" = "---" ]
   # Must contain 'name: dav-wiki' and 'description:' within first 10 lines
   run head -10 "$SKILL_DIR/SKILL.md"
-  [[ "$output" =~ "name: dav-wiki" ]]
-  [[ "$output" =~ "description:" ]]
+  [[ "$output" =~ "name: dav-wiki" ]] || {
+    echo 'FAIL: tests/dav-wiki.bats:54: assertion failed' >&2; return 1; }
+  [[ "$output" =~ "description:" ]] || {
+    echo 'FAIL: tests/dav-wiki.bats:56: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-4: SKILL.md mentions the 7-step workflow ----------

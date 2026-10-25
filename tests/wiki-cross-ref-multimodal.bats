@@ -194,11 +194,12 @@ EOF
 @test "AC-MR7: --help" {
   run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage" ]]
+  [[ "$output" =~ "Usage" ]] || {
+    echo 'FAIL: tests/wiki-cross-ref-multimodal.bats:197: assertion failed' >&2; return 1; }
 }
 
 # === AC-MR8: 不存在的輸入 → 錯誤 ===
-@test "AC-MR8: → exit 2" {
+@test "AC-MR8: missing arg -> exit 2" {
   run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh" --input "/nonexistent/wiki.md"
   [ "$status" -ne 0 ]
 }
@@ -213,7 +214,7 @@ EOF
 }
 
 # === AC-MR10: 沒給 --input ===
-@test "AC-MR10: --input --input-dir → exit 1" {
+@test "AC-MR10: both --input and --input-dir -> exit 1" {
   run "$REPO_ROOT/skills/dav-wiki/scripts/wiki-index.sh"
   [ "$status" -ne 0 ]
 }

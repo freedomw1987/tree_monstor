@@ -101,7 +101,7 @@ teardown() {
 }
 
 # === AC-V6: 不存在的影片 ===
-@test "AC-V6: error → ffprobe diagnostics" {
+@test "AC-V6: error path -> ffprobe diagnostics" {
   run ffprobe -v error -show_entries format=duration \
               -of csv=p=0 "/nonexistent/video.mp4"
   [ "$status" -ne 0 ]

@@ -190,19 +190,19 @@ EOF
 }
 
 # === AC-M8: 沒給 wiki ===
-@test "AC-M8: missing --wiki → exit 1" {
+@test "AC-M8: missing --wiki -> exit 1" {
   run "$TOOL" --media "$WORK/media.json" --media-type image
   [ "$status" -ne 0 ]
 }
 
 # === AC-M9: 不存在的 wiki ===
-@test "AC-M9: nonexistent wiki → exit 2" {
+@test "AC-M9: nonexistent wiki -> exit 2" {
   run "$TOOL" --wiki "/nonexistent/wiki.md" --media "$WORK/media.json" --media-type image
   [ "$status" -ne 0 ]
 }
 
 # === AC-M10: 沒給 media ===
-@test "AC-M10: missing --media → exit 1" {
+@test "AC-M10: missing --media -> exit 1" {
   create_wiki
   run "$TOOL" --wiki "$WORK/wiki.md" --media-type image
   [ "$status" -ne 0 ]
@@ -212,7 +212,8 @@ EOF
 @test "AC-M11: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage" ]]
+  [[ "$output" =~ "Usage" ]] || {
+    echo 'FAIL: tests/wiki-merge-media.bats:215: assertion failed' >&2; return 1; }
 }
 
 # === AC-M12: 多個媒體依序合併 ===

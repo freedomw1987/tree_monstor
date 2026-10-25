@@ -171,7 +171,8 @@ teardown() {
   [ ! -e "$TEST_HOME/.agents" ]
 
   # Output should mention the planned actions
-  [[ "$output" == *"CLAUDE.md"* ]]
+  [[ "$output" == *"CLAUDE.md"* ]] || {
+    echo 'FAIL: tests/install.bats:174: assertion failed' >&2; return 1; }
   [[ "$output" == *"dry-run"* || "$output" == *"DRY"* ]]
 }
 
@@ -179,10 +180,14 @@ teardown() {
 @test "AC-10: --help prints usage and exits 0" {
   run run_install --help
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Usage"* ]]
-  [[ "$output" == *"--global"* ]]
-  [[ "$output" == *"--local"* ]]
-  [[ "$output" == *"--uninstall"* ]]
+  [[ "$output" == *"Usage"* ]] || {
+    echo 'FAIL: tests/install.bats:183: assertion failed' >&2; return 1; }
+  [[ "$output" == *"--global"* ]] || {
+    echo 'FAIL: tests/install.bats:185: assertion failed' >&2; return 1; }
+  [[ "$output" == *"--local"* ]] || {
+    echo 'FAIL: tests/install.bats:187: assertion failed' >&2; return 1; }
+  [[ "$output" == *"--uninstall"* ]] || {
+    echo 'FAIL: tests/install.bats:189: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-11: idempotent ----------
@@ -260,22 +265,27 @@ teardown() {
     bash "$INSTALL_SH" --source "$TEST_SOURCE" --global --dry-run
   [ "$status" -eq 0 ]
   # ANSI escape: ESC[
-  [[ "$output" == *$'\033['* ]]
+  [[ "$output" == *$'\033['* ]] || {
+    echo 'FAIL: tests/install.bats:268: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-14: pure bash ----------
 @test "AC-14: install.sh starts with #!/usr/bin/env bash" {
   run head -1 "$BATS_TEST_DIRNAME/../install.sh"
-  [[ "$output" == *"bash"* ]]
+  [[ "$output" == *"bash"* ]] || {
+    echo 'FAIL: tests/install.bats:275: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-15: README exists and documents usage ----------
 @test "AC-15: README.md exists and contains usage section" {
   [ -f "$BATS_TEST_DIRNAME/../README.md" ]
   run cat "$BATS_TEST_DIRNAME/../README.md"
-  [[ "$output" == *"Usage"* ]]
-  [[ "$output" == *"--global"* ]]
-  [[ "$output" == *"--uninstall"* ]]
+  [[ "$output" == *"Usage"* ]] || {
+    echo 'FAIL: tests/install.bats:283: assertion failed' >&2; return 1; }
+  [[ "$output" == *"--global"* ]] || {
+    echo 'FAIL: tests/install.bats:285: assertion failed' >&2; return 1; }
+  [[ "$output" == *"--uninstall"* ]] || {
+    echo 'FAIL: tests/install.bats:287: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-16: meta — every AC has a test ----------
@@ -351,7 +361,8 @@ teardown() {
   # User's file content must survive.
   assert_path_is_file "$TEST_HOME/.claude/skills/conflict-skill/SKILL.md"
   run cat "$TEST_HOME/.claude/skills/conflict-skill/SKILL.md"
-  [[ "$output" == *"User-owned version"* ]]
+  [[ "$output" == *"User-owned version"* ]] || {
+    echo 'FAIL: tests/install.bats:364: assertion failed' >&2; return 1; }
   [[ ! "$output" == *"Mock conflict-skill"* ]] || {
     echo "FAIL: installer's conflict-skill content leaked into user's dir" >&2
     return 1
@@ -557,7 +568,8 @@ EOF
     bash "$INSTALL_SH" --source "$TEST_SOURCE" --local --yes
   [ "$status" -eq 0 ]
   # Look for ESC[1m (bold on) in the install output.
-  [[ "$output" == *$'\033[1m'* ]]
+  [[ "$output" == *$'\033[1m'* ]] || {
+    echo 'FAIL: tests/install.bats:571: assertion failed' >&2; return 1; }
 }
 
 # ---------- TD-018: handbook/*.md deploy ----------
@@ -584,7 +596,8 @@ EOF
   # The target must be inside the repo's docs/sop/handbook/ dir.
   local target
   target=$(readlink "$TEST_HOME/.pi/sop/handbook/2.1-planning.md")
-  [[ "$target" == *"/docs/sop/handbook/2.1-planning.md" ]]
+  [[ "$target" == *"/docs/sop/handbook/2.1-planning.md" ]] || {
+    echo 'FAIL: tests/install.bats:599: assertion failed' >&2; return 1; }
 }
 
 @test "TD-018 AC-4: --uninstall removes handbook symlinks but preserves user files" {

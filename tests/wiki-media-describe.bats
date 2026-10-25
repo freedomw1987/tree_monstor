@@ -73,13 +73,13 @@ teardown() {
 }
 
 # ---------- AC-D4: 缺 --mode ----------
-@test "AC-D4: invalid --mode → exit 1" {
+@test "AC-D4: invalid --mode -> exit 1" {
   run "$TOOL" --input "foo.png" --mock
   [ "$status" -ne 0 ]
 }
 
 # ---------- AC-D5: 不存在的輸入 ----------
-@test "AC-D5: missing --input → exit 2" {
+@test "AC-D5: missing --input -> exit 2" {
   run "$TOOL" --mode describe \
               --input "/nonexistent/foo.png" \
               --mock
@@ -87,7 +87,7 @@ teardown() {
 }
 
 # ---------- AC-D6: 不支援的 mode ----------
-@test "AC-D6: bad mode value → exit 3" {
+@test "AC-D6: bad mode value -> exit 3" {
   run "$TOOL" --mode foo-bar \
               --input "foo.png" \
               --mock
@@ -110,7 +110,8 @@ teardown() {
 @test "AC-D8: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage" ]]
+  [[ "$output" =~ "Usage" ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:113: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D9: describe 對非圖片副檔名 ----------
@@ -127,7 +128,8 @@ teardown() {
   # TMO-060（reviewer Round-2 P3-7）：非媒體檔必須**出聲**——否則「把 WARN 整段
   # 拿掉」的突變可存活（本票正好動了這一行）。注意 `-qi` 只影響大寫判定，
   # `.txt` 兩種寫法都該 WARN。
-  [[ "$output" == *"not an image"* ]]
+  [[ "$output" == *"not an image"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:131: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D10: transcript 對 .png 副檔名 ----------
@@ -183,7 +185,7 @@ teardown() {
 }
 
 # ---------- AC-D15: input-dir 不存在 ----------
-@test "AC-D15: missing --input-dir → exit 2" {
+@test "AC-D15: missing --input-dir -> exit 2" {
   run "$TOOL" --mode describe \
               --input-dir "/nonexistent/dir" \
               --mock
@@ -241,19 +243,21 @@ teardown() {
 # ==========================================================================
 
 # ---------- AC-D19: real 單檔未實作 → rc=5、不得有產物 ----------
-@test "AC-D19: real mode single file → rc=5 and NO artifact" {
+@test "AC-D19: real mode on a single file -> rc=5 and no artifact" {
   run env -u DAV_WIKI_MOCK "$TOOL" --mode describe \
       --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
       --output-json "$WORK/real.json"
   [ "$status" -eq 5 ]
   [ ! -f "$WORK/real.json" ]
-  [[ "$output" == *"not implemented"* ]]
+  [[ "$output" == *"not implemented"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:252: assertion failed' >&2; return 1; }
   # 真的沒走 mock（防空過：若走 mock 就會有 [MOCK] 產物/字樣）
-  [[ "$output" != *"[MOCK]"* ]]
+  [[ "$output" != *"[MOCK]"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:255: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D20: real 批次全失敗 → rc≠0、不得出現成功訊息 ----------
-@test "AC-D20: real mode batch all-failed → rc≠0 and NO success message" {
+@test "AC-D20: real mode batch where all fail -> nonzero rc and no success message" {
   mkdir -p "$WORK/batch-real"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-real/"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/blue.png" "$WORK/batch-real/"
@@ -261,21 +265,24 @@ teardown() {
       --input-dir "$WORK/batch-real" \
       --output-dir "$WORK/out-real"
   [ "$status" -ne 0 ]
-  [[ "$output" != *"✅ 批次完成"* ]]
-  [[ "$output" == *"失敗"* ]]
+  [[ "$output" != *"✅ 批次完成"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:268: assertion failed' >&2; return 1; }
+  [[ "$output" == *"失敗"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:270: assertion failed' >&2; return 1; }
   # 零產出（契約：不留部分產出）
   [ -z "$(find "$WORK/out-real" -maxdepth 1 -type f 2>/dev/null)" ]
 }
 
 # ---------- AC-D21: 批次 mock 全成功仍是 rc=0 + ✅（回歸鎖） ----------
-@test "AC-D21: batch mock all-success stays rc=0 + ✅（回歸鎖）" {
+@test "AC-D21: mocked batch with all success stays rc=0 and reports success (regression lock)" {
   mkdir -p "$WORK/batch-ok"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-ok/"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/blue.png" "$WORK/batch-ok/"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-ok" \
       --output-dir "$WORK/out-ok" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:284: assertion failed' >&2; return 1; }
   [ -f "$WORK/out-ok/red.desc.json" ]
   [ -f "$WORK/out-ok/blue.desc.json" ]
 }
@@ -290,17 +297,19 @@ teardown() {
 }
 
 # ---------- AC-D23: usage 與實作一致（有 rc 5、無死碼 4） ----------
-@test "AC-D23: usage/實作一致：有 5 未實作、無死的 4 必要工具缺失" {
+@test "AC-D23: usage matches implementation: 5 not implemented, no dead required-tool gaps" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
-  [[ "$output" == *"5  未實作"* ]]
-  [[ "$output" != *"必要工具缺失"* ]]
+  [[ "$output" == *"5  未實作"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:303: assertion failed' >&2; return 1; }
+  [[ "$output" != *"必要工具缺失"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:305: assertion failed' >&2; return 1; }
   assert_file_contains "$TOOL" "EXIT_NOTIMPL"
   refute_file_contains "$TOOL" "EXIT_TOOLMISSING"
 }
 
 # ---------- AC-D24: SKILL.md 不得再描述成「回 rc 0＝假成功」 ----------
-@test "AC-D24: SKILL.md 限制表寫明 rc 5（不再是『回 rc 0＝假成功』）" {
+@test "AC-D24: the SKILL.md limits table states rc 5 (not rc 0 meaning fake success)" {
   local skill="$REPO_ROOT/skills/dav-wiki/SKILL.md"
   # 用 body 版（排除 `## 變動歷史`）：歷史列本來就會提到「原本是假成功」的舊行為，
   # 那不該算違規；違規的是**現行說明**仍把它描述成現在式。
@@ -324,15 +333,17 @@ teardown() {
   run "$TOOL" --mode describe --input-dir "$WORK/batch-many" \
       --output-dir "$WORK/out-many" --mock --max-concurrency 2
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:336: assertion failed' >&2; return 1; }
   # TMO-060（reviewer P2-2）：收緊到整行——否則「訊息印死 --batch-limit」的突變能存活。
-  [[ "$output" == *"已達 --max-concurrency 上限（2），尚有 3 個未處理"* ]]
+  [[ "$output" == *"已達 --max-concurrency 上限（2），尚有 3 個未處理"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:339: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D26: 部分失敗可達（輸出寫不進去 → ❌ + rc=6） ----------
 # TMO-058 順修（已揭露）：原版 `echo > "$output"` 不看 rc，寫入失敗照樣印「✓ wrote」+ ✅。
 # 本探針讓「部分失敗」那條分支真的可達（原本 mock 全成功／real 全失敗 → 永遠是死碼）。
-@test "AC-D26: batch partial failure (blocked output path) → rc=6 and ❌" {
+@test "AC-D26: batch partial failure (blocked output path) -> rc=6 and a cross mark" {
   mkdir -p "$WORK/batch-mix" "$WORK/out-mix"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png"  "$WORK/batch-mix/"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/blue.png" "$WORK/batch-mix/"
@@ -341,23 +352,26 @@ teardown() {
   run "$TOOL" --mode describe --input-dir "$WORK/batch-mix" \
       --output-dir "$WORK/out-mix" --mock
   [ "$status" -eq 6 ]
-  [[ "$output" == *"❌ 批次部分失敗"* ]]
-  [[ "$output" != *"✅ 批次完成"* ]]
+  [[ "$output" == *"❌ 批次部分失敗"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:355: assertion failed' >&2; return 1; }
+  [[ "$output" != *"✅ 批次完成"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:357: assertion failed' >&2; return 1; }
   [ -f "$WORK/out-mix/blue.desc.json" ]
 }
 
 # ---------- AC-D27: 單檔寫入失敗不得假成功 ----------
-@test "AC-D27: single-file blocked output path → rc=6, no ✓ wrote" {
+@test "AC-D27: single-file blocked output path -> rc=6 with no check mark written" {
   mkdir -p "$WORK/blocked.desc.json"
   run "$TOOL" --mode describe \
       --input "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" \
       --output-json "$WORK/blocked.desc.json" --mock
   [ "$status" -eq 6 ]
-  [[ "$output" != *"✓ wrote"* ]]
+  [[ "$output" != *"✓ wrote"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:369: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D28: 建不出 output-dir 不得假成功 ----------
-@test "AC-D28: un-creatable --output-dir → rc=6, no batch success" {
+@test "AC-D28: un-creatable --output-dir -> rc=6 with no batch success" {
   mkdir -p "$WORK/batch-dir"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-dir/"
   echo "not a dir" > "$WORK/a-file"
@@ -365,15 +379,17 @@ teardown() {
       --output-dir "$WORK/a-file/sub" --mock
   [ "$status" -eq 6 ]
   # 收緊到「專屬訊息」：否則下游寫入失敗也會回 6，這條護欄就無法被隔離驗證
-  [[ "$output" == *"無法建立 output-dir"* ]]
-  [[ "$output" != *"✅ 批次完成"* ]]
+  [[ "$output" == *"無法建立 output-dir"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:382: assertion failed' >&2; return 1; }
+  [[ "$output" != *"✅ 批次完成"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:384: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D29: 上限旗標非法值 → rc=1（TMO-060：`0` 改為合法＝無限制） ----------
 # TMO-058 時鎖的是「0／2x 皆非法」。TMO-060 重定義語意後 `0`＝無限制（合法），
 # 故拒收方向改壓在 -1／2x／1.5（覆蓋面比原本更廣，且要求新的精確訊息）；
 # 「0 必須被接受」由 AC-D32 正面鎖。← V03.6 申報的條件放寬項：0 由 fail 改為 pass。
-@test "AC-D29: --batch-limit/--max-concurrency 非法值 → rc=1, no batch success" {
+@test "AC-D29: invalid --batch-limit or --max-concurrency -> rc=1 with no batch success" {
   mkdir -p "$WORK/batch-mc"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-mc/"
   local n
@@ -384,29 +400,33 @@ teardown() {
     run "$TOOL" --mode describe --input-dir "$WORK/batch-mc" \
         --output-dir "$WORK/out-mc-$n" --mock --batch-limit "$n"
     [ "$status" -eq 1 ]
-    [[ "$output" != *"✅ 批次完成"* ]]
+    [[ "$output" != *"✅ 批次完成"* ]] || {
+      echo 'FAIL: tests/wiki-media-describe.bats:403: assertion failed' >&2; return 1; }
     # TMO-060（reviewer P3-1）：斷言整行含**使用者實際打的旗標名**——否則把訊息
     # 寫死成 --batch-limit 的突變能存活（M21 實測）。
-    [[ "$output" == *"ERROR: --batch-limit 需為 0 或正整數（不得有前導零）（收到：${n}）"* ]]
+    [[ "$output" == *"ERROR: --batch-limit 需為 0 或正整數（不得有前導零）（收到：${n}）"* ]] || {
+      echo 'FAIL: tests/wiki-media-describe.bats:407: assertion failed' >&2; return 1; }
     [ -z "$(find "$WORK/out-mc-$n" -maxdepth 1 -type f 2>/dev/null)" ]
   done
   # 別名必須走同一條驗證（不得只驗正名）
   run "$TOOL" --mode describe --input-dir "$WORK/batch-mc" \
       --output-dir "$WORK/out-mc-alias" --mock --max-concurrency 2x
   [ "$status" -eq 1 ]
-  [[ "$output" == *"ERROR: --max-concurrency 需為 0 或正整數（不得有前導零）（收到：2x）"* ]]
+  [[ "$output" == *"ERROR: --max-concurrency 需為 0 或正整數（不得有前導零）（收到：2x）"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:415: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D30: --max-concurrency 合法值不得被新驗證誤擋 ----------
 # reviewer Round-2 P3-6：AC-D29 只鎖「拒絕」方向，邊界缺「接受」證據（1000 應可通過）。
-@test "AC-D30: --max-concurrency 合法值（10 / 1000）仍 rc=0" {
+@test "AC-D30: valid --max-concurrency values (10 and 1000) still give rc=0" {
   mkdir -p "$WORK/batch-mc-ok"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-mc-ok/"
   for n in 10 1000; do
     run "$TOOL" --mode describe --input-dir "$WORK/batch-mc-ok" \
         --output-dir "$WORK/out-mc-$n" --mock --max-concurrency "$n"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"✅ 批次完成：1 個檔案"* ]]
+    [[ "$output" == *"✅ 批次完成：1 個檔案"* ]] || {
+      echo 'FAIL: tests/wiki-media-describe.bats:428: assertion failed' >&2; return 1; }
   done
 }
 
@@ -416,7 +436,7 @@ teardown() {
 # ==========================================================================
 
 # ---------- AC-D31: 預設＝無上限（6 檔批次不得丟檔） ----------
-@test "AC-D31: 預設無上限 → 6 檔批次全處理（舊版預設 4 會丟 2 檔）" {
+@test "AC-D31: the default has no limit and a 6-file batch is fully processed" {
   mkdir -p "$WORK/batch-six"
   local i
   for i in 1 2 3 4 5 6; do
@@ -425,13 +445,15 @@ teardown() {
   run "$TOOL" --mode describe --input-dir "$WORK/batch-six" \
       --output-dir "$WORK/out-six" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：6 個檔案"* ]]
-  [[ "$output" != *"未處理"* ]]
+  [[ "$output" == *"✅ 批次完成：6 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:448: assertion failed' >&2; return 1; }
+  [[ "$output" != *"未處理"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:450: assertion failed' >&2; return 1; }
   [ "$(find "$WORK/out-six" -maxdepth 1 -type f -name '*.desc.json' | wc -l | tr -d ' ')" -eq 6 ]
 }
 
 # ---------- AC-D32: --batch-limit 名實相符＋別名等價＋0＝無限制 ----------
-@test "AC-D32: --batch-limit 2 截斷訊息＋--max-concurrency 等價＋0＝無限制" {
+@test "AC-D32: --batch-limit 2 truncates with a message, --max-concurrency is equivalent, 0 means unlimited" {
   mkdir -p "$WORK/batch-limit"
   local i
   for i in 1 2 3 4; do
@@ -440,24 +462,30 @@ teardown() {
   run "$TOOL" --mode describe --input-dir "$WORK/batch-limit" \
       --output-dir "$WORK/out-bl" --mock --batch-limit 2
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
-  [[ "$output" == *"已達 --batch-limit 上限（2），尚有 2 個未處理"* ]]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:465: assertion failed' >&2; return 1; }
+  [[ "$output" == *"已達 --batch-limit 上限（2），尚有 2 個未處理"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:467: assertion failed' >&2; return 1; }
   # 別名：同一組輸入 → 同一行批次摘要（等價性的可觀察證據）
   run "$TOOL" --mode describe --input-dir "$WORK/batch-limit" \
       --output-dir "$WORK/out-mcalias" --mock --max-concurrency 2
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
-  [[ "$output" == *"已達 --max-concurrency 上限（2），尚有 2 個未處理"* ]]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:473: assertion failed' >&2; return 1; }
+  [[ "$output" == *"已達 --max-concurrency 上限（2），尚有 2 個未處理"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:475: assertion failed' >&2; return 1; }
   # 0＝無限制（TMO-060 新語意）
   run "$TOOL" --mode describe --input-dir "$WORK/batch-limit" \
       --output-dir "$WORK/out-mc0" --mock --max-concurrency 0
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：4 個檔案"* ]]
-  [[ "$output" != *"未處理"* ]]
+  [[ "$output" == *"✅ 批次完成：4 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:481: assertion failed' >&2; return 1; }
+  [[ "$output" != *"未處理"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:483: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D33a: 失敗檔佔額度（額度＝嘗試數，不是成功數） ----------
-@test "AC-D33a: 額度計嘗試數——失敗檔也佔額度（舊版會變「失敗 3」）" {
+@test "AC-D33a: the quota counts attempts - failed files consume it too" {
   # --batch-limit 1：3 檔都註定失敗 → 只能嘗試 1 檔
   #     （舊版只數成功 → 3 檔全試，訊息會是「失敗 3」）
   mkdir -p "$WORK/batch-fail" "$WORK/out-fail"
@@ -469,96 +497,111 @@ teardown() {
   run "$TOOL" --mode describe --input-dir "$WORK/batch-fail" \
       --output-dir "$WORK/out-fail" --mock --batch-limit 1
   [ "$status" -eq 6 ]
-  [[ "$output" == *"❌ 批次失敗：成功 0 / 失敗 1"* ]]
-  [[ "$output" == *"已達 --batch-limit 上限（1），尚有 2 個未處理"* ]]
+  [[ "$output" == *"❌ 批次失敗：成功 0 / 失敗 1"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:500: assertion failed' >&2; return 1; }
+  [[ "$output" == *"已達 --batch-limit 上限（1），尚有 2 個未處理"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:502: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D33b: 不符 mode 白名單的檔要計數 WARN ----------
-@test "AC-D33b: 批次對不符白名單的檔發出計數 WARN（原本完全靜默）" {
+@test "AC-D33b: the batch warns about files outside the allow list (previously silent)" {
   mkdir -p "$WORK/batch-wl"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-wl/"
   echo "not an image" > "$WORK/batch-wl/notes.txt"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-wl" \
       --output-dir "$WORK/out-wl" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：1 個檔案"* ]]
-  [[ "$output" == *"已略過 1 個不符 describe 白名單的檔"* ]]
+  [[ "$output" == *"✅ 批次完成：1 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:514: assertion failed' >&2; return 1; }
+  [[ "$output" == *"已略過 1 個不符 describe 白名單的檔"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:516: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D33c: dry-run 批次不得宣稱完成 ----------
-@test "AC-D33c: dry-run 批次印 [DRY-RUN] 前綴且不得出現 ✅ 批次完成" {
+@test "AC-D33c: a dry-run batch prints the [DRY-RUN] prefix and no batch-complete success" {
   mkdir -p "$WORK/batch-dry"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-dry/"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-dry" \
       --output-dir "$WORK/out-dry" --mock --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *"[DRY-RUN] 批次完成：1 個檔案"* ]]
-  [[ "$output" != *"✅ 批次完成"* ]]
+  [[ "$output" == *"[DRY-RUN] 批次完成：1 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:527: assertion failed' >&2; return 1; }
+  [[ "$output" != *"✅ 批次完成"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:529: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D34: 大寫副檔名必須被處理（P1-1 回歸鎖） ----------
 # reviewer Round-1 P1-1：本票把 `find -iname`（大小寫不敏感）換成 `grep -qE` 時弄丟了
 # `-i`，導致 `IMG_001.PNG`（macOS 相機／截圖常見）由「被處理」變成「靜默跳過」。
-@test "AC-D34: 批次大寫副檔名（IMG_001.PNG）仍要被處理" {
+@test "AC-D34: uppercase extensions (IMG_001.PNG) are still processed" {
   mkdir -p "$WORK/batch-upper"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-upper/IMG_001.PNG"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-upper/ok.png"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-upper" \
       --output-dir "$WORK/out-upper" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]]
-  [[ "$output" != *"已略過"* ]]
+  [[ "$output" == *"✅ 批次完成：2 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:543: assertion failed' >&2; return 1; }
+  [[ "$output" != *"已略過"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:545: assertion failed' >&2; return 1; }
   [ -f "$WORK/out-upper/IMG_001.desc.json" ]
 }
 
 # ---------- AC-D35: 全部檔都被白名單略過 → WARN + rc 0（零產物仍印 ✅＝明示契約） ----------
 # reviewer Round-1 P2-4 要求把這條路徑變成明示取捨：訊息不靜默（有 WARN、有計數），
 # 但「成功」指的是「沒有失敗」，不是「有產出」—— 所以仍印 ✅ 且 rc 0。
-@test "AC-D35: 目錄內全是 non-media 檔 → 略過 WARN + 完成 0 檔 + rc 0" {
+@test "AC-D35: a directory of only non-media files -> skip warning, 0 processed, rc 0" {
   mkdir -p "$WORK/batch-allskip"
   echo "a" > "$WORK/batch-allskip/a.txt"
   echo "b" > "$WORK/batch-allskip/b.txt"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-allskip" \
       --output-dir "$WORK/out-allskip" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" == *"已略過 2 個不符 describe 白名單的檔"* ]]
-  [[ "$output" == *"✅ 批次完成：0 個檔案"* ]]
+  [[ "$output" == *"已略過 2 個不符 describe 白名單的檔"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:560: assertion failed' >&2; return 1; }
+  [[ "$output" == *"✅ 批次完成：0 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:562: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D38: 旗標缺值要走友善錯誤（P3-5） ----------
 # reviewer Round-1 P3-5：`BATCH_LIMIT="$2"` 在 `set -u` 下缺值會直接以
 # `unbound variable` 中止（rc 1 但無訊息、指不到哪個旗標）→ 改用 `${2:-}` 走同一條驗證。
-@test "AC-D38: --batch-limit 缺值 → rc=1 且印友善錯誤（不是 unbound variable）" {
+@test "AC-D38: --batch-limit without a value -> rc=1 and a friendly error (not an unbound variable)" {
   mkdir -p "$WORK/batch-noval"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-noval/"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-noval" \
       --output-dir "$WORK/out-noval" --mock --batch-limit
   [ "$status" -eq 1 ]
-  [[ "$output" == *"ERROR: --batch-limit 需為 0 或正整數（不得有前導零）（收到：）"* ]]
-  [[ "$output" != *"unbound variable"* ]]
+  [[ "$output" == *"ERROR: --batch-limit 需為 0 或正整數（不得有前導零）（收到：）"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:575: assertion failed' >&2; return 1; }
+  [[ "$output" != *"unbound variable"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:577: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-D37: 隱藏但符合白名單的媒體檔仍要處理（P2-1 的反面） ----------
 # reviewer Round-1 P2-1：dotfile 豁免只能用在「隱藏**且**不符白名單」；
 # 否則 `.cover.png` 這種合法媒體檔又會變成靜默丟檔（正是本票在修的病）。
-@test "AC-D37: 隱藏媒體檔（.cover.png）仍要被處理、不列入略過計數" {
+@test "AC-D37: hidden media files (.cover.png) are still processed and not counted as skipped" {
   mkdir -p "$WORK/batch-hidden"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/batch-hidden/.cover.png"
   run "$TOOL" --mode describe --input-dir "$WORK/batch-hidden" \
       --output-dir "$WORK/out-hidden" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✅ 批次完成：1 個檔案"* ]]
-  [[ "$output" != *"已略過"* ]]
+  [[ "$output" == *"✅ 批次完成：1 個檔案"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:590: assertion failed' >&2; return 1; }
+  [[ "$output" != *"已略過"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:592: assertion failed' >&2; return 1; }
   [ -f "$WORK/out-hidden/.cover.desc.json" ]
 }
 
 # ---------- AC-D36: 單檔模式對大寫副檔名不得誤報「not an image」 ----------
 # TMO-060 順修（已揭露）：批次端已 case-insensitive；單檔端原本 case-sensitive →
 # `IMG_002.PNG` 會被警告成「not an image file」卻照樣處理＝同一檔兩種結論。
-@test "AC-D36: 單檔大寫副檔名 rc 0 且不得出現 not an image 警告" {
+@test "AC-D36: a single file with an uppercase extension gives rc 0 and no not-an-image warning" {
   mkdir -p "$WORK/single-upper"
   cp "$REPO_ROOT/tests/fixtures/pdf-multimodal/red.png" "$WORK/single-upper/IMG_002.PNG"
   run "$TOOL" --mode describe --input "$WORK/single-upper/IMG_002.PNG"       --output-dir "$WORK/out-single-upper" --mock
   [ "$status" -eq 0 ]
-  [[ "$output" != *"not an image"* ]]
+  [[ "$output" != *"not an image"* ]] || {
+    echo 'FAIL: tests/wiki-media-describe.bats:605: assertion failed' >&2; return 1; }
 }

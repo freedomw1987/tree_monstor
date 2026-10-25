@@ -105,7 +105,7 @@ teardown() {
 }
 
 # ---------- AC-E7: 邊緣案例 - 不存在的檔案 ----------
-@test "AC-E7: missing input → exit 2 + error" {
+@test "AC-E7: missing input -> exit 2 plus an error message" {
   run "$TOOL" --input "/nonexistent/file.pdf" \
               --output-dir "$WORK/out" \
               --type pdf
@@ -114,7 +114,7 @@ teardown() {
 }
 
 # ---------- AC-E8: 邊緣案例 - 不支援的格式 ----------
-@test "AC-E8: invalid format → exit 3 + error" {
+@test "AC-E8: invalid format -> exit 3 plus an error message" {
   echo "fake content" > "$WORK/fake.xyz"
   run "$TOOL" --input "$WORK/fake.xyz" \
               --output-dir "$WORK/out" \
@@ -169,7 +169,7 @@ teardown() {
 }
 
 # ---------- AC-E14: 沒給必填 --input ----------
-@test "AC-E14: missing --input → error" {
+@test "AC-E14: missing --input -> error" {
   run "$TOOL" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
@@ -208,7 +208,7 @@ teardown() {
 }
 
 # ---------- AC-E18: 旗標解析容錯（未知旗標）----------
-@test "AC-E18: unsupported → + exit 1" {
+@test "AC-E18: unsupported input -> exit 1" {
   run "$TOOL" --unknown-flag foo \
               --input "$REPO_ROOT/tests/fixtures/pdf-mixed/sample.pdf"
   [ "$status" -eq 1 ]
@@ -250,11 +250,12 @@ teardown() {
   [ "$status" -eq 5 ]
   [ ! -f "$WORK/out/text.md" ]
   # 必須是「無法讀取壞檔」那條路徑
-  [[ "$output" =~ "無法讀取" ]]
+  [[ "$output" =~ "無法讀取" ]] || {
+    echo 'FAIL: tests/wiki-extract-media.bats:253: assertion failed' >&2; return 1; }
 }
 
 # ---------- AC-E22: 掃描件 PDF（無文字層）不得當成失敗 ----------
-@test "AC-E22: scanned PDF (no text layer) → exit 0 + images + empty-text warning" {
+@test "AC-E22: scanned PDF (no text layer) -> exit 0 plus images plus an empty-text warning" {
   # fixture 漂移守衛：fixture 必須存在、且真的沒有文字層（否則這條探針測不到警告）
   local fx="$REPO_ROOT/tests/fixtures/pdf-scan/scan.pdf"
   [ -f "$fx" ] || { echo "FAIL: 缺少 fixture ${fx}（見檔頭重建指令）" >&2; return 1; }
@@ -270,5 +271,6 @@ teardown() {
   [ -f "$WORK/out/text.md" ]
   img=$(find "$WORK/out/images" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
   [ "$img" -ge 1 ]
-  [[ "$output" =~ "掃描件" ]]
+  [[ "$output" =~ "掃描件" ]] || {
+    echo 'FAIL: tests/wiki-extract-media.bats:274: assertion failed' >&2; return 1; }
 }

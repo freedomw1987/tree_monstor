@@ -40,20 +40,24 @@ isolated_bin() {
   printf '%s' "$d"
 }
 
-@test "WTM-1: 隔離 PATH 可用且真的缺工具（正向＋反向對照，防空過）" {
+@test "WTM-1: the isolated PATH works and really lacks the tool (positive plus negative control)" {
   local bin
   bin="$(isolated_bin "$BATS_TEST_TMPDIR/bin")"
   run env PATH="$bin" bash "$WIKI/scripts/wiki-extract-audio.sh" --help
   [ "$status" -eq 0 ]
-  [[ "$output" == *"wiki-extract-audio.sh"* ]]
+  [[ "$output" == *"wiki-extract-audio.sh"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:48: assertion failed' >&2; return 1; }
   # 反向對照：同一條 PATH 下真的沒有 ffmpeg / pandoc，否則下面幾條會假綠
   run env PATH="$bin" bash -c 'command -v ffmpeg; command -v pandoc; echo NO_TOOLS'
-  [[ "$output" == *"NO_TOOLS"* ]]
-  [[ "$output" != *"/ffmpeg"* ]]
-  [[ "$output" != *"/pandoc"* ]]
+  [[ "$output" == *"NO_TOOLS"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:52: assertion failed' >&2; return 1; }
+  [[ "$output" != *"/ffmpeg"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:54: assertion failed' >&2; return 1; }
+  [[ "$output" != *"/pandoc"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:56: assertion failed' >&2; return 1; }
 }
 
-@test "WTM-2: audio 缺 ffmpeg → rc=4 + 安裝提示，且不留半成品（不降級）" {
+@test "WTM-2: audio without ffmpeg -> rc=4 plus an install hint and no partial output" {
   local bin
   bin="$(isolated_bin "$BATS_TEST_TMPDIR/bin")"
   local inp="$BATS_TEST_TMPDIR/silence.wav"
@@ -61,14 +65,16 @@ isolated_bin() {
   run env PATH="$bin" bash "$WIKI/scripts/wiki-extract-audio.sh" \
       --input "$inp" --output-dir "$BATS_TEST_TMPDIR/out"
   [ "$status" -eq 4 ]
-  [[ "$output" == *"required tool 'ffmpeg' not found"* ]]
-  [[ "$output" == *"brew install ffmpeg"* ]]
+  [[ "$output" == *"required tool 'ffmpeg' not found"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:68: assertion failed' >&2; return 1; }
+  [[ "$output" == *"brew install ffmpeg"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:70: assertion failed' >&2; return 1; }
   # 「降級」會留下 text.md / manifest.json 這類部分成果；契約是「什麼都不留」
   # （audio 連目錄都不建，對照 WTM-3 的 media 會留空目錄）
   [ ! -d "$BATS_TEST_TMPDIR/out" ]
 }
 
-@test "WTM-3: media（docx）缺 pandoc → rc=4 + 安裝提示（不留部分產出）" {
+@test "WTM-3: media (docx) without pandoc -> rc=4 plus an install hint and no partial output" {
   local bin
   bin="$(isolated_bin "$BATS_TEST_TMPDIR/bin")"
   local inp="$BATS_TEST_TMPDIR/doc.docx"
@@ -76,15 +82,17 @@ isolated_bin() {
   run env PATH="$bin" bash "$WIKI/scripts/wiki-extract-media.sh" \
       --input "$inp" --output-dir "$BATS_TEST_TMPDIR/out-media"
   [ "$status" -eq 4 ]
-  [[ "$output" == *"required tool 'pandoc' not found"* ]]
-  [[ "$output" == *"brew install pandoc"* ]]
+  [[ "$output" == *"required tool 'pandoc' not found"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:85: assertion failed' >&2; return 1; }
+  [[ "$output" == *"brew install pandoc"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:87: assertion failed' >&2; return 1; }
   # 與 audio 不同：media 的 `mkdir -p "$OUTPUT_DIR"` 早於 require_tool，所以會留下**空目錄**。
   # 契約只保證「不留部分**產出**」——不要在這條斷言「連目錄都沒有」。
   # 用 `find` 而非 `[ ! -e "$dir"/*.md ]`：後者一旦環境開了 nullglob 會靜默反轉。
   [ -z "$(find "$BATS_TEST_TMPDIR/out-media" -maxdepth 1 -type f 2>/dev/null)" ]
 }
 
-@test "WTM-8: media（pdf）缺 poppler → rc=4 + 安裝提示（doc 點名的工具之一）" {
+@test "WTM-8: media (pdf) without poppler -> rc=4 plus an install hint" {
   local bin
   bin="$(isolated_bin "$BATS_TEST_TMPDIR/bin")"
   local inp="$BATS_TEST_TMPDIR/scan.pdf"
@@ -92,12 +100,14 @@ isolated_bin() {
   run env PATH="$bin" bash "$WIKI/scripts/wiki-extract-media.sh" \
       --input "$inp" --output-dir "$BATS_TEST_TMPDIR/out-pdf"
   [ "$status" -eq 4 ]
-  [[ "$output" == *"required tool 'pdfimages' not found"* ]]
-  [[ "$output" == *"brew install poppler"* ]]
+  [[ "$output" == *"required tool 'pdfimages' not found"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:103: assertion failed' >&2; return 1; }
+  [[ "$output" == *"brew install poppler"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:105: assertion failed' >&2; return 1; }
   [ -z "$(find "$BATS_TEST_TMPDIR/out-pdf" -maxdepth 1 -type f 2>/dev/null)" ]
 }
 
-@test "WTM-9: media（pptx）缺 python3 / python-pptx → rc=4 + 提示含 python-pptx" {
+@test "WTM-9: media (pptx) without python3 or python-pptx -> rc=4 plus a hint naming python-pptx" {
   local bin
   bin="$(isolated_bin "$BATS_TEST_TMPDIR/bin")"
   local inp="$BATS_TEST_TMPDIR/deck.pptx"
@@ -106,11 +116,13 @@ isolated_bin() {
       --input "$inp" --output-dir "$BATS_TEST_TMPDIR/out-pptx"
   [ "$status" -eq 4 ]
   # 隔離 PATH 下先落空的是 python3；提示同時涵蓋套件（python-pptx）
-  [[ "$output" == *"required tool 'python3' not found"* ]]
-  [[ "$output" == *"python-pptx"* ]]
+  [[ "$output" == *"required tool 'python3' not found"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:119: assertion failed' >&2; return 1; }
+  [[ "$output" == *"python-pptx"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:121: assertion failed' >&2; return 1; }
 }
 
-@test "WTM-4: video 缺 ffmpeg → rc=4 + 安裝提示" {
+@test "WTM-4: video without ffmpeg -> rc=4 plus an install hint" {
   local bin
   bin="$(isolated_bin "$BATS_TEST_TMPDIR/bin")"
   local inp="$BATS_TEST_TMPDIR/clip.mp4"
@@ -118,17 +130,19 @@ isolated_bin() {
   run env PATH="$bin" bash "$WIKI/scripts/wiki-extract-video.sh" \
       --input "$inp" --output-dir "$BATS_TEST_TMPDIR/out-video"
   [ "$status" -eq 4 ]
-  [[ "$output" == *"required tool 'ffmpeg' not found"* ]]
-  [[ "$output" == *"brew install ffmpeg"* ]]
+  [[ "$output" == *"required tool 'ffmpeg' not found"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:133: assertion failed' >&2; return 1; }
+  [[ "$output" == *"brew install ffmpeg"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:135: assertion failed' >&2; return 1; }
 }
 
-@test "WTM-5: SKILL.md 限制表對齊現實（不得承諾降級為純文字）" {
+@test "WTM-5: the SKILL.md limits table matches reality (no promise of plain-text fallback)" {
   local skill="$WIKI/SKILL.md"
   refute_file_contains "$skill" "降級為純文字模式"
   assert_file_contains "$skill" "exit 4"
 }
 
-@test "WTM-6: OCR 腳本自己不再宣稱 exit 4（決策：自動 mock，不硬退）" {
+@test "WTM-6: the OCR script no longer claims exit 4 (decision: auto-mock, no hard exit)" {
   # TMO-035 的第二個文實矛盾：usage 原本寫「4 必要工具缺失（且未啟 mock）」，
   # 但本檔根本沒有任何 `exit 4` 路徑（缺 tesseract 就走 mock）。決策是對齊現實。
   # 註：這裡把「常數不存在」也鎖住是刻意的——若未來真的要替 OCR 加硬退 4 路徑，
@@ -139,7 +153,7 @@ isolated_bin() {
   assert_file_contains "$ocr" "自動降級為 mock"
 }
 
-@test "WTM-7: OCR 的 mock 降級是唯一例外——文件有寫，且實跑得到" {
+@test "WTM-7: the OCR mock fallback is the only exception - documented and actually reachable" {
   local skill="$WIKI/SKILL.md"
   assert_file_contains "$skill" "tesseract"
   assert_file_contains "$skill" "mock"
@@ -151,6 +165,7 @@ isolated_bin() {
   run env PATH="$bin" bash "$WIKI/scripts/wiki-ocr.sh" \
       --input "$img" --output-json "$BATS_TEST_TMPDIR/page.ocr.json"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"falling back to mock"* ]]
+  [[ "$output" == *"falling back to mock"* ]] || {
+    echo 'FAIL: tests/wiki-toolmissing-contract.bats:168: assertion failed' >&2; return 1; }
   [ -f "$BATS_TEST_TMPDIR/page.ocr.json" ]
 }

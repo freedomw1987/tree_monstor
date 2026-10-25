@@ -97,7 +97,7 @@ teardown() {
 }
 
 # === AC-W6: 不存在影片 ===
-@test "AC-W6: missing input → exit 2" {
+@test "AC-W6: missing input -> exit 2" {
   run "$TOOL" --input "/nonexistent/video.mp4" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
@@ -106,11 +106,12 @@ teardown() {
 @test "AC-W7: --help shows usage" {
   run "$TOOL" --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage" ]]
+  [[ "$output" =~ "Usage" ]] || {
+    echo 'FAIL: tests/wiki-extract-video.bats:109: assertion failed' >&2; return 1; }
 }
 
 # === AC-W8: 沒給 --input ===
-@test "AC-W8: missing --input → exit 1" {
+@test "AC-W8: missing --input -> exit 1" {
   run "$TOOL" --output-dir "$WORK/out"
   [ "$status" -ne 0 ]
 }
