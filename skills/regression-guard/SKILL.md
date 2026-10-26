@@ -99,9 +99,9 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.12 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`examples.md` 861 → 291 行（Jev Oracle 章節同 `jev-oracle.md` 重複 → 壓成索引 ＋ 保留被探針錨定嘅四種輸出同 fix proposal 契約）、`testing-methods.md` 388 → 184 行（9 類測試法合併成對照表 ＋ 可抄骨架）、`PoC/README.md` 274 → 176 行（5 張 milestone 證據表合併成 1 張） | agent 每次觸發 skill 都要讀落 context 嘅量過大（regression-guard 單個 skill 就 2,495 行）；去重 ＋ 表格化後降至 1,623 行，零被探針錨定嘅契約損失 |
 | v2.11 | 2026-09-26 | 自包含化：搬入 `examples/probes/`（3 個 .ts，原 monorepo 範例總目錄內的 probes 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/probes/」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 | v2.10 | 2026-09-26 | Module 感知邏輯：探針必含 Module prefix；`REGRESSION_MODULE` 環境變量限定 Module 範圍；規則表加 3 條 Module 規則；dev-checker-loop v2.2 對齊 | 用戶決策：Module = 一組檔案；v2.6 dav-designer 鋪路、v2.2 dev-checker-loop 實作，本 skill 補完「探針 → Module」綁定 |
-| v2.9 | 2026-09-26 | 拆檔：主檔 714 → 120 行；Jev Oracle（506 行）+ CI 整合→ `jev-oracle.md`；runner 對照表 → `runner-cheatsheet.md`；API+env → `api-contract.md`；輸出 → `output-format.md`；命名+粒度 → `probe-naming.md` | 達 150 行上限；Jev Oracle 屬「進階 / 可選」，拆出避免稀釋主檔注意力 |
 
 ---
 ---

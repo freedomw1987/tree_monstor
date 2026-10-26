@@ -7,19 +7,11 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 > 本檔為 dav-planner 的 Backlog 編寫規則附件，於產出 Backlog 前查閱。主檔在 `SKILL.md`。
 
-## §4.1 INVEST 原則
+## §4.1 INVEST 原則 + AC 格式
 
-- **I**ndependent — 獨立
-- **N**egotiable — 可協商
-- **V**aluable — 有價值
-- **E**stimable — 可估算
-- **S**mall — 小
-- **T**estable — 可測試
+**INVEST**：Independent 獨立｜Negotiable 可協商｜Valuable 有價值｜Estimable 可估算｜Small 小｜Testable 可測試。
 
-## §4.2 AC 範本（Given-When-Then / DoD）
-
-- **Given-When-Then**：3 條以上 BDD 格式
-- **DoD**：技術視角（4-6 項 checklist）
+**AC 範本**：Given-When-Then 3 條以上 BDD 格式 + DoD 技術視角 checklist（4-6 項）。
 
 ## §4.3 Backlog 編寫方式
 
@@ -83,6 +75,9 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 ### §4.3.2 Module 級 sprint 規劃（v2.3 新增）
 
 > dav-designer v2.3 規範 + dev-checker-loop v2.2 + regression-guard v2.10 共同鋪路下，backlog 規劃可以 Module 級而非純 US 級。
+> 1 個 sprint 交付 1 個 Module（M01）；dav-submitter v2.2 Module 級交付語法記錄；dev-checker-loop v2.2 用 Module 級派工；
+> regression-guard v2.10 用 `REGRESSION_MODULE=M01` 跑全 Module 探針。
+> **為什麼 Module 級 sprint**：平行化加速（M01 / M02 兩個 dev 同時做）｜錯誤範圍隔離｜探針邊界清楚（`REGRESSION_MODULE` 限定）。
 
 **Module 級 sprint 範本**：
 
@@ -96,16 +91,9 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 | M01-US-103 | US | M01 | 修改密碼 | P1 | 3 | PENDING |
 | M01-DE-301 | DE | M01 | 修正登入 token 過期 | P1 | 2 | PENDING |
 
-**Module 級 sprint 交付**：1 個 sprint 交付 1 個 Module（M01）；dav-submitter v2.2 Module 級交付語法記錄；dev-checker-loop v2.2 用 Module 級派工；regression-guard v2.10 用 `REGRESSION_MODULE=M01` 跑全 Module 探針。
-
-**為什麼 Module 級 sprint**：
-- 平行化加速：Sprint 1 派 M01，Sprint 2 派 M02，兩個 dev 同時做
-- 錯誤範圍隔離：M01 壞了不連累 M02
-- 探針邊界清楚：`REGRESSION_MODULE` 限定、不混跑
-
 ## §4.4 類型混合管理
 
-- User Story（新功能）/ Defects（Bug）/ Technical Debt（技術債）/ Spike（研究）
+- 類型：User Story（新功能）/ Defects（Bug）/ Technical Debt（技術債）/ Spike（研究）
 - 頂部精細、底部粗略（Granularity）
 
 ## §4.5 Backlog 更新規則
@@ -119,7 +107,7 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 - **生成順序（同 turn）**：先 .md → 再 .html → 最後更新 backlog.md
 - **為什麼同 turn**：避免 .md 與 .html 不同步
 - **過渡期規則**：既有 US（§4.3.2 之前）不主動生成 AC 範本
-- **自我檢查清單**：5 項（檔案存在 / 連結路徑 / CSS 媒體查詢）
+- **自我檢查清單**：5 項（檔案存在 / 連結路徑 / CSS 媒體查詢）—— 詳見同套本 skill 子檔（`./examples/backlog.md`）
 
 ## §4.7 需求錨點檔生成 SOP（v2.7 新增）
 

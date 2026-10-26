@@ -7,6 +7,26 @@
 > ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
 > 與舊 `AGENTS.md` §2 標題的 **SOP 版本號**（已於 v2.14 隨 §2 移除）不是同一個序號 —— 兩者不可互相比較大小。
 
+## v2.18 — 2026-10-26
+
+**本版異動**：TMO-082「第二刀」——**A（Context 瘦身刀）** 壓縮 13 個 skill 嘅支援檔
+（= agent 每次觸發 skill 要讀落 context 嘅量（上界）：**9,619 → 7,413 行，−22.9%**）
+＋ **D（體重守門）** 新增 `scripts/ci/check-framework-weight.py` ＋ `docs/ci/framework-weight.json`
+＋ `tests/framework-weight.bats`（16 支）並接入 CI。
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | ---- |
+| 瘦身 | 量度 13 個 skill；其中 **9 個** skill 嘅 **14 個**支援檔被壓縮（`skills/*/**.md`，`SKILL.md` 與 `CHANGELOG.md` 除外） | 支援檔：動工前 7,950 行 → 動工後 **5,743 行（−27.8%）**；連主檔計嘅「context 總量」9,619 → **7,413（−22.9%）**。手法：**去重**（`regression-guard/examples.md` 嘅 Jev 章節同 `jev-oracle.md` 重複 → 壓成索引）＋ **表格化**（9 類測試法各一段長範例 → 一張對照表 ＋ 可抄骨架）＋ **骨架共用**（3 個反省模板 → 共用骨架 ＋ 每級差異）。⚠️ **零內容契約損失**：14 條被探針錨定嘅字串／段落結構／檔案存在性逐條守住（清單見 `docs/deliverable/2026-10-26-context-slim-framework-weight.md` §5.2）|
+| 守門 | `scripts/ci/check-framework-weight.py` | 守三層：①**context 預算**（每 skill 嘅 `SKILL.md` + 支援 `.md` ≤ cap；= agent 觸發 skill 嘅讀入量上限）②**指標完整性**（`SKILL.md` 嘅 `./xxx.md` 指標必須存在且非空 → 防「指標指住空檔」嘅假覆蓋）③**框架／產品行數比** ratchet（(框架層 + context 層) / 產品層 ≤ baseline + tolerance）。⚠️ 量度對象 = **git tracked 檔案**（唔含本機生成物，例如 PoC cache）→ 本機同 CI 量到同一個數 |
+| 設定 | `docs/ci/framework-weight.json` | 機器可讀嘅 cap ＋ ratchet baseline。per-skill cap 留 ~12% 餘裕；**改 cap / baseline = 改規範**（須走 V03）。⚠️ 已知邊界：①「context」用行數做代理（token 更準但唔可審核）②框架層含 `tests/` → 加探針會推高比值 → 所以用 baseline + tolerance 而唔係硬上限 |
+| 探針 | `tests/framework-weight.bats`（FW-1..016） | 每種壞情境都有**實測證明會紅**：超預算／死指標／子檔被掏空／枚舉壞咗（防空過）／ratio 超標／冇 `skills/` 目錄 rc=2／CI 接線與假綠／自我證明 context 檢查真係有做／**怪路徑唔會量成 0**（實測踩到嘅真 bug：跳過清單若連 root 路徑都睇 → repo 放喺 `/tmp/xxx` 之下會令全部檔案被跳過 → 量度變 0 → 守門「因為冇嘢可查」而永遠綠；已修並加 FW-11 鎖住）|
+| CI | `.github/workflows/ci.yml` | 新增 `Verify framework weight (context budget + ratio)` step；**不得** `continue-on-error` / `\|\| true`（FW-9 鎖住）|
+| 計數 | 探針數 | 666 → **682**（新增 16 支 FW）；mutant 表 **58 支未動**（本票冇改任何既有探針 → 門檻一個都冇放寬）|
+
+**為什麼唔係「砍治理文件」**：動工前量測顯示，總行數唔係最痛嘅位——**高頻成本**先係。
+治理文件（`docs/system-design.md` 等）係一次性讀取；而 skill 支援檔係**每次觸發 skill 都要讀**。
+故第二刀先切支援檔（A）＋ 裝尺（D），治理文件同「衍生膨脹上限」留待第三刀（用戶於範圍確認時選咗 A+D）。
+
 ## v2.17 — 2026-10-26
 
 **本版異動**：TMO-079／TMO-080 兩項 PNA-4 技術債清埋（規則⑦ 收窄成「只豁免 `@test` body」

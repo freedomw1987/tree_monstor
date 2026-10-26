@@ -130,6 +130,15 @@ jobs:
       - name: Verify Python heredoc syntax
         run: bash scripts/ci/check-python-heredocs.sh
 
+      - name: Verify framework weight (context budget + ratio)
+        # 守「框架唔可以再膨脹」：
+        #   ① 每個 skill 嘅 context 成本（SKILL.md + 支援 .md）≤ cap → agent 觸發 skill 嘅讀入量有上限
+        #   ② SKILL.md 指標完整性（指向嘅子檔必須存在且非空）→ 防止「指標指住空檔」嘅假覆蓋
+        #   ③ 框架／產品行數比 ≤ baseline + tolerance（ratchet）
+        # 守門探針：tests/framework-weight.bats（FW-1..016）。
+        # 不得加 continue-on-error / || true（否則就是假綠）。
+        run: python3 scripts/ci/check-framework-weight.py
+
       - name: Verify no document drift (D1-D8)
         # 抓「同一件事在多份文件之間各說各話」（D1..D8）：
         #   D1 AC 狀態 vs backlog｜D2 AC 編號連續唯一｜D3 追溯矩陣幽靈 ID｜D4 交付摘要引用不存在的檔案

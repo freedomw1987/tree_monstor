@@ -124,9 +124,9 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.8 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`backlog-rules.md` 173 → 161 行（INVEST／AC 格式／類型混合合併成一段 ＋ 刪重複嘅 Module sprint 說明） | context 成本由 535 行降至 523 行；R-ID 規則、AC 範本生成 SOP、需求錨點檔 SOP 一個字都冇少 |
 | v2.7 | 2026-10-26 | 產 US 必產**需求錨點檔** `docs/req/<US-ID>-requirement.md`（原話區唯讀 + R-ID 化驗收句）；Step 4 產出物 3 → 4 檔 | TMO-071：多文件 pipeline 中用戶原話被 AI 改寫後失真，成果與需求對不上；錨點檔是對帳的根節點；V03 Reviewer 二審：第 1 輪 request-changes（1 P0 / 4 P1 / 10 P2 / 5 P3）→ 已修，結論見全域 changelog v2.11 二審結論節 |
 | v2.6 | 2026-09-26 | +Step 1.5「來源抽取（複雜任務可選）」：位於 Step 1 後 Step 2 前；觸發條件 + 推薦調用 dav-wiki + 何時跳過 + dav-wiki 未裝 fallback | 用戶決策：複雜任務需求會多次更新、需要回原始來源；dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝<br>**後續維護提醒**：dav-wiki 大改後需跑「dav-planner 引用同步檢查」（防止 Step 1.5 引用過時） |
-| v2.5 | 2026-09-26 | 自包含化：搬入 `examples/backlog.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/backlog.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 
 ---
 ---

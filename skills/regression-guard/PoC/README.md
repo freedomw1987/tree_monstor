@@ -2,7 +2,7 @@
 
 > 把 `regression-guard` skill 升級成「**用戶旅程模擬回歸測試**」的最小可行 PoC。
 >
-> **這個目錄是 PoC**，**不是** production code。Skill 本體（`./SKILL.md`、`./examples.md`、`./testing-methods.md`）沒動。
+> **這個目錄是 PoC**，**不是** production code。Skill 本體（主檔、示例、測試方法指南）沒動。
 
 ## TL;DR
 
@@ -22,24 +22,28 @@
 ```
 PoC/
 ├─ jev_oracle.py          # 核心：Jev HTTP 呼叫 + 回應解析 + cache
-├─ ac_schema.py          # 解析 docs/ac/US-XXX.md → 結構化 AC 條目
-├─ example_run.py        # 示範：US-101 真實 AC + 4 個 mock 觀察 → 跑 oracle
-├─ journey_generator.py  # 讀 AC → 走 Jev complexity + action plan → 產 Journey spec
-├─ journey_gen.py        # CLI: journey_generator 的命令列 entry
-├─ journey_runner.py     # Dry-run loop: observe→Jev→verdict→recheck→stale detection
-├─ run_journey.py        # CLI: 跑 journey_runner（支援 --stale-test 證邏輯 + --json-output）
-├─ batch_report.py       # M4 核心：4 題 batch call 出 overall_health / fix_priority / flaky_likelihood / regression_type
-├─ run_report.py         # CLI: batch_report 的入口
-├─ run_pipeline.sh       # 🚀 一鍵跑 M2 → M3 → M4
+├─ ac_schema.py           # 解析 docs/ac/US-XXX.md → 結構化 AC 條目
+├─ example_run.py         # 示範：US-101 真實 AC + 4 個 mock 觀察 → 跑 oracle
+├─ journey_generator.py   # 讀 AC → 走 Jev complexity + action plan → 產 Journey spec
+├─ journey_gen.py         # CLI: journey_generator 的命令列 entry
+├─ journey_runner.py      # Dry-run loop: observe→Jev→verdict→recheck→stale detection
+├─ run_journey.py         # CLI: 跑 journey_runner（--stale-test + --json-output）
+├─ batch_report.py        # M4 核心：4 題 batch call → overall_health / fix_priority / flaky_likelihood / regression_type
+├─ run_report.py          # CLI: batch_report 的入口
+├─ run_pipeline.sh        # 🚀 一鍵跑 M2 → M3 → M4
+├─ fix_proposal.py / fix_proposal_v2.py   # M6 / M6.1：信心度報告 + LLM relay
+├─ playwright_patcher.py / re_validate.py / sandbox_runner.py  # M6.2 / M6.3：patch + re-validate 閉環
+├─ flaky_check.py / flaky_integration.py / gh_pr_comment.py   # M7：flaky 量測 + PR comment
 ├─ journeys/
 │  └─ US-101.yaml        # 產出的人類可讀 journey spec（要進 git）
-├─ requirements.txt      # 執行期依賴（httpx / PyYAML）—— 唯一來源
-├─ setup-venv.sh         # 一鍵建 venv + 裝 requirements.txt（優先 uv，否則 python3 -m venv；--force 有破壞性護欄）
+├─ fixtures/              # config-driven 觀察 fixture（脫離 hardcode）
+├─ requirements.txt       # 執行期依賴（httpx / PyYAML）—— 唯一來源
+├─ setup-venv.sh          # 一鍵建 venv + 裝 requirements.txt（優先 uv，否則 python3 -m venv；--force 有破壞性護欄）
 ├─ cache/
-│  ├─ fixture_helper.py  # 預塞假 Jev 回應（沒 key 時 demo 用）
-│  └─ *.json             # 自動 cache（gitignored）
-├─ .env.example          # OPENROUTER_API_KEY 範本
-└─ README.md             # ← 你正在看
+│  ├─ fixture_helper.py   # 預塞假 Jev 回應（沒 key 時 demo 用）
+│  └─ *.json              # 自動 cache（gitignored）
+├─ .env.example           # OPENROUTER_API_KEY 範本
+└─ README.md              # ← 你正在看
 ```
 
 ## 怎麼跑（沒 API key）
@@ -121,116 +125,19 @@ report.json              ← batch report 機器版
 report.md                ← batch report 人讀版（emoji + 表格 + 每步結果）
 ```
 
-## M1 完成的證據
+## Milestone 完成證據
 
-| 項 | 狀態 |
-|---|---|
-| 讀真實 `docs/ac/US-101.md` → parse 出 4 條 AC | ✅ |
-| AC parser 用真正的 AC schema（Given/When/Then/And）| ✅ |
-| Oracle 跑出 4 種 verdict（pass / fail / flaky / over_assertion）| ✅ |
-| Cache 機制（含 cache key 雜湊、save / load）| ✅ |
-| Confidence + severity + verdict probabilities 完整呈現 | ✅ |
-| End-of-run summary（count by verdict + avg severity）| ✅ |
-| 真 API 打接 + 介面正確（/api/alpha/decisions）| ✅ |
-| API key 自動讀取（環境變數為主；PoC/.env 等為後備）＋ `JEV_MODEL` 可切換模型 | ✅ |
+| Milestone | 核心產出 | 證據 |
+|---|---|---|
+| **M1** oracle | `jev_oracle.py` + `ac_schema.py` + `example_run.py` + cache | 讀真實 `docs/ac/US-101.md` → parse 出 4 條 AC；跑出 4 種 verdict（pass / fail / flaky / over_assertion）；cache 機制（含 key 雜湊 / save / load）；confidence + severity + verdict probabilities 完整呈現；end-of-run summary；真 API 打接（`/api/alpha/decisions`）；API key 自動讀取（環境變數為主，`JEV_MODEL` 可切模型）|
+| **M2** journey 生成 | `journey_generator.py` + `journey_gen.py` | 讀 AC → 兩階段 Jev call（complexity score + action plan choice）→ human-readable YAML；自動拆步（complexity 0-3 → 1~4 步 / AC）+ depends_on chain；US-101 4 條 AC → 9 步（2.25 步 / AC）、8 個 Jev call、3.4s |
+| **M3** dry-run loop | `journey_runner.py` + `run_journey.py` | observe → Jev → verdict → recheck 迴路；AC-aware mock 觀察器；stale detection（連續 3 步同 state + fail → block）；`--json-output` 落盤；US-101 預設 3 pass / 6 fail / 0 block / 2ms 全 cache；stale-test 模式 7 fail + 2 BLOCKED |
+| **M4** batch report | `batch_report.py` + `run_report.py` + `run_pipeline.sh` | 4 題 batch call（overall_health / fix_priority / flaky_likelihood / regression_type）；`REGRESSION_REPORT_PATH` env；Markdown 報表（emoji + 表格 + 每步結果 + 信心分布）；US-101 → 🔴 red / fix_priority 2.93 / flaky 0.22 / real_bug；Cost $0.000070 / latency 628ms（cache 重跑免費）|
+| **M5** 去 hardcode | `fixtures/US-101.yaml` + `_load_fixture()` | config-driven 觀察（脫離 hardcoded dict）；stale 限「同一 AC」（`current_ac_id` 狀態機）；`mock_observe_static`（stale-test 門檻降為 2）；`run_dry()` 統一入口（CLI 從 ~50 行收縮到 ~20 行）；`tests/v2.1-jev-poc.bats` 16 探針全綠；向後相容（仍 3 pass / 6 fail）|
 
-## M2 完成的證據
-
-| 項 | 狀態 |
-|---|---|
-| `journey_generator.py`：讀 AC → 兩階段 Jev call（complexity score + action plan choice）| ✅ |
-| `journey_gen.py` CLI entry | ✅ |
-| 產 human-readable YAML 到 `journeys/<story_id>.yaml` | ✅ |
-| 自動拆步（依 complexity 0-3 → 1~4 步 / AC）| ✅ |
-| Step 之間 depends_on chain（跨 AC 串連）| ✅ |
-| Cache 機制（同一個 AC 不會重 call Jev）| ✅ |
-| US-101 4 條 AC → 9 步（2.25 步 / AC），8 個 Jev call，3.4s | ✅ |
-
-## M3 完成的證據（dry-run loop）
-
-| 項 | 狀態 |
-|---|---|
-| `journey_runner.py`：observe → Jev → verdict → recheck 迴路 | ✅ |
-| `run_journey.py` CLI 兩種模式：ac-aware（預設）+ stale-test | ✅ |
-| AC-aware mock 觀察器（用 fixture 對應 AC Then）| ✅ |
-| Stale detection：連續 3 步同 state + fail → block | ✅ |
-| `--json-output` 選項：把 run 結果落盤成可被 M4 讀的 JSON | ✅ |
-| US-101 預設模式：3 pass / 6 fail / 0 block / 2ms 全 cache | ✅ |
-| US-101 stale-test 模式：7 fail + 2 BLOCKED（驗證 block 邏輯）| ✅ |
-| 每步 verdict + confidence + severity + is_real_bug 全印出 | ✅ |
-
-## M4 完成的證據（end-of-run batch report）
-
-| 項 | 狀態 |
-|---|---|
-| `batch_report.py`：4 題 batch call（overall_health / fix_priority / flaky_likelihood / regression_type）| ✅ |
-| `run_report.py` CLI：讀 run JSON → Jev batch → 寫 report.json + .md | ✅ |
-| 支援 `REGRESSION_REPORT_PATH` env（指定輸出 basename）| ✅ |
-| Markdown 報表：emoji + 表格 + 每步結果 + 信心分布 | ✅ |
-| `run_pipeline.sh` 一鍵跑完 M2 → M3 → M4 | ✅ |
-| US-101 batch report：🔴 red / fix_priority 2.93 / flaky 0.22 / real_bug | ✅ |
-| Cost $0.000070 / latency 628ms（單次 Jev call）/ cache 重跑免費 | ✅ |
-
-## M2 接續（下一步）
-
-**Journey 生成器**：用 Jev 從 AC 自動生 user journey 規格（YAML）。預期 target：把 US-101.md 變成：
-
-```yaml
-journey: US-101
-generated_by: jev
-steps:
-  - id: login-or-stub
-    action: navigate
-    target: https://example.com
-  - id: add-item-to-cart
-    action: interact
-    target_text: 加入購物車
-    observe_state: { cart_count_increments: true }
-  - id: click-checkout
-    action: click
-    target_text: 結帳
-    expected_url: https://example.com/checkout/payment
-    ...
-```
-
-## M3 接續
-
-**Journey runner**：Chrome + DOM snapshot driver（dry-run loop 先、不接 Chrome；接 Chrome 留 M3.1）。每步用 oracle 評估 + recheck
-freshness。## M4 接續
-
-**End-of-run report**：batch call 出 overall_health / fix_priority / flaky_likelihood，寫進 `REGRESSION_REPORT_PATH`。✅ 完成
-
-## 變動歷史
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|---|---|---|---|
-| M0 | 2026-09-28 | 環境探勘：看 docs/backlog.md、docs/ac/US-101.md、regression-guard skill 子檔 | 先理解現實再動工 |
-| M1 | 2026-09-28 | oracle + AC parser + example runner + cache fixture；介面改 /api/alpha/decisions；加三層 key loader；真 API 驗證 | 證明「讀 AC → Jev → verdict」流程跑得起來 |
-| M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call（complexity score + action plan choice）；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
-| M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection（--stale-test 驗證）；加 --json-output | 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
-| M4 | 2026-09-28 | batch_report.py + run_report.py CLI；4 題 batch call；report.json + .md 雙輸出；run_pipeline.sh 一鍵串接 M2→M3→M4 | 證明 end-of-run 4 維度綜合判定跑得起來（overall_health / fix_priority / flaky_likelihood / regression_type）|
-| M5 | 2026-09-28 | (a) fixtures/US-101.yaml + `_load_fixture()`（脫離 hardcoded fixture）；(b) stale 限「同一 AC」+ `mock_observe_static`；(c) `run_dry()` 統一入口；(d) `tests/v2.1-jev-poc.bats` 16 探針 | 16/16 bats 探針過；M3 行為完全向後相容（3 pass / 6 fail）|
-
----
-
-## M5 完成的證據（去 hardcode + 重構 + 探針覆蓋）
-
-| 項 | 狀態 |
-|---|---|
-| `fixtures/US-101.yaml` config-driven（脫離 hardcoded `AC_AWARE_FIXTURES` dict）| ✅ |
-| `ac_aware_observe(step, prev, story_id=...)` 從 YAML 自動載入 | ✅ |
-| Stale detection 限「同一 AC」連續（`current_ac_id` 狀態機，換 AC reset counter）| ✅ |
-| `mock_observe_static` 強制同 state（讓 stale-test 仍能 trigger block，門檻降為 2）| ✅ |
-| `run_dry(journey, story_acs, stale_test=...)` 統一入口（CLI 不再 inline 邏輯）| ✅ |
-| `run_journey.py` 從 ~50 行收縮到 ~20 行；`run_dry()` 一行 dispatch | ✅ |
-| `tests/v2.1-jev-poc.bats` 16 探針：4 區塊 + 2 runtime | ✅ 16/16 |
-| 向後相容：M3 預設模式仍 3 pass / 6 fail（無迴歸）| ✅ |
-
-```bash
-# 跑探針
-bats tests/v2.1-jev-poc.bats
-# → 1..16, all ok
-```
+**M5 化解決的 TMO-011 反思問題**：
+`ac_aware_observe` hardcoded → config-driven｜Stale 跨 AC 誤判 → 狀態機 reset｜
+`--stale-test` 散在 CLI → 抽進 `run_dry()`｜無 bats 探針 → 16 探針。
 
 ## CI 整合（GitHub Actions）
 
@@ -238,13 +145,10 @@ bats tests/v2.1-jev-poc.bats
 
 | Job | 用途 | 不需 / 需 API key |
 |---|---|---|
-| `bats` | 跑 25 個探針 | 不需 |
+| `bats` | 跑探針 | 不需 |
 | `pipeline` | 跑 `run_pipeline.sh` | 需（走 `secrets.OPENROUTER_API_KEY`）|
 
-**Return code gate**：
-- `0` (green) — 通過
-- `2` (yellow) — warning（不擋 merge）
-- `1` (red) — error，擋 merge
+**Return code gate**：`0` (green) 通過｜`2` (yellow) warning（不擋 merge）｜`1` (red) error，擋 merge。
 
 詳細 branch protection + secrets 設定見
 [`docs/ci/regression-guard-jev-poc.md`](../../../docs/ci/regression-guard-jev-poc.md)。
@@ -254,21 +158,19 @@ bats tests/v2.1-jev-poc.bats
 **核心精神**：regression-guard 不只記錄「test 是 pass 還是 fail」，而是「這個 fail 是真 bug、flaky、還是 AC 本身寫得不好」。Jev oracle 把這層語意判定帶進來，用
 confidence gating 確保不誤導修正循環。
 
-**本 sprint 已完成**：
-- ✅ **M3.1**：Playwright Chrome driver + dispatcher（`OBSERVER_BACKEND=playwright` 切換）
-- ✅ **M6**：Jev fix proposal CLI（`fix_proposal.py`）+ SKILL Step 4 整合
-- ✅ **CI**：GitHub Actions workflow + return code gate + branch protection SOP
+**已完成**：M3.1 Playwright Chrome driver + dispatcher（`OBSERVER_BACKEND=playwright` 切換）｜
+M6 fix proposal CLI + SKILL Step 4 整合｜CI workflow + return code gate。
 
-**Out of scope（順延到真實 PENDING US 觸發時）**：
-- M3.2 真實 driver 跑 example.com
-- CI 進 GH Actions 啟用 + branch protection 實際開設
-- 多 story_id matrix pipeline
+**Out of scope（順延到真實 PENDING US 觸發時）**：M3.2 真實 driver 跑 example.com｜
+CI 進 GH Actions 啟用 + branch protection 實際開設｜多 story_id matrix pipeline。
 
-## M5 化解決的 TMO-011 反思問題
+## 變動歷史
 
-| 反思項 | M5 解決方式 |
-|---|---|
-| `ac_aware_observe` hardcoded | → `fixtures/<story_id>.yaml` config-driven |
-| Stale 跨 AC 誤判 | → `current_ac_id` 狀態機 + `same_ac` reset |
-| `--stale-test` 散在 CLI | → 抽進 `runner.run_dry(stale_test=True)` |
-| 無 bats 探針 | → 16 探針（4 區塊 + 2 runtime）|
+| 版本 | 日期 | 變動 | 為什麼 |
+|---|---|---|---|
+| M0 | 2026-09-28 | 環境探勘：看 docs/backlog.md、docs/ac/US-101.md、regression-guard skill 子檔 | 先理解現實再動工 |
+| M1 | 2026-09-28 | oracle + AC parser + example runner + cache fixture；介面改 /api/alpha/decisions；加三層 key loader；真 API 驗證 | 證明「讀 AC → Jev → verdict」流程跑得起來 |
+| M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
+| M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection；加 --json-output | 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
+| M4 | 2026-09-28 | batch_report.py + run_report.py CLI；4 題 batch call；report.json + .md 雙輸出；run_pipeline.sh 一鍵串接 M2→M3→M4 | 證明 end-of-run 4 維度綜合判定跑得起來 |
+| M5 | 2026-09-28 | fixtures/US-101.yaml config-driven；stale 限「同一 AC」；`run_dry()` 統一入口；16 支 bats 探針 | 16/16 探針過；M3 行為完全向後相容（3 pass / 6 fail）|

@@ -8,8 +8,6 @@
 > **對應 Backlog**: M02-US-201, M02-US-202, M02-US-203, M02-DE-301
 > **Sprint / Module**: Sprint 1 / M02-payment
 > **交付狀態**: ✅ 完成（Module 級交付）
->
-> **本檔為範例**，由 dav-submitter skill v2.2 產出。展示 Module 級交付語法 + §9 Module 級總結。
 
 ---
 
@@ -32,10 +30,7 @@
   - 為什麼 Module 切割出 M02（vs 全部塞進 M04 checkout）：dav-designer v2.6 5 條原則驗證「功能內聚 + 可獨立交付」
   - 為什麼用 event bus 通知 M03（vs 直接 import）：避免 M02 / M03 互相依賴、可獨立部署
   - 為什麼冪等處理付款回呼（vs 不處理）：第三方付款閘道會重試回呼、不冪等會重複扣款
-- **成功怎麼看**：
-  - M02 Module 探針全綠（3 個）+ INT 探針綠（1 個）
-  - production 用戶可順利完成付款流程
-  - M02 故障不連累 M01 / M03 / M04（Module 隔離生效）
+- **成功怎麼看**：M02 + INT 探針全綠｜production 用戶可完成付款流程｜M02 故障不連累 M01 / M03 / M04
 
 ## 2. 做了什麼改動
 
@@ -45,12 +40,9 @@
 | --- | --- |
 | `src/payment/PaymentService.ts` | M02 對外 interface |
 | `src/payment/PaymentServiceImpl.ts` | M02 實作（含 retry / idempotency / connection 釋放）|
-| `src/payment/models/Payment.ts` | 付款單 model |
-| `src/payment/models/PaymentStatus.ts` | 狀態 enum |
-| `src/payment-gateway/GatewayAdapter.ts` | 第三方閘道 adapter interface |
-| `src/payment-gateway/StripeAdapter.ts` | Stripe mock 實作 |
-| `probes/M02-credit-card-payment.test.ts` | 3 個 Module 內探針 |
-| `probes/M02-payment-callback.test.ts` | 2 個 Module 內探針（冪等 + 簽名驗證）|
+| `src/payment/models/Payment.ts` | 付款單 model + `PaymentStatus` enum |
+| `src/payment-gateway/GatewayAdapter.ts` | 第三方閘道 adapter interface（`StripeAdapter.ts` 為 mock 實作）|
+| `probes/M02-*.test.ts` | 5 個 Module 內探針 |
 | `probes/INT-M01-M02-checkout.test.ts` | 1 個跨 Module 整合探針 |
 
 ### 2.2 修改檔案
@@ -70,9 +62,9 @@
 
 | 改動 | 為什麼這樣設計 | 放棄的選項 |
 | --- | --- | --- |
-| **PaymentService 用 interface 對外** | 易測試（M04 可 mock）、易替換（換閘道不影響）、易演進（內部 refactor 不影響外部）| 對外暴露 class（M04 會 import 整個 class，耦合度高；測試難）|
-| **冪等處理付款回呼** | 第三方付款閘道會重試回呼（網路不穩）、不冪等會重複扣款（商業災難）| 用 transaction 處理（無法保證跨 process 冪等；用 unique index 是更強保證）|
-| **DB connection 在 finally 釋放** | 高併發下 timeout 會堆積 connection、最終 crash（DE-301 的根因）| 用 middleware 釋放（不好寫、跨 function 時容易漏；finally 是顯而易見的釋放點）|
+| **PaymentService 用 interface 對外** | 易測試（M04 可 mock）、易替換（換閘道不影響）、易演進 | 對外暴露 class（M04 會 import 整個 class，耦合度高；測試難）|
+| **冪等處理付款回呼** | 第三方付款閘道會重試回呼（網路不穩）、不冪等會重複扣款（商業災難）| 用 transaction 處理（無法保證跨 process 冪等；unique index 是更強保證）|
+| **DB connection 在 finally 釋放** | 高併發下 timeout 會堆積 connection、最終 crash（DE-301 的根因）| 用 middleware 釋放（跨 function 時容易漏；finally 是顯而易見的釋放點）|
 | **event bus 而非直接 import M03** | M02 不應該依賴 M03 內部；event bus 讓 M03 故障不影響 M02 | 直接 `import { OrderModel } from 'src/order'`（破壞 Module 邊界、測試時要 mock M03）|
 
 ## 3. 驗收標準對應
@@ -80,11 +72,9 @@
 | AC | 描述 | 結果 | 證據 |
 | --- | --- | --- | --- |
 | M02-US-201 AC-1 | 有效信用卡建立付款單 | ✅ | `M02-create-payment-returns-success-on-valid-card` 探針 |
-| M02-US-201 AC-2 | 第三方成功後更新訂單為 PAID | ✅ | INT 探針 `INT-M01-M02-checkout-full-flow` |
 | M02-US-201 AC-3 | Timeout 釋放 DB connection | ✅ | `M02-payment-timeout-releases-db-connection` 探針 |
 | M02-US-202 AC-2 | 同一 callback 重複 3 次結果冪等 | ✅ | `M02-payment-callback-is-idempotent` 探針 |
 | M02-US-203 AC-2 | 連續失敗 3 次鎖卡 | ✅ | `M02-payment-retry-blocks-after-3-failures` 探針 |
-| M02-DE-301 | DB connection 釋放 | ✅ | 壓力測試 + `M02-payment-timeout-releases-db-connection` 探針 |
 | INT-M01-M02-01 AC-1 | 登入後付款完整流程 | ✅ | INT 探針 |
 
 ## 4. 測試結果
@@ -108,16 +98,15 @@
 
 ### 6.1 立即可做（建議優先）
 
-1. **執行 Sprint 2：M03-order Module 完整交付** — 解鎖 INT-M01-M02-02（登入後付款 + 訂單歷史）
-   - **為什麼這個優先**：M03 是 M02 的下游 consumer，目前 event bus 沒 retry、TECH-503 P1 問題要靠 M03 完整測試才能驗證
+1. **執行 Sprint 2：M03-order Module 完整交付** — 解鎖 INT-M01-M02-02
+   - **為什麼這個優先**：M03 是 M02 的下游 consumer，TECH-503 P1 問題要靠 M03 完整測試才能驗證
 2. **修正 TECH-503（event bus retry / dead letter queue）** — 避免 M03 故障時 M02 訊息掉
    - **為什麼這個優先**：production 風險高、目前是 P1 已知問題
 
 ### 6.2 下一個 Sprint 考慮
 
 - [ ] M03-order Module 完整交付（BACKLOG: M03-*）
-- [ ] TECH-501（M02 部分退款）
-- [ ] TECH-503（event bus retry）
+- [ ] TECH-501（M02 部分退款）｜TECH-503（event bus retry）
 - [ ] INT-M01-M02-02（登入後付款 + 訂單歷史）
 
 ### 6.3 長期方向（Think Big）
@@ -130,7 +119,7 @@
 - [Backlog 對應項目](./docs/backlog.md)
 - [系統設計](./docs/system-design.md)
 - [M02 探針](./probes/)
-- [dev-checker-loop 校驗清單](./checklist.md)
+- [dev-checker-loop 校驗清單](見同套 dev-checker-loop skill 子檔)
 
 ## 8. 反思（Reflection 末段，v2.0 新：併入此處）
 
@@ -197,16 +186,15 @@ M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 | --- | --- |
 | 探針總數 | 5（4 個 M02 + 1 個 INT）|
 | Module 大小（LOC）| ~800 |
-| 變動歷史 | 本次 sprint 第 1 版 |
 | 測試覆蓋率 | ~85% |
 | Module 內聚度 | 高（dav-designer 5 條原則驗證通過）|
 | Module 耦合度 | 低（對外 interface、無直接 import M01 / M03）|
 
 ### 9.5 Module 級下一步
 
-1. **Sprint 2 派 M03-order**：M03 是 M02 的下游 consumer，需先把 M03 交付完整才能驗證跨 Module 流程
+1. **Sprint 2 派 M03-order**：M03 是 M02 的下游 consumer，需先交付完整才能驗證跨 Module 流程
 2. **修 TECH-503 event bus retry**：影響全 repo，是其他 Module 的隱性風險
-3. **M04 checkout 編排**：M04 需 M01 + M02 + M03 都完成後才能完整測試
+3. **M04 checkout 編排**：需 M01 + M02 + M03 都完成後才能完整測試
 
 ---
 

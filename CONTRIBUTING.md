@@ -126,7 +126,22 @@ for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 
 # SKILL.md 行數檢查（≤ 150）
 wc -l skills/dav-wiki/SKILL.md
+
+# 框架體重守門 + 儀表板（TMO-082）：context 預算、指標完整性、框架／產品行數比
+python3 scripts/ci/check-framework-weight.py
 ```
+
+### 框架體重守門（TMO-082）
+
+`scripts/ci/check-framework-weight.py` 守三樣嘢（設定在 `docs/ci/framework-weight.json`）：
+
+| 守乜 | 意思 | 點解要有 |
+|------|------|---------|
+| **context 預算** | 每個 skill 嘅 `SKILL.md` + 支援 `.md` 行數 ≤ cap | 呢啲係 agent **每次觸發 skill 真金白銀要讀落 context** 嘅量；冇上限就會慢慢脹 |
+| **指標完整性** | `SKILL.md` 點名嘅子檔（`./xxx.md`）必須存在且非空 | 指標指住空檔 = agent 讀到空內容 = 假覆蓋 |
+| **框架／產品行數比** | (框架層 + context 層) / 產品層 ≤ baseline + tolerance | ratchet：加探針會推高比值，所以用 baseline + 餘裕；**明顯上升先紅** |
+
+想睇儀表板（每個 skill 嘅 context 排行、框架體重、產物線檔案數）：直接跑上面嗰條命令。
 
 ### markdownlint 政策（TMO-037 後）
 
@@ -147,7 +162,10 @@ wc -l skills/dav-wiki/SKILL.md
 3. **bash -n** 驗證 CLI 腳本語法
 4. **SKILL.md 行數檢查**（≤ 150）
 5. **Python heredoc 平衡檢查**
-6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 58 支
+6. **框架體重守門**（`python3 scripts/ci/check-framework-weight.py`）：context 預算 + 指標完整性 +
+   框架／產品行數比（ratchet）。守門探針：`tests/framework-weight.bats`（FW-1..016，含死指標、
+   子檔被掏空、枚舉壞咗、ratio 超標四種壞情境嘅實測證明）。
+7. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 58 支
    mutant 在副本上重跑一次（各類分佈見該檔本身——手寫明細會漂，交給 `awk` 自查），
    每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`

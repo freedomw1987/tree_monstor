@@ -1,141 +1,86 @@
 # Regression Guard 多語言實現示例
 
+> 本檔是「探針點樣寫」嘅速查表：跨語言 API 對照 + 命名規範 + 輸出格式。
+> **Jev Oracle 嘅完整用法**（M6 / M6.1 / M6.2 / M6.3 / M7 / M8 / flaky / CI matrix）→ 同套本 skill 子檔（`./jev-oracle.md`）；
+> PoC 嘅程式碼、milestone 證據、fixture → `PoC/README.md`。
+
 ---
 
-## 🌐 Frontend 探針示例
+## 1. 探針 API 跨語言對照
 
-### React 探針實現
+| 語言 | probe | assert | describe | 探針點例 |
+|---|---|---|---|---|
+| TypeScript / JS | `probe(name, value, cfg)` | `assert(cond, msg)` | `describe(name, fn)` | `render:X` / `api:GET:/users` / `state:user` |
+| Python | `probe(name, value, cfg)` | `assert_(cond, msg)` | `@describe` 裝飾器 | `payment:process` / `db:query:users` |
+| Go | `Probe(name, value, ProbeConfig{...})` | `Assert(cond, msg)` | `Describe(name, fn)` | `http:GET:/orders` / `user:create` |
+| Vue | 同 TS（`probe` / `assert`） | 同 TS | `setup()` 內掛鉤 | `vue:mounted:X` / `vue:watch:prop` |
+
+**共通形狀**：`probe(名稱, 實際值, 期望條件)` → 產出一筆可回放嘅紀錄；`assert(條件, 失敗訊息)` → 硬失敗。
+條件欄位：`expected` / `threshold` / `validate` / `notNull`。
+
+**通用探針點**（跨層）：
+
+| 探針類型 | 觸發時機 | 預期值 |
+|---------|---------|--------|
+| `render:componentName` | 組件渲染完成 | 渲染時間 < 100ms |
+| `api:endpoint` | API 請求完成 | status 2xx、response 非 null |
+| `state:stateName` | 狀態更新 | 新值 ≠ 舊值 |
+| `interaction:eventType` | 用戶交互 | 響應時間 < 200ms |
+| `db:query:entity` | 資料存取 | 耗時 < 100ms、筆數符合預期 |
+| `error:errorType` | 錯誤發生 | 錯誤應被捕獲並記錄 |
+
+---
+
+## 2. 最小可用範例
+
+### 2.1 Frontend（React + TypeScript）
 
 ```typescript
 // probes/react-probes.ts
-import { probe, assert, describe } from './probes';
+import { probe, assert } from './probes';
 
 export function useRegressionGuard() {
-  const results: ProbeResult[] = [];
-
   return {
-    // ✅ 組件渲染探針
-    probeRender: (componentName: string, renderTime: number) => {
-      probe(`render:${componentName}`, renderTime, {
-        threshold: 100, // 渲染應在 100ms 內
-        unit: 'ms'
-      });
-    },
+    probeRender: (componentName: string, renderTime: number) =>
+      probe(`render:${componentName}`, renderTime, { threshold: 100, unit: 'ms' }),
 
-    // ✅ 狀態更新探針
-    probeStateUpdate: (stateName: string, oldValue: any, newValue: any) => {
+    probeStateUpdate: (stateName: string, oldValue: unknown, newValue: unknown) =>
       probe(`state:${stateName}`, { old: oldValue, new: newValue }, {
         validate: (actual) => actual.new !== undefined
-      });
-    },
+      }),
 
-    // ✅ API 調用探針
-    probeApiCall: async (endpoint: string, response: Response) => {
-      const probeResult = probe(`api:${endpoint}`, response.status, {
+    probeApiCall: (endpoint: string, response: Response) => {
+      const result = probe(`api:${endpoint}`, response.status, {
         expected: 200,
         validate: (status) => status >= 200 && status < 300
       });
-      
-      if (!probeResult.passed) {
-        console.error(`💡 ${probeResult.suggestion}`);
-      }
+      if (!result.passed) console.error(`💡 ${result.suggestion}`);
     },
 
-    // ✅ 用戶交互探針
-    probeInteraction: (eventType: string, target: string, duration: number) => {
-      assert(duration < 200, `互動 ${eventType} 在 ${target} 耗時 ${duration}ms，應少於 200ms`);
-    }
+    probeInteraction: (eventType: string, target: string, duration: number) =>
+      assert(duration < 200, `互動 ${eventType} 在 ${target} 耗時 ${duration}ms，應少於 200ms`)
   };
-}
-
-// 使用示例
-function UserProfile({ userId }: { userId: string }) {
-  const guard = useRegressionGuard();
-  const [user, setUser] = useState(null);
-  const renderStart = performance.now();
-
-  useEffect(() => {
-    const startTime = performance.now();
-    
-    fetchUser(userId)
-      .then(data => {
-        probe('api:fetchUser', data, { notNull: true });
-        setUser(data);
-      });
-      
-    return () => {
-      const duration = performance.now() - startTime;
-      probe('api:fetchUser:duration', duration, { threshold: 500 });
-    };
-  }, [userId]);
-
-  const renderTime = performance.now() - renderStart;
-  probe('render:UserProfile', renderTime, { threshold: 100 });
-
-  return <div>{user?.name}</div>;
 }
 ```
 
-### Vue 探針實現
+### 2.2 Frontend（Vue）
 
 ```typescript
 // probes/vue-probes.ts
 export function useVueProbes() {
   return {
-    setup: () => {
-      probe('vue:setup', Date.now(), { label: 'Component setup' });
-    },
-
-    mounted: (componentName: string) => {
-      probe(`vue:mounted:${componentName}`, Date.now(), { 
-        label: `${componentName} mounted` 
-      });
-    },
-
-    watch: (property: string, newValue: any, oldValue: any) => {
+    setup: () => probe('vue:setup', Date.now(), { label: 'Component setup' }),
+    mounted: (componentName: string) =>
+      probe(`vue:mounted:${componentName}`, Date.now(), { label: `${componentName} mounted` }),
+    watch: (property: string, newValue: unknown, oldValue: unknown) =>
       probe(`vue:watch:${property}`, { new: newValue, old: oldValue }, {
         validate: (val) => val.new !== val.old
-      });
-    }
+      })
   };
 }
-
-// 使用示例
-export default {
-  setup() {
-    const probes = useVueProbes();
-    probes.setup();
-
-    const user = ref(null);
-    
-    watch(user, (newVal, oldVal) => {
-      probes.watch('user', newVal, oldVal);
-    });
-
-    onMounted(() => {
-      probes.mounted('UserProfile');
-    });
-
-    return { user };
-  }
-};
 ```
 
-### Frontend 常見探針點
-
-| 探針類型 | 觸發時機 | 預期值 |
-|---------|---------|--------|
-| `render:componentName` | 組件渲染完成 | 渲染時間 < 100ms |
-| `api:endpoint` | API 請求完成 | status 200, response 不為 null |
-| `state:stateName` | 狀態更新 | 新值不等於舊值 |
-| `interaction:eventType` | 用戶交互 | 響應時間 < 200ms |
-| `error:errorType` | 錯誤發生 | 錯誤應被捕獲並記錄 |
-
----
-
-## ⚙️ Backend 探針示例
-
-### Node.js 探針實現
+### 2.3 Backend（Node.js）
 
 ```typescript
 // probes/backend-probes.ts
@@ -144,50 +89,19 @@ import { probe, assert, describe } from './probes';
 describe('User Module', () => {
   describe('authentication', () => {
     probe('login:valid-credentials', actualUser, expectedUser);
-    
     assert(user.id === expectedId, 'User ID should match');
   });
 
   describe('data-access', () => {
     const startTime = Date.now();
-    
-    // 數據庫查詢探針
     const result = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
-    
-    probe('db:query:users', result.rows.length, {
-      expected: 1,
-      validate: (count) => count >= 0
-    });
-    
+    probe('db:query:users', result.rows.length, { expected: 1, validate: (n) => n >= 0 });
     assert(Date.now() - startTime < 100, 'Query should complete within 100ms');
   });
 });
-
-// API 響應探針 Middleware
-export function probeMiddleware(req: Request, res: Response, next: NextFunction) {
-  const startTime = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    
-    probe(`api:${req.method}:${req.path}`, {
-      status: res.statusCode,
-      duration,
-      timestamp: new Date().toISOString()
-    }, {
-      validate: (result) => result.status < 500
-    });
-    
-    if (duration > 1000) {
-      console.warn(`💡 Slow API: ${req.path} took ${duration}ms`);
-    }
-  });
-  
-  next();
-}
 ```
 
-### Python 探針實現
+### 2.4 Backend（Python）
 
 ```python
 # probes/python_probes.py
@@ -195,133 +109,64 @@ from probes import probe, assert_, describe
 
 @describe('Payment Module')
 class TestPaymentRegression:
-    """支付模組回歸探針"""
-    
     def test_payment_processing(self):
-        """處理支付探針"""
-        result = payment_service.process({
-            'amount': 100,
-            'currency': 'USD'
-        })
-        
+        result = payment_service.process({'amount': 100, 'currency': 'USD'})
         probe('payment:process:success', result.status, {
             'expected': 'completed',
             'validate': lambda r: r in ['completed', 'failed']
         })
-        
-        assert_(result.transaction_id is not None, 
-                'Transaction ID should be generated')
-    
+        assert_(result.transaction_id is not None, 'Transaction ID should be generated')
+
     def test_database_query_performance(self):
-        """數據庫查詢性能探針"""
         import time
         start = time.time()
-        
         users = db.query('SELECT * FROM users')
-        
         duration = time.time() - start
-        probe('db:query:users:duration', duration, {
-            'threshold': 0.1,  # 100ms
-            'unit': 'seconds'
-        })
-        
+        probe('db:query:users:duration', duration, {'threshold': 0.1, 'unit': 'seconds'})
         assert_(duration < 0.1, f'Query took {duration}s, should be < 0.1s')
 ```
 
-### Go 探針實現
+### 2.5 Backend（Go）
 
 ```go
 // probes/go_probes.go
 package probes
 
-import (
-    "time"
-)
-
 func ProbeHTTP(handler http.HandlerFunc, method, path string) {
     req := httptest.NewRequest(method, path, nil)
     w := httptest.NewRecorder()
-    
     start := time.Now()
     handler(w, req)
-    duration := time.Since(start)
-    
-    Probe("http:" + method + ":" + path, map[string]interface{}{
-        "status":  w.Code,
-        "duration": duration.Milliseconds(),
-    }, ProbeConfig{
-        Validate: func(data interface{}) bool {
-            return w.Code < 500
-        },
-    })
-}
-
-func TestUserService(t *testing.T) {
-    Describe("User Module", func() {
-        It("should create user", func() {
-            start := time.Now()
-            user, err := service.CreateUser(&User{Name: "Test"})
-            duration := time.Since(start)
-            
-            Probe("user:create", map[string]interface{}{
-                "success":   err == nil,
-                "user_id":   user.ID,
-                "duration":  duration.Milliseconds(),
-            }, ProbeConfig{
-                Validate: func(data map[string]interface{}) bool {
-                    return data["success"] == true && data["user_id"] != ""
-                },
-            })
-            
-            Assert(err == nil, "User creation should succeed")
-            Assert(duration < 100, "Creation should take < 100ms")
-        })
-    })
+    Probe("http:"+method+":"+path, map[string]interface{}{
+        "status": w.Code, "duration": time.Since(start).Milliseconds(),
+    }, ProbeConfig{Validate: func(data interface{}) bool { return w.Code < 500 }})
 }
 ```
 
 ---
 
-## 🎯 探針命名規範
+## 3. 探針命名規範
 
-### Frontend 探針命名
-
-```
-✅ 格式: {category}:{component|action}:{detail}
-
-render:UserProfile
-render:ProductCard:list
-api:GET:/users
-api:POST:/checkout
-state:userProfile:loading
-state:cart:itemCount
-interaction:button:click
-error:validation:email
-error:api:network
-```
-
-### Backend 探針命名
+**格式**：Frontend `{category}:{component|action}:{detail}`；Backend `{layer}:{operation}:{entity}`。
 
 ```
-✅ 格式: {layer}:{operation}:{entity}
-
-db:query:users
-db:insert:orders
-db:update:inventory
-cache:get:session
-cache:set:token
-api:POST:/payments
-api:GET:/orders/[id]
-service:payment:process
-service:auth:login
-queue:publish:order-created
+render:UserProfile          db:query:users
+render:ProductCard:list     db:insert:orders
+api:GET:/users              db:update:inventory
+api:POST:/checkout          cache:get:session
+state:userProfile:loading   cache:set:token
+state:cart:itemCount        service:payment:process
+interaction:button:click    service:auth:login
+error:validation:email      queue:publish:order-created
 ```
+
+進階（採用 Jev oracle 時）可加 `JEV-` prefix，與傳統 `US-101-AC01` 並行不重疊。
 
 ---
 
-## 📊 探針輸出格式
+## 4. 探針輸出格式
 
-### 文本輸出
+### 4.1 文本輸出
 
 ```
 ✅ probe: render:UserProfile (45ms)
@@ -332,7 +177,7 @@ queue:publish:order-created
    💡 Suggestion: Add index on orders.user_id and orders.created_at
 ```
 
-### JSON 報告
+### 4.2 JSON 報告
 
 ```json
 {
@@ -349,13 +194,6 @@ queue:publish:order-created
       "actual": 1234,
       "expected": "< 100",
       "suggestion": "Add index on orders.user_id and orders.created_at"
-    },
-    {
-      "name": "render:ProductList",
-      "layer": "frontend",
-      "actual": { "items": 0 },
-      "expected": { "items": "> 0" },
-      "suggestion": "Check API response and data binding"
     }
   ]
 }
@@ -365,201 +203,79 @@ queue:publish:order-created
 
 ## 🧠 Jev Oracle 範例（進階）
 
-> 這章是**可選章節**。主流程（上面所有 JSON / bash 範例）對多数項目已足夠。
-> 以下是 skill PoC `skills/regression-guard/PoC/` 跑出 M1-M5 的範例輸出，給決定要採用 Jev oracle 的项目參考。
+> **可選章節**：預設 regression-guard 流程（Steps 1-4 + 上面全部規則）對多数項目已足夠。
+> 下面只列**四種輸出嘅長相**；完整用法、gating 規則、safety 規則、CI matrix → 同套本 skill 子檔（`./jev-oracle.md`）。
 
-### 範例 User Story：US-101 付款頁
+### 5.1 四種輸出物
 
-來源：`docs/ac/US-101.md`（4 條 AC：付款頁、錯誤卡、訂單成立、500 錯誤）
+| 輸出 | 例子 | 用途 |
+|---|---|---|
+| **journey YAML** | `journeys/US-101.yaml`（M2 產，每步對應一條 AC） | 描述要跑的步驟 |
+| **dry-run 主迴路** | `US-101-AC01-s1 setup_state verdict=pass conf=0.96 sev=0.08 bug=0.10` | 每步判定 + 信心度 |
+| **batch report** | `report.md`（M4）：健康度 🔴/🟡/🟢 + 修復優先級 + flaky 機率 | end-of-run 總覽 |
+| **JSON 報告** | `report.json`（CI 用，含 `return_code`） | pipeline gate |
 
-#### 範例 1：journey YAML（M2 產出）
+**三種 observer backend**（`ac_aware` / `mock` / `playwright`）切換指令見 `./jev-oracle.md`。
 
-```yaml
-# journeys/US-101.yaml — 自動生成（M2 Jev 評估出 9 步、2.25/AC 複雜度）
-journey_id: US-101
-title: AC 範本
-source: ../../docs/ac/US-101.md
-generated_by: typesafe/jev-1.13
-generated_at: '2026-09-28T14:33:19+00:00'
-total_steps: 9
-steps:
-  - id: US-101-AC01-s1
-    action: setup_state
-    verifying_ac: US-101-AC01
-  - id: US-101-AC01-s2
-    action: setup_state
-    verifying_ac: US-101-AC01
-  - id: US-101-AC01-s3
-    action: click
-    target_text: 結帳
-    verifying_ac: US-101-AC01
-  # ... 以此類推
-```
+### 5.2 Fix proposal（M6）
 
-#### 範例 2：dry-run 主迴路輸出（M3）
-
-```
-  US-101-AC01-s1           setup_state   verdict=pass           conf=0.96 sev=0.08 bug=0.10
-  US-101-AC01-s2           setup_state   verdict=pass           conf=0.94 sev=0.09 bug=0.12
-  US-101-AC01-s3           click         verdict=pass           conf=0.98 sev=0.05 bug=0.08
-  US-101-AC02-s1           setup_state   verdict=fail           conf=0.99 sev=1.60 bug=0.43
-  US-101-AC02-s2           type          verdict=fail           conf=0.99 sev=1.62 bug=0.50
-  US-101-AC03-s1           setup_state   verdict=fail           conf=0.92 sev=1.75 bug=0.45
-  US-101-AC03-s2           wait          verdict=fail           conf=0.59 sev=1.18 bug=0.40
-  US-101-AC04-s1           setup_state   verdict=fail           conf=0.99 sev=2.76 bug=0.56
-  US-101-AC04-s2           observe       verdict=fail           conf=0.99 sev=2.77 bug=0.67
-
-📊 Summary:
-   total_steps:        9
-   verdict counts:     {'pass': 3, 'fail': 6}
-   blocked:            False ()
-   total latency:      0ms
-   total cost:         $0.000320
-   cache hits:         9/9
-```
-
-#### 範例 3：end-of-run batch report（M4）
-
-Markdown 報告（`report.md`）：
-
-```markdown
-# Regression Report — US-101
-
-**整體健康度**：🔴 red
-**修復優先級**：2.96 / 3
-**Flaky 可能性**：0.25
-**Regression 類型**：real_bug
-
-## 各步 verdict 摘要
-
-| 步驟 | 動作 | 判定 | 信心 | 嚴重度 | 真 bug 機率 |
-|------|------|------|------|--------|-------------|
-| US-101-AC01-s1 | setup_state | pass | 0.96 | 0.08 | 0.10 |
-| US-101-AC04-s2 | observe | fail | 0.99 | 2.77 | 0.67 |
-```
-
-#### 範例 4：JSON 報告（CI 用，`report.json`）
-
-```json
-{
-  "journey_id": "US-101",
-  "overall_health": "red",
-  "fix_priority": 2.96,
-  "flaky_likelihood": 0.25,
-  "regression_type": "real_bug",
-  "return_code": 1,
-  "verdict_counts": {"pass": 3, "fail": 6}
-}
-```
-
-> **CI 整合提示**：`return_code` 是 `green=0 / yellow=2 / red=1`，可直接讀進 pipeline 決定是否阻擋部署。
-
-### 三種 observer backend 切換
-
-```bash
-# 預設 ac_aware（從 fixtures/<story_id>.yaml 讀）
-.venv/bin/python run_journey.py journeys/US-101.yaml
-
-# 純 mock（不接 fixture，oracle 會看到空 body 全判 fail）
-OBSERVER_BACKEND=mock .venv/bin/python run_journey.py journeys/US-101.yaml
-
-# 真 Chrome driver（M3.1+；要 uv pip install playwright + playwright install chromium）
-OBSERVER_BACKEND=playwright .venv/bin/python run_journey.py journeys/US-101.yaml
-```
-
-### PoC 詳情
-
-完整 milestone 記錄、程式碼、探針守護見 `PoC/README.md`。
-詳細 SKILL 整合見 `SKILL.md` 章節「Jev Oracle 補充（進階）」。
-
-### Fix proposal 範例（M6）
-
-跑出 `real_bug` verdict 後，自動產出信心度報告：
+跑出 `real_bug` verdict 後，自動產出**信心度報告**（不是自動寫 fix）：
 
 ```bash
 JEV_FIX_PROPOSAL=1 REGRESSION_REPORT_PATH=/tmp/report ./run_pipeline.sh US-101
+# → /tmp/report-fix-proposal.md
 ```
-
-產出 `/tmp/report-fix-proposal.md`：
 
 ```markdown
 # Fix Proposal — US-101
-
-> **M6 Jev 信心度報告**（3 題 noul batch call）— PoC 階段，需人工接手寫 fix 細節。
 
 **整體信心度**：0.41 (🟠 低信心)
 
 ## 信心度評估
 
-| 維度 | 信心度 | 評級 | 備註 |
-|---|---|---|---|
-| 問題摘要 | 0.44 | 🟠 低信心 | Jev 認為能寫出 1 句話明確總結 |
-| 建議修正 | 0.35 | 🟠 低信心 | Jev 認為能指向特定 component |
-| 驗證步驟 | 0.44 | 🟠 低信心 | Jev 認為步驟能在 <5min CI-runnable |
+| 維度 | 信心度 | 評級 |
+|---|---|---|
+| 問題摘要 | 0.44 | 🟠 低信心 |
+| 建議修正 | 0.35 | 🟠 低信心 |
+| 驗證步驟 | 0.44 | 🟠 低信心 |
 
 ## 原始失敗走跡（reviewer 接手起點）
 
   [US-101-AC04-s1] setup_state → FAIL conf=0.99 sev=2.76 bug=0.56
-    url:    https://example.com/checkout/payment?order=A123
     status: 500
-    body:   [setup for US-101-AC04] 服務暫時無法使用，請稍後重試
 ```
 
-**Reviewer workflow**：
-1. 看「整體信心度」— ≥0.5 直接接手；<0.5 先加 observer context
-2. 找「評估表」最低那一維 — 通常是「建議修正」維度低，需要更多 code reading
-3. 對「原始失敗走跡」找 status 500 步 → 定位 component
+**Reviewer workflow**：① 看整體信心度（≥0.5 直接接手；<0.5 先加 observer context）② 找最低那一維 ③ 對走跡定位 component。
 
-### Fix proposal v2 範例（M6.1 LLM Relay）
+### 5.3 Fix proposal v2（M6.1 LLM Relay）
 
-整體信心度 ≥ 0.5 時，召喚當下對話的 LLM agent 接力寫 fix 文字：
+整體信心度 **≥ 0.5** 時，召喚**當下對話嘅 LLM agent**接力寫 fix 文字：
 
 ```bash
-# 1. 跑 pipeline 產 v1 + v2 prompt bundle
+# 1. pipeline 產 v1 + v2 + prompt bundle
 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
-  REGRESSION_REPORT_PATH=/tmp/r \
-  ./run_pipeline.sh US-101
+  REGRESSION_REPORT_PATH=/tmp/r ./run_pipeline.sh US-101
+# → /tmp/r-fix-proposal-v2.md + /tmp/US-101-run.relay/prompt.md
 
-# 2. 看 prompt bundle
-cat /tmp/US-101-run.relay/prompt.md
-# → 含 Jev 信心度報告 + 原始失敗走跡 + template
+# 2. 在對話中接力：讀 prompt.md → 寫 fix → 存 answer.md
+#    （由 subagent / pi 本身按 prompt template 的「產出」段寫）
 
-# 3. 在對話中：讀 prompt.md → 寫 fix → 存到 answer.md
-#    （由 subagent / pi 本身根據 prompt template 的「產出」段寫）
-
-# 4. 拼 final report
+# 3. 拼 final report
 .venv/bin/python fix_proposal_v2.py /tmp/US-101-run.json \
   /tmp/r-final.md --answer-from /tmp/US-101-run.relay/answer.md
 ```
 
-產出 `/tmp/r-final.md`（LLM 接力成功時）：
-
 ```markdown
 # Fix Proposal — US-101
 
-（... Jev 信心度報告 ...）
-
----
-
 ## LLM Relay Fix Proposal（M6.1）
 
-**問題分析**：信心度 0.81（高）佐證 — 從走跡看，`/checkout/payment` 在 AC04 連續 2 步
-回 500 + 「服務暫時無法使用」訊息，這是真 bug 的典型特徵...
+**問題分析**：信心度 0.81（高）佐證 — 從走跡看，`/checkout/payment` 連續 2 步回 500…
 
-**建議修正**：檢查 `/api/payment` route 的 exception handling（推測）...
-應加 try/except 包住 Stripe call 並回 200 + 友善錯誤頁。
+**建議修正**：檢查 `/api/payment` route 的 exception handling…
 
 **驗證步驟**：
 1. `JEV_FIX_PROPOSAL=1 ./run_pipeline.sh US-101` — 預期 9 pass / 0 fail
-2. 手動：在 /checkout/payment 用測試卡 4242 4242 4242 4242
-
-**AC 建議**：無
-
-### 信心度佐證對照
-
-- 整體信心度：0.81（門檻 0.5）
-- Gating：✅ 通過
-- 走跡筆數：6
 ```
 
 **gating 規則**：
@@ -567,295 +283,9 @@ cat /tmp/US-101-run.relay/prompt.md
 | 整體信心度 | 行為 | final report 內容 |
 |---|---|---|
 | ≥ 0.5 | 召喚 LLM relay，產 prompt bundle | 信心度報告 + LLM 接力文字 + 走跡對照 |
-| < 0.5 | 跳過 LLM relay | 信心度報告 + 走跡，標「reviewer 接手」|
+| < 0.5 | 跳過 LLM relay | 信心度報告 + 走跡，標「reviewer 接手」 |
 
 **為什麼是 skill 本身 LLM（不接外部 Claude/GPT）**：
-- regression-guard 本身是個 skill → 召喚它時的 LLM（subagent / pi 本身）就是接力的 LLM
-- 不增加外部依賴、prompt template 是「檔案」可版本化
+- regression-guard 本身係個 skill → 召喚佢時嘅 LLM（subagent / pi 本身）就係接力嘅 LLM
+- 不增加外部依賴、prompt template 係「檔案」可版本化
 - prompt template 位置：`PoC/prompts/fix_relay.md`
-
-### M6.2 patch + re-validate 閉環範例
-
-```bash
-# 1. 跑 pipeline 產 fix_proposal_v2.md + patches.json
-JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 JEV_PATCH_AND_REVALIDATE=1 \
-  REGRESSION_REPORT_PATH=/tmp/r \
-  ./run_pipeline.sh US-M62
-# → /tmp/r-fix-proposal-v2.md
-# → /tmp/r-patches.json  (patch_parser 抽出的結構化 patch 列表)
-
-# 2. 看 patch 列表
-cat /tmp/r-patches.json | jq '.patches[] | {file, format, confidence}'
-# → [{"file": "fix_proposal.py", "format": "describe_only", "confidence": 0.4}]
-
-# 3. Dry-run patch（看 diff 不改檔案）
-.venv/bin/python playwright_patcher.py fix_proposal.py \
-  --old '    result = ParseResult()' \
-  --new '    result = ParseResult()\n    return result'
-# → 👀 action: dry_run + unified diff + .bak 已建
-
-# 4. 真的 apply
-.venv/bin/python playwright_patcher.py fix_proposal.py \
-  --old '    result = ParseResult()' \
-  --new '    result = ParseResult()\n    return result' \
-  --apply
-
-# 5. 重跑 journey（patch 後）
-.venv/bin/python run_journey.py journeys/US-M62.yaml \
-  --json-output /tmp/US-M62-after.json
-
-# 6. 比較 verdict 變化
-.venv/bin/python re_validate.py /tmp/US-M62-before.json /tmp/US-M62-after.json
-# → # Re-validate Report — US-M62
-# → **分類**：🟢 improvement
-# → **建議**：keep patch
-```
-
-**safety 規則**：
-
-| 條件 | 動作 |
-|---|---|
-| `old_text` 不存在 | ❌ abort |
-| `old_text` 出現 > 1 次 | ❌ abort（拒絕靜默套用）|
-| `old_text` 出現 1 次 + dry-run | 👀 產 diff 報告 + 建 .bak，不改檔案 |
-| `old_text` 出現 1 次 + --apply | ✅ apply + .bak 已建 |
-| `--rollback` | ⏪ 從 .bak 還原 |
-
-**自動分類**：
-
-| fail delta | 分類 | 建議 |
-|---|---|---|
-| < 0 | 🟢 improvement | keep patch |
-| > 0 | 🔴 regression | rollback |
-| = 0 | 🟡 no_change | review |
-
-**為什麼 apply + re-validate 不全自動**：
-- sandbox 限制：CI 環境不能無人工 commit
-- LLM 接力文字可能錯，需人工 review
-- M6.2 pipeline 階段只「產 patch 素材」，apply / re-validate 在 sandbox 手動跑
-
-### M6.3 互動式 sandbox 範例
-
-```bash
-# 一鍵跑 M2→M3→M4→M6→M6.1→M6.2→M6.3
-JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
-  JEV_PATCH_AND_REVALIDATE=1 JEV_SANDBOX_RUN=1 \
-  ./run_pipeline.sh US-M63
-# → 建 tmp/.sandbox-US-M63-<ts>/ 隔離工作目錄
-# → apply patch in sandbox（不動主 repo）
-# → 重跑 journey 產 after.json
-# → 自動 re-validate
-# → 若 regression：自動 rollback
-# → 產出 sandbox_report.md
-# → cleanup sandbox 目錄
-
-# Sandbox 模組獨立使用
-.venv/bin/python sandbox_runner.py \
-  --before /tmp/US-M63-before.json \
-  --file fixtures/US-M63-sample.py \
-  --old 'return "before-patch"' \
-  --new 'return "after-patch"' \
-  --journey journeys/US-M63.yaml \
-  --story-id US-M63 \
-  --source docs/ac/US-M63.md \
-  --sandbox-dry-run
-# → 👀 建 sandbox + 備份，不 apply
-```
-
-**6 步流程**：
-
-| 步驟 | 動作 | 輸出 |
-|---|---|---|
-| 1. 建立 sandbox | mkdir + copy + 備份 | sandbox 已建 |
-| 2. apply patch | playwright_patcher.py in sandbox | file 已改（sandbox 內）|
-| 3. 重跑 journey | run_journey.py 產 after.json | verdict_after |
-| 4. re-validate | re_validate.py 比對 | classification |
-| 5. auto rollback | 若 regression：從 .pre-patch/ 還原 | file 回 baseline |
-| 6. cleanup | shutil.rmtree(sandbox) | 隔離目錄已刪 |
-
-**為什麼叫「互動式」**：
-- sandbox 內 apply + re-validate + rollback 全自動
-- 「要不要把 sandbox 的 patch 拿回主 repo + commit」仍人工決定
-
-### Flaky 驗證範例
-
-```bash
-.venv/bin/python flaky_check.py journeys/US-M62.yaml \
-  --source docs/ac/US-M62.md \
-  --story-id US-M62 --runs 5 \
-  --output /tmp/flaky-usm62.md
-
-# → 跑 5 次同一 journey
-# → 聚合 verdict 分布
-# → 計算 flaky_likelihood = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
-# → 產出 flaky_report.md
-```
-
-**實測結果**（US-M62 5 次跑）：
-
-| Run | fail | blocked | pass | wall time |
-|-----|------|---------|------|-----------|
-| #1  | 12   | 1       | 0    | 73335ms   |
-| #2  | 12   | 1       | 0    | 70651ms   |
-| #3  | 12   | 1       | 0    | 45058ms   |
-| #4  | 12   | 1       | 0    | 29698ms   |
-| #5  | 12   | 1       | 0    | 57041ms   |
-
-→ verdict 完全一致 → 🟢 **stable** (flaky_likelihood=0.0)
-
-**3 種分類**：
-
-| flaky_likelihood | 分類 | 建議 |
-|---|---|---|
-| < 0.05 | 🟢 stable | 結果可信 |
-| 0.05 ~ 0.20 | 🟡 mildly_flaky | 加 Jev observer context 重跑 |
-| ≥ 0.20 | 🔴 highly_flaky | 檢查 observer 實作 / AC 定義 |
-
-### Cleanup 進 CI 定期範例
-
-```yaml
-# .github/workflows/regression-guard-jev-poc.yml
-on:
-  schedule:
-    - cron: '0 0 * * 1'   # 每周一 00:00 UTC
-
-jobs:
-  cleanup-scan:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - name: Run cleanup-scan
-        run: python docs/cleanup/cleanup-scan.py --json > /tmp/scan.json
-      - name: Post summary
-        if: always()
-        run: |
-          {
-            echo "## docs/cleanup-scan 定期檢查"
-            echo "**DELETE**: $DELETE_COUNT"
-            if [ "$DELETE_COUNT" -gt 0 ]; then
-              echo "⚠️ 發現 $DELETE_COUNT 個建議刪除文件，請手動 review"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-```
-
-**4 類分類**：
-
-| 類別 | 標準 | 動作 |
-|---|---|---|
-| KEEP | ≥2 cross-link 或 protected pattern | 保留 |
-| REVIEW | 1 cross-link | 人工 review |
-| DELETE | 0 cross-link | ⚠️ 警告（不自動刪）|
-| MERGE | TODO | 預留 hook（v2.0 規則禁止改存量，未實作）|
-
-**為什麼是 weekly 不是 daily**：
-- 文件分類變化不快
-- daily 太頻繁，CI minutes 浪費
-- 每周一次夠 cover 「主動堆積」
-
-### M7 flaky 整合 + gh pr comment 範例
-
-```bash
-# flaky 整合
-JEV_FLAKY_INTEGRATION=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
-  REGRESSION_REPORT_PATH=/tmp/r \
-  ./run_pipeline.sh US-M62
-# → M4 後額外跑 2 次 journey
-# → 寫回 batch_report.batch_report.flaky_measured
-# → 實測結果：flaky_measured=0.0 stable
-
-# gh pr comment
-.venv/bin/python gh_pr_comment.py \
-  --batch-report /tmp/US-M62-batch.json \
-  --fix-proposal /tmp/US-M62-fix-proposal-v2.md \
-  --pr-number 42
-# → 構造 4 段 comment + 推 PR
-
-# Pipeline 整合
-JEV_GH_PR_COMMENT=1 JEV_FIX_PROPOSAL=1 JEV_FIX_PROPOSAL_V2=1 \
-  GITHUB_PR_NUMBER=42 \
-  ./run_pipeline.sh US-M62
-# → 自動 gh pr comment 推 PR
-```
-
-**4 段 comment**：
-
-| 段 | 內容 |
-|---|---|
-| 1. Journey 標題 | story_id + title + 4 維度表 |
-| 2. Fix Proposal | 信心度 + gating 決定 |
-| 3. 問題分析摘要 | 從 fix_proposal 抓前 300 字 |
-| 4. Sandbox 建議 | 一鍵 pipeline 指令 |
-
-**batch_report schema 新欄位**：
-
-```json
-{
-  "batch_report": {
-    "flaky_likelihood": 0.24,           // Jev 算的
-    "flaky_measured": {                  // M7 新增
-      "likelihood": 0.0,
-      "classification": "stable",
-      "warning": false,
-      "sample_count": 2
-    }
-  }
-}
-```
-
-### M8 CI matrix 範例
-
-```yaml
-# .github/workflows/regression-guard-jev-poc.yml
-jobs:
-  pipeline:
-    strategy:
-      fail-fast: false
-      matrix:
-        story_id: [US-101, US-M62, US-M63]
-    steps:
-      - run: ./run_pipeline.sh "${{ matrix.story_id }}"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: regression-report-${{ matrix.story_id }}
-          path: reports/
-
-  aggregate-matrix:
-    needs: pipeline
-    if: always() && github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: regression-report-*
-          merge-multiple: true
-      - run: |
-          # 合併 batch_report 成 matrix-summary.md
-          {
-            echo "| Story | Health | Fix Priority | Flaky |"
-            echo "|-------|--------|--------------|-------|"
-            for f in *.json; do
-              # ...
-            done
-          } > matrix-summary.md
-```
-
-**Matrix summary 輸出**：
-
-```markdown
-# regression-guard Matrix Summary
-
-| Story | Health | Fix Priority | Flaky | Type |
-|-------|--------|--------------|-------|------|
-| `US-101` | 🟢 green | 0.50 | 0.00 | stable |
-| `US-M62` | 🔴 red | 2.97 | 0.00 | real_bug |
-| `US-M63` | 🟡 yellow | 1.80 | 0.20 | flaky |
-```
-
-**3 個關鍵設計**：
-
-| 設計 | 原因 |
-|---|---|
-| `fail-fast: false` | 一個 fail 不 cancel 其他 |
-| `workflow_dispatch` 才跑 | push/PR 跑 3 個太慢 |
-| `merge-multiple: true` | 一次下載全部 artifact |

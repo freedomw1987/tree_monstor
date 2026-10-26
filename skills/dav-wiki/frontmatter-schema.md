@@ -7,7 +7,7 @@
 
 ## 1. 文件 frontmatter（docs/wiki/{title}.md）
 
-### 1.1 完整範例
+### 1.1 完整範例（含選填的多模組欄位）
 
 ```yaml
 ---
@@ -34,37 +34,6 @@ related:                          # 必填（可空陣列）：交叉引用
   - "[[streaming-ssr-patterns]]"
 concepts:                         # 必填（可空陣列）：本文件提煉的概念
   - "[[server-component-serialization-boundary]]"
-deprecated: false                 # 必填：true | false
-superseded_by: null                # 選填：deprecated 時填新檔路徑
----
-```
-
-### 1.2 完整範例（FR-2 多模組擴充版）
-
-```yaml
----
-title: "React Server Components 深入解析"
-source:
-  type: pdf                       # 必填：pdf | docx | pptx | txt | md | url | ocr | subtitle
-  original: "rsc-deep-dive.pdf"   # 必填：原始檔名 或 URL
-  url: null                       # 選填：網頁來源時填
-extracted_at: 2026-01-15          # 必填：ISO 8601 日期
-category: frontend                # 必填：用戶確認的 category（kebab-case）
-tags:                             # 必填：3-8 個 tag（kebab-case，小寫）
-  - react
-  - server-components
-  - rsc
-  - rendering
-summary: "深入講解 RSC 的運作原理、與 SSR 的差異、效能影響"
-keywords:                         # 必填：3-5 個關鍵詞
-  - serialization
-  - hydration
-  - bundle-size
-  - streaming
-related:                          # 必填（可空陣列）：交叉引用
-  - "[[nextjs-app-router-guide]]"
-concepts:                         # 必填（可空陣列）：本文件提煉的概念
-  - "[[server-component-serialization-boundary]]"
 images:                           # 選填（FR-2.2）：文件內含的圖片清單
   - path: "assets/images/1.png"
     caption: "RSC 架構圖"
@@ -74,6 +43,7 @@ videos:                           # 選填（FR-2.3）：文件內含的影片�
   - path: "assets/videos/demo.mp4"
     duration: 180
     transcript_path: "assets/videos/demo.transcript.md"
+    thumbnail: "assets/videos/demo.jpg"
     chapters:
       - title: "開場"
         start: 0
@@ -83,12 +53,14 @@ audio:                            # 選填（FR-2.4）：文件內含的音訊�
   - path: "assets/audio/podcast.mp3"
     duration: 1800
     transcript_path: "assets/audio/podcast.transcript.md"
-deprecated: false
-superseded_by: null
+deprecated: false                 # 必填：true | false
+superseded_by: null                # 選填：deprecated 時填新檔路徑
 ---
 ```
 
-### 1.3 欄位規範
+> 純文字 / URL 來源**唔使**填 `images` / `videos` / `audio`；刪走嗰三段即可（其餘欄位不變）。
+
+### 1.2 欄位規範
 
 | 欄位 | 型別 | 必填 | 約束 |
 | --- | --- | --- | --- |
@@ -100,16 +72,16 @@ superseded_by: null
 | `category` | string | ✅ | kebab-case 小寫 |
 | `tags` | string[] | ✅ | 3-8 個、kebab-case 小寫 |
 | `summary` | string | ✅ | 1-3 句 |
-| `keywords` | string[] | ✅ | 3-5 個關鍵詞（從 summary 提取、提升交叉引用品質） |
+| `keywords` | string[] | ✅ | 3-5 個關鍵詞（提升交叉引用品質） |
 | `related` | string[] | ✅ | `[[xxx]]` 雙鏈接，可空 |
 | `concepts` | string[] | ✅ | `[[xxx]]` 雙鏈接，可空 |
-| `images` | object[] | ❌ | FR-2.2 擴充，見下表 |
-| `videos` | object[] | ❌ | FR-2.3 擴充，見下表 |
-| `audio` | object[] | ❌ | FR-2.4 擴充，見下表 |
+| `images` | object[] | ❌ | 見 1.3 |
+| `videos` | object[] | ❌ | 見 1.4 |
+| `audio` | object[] | ❌ | 見 1.5 |
 | `deprecated` | boolean | ✅ | `true` / `false` |
 | `superseded_by` | string \| null | ❌ | deprecated 時填 |
 
-### 1.4 images 物件 schema（FR-2.2）
+### 1.3 images 物件 schema（FR-2.2）
 
 | 欄位 | 型別 | 必填 | 約束 |
 | --- | --- | --- | --- |
@@ -118,7 +90,7 @@ superseded_by: null
 | `ocr_text` | string | ❌ | OCR 提取的文字（圖含文字才填） |
 | `alt_text` | string | ❌ | 無障礙用 alt 文字 |
 
-### 1.5 videos 物件 schema（FR-2.3）
+### 1.4 videos 物件 schema（FR-2.3）
 
 | 欄位 | 型別 | 必填 | 約束 |
 | --- | --- | --- | --- |
@@ -128,22 +100,17 @@ superseded_by: null
 | `chapters` | object[] | ❌ | 章節切分，見下表 |
 | `thumbnail` | string | ❌ | 封面圖路徑 |
 
-### 1.5.1 chapters 物件 schema
+**chapters 條目**：`title`（✅）、`start`（✅ 秒）、`end`（✅ 秒）、`summary`（✅ 1-3 句）。
 
-| 欄位 | 型別 | 必填 | 約束 |
-| --- | --- | --- | --- |
-| `title` | string | ✅ | 章節名稱 |
-| `start` | number | ✅ | 起始秒數 |
-| `end` | number | ✅ | 結束秒數 |
-| `summary` | string | ✅ | AI 生成的 1-3 句摘要 |
-
-### 1.6 audio 物件 schema（FR-2.4）
+### 1.5 audio 物件 schema（FR-2.4）
 
 | 欄位 | 型別 | 必填 | 約束 |
 | --- | --- | --- | --- |
 | `path` | string | ✅ | 相對 `assets/audio/` 下的路徑 |
 | `duration` | number | ✅ | 音訊秒數 |
 | `transcript_path` | string | ❌ | Whisper 字幕檔路徑 |
+
+---
 
 ## 2. 概念 frontmatter（docs/concepts/{slug}.md）
 
@@ -185,25 +152,17 @@ history:                                    # 必填（可空）：演進歷史
 | `parents` | string[] | ✅ | `[[xxx]]`，可空 |
 | `children` | string[] | ✅ | `[[xxx]]`，可空 |
 | `related_docs` | string[] | ✅ | `[[xxx]]`，可空 |
-| `history` | object[] | ✅ | 可空，見下表 |
+| `history` | object[] | ✅ | 可空，見 2.3 |
 
 ### 2.3 history 條目規範
 
-每條 history 是一個物件：
-
-| 欄位 | 型別 | 必填 | 說明 |
-| --- | --- | --- | --- |
-| `date` | date | ✅ | 發生日期（ISO 8601） |
-| `action` | enum | ✅ | `created` `derived` `revised` `merged` `deprecated` |
-| `note` | string | ❌ | 一句話說明 |
+每條 history 係一個物件：`date`（✅ ISO 8601）、`action`（✅ `created` / `derived` / `revised` / `merged` / `deprecated`）、`note`（❌ 一句話說明）。
 
 ---
 
 ## 3. 驗證規則
 
 ### 3.1 寫入前檢查
-
-寫入任何 frontmatter 前，必須確認：
 
 - ✅ 所有必填欄位都有值
 - ✅ 日期是有效 ISO 8601
@@ -218,74 +177,11 @@ history:                                    # 必填（可空）：演進歷史
 
 ### 3.3 命名衝突
 
-若 slug 已存在：
-
-- 自動加 `-2`、`-3` 後綴
-- 在對話中提示用戶
+若 slug 已存在：自動加 `-2`、`-3` 後綴，並在對話中提示用戶。
 
 ---
 
-## 4. 範例
-
-### 4.1 一篇完成的 wiki 文件
-
-```markdown
----
-title: "Next.js App Router 路由指南"
-source:
-  type: url
-  original: "https://nextjs.org/docs/app/building-your-application/routing"
-  url: "https://nextjs.org/docs/app/building-your-application/routing"
-extracted_at: 2026-01-15
-category: frontend
-tags:
-  - nextjs
-  - app-router
-  - routing
-summary: "Next.js 13+ App Router 的路由系統，包含 file-based routing、layouts、dynamic routes"
-related:
-  - "[[react-server-components-deep-dive]]"
-concepts:
-  - "[[app-router-file-conventions]]"
-deprecated: false
-superseded_by: null
----
-
-# Next.js App Router 路由指南
-
-## 簡介
-...
-```
-
-### 4.2 一個演進中的概念
-
-```markdown
----
-slug: app-router-file-conventions
-title: "App Router 檔案命名慣例"
-definition: "App Router 透過檔案命名（page.tsx, layout.tsx, loading.tsx 等）來定義路由行為的慣例"
-status: active
-deprecated: false
-superseded_by: null
-parents: []
-children:
-  - "[[app-router-loading-conventions]]"
-  - "[[app-router-error-conventions]]"
-related_docs:
-  - "[[nextjs-app-router-guide]]"
-history:
-  - date: 2026-01-15
-    action: created
-    note: "初版"
-  - date: 2026-02-10
-    action: revised
-    note: "加入 route groups 說明"
----
-```
-
----
-
-## 5. 參考
+## 4. 參考
 
 - [Obsidian Internal Links](https://help.obsidian.md/Linking/Internal+links) — `[[xxx]]` 語法
 - [JSON Schema Draft 07](https://json-schema.org/draft-07/json-schema-release-notes.html) — 索引格式

@@ -1,32 +1,28 @@
 # TDD Test Writer 示例
 
+> 本檔係「點樣將 AC 寫成測試」嘅速查：Frontend / Backend 工具棧 + 可直接抄嘅骨架。
+> 測試方法（單元 / 集成 / E2E 嘅分別）→ 見同套 `regression-guard` skill 子檔（需同套安裝）。
+
 ---
 
 ## 🌐 Frontend 測試指南
 
-### Frontend 測試金字塔
+### 測試金字塔（Frontend）
 
-```
-        ┌─────────────┐
-        │    E2E      │  ← Playwright, Cypress
-        │   測試      │
-        ├─────────────┤
-        │   集成      │  ← 組件協作、Context/Store
-        │   測試      │
-        ├─────────────┤
-        │   單元      │  ← 組件、Hook、Utils
-        │   測試      │
-        └─────────────┘
-```
+| 層 | 測試對象 | 工具 |
+|---|---------|------|
+| 頂 | E2E：完整用戶流程 | Playwright, Cypress |
+| 中 | 集成：組件協作、Context / Store | RTL + 測試 Provider |
+| 底 | 單元：組件、Hook、Utils | RTL, Vue Test Utils |
 
 ### Frontend 測試工具棧
 
 | 類型 | 工具 | 適用場景 |
 |------|------|----------|
-| 測試運行器 | Jest, Vitest, Karma | 單元/集成測試 |
+| 測試運行器 | Jest, Vitest, Karma | 單元 / 集成測試 |
 | 組件測試 | React Testing Library, Vue Test Utils | UI 組件 |
 | Hook 測試 | @testing-library/react-hooks | 自定義 Hooks |
-| 狀態管理 | Mock Store (Redux/Zustand) | 全局狀態 |
+| 狀態管理 | Mock Store (Redux / Zustand) | 全局狀態 |
 | E2E | Playwright, Cypress | 完整用戶流程 |
 | 視覺回歸 | Percy, Chromatic, Happo | UI 視覺一致性 |
 | Accessibility | jest-axe, axe-core | a11y 合規 |
@@ -58,43 +54,28 @@ describe('LoginForm', () => {
   describe('rendering', () => {
     it('should render email and password fields', () => {
       render(<LoginForm onSubmit={jest.fn()} />);
-      
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     });
-
-    it('should render submit button', () => {
-      render(<LoginForm onSubmit={jest.fn()} />);
-      expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
-    });
   });
 
-  // ✅ 單元測試：用戶交互
+  // ✅ 單元測試：用戶交互（對應 AC「顯示紅字提示」）
   describe('user interaction', () => {
     it('should show validation error for invalid email', async () => {
-      const onSubmit = jest.fn();
-      render(<LoginForm onSubmit={onSubmit} />);
-      
-      fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: 'invalid-email' }
-      });
-      
+      render(<LoginForm onSubmit={jest.fn()} />);
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'invalid-email' } });
+
       await waitFor(() => {
         expect(screen.getByText(/請輸入有效 email/i)).toBeInTheDocument();
       });
     });
 
     it('should show error message in red for invalid input', async () => {
-      const onSubmit = jest.fn();
-      render(<LoginForm onSubmit={onSubmit} />);
-      
-      fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: 'invalid' }
-      });
-      
+      render(<LoginForm onSubmit={jest.fn()} />);
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'invalid' } });
+
       const errorMsg = await screen.findByText(/請輸入有效 email/i);
-      // ✅ AC: 顯示紅字提示
-      expect(errorMsg).toHaveClass('text-red-500'); // 或使用 getComputedStyle
+      expect(errorMsg).toHaveClass('text-red-500'); // ✅ AC: 顯示紅字提示
     });
   });
 
@@ -103,16 +84,10 @@ describe('LoginForm', () => {
     it('should call onSubmit with form data when valid', async () => {
       const onSubmit = jest.fn();
       render(<LoginForm onSubmit={onSubmit} />);
-      
-      fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: 'user@example.com' }
-      });
-      fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: 'password123' }
-      });
-      
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
+      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
       fireEvent.click(screen.getByRole('button', { name: /login/i }));
-      
+
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith({
           email: 'user@example.com',
@@ -124,99 +99,33 @@ describe('LoginForm', () => {
 });
 ```
 
-### Frontend 測試示例：Vue + Vue Test Utils
+### Frontend 其他骨架
 
 ```typescript
-// src/components/UserProfile.test.ts
-import { mount } from '@vue/test-utils';
-import UserProfile from './UserProfile.vue';
+// Vue Test Utils
+const wrapper = mount(UserProfile, { props: { name: '張三', avatar: '' } });
+expect(wrapper.find('.avatar-placeholder').exists()).toBe(true);
 
-describe('UserProfile', () => {
-  describe('rendering', () => {
-    it('should display user name', () => {
-      const wrapper = mount(UserProfile, {
-        props: { name: '張三', avatar: '/avatar.png' }
-      });
-      
-      expect(wrapper.text()).toContain('張三');
-    });
-  });
-
-  describe('props validation', () => {
-    it('should show placeholder when no avatar', () => {
-      const wrapper = mount(UserProfile, {
-        props: { name: '張三', avatar: '' }
-      });
-      
-      expect(wrapper.find('.avatar-placeholder').exists()).toBe(true);
-    });
-  });
-});
+// Hook（renderHook + act）
+const { result, rerender } = renderHook(
+  ({ value, delay }) => useDebounce(value, delay),
+  { initialProps: { value: 'initial', delay: 500 } }
+);
+rerender({ value: 'updated2', delay: 500 });
+await act(async () => { await new Promise(r => setTimeout(r, 600)); });
+expect(result.current).toBe('updated2');
 ```
 
-### Frontend Hook 測試示例
-
 ```typescript
-// src/hooks/useDebounce.test.ts
-import { renderHook, act } from '@testing-library/react';
-import { useDebounce } from './useDebounce';
+// Playwright E2E
+test('should show validation errors in red', async ({ page }) => {
+  await page.goto('/login');
+  await page.click('[data-testid="submit-btn"]');
 
-describe('useDebounce', () => {
-  it('should debounce value changes', async () => {
-    const { result, rerender } = renderHook(
-      ({ value, delay }) => useDebounce(value, delay),
-      { initialProps: { value: 'initial', delay: 500 } }
-    );
-    
-    expect(result.current).toBe('initial');
-    
-    // 快速更新值
-    rerender({ value: 'updated1', delay: 500 });
-    rerender({ value: 'updated2', delay: 500 });
-    
-    // 500ms 後才會 debounce
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 600));
-    });
-    
-    expect(result.current).toBe('updated2');
-  });
-});
-```
-
-### Frontend E2E 測試示例：Playwright
-
-```typescript
-// tests/e2e/login.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('登入流程 E2E', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
-  });
-
-  test('should show validation errors in red', async ({ page }) => {
-    // 點擊提交而不填寫任何內容
-    await page.click('[data-testid="submit-btn"]');
-    
-    // 驗證錯誤訊息是紅色
-    const emailError = page.locator('[data-testid="email-error"]');
-    await expect(emailError).toBeVisible();
-    
-    const color = await emailError.evaluate(el => 
-      window.getComputedStyle(el).color
-    );
-    expect(color).toBe('rgb(239, 68, 68)'); // 紅色
-  });
-
-  test('should navigate to dashboard after successful login', async ({ page }) => {
-    await page.fill('[data-testid="email"]', 'user@example.com');
-    await page.fill('[data-testid="password"]', 'password123');
-    await page.click('[data-testid="submit-btn"]');
-    
-    await expect(page).toHaveURL('/dashboard');
-    await expect(page.locator('[data-testid="welcome"]')).toBeVisible();
-  });
+  const emailError = page.locator('[data-testid="email-error"]');
+  await expect(emailError).toBeVisible();
+  const color = await emailError.evaluate(el => window.getComputedStyle(el).color);
+  expect(color).toBe('rgb(239, 68, 68)'); // 紅色
 });
 ```
 
@@ -224,21 +133,13 @@ test.describe('登入流程 E2E', () => {
 
 ## ⚙️ Backend 測試指南
 
-### Backend 測試金字塔
+### 測試金字塔（Backend）
 
-```
-        ┌─────────────┐
-        │   E2E /     │
-        │   Contract  │  ← API 完整流程、API Contract
-        │   測試      │
-        ├─────────────┤
-        │   集成      │  ← API + Database、訊息隊列
-        │   測試      │
-        ├─────────────┤
-        │   單元      │  ← 業務邏輯、驗證、轉換
-        │   測試      │
-        └─────────────┘
-```
+| 層 | 測試對象 | 工具 |
+|---|---------|------|
+| 頂 | E2E / Contract：API 完整流程 | Supertest + 真的 server |
+| 中 | 集成：API + Database、訊息隊列 | Testcontainers / sqlite |
+| 底 | 單元：業務邏輯、驗證、轉換 | Jest / pytest / JUnit |
 
 ### Backend 測試工具棧
 
@@ -264,281 +165,68 @@ src/
 tests/
 ├── unit/
 ├── integration/
-│   └── __tests__/
-│       └── api/
+│   └── __tests__/api/
 └── fixtures/
 ```
 
 ### Backend 測試示例：Node.js + Jest + Supertest
 
 ```typescript
-// tests/unit/services/payment.service.test.ts
-import { PaymentService } from '../../src/services/payment.service';
-
-describe('PaymentService', () => {
-  let paymentService: PaymentService;
-  
-  beforeEach(() => {
-    paymentService = new PaymentService();
-  });
-
-  describe('validateCard', () => {
-    it('should accept valid Visa card', () => {
-      const result = paymentService.validateCard('4111111111111111', 'visa');
-      expect(result.isValid).toBe(true);
-    });
-
-    it('should accept valid MasterCard', () => {
-      const result = paymentService.validateCard('5555555555554444', 'mastercard');
-      expect(result.isValid).toBe(true);
-    });
-
-    it('should reject invalid card number', () => {
-      const result = paymentService.validateCard('1234567890123456', 'visa');
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe('Invalid card number');
-    });
-  });
-
-  describe('processPayment', () => {
-    it('should return success for valid payment', async () => {
-      const result = await paymentService.processPayment({
-        cardNumber: '4111111111111111',
-        amount: 100,
-        currency: 'USD'
-      });
-      
-      expect(result.success).toBe(true);
-      expect(result.transactionId).toBeDefined();
-    });
-  });
-});
-
-// tests/integration/api/payment.test.ts
+// tests/integration/payment.test.ts
 import request from 'supertest';
 import { app } from '../../src/app';
-import { setupTestDatabase, teardownTestDatabase } from '../helpers';
+import { db } from '../../src/database';
 
 describe('POST /api/payments', () => {
-  beforeAll(async () => {
-    await setupTestDatabase();
+  beforeEach(async () => {
+    await db.query('DELETE FROM payments');
   });
 
-  afterAll(async () => {
-    await teardownTestDatabase();
+  it('should create payment and return 201', async () => {
+    const res = await request(app)
+      .post('/api/payments')
+      .send({ amount: 100, currency: 'USD' })
+      .expect(201);
+
+    expect(res.body.transaction_id).toBeDefined();
+    expect(res.body.status).toBe('completed');
   });
 
-  describe('validation', () => {
-    it('should return 400 for invalid card number', async () => {
-      const response = await request(app)
-        .post('/api/payments')
-        .send({
-          cardNumber: 'invalid',
-          amount: 100
-        });
-      
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Invalid card number');
-    });
-
-    it('should return 400 for missing required fields', async () => {
-      const response = await request(app)
-        .post('/api/payments')
-        .send({});
-      
-      expect(response.status).toBe(400);
-      expect(response.body.errors).toBeDefined();
-    });
-  });
-
-  describe('payment processing', () => {
-    it('should process payment and return transaction id', async () => {
-      const response = await request(app)
-        .post('/api/payments')
-        .send({
-          cardNumber: '4111111111111111',
-          amount: 100,
-          currency: 'USD'
-        });
-      
-      expect(response.status).toBe(200);
-      expect(response.body.transactionId).toBeDefined();
-      expect(response.body.status).toBe('completed');
-    });
+  it('should return 400 for invalid amount', async () => {
+    await request(app)
+      .post('/api/payments')
+      .send({ amount: -1, currency: 'USD' })
+      .expect(400);
   });
 });
 ```
 
-### Backend 測試示例：Python + pytest
+### Backend 其他骨架
 
 ```python
 # tests/unit/test_payment_service.py
-import pytest
-from unittest.mock import Mock, patch
-from src.services.payment import PaymentService
+def test_payment_processing():
+    result = payment_service.process({'amount': 100, 'currency': 'USD'})
+    assert result.status == 'completed'
+    assert result.transaction_id is not None
 
-class TestPaymentService:
-    """支付服務單元測試"""
-    
-    def setup_method(self):
-        self.service = PaymentService()
-    
-    def test_validate_card_accepts_visa(self):
-        """測試接受有效 Visa 卡號"""
-        result = self.service.validate_card('4111111111111111', 'visa')
-        assert result.is_valid is True
-    
-    def test_validate_card_rejects_invalid(self):
-        """測試拒絕無效卡號"""
-        result = self.service.validate_card('invalid', 'visa')
-        assert result.is_valid is False
-        assert 'Invalid card number' in result.error
-    
-    @patch('src.services.payment.PaymentGateway')
-    def test_process_payment_calls_gateway(self, mock_gateway):
-        """測試處理支付時調用支付網關"""
-        mock_gateway.return_value.process.return_value = {
-            'status': 'success',
-            'transaction_id': 'txn_123'
-        }
-        
-        result = self.service.process_payment({
-            'card_number': '4111111111111111',
-            'amount': 100
-        })
-        
-        assert result.success is True
-        assert result.transaction_id == 'txn_123'
-
-
-# tests/integration/test_payment_api.py
-import pytest
-from fastapi.testclient import TestClient
-from main import app
-
-client = TestClient(app)
-
-class TestPaymentAPI:
-    """支付 API 集成測試"""
-    
-    def test_create_payment_success(self):
-        """測試成功創建支付"""
-        response = client.post('/api/payments', json={
-            'card_number': '4111111111111111',
-            'amount': 100,
-            'currency': 'USD'
-        })
-        
-        assert response.status_code == 200
-        data = response.json()
-        assert data['status'] == 'completed'
-        assert 'transaction_id' in data
-    
-    def test_create_payment_validation_error(self):
-        """測試支付驗證錯誤"""
-        response = client.post('/api/payments', json={
-            'card_number': 'invalid',
-            'amount': -100  # 負數金額
-        })
-        
-        assert response.status_code == 400
-        assert 'errors' in response.json()
+def test_payment_rejects_invalid_amount():
+    with pytest.raises(ValueError):
+        payment_service.process({'amount': -1, 'currency': 'USD'})
 ```
 
-### Backend 測試示例：Go
-
 ```go
-// services/payment_test.go
-package services
-
-import (
-    "testing"
-)
-
-func TestValidateCard(t *testing.T) {
-    service := NewPaymentService()
-
-    tests := []struct {
-        name     string
-        card     string
-        cardType string
-        want     bool
-    }{
-        {"valid visa", "4111111111111111", "visa", true},
-        {"valid mastercard", "5555555555554444", "mastercard", true},
-        {"invalid card", "1234567890123456", "visa", false},
-    }
-
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            result := service.ValidateCard(tt.card, tt.cardType)
-            if result.IsValid != tt.want {
-                t.Errorf("ValidateCard() = %v, want %v", result.IsValid, tt.want)
-            }
-        })
-    }
-}
-
-// api/payment_test.go
-package api
-
-import (
-    "bytes"
-    "encoding/json"
-    "net/http"
-    "net/http/httptest"
-    "testing"
-)
-
-func TestCreatePayment(t *testing.T) {
-    router := SetupRouter()
-
-    tests := []struct {
-        name       string
-        payload    map[string]interface{}
-        wantStatus int
-    }{
-        {
-            name: "valid payment",
-            payload: map[string]interface{}{
-                "card_number": "4111111111111111",
-                "amount":      100,
-                "currency":    "USD",
-            },
-            wantStatus: http.StatusOK,
-        },
-        {
-            name: "invalid card",
-            payload: map[string]interface{}{
-                "card_number": "invalid",
-                "amount":      100,
-            },
-            wantStatus: http.StatusBadRequest,
-        },
-    }
-
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            body, _ := json.Marshal(tt.payload)
-            req, _ := http.NewRequest("POST", "/api/payments", bytes.NewBuffer(body))
-            req.Header.Set("Content-Type", "application/json")
-
-            w := httptest.NewRecorder()
-            router.ServeHTTP(w, req)
-
-            if w.Code != tt.wantStatus {
-                t.Errorf("CreatePayment() status = %v, want %v", w.Code, tt.wantStatus)
-            }
-        })
-    }
+// payment_test.go
+func TestPaymentProcess(t *testing.T) {
+    result, err := service.Process(100, "USD")
+    assert.NoError(t, err)
+    assert.Equal(t, "completed", result.Status)
 }
 ```
 
 ---
 
 ## 🎯 常見測試模式對照
-
-### Frontend vs Backend 測試重點
 
 | 測試類型 | Frontend 關注點 | Backend 關注點 |
 |---------|----------------|----------------|
