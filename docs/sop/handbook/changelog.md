@@ -7,6 +7,27 @@
 > ⚠️ **版本序號說明**：本檔的版本號 = **全域變更序號**（含 skill / CI / 文件變更），
 > 與舊 `AGENTS.md` §2 標題的 **SOP 版本號**（已於 v2.14 隨 §2 移除）不是同一個序號 —— 兩者不可互相比較大小。
 
+## v2.17 — 2026-10-26
+
+**本版異動**：TMO-079／TMO-080 兩項 PNA-4 技術債清埋（規則⑦ 收窄成「只豁免 `@test` body」
+＋ 頂層區塊 kind 明確追蹤；PNA-4c 補 EOF 方向 canary ＋ 新增 mutant `PNA-M3`），
+另**更正咗一個被實測推翻嘅前提**（PNA-4 註解寫「bats 裡獨立 `[[ ]]` 失敗不會中止 test body」→ 實測係**會中止**）。
+
+| 類型 | 項目 | 說明 |
+| ---- | -- | ---- |
+| 探針 | `tests/helpers/probe-scan.bash` 規則⑦（TMO-079） | 原判準靠「下一個行首 `}`」呢個**隱含假設**認「test body 收尾」。但行首 `}` 有**兩種**意義 —— 關 `@test` body，**或者**關 `setup()`／`teardown()`／helper function（.bats 入面呢啲 function 嘅收尾 `}` 同樣喺行首）→ 原判準分唔到（TMO-078 嘅 V03 二審當時裁定保留原語意，並把呢個更實際嘅假綠面記落 backlog TMO-079）。而家逐行追蹤**頂層區塊**（column-0 嘅 `{` / `}`），記低每行所屬區塊 kind（`test`／`func`／`other`）同關閉佢嘅行號；豁免要求「所屬區塊**確實係 `@test` body**」＋「掃描到嗰個區塊嘅**真實收尾行**」。⚠️ **方向係收緊**（豁免更少 → 報得更多）→ 唔會製造假綠；⚠️ 對真實 corpus **零影響**（全 corpus 依賴規則⑦ 豁免嘅斷言共 **9 條**，全部喺 `@test` body 內，setup/teardown/helper 內 **0 條**）→ 唔會假紅。⚠️ 淨行 column-0（唔做全檔 brace-depth 計數）→ 唔使解析字串內嘅 `{}`（`${VAR}`、`awk '{...}'`、JSON heredoc 嘅 `}`）→ 對真實 corpus 零風險 |
+| 探針 | `tests/probe-name-ascii.bats` 新增 `PNA-4d` | canary 鎖住 TMO-079 嘅四個方向：案例 1（`setup()` 函式 body 嘅最後一句 → 必須**照報**）＋ 案例 2（test body 由 `} \|\| {` 收尾 → 必須**唔報**，保留 TMO-078 嘅語意）＋ 案例 3（test body 入面但唔係最後一句 → 必須**照報**，對照組）＋ 案例 4（裸 column-0 群組 `{ ... }` → 必須**照報**，fail-closed：豁免嘅理由只適用於 `@test` body） |
+| 探針 | `tests/probe-name-ascii.bats` `PNA-4c` 加**第 5 案**（TMO-080） | `@test` body **冇收尾**、斷言喺檔尾 → 必須**照報**（此前冇 canary 鎖住呢個方向 → 若日後有人改成「行到 EOF 就豁免」，PNA-4b／PNA-4c 都唔會紅 → 守門失效）。期望字串由 1 條改成 **2 條**（案例 A 行 4 ＋ 案例 E 行 20） |
+| 探針 | `scripts/ci/mutants.tsv` 新增 `PNA-M3` | 突變 `found_body_close = 0` → `found_body_close = (i >= n)`（＝「斷言喺**檔案最後一行**就豁免（案例 E 就係咁）」）→ 必須令 `PNA-4c` 轉紅。實測死因為**案例 E 消失**嘅語意差（唔係 awk parse error → 有證據力）。全表 **58 支全部死亡** |
+| 文件 | `tests/probe-name-ascii.bats` PNA-4 註解（前提更正） | ⚠️ 原註解寫「bats 裡獨立的 `[[ ... ]]` 斷言失敗**不會中止 test body**（只有最後一個命令的狀態決定結果）」，並聲稱 bash 3.2 唔中止、bash 5.x 會中止 —— **兩句都係實測錯**。重新量測：bats 1.14.0（CI pin）同 1.11.1 嘅 `libexec/bats-core/bats-exec-test` 開頭都係 `set -eET`，而 test body 喺 `{ setup "$@"; "$@"; }` 呢個**唔受 -e 忽略**嘅語境入面跑 → 獨立嘅 `[[ ]]` 失敗**會中止 test body**（bash 3.2 同 5.3 一致，冇版本差；`bats --print-output-on-failure` 實測 T1~T7 全部 `not ok` 且 `echo reached` 一次都冇印出）。→ PNA-4 現時定位為**風格／可讀性守門**（要求顯式 fail-fast + `FAIL: <file>:<line>` 訊息），而唔係「唯一防止靜默失敗」嘅東西；**規則保留**（①診斷到行 ②防 test body 入面嘅 `set +e` ③防將來 bats 改行為；181 個斷言已改咗 → 規則鎖住成果） |
+| 計數 | mutant 表 | 57 → **58 支**（行為鎖 47 → 48；文件／資料契約鎖 10 不變）。同步：`scripts/ci/mutants.tsv` 檔頭、`tests/mutant-must-die.bats` 硬門檻、`CONTRIBUTING.md`（`tests/doc-facts.bats` 守住呢個數字） |
+
+**等價性證據**：46 個真實探針檔（口徑：`git ls-files 'tests/*.bats' 'skills/*/tests/*.bats' | wc -l`）
+舊規則 vs 新規則 → **0 新增 violation**（repo 本身 0 = 0）；
+收窄方向嘅影響面實測：依賴規則⑦ 豁免嘅斷言 **9 條全部喺 `@test` body 內** → 零假紅。
+> 註：v2.15／v2.16 寫嘅「45 個真實探針檔」係**當時**嘅數（corpus 喺 TMO-077 加咗第 46 支探針檔後
+> 就變 46；v2.16 條目由 TMO-078 寫喺 TMO-077 之後 → 該處嘅 45 已過期，歷史記錄保留唔改）。
+
 ## v2.16 — 2026-10-26
 
 **本版異動**：TMO-078 兩項技術債清埋（PNA-4 規則⑦ 語意修正 ＋ 清死碼），
@@ -29,6 +50,14 @@ fuzz 1200 檔 → 舊 2217 / 新 2210，**新增 = 0**，少報 7 個全部屬�
 > 註：`M7-flaky` 經量測後**唔需要改**——因為 cache 命中，額外 2 次 run 各只係 ~11ms，
 > 成本 ×3 只喺 cache 冷時出現。而 Gate 4（dev-checker-loop）嘅慢，主因係每輪迭代要跑
 > `bats tests/` 全套 → 已經由 PNA-4 效能修正（380s → 160s）解決。
+
+### TMO-079／080 的 V03 二審結論（Reviewer）
+
+| 輪次 | Verdict | 摘要與處置 |
+|------|---------|------------|
+| 第 1 輪 | ⚠️ approve with notes（0 P0 / 0 P1 / 3 P2 / 3 P3）| Reviewer session **冇 shell tool**（只有 Read／Grep／Glob／LS）→ 改用「Reviewer 出命令清單 → supervisor 執行並貼原文輸出 → Reviewer 覆核」嘅 (B) 方案。**實作層面 0 P0／0 P1**：方向係**收窄**、對 corpus 零影響、三支 canary 期望值同實作逐字一致。**P2 三項已清**：①`CONTRIBUTING.md:166`「行為鎖 47」過期（實際 48）②changelog v2.15 仍以「實測發現」斷言被 v2.17 推翻嘅前提 → 加前提更正 pointer（保留歷史原文）③PNA-4 註解唔再定義 T1~T7 → 證據不可重現 → 補自包含嘅可重現量測段。**P3 三項已清**：④`docs/backlog.md` 兩行自述互相矛盾 → 併成單行 ⑤PNA-M3 註解語意過度聲稱 → 精確化 ⑥「45 個探針檔」實際 46 → 修正並標明量測口徑 |
+| 第 2 輪 | ⚠️ approve with notes（0 P0 / 0 P1 / 0 P2 / 6 P3）| C1–C15 **全部執行確認**：corpus violations = 0；**新舊規則 46 檔逐檔零差異**（收窄對 corpus 零影響）；依賴規則⑦ 豁免嘅斷言**剛好 9 條、全喺 `@test` body**（func／helper／裸群組內 0 條）；**C15 實證收窄效果**——舊規則喺 `setup()` body／helper body／裸 column-0 群組三處**誤豁免**（＝TMO-079 記低嘅真·假綠面）→ 新規則全部照報，而 `} \|\| {` 收尾／heredoc 內斷言／JSON heredoc 內 column-0 `}` 兩版**一致** → 精準收窄、零誤傷。**PNA-M3 死因＝語意差**（案例 E 消失、無 parse error、mut 版掃 caseE 空輸出）。**P3 六項已清**（N1–N6：探針規格段／changelog／backlog／helper 四處「三個方向 → 四個方向」、PNA-4c 案例數 4 → 5、「已知刻意差異兩處 → 三處」並新增 ③＝TMO-079 收窄方向**多報**）。⚠️ 另修 **R4**：PNA-M2 錨點由 12 → 14 空格重新對齊（**係本 diff 加咗一層 `if (blk_kind…)` 包裝造成**，唔係先前殘留 → 屬本次範圍） |
+| 第 3 輪 | ✅ **approve**（0 P0 / 0 P1 / 0 P2 / 0 P3）| **P3 兩項已清**：N7（PNA-4c 案例列舉補齊 C／D）＋ N8（效能數字改為**有口徑**版本：94.6 秒 ÷ 0.66 秒 → 約 143 倍，並註明量測值唔好寫成硬門檻）；順帶清 R2（歷史交付摘要表格**之後**加 pointer，歷史列原文一字未動）＋ PNA-M3 註解精確化（只豁免「斷言喺檔案最後一行」）。**終審全量綠**：`bats tests/` 666 支 not-ok = 0、`bats skills/*/tests/*.bats` not-ok = 0、**全表 58 支 mutant 全部死亡**、shellcheck rc=0、markdownlint `0 issues` rc=0、doc-drift `21 項檢查完成，7 項豁免` rc=0、數字 58／48／10 三處一致。**等價性最終結論**：收窄對真實 corpus 零影響、canary 方向無缺口（`test`／`func`／`other` 三類 kind ＋ 「搵唔到收尾」方向 ＋ 「內層區塊收尾」family）、前提更正成立。**剩餘風險（接受）**：①非標準縮排（`@test` body 入面寫 column-0 嘅 `{`／`}`）會令 stack 提前收尾 → 可能多報（corpus 實測零命中 ＋ PNA-4d 案例 4 已鎖）②`} \|\| {` 喺真 .bats 語法上不可達 → 該 canary 保護一個不可達分支（刻意保留 TMO-078 語意）③PNA-M3 嘅守護範圍窄過「搵唔到收尾就豁免」成個類別（但 TMO-080 嘅實際守護案例 E 已實測咬得住） |
 
 ### TMO-078 的 V03 二審結論（Reviewer）
 
@@ -241,6 +270,9 @@ Gate 的**定義**改由各自承載它的 skill 負責，讓 skill 自足；並
 #### 連帶挖出並修掉的第二層假綠（比本 bug 更嚴重）
 
 **實測發現**：bats（與純 bash）之下，**獨立的 `[[ ... ]]` 斷言失敗不會中止 test body** —— 只有**最後一個**命令的狀態決定結果：
+> ⚠️ **前提更正（2026-10-26，見 v2.17）**：上面呢句「實測發現」經重新量測後證實係**錯**嘅 ——
+> 獨立嘅 `[[ ... ]]` 失敗**會**中止 test body（bats 1.11.1／1.14.0 嘅 `bats-exec-test` 都係 `set -eET`）。
+> 本段保留原文作歷史記錄；**現行定位見 v2.17**（PNA-4 = 風格／可讀性守門）。
 
 ```
 [[ abc == xyz ]]; echo reached   → reached（rc 0，沒中止）

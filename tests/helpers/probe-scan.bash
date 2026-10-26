@@ -96,7 +96,7 @@ probe_declared_count() {
 #   改成：**每個檔案一個 awk 行程**，檔案內容先讀進陣列，再在 awk 內做全部判斷。
 #   → 量測口徑（唔好再寫第二個數字）：
 #       `bats --timing tests/probe-name-ascii.bats` → PNA-4 **855ms**（改前 94,612ms，快 111 倍）
-#       掃描器本身掃 45 個探針檔約 0.6–0.8s（每次量測會有 ±0.2s 浮動）
+#       掃描器本身掃 46 個探針檔約 0.6–0.8s（2026-10-26 實測 3 次：0.66／0.66／0.65s）
 #     整個 `bats tests/ skills/` 總時間**唔寫死**（受機器負載影響，本機量到 2m42s–3m23s 幾個值）。
 #
 # 判斷規則與原本逐行版的**逐條對照**（左 = 原本 shell `case` glob，右 = 現版 awk regex）：
@@ -110,27 +110,42 @@ probe_declared_count() {
 #      `||` / `&&` **行尾** + 下一行開頭 `{` → 開區塊
 #                                   ← *"||"* / *"&&"*（**行尾錨定**）≡ /\|\|$/ / /&&$/
 #      區塊內（以 `}` 為界）有 `return 1` → 安全
-#   ⑦ 斷言係 test body 嘅最後一個命令 → 安全：
+#   ⑦ 斷言係 **@test body** 嘅最後一個命令 → 安全（TMO-079 收緊）：
+#      ⓪ **所屬頂層區塊必須確實係 `@test` body**（見下面「頂層區塊追蹤」）
 #      ① **下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準逐字一致）
 #      ② 否則若佢係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，
-#         直到遇到行首 `}`（= test body 收尾）→ 豁免
+#         直到遇到**所屬 @test body 嘅真實收尾行** → 豁免
 #      ③ 一旦遇到其他 code → 唔豁免（照報 violation）
+#      ④ @test body **從來冇收尾**（搵唔到收尾行）→ 唔豁免（照報 violation）
+#         （TMO-080：呢個方向之前冇 canary 鎖住 → 對應 mutant PNA-M3）
 #                                   ← 原版：after=$(awk 'NR>s && NF{print; exit}')（**原行，未剝空白**）
 #                                     + case "$after" in \}*  ≡  after ~ /^\}/
 #                                     （**TMO-078 語意修正**：見下面「規則⑦ 嘅語意修正」段）
 #   ⑧ 以上都不中 → 記一個 violation
 #
-# 等價範圍（TMO-078 規則⑦ 修正**之後**）：
+# 等價範圍（TMO-078 規則⑦ 修正**之後**；TMO-079 收窄**之後**）：
 #   - 45 個真實探針檔：舊規則 vs 新規則 → **新增 violation = 0**（repo 本身 0 = 0）
+#     （⚠️ 45 係**當時**嘅 corpus 大小：TMO-077 喺 2026-10-26 加咗第 46 支探針檔
+#      `tests/doc-facts.bats` → 現況係 46 檔。口徑：`git ls-files 'tests/*.bats'
+#      'skills/*/tests/*.bats' | wc -l`）
+#   - **TMO-079 收窄嘅影響面（實測）**：全 corpus 依賴規則⑦ 豁免嘅斷言共 **9 條**，
+#     全部喺 `@test` body 內；setup()／teardown()／helper function body 內 **0 條**
+#     → 收窄（豁免只限 `@test` body）對真實 corpus **零影響**，唔會製造假紅。
+#     方向亦都係**收緊**（豁免更少 → 報得更多），唔係放寬 → 唔會製造假綠。
 #   - fuzz 200 檔 + 1000 檔（多 seed + 未閉合引號 / 各種 heredoc 變體）：
 #     舊 2222 / 新 2213 → **新增 = 0**，少報嘅 9 個全部屬「內層區塊收尾」family
 #   - 9 個針對性 edge case（`}` + 行尾註解 / `} else {` / `};` / 雙 `}` / 縮排 body `}` 等）：一致
-#   - 10 個 edge case ＋ PNA-4b 嘅 7 條規則案例 ＋ PNA-4c 嘅 4 個案例：一致
-# ⚠️ **已知刻意差異（兩處，唔係「唯一一處」）**：
+#   - 10 個 edge case ＋ PNA-4b 嘅 7 條規則案例 ＋ PNA-4c 嘅 5 個案例（A~E）：一致
+# ⚠️ **已知刻意差異（三處，唔係「唯一一處」）**：
 #   ① heredoc 內容 strip 一次過做（純效能，唔影響判定結果）
 #   ② **規則⑦ 刻意放寬**：原本「下一個非空行係行首 `}`」→ 現在多豁免「內層 `{ ... }`
 #      區塊收尾」呢一類（原本會被誤判成 violation = latent 假紅）。
 #      → 方向係**少報**（豁免更多），**唔會**新增 violation → 守門唔會變寬鬆到放過真違規。
+#   ③ **規則⑦ 刻意收窄（TMO-079，2026-10-26）**：豁免要求「所屬頂層區塊**確實係
+#      `@test` body**」→ `setup()`／`teardown()`／helper body 嘅斷言唔再被意外豁免。
+#      → 方向係**多報**（豁免更少），**唔會**少報 → 唔會製造假綠。
+#      ⚠️ ② 同 ③ 方向**相反**：② 係 TMO-078 嘅放寬（少報），③ 係 TMO-079 嘅收窄（多報）。
+#         兩者同時存在 → 淨效果要靠實測：46 個探針檔新舊規則**逐檔零差異**（見上面）。
 # ⚠️ **規則⑦ 嘅語意修正（TMO-078，2026-10-26）**：
 #    原版規則⑦：「**下一個**非空行係行首 `}`」→ 內層 `{ ... }` 區塊嘅最後一句會被
 #    誤判成 violation（**latent 假紅** —— 該斷言其實係 test body 嘅最後一個命令，
@@ -154,6 +169,30 @@ probe_declared_count() {
 #      ③ heredoc 偵測嘅引號狀態：原版 `q` 喺 BEGIN 宣告（**跨行保留**，註解明講
 #         「引號狀態跨行保存」）；初版放喺 function 內 local（每行重置）→ 改成全域 `gq`。
 #    → 教訓：shell `case` 嘅 glob（尾端錨定）≠ awk regex（任意位置）。
+#
+# ─── 頂層區塊追蹤（TMO-079）──────────────────────────────────────────
+#
+# 點解要呢一層：規則⑦ 原本靠「下一個行首 `}`」呢個**隱含假設**認「test body 收尾」。
+# 但行首 `}` 唔必然係 test body —— 佢亦可能關 setup()／teardown()／helper function
+# （.bats 入面呢啲 function 嘅收尾 `}` 同樣喺行首）→ 同一個「行首 `}`」有兩種意義，
+# 原判準分唔到。TMO-078 嘅 V03 二審當時裁定「保留原語意（超集性質優先）」，
+# 但同時記低咗呢個更實際嘅假綠面 → backlog TMO-079。
+#
+# 而家逐行追蹤「頂層區塊」，記低每行所屬區塊嘅 kind 同關閉佢嘅行號：
+#   opener ：column-0 行，剝註解後以 `{` 結尾（`${` 唔算 —— 係參數展開）
+#   closer ：column-0 行，以 `}` 開頭
+#   kind   ：test（`@test` 開頭）／func（`name() {` 或 `function name`）／other
+#
+# ⚠️ 點解淨係行 column-0（唔做全檔 brace-depth 計數）：
+#   .bats 入面內層區塊一律**縮排** → column-0 嘅 `{` / `}` 恰好就係頂層區塊嘅邊界。
+#   用佢哋做堆疊就唔使解析字串內嘅 `{}`（`${VAR}`、`awk '{...}'`、JSON heredoc 嘅
+#   `}` … 全部唔使理）→ 對真實 corpus 零風險。
+#
+# ⚠️ 收窄嘅方向（關鍵）：豁免而家要求 kind == "test"。
+#   → 方向係**收緊**（豁免更少 → 報得更多）→ 唔會製造假綠。
+#   → 對真實 corpus 零影響（實測 9 條，全喺 @test body 內）。
+#   → 對應 canary：PNA-4d（函式 body 必須照報／`} || {` 收尾必須唔報／對照組／
+#     裸 column-0 群組必須照報）。
 #
 # 輸出格式（與原本 echo 相同，方便 diff 對照）：
 #   <行號>\t<剝掉註解後的該行>
@@ -215,6 +254,54 @@ probe_find_standalone_assertions() {
         t = is_heredoc_start(L[i])
         if (t != "") { tag = t; skip = 1; inhd[i+1] = 1 }
       }
+      # ─── 頂層區塊追蹤（TMO-079）────────────────────────────────────────
+      #
+      # 為什麼要呢一層：規則⑦ 原本靠「下一個行首 `}`」呢個**隱含假設**去認
+      # 「test body 收尾」。但行首 `}` 唔必然係 test body —— 佢亦可能關
+      # setup()／teardown()／helper function（.bats 入面呢啲 function 嘅收尾
+      # `}` 同樣喺行首）。→ 同一個「行首 `}`」有兩種意義，原判準分唔到。
+      #
+      # 而家改成**明確判定**：逐行追蹤「頂層區塊」（column-0 嘅 `{` / `}`），
+      # 記低每行所屬區塊嘅 kind 同關閉佢嘅行號：
+      #   opener ：column-0 行，剝註解後以 `{` 結尾（`${` 唔算 —— 係參數展開）
+      #   closer ：column-0 行，以 `}` 開頭
+      #   kind   ：test（`@test` 開頭）／func（`name() {` 或 `function name`）／other
+      # 然後規則⑦ 唔再靠「搵到行首 `}`」，而係靠**所屬區塊嘅真實收尾行**。
+      #
+      # ⚠️ 為什麼淨係行 column-0（唔做全檔 brace-depth 計數）：
+      #   .bats 入面內層區塊一律**縮排**，所以 column-0 嘅 `{` / `}` 恰好就係
+      #   頂層區塊嘅邊界 —— 用佢哋做堆疊，唔使解析字串內嘅 `{}`（`${VAR}`、
+      #   `awk '{...}'`、JSON heredoc 嘅 `}` … 全部唔使理）。
+      #   → 對真實 corpus 零影響（實測：46 個探針檔內，依賴規則⑦ 豁免嘅斷言
+      #     共 9 條，全部喺 `@test` body 內；setup/teardown/helper 內係 0 條）。
+      sp = 0
+      for (i = 1; i <= n; i++) {
+        # 先記錄「呢行屬於邊個頂層區塊」（喺處理 opener/closer **之前**）
+        blk_kind[i] = (sp > 0) ? st_kind[sp] : ""
+        blk_open[i] = (sp > 0) ? st_open[sp] : 0
+        if (inhd[i]) continue
+        if (L[i] ~ /^[ \t]/) continue            # 只理 column-0 嘅行
+        t = strip(L[i]); sub(/^[[:space:]]*/, "", t); sub(/[[:space:]]*$/, "", t)
+        if (t ~ /^\}/) {
+          # closer：關閉最內層頂層區塊（記低收尾行號）
+          if (sp > 0) { blk_close_of[st_open[sp]] = i; sp-- }
+          # `} || {` → 同一行關一個又開一個（開嗰個當 other）
+          if (t ~ /\{$/ && t !~ /\$\{$/) { sp++; st_open[sp] = i; st_kind[sp] = "other" }
+          continue
+        }
+        if (t ~ /\{$/ && t !~ /\$\{$/) {
+          sp++
+          st_open[sp] = i
+          if (t ~ /^@test/) st_kind[sp] = "test"
+          else if (t ~ /^[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\([[:space:]]*\)/ || t ~ /^function[[:space:]]/) st_kind[sp] = "func"
+          else st_kind[sp] = "other"
+        }
+      }
+      # 補返每行所屬區塊嘅收尾行號（0 = 該區塊從來冇關閉）
+      for (i = 1; i <= n; i++) {
+        if (blk_open[i] > 0) blk_close[i] = blk_close_of[blk_open[i]]
+      }
+
       for (i = 1; i <= n; i++) {
         if (inhd[i]) continue
         s = strip(L[i])
@@ -241,8 +328,8 @@ probe_find_standalone_assertions() {
           }
           if (found) continue
         }
-        # ⑦ 斷言係 test body 嘅最後一個命令 → 安全
-        #    判準（2026-10-26 TMO-078，經 V03 二審修正）：
+        # ⑦ 斷言係 **@test body** 嘅最後一個命令 → 安全
+        #    判準（2026-10-26 TMO-078，經 V03 二審修正；2026-10-26 TMO-079 收緊）：
         #      ① **下一個非空行若以行首 `}` 開頭 → 豁免**（與原判準**完全一致**）
         #      ② 否則若佢係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，
         #         直到遇到行首 `}`（= test body 收尾）→ 豁免
@@ -252,17 +339,31 @@ probe_find_standalone_assertions() {
         #       **同原判準逐字一致** → 原判準豁免嘅全部照樣豁免 → **唔可能新增 violation**。
         #       （第一版寫成「t 必須恰好等於 `}`」→ `} # end of test` 會被誤報 = 假紅迴歸；
         #        V03 二審 P1-1 捉到，已修正。）
-        #    ⚠️ 已知邊界（非本輪範圍，記於 backlog TMO-079）：行首 `}` 之後如果仲有 code
-        #       （例如 `} || {`）會被豁免 —— 但 `}` 喺行首喺 .bats 入面**必然**係關 test body，
-        #       `} || {` 喺 function 定義位置係**語法錯誤** → 實際唔可能出現。
+        #
+        #    ⚠️ **TMO-079 收窄（2026-10-26）**：豁免而家要求「所屬頂層區塊**確實係
+        #       `@test` body**」，而唔再係「撞到行首 `}` 就當係」。
+        #       原因：行首 `}` 有兩種意義 —— 關 @test body，**或者**關 setup()／
+        #       teardown()／helper function。TMO-078 嘅 V03 二審當時裁定「保留原語意
+        #       （超集性質優先）」，但同時記低咗呢個更實際嘅假綠面（backlog TMO-079）。
+        #       而家用「頂層區塊 kind」明確判定 → 函式 body 嘅斷言**唔再**被意外豁免。
+        #       → 方向係**收緊**（豁免更少 → 報得更多），唔係放寬 → 唔會製造假綠。
+        #       → 對真實 corpus 零影響（實測：9 條依賴規則⑦ 嘅斷言全部喺 @test body 內）。
+        #
+        #    豁免嘅**理由**（為什麼淨係 @test body 適用）：bats 取 **test body 最後一個
+        #    命令**嘅狀態做測試結果 → 斷言喺最後就已經 fail-fast，唔使再包一層。
+        #    函式 body 冇呢個保證（bats 對 setup/teardown 另有處理，helper 更加冇），
+        #    所以唔豁免 → 要求寫成顯式 fail-fast 慣例。
         found_body_close = 0
-        for (j = i + 1; j <= n; j++) {
-          if (L[j] ~ /[^ \t]/) {
-            # ① 行首 `}` → 同原判準一致，直接收尾（豁免）
-            if (L[j] ~ /^\}/) { found_body_close = 1; break }
-            # ② 縮排嘅收尾行 → 繼續向後行
-            t = strip(L[j]); sub(/^[[:space:]]*/, "", t); sub(/[[:space:]]*$/, "", t)
-            if (t != "}" && t != "};") break      # ③ 其他 code → 唔豁免
+        if (blk_kind[i] == "test" && blk_close[i] > 0) {
+          for (j = i + 1; j <= n; j++) {
+            if (L[j] ~ /[^ \t]/) {
+              # ① 抵達「所屬 @test body 嘅真實收尾行」→ 豁免
+              #    （TMO-079：唔再靠「搵到行首 `}`」，而係靠明確追蹤出嚟嘅收尾行）
+              if (j == blk_close[i]) { found_body_close = 1; break }
+              # ② 縮排嘅收尾行 → 繼續向後行
+              t = strip(L[j]); sub(/^[[:space:]]*/, "", t); sub(/[[:space:]]*$/, "", t)
+              if (t != "}" && t != "};") break      # ③ 其他 code → 唔豁免
+            }
           }
         }
         if (found_body_close) continue

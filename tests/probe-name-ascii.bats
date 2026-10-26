@@ -33,14 +33,19 @@
 # 「bats 到底會不會丟棄 CJK 名」的**機制 canary**歸 `tests/env-equivalence.bats` ENV-EQ-9 所有
 # （那裡同時有 repo 普查）；本檔只負責「repo 的命名政策 + 掃描器本身的正確性」。
 #
-# 另外 PNA-4 守的是**斷言會不會真的生效**（TMO-074 的第二層教訓）：
-#   **bash 3.2** 下，獨立的 `[[ ... ]]` 失敗**不會中止 test body**（只有最後一個命令的
-#   狀態決定結果）→ 夾在中間的 `[[ ]]` 斷言等於沒有 → 本機假綠。
-#   （bash 5.x 會中止 → 同一支探針在 CI 是對的、在本機是錯的 → 又是環境相依的假綠。）
-#   實測（bats 1.14.0 / bash）：
-#     [[ abc == xyz ]]; echo reached   -> reached（rc 0，沒中止）
-#     [ abc = xyz ];    echo reached   -> 中止（rc 1）
-#   → 因此所有獨立斷言都必須寫成 fail-fast 慣例：
+# 另外 PNA-4 守的是**斷言會唔會寫得夠顯眼**（TMO-074 的第二層教訓）：
+#   獨立的 `[[ ... ]]` 失敗時唔會印任何嘢 → 睇唔到邊行出錯 → 難診斷。
+#   ⚠️ **前提更正（2026-10-26，TMO-079 順帶查證）**：本段原本寫住「bash 3.2 下獨立的
+#   `[[ ]]` 失敗**不會中止 test body**、bash 5.x 會中止」—— 重新量測之後**兩句都係錯**：
+#     bats 1.14.0（CI pin）同 1.11.1 嘅 `libexec/bats-core/bats-exec-test` 開頭都係
+#     `set -eET`，test body 喺 `{ setup "$@"; "$@"; }` 呢個**唔受 -e 忽略**嘅語境入面跑
+#     → 獨立嘅 `[[ ]]` 失敗**會中止 test body**（bash 3.2 同 5.3 一樣，冇版本差）。
+#     實測（`bats --print-output-on-failure`）：T1~T7 全部 `not ok`，`echo reached`
+#     一次都冇印出 → 確認係「中止」。（量測工具自我檢查：印 reached 後明確 false →
+#     reached 有印 → 工具正常。）
+#   → 所以 PNA-4 而家嘅定位係**風格／可讀性守門**（要求顯式 fail-fast + 檔案行號
+#     訊息），而唔係「唯一防止靜默失敗」嘅東西。規則**保留**（理由見 PNA-4 支內註）。
+#   → 所有獨立斷言仍然寫成 fail-fast 慣例：
 #     [[ ... ]] || {
 #       echo 'FAIL: <file>:<line>: assertion failed' >&2; return 1; }
 #
@@ -148,21 +153,37 @@ _probe_files() {
 
 
 @test "PNA-4: every standalone [[ ]] assertion is fail-fast (or a conditional)" {
-  # TMO-074 的第二層教訓：獨立的 `[[ ... ]]` 斷言在 bats 裡**失敗不會中止 test body**
-  # （只有最後一個命令的狀態決定結果）→ 夾在中間的斷言等於沒有，探針會「假綠」。
+  # TMO-074 的第二層教訓：獨立的 `[[ ... ]]` 斷言寫得唔顯眼 → 失敗時睇唔到邊行出錯
+  # → 探針會「假綠」（測試報綠，但其實個斷言從來冇生效過）。
   #
-  # 實測（bats 1.14.0）：
-  #   **同一個檔案、同一個環境、每個案例的最後一個命令都是 `true`**（這樣「中途是否
-  #   中止」就唯一決定結果，不會被「量測環境混用」誤導）：
-  #   T1: [ abc = xyz ];    echo reached; true   -> 紅（中止）
-  #   T2: [[ abc == xyz ]]; echo reached; true   -> 綠（**沒**中止）
-  #   T3: false;             echo reached; true   -> 紅（中止）
-  #   T4/T5: 單獨一行時，兩種括號都會讓測試紅（最後一個命令就是斷言本身）
-  #   T6: [[ abc == xyz ]] || [[ abc == xyz2 ]]  -> 綠（**|| 鏈也不會中止！**）
-  #   T7: [[ abc == xyz ]] || { echo x; return 1; } -> 紅（fail-fast 有效）
-  # → 不對稱是真的：**只有雙括號 `[[ ]]`（含 `||` 鏈）不會中止**；
-  #   單括號 `[ ]` 與 `false` 都會中止 → 單括號中段斷言是安全的，不需改寫。
-  #   （V03 Reviewer 質疑這個不對稱是量測環境混用 → 已用上述 T1~T7 同檔對照實驗排除。）
+  # ⚠️ **前提更正（2026-10-26，TMO-079 順帶查證）**：
+  #   本檔原本寫住「bats 裡獨立的 `[[ ]]` 斷言失敗**不會中止 test body**」，
+  #   嗰句係**實測錯**（原始 T1~T7 記錄見 git history `9c04aaa`）。重新量測：
+  #     bats 1.14.0（CI pin 嘅版本）同 1.11.1 嘅 `libexec/bats-core/bats-exec-test`
+  #     開頭都係 `set -eET`，而 test body 係喺 `{ setup "$@"; "$@"; }` 呢個
+  #     **唔受 -e 忽略**嘅語境入面跑 → **獨立嘅 `[[ ]]` 失敗係會中止 test body 嘅**。
+  #     實測（`bats --print-output-on-failure`）：T1~T7 全部 `not ok`，
+  #     而且 `echo reached` **一次都冇印出** → 確認係「中止」而唔係「跑完先失敗」。
+  #     （器材自我檢查：印 `reached` 之後明確 `false` → `reached` 有印 → 量測工具正常。）
+  #   → 所以 PNA-4 現時嘅定位係**風格／可讀性守門**（要求顯式 fail-fast + 檔案行號
+  #     訊息），而**唔係**「唯一防止靜默失敗」嘅東西。
+  #   → 規則**保留**：①顯式 fail-fast 會印 `FAIL: <file>:<line>` → 診斷到行；
+  #     ②防「有人喺 test body 裡寫 `set +e`」嗰種會令一切靜默嘅情況；
+  #     ③防將來 bats 改行為。181 個斷言已經改咗（9c04aaa）→ 規則鎖住成果。
+  #
+  #   **可重現嘅量測（2026-10-26 實測，bats 1.14.0 ＝ CI pin 嘅版本；v1.11.1 結果相同）**：
+  #     同一個 .bats 檔、同一環境、每個案例嘅最後一個命令都係 `true`；
+  #     用 `bats --print-output-on-failure` 睇 test body 有冇跑完（冇 `reached` ＝ 中止）：
+  #       T1: [ abc = xyz ];    echo reached; true   -> not ok（中止）
+  #       T2: [[ abc == xyz ]]; echo reached; true   -> not ok（中止）
+  #       T3: false;             echo reached; true   -> not ok（中止）
+  #       T4/T5: 單獨一行時，兩種括號都會讓測試紅（最後一個命令就是斷言本身）
+  #       T6: [[ abc == xyz ]] || [[ abc == xyz2 ]]  -> not ok（中止）
+  #       T7: [[ abc == xyz ]] || { echo x; return 1; } -> not ok（fail-fast 有效）
+  #     ⚠️ 原本記錄寫 T2／T6 係「綠（冇中止）」—— 重新量測證實**兩者都係錯**（見上）。
+  #     器材自我檢查（確認量測工具本身有效）：印 `reached` 之後明確 `false` → `reached` 有印。
+  #     ⚠️ 教訓：量測「有冇中止」**必須**用 `--print-output-on-failure`**，
+  #        否則 bats 會把 test body 嘅 stdout 收埋，睇唔到 `reached` 有冇印過。
   #
   # 規定：獨立的 `[[ ... ]]`（含 `||` / `&&` 鏈）必須寫成 fail-fast 慣例
   #   [[ ... ]] || {
@@ -170,16 +191,27 @@ _probe_files() {
   # 允許的例外：
   #   ① if / elif / while / until 的條件式（那是安全的條件語境）
   #   ② guard clause（|| continue / || break / && continue …）——那是「跳過」不是「斷言」
-  #   ③ 位於 test body 的**最後一句**（bats 取最後一個命令的狀態 → 會失敗）
+  #   ③ 位於 **@test body** 嘅**最後一句**（bats 取 test body 最後一個命令嘅狀態
+  #      做測試結果 → 斷言失敗就係測試失敗，唔使再包一層）
   #      ——判準三步：①下一個非空行若以**行首** `}` 開頭 → 豁免（與原判準逐字一致）
   #        ②否則若係「純收尾行」（剝空白後 == `}` 或 `};`）→ 繼續向後行，直到遇到行首 `}` → 豁免
   #        ③一旦遇到其他 code → 唔豁免
   #      含「內層 `{ ... }` 區塊收尾」嗰種情況（TMO-078 語意修正，見 helper 註解）
+  #      ⚠️ TMO-079：豁免而家要求「所屬頂層區塊**確實係 `@test` body**」
+  #        （行首 `}` 亦可能關 setup()／teardown()／helper function → 唔再意外豁免）。
+  #        對應 canary：PNA-4d。
   # 效能（2026-10-26）：原本呢支係「逐行 fork awk/sed」——repo 13,660 行 × 約 2.5 fork
   # ≈ 35,000 次 process spawn → 單呢支探針要 94.6 秒（bats --timing 實測）。
   # 改成 `probe_find_standalone_assertions`：**每個檔案一個 awk 行程**，檔案內容讀進
   # 陣列後喺 awk 內完成全部判斷（heredoc 感知 / 剝註解 / guard clause / fail-fast 區塊
-  # / 最後一句）→ 45 個探針檔全部掃完 0.745 秒（快 127 倍），判斷結果逐檔一致。
+  # / 最後一句 / 頂層區塊追蹤）→ 46 個探針檔全部掃完，判斷結果逐檔一致。
+  # ⚠️ 效能數字嘅**口徑**（唔好再寫第二個無出處嘅數）：
+  #   原始逐行 fork 版：94.6 秒（`bats --timing` 實測，當時 corpus 45 檔）
+  #   現版單 awk 行程版：掃描器本體 0.66 秒（2026-10-26 實測 3 次：0.66／0.66／0.65，
+  #     46 檔）→ 掃描器本體約 **143 倍**（94.6 ÷ 0.66；兩邊 corpus 大小唔同：45 → 46 檔）
+  #   （PNA-4 呢支**成支探針**嘅耗時對比 94,612ms → 855ms／快 111 倍 → 口徑統一放喺
+  #     helper 同一節，呢度唔重複寫，避免同一指標出現兩個值）
+  #   ⚠️ 呢啲係**量測值**（受機器負載影響）→ 唔好寫成硬門檻。
   # 判斷規則逐條對應原本的規格（見 tests/helpers/probe-scan.bash 內該函式的說明）。
   local file n stripped violations=0 shown=0 scanned_files=0
   while IFS= read -r file; do
@@ -189,7 +221,7 @@ _probe_files() {
       [ -n "$n" ] || continue
       violations=$((violations + 1))
       if [ "$shown" -lt 10 ]; then
-        echo "VIOLATION: $file:$n 獨立 [[ ]] 斷言沒有 fail-fast（失敗會被靜默忽略 → 假綠）：" >&2
+        echo "VIOLATION: $file:$n 獨立 [[ ]] 斷言沒有 fail-fast（失敗時唔會印邊行出錯 → 難診斷）：" >&2
         echo "    $stripped" >&2
         shown=$((shown + 1))
       fi
@@ -205,7 +237,7 @@ _probe_files() {
     return 1
   }
   [ "$violations" -eq 0 ] || {
-    echo "FAIL: $violations 個獨立 [[ ]] 斷言沒有 fail-fast（bats 裡失敗不會中止 → 假綠）" >&2
+    echo "FAIL: $violations 個獨立 [[ ]] 斷言沒有 fail-fast（要求顯式 fail-fast + 檔案行號訊息）" >&2
     echo "修法：改成 [[ ... ]] || { echo 'FAIL: <file>:<line>: assertion failed' >&2; return 1; }" >&2
     return 1
   }
@@ -279,10 +311,16 @@ _probe_files() {
   # ③ 一旦遇到其他 code → 唔豁免（照報 violation）。
   # → 係舊判準嘅**超集** → 舊判準豁免嘅全部照樣豁免，**唔可能新增 violation**。
   #
-  # 呢支用兩個案例**同時**鎖住兩個方向：
+  # 呢支用五個案例**同時**鎖住五個方向：
   #   案例 A（行 4）：內層區塊收尾之後**仲有其他 code** → 必須**照報**（真違規，
   #                   唔可以因為「下一行係 `}`」就放過 → 防止條件放寬）
   #   案例 B（行 10）：內層區塊**就係** test body 嘅最後一個命令 → 必須**唔報**（假紅修正）
+  #   案例 C（行 14）：收尾 `}` **帶行尾註解**（`} # end of test`）→ 必須**唔報**
+  #   案例 D（行 18）：收尾用 `};` → 必須**唔報**
+  #   案例 E（行 20）：**之後搵唔到行首 `}`**（@test body 根本冇收尾，斷言喺檔尾）
+  #                   → 必須**照報**（TMO-080：呢個方向之前冇 canary 鎖住 →
+  #                   若日後有人改成「行到 EOF 就豁免」，PNA-4b／PNA-4c 都唔會紅
+  #                   → 守門失效。對應 mutant：PNA-M3）
   local st="$BATS_TEST_TMPDIR/pna4c-fixture.fixture"
   {
     printf '%s\n' '#!/usr/bin/env bats'
@@ -303,17 +341,80 @@ _probe_files() {
     printf '%s\n' '@test "case D: closing brace with semicolon" {'
     printf '%s\n' '  [[ "$a" == "b" ]]'
     printf '%s\n' '};'
+    printf '%s\n' '@test "case E: assertion at EOF with no closing brace" {'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
   } > "$st"
 
   local out expected
   out=$(probe_find_standalone_assertions "$st")
-  # 期望：**恰好**一個 violation，行號 = 4（案例 A）。
+  # 期望：**恰好**兩個 violation，行號 = 4（案例 A）同 20（案例 E）。
   # 案例 B（行 10）／C（行 14）／D（行 18）**唔應該**被報 →
-  # 若新判準錯判成「豁免案例 A」就會變成空輸出 → 紅；
-  # 若錯判成「把案例 B/C/D 當違規」就會變成多行 → 亦紅。
-  expected=$(printf '4\t%s' '[[ "$a" == "b" ]]')
+  # 若新判準錯判成「豁免案例 A」就會變成少一行 → 紅；
+  # 若錯判成「把案例 B/C/D 當違規」就會變成多行 → 亦紅；
+  # 若錯判成「豁免案例 E（行到 EOF 就當安全）」→ 都會少一行 → 紅（TMO-080 嘅鎖）。
+  expected=$(printf '4\t%s\n20\t%s' '[[ "$a" == "b" ]]' '[[ "$a" == "b" ]]')
   [ "$out" = "$expected" ] || {
-    echo "FAIL: 規則⑦ 嘅輸出唔等於期望值（案例 A 行 4 應報、案例 B 行 10 應唔報）" >&2
+    echo "FAIL: 規則⑦ 嘅輸出唔等於期望值（案例 A 行 4 + 案例 E 行 20 應報；B/C/D 應唔報）" >&2
+    echo "  期望: $(printf '%q' "$expected")" >&2
+    echo "  實際: $(printf '%q' "$out")" >&2
+    return 1
+  }
+  return 0
+}
+
+
+@test "PNA-4d: the last-statement rule only exempts @test bodies" {
+  # TMO-079：規則⑦ 原本靠「下一個行首 `}`」呢個**隱含假設**認「test body 收尾」。
+  # 但行首 `}` 有**兩種**意義 —— 關 @test body，**或者**關 setup()／teardown()／
+  # helper function（.bats 入面呢啲 function 嘅收尾 `}` 同樣喺行首）。
+  # TMO-078 嘅 V03 二審當時裁定「保留原語意（超集性質優先）」，但同時記低咗呢個
+  # 更實際嘅假綠面 → backlog TMO-079。
+  #
+  # 而家改成**明確判定**：掃描器逐行追蹤頂層區塊（column-0 嘅 `{` / `}`），
+  # 記低每行所屬區塊嘅 kind（test／func／other）同關閉佢嘅行號；
+  # 規則⑦ 嘅豁免要求「所屬區塊**確實係 `@test` body**」＋「掃描到嗰個區塊嘅
+  # **真實收尾行**」。→ 函式 body 嘅斷言**唔再**被意外豁免。
+  #
+  # 呢支鎖住四個方向（行號如右）：
+  #   案例 1（行 3）：`setup()` 函式 body 嘅最後一句 → 必須**照報**
+  #                   （TMO-079 收緊嘅核心：以前會被「行首 `}`」意外豁免）
+  #   案例 2（行 6）：test body 嘅最後一句，由 `} || {` 收尾 → 必須**唔報**
+  #                   （TMO-079 裁定要保留嘅語意：斷言仍然係 test body 最後一句）
+  #   案例 3（行 11）：test body 入面但**唔係**最後一句 → 必須**照報**（對照組）
+  #   案例 4（行 15）：**裸 column-0 群組** `{ ... }`（唔係 test body、唔係函式）
+  #                   → 必須**照報**（fail-closed：豁免嘅理由只適用於 @test body）
+  #
+  # ⚠️ Fixture **唔會俾 bats 執行**（淨係俾掃描器讀），所以 `} || {` 呢種
+  #    非標準寫法喺度冇問題。
+  # ⚠️ 新增嘅安全案例一律放喺行 3 **之後**，否則 violation 嘅行號會飄 → 期望字串要跟住改。
+  local st="$BATS_TEST_TMPDIR/pna4d-fixture.fixture"
+  {
+    printf '%s\n' '#!/usr/bin/env bats'
+    printf '%s\n' 'setup() {'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '}'
+    printf '%s\n' '@test "edge a: test body closed by } || {" {'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '} || {'
+    printf '%s\n' '  echo cleanup'
+    printf '%s\n' '}'
+    printf '%s\n' '@test "edge c: assertion is not the last command" {'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '  echo after'
+    printf '%s\n' '}'
+    printf '%s\n' '{'
+    printf '%s\n' '  [[ "$a" == "b" ]]'
+    printf '%s\n' '}'
+  } > "$st"
+
+  local out expected
+  out=$(probe_find_standalone_assertions "$st")
+  # 期望：**恰好**三個 violation，行號 = 3（函式 body）、11（唔係最後一句）、
+  # 15（裸 column-0 群組）。
+  # 案例 2（行 6）**唔應該**被報 → 若被報就代表收窄得太狠（連 @test body 都唔豁免）。
+  expected=$(printf '3\t%s\n11\t%s\n15\t%s' '[[ "$a" == "b" ]]' '[[ "$a" == "b" ]]' '[[ "$a" == "b" ]]')
+  [ "$out" = "$expected" ] || {
+    echo "FAIL: 規則⑦ 嘅區塊 kind 判定唔等於期望值（行 3／11／15 應報、行 6 應唔報）" >&2
     echo "  期望: $(printf '%q' "$expected")" >&2
     echo "  實際: $(printf '%q' "$out")" >&2
     return 1

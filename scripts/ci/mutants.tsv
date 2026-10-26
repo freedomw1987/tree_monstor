@@ -14,7 +14,7 @@
 # 性質兩種（TMO-066 二審後明文化）：分類看**目標檔類型**（可機械判定，不看註解）——
 #   * 行為鎖：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 死因必須是語意差。
 #   * 文件／資料契約鎖：目標檔是 `.md`／`.json` 等，探針只斷言檔案文字。
-#   查到現在有幾列（行為鎖 47＋文件／資料契約鎖 10＝57；其中 TMO-071/072/073 再 +5
+#   查到現在有幾列（行為鎖 48＋文件／資料契約鎖 10＝58；其中 TMO-071/072/073 再 +5
 #   —— DD-M1..DD-M3／DR-M1／DR-M2；PNA-M1／PNA-M2 為 TMO-074 掃描器重寫時補嘅
 #   PNA-4b／PNA-4c canary 對應條目）：
 #     awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
@@ -99,4 +99,5 @@ DR-M2	skills/dav-reconciler/reconcile-format.md	| ✅ 已實作 | 需求句的**
 DD-M2	skills/dav-reconciler/scripts/check-doc-drift.py	                if missing:	                if False:  # MUTANT: D7 覆蓋率檢查失效	tests/doc-drift.bats	DOC-DRIFT-024: D7 catches a reconcile table that misses an R-ID
 DD-M3	skills/dav-reconciler/scripts/check-doc-drift.py	            if gaps and declared.startswith("✅"):	            if False:  # MUTANT: D8 狀態矛盾檢查失效	tests/doc-drift.bats	DOC-DRIFT-028: D8 catches a deliverable claiming success while the reconcile has gaps
 PNA-M1	tests/helpers/probe-scan.bash	        if (s !~ /^\[\[/) continue	        if (s !~ /^\[\[/) continue; if (s ~ /^\[\[/) continue	tests/probe-name-ascii.bats	PNA-4b: the standalone-assertion scanner bites
-PNA-M2	tests/helpers/probe-scan.bash	            if (t != "}" && t != "};") break      # ③ 其他 code → 唔豁免	            if (t != "}" && t != "};") continue    # MUTANT: 遇其他 code 唔停 → 內層區塊被錯誤豁免	tests/probe-name-ascii.bats	PNA-4c: the inner-block last-statement rule
+PNA-M2	tests/helpers/probe-scan.bash	              if (t != "}" && t != "};") break      # ③ 其他 code → 唔豁免	if (t != "}" && t != "};") continue    # MUTANT: 遇其他 code 唔停 → 內層區塊被錯誤豁免	tests/probe-name-ascii.bats	PNA-4c: the inner-block last-statement rule
+PNA-M3	tests/helpers/probe-scan.bash	found_body_close = 0	found_body_close = (i >= n)  # MUTANT: 斷言喺檔案最後一行就豁免（案例 E 就係咁 → 守門失效）	tests/probe-name-ascii.bats	PNA-4c: the inner-block last-statement rule

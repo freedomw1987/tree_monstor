@@ -36,6 +36,7 @@
 #   * 表 39 → 43 支（TMO-066 二審收尾；dav-trust v2.4 再 +3 支：DT-M1..M3）。
 #   * 再 +12 支 → **55 支**（TMO-071/072/073：DD-M1..DD-M3 / DR-M1 / DR-M2；
 #     TMO-074 掃描器重寫再加 PNA-M1（PNA-4b canary 對應）＋ PNA-M2（PNA-4c 規則⑦ 對應）→ **57 支**；
+#     TMO-079／080 再加 PNA-M3（PNA-4c 案例 E 對應）→ **58 支**；
 #     TMO-069 Qoder 安裝：QD-M1..QD-M6；TMO-070 jev 間歇紅：RG-M5）。
 #
 # 【第 2 輪 V03 二審（reviewer subagent、verdict = request-changes）後追加】
@@ -78,7 +79,7 @@ run_mmd() {
   printf '%s\n' "$output" | awk -F'\t' 'NF==4' > "$W/list.txt"
   local n
   n=$(grep -c . "$W/list.txt")
-  [ "$n" -eq 57 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 57；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
+  [ "$n" -eq 58 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 58；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
 
   local -a ids=() targets=()
   local line id target probe_file probe

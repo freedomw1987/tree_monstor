@@ -142,6 +142,11 @@
 | 10 | **mutant harness 在截斷多位元組字元時會 UnicodeDecodeError 崩潰**（`text=True` 嚴格解碼）→ 整張表中止 → 其餘 mutant 從未被驗（**既存缺陷**，本輪跑全表才浮現）| P2 | — | **已閉合**（改 `errors="replace"`；rc 才是判定依據）|
 | 11 | ~~**TMO-074**：bats 1.14 在 **bash 3.2**（macOS 預設）+ UTF-8 locale 下靜默丟棄名稱含 CJK 的 `@test` → 探針從未執行（**本機**假綠；CI 的 bash 5.x 不受影響）~~ | — | — | **已閉合**（2026-10-26）：①**21 個探針檔共 134 支**探針名改為純 ASCII（保留 ID 前綴；`mutants.tsv` 的 ASCII ID 仍對得上）→ 計畫數 == 執行數 == 760、`unknown test name` 0 筆；②新增 `tests/helpers/probe-scan.bash` + `tests/probe-name-ascii.bats`（PNA-1～PNA-4）作守門；③ENV-EQ-9 的 canary 改成與環境無關的斷言（→ **ENV-EQ-9 從紅轉綠**）；④連帶修掉 **181 個**「獨立 `[[ ]]` 斷言在 bash 3.2 下不會中止 test body」的假綠→ **本機 bash 3.2 下原本守不住的 6 支 mutant 全部轉死**，全表 **48 支 mutant 跑完**（本機 bash 3.2 動工前整表崩潰）|
 
+> ⚠️ **前提更正（2026-10-26，見 changelog v2.17）**：上表 row 11 入面
+> 「獨立的 `[[ ... ]]` 斷言失敗**不會中止 test body**」經重新量測後證實係**錯**嘅 →
+> 獨立 `[[ ]]` 失敗**會**中止（bats ≥ 1.11 嘅 `bats-exec-test` 用 `set -eET`）。
+> 上表保留原文作歷史記錄；**現行定位見 changelog v2.17**。
+
 ## 6. 反思
 
 | 維度 | 評分 | 說明 |
