@@ -6,6 +6,7 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.9 | 2026-10-26 | `backlog-rules.md` 161 → 156 行（AC 段範本改指標式骨架、Module sprint 範本收窄） | context 成本輕微下降；R-ID 規則、AC 範本生成 SOP、需求錨點檔 SOP 一個字都冇少 |
 | v2.8 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`backlog-rules.md` 173 → 161 行（INVEST／AC 格式／類型混合合併成一段 ＋ 刪重複嘅 Module sprint 說明） | context 成本由 535 行降至 523 行；R-ID 規則、AC 範本生成 SOP、需求錨點檔 SOP 一個字都冇少 |
 | v2.7 | 2026-10-26 | +§4.7 需求錨點檔格式規範（4 段固定結構 + R-ID 規則 + 唯讀邊界）；Step 4 產出物含錨點檔 | TMO-071：需求錨點是對帳（FR-02）的根節點，格式必須可機械驗 |
 | v2.6 | 2026-09-26 | +Step 1.5「來源抽取（複雜任務可選）」：位於 Step 1 後 Step 2 前；觸發條件 + 推薦調用 dav-wiki + 何時跳過 + dav-wiki 未裝 fallback | 用戶決策：複雜任務需求會多次更新、需要回原始來源；dav-wiki 已是 monorepo skill、軟引用而非強制耦合；V03 Reviewer 二審通過（verdict-3）；依賴 dav-wiki skill 需同套安裝 |

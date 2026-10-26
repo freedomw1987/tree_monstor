@@ -42,8 +42,7 @@
 | `src/payment/PaymentServiceImpl.ts` | M02 實作（含 retry / idempotency / connection 釋放）|
 | `src/payment/models/Payment.ts` | 付款單 model + `PaymentStatus` enum |
 | `src/payment-gateway/GatewayAdapter.ts` | 第三方閘道 adapter interface（`StripeAdapter.ts` 為 mock 實作）|
-| `probes/M02-*.test.ts` | 5 個 Module 內探針 |
-| `probes/INT-M01-M02-checkout.test.ts` | 1 個跨 Module 整合探針 |
+| `probes/M02-*.test.ts` / `probes/INT-M01-M02-checkout.test.ts` | 5 個 Module 內探針 ＋ 1 個跨 Module 整合探針 |
 
 ### 2.2 修改檔案
 
@@ -71,8 +70,7 @@
 
 | AC | 描述 | 結果 | 證據 |
 | --- | --- | --- | --- |
-| M02-US-201 AC-1 | 有效信用卡建立付款單 | ✅ | `M02-create-payment-returns-success-on-valid-card` 探針 |
-| M02-US-201 AC-3 | Timeout 釋放 DB connection | ✅ | `M02-payment-timeout-releases-db-connection` 探針 |
+| M02-US-201 AC-1 / AC-3 | 有效信用卡建立付款單／Timeout 釋放 DB connection | ✅ | `M02-create-payment-returns-success-on-valid-card`、`M02-payment-timeout-releases-db-connection` 探針 |
 | M02-US-202 AC-2 | 同一 callback 重複 3 次結果冪等 | ✅ | `M02-payment-callback-is-idempotent` 探針 |
 | M02-US-203 AC-2 | 連續失敗 3 次鎖卡 | ✅ | `M02-payment-retry-blocks-after-3-failures` 探針 |
 | INT-M01-M02-01 AC-1 | 登入後付款完整流程 | ✅ | INT 探針 |
@@ -185,8 +183,7 @@ M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 | 指標 | 數值 |
 | --- | --- |
 | 探針總數 | 5（4 個 M02 + 1 個 INT）|
-| Module 大小（LOC）| ~800 |
-| 測試覆蓋率 | ~85% |
+| Module 大小（LOC）／測試覆蓋率 | ~800／~85% |
 | Module 內聚度 | 高（dav-designer 5 條原則驗證通過）|
 | Module 耦合度 | 低（對外 interface、無直接 import M01 / M03）|
 

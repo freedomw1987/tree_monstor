@@ -19,3 +19,12 @@ D1#US-101#docs/ac/README.md 的教學範例（非真實 backlog 列），backlog
 # D4 = 交付摘要提到的檔案真的存在
 # 2026-10-26 減法：該交付摘要記載的 meta 探針 restruct-agents-md.bats 已隨本次減法刪除
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:tests/restruct-agents-md.bats#2026-10-26 減法：meta 探針 restruct-agents-md.bats 已刪除（歷史交付摘要為 append-only，不回改）
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/TMO-073.html#存量 AC 範本 HTML 產物已於 TMO-083 減法刪除（內容在 git history；HTML 只係 .md 嘅閱讀版重複）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M62.html#存量 AC 範本 HTML 產物已於 TMO-083 減法刪除（內容在 git history；HTML 只係 .md 嘅閱讀版重複）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M63.html#存量 AC 範本 HTML 產物已於 TMO-083 減法刪除（內容在 git history；HTML 只係 .md 嘅閱讀版重複）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M71.html#存量 AC 範本 HTML 產物已於 TMO-083 減法刪除（內容在 git history；HTML 只係 .md 嘅閱讀版重複）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.html#存量 AC 範本 HTML 產物已於 TMO-083 減法刪除（內容在 git history；HTML 只係 .md 嘅閱讀版重複）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-round2.md:docs/ac/TMO-071.html#TMO-083 產物線清理已刪除該檔（內容完整保留在 git history）；本交付摘要點名記錄「刪咗乜」係事實陳述
+D4#2026-10-26-context-slim-round2.md:docs/deliverable/2026-10-26-doc-facts-guard.md#TMO-083 產物線清理已刪除該檔（內容完整保留在 git history）；本交付摘要點名記錄「刪咗乜」係事實陳述
+D4#2026-10-26-context-slim-round2.md:docs/deliverable/2026-10-26-gates-into-skills.md#TMO-083 產物線清理已刪除該檔（內容完整保留在 git history）；本交付摘要點名記錄「刪咗乜」係事實陳述
+D4#2026-10-26-context-slim-round2.md:docs/deliverable/2026-10-26-slim-meta-layer.md#TMO-083 產物線清理已刪除該檔（內容完整保留在 git history）；本交付摘要點名記錄「刪咗乜」係事實陳述

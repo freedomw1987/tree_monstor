@@ -131,9 +131,9 @@ dev-checker-loop v2.2 起支援 **Module 級派工**。Module 定義在 `docs/sy
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.7 | 2026-10-26 | 本輪支援檔無改動（只更新變動歷史以反映 TMO-083 全域瘦身） | 維持可追溯性 |
 | v2.6 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`workflow.md` 200 → 116 行（8 張「步驟／操作／目的」表合併成 2 張 ＋ 狀態機加文字版） | context 成本由 504 行降至 420 行；dev／checker 兩條流程嘅步驟與 jev 整合規則保留不變 |
 | v2.5 | 2026-10-04 | Step 1「動作+為什麼」措辭精確化：明示 backlog / system-design 屬「目標專案」、改寫為非跨目錄讀取式語法；主檔 127 行不變 | TMO-026：V03.6 探針 retarget 附帶修正；V03 Reviewer 二審 approve-with-comments / 0 P0-P1 |
-| v2.4 | 2026-09-26 | +可用性偵測（Step 0）+校驗前/後 jev 快篩與驗證 +escalate 落報告 +術語對齊 +輕量路徑 +6 條新規則；主檔 148 → 127 行 | 用戶決策：全面整合 jev-use；Reviewer ⚠️ approve with suggestions（3 必加 + 3 建議全納入）|
 
 ---
 ---

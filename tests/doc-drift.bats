@@ -1158,8 +1158,9 @@ MD
 @test "DOC-DRIFT-053: header declaring a US without an anchor must not fall back to whole-text scan" {
   # fallback 的條件必須是「標題區**連一個 ID token 都沒有**」，不能是「標題區沒有帶錨點的 US」。
   # 後者會在「標題宣告的 US 沒有 docs/req/ 錨點」時退掃全文，把正文順帶提到的帶錨點 US 拉進對帳
-  # → 重現本票要消滅的假紅。現成**同形**檔：docs/deliverable/2026-10-26-slim-meta-layer.md（標題宣告
-  # 無錨點的 TMO-075）；真正的假紅還需該檔正文再裸提一個**帶錨點**的 US（目前 repo 內無此例）。
+  # → 重現本票要消滅的假紅。**同形**檔曾經存在（docs/deliverable/2026-10-26-slim-meta-layer.md，
+  # 標題宣告無錨點的 TMO-075），已於 TMO-083 減法刪除（內容在 git history）；
+  # 真正的假紅還需該檔正文再裸提一個**帶錨點**的 US（目前 repo 內無此例）。
   local root="$BATS_TEST_TMPDIR/noanchor_head"
   _make_fixture "$root"
   # DEMO-002 有錨點，且它的權威表有 **2 列**（R1/R2）→ 一旦被拉進對帳，內嵌表（只有 R1）就會對不上

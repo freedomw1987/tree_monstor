@@ -8,6 +8,7 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.7 | 2026-10-26 | 本輪支援檔無改動（只更新變動歷史以反映 TMO-083 全域瘦身） | 維持可追溯性 |
 | v2.6 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`workflow.md` 200 → 116 行（8 張「步驟／操作／目的」表合併成 2 張 ＋ 狀態機加文字版） | context 成本由 504 行降至 420 行；dev／checker 兩條流程嘅步驟與 jev 整合規則保留不變 |
 | v2.5 | 2026-10-04 | Step 1「動作+為什麼」措辭精確化：明示 `docs/backlog.md` 與 system-design 取得皆屬「目標專案」、改寫為非跨目錄讀取式語法；主檔行數 127 → 127（不變）| TMO-026：A 類 18 紅清理附帶修正（探針 retarget 時發現 skill 文案有語意模糊）；V03 Reviewer 二審 approve-with-comments、0 P0/P1；P2 建議「應補 CHANGELOG 紀錄」已納入。**v2.5 二次更新（2026-10-05）**：reviewer round B P1-1 修正＝把 TMO-037 折行時造成的內容刪減（Step 3 掉了 regression-guard 探針與 jev 子步驟）**逐字還原**（文字與 `5da880e` 逐字相同、只多 2 個折行）；主檔 **127 → 129 行**（`< 130` 綠區，餘裕僅 1 行 → 下次動本檔須先外移） |
 | v2.4 | 2026-09-26 | +可用性偵測（Step 0 / `which jev-use`）+校驗前 jev 快篩（Module ≥5 檔）+校驗後 jev 驗證 +escalate 落校驗報告 +V03.5 主檔行數預警（B1：143 行黃區）+術語對齊說明（B2：本 skill 三類 vs dav-reflection 一類）+輕量路徑（S2：小 Module 跳過快篩）+ jev 內部失敗 fallback（S3）+M-Step 3 探針點名（B3：`bats tests/restruct-dev-checker-loop.bats`）+6 條新規則；**v2.4 二次更新**：主檔 148 行瘦身至 127 行（綠區）、Step 1/2/4/5「動作/為什麼/產出/證據」4 欄合併、觸發表格 6 列縮至 3 列、規則表 6 條 v2.4 規則濃縮為 1 行指向 workflow.md；workflow.md 新增「## jev 整合細節（v2.4 新增）」含 Step 0 程式碼 +校驗前/後 jev 步驟 +escalate 處理 +術語對齊 +6 條規則完整版 | 用戶決策：全面整合 jev-use；先出方案再啟動 Reviewer（V03）；escalate 降級為人類決策；軟性降級 + 提示安裝；Reviewer verdict = ⚠️ approve with suggestions、全部 3 必加 + 3 建議納入；TECH-003 瘦身：128 → 127 行、回到綠區 |

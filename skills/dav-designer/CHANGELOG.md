@@ -6,6 +6,7 @@
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.6 | 2026-10-26 | `examples/system-design.md` 152 → 136 行（§7 三個「為什麼這樣切割」合併成一張表：問題／理由／放棄嘅做法） | context 成本由 510 → 494 行；Module 切割示範嘅 5 條原則、邊界清單、對外 interface、資料模型、錯誤碼全部保留 |
 | v2.5 | 2026-09-26 | 本次自包含化：搬入 `examples/system-design.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/system-design.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 清「具體 Module 完整生命週期範例的 path 引用」 → 抽象詞「見 monorepo 對應的 X」 | 修 v2.2 跨目錄讀檔引用零容忍存量；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 拆檔：主檔瘦身到 ~75 行，Step 1-5 全剖細節 → `workflow.md` | 達 150 行上限；與 dav-planner v2.2 拆檔哲學一致 |

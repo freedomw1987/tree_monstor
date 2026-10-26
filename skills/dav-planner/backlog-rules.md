@@ -55,21 +55,17 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 - `DE-301` / `TECH-401`：跨 Module 的 Bug / 技術債（不綁 Module）
 - 不寫 Module 欄位 = `M00` fallback
 
-**AC 段範本**（v2.3 沿用 INVEST + Given-When-Then）：
+**AC 段範本**（v2.3 沿用 INVEST + Given-When-Then；**完整可抄範例**見同套本 skill 子檔 `./examples/backlog.md`）：
 
-```markdown
-## M01-US-101 詳細
-
-- **對應 Module**: M01（user-auth）
+```
+## <US-ID> 詳細
+- **對應 Module**: <Module 代碼（名稱）>
 - **負責 dev**: （派工後填入）
-- **預估時間**: 3 SP
-- **AC**:
-  - **AC-1** (Given-When-Then): Given 用戶輸入正確密碼 When 點登入 Then 進入首頁
-  - **AC-2** (Given-When-Then): Given 用戶輸入錯誤密碼 3 次 When 第 3 次登入 Then 鎖定 5 分鐘
-  - **AC-3** (DoD): 探針 `M01-user-login-returns-correct-data` 必通過
+- **預估時間**: <N> SP
+- **AC**: 3 條以上 Given-When-Then + DoD（技術視角 checklist）
 - **依賴**: —
-- **驗收方式**: 跑 `REGRESSION_MODULE=M01 ./run_pipeline.sh M01-US-101`
-- **為什麼這個優先**（v2.3 新增）：P0 是因為這是其他 Module（M02 / M03）的入口
+- **驗收方式**: 跑 `REGRESSION_MODULE=<M> ./run_pipeline.sh <US-ID>`
+- **為什麼這個優先**: <一句講清優先級理由>
 ```
 
 ### §4.3.2 Module 級 sprint 規劃（v2.3 新增）
@@ -79,7 +75,7 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 > regression-guard v2.10 用 `REGRESSION_MODULE=M01` 跑全 Module 探針。
 > **為什麼 Module 級 sprint**：平行化加速（M01 / M02 兩個 dev 同時做）｜錯誤範圍隔離｜探針邊界清楚（`REGRESSION_MODULE` 限定）。
 
-**Module 級 sprint 範本**：
+**Module 級 sprint 範本**（完整範例見同套本 skill 子檔 `./examples/backlog.md`「Module 級 Sprint 規劃」節）：
 
 ```markdown
 ## Sprint 1（Module M01 整體交付）
@@ -87,9 +83,8 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 | US ID | 類型 | Module | 標題 | 優先級 | SP | 狀態 |
 | --- | --- | --- | --- | --- | --- | --- |
 | M01-US-101 | US | M01 | 用戶登入 | P0 | 3 | PENDING |
-| M01-US-102 | US | M01 | 忘記密碼 | P0 | 5 | PENDING |
-| M01-US-103 | US | M01 | 修改密碼 | P1 | 3 | PENDING |
 | M01-DE-301 | DE | M01 | 修正登入 token 過期 | P1 | 2 | PENDING |
+```
 
 ## §4.4 類型混合管理
 

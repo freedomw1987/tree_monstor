@@ -75,7 +75,7 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 > 這章是**可選章節**：預設 regression-guard 流程（Steps 1-4 + 上述全部規則）對多数項目已足夠。
 > 只有在「柔性 AC / 真假 bug 混淆 / Confidence-gated 自動行動」等場景才需要。
 
-完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 511 行），見 [`jev-oracle.md`](./jev-oracle.md)。
+完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 320 行），見 [`jev-oracle.md`](./jev-oracle.md)。
 
 ## Gate 定義（本節是 single source 之一；機器可讀副本 `docs/sop/gates.json`）
 
@@ -99,9 +99,9 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.13 | 2026-10-26 | `jev-oracle.md` 511 → 319 行、M6／M6.1 示範段去重（內容留喺 `examples.md`）、CI matrix YAML 刪走只留設計表 | context 成本由 1,623 → 1,431 行；Jev Oracle 嘅**規則同判準**（gating 表、safety 表、auto-classify 表）一個唔少 |
 | v2.12 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`examples.md` 861 → 291 行（Jev Oracle 章節同 `jev-oracle.md` 重複 → 壓成索引 ＋ 保留被探針錨定嘅四種輸出同 fix proposal 契約）、`testing-methods.md` 388 → 184 行（9 類測試法合併成對照表 ＋ 可抄骨架）、`PoC/README.md` 274 → 176 行（5 張 milestone 證據表合併成 1 張） | agent 每次觸發 skill 都要讀落 context 嘅量過大（regression-guard 單個 skill 就 2,495 行）；去重 ＋ 表格化後降至 1,623 行，零被探針錨定嘅契約損失 |
 | v2.11 | 2026-09-26 | 自包含化：搬入 `examples/probes/`（3 個 .ts，原 monorepo 範例總目錄內的 probes 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/probes/」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
-| v2.10 | 2026-09-26 | Module 感知邏輯：探針必含 Module prefix；`REGRESSION_MODULE` 環境變量限定 Module 範圍；規則表加 3 條 Module 規則；dev-checker-loop v2.2 對齊 | 用戶決策：Module = 一組檔案；v2.6 dav-designer 鋪路、v2.2 dev-checker-loop 實作，本 skill 補完「探針 → Module」綁定 |
 
 ---
 ---

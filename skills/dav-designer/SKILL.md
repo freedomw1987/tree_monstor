@@ -92,9 +92,9 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
 
 | 版本 | 日期 | 變動 | 為什麼 |
 |------|------|------|------|
+| v2.6 | 2026-10-26 | `examples/system-design.md` 152 → 136 行（§7 三個「為什麼這樣切割」合併成一張表：問題／理由／放棄嘅做法） | context 成本由 510 → 494 行；Module 切割示範嘅 5 條原則、邊界清單、對外 interface、資料模型、錯誤碼全部保留 |
 | v2.5 | 2026-09-26 | 自包含化：搬入 `examples/system-design.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/system-design.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
 | v2.4 | 2026-09-26 | 拆檔：主檔瘦身到 ~75 行，Step 1-5 全剖細節 → `workflow.md` | 達 150 行上限；與 dav-planner v2.2 拆檔哲學一致 |
-| v2.3 | 2026-09-26 | +Module 目的與切割原則（Step 1）+ Module 邊界即測試邊界（Step 3）| 用戶決策：Module 為「可獨立開發 / 增減 / 測試」的功能單位 |
 
 ---
 ---

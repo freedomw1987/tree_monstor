@@ -123,27 +123,11 @@ enum PaymentStatus {
 
 ## 7. 為什麼這樣切割（dav-designer v2.6 「為什麼」溝通）
 
-### 7.1 為什麼 M02 不包含 checkout？
-
-M04 checkout 是「編排者」，呼叫 M01 + M02 + M03 完成結帳流程。如果 M02 包含 checkout：
-
-- M02 的「付款」職責會被 checkout 稀釋
-- 測試 M02 變數增加（要 mock checkout）
-- M02 無法獨立交付（要等 checkout 一起）
-
-### 7.2 為什麼 M02 用 event bus 通知 M03？
-
-M02 不應該 import M03 的 Order model。改用 event bus：
-
-- M02 / M03 可獨立部署
-- M03 故障時 M02 仍可運作（訊息會 retry）
-- 介面更乾淨（M02 只 emit「payment.success」event，不需知道誰消費）
-
-### 7.3 為什麼 M02 對外是 interface 不是 class？
-
-- 易測試：M04 可 mock `PaymentService` interface
-- 易替換：未來換付款閘道不影響 M04
-- 易演進：M02 內部 refactor 不影響外部
+| 問題 | 理由 | 放棄嘅做法 |
+|------|------|------------|
+| **為什麼 M02 不包含 checkout？** | M04 checkout 係「編排者」，呼叫 M01 + M02 + M03 完成結帳。若 M02 包含 checkout：M02 嘅「付款」職責會被稀釋、測試 M02 變數增加（要 mock checkout）、M02 無法獨立交付 | 把 checkout 一併放進 M02 |
+| **為什麼 M02 用 event bus 通知 M03？** | M02 唔應該 import M03 嘅 Order model；改用 event bus → M02 / M03 可獨立部署、M03 故障時 M02 仍可運作（訊息會 retry）、介面更乾淨（M02 只 emit event，唔需知道誰消費）| 直接 `import { OrderModel } from 'src/order'`（破壞 Module 邊界、測試時要 mock M03）|
+| **為什麼 M02 對外是 interface 不是 class？** | 易測試（M04 可 mock `PaymentService`）、易替換（未來換付款閘道不影響 M04）、易演進（M02 內部 refactor 不影響外部）| 對外暴露 class（M04 會 import 整個 class，耦合度高；測試難）|
 
 ## 8. 變動歷史
 

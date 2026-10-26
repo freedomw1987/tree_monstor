@@ -122,75 +122,18 @@ fi
 
 ---
 
-## §4 邊角情境
+## §4 邊角情境（8 種）
 
-### 4.1 跨午夜
-
-```bash
-# 假設 23:50 啟動、deadline 1 小時後 = 00:50 明天
-date -d "now + 1 hour" '+%Y-%m-%d %H:%M:%S %z'
-```
-
-**若用戶給「X 小時後」跨越午夜** → Agent 必須問用戶「是明天 X 點還是今天稍後」。
-
-### 4.2 時區
-
-- 用戶沒指定時區 → 用 Agent 所在時區（`date` 查到的 `+0800` 之類）
-- 用戶明示「UTC」/「台北」→ 鎖死該時區
-
-### 4.3 deadline 已過
-
-```bash
-# 啟動時若 DEADLINE_TS 已過
-NOW_EPOCH=$(date '+%s')
-if [ "$DEADLINE_TS_EPOCH" -lt "$NOW_EPOCH" ]; then
-  echo "⚠️ deadline 已過，Agent 必須停下、不能啟動 trust mode"
-fi
-```
-
-**Agent 動作**：停下問用戶「deadline 已過，請重新給」。
-
-### 4.4 用戶中途改 deadline
-
-| 用戶訊息 | Agent 動作 |
-|---------|-----------|
-| 「改 deadline 到 18:00」 | ✅ 可更新錨點 + trust-log 加記錄 `📝 deadline 變更` |
-| 「不要 trust mode 了」 | 結束 trust mode（見 SKILL.md §Step 5）|
-
-### 4.5 沙盒環境無法跑 `date` shell
-
-- **情境**：Agent 在受限沙盒（無 shell、無 `date` 指令）
-- **Agent 動作**：
-  1. 停下問用戶「環境無法跑 `date`，請給我當前時間（精確到秒）」
-  2. 用用戶給的時間作為 `START_TS`
-  3. trust-log 第一條加 `📝 時間由用戶提供（非系統查詢）`
-- **限制**：T2-T5 仍需用戶提供每個關鍵節點的時間（無法自主算剩餘時間）
-
-### 4.6 極短 deadline（< 10 分鐘）
-
-- **情境**：用戶給「trust mode 跑 5 分鐘」
-- **Agent 動作**：
-  1. 啟動時明示警告「deadline 極短、L3 不會啟動、僅能完成 0-1 個 Backlog」
-  2. 跳過 L1→L2 階段、直接評估單一 Backlog 是否值得做
-  3. 若 Backlog 預估時間 > deadline → 標 ⏸️ 不啟動 trust
-
-### 4.7 DST 切換日（春令/秋令）
-
-- **情境**：3 月春令（少 1 小時）或 11 月秋令（多 1 小時）
-- **Agent 動作**：
-  1. 啟動時若跨 DST 日 → 用 `date -d "DEADLINE_TS"` 驗證系統是否自動處理 DST
-  2. 若用戶給「今天 18:00」、deadline 跨 DST → 系統時間可能差 1 小時
-  3. 鎖死時用 epoch 換算（`date -d "DEADLINE" '+%s'`）→ 避免字串比對 DST 漂移
-
-### 4.8 Agent 與用戶時區不同
-
-- **情境**：Agent 在 UTC、用戶在 +0800
-- **Agent 動作**：
-  1. 啟動時問用戶「您在哪個時區？」（`date` 查 Agent 自己的時區可能誤判）
-  2. DEADLINE_TS 同時記兩個：`USER_TS = 2026-01-15 18:00 +0800`、`AGENT_TS = 2026-01-15 10:00 UTC`
-  3. trust-log 用 **用戶時區**（USER_TS）顯示，內部計算用 epoch 避免漂移
-
----
+| # | 情境 | Agent 動作 |
+|---|------|-----------|
+| 4.1 | **跨午夜**（「X 小時後」跨過午夜） | 必須問用戶「是明天 X 點還是今天稍後」（epoch 換算：`date -d "now + 1 hour"`） |
+| 4.2 | **時區未指定 / 明示** | 未指定 → 用 Agent 所在時區（`date` 查到的 `+0800` 類）；明示 UTC／台北 → 鎖死該時區 |
+| 4.3 | **啟動時 deadline 已過** | 停下問用戶「deadline 已過，請重新給」（唔可以啟動 trust mode）|
+| 4.4 | **用戶中途改 deadline** | ✅ 可更新錨點 + trust-log 加記錄 `📝 deadline 變更`；「不要 trust mode 了」→ 結束 trust mode |
+| 4.5 | **沙盒無法跑 `date`** | 停下問用戶當前時間（精確到秒）→ 用該時間作 `START_TS` → trust-log 第一條加 `📝 時間由用戶提供（非系統查詢）`；T2-T5 仍需用戶逐個提供 |
+| 4.6 | **極短 deadline（< 10 分鐘）** | 啟動時明示警告「L3 不會啟動、僅能完成 0-1 個 Backlog」；跳過 L1→L2；預估時間 > deadline → 標 ⏸️ 不啟動 trust |
+| 4.7 | **DST 切換日**（春/秋令） | 用 `date -d "DEADLINE_TS"` 驗證系統是否自動處理 DST；⚠️ 跨 DST 日子**系統時間可能差 1 小時**；鎖死時用 epoch 換算（`date -d "DEADLINE" '+%s'`）避免字串比對漂移 |
+| 4.8 | **Agent 與用戶時區不同** | 啟動時問用戶時區；同時記 `USER_TS` 同 `AGENT_TS`；trust-log 用用戶時區顯示、內部計算用 epoch |
 
 ## §5 與 SOP 規範的關係
 

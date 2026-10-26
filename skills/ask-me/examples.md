@@ -1,12 +1,13 @@
 # Ask Me — 範例集
 
-> 配合主檔見範例（指本 skill 的 SKILL.md）；本檔存放 need-you-help.md 完整範本、雙寫前後對照、實戰時間軸、邊角情境。
+> 配合主檔見範例（指本 skill 的 SKILL.md）；本檔存放 need-you-help.md 結構骨架、雙寫前後對照、實戰時間軸、邊角情境。
 
 ---
 
-## 1. need-you-help.md 完整範本（上游 trust skill 創建時寫的格式）
+## 1. need-you-help.md 格式（上游 trust skill 創建時寫）
 
 > ⚠️ 本節是「上游 trust skill 創建待辦擔憂檔時的格式範本」，本 skill 消化時只改 ☐→☑ 和抉擇欄。
+> 同一個格式嘅**完整範本**（檔頭 + 一條擔憂）見 `dav-trust` skill 子檔；呢度只列**結構骨架**：
 
 ```markdown
 # Need Your Help — CRM 會員系統開發
@@ -16,31 +17,17 @@
 
 ---
 
-## ⚠️ US-105 匯出 CSV
+## ⚠️ <US-ID> <短標題>
 
-**Backlog**: 客戶列表支援 CSV 匯出（10 萬筆）
-**擔憂**: 同步匯出 10 萬筆可能 timeout（30s），且會 block UI thread
-**影響範圍**: US-102 客戶列表的效能、用戶體驗
-**建議**: 改用 streaming 匯出 或 加進度條
-
-**抉擇**:
-- [ ] 繼續做（接受風險，10 萬筆超時請改批次）
-- [ ] 改設計（分批 / streaming 匯出）
-- [ ] 跳過（不做這個功能）
-
----
-
-## ⚠️ US-103 表單驗證
-
-**Backlog**: 客戶新增/編輯表單加 zod schema 驗證
-**擔憂**: 第三方驗證庫 zod v3 與現有 TypeScript 5.x 相容性未知
-**影響範圍**: 表單提交流程
-**建議**: 用原生 TypeScript 寫簡單驗證（避免依賴）
+**Backlog**: <一句講清呢條擔憂對應嘅 Backlog>
+**擔憂**: <具體會點出事>
+**影響範圍**: <影響邊啲功能>
+**建議**: <建議點做>
 
 **抉擇**:
-- [ ] 繼續做（試試看 zod，不行再換）
-- [ ] 改設計（用原生 TS 寫）
-- [ ] 跳過（不做表單驗證）
+- [ ] 繼續做（<接受咩風險>）
+- [ ] 改設計（<改成咩>）
+- [ ] 跳過（<唔做嘅影響>）
 ```
 
 ---
@@ -100,35 +87,12 @@
 ## 3. 實戰時間軸範例
 
 ```
-[Trust Mode 自然結束：deadline 到 / 用戶叫停]
-    ↓
-Agent 輸出「🏁 Trust Mode 已結束」+ 標記有 need-you-help.md 待處理
-    ↓
-用戶：「ask-me，幫我處理 need-you-help」
-    ↓
-🤖 開始 ask-me
-    ↓
-📋 共 2 個未確認擔憂（US-103 表單驗證、US-105 匯出 CSV）
-    ↓
-⚠️ US-103 表單驗證
-   擔憂：zod v3 與 TypeScript 5.x 相容性未知
-   建議：用原生 TS 寫簡單驗證
-    ↓
-用戶：✅ 繼續做（試試看 zod，不行再換）
-    ↓
-✏️ 雙寫：need-you-help.md ☐→☑ + backlog.md ⏸️→✅
-    ↓
-⚠️ US-105 匯出 CSV
-   擔憂：10 萬筆同步匯出可能 timeout
-   建議：streaming 匯出 或 加進度條
-    ↓
-用戶：📝 改設計（分批 / streaming 匯出）
-    ↓
-✏️ 雙寫：need-you-help.md ☐→☑ + backlog.md ⏸️→📝 + US-105 名稱加「（分批）」
-    ↓
-📋 沒有更多未確認擔憂
-    ↓
-🏁 ask-me 結束
+[Trust Mode 結束] → Agent 輸出「🏁 Trust Mode 已結束」+ 標記有 need-you-help.md 待處理
+    ↓ 用戶：「ask-me，幫我處理 need-you-help」 → 🤖 開始 ask-me
+    ↓ 📋 共 2 個未確認擔憂（US-103 表單驗證、US-105 匯出 CSV）
+⚠️ US-103（擔憂 + 建議） → 用戶：✅ 繼續做 → ✏️ 雙寫：need-you-help.md ☐→☑ + backlog.md ⏸️→✅
+⚠️ US-105（擔憂 + 建議） → 用戶：📝 改設計 → ✏️ 雙寫：need-you-help.md ☐→☑ + backlog.md ⏸️→📝 + 名稱加「（分批）」
+    ↓ 📋 沒有更多未確認擔憂 → 🏁 ask-me 結束
 
 處理: 2/2 項
 - US-103: ✅ 繼續做（用戶決定試 zod）
