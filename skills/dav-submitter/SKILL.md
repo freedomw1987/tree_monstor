@@ -14,11 +14,12 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
    - V01：對話摘要 + Markdown 詳錄，一次只談一個任務
    - V02：下一步建議必含「驗收方式 / 預估時間 / 風險提示」
    - v2.0 交付規則：兩層產出物（對話 + Markdown），**不產 HTML**；反思**併進** Markdown 末段「## 反思」
-   - **v2.1 為什麼必溝通**：每次交付必明示「為什麼做這個改動 / 為什麼這個設計 / 為什麼放棄其他選項」 — 不是只有「做了什麼」、更是「為什麼這樣做」。讓用戶驗收時不只看「做了什麼」，更理解「為什麼」
+   - **v2.1 為什麼必溝通**：每次交付必明示「為什麼做這個改動 / 為什麼這個設計 / 為什麼放棄其他選項」——
+     讓用戶驗收時唔只睇「做了什麼」，更理解「為什麼這樣做」
    - **v2.5 需求對帳硬門檻**：本次 US 有需求錨點時，交付摘要必含「需求對帳」段；對帳未全數對上 → 狀態**不得**標「✅ 完成」，只能「⚠️ 部分完成」+ 待補清單
 5. **必產出物**：
    - 對話摘要（90 秒可讀，含「為什麼」獨立段）
-   - `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`（含「為什麼」獨立段 + 反思末段 + 需求對帳段）
+   - `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`（含「為什麼」獨立段 + 反思末段 + 需求對帳段；**只留最近一次** → `./retention.md`）
 
 ## 觸發時機
 
@@ -39,30 +40,16 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 ### v2.2 Module 級交付（新場景）
 
-> v2.2 起：dav-submitter 可交付單個 Module（不只是單個 US）。
-
-- **單個 US 交付**
-  - 交付單位：1 個 AC 套件
-  - 適合 skill：dav-submitter（本 skill）
-- **單個 Module 交付**
-  - 交付單位：Module 內所有 US 集合
-  - 適合 skill：dav-submitter（本 skill）+ 本 skill Step 3.5 微總結
-- **多個 Module 交付**
-  - 交付單位：Module 集合 + cross-module integration
-  - 適合 skill：本 skill Step 3.5 宏觀總結
-- **整個 repo / sprint 結束**
-  - 交付單位：整個交付歷史
-  - 適合 skill：本 skill Step 3.5 宏觀總結
-
-**Module 級交付的差異**：
-
-1. **Backlog ID 格式**：`<MODULE_CODE>-<US_ID>`（如 `M01-US-101`、`M02-US-203`）；多 US 同 Module 交付時在 §2.1-2.3 用 `M01 多 US 集合` 代表
-2. **Module 邊界即測試邊界**（v2.8 dav-developer 規則）：探針必含 Module prefix；交付檔必明記 Module
-3. **deliverable.md 命名**：`docs/deliverable/<YYYY-MM-DD>-<module>-<slug>.md`（Module 級）或原本
-   `<YYYY-MM-DD>-<task-slug>.md`（US 級）
-4. **Module 交付有「第 9 段」**：§9 Module 級總結（包含多 US 間的關聯、跨 Module 遺留問題、Module 級技術債）
-
-詳見 `module-delivery.md` 子檔（v2.2 新增）。
+> v2.2 起：dav-submitter 可交付單個 Module（唔只單個 US）。交付單位 4 級：
+> 單個 US（1 個 AC 套件）｜單個 Module（Module 內所有 US 集合）｜多個 Module（＋ cross-module integration）
+> ｜整個 repo / sprint 結束（整個交付歷史）—— 後三級用 Step 3.5 微總結。
+>
+> 差異 4 點：① Backlog ID 用 `<MODULE_CODE>-<US_ID>`（如 `M01-US-101`）
+> ② Module 邊界即測試邊界（探針必含 Module prefix）
+> ③ 交付檔命名加 Module 段（`<date>-<module>-<slug>.md`）
+> ④ Module 級交付多咗「§9 Module 級總結」
+>
+> 詳見同套本 skill 子檔（`./module-delivery.md`）。
 
 ## 流程（5 步）
 
@@ -84,9 +71,13 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 - **動作**：套用 `skills/dav-submitter/template.md` 模板（含 `## 1.2 為什麼做這個改動`、`## 2.4 改動背後的理由`、`## 8. 反思` 段），寫入
   `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
-- **為什麼**：v2.0 規則；v2.1 加「為什麼」獨立段；Markdown 詳錄是 audit trail（含反思 + 設計判斷理由）
-- **產出**：`docs/deliverable/<...>.md` 完整檔案（含為什麼）
-- **證據**：bats 探針驗證檔案存在；包含「為什麼做這個改動」段 + `## 反思` 段
+- **保留策略**：`docs/deliverable/` **只保留最近一次交付摘要**（舊嘅靠 git history，刪之前先 commit）；
+  **連帶嗰次交付嘅引用鏈要留低**（`docs/req/<US>-requirement.md` ＋ `docs/reconcile/<US>-reconcile.md`）——
+  唔留的話，文件漂移檢查嘅 D8 硬門檻（窗內要有交付摘要可對帳）會失效
+- **為什麼**：v2.0 規則；v2.1 加「為什麼」獨立段；詳錄是 audit trail（含反思 + 判斷理由）；
+  交付摘要愈積愈多只會浪費 agent／用戶嘅時間同 token（完成嘅記錄 git history 已經有）
+- **產出**：`docs/deliverable/<...>.md` 完整檔案（含為什麼）＋ 該次交付嘅 req 錨點 ＋ 對帳表（留低）
+- **證據**：bats 探針驗檔案存在；含「為什麼做這個改動」段 + `## 反思` 段；`docs/deliverable/` 只有最新一份
 
 ### Step 3.5：反省（v2.6 併入：原 dav-reflection skill）
 
@@ -116,13 +107,11 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 ### Step 5：更新 Backlog + 確認下一步（完成項要移出）
 
-- **動作**：更新 `docs/backlog.md` 嘅狀態 → **完成（done）嘅 row 要移出 backlog**
-  （記錄去交付摘要 ＋ 該 US 嘅需求錨點 ＋ git history；backlog 只留未完成嘅嘢）
-- **為什麼**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會愈滾愈大，
-  令 agent／用戶每次都要重讀已完嘅嘢（浪費時間同 token）
+- **動作**：更新 `docs/backlog.md` 嘅狀態 → **完成（done）嘅 row 要移出**（記錄去交付摘要 ＋ 需求錨點 ＋ git history）
+- **為什麼**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會愈滾愈大，令 agent／用戶每次都要重讀已完嘅嘢
 - **產出**：backlog.md 只剩未完成（todo／doing／⏸️）嘅 row
 - **證據**：backlog.md 冇已完成 row；被移出嘅 row 在交付摘要有對應記錄
-- **參考**：同套 `dav-planner` 子檔（`./backlog-rules.md` §4.5）
+- **參考**：保留策略 → 同套本 skill 子檔（`./retention.md`）；backlog 細節 → `dav-planner` §4.5
 
 - **動作**：對應 `docs/backlog.md` 已更新；提示用戶下一步要做什麼、提供具體選項
 - **為什麼**：Backlog 同步狀態；引導用戶繼續 SOP 第一步
@@ -141,6 +130,7 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 - **「為什麼」必含（v2.1 新增）** — 例外：緊急修復可簡為一句話；限制：對話摘要 + Markdown §1.2 + §2.4 都必含
 - **Module 級交付可觸發（v2.2 新增）** — 例外：預設 US 級交付；限制：Module 級需在對話明示「Module 級交付」
 - **需求對帳硬門檻（v2.5 新增）** — 例外：本次 US 無需求錨點（存量任務）；限制：對帳未全數對上 → 不得標「✅ 完成」；缺對帳段 → 視同未對帳
+- **Backlog 只留未完成 ＋ 交付摘要只留最近一次**（`./retention.md`）— 例外：`⏸️` 暫停要留；引用鏈要留低；限制：移出前先 commit
 - **術語一致（跟 dav-planner 術語表）** — 例外：專案層冇術語表 → 照常用詞；限制：專案層有 `docs/glossary_list.md` → 交付摘要同對話一律用入面嘅術語
 
 ---
@@ -150,4 +140,5 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 - Markdown 詳錄模板（含 `## 反思` 段 + v2.1 為什麼必含）→ 見同套本 skill 子檔（`./template.md`）
 - Module 級交付細節 → 見同套本 skill 子檔（`./module-delivery.md`）
 - 反省流程（6 維度 + 三級別模板）→ 同套本 skill 子檔（`./reflection-checklist.md`、`./reflection-templates.md`）
+- **交付摘要 ＋ docs 保留 vs 歸檔策略** → 同套本 skill 子檔（`./retention.md`）
 - Module 完整生命週期範例（含 v2.2 Module 級交付樣本）→ 見本 skill 的 `examples/deliverable-sample.md`

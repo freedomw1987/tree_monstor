@@ -113,6 +113,10 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
   - **點解**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會令 backlog 愈滾愈大、
     令 agent／用戶每次都要重讀已完嘅嘢（浪費時間同 token）
   - 每次更新 backlog 都要順手檢查：有冇已完成嘅 row 殘留 → 有就移出（並喺交付摘要記低）
+- **同一套「保留 vs 歸檔」判斷（docs 層）**（2026-10-27）：`docs/` 淨留「仲有用」嘅
+  （SOP／CI／工具／術語表／設計文件／範本／未完成 US 嘅檔 ＋ 最近一次交付摘要 ＋ 佢引用鏈）；
+  其餘（完成 US 嘅 ac／req／reconcile、已交付專案嘅 PRD、舊交付摘要）靠 git history 歸檔
+  —— 完整清單 ＋ 執行次序 → 同套 `dav-submitter` 子檔（`./retention.md`）
 
 ## §4.6 AC 範本生成 SOP（v1.8 新增，含 HTML）
 
