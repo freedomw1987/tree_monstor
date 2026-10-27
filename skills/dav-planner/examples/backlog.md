@@ -129,9 +129,3 @@ REGRESSION_MODULE=INT ./run_pipeline.sh INT-M01-M02-01
 | INT 完成 | Module 級 | `docs/deliverable/2026-XX-XX-int-checkout-full-flow.md` |
 
 ---
-
-## 變動歷史
-
-| 版本 | 日期 | 變動 | 為什麼 |
-| --- | --- | --- | --- |
-| v1.0 | 2026-09-26 | 初始 Module 級 sprint（含 Module 欄位） | dav-planner v2.3 範例 |

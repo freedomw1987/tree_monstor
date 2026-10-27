@@ -242,4 +242,4 @@ echo "==> 驗證"
 echo
 echo "完成。接著可跑："
 echo "  bats tests/                                    # 全套"
-echo "  bats tests/v2.1-jev-poc.bats                   # 只跑 PoC 探針"
+echo "  bats skills/regression-guard/tests/v2.1-jev-poc.bats                   # 只跑 PoC 探針"

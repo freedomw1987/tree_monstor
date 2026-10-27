@@ -2,6 +2,13 @@
 
 [![CI](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml)
 
+> **CI 係偵測器，唔係閘**（TMO-084，2026-10-27）：本 repo 係平時自用嘅技能庫，閘喺本機 ——
+> 探針全綠 ＋ lint 0 issue ＋ mutant 全死 ＋ Reviewer 二審。一條指令跑齊：
+> `bash scripts/check-all.sh`。CI 仍然會跑（跨環境偵測用），但**唔阻 merge**。
+>
+> **regression-guard 嘅 CI 完全唔喺 GitHub 跑**（2026-10-27 用戶決策）：改用本機 runner
+> `bash skills/regression-guard/PoC/run_ci.sh all`（`probes`／`pipeline`／`matrix`／`cleanup-scan`）。
+
 `tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent、Qoder 等）的**工作 SOP + skills**。
 `install.sh` 把它 expose 到 agent 的讀取路徑（全域或專案層），以 symlink 為主，改源檔即時生效。
 
@@ -103,7 +110,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | [`dav-wiki`](skills/dav-wiki/SKILL.md) | 文件知識庫化：PDF / 網頁 / OCR / 字幕 → Markdown |
 | [`dav-trust`](skills/dav-trust/SKILL.md) | 信任模式：給大目標 + deadline 後自主跑完 SOP 執行段（執行 → 反省 → 提交；規劃 / 設計須啟動前完成；支援中斷續跑 / 用戶叫停）|
 | [`ask-me`](skills/ask-me/SKILL.md) | 逐題確認 trust 期間的待決擔憂，回寫 backlog |
-| [`dav-skill-creater`](skills/dav-skill-creater/SKILL.md) | 提煉 / 修改 skill，守住 5 段結構與 150 行上限 |
+| [`dav-skill-creater`](skills/dav-skill-creater/SKILL.md) | 提煉 / 修改 skill，守住 4 段結構、文檔行數限制與 150 行上限 |
 | [`pptx-slim`](skills/pptx-slim/SKILL.md) | PPTX 就地減重：轉碼影片／重壓圖片、只換媒體重打包、四關驗證（含畫質關） |
 
 ## 進階

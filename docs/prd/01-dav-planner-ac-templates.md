@@ -265,7 +265,7 @@ HTML 結構（嵌入 CSS）：
 - [ ] `docs/ac/US-101.html` 範例檔已建立（含 CSS）
 - [ ] `dav-planner/SKILL.md` §4.3.2 已新增（AC 精簡規則）
 - [ ] `dav-planner/SKILL.md` §4.6 已新增（HTML 生成 SOP）
-- [ ] `tests/dav-planner-ac-templates.bats` 已建立（≥ 5 個探針）
+- [ ] （2026-10-27 減法：該探針檔已刪 → 本項檢查由人手做）
 - [ ] 全部 bats 測試通過
 - [ ] `docs/sop/handbook/changelog.md` v1.8 已新增
 - [ ] Reviewer subagent verdict: PASS（無 blocker）

@@ -133,24 +133,27 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
 | **M2** journey 生成 | `journey_generator.py` + `journey_gen.py` | 讀 AC → 兩階段 Jev call（complexity score + action plan choice）→ human-readable YAML；自動拆步（complexity 0-3 → 1~4 步 / AC）+ depends_on chain；US-101 4 條 AC → 9 步（2.25 步 / AC）、8 個 Jev call、3.4s |
 | **M3** dry-run loop | `journey_runner.py` + `run_journey.py` | observe → Jev → verdict → recheck 迴路；AC-aware mock 觀察器；stale detection（連續 3 步同 state + fail → block）；`--json-output` 落盤；US-101 預設 3 pass / 6 fail / 0 block / 2ms 全 cache；stale-test 模式 7 fail + 2 BLOCKED |
 | **M4** batch report | `batch_report.py` + `run_report.py` + `run_pipeline.sh` | 4 題 batch call（overall_health / fix_priority / flaky_likelihood / regression_type）；`REGRESSION_REPORT_PATH` env；Markdown 報表（emoji + 表格 + 每步結果 + 信心分布）；US-101 → 🔴 red / fix_priority 2.93 / flaky 0.22 / real_bug；Cost $0.000070 / latency 628ms（cache 重跑免費）|
-| **M5** 去 hardcode | `fixtures/US-101.yaml` + `_load_fixture()` | config-driven 觀察（脫離 hardcoded dict）；stale 限「同一 AC」（`current_ac_id` 狀態機）；`mock_observe_static`（stale-test 門檻降為 2）；`run_dry()` 統一入口（CLI 從 ~50 行收縮到 ~20 行）；`tests/v2.1-jev-poc.bats` 16 探針全綠；向後相容（仍 3 pass / 6 fail）|
+| **M5** 去 hardcode | `fixtures/US-101.yaml` + `_load_fixture()` | config-driven 觀察（脫離 hardcoded dict）；stale 限「同一 AC」（`current_ac_id` 狀態機）；`mock_observe_static`（stale-test 門檻降為 2）；`run_dry()` 統一入口（CLI 從 ~50 行收縮到 ~20 行）；`skills/regression-guard/tests/v2.1-jev-poc.bats` 16 探針全綠；向後相容（仍 3 pass / 6 fail）|
 
 **M5 化解決的 TMO-011 反思問題**：
 `ac_aware_observe` hardcoded → config-driven｜Stale 跨 AC 誤判 → 狀態機 reset｜
 `--stale-test` 散在 CLI → 抽進 `run_dry()`｜無 bats 探針 → 16 探針。
 
-## CI 整合（GitHub Actions）
+## CI 整合（本機跑）
 
-`.github/workflows/regression-guard-jev-poc.yml` 跑 2 個 job：
+2026-10-27 用戶決策：「regression-guard 的 ci 在本地跑都得，不用在 github 上跑」
+→ GitHub Actions workflow 已刪除；改用本機 runner `skills/regression-guard/PoC/run_ci.sh`：
 
-| Job | 用途 | 不需 / 需 API key |
+| Subcommand | 用途 | 不需 / 需 API key |
 |---|---|---|
-| `bats` | 跑探針 | 不需 |
-| `pipeline` | 跑 `run_pipeline.sh` | 需（走 `secrets.OPENROUTER_API_KEY`）|
+| `probes` | 跑 `skills/regression-guard/tests/v2.1-jev-poc.bats` | 不需 |
+| `pipeline` | 跑 `run_pipeline.sh <story>` | 需（本機 `OPENROUTER_API_KEY`）|
+| `matrix` | 跑多個 story ＋ 匯總 `matrix-summary.md` | 需 |
+| `cleanup-scan` | 跑 `docs/cleanup/cleanup-scan.py` | 不需 |
 
-**Return code gate**：`0` (green) 通過｜`2` (yellow) warning（不擋 merge）｜`1` (red) error，擋 merge。
+**Return code gate**：`0` (green) 通過｜`2` (yellow) warning（唔擋）｜`1` (red) error，擋｜`3` 用法／環境錯誤。
 
-詳細 branch protection + secrets 設定見
+詳細（本機用法 ＋ 目標專案用 GH Actions 參考）見
 [`docs/ci/regression-guard-jev-poc.md`](../../../docs/ci/regression-guard-jev-poc.md)。
 
 ---
@@ -159,18 +162,7 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
 confidence gating 確保不誤導修正循環。
 
 **已完成**：M3.1 Playwright Chrome driver + dispatcher（`OBSERVER_BACKEND=playwright` 切換）｜
-M6 fix proposal CLI + SKILL Step 4 整合｜CI workflow + return code gate。
+M6 fix proposal CLI + SKILL Step 4 整合｜**本機 CI runner + return code gate**（2026-10-27：唔再喺 GitHub Actions 跑）。
 
 **Out of scope（順延到真實 PENDING US 觸發時）**：M3.2 真實 driver 跑 example.com｜
-CI 進 GH Actions 啟用 + branch protection 實際開設｜多 story_id matrix pipeline。
-
-## 變動歷史
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|---|---|---|---|
-| M0 | 2026-09-28 | 環境探勘：看 docs/backlog.md、docs/ac/US-101.md、regression-guard skill 子檔 | 先理解現實再動工 |
-| M1 | 2026-09-28 | oracle + AC parser + example runner + cache fixture；介面改 /api/alpha/decisions；加三層 key loader；真 API 驗證 | 證明「讀 AC → Jev → verdict」流程跑得起來 |
-| M2 | 2026-09-28 | journey_generator.py + journey_gen.py CLI；兩階段 Jev call；產 journeys/US-101.yaml | 證明「讀 AC → Jev 自評拆步 → 產 journey spec」跑得起來 |
-| M3 | 2026-09-28 | journey_runner.py + run_journey.py CLI；dry-run loop；AC-aware mock observer；stale detection；加 --json-output | 證明 observe→Jev→verdict→recheck 迴路 + block 機制跑得起來，不接 Chrome |
-| M4 | 2026-09-28 | batch_report.py + run_report.py CLI；4 題 batch call；report.json + .md 雙輸出；run_pipeline.sh 一鍵串接 M2→M3→M4 | 證明 end-of-run 4 維度綜合判定跑得起來 |
-| M5 | 2026-09-28 | fixtures/US-101.yaml config-driven；stale 限「同一 AC」；`run_dry()` 統一入口；16 支 bats 探針 | 16/16 探針過；M3 行為完全向後相容（3 pass / 6 fail）|
+目標專案喺自己 repo 開 GitHub Actions（branch protection 實際開設）｜cleanup-scan 自動排程。

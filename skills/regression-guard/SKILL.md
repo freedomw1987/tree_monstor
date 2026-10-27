@@ -75,7 +75,7 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 > 這章是**可選章節**：預設 regression-guard 流程（Steps 1-4 + 上述全部規則）對多数項目已足夠。
 > 只有在「柔性 AC / 真假 bug 混淆 / Confidence-gated 自動行動」等場景才需要。
 
-完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 320 行），見 [`jev-oracle.md`](./jev-oracle.md)。
+完整 Jev Oracle（M6 / M6.1 / M6.2 / M6.3 / Flaky / M7 / M8 / CI 整合，共 296 行），見 [`jev-oracle.md`](./jev-oracle.md)。
 
 ## Gate 定義（本節是 single source 之一；機器可讀副本 `docs/sop/gates.json`）
 
@@ -89,20 +89,9 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 | fail_action | 不可聲稱『做完了』 |
 | mandatory_phrase | 依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 完整測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。|
 
-> 機器可讀副本：`docs/sop/gates.json`（`tests/gate-in-skill.bats` 鎖兩邊逐條一致）。
+> 機器可讀副本：`docs/sop/gates.json`（鎖兩邊一致嘅探針已於 2026-10-27 減法刪走 → 兩邊要人手同步）。
 >
 > 測試指令必須禁用 interactive / watch 模式（詳見上方 TTY fail-fast 對照表）。
-
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v2.13 | 2026-10-26 | `jev-oracle.md` 511 → 319 行、M6／M6.1 示範段去重（內容留喺 `examples.md`）、CI matrix YAML 刪走只留設計表 | context 成本由 1,623 → 1,431 行；Jev Oracle 嘅**規則同判準**（gating 表、safety 表、auto-classify 表）一個唔少 |
-| v2.12 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`examples.md` 861 → 291 行（Jev Oracle 章節同 `jev-oracle.md` 重複 → 壓成索引 ＋ 保留被探針錨定嘅四種輸出同 fix proposal 契約）、`testing-methods.md` 388 → 184 行（9 類測試法合併成對照表 ＋ 可抄骨架）、`PoC/README.md` 274 → 176 行（5 張 milestone 證據表合併成 1 張） | agent 每次觸發 skill 都要讀落 context 嘅量過大（regression-guard 單個 skill 就 2,495 行）；去重 ＋ 表格化後降至 1,623 行，零被探針錨定嘅契約損失 |
-| v2.11 | 2026-09-26 | 自包含化：搬入 `examples/probes/`（3 個 .ts，原 monorepo 範例總目錄內的 probes 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/probes/」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
-
 ---
 ---
 
@@ -115,6 +104,5 @@ description: 在開發過程中埋入探針，透過 REGRESSION_MODE 環境變�
 - 探針命名 + 粒度 → 同套本 skill 子檔（`./probe-naming.md`）
 - Jev Oracle 補充（進階） → 同套本 skill 子檔（`./jev-oracle.md`）
 - Module 完整生命週期範例（含 Module prefix 探針）→ 見本 skill 的 `examples/probes/`
-- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
 
 **核心精神**：語言可以換，框架可以變，但 Regression Guard 的原則永存。

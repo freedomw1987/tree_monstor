@@ -310,7 +310,7 @@
 - [x] `skills/dav-reconciler/` 主檔 ≤150 行（120 行）、frontmatter 齊全、5 段導航、純文字引用
 - [x] 對帳表格式 + 硬門檻規則已登錄（dav-submitter v2.5 + `template.md` §3.1）
 - [x] handbook §2.3 / §2.4 已登錄 Gate 4.5（`gates.json` 刻意不動，見 ADR-D1）；2026-10-26 起改由 `skills/dav-reconciler/SKILL.md` 承載
-- [x] `bats tests/restruct-dav-reconciler.bats` 綠（16 條）
+- [x] 探針綠（2026-10-27 減法後檔名：`skills/dav-reconciler/tests/doc-drift.bats`）
 
 ### 階段 3（TMO-073）
 

@@ -121,20 +121,9 @@ dev-checker-loop v2.2 起支援 **Module 級派工**。Module 定義在 `docs/sy
 | fail_action | 不可進入 §2.4 反省 |
 | mandatory_phrase | 依 gates.json 規範，Gate 4 (reviewer) 需要：checker 回傳『沒找到更多問題』+ playwright-cli E2E 全綠（含截圖），並在對話貼出 checker subagent 原文回傳。|
 
-> 機器可讀副本：`docs/sop/gates.json`（`tests/gate-in-skill.bats` 鎖兩邊逐條一致）。
+> 機器可讀副本：`docs/sop/gates.json`（鎖兩邊一致嘅探針已於 2026-10-27 減法刪走 → 兩邊要人手同步）。
 >
 > 純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示「無 UI 故不適用」及理由。
-
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v2.7 | 2026-10-26 | 本輪支援檔無改動（只更新變動歷史以反映 TMO-083 全域瘦身） | 維持可追溯性 |
-| v2.6 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`workflow.md` 200 → 116 行（8 張「步驟／操作／目的」表合併成 2 張 ＋ 狀態機加文字版） | context 成本由 504 行降至 420 行；dev／checker 兩條流程嘅步驟與 jev 整合規則保留不變 |
-| v2.5 | 2026-10-04 | Step 1「動作+為什麼」措辭精確化：明示 backlog / system-design 屬「目標專案」、改寫為非跨目錄讀取式語法；主檔 127 行不變 | TMO-026：V03.6 探針 retarget 附帶修正；V03 Reviewer 二審 approve-with-comments / 0 P0-P1 |
-
 ---
 ---
 
@@ -143,4 +132,3 @@ dev-checker-loop v2.2 起支援 **Module 級派工**。Module 定義在 `docs/sy
 - Module 感知邏輯細節 → 同套本 skill 子檔（`./module-rules.md`）
 - regression-guard 探針規則 → 見同套 regression-guard skill（需同套安裝）
 - Module 完整生命週期範例（含本 skill 校驗清單）→ 見本 skill 的 `examples/checklist.md`
-- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

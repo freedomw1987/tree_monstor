@@ -34,18 +34,13 @@ Jev PoC 已在 `skills/regression-guard/PoC/` 跑出 M1-M5 完整 milestone，**
 | `PoC/batch_report.py` | 4 維度 end-of-run 報告 |
 | `PoC/run_pipeline.sh` | M2→M3→M4 一鍵串接 |
 
-**3 種 observer backend 選用**：
+**3 種 observer backend**（`.venv/bin/python run_journey.py journeys/US-101.yaml`）：
 
-```bash
-# 預設：ac_aware（從 fixtures/<story_id>.yaml 讀）
-.venv/bin/python run_journey.py journeys/US-101.yaml
-
-# 純 mock（不接 fixture）
-OBSERVER_BACKEND=mock .venv/bin/python run_journey.py journeys/US-101.yaml
-
-# 真 Chrome driver（要 uv pip install playwright + playwright install chromium）
-OBSERVER_BACKEND=playwright .venv/bin/python run_journey.py journeys/US-101.yaml
-```
+| `OBSERVER_BACKEND` | 用途 | 備註 |
+|---|---|---|
+| `ac_aware`（預設）| 從 `fixtures/<story_id>.yaml` 讀 | — |
+| `mock` | 純 mock，不接 fixture | — |
+| `playwright` | 真 Chrome driver | 要 `uv pip install playwright` ＋ `playwright install chromium` |
 
 ## 實作成本預估
 
@@ -104,11 +99,8 @@ JEV_FIX_PROPOSAL=1 .venv/bin/python fix_proposal.py /tmp/<STORY>-run.json
 
 **適用情境**：v1 M6 fix proposal 跑出整體信心度 **≥ 0.5** 時，由「當下對話的 LLM agent」接力寫 fix 文字。
 
-**為什麼是 skill 本身 LLM（不接外部 Claude/GPT）**：
-
-- regression-guard 本身是個 skill → 召喚它時的 LLM（subagent / pi 本身）就是「接力的 LLM」
-- 不增加外部依賴、不增加 API cost、不增加 prompt 邏輯雙重來源
-- prompt template 是「檔案」而非 hardcoded 字串 → 可由 skill 維護者迭代、不需改 code
+**為什麼是 skill 本身 LLM（不接外部 Claude/GPT）**：召喚 regression-guard 嗰個 LLM（subagent／pi 本身）
+就係「接力的 LLM」→ 冇外部依賴、冇額外 API cost、prompt template 係檔案（可迭代、唔使改 code）。
 
 **流程（3 步）**：① pipeline 產 v1 + v2 + prompt bundle → ② 在對話中讀 `prompt.md`、
 按 template 寫 `answer.md` → ③ `fix_proposal_v2.py` 拼 final report（指令見 `./examples.md`）。
@@ -136,13 +128,9 @@ JEV_FIX_PROPOSAL=1 .venv/bin/python fix_proposal.py /tmp/<STORY>-run.json
 ② `playwright_patcher.py` dry-run（看 diff 不改檔）→ ③ `--apply` → ④ 重跑 journey 產 after.json
 → ⑤ `re_validate.py` 比對 before/after → regression 時 `playwright_patcher.py --rollback`。
 
-**三個模組**（在 `PoC/`）：
-
-| 模組 | 角色 | 入口 |
-|---|---|---|
-| `patch_parser.py` | 從 fix_proposal_v2.md 抽 (file, old, new) | `parse_fix_proposal(md_text) → ParseResult` |
-| `playwright_patcher.py` | apply patch（dry-run / apply / rollback）| `apply_patch(file, old, new, dry_run=True)` |
-| `re_validate.py` | 比較 before/after verdict 分布 | `re_validate(before.json, after.json)` |
+**三個模組**（在 `PoC/`）：`patch_parser.py`（抽 `(file, old, new)` → `parse_fix_proposal(md_text)`）｜
+`playwright_patcher.py`（apply patch：dry-run／apply／rollback → `apply_patch(file, old, new, dry_run=True)`）｜
+`re_validate.py`（比較 before/after verdict 分布 → `re_validate(before.json, after.json)`）。
 
 **safety 規則**（`playwright_patcher.py`）：
 
@@ -154,13 +142,7 @@ JEV_FIX_PROPOSAL=1 .venv/bin/python fix_proposal.py /tmp/<STORY>-run.json
 | `old_text` 出現 1 次 + --apply | ✅ apply + .bak 已建 |
 | `--rollback` | ⏪ 從 .bak 還原 |
 
-**自動分類**（`re_validate.py`）：
-
-| fail delta | 分類 | 建議 |
-|---|---|---|
-| < 0 | 🟢 improvement | keep patch |
-| > 0 | 🔴 regression | rollback |
-| = 0 | 🟡 no_change | review |
+**自動分類**（`re_validate.py`）：fail delta < 0 → 🟢 improvement（keep patch）｜> 0 → 🔴 regression（rollback）｜= 0 → 🟡 no_change（review）。
 
 **Pipeline 整合**：`JEV_PATCH_AND_REVALIDATE=1 ./run_pipeline.sh US-M62` 一鍵跑 M2→M3→M4→M6→M6.1→M6.2。
 → M6.2 步驟只「產 patch 素材」（`-patches.json`），apply / re-validate 仍需手動在 sandbox 跑。
@@ -210,13 +192,8 @@ flaky_likelihood = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
 
 **實測（US-M62 跑 5 次）**：fail=12 / blocked=1 / pass=0 每次都一致 → flaky_likelihood = 0.0 → 🟢 **stable**。
 
-**flaky_check.py 模組**（在 `PoC/`）：
-
-| 函數 | 用途 |
-|---|---|
-| `RunRecord` | 一次跑的 verdict 計數 + blocked + wall time |
-| `analyze_runs(runs)` | 聚合 + 計算 flaky_likelihood + 分類 |
-| `render_flaky_report(report)` | 渲染 flaky_report.md |
+**flaky_check.py 模組**（在 `PoC/`）：`RunRecord`（一次跑嘅 verdict 計數 + blocked + wall time）｜
+`analyze_runs(runs)`（聚合 + 計 flaky_likelihood + 分類）｜`render_flaky_report(report)`（渲染 flaky_report.md）。
 
 **為什麼 flaky_likelihood 重要**：CI 訊號穩定（穩定嘅 journey 結果可以信）｜regression 報告加值（標記「這次跑是否 flaky」）
 ｜debug 線索（flaky 高嘅 journey 多半係 Jev cache 命中、observer 不穩、AC 定義模糊）。
@@ -224,7 +201,8 @@ flaky_likelihood = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
 ## CI 定期檢查：docs/cleanup-scan 排程
 
 **適用情境**：repo 文件會隨時間累積（PRD、reflection、audit trail）；定期自動掃描找出「建議刪除」的文件。
-**排程**：`cron: '0 0 * * 1'`（每周一 00:00 UTC），job `cleanup-scan` 跑 `python docs/cleanup/cleanup-scan.py --json`。
+**排程**：2026-10-27 起本 repo 唔喺 GitHub Actions 跑 → **自己排程或人手跑**
+`bash skills/regression-guard/PoC/run_ci.sh cleanup-scan`（內部行 `cleanup-scan.py --json`）。
 
 **cleanup-scan.py 4 類**：
 
@@ -238,7 +216,7 @@ flaky_likelihood = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
 **為什麼不自動刪 DELETE**：可能是 audit trail｜可能是重要文件但缺交叉引用｜可能是 contributor 故意留下的 work-in-progress。
 **為什麼是 weekly 不是 daily**：文件分類變化不快；daily 太頻繁，CI minutes 浪費。
 
-**手動觸發**：`gh workflow run regression-guard-jev-poc.yml` 選 workflow_dispatch 即可。
+**本機觸發**：`bash skills/regression-guard/PoC/run_ci.sh cleanup-scan`（2026-10-27 起本 repo 唔再喺 GitHub Actions 跑 → 冇 cron 自動跑，要自己排程或人手跑）。
 
 ## M7 修正循環補充：flaky 整合 + gh pr comment
 
@@ -280,10 +258,8 @@ comment 失敗不中斷 → CI 不會因 gh token 問題 block。
 ## M8 修正循環補充：CI matrix pipeline
 
 **適用情境**：多個 US 同時變更時，需要一次看多個 regression 結果。
-**做法**：workflow 嘅 `pipeline` job 用 `matrix.story_id` 並行跑多個 story，各自產 artifact；
-`aggregate-matrix` job（`needs: pipeline`、只在 `workflow_dispatch`）下載全部 artifact 合併成 `matrix-summary.md`。
-
-**Matrix summary 輸出**：
+**做法**：本機 runner `run_ci.sh matrix` 預設跑 3 個 story（`US-101`／`US-M62`／`US-M63`），
+各自產報告，再合併成 `matrix-summary.md`（表格式同下）：
 
 | Story | Health | Fix Priority | Flaky | Type |
 |-------|--------|--------------|-------|------|
@@ -291,30 +267,30 @@ comment 失敗不中斷 → CI 不會因 gh token 問題 block。
 | `US-M62` | 🔴 red | 2.97 | 0.00 | real_bug |
 | `US-M63` | 🟡 yellow | 1.80 | 0.20 | flaky |
 
-**3 個關鍵設計**：
+**3 個關鍵設計**：`fail-fast: false`（一個 fail 不停其他）｜最差 verdict 先決定整體 rc｜可傳自訂 story 列表。
+（2026-10-27 前呢段講嘅係 GitHub Actions 嘅 `matrix` + `aggregate-matrix` job；該 workflow 已刪 → 見下一節。）
 
-| 設計 | 原因 |
-|---|---|
-| `fail-fast: false` | 一個 fail 不 cancel 其他；reviewer 一次看 3 個結果 |
-| `workflow_dispatch` 才跑 | push/PR 跑 3 個太慢 |
-| `merge-multiple: true` | 一次下載全部 artifact |
+## CI 整合補充（本機跑）
 
-**workflow_dispatch vs push/PR**：push/PR 只跑單一 story_id（matrix 預設 3 個但只跑 1）
-｜`workflow_dispatch` 跑完整 matrix + aggregate（多 US 變更需要一次看多結果；自動 trigger 太慢，人工 trigger 拿可控性）。
+2026-10-27 用戶決策：「regression-guard 的 ci 在本地跑都得，不用在 github 上跑」
+→ `.github/workflows/regression-guard-jev-poc.yml` **已刪除**；原本 4 個 job 改由本機 runner
+`skills/regression-guard/PoC/run_ci.sh` 承擔：
 
-## CI 整合補充
-
-workflow 在 `.github/workflows/regression-guard-jev-poc.yml`：
-
-| Job | 用途 | 觸發 | 需 API key |
+| 原本 job | 而家 | 用途 | 需 API key |
 |---|---|---|---|
-| `bats` | 跑探針 | push / PR / dispatch | ❌ |
-| `pipeline` | 跑 `run_pipeline.sh <STORY>` | push / PR / dispatch | ✅ (secret) |
+| `bats` | `probes` | 跑 `tests/v2.1-jev-poc.bats` | ❌ |
+| `pipeline` | `pipeline` | 跑 `run_pipeline.sh <STORY>` | ✅（本機 `OPENROUTER_API_KEY`）|
+| `aggregate-matrix` | `matrix` | 跑多個 story ＋ 匯總 `matrix-summary.md` | ✅ |
+| `cleanup-scan` | `cleanup-scan` | 跑 `docs/cleanup/cleanup-scan.py` | ❌ |
 
-**Return code gate**（擋 merge）：
+**Return code gate**（同原本 workflow 一致）：
 
 - `0` (green) — 通過
-- `2` (yellow) — warning，不擋 merge
-- `1` (red) — error，**擋 merge**
+- `2` (yellow) — warning，唔擋
+- `1` (red) — error，**擋**
+- `3` — 用法／環境錯誤（缺 key／缺 venv）
 
-詳細 branch protection + secrets 設定見 [`docs/ci/regression-guard-jev-poc.md`](../../docs/ci/regression-guard-jev-poc.md)。
+⚠️ verdict 由 batch report JSON 嘅 `overall_health` 讀（`run_pipeline.sh` 嘅離開碼永遠係 0 → 捉唔到紅燈）。
+
+目標專案想自己喺 GitHub Actions 跑（secrets／branch protection）見
+[`docs/ci/regression-guard-jev-poc.md`](../../docs/ci/regression-guard-jev-poc.md)。

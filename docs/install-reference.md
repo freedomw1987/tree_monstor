@@ -261,7 +261,7 @@ description: |
 
 ## 開發 / 測試
 
-> ℹ️ **探針總數會隨開發變動，一律以 `bats --count tests/` 為準**；本文件不再硬編總數（TMO-061）。
+> ℹ️ **探針總數會隨開發變動，一律以 `bats --count tests/`（repo 級）＋ `bats --count skills/*/tests/`（skill 級）為準**；本文件不再硬編總數（TMO-061）。
 
 ```bash
 # 跑全部測試
@@ -289,10 +289,10 @@ bats --version                           # 應顯示 Bats 1.14.0
 
 ### 跑全套測試前：建 Jev PoC venv（必需）
 
-`tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
+`skills/regression-guard/skills/regression-guard/tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
 靜態檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時
 這批案例會全紅，而且每一條失敗測試各自印出修復指令（TMO-038 起該名單由探針自動列舉，不再硬編；
-**確切條數以 `bats --count tests/v2.1-jev-poc.bats` 為準**）：
+**確切條數以 `bats --count skills/regression-guard/tests/v2.1-jev-poc.bats` 為準**）：
 
 ```bash
 bash skills/regression-guard/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
@@ -302,29 +302,29 @@ skill 自帶探針（`skills/*/tests/*.bats`）**不在** `bats tests/` 內，�
 `~/.pi/agent/skills`，在 repo 內請用覆寫變數指向本 repo（否則會 fail-closed 紅）：
 
 ```bash
-SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
+bats skills/*/tests/*.bats
 ```
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）會有一批紅**（確切條數 = `bats --count tests/` 減去實跑 `ok`，隨新增探針變動）：
+> **clean clone（無 venv）會有一批紅**（確切條數 = `bats --count skills/regression-guard/tests/` 減去實跑 `ok`，隨新增探針變動）：
 > - `v2.1-jev-poc.bats` 的 venv-dependent 子集
 > - `poc-clean-clone.bats`（CLEAN-POC-f/i，整檔離線重跑也要 venv）
 > - `env-equivalence.bats`（ENV-EQ-7 網路黑洞下的 oracle 子集）
 > - `poc-bootstrap.bats`（**只在缺 PyYAML 的機器上紅**：TMO-038 的 CI 契約語意斷言用 PyYAML 解 workflow）
-> 全部都是**紅＋修復指令**（不 skip）；`tests/poc-bootstrap.bats` 那條是刻意取捨：
+> 全部都是**紅＋修復指令**（不 skip）；`skills/regression-guard/tests/poc-bootstrap.bats` 那條是刻意取捨：
 > 字串比對看不到 trigger／步驟先後／矩陣，而 CI 的執行次序保證了 venv 先建好。
 
 ### 環境等價探針（TMO-041）
 
-`tests/env-equivalence.bats` 守「本機全綠 ≠ CI 全綠」那類假綠。`bats tests/` 的條數**以 `bats --count tests/`
+`tests/env-equivalence.bats` 守「本機全綠 ≠ CI 全綠」那類假綠。repo 級 `bats tests/` 的條數**以 `bats --count tests/`
 為準**；CI 另跑 skill 自帶探針（`skills/*/tests/*.bats`，TMO-047 起），所以 CI 實際執行 =
-`bats --count tests/` ＋ skill 自帶探針數：
+`bats --count tests/` ＋ skill 自帶探針數（`bats --count skills/*/tests/`）：
 
 | 探針 | 守什麼 | 本機需要什麼 |
 |------|--------|--------------|
 | ENV-EQ-1 | 本機要有 bash 5.x（CI 的 ubuntu 就是 5.x）| macOS：`brew install bash`（沒裝 → 紅＋這行指令，不 skip） |
-| ENV-EQ-2 | **每一個**本機可用的 bash 版本都跑一遍 `tests/wiki-cleanup.bats` | 同上（macOS 多一個 5.x 版本要跑） |
+| ENV-EQ-2 | **每一個**本機可用的 bash 版本都跑一遍 `skills/dav-wiki/tests/wiki-cleanup.bats` | 同上（macOS 多一個 5.x 版本要跑） |
 | ENV-EQ-3 | PATH shim 真的把 bash 換掉（不然 ENV-EQ-2 是假的） | — |
 | ENV-EQ-4 | 空陣列 × `set -u` 行為逐版本量測並印表 | — |
 | ENV-EQ-5 | 探針不得寫固定 `/tmp/<name>`（跨 run 殘檔 → 假綠） | `python3` |
@@ -333,16 +333,16 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 | ENV-EQ-8 | `scripts/ci` 護欄腳本自動列舉：不得有孤兒鎖，`--self-test` 必須自己綠 | `python3` |
 | ENV-EQ-9 | `@test` 宣告數 == `bats --count`（防「宣告 N／實跑 N-3」；含 CJK 名稱 canary） | bats |
 | ENV-EQ-10 | 本機安裝文件必須教釘版 bats（只鎖 CI 一側＝本機仍漂移） | — |
-| ENV-EQ-11 | skill 自帶探針（`skills/*/tests/*.bats`，≥2 檔）存在且 CI 真跑：override 下逐檔實跑綠、不得 `skip`、每檔須認 override；空 root 必紅（防空過）；`ci.yml` 恰好一步 | bats |
-| ENV-EQ-12 | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 頂層與 `skills/*/tests/`；**精確 regex**，因 CI 的 `bats tests/` 非遞迴）＋列舉下限 ≥40。列舉用 `find`（才抓得到未追蹤檔），再以 `git check-ignore -q` **逐檔**排除 gitignored 項（依 gitignore 事實，非硬編清單；`git check-ignore` 預設看 index → **被追蹤的檔永不排除**，故 gitignored 樹內若有被追蹤 `.bats` 仍會被檢查） | find + git check-ignore + bash regex |
+| ENV-EQ-11 | skill 自帶測試（`skills/*/tests/*.bats`，≥1 檔）存在且 CI 真跑；`ci.yml` 恰好一步；`scripts/test-skill.sh --list` 要列得出 skill | bats |
+| ENV-EQ-12 | 全 repo `.bats` 不得有 orphan（只允許 `tests/` 頂層與 `skills/*/tests/`；**精確 regex**，因 CI 的 `bats tests/` 非遞迴）＋列舉下限 ≥25。列舉用 `find`（才抓得到未追蹤檔），再以 `git check-ignore -q` **逐檔**排除 gitignored 項（依 gitignore 事實，非硬編清單；`git check-ignore` 預設看 index → **被追蹤的檔永不排除**，故 gitignored 樹內若有被追蹤 `.bats` 仍會被檢查） | find + git check-ignore + bash regex |
 | ENV-EQ-13 | 每個 shell 檔須宣告 shell（shebang 或 `# shellcheck shell=`）＋ Gate 2 指令須自我列舉且含 `*.sh`／`*.bash`＋下限 ≥20 | git |
 | ENV-EQ-14 | 每個被追蹤 `.py` 須 `ast.parse` 通過、`.json` 須 `json.load` 通過（stdlib、不寫 `__pycache__`）＋下限 ≥25／≥5 | python3 |
-| ENV-EQ-15 | `.bats` 不得有**下列字面**的空過斷言：`[ true ]`／`[[ true ]]`／單行 `true`／`:`（先剝行尾註解再比對）＋下限 ≥40。**注意**：`\|\| true`、`[[ 1 -eq 1 ]]` 等變體**不在鎖內**（實測 `.bats` 內有 49 處 `\|\| true`，硬鎖會誤殺） | grep + sed |
+| ENV-EQ-15 | `.bats` 不得有**下列字面**的空過斷言：`[ true ]`／`[[ true ]]`／單行 `true`／`:`（先剝行尾註解再比對）＋下限 ≥25。**注意**：`\|\| true`、`[[ 1 -eq 1 ]]` 等變體**不在鎖內**（實測 `.bats` 內有 49 處 `\|\| true`，硬鎖會誤殺） | grep + sed |
 | ENV-EQ-16 | 每個被追蹤文字檔須以換行結尾（binary 以 NUL 嗅探排除）＋下限 ≥100 | python3 |
 | ENV-EQ-17 | shell／CI 檔不得有「`$var` 緊接非 ASCII 字元」——bash 3.2 + UTF-8 locale 會把該字元首位元組吞進變數名（`$f（` → 展開 `$f\xef`）。實作：`scripts/ci/lint-shell-var-nonascii.py` | python3 + git |
 | ENV-EQ-18 | CI `test` job 必須跑**自我列舉**的 shellcheck，且 `Verify bash syntax` 不得回頭用硬編子集 glob；這兩步不得有 `\|\| true`／`continue-on-error` | git + awk |
 | ENV-EQ-19 | `scripts/ci/*.sh` 在**每一個本機可用** bash 版本 × 每支腳本（組合數必須全部跑到）＋UTF-8 locale 下都必須 rc=0 且有輸出 | bash 多版本 |
-| （另檔）SSG-1..3 | `tests/skill-size-guard.bats`：每個 `SKILL.md` ≤150 行＋CI 必須呼叫自動列舉腳本 | — |
+| （已刪）SSG-1..3 | `tests/skill-size-guard.bats`：2026-10-27 減法已刪 → 規則改由 `dav-skill-creater` 規範承擔（文檔行數限制）| — |
 
 四個靜態鎖的實作在 `scripts/ci/lint-probe-tmp-paths.py`、`scripts/ci/lint-probe-tools.py`、
 `scripts/ci/lint-shell-var-nonascii.py` 與 `scripts/ci/lint-probe-secrets.py`（鎖 4：密鑰不得進 FAIL
@@ -358,7 +358,7 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 CI 的 bats-core 已釘版：兩個 runner 都 `git clone --branch v1.14.0`＋`install.sh /usr/local`
 （apt 的 bats 與 brew 的 bats-core 版本會漂移，`@test` 名稱／旗標行為跟著變），契約由
-`tests/poc-bootstrap.bats` 的 PyYAML 語意斷言鎖住（兩平台同 tag、`>= v1.14.0`）。
+`skills/regression-guard/tests/poc-bootstrap.bats` 的 PyYAML 語意斷言鎖住（兩平台同 tag、`>= v1.14.0`）。
 
 2026-10-05 CI 首跑後另修三件事（見 `ENV-EQ-17/18/19`）：clone 位置改 `$RUNNER_TEMP`
 （過去 clone 進工作區，會被 `ENV-EQ-12` 當成 ~250 個孤兒 `.bats`）、macOS leg 改裝 bash 5
@@ -380,7 +380,7 @@ bash 3.2 的覆蓋改由本機 `ENV-EQ-19` 接手（逐版本實跑 `scripts/ci/
 
 ### 可選：dav-wiki 媒體提取的測試依賴
 
-`tests/wiki-extract-media.bats` 有一部分案例需要額外工具；**缺工具時這些探針會直接失敗**（不會 skip），
+`skills/dav-wiki/tests/wiki-extract-media.bats` 有一部分案例需要額外工具；**缺工具時這些探針會直接失敗**（不會 skip），
 因為它們是產品承諾的功能，不是可選裝飾：
 
 | 工具 | 用在哪 | 安裝 |

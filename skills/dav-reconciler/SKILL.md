@@ -125,7 +125,7 @@ python3 <安裝後的 skill 目錄>/scripts/check-doc-drift.py --root .
 
 > Gate 4.5 是**內嵌子關卡**，不進 `docs/sop/gates.json`（該檔的 gate `id` 受 schema 限制，
 > 只允許整數編號的四大 Gate）。它的定義本體在 `docs/sop/handbook/2.3-execution.md` 的
-> 「Gate 4.5 需求對帳」段（本節為該段的 skill 端鏡像；`tests/gate-in-skill.bats` 鎖兩邊一致）。
+> 「Gate 4.5 需求對帳」段（本節為該段的 skill 端鏡像；鎖兩邊一致嘅探針已於 2026-10-27 減法刪走 → 兩邊要人手同步）。
 
 | 欄位 | 內容 |
 |------|------|
@@ -133,12 +133,3 @@ python3 <安裝後的 skill 目錄>/scripts/check-doc-drift.py --root .
 | required_evidence | ① 需求對帳表（落在目標專案的 reconcile 目錄）② 未參與實作的 subagent 對帳原文回傳 ③ 交付摘要的「需求對帳」段與覆蓋率 |
 | fail_action | 不可進入 §2.4 反省 |
 | mandatory_phrase | 依 §2.3 規範，Gate 4.5 (需求對帳) 需要：對帳表覆蓋全部 R-ID + 獨立 subagent 對帳原文 + 交付狀態與對帳結果一致，並在對話貼出對帳表與覆蓋率。|
-
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v1.1 | 2026-10-26 | 配套探針修正 + 檢查工具收緊：RECON-007 解析器改 python3（修 BSD grep 交替分支上限 bug）；`check-doc-drift.py` 的 `--from-date` 改為格式驗證 + fail-closed（rc=2）；新增 DOC-DRIFT-036/037 | 第 6 輪對帳：RECON-007 v1.0 的 `grep -oE` 在 BSD grep 2.6 上只認 2 個交替分支 → 探針本身紅 → mutant 守護整表中止（4 支從未被真的跑到）；`--from-date` 傳入非法值會讓 D8 硬門檻被靜默關掉 → 假綠。兩者皆為**工具缺陷**，非需求缺口 |
-| v1.0 | 2026-10-26 | 初版建立（需求對帳機制：5 步流程 + 硬門檻 + 降級路徑）| TMO-072：使用者回報「用戶提出需求，最後 AI 出來的成果對不上」；根因之一是 pipeline 內沒有任何一環在做「需求 ↔ 成果」比對，交付摘要由執行者自評 |

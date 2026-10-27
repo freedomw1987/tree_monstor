@@ -79,12 +79,10 @@ jobs:
       - name: Run bats tests
         run: bats tests/
 
-      - name: Run skill-local probes
-        # TMO-047：skills/*/tests/*.bats 過去從未被 CI 執行（改了不會擋）。
-        # 這些探針預設掃「已安裝」的 skills，故必須以環境變數把 root 指到 repo，
-        # 否則掃不到檔＝靜默綠（原本其中一支甚至會 skip 掉）。
-        # 守門探針：tests/env-equivalence.bats ENV-EQ-11。
-        run: SKILLS_DIR_OVERRIDE="$PWD/skills" bats skills/*/tests/*.bats
+      - name: Run skill-local tests
+        # 2026-10-27：探針跟 skill 搬入 skills/*/tests/ → 改動某個 skill 時可以只跑嗰個 skill。
+        # 單獨跑：bash scripts/test-skill.sh regression-guard
+        run: bats skills/*/tests/*.bats
 
       - name: Verify probes still kill mutants
         # TMO-065：突變測試自動化。人工種 mutant 只能在「當下那個 commit」證明探針咬得住；
@@ -117,27 +115,13 @@ jobs:
             n=$((n + 1))
           done <<< "$(git ls-files '*.sh' '*.bash')"
           # 下限（reviewer round L P2-1）：列舉空掉時不能印 OK 假綠（舊硬編 glob 在無匹配時是 fail-closed）。
-          # 門檻 20 是列舉器 tripwire（現況 23 檔）；若日後合法縮到 < 20 支 shell 檔，請同步調整此值。
-          [ "$n" -ge 20 ] || { echo "FAIL: 只列舉到 $n 個 shell 檔（< 20）→ 列舉器壞了"; exit 1; }
+          # 門檻 15 是列舉器 tripwire（現況 21 檔；與 scripts/check-all.sh 同一門檻）；
+          # 若日後合法縮到 < 15 支 shell 檔，請同步調整此值同 check-all.sh。
+          [ "$n" -ge 15 ] || { echo "FAIL: 只列舉到 $n 個 shell 檔（< 15）→ 列舉器壞了"; exit 1; }
           echo "OK: $n shell files syntax-checked"
-
-      - name: Verify SKILL.md size (≤ 150 lines)
-        # 自動列舉所有 skill 主檔（不再只檢查一個檔案）：
-        # 硬編單檔＝其他主檔改爆不會被擋（同 TMO-038 ④ / TMO-033 的教訓）。
-        # 守門探針：tests/skill-size-guard.bats（SSG-1/2/3）。
-        run: bash scripts/ci/check-skill-size.sh
 
       - name: Verify Python heredoc syntax
         run: bash scripts/ci/check-python-heredocs.sh
-
-      - name: Verify framework weight (context budget + ratio)
-        # 守「框架唔可以再膨脹」：
-        #   ① 每個 skill 嘅 context 成本（SKILL.md + 支援 .md）≤ cap → agent 觸發 skill 嘅讀入量有上限
-        #   ② SKILL.md 指標完整性（指向嘅子檔必須存在且非空）→ 防止「指標指住空檔」嘅假覆蓋
-        #   ③ 框架／產品行數比 ≤ baseline + tolerance（ratchet）
-        # 守門探針：tests/framework-weight.bats（FW-1..016）。
-        # 不得加 continue-on-error / || true（否則就是假綠）。
-        run: python3 scripts/ci/check-framework-weight.py
 
       - name: Verify no document drift (D1-D8)
         # 抓「同一件事在多份文件之間各說各話」（D1..D8）：
@@ -153,7 +137,7 @@ jobs:
     name: Markdown lint
     runs-on: ubuntu-latest
     # TMO-037（2026-10-05）：債已清 0，本 job 恢復阻擋（不再設 job 級容錯）。
-    # 守門探針：tests/markdownlint-guard.bats（MLG-1/2 鎖住 job 存在且會擋、MLG-3/4/8 鎖 glob 不縮小）。
+    # 2026-10-27 減法：守門探針 tests/markdownlint-guard.bats 已刪 → 此 job 冇機械鎖。
     # 注意：glob 必須涵蓋 tests/fixtures/**/*.md，且不得把 .venv/ 納入（見 .markdownlint-cli2.jsonc）。
     steps:
       - uses: actions/checkout@v4

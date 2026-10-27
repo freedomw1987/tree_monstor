@@ -118,16 +118,6 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 | **複雜任務必走 Step 1.5（v2.6）** | **用戶已主動提供結構化 Markdown 來源** | **推薦 dav-wiki、避免手動抄 PDF；dav-wiki 未裝則退回用戶口述 + 提示安裝** |
 | **產 US 必產需求錨點檔（v2.7）** | 存量 US 不補 | `docs/req/<US-ID>-requirement.md`；「用戶原話」區唯讀、R-ID 連續唯一 |
 
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v2.9 | 2026-10-26 | `backlog-rules.md` 161 → 156 行（AC 段範本改指標式骨架、Module sprint 範本收窄） | context 成本輕微下降；R-ID 規則、AC 範本生成 SOP、需求錨點檔 SOP 一個字都冇少 |
-| v2.8 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`backlog-rules.md` 173 → 161 行（INVEST／AC 格式／類型混合合併成一段 ＋ 刪重複嘅 Module sprint 說明） | context 成本由 535 行降至 523 行；R-ID 規則、AC 範本生成 SOP、需求錨點檔 SOP 一個字都冇少 |
-| v2.7 | 2026-10-26 | 產 US 必產**需求錨點檔** `docs/req/<US-ID>-requirement.md`（原話區唯讀 + R-ID 化驗收句）；Step 4 產出物 3 → 4 檔 | TMO-071：多文件 pipeline 中用戶原話被 AI 改寫後失真，成果與需求對不上；錨點檔是對帳的根節點；V03 Reviewer 二審：第 1 輪 request-changes（1 P0 / 4 P1 / 10 P2 / 5 P3）→ 已修，結論見全域 changelog v2.11 二審結論節 |
-
 ---
 ---
 
@@ -135,6 +125,5 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 - 提問技巧 / 7 維度 / 成熟度 → 同套 `reference.md`
 - Backlog 規則（含 Module 欄位範本 + Module 級 sprint）→ 同套 `backlog-rules.md`
 - SOP §2.1 詳細內容 → 見 monorepo 對應的規劃文件（路徑由 monorepo 約定）
-- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
 - AC 範本格式範例 → 見 monorepo 對應的 AC 範本文件（路徑由 monorepo 約定）
 - Module 完整生命週期範例 → 見本 skill 的 `examples/backlog.md`

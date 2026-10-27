@@ -1,6 +1,7 @@
 ---
 name: dav-wiki
 description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DOCX/PPTX、網頁 URL、圖片 OCR、影音字幕等多種來源，自動轉成結構化 Markdown 知識庫（含 frontmatter、tag、概念、交叉引用）。
+
 ---
 
 # Dav Wiki
@@ -109,18 +110,6 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 **不真刪除檔案**：frontmatter 標 `deprecated: true` / `superseded_by`，90 天後可移入 `docs/wiki/_deprecated/`；細節見 `./soft-delete.md`
 
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條 + v2.0 首版錨點
-（慣例；原 `tests/restruct-dav-wiki.bats` 要求，該 meta 探針已於 2026-10-26 減法刪除）以節省 LLM 注意力。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v2.2.5 | 2026-10-26 | 本輪支援檔無改動（只更新變動歷史以反映 TMO-083 全域瘦身） | context 成本繼續下降；FR-3 多模組小節（上一輪補回）保留 |
-| v2.2.4 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`examples.md` 610 → 248 行（8 個完整對話流程 → 共通 7 步骨架 ＋ 每個範例只留差異，並補回 FR-3 多模組子步驟表）、`frontmatter-schema.md` 293 → 189 行（兩個重複 YAML 範例合併成一個超集）、`concept-evolution.md` 239 → 116 行（4 種動作合併成對照表 ＋ 決策樹） | dav-wiki 嘅 context 成本由 1,354 行降至 742 行；內容契約（AC-5a/5b 欄位、AC-6 四種動作、AC-7 範例數 ≥5）一個唔少 |
-| v2.2.3 | 2026-10-05 | 批次上限旗標正名 `--batch-limit`（`--max-concurrency` 為等價別名）、預設 `0`＝無限制（原 4 會丟檔）| TMO-060：名實不符＋預設丟檔 |
-| v2.0 | 2026-09-26 | 文件產出物精簡規則適用 | TMO-008 減法 |
-
 ---
 
 **交叉引用（純文字）**：
@@ -131,4 +120,3 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 - 互動設計系統 → 見 monorepo 對應的 design 文件（路徑由 monorepo 約定）
 - 技術架構 → 見 monorepo 對應的 system-design 文件（路徑由 monorepo 約定）
 - PRD → 見 monorepo 對應的 PRD 文件（路徑由 monorepo 約定）
-- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

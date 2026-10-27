@@ -18,7 +18,7 @@
 
 | 需求 ID | 需求句（摘要） | 狀態 | 實作位置 | 證據 | 備註 |
 |---------|---------------|------|---------|------|------|
-| R1 | 產出機制做成框架級能力 | ✅ 已實作 | skills/dav-reconciler/SKILL.md:1 | tests/restruct-dav-reconciler.bats RECON-001 | |
+| R1 | 產出機制做成框架級能力 | ✅ 已實作 | skills/dav-reconciler/SKILL.md:1 | skills/dav-reconciler/tests/doc-drift.bats DOC-DRIFT-008 | |
 | R2 | 本 repo 先跑驗證 | ✅ 已實作 | docs/req/TMO-071-requirement.md:1 | bats tests/doc-drift.bats | |
 | R3 | 原文區唯讀 | ✅ 已實作 | skills/dav-planner/backlog-rules.md §4.7 | DOC-DRIFT-002 | |
 

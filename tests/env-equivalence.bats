@@ -12,7 +12,7 @@
 #
 # 本檔守 ENV-EQ-1..19（18 條可證偽斷言 + 1 條量測 ENV-EQ-4；11..19 於 TMO-041/2026-10-05 CI 首跑追加）：
 #   1. 本機必須有 bash 5.x 可用（缺 → 紅＋安裝指令，不 skip）
-#   2. `tests/wiki-cleanup.bats` 在**每一個**本機可用 bash 版本下都全綠
+#   2. `skills/dav-wiki/tests/wiki-cleanup.bats` 在**每一個**本機可用 bash 版本下都全綠
 #      （PATH shim 真的把 bash 換掉；bash 5.x 這條＝CI 的 ubuntu bash 變體 Gate 3）
 #   3. shim 機制本身有效（bats 真的跑在目標 bash 上）→ 否則第 2 條等於在跑預設 bash
 #   4. 空陣列 × `set -u` 的行為對照表：逐版本實測並印出（**量測，刻意不斷言**；
@@ -35,7 +35,7 @@
 #       bash 5.3 + C locale   → CJK 名**會跑**
 #     實測被丟棄的有：中文／假名／韓文／西里爾；**不會**被丟棄的有：希臘文、café、全形英數、emoji、→。
 #     → **CI 沒有這個病**；受影響的是**本機 bash 3.2**（macOS 預設）→ 本機假綠。
-#     處理：①repo 內所有 @test 名一律純 ASCII（守門：tests/probe-name-ascii.bats PNA-1）
+#     處理：①repo 內所有 @test 名一律純 ASCII（2026-10-27 減法：PNA-1 探針已刪 → 改為寫探針時自律）
 #           → 讓本機與 CI 跑同一套探針、看到同一個結果；
 #           ②本檔 ENV-EQ-9 的 canary 改成**依當前環境實測**的斷言（下方）。
 
@@ -50,7 +50,7 @@ setup() {
 # （實測 1.14.0），所以「用 heredoc 寫 fixture」不能拿來測這個函式，fixture 要用 printf。
 #
 # ⚠️ TMO-074：掃描器本體已外移到 `tests/helpers/probe-scan.bash`（與 TMO-074 新增的
-#    `tests/probe-name-ascii.bats` 共用同一份），避免兩份掃描器漂移。
+#    掃描器本體），避免兩份掃描器漂移。
 #    這裡保留薄包裝只是為了不動 ENV-EQ-9 的自我測試呼叫點。
 count_declared_tests() {
   probe_declared_count "$1"
@@ -112,7 +112,7 @@ find_bash5() {
       echo "FAIL: shim 沒生效（期望 ${v}，得到 ${got}）" >&2
       return 1
     }
-    run env PATH="$shim:$PATH" bats "$REPO_ROOT/tests/wiki-cleanup.bats"
+    run env PATH="$shim:$PATH" bats "$REPO_ROOT/skills/dav-wiki/tests/wiki-cleanup.bats"
     rc=$status
     printf '%s\n' "$output" > "$BATS_TEST_TMPDIR/wc-$ran.txt"
     okn=$(printf '%s\n' "$output" | grep -c '^ok ' || true)
@@ -280,7 +280,7 @@ printf "%s\n" "${a[@]}"'
     return 1
   }
 
-  local fails="$REPO_ROOT/tests/v2.1-jev-poc.bats"
+  local fails="$REPO_ROOT/skills/regression-guard/tests/v2.1-jev-poc.bats"
   local filter ok_total=0 notok_total=0 ran=0 rc f
   for f in 'M5-runtime-b' '^M6-g' 'M6.1-c'; do
     run env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
@@ -397,8 +397,10 @@ printf "%s\n" "${a[@]}"'
     return 1
   }
   # (1) 普查：宣告數必須等於 bats 自報的計畫數
-  local declared=0 f n
-  for f in "$REPO_ROOT"/tests/*.bats; do
+  # 2026-10-27 探針 skill-local 化 → 宣告數要包埋 skills/*/tests/（兩邊都要同 bats 自報數一致）
+  local declared=0 f n planned_repo planned_skill
+  for f in "$REPO_ROOT"/tests/*.bats "$REPO_ROOT"/skills/*/tests/*.bats; do
+    [ -f "$f" ] || continue
     n=$(count_declared_tests "$f")
     declared=$((declared + n))
   done
@@ -407,9 +409,16 @@ printf "%s\n" "${a[@]}"'
     echo "FAIL: bats --count 失敗：$output" >&2
     return 1
   }
-  local planned="$output"
-  [ "$declared" -ge 500 ] || {
-    echo "FAIL: 只數到 $declared 個 @test（<500）→ 抽取器可能壞了（防空過）" >&2
+  planned_repo="$output"
+  run bash -c "cd \"$REPO_ROOT\" && bats --count skills/*/tests/"
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: bats --count skills/*/tests/ 失敗：$output" >&2
+    return 1
+  }
+  planned_skill="$output"
+  local planned=$((planned_repo + planned_skill))
+  [ "$declared" -ge 400 ] || {
+    echo "FAIL: 只數到 $declared 個 @test（<400）→ 抽取器可能壞了（防空過）" >&2
     return 1
   }
   [ "$planned" -eq "$declared" ] || {
@@ -511,63 +520,63 @@ printf "%s\n" "${a[@]}"'
   echo "OK: 2 份本機安裝文件都教釘版 bats" >&2
 }
 
-@test "ENV-EQ-11: skill-local probes exist and CI really runs them against the repo" {
-  # TMO-047（起源：round F P3-5）：`skills/*/tests/*.bats` 存在而且綠，但 CI 只跑 `bats tests/`
-  # → 這些探針永遠不會被執行（改了不會擋）。本條鎖三件事：
-  # ① 自動列舉（>=2 檔；硬編清單＝漂移時靜默漏掃）；② 每檔在「repo 為 root」下真的跑綠，
-  # 且**不得出現 skip**（那兩支原本掃 `~/.pi/agent/skills`，CI 上掃不到檔＝靜默綠）；
-  # ③ ci.yml 有一步真的呼叫它們，並以環境變數把 root 指到 repo。
+# ENV-EQ-11（2026-10-27 探針 skill-local 化後重寫）：探針跟 skill 搬入 `skills/<name>/tests/`
+# → CI 必須真係跑嗰批（否則改壞咗冇人擋）；改動單一 skill 時可用 `bash scripts/test-skill.sh <name>` 淨跑。
+@test "ENV-EQ-11: skill-local tests exist and CI really runs them" {
   local f files=() n=0
   while IFS= read -r f; do
     files+=("$f"); n=$((n + 1))
   done < <(cd "$REPO_ROOT" && find skills -path '*/tests/*.bats' | sort)
-  [ "$n" -ge 2 ] || {
-    echo "FAIL: 只找到 $n 個 skill 自帶探針（<2）→ 列舉壞了或探針被刪" >&2
+  [ "$n" -ge 1 ] || {
+    echo "FAIL: 搵唔到任何 skill 自帶測試 → 探針被搬走／刪晒" >&2
     return 1
   }
-
-  for f in ${files[@]+"${files[@]}"}; do
-    run env SKILLS_DIR_OVERRIDE="$REPO_ROOT/skills" bats "$REPO_ROOT/$f"
-    [ "$status" -eq 0 ] || {
-      echo "FAIL: $f 在 repo root 下不綠（rc=${status}）：$output" >&2
-      return 1
-    }
-    case "$output" in
-      *'# skip'*)
-        echo "FAIL: $f 出現 skip（探針空過）→ 不得以 skip 代替通過：$output" >&2
-        return 1
-        ;;
-    esac
-    grep -q 'SKILLS_DIR_OVERRIDE' "$REPO_ROOT/$f" || {
-      echo "FAIL: $f 不認 SKILLS_DIR_OVERRIDE → CI 上會掃預設目錄（掃不到檔＝靜默綠）" >&2
-      return 1
-    }
-  done
-
-  # P2-1（round I）：上面的實跑只證明「override 指向 repo → 綠」。若把探針的 fail-closed 拿掉
-  # （root 不存在／掃不到檔就當通過），本條仍會全綠 → 空過機制失去自動重驗。故再驗一次：
-  # root 指向**空目錄**時，每一支 skill 自帶探針都必須**失敗**（不得靜默通過）。
-  local empty="$BATS_TEST_TMPDIR/empty-skills-root"
-  mkdir -p "$empty"
-  for f in ${files[@]+"${files[@]}"}; do
-    run env SKILLS_DIR_OVERRIDE="$empty" bats "$REPO_ROOT/$f"
-    [ "$status" -ne 0 ] || {
-      echo "FAIL: $f 在空 skills root 下竟然通過（rc=0）→ 探針空過（假綠）；請補 fail-closed（掃不到檔要紅）" >&2
-      return 1
-    }
-  done
-
   local ci="$REPO_ROOT/.github/workflows/ci.yml" hits
-  hits=$(grep -cE 'run: SKILLS_DIR_OVERRIDE="\$PWD/skills" bats skills/\*/tests/\*\.bats' "$ci" || true)
+  hits=$(grep -cE 'run: bats skills/\*/tests/\*\.bats' "$ci" || true)
   [ "$hits" -eq 1 ] || {
-    echo "FAIL: ci.yml 沒有（或重複）skill-local 探針步驟（命中 $hits 次）→ 這些探針永遠不會被 CI 執行" >&2
+    echo "FAIL: ci.yml 冇（或重複）skill-local 測試步驟（命中 $hits 次）→ 改壞咗冇人擋" >&2
     return 1
   }
-  echo "OK: $n 個 skill 自帶探針都在 CI 被實跑（repo root + override）" >&2
+  # 單 skill 跑法（用戶要求：改指定 skill 唔好等成 repo）→ 腳本必須存在且列得出 skill
+  [ -f "$REPO_ROOT/scripts/test-skill.sh" ] || {
+    echo "FAIL: 缺 scripts/test-skill.sh（單 skill 跑法）" >&2
+    return 1
+  }
+  run bash "$REPO_ROOT/scripts/test-skill.sh" --list
+  [[ "$status" -eq 0 ]] || { echo "FAIL: test-skill.sh --list 唔係 0 退出" >&2; return 1; }
+  [[ "$output" == *"regression-guard"* ]] || {
+    echo "FAIL: test-skill.sh --list 唔見 regression-guard → 佢嘅 tests/ 唔見咗？" >&2
+    return 1
+  }
+  # 行為自證（唔係 grep 文字鎖）：喺 temp git repo 起一個「淨跑一個 skill」嘅場景
+  #   ① 嗰個 skill 嘅探針紅 → 整體 rc=1；② 未知 skill → rc=2（用法錯誤）
+  local tmprepo="$BATS_TEST_TMPDIR/skillrepo"
+  mkdir -p "$tmprepo/scripts" "$tmprepo/skills/demo-skill/tests"
+  cp "$REPO_ROOT/scripts/test-skill.sh" "$tmprepo/scripts/"
+  # ⚠️ 測試名同 body 要合法（bats 會把 `@test "name" {` 轉成 shell function 名：
+  #    名入面有空格／冒號 → 變成非法 function 名 → **parse error**，紅嘅原因就唔係「測試紅」）
+  printf '#!/usr/bin/env bats\n@test "demo_fails" {\n  false\n}\n' \
+    > "$tmprepo/skills/demo-skill/tests/demo.bats"
+  ( cd "$tmprepo" && git init -q )
+  run bash -c "cd '$tmprepo' && bash scripts/test-skill.sh demo-skill"
+  [ "$status" -eq 1 ] || {
+    echo "FAIL: 單 skill 嘅探針紅 → test-skill.sh 應該 rc=1（實際 ${status}）" >&2
+    echo "$output" >&2
+    return 1
+  }
+  [[ "$output" == *"demo-skill"* ]] || {
+    echo "FAIL: 輸出應該講明係邊個 skill 紅" >&2
+    return 1
+  }
+  run bash -c "cd '$tmprepo' && bash scripts/test-skill.sh no-such-skill"
+  [ "$status" -eq 2 ] || {
+    echo "FAIL: 未知 skill 應該 rc=2（用法錯誤；實際 ${status}）" >&2
+    return 1
+  }
 }
 
 # ENV-EQ-12（L4 擴量）：把 TMO-047 的 bug 類別一般化——「探針存在但沒有任何 CI 步驟跑到它」。
-# 目前 repo 只有兩條執行路徑：`bats tests/`（僅頂層，非遞迴）與 skill 自帶探針那一步。
+# 目前 repo 有兩條執行路徑：`bats tests/`（僅頂層，非遞迴）同 `bats skills/*/tests/*.bats`（skill 自帶測試）。
 # 任何落在其他位置的 `.bats` 都不會被 CI 執行 → 改壞了沒人擋（假綠）。
 @test "ENV-EQ-12: no orphan .bats outside the two CI execution paths" {
   local all orphan=""
@@ -590,15 +599,15 @@ printf "%s\n" "${a[@]}"'
     if [[ "$f" =~ ^tests/[^/]+\.bats$ ]]; then
       continue                                     # CI: bats tests/
     elif [[ "$f" =~ ^skills/[^/]+/tests/[^/]+\.bats$ ]]; then
-      continue                                     # CI: SKILLS_DIR_OVERRIDE=... bats skills/*/tests/*.bats
+      continue                                     # CI: bats skills/*/tests/*.bats
     else
       orphan="$orphan $f"
     fi
   done <<< "$all"
-  [ "$n" -ge 40 ] || { echo "FAIL: 只列舉到 $n 個 .bats（<40）→ 列舉器壞了或路徑漂移" >&2; return 1; }
+  [ "$n" -ge 25 ] || { echo "FAIL: 只列舉到 $n 個 .bats（<25）→ 列舉器壞了或路徑漂移" >&2; return 1; }
   [ -z "$orphan" ] || {
     echo "FAIL: 下列 .bats 不在任何 CI 執行路徑（orphan → 改了不會擋）：$orphan" >&2
-    echo "修法：移到 tests/（頂層）或 skills/<name>/tests/，或替它加一條 CI 步驟＋對應鎖" >&2
+    echo "修法：移到 tests/（頂層），或替它加一條 CI 步驟＋對應鎖" >&2
     return 1
   }
   echo "OK: $n 個 .bats 全部落在 CI 執行路徑（tests/ 或 skills/*/tests/）" >&2
@@ -695,7 +704,7 @@ sys.exit(1 if bad else 0)
 }
 
 # ENV-EQ-15（L7 擴量）：禁止「永遠不可能失敗」的空過斷言。
-# 起因：`tests/ci-linux.bats` 原有一條 `if Linux then skip else [ true ]` —— 在任何平台都不可能紅，
+# 起因：`skills/dav-wiki/tests/ci-linux.bats` 原有一條 `if Linux then skip else [ true ]` —— 在任何平台都不可能紅，
 # 是純裝飾的綠燈（正是「探針禁空過」要擋的類別）。現況已改成真斷言（date 回溯 vs Python），
 # 這條鎖則防止再寫回來。範圍：repo 內所有 .bats。
 @test "ENV-EQ-15: no tautological assertions in any .bats" {
@@ -711,7 +720,7 @@ sys.exit(1 if bad else 0)
     [ -z "$h" ] || hits="$hits
 $f:$h"
   done
-  [ "$n" -ge 40 ] || { echo "FAIL: 只掃到 $n 支 .bats（<40）→ 列舉器壞了" >&2; return 1; }
+  [ "$n" -ge 25 ] || { echo "FAIL: 只掃到 $n 支 .bats（<25）→ 列舉器壞了" >&2; return 1; }
   [ -z "$hits" ] || {
     echo "FAIL: 下列 .bats 有空過斷言（永遠不會失敗 → 假綠）：$hits" >&2
     echo "修法：刪掉該行，或改成真斷言（檢查實際輸出／狀態碼）" >&2
@@ -759,12 +768,12 @@ PYEOF
 # ENV-EQ-17（2026-10-05 CI 首跑）：`$var` 緊接非 ASCII 字元 —— bash 3.2 + UTF-8 locale 陷阱。
 # 起因：macOS CI leg（/bin/bash 3.2 + runner 的 UTF-8 locale）下，`scripts/ci/check-skill-size.sh:51`
 # 的 `$worst_file）` 被 bash 3.2 解析成變數 `$worst_file\xef` → `set -u` 下 `unbound variable`
-# → `skill-size-guard.bats SSG-3` 只在 macOS leg 紅；本機 bash 5 完全看不到（本機全綠 ≠ CI 全綠）。
+# → 只在 macOS leg 紅；本機 bash 5 完全看不到（本機全綠 ≠ CI 全綠）。
 # 全 repo 同類寫法共 39 處已修（一律改 `${var}`，語意相同、變數名有邊界）。
 # 靜態鎖實作在 `scripts/ci/lint-shell-var-nonascii.py`（獨立檔，避免探針掃到自己的說明文字）。
 #
 # 盲點修正（2026-10-05 晚）：鎖原本只掃 `git ls-files`（已追蹤）→ **新檔在 commit 前是 untracked**，
-# 於是「本機全綠、push 後 CI 才紅」。TMO-064／065 的 `tests/pptx-slim-images.bats`（`$after（`、`$name（`）
+# 於是「本機全綠、push 後 CI 才紅」。TMO-064／065 的 `skills/pptx-slim/tests/pptx-slim-images.bats`（`$after（`、`$name（`）
 # 與 `tests/mutant-must-die.bats`（`$status）`）就是這樣溜進 commit 的（同日稍早另有「新檔缺檔尾換行」
 # 被 ENV-EQ-16 在 clean clone 咬到，同一個病）。改成 `git ls-files -co --exclude-standard`（含未追蹤、不含 gitignore）。
 @test "ENV-EQ-17: no shell or CI file puts a non-ASCII byte right after a variable expansion" {

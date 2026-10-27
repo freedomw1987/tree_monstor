@@ -26,7 +26,7 @@
 #
 # TMO-066 二審（claude-code，verdict = request-changes）後追加：
 #   * DW-M5：原本只能當「文字契約鎖」（咬 WTM-6 的『檔案不得出現 EXIT_TOOLMISSING』）；
-#     後改成**真行為鎖**——先把 `tests/wiki-ocr.bats` 的 AC-O4/AC-O6 由「只驗非零」收緊為
+#     後改成**真行為鎖**——先把 `skills/dav-wiki/tests/wiki-ocr.bats` 的 AC-O4/AC-O6 由「只驗非零」收緊為
 #     驗 2／驗 1（測名本來就這樣寫，只驗非零已是假綠），再看 mutant「把 EXIT_NOINPUT 改成 1」
 #     是否會被咬住（會）。約定 `MUTANT(text-lock):` 仍保留，目前表內 0 列。
 #   * SM-M1 重寫：舊版把 `sed -E \` 換成 `cat #...` 掉了續行反斜線（rc=127 假死因）。
@@ -37,7 +37,16 @@
 #   * 再 +12 支 → **55 支**（TMO-071/072/073：DD-M1..DD-M3 / DR-M1 / DR-M2；
 #     TMO-074 掃描器重寫再加 PNA-M1（PNA-4b canary 對應）＋ PNA-M2（PNA-4c 規則⑦ 對應）→ **57 支**；
 #     TMO-079／080 再加 PNA-M3（PNA-4c 案例 E 對應）→ **58 支**；
-#     TMO-069 Qoder 安裝：QD-M1..QD-M6；TMO-070 jev 間歇紅：RG-M5）。
+#     TMO-069 Qoder 安裝：QD-M1..QD-M6；TMO-070 jev 間歇紅：RG-M5）；
+#     TMO-084（CI 降級為偵測器 ＋ 落地本機等價閘）再加 LC-M1
+#     （本機 runner 嘅「失敗匯總」改成唔會令整體變紅 → 探針 LC-8 必須紅）→ **59 支**；
+#     同一票再加 RG-CI-M1（regression-guard 本機 runner 嘅紅燈 verdict 映射改成綠燈
+#     → 探針 CI-d 必須紅）→ **60 支**。
+#   * 2026-10-27 減法（只保留真 python／shell 功能測試）：刪走 **11 列** →
+#     **49 支**（RG-M1..M3／DT-M1..M3／DR-M1／DR-M2／PNA-M1..M3 —— 佢哋鎖嘅探針
+#     屬「測文件內容」性質，已隨探針刪走；RG-M4 改指向 skill-local 探針後補回）。
+#     現況：**47 列行為鎖 ＋ 2 列文件／資料契約鎖**（DW-M4→`skills/dav-wiki/SKILL.md`、
+#     RG-M4→`skills/regression-guard/SKILL.md`）。
 #
 # 【第 2 輪 V03 二審（reviewer subagent、verdict = request-changes）後追加】
 #   * 二審 #1（P1）：LK-M1 原本的『換成』在**行中**錨點尾接 `# MUTANT: ...` → 註解吞掉該行
@@ -79,7 +88,7 @@ run_mmd() {
   printf '%s\n' "$output" | awk -F'\t' 'NF==4' > "$W/list.txt"
   local n
   n=$(grep -c . "$W/list.txt")
-  [ "$n" -eq 58 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 58；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
+  [ "$n" -eq 49 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 49；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
 
   local -a ids=() targets=()
   local line id target probe_file probe
@@ -163,7 +172,7 @@ run_mmd() {
 @test "MMD-3: a surviving mutant must make the whole check fail (otherwise it is a fake green)" {
   # 造一張「無害突變」表：改動真實發生、但對受測行為沒影響 → 探針必綠 → 必須被當成 survivor。
   # （不可用「原文＝換成」當無害案例：那叫等價突變，載入期就被擋掉了，見 MMD-6。）
-  printf 'NOOP-1\tskills/pptx-slim/scripts/pptx-verify.py\t        bad = zf.testzip()\t        bad = zf.testzip()  # MUTANT: 無害改動（只加註解，行為不變）\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/noop.tsv"
+  printf 'NOOP-1\tskills/pptx-slim/scripts/pptx-verify.py\t        bad = zf.testzip()\t        bad = zf.testzip()  # MUTANT: 無害改動（只加註解，行為不變）\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/noop.tsv"
   run_mmd --table "$W/noop.tsv"
   [ "$status" -eq 1 ] || { echo "FAIL: 無害突變竟然回報成功（rc=${status}）→ 這支檢查會永遠說 OK" >&2; return 1; }
   [[ "$output" == *"還活著"* ]] || { echo "FAIL: 沒有回報 survivor" >&2; return 1; }
@@ -178,14 +187,14 @@ run_mmd() {
   [[ "$output" == *"6 欄"* ]] || { echo "FAIL: 沒指出欄數（${output}）" >&2; return 1; }
 
   # ② 等價突變（原文＝換成）——二審 F3 的主角
-  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t%s\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' \
+  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t%s\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\n' \
     "$anchor" "$anchor" > "$W/noop.tsv"
   run_mmd --table "$W/noop.tsv" --list
   [ "$status" -ne 0 ] || { echo "FAIL: 等價突變竟然通過（會變成灌水列）" >&2; return 1; }
   [[ "$output" == *"等價"* ]] || { echo "FAIL: 沒指出等價突變（${output}）" >&2; return 1; }
 
   # ③ id 重複
-  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\ttests/pptx-slim.bats\tPPTX-SLIM-12\nMUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' \
+  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\nMUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\n' \
     "$anchor" "$anchor" > "$W/dup.tsv"
   run_mmd --table "$W/dup.tsv" --list
   [ "$status" -ne 0 ] || { echo "FAIL: id 重複竟然通過" >&2; return 1; }
@@ -198,14 +207,14 @@ run_mmd() {
   [[ "$output" == *"空的"* ]] || { echo "FAIL: 沒指出表是空的（${output}）" >&2; return 1; }
 
   # ⑤ 某欄空白（探針名空）——空欄會讓 `--list` 統計靜默失真
-  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\ttests/pptx-slim.bats\t\n' \
+  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\tskills/pptx-slim/tests/pptx-slim.bats\t\n' \
     "$anchor" > "$W/emptyfield.tsv"
   run_mmd --table "$W/emptyfield.tsv" --list
   [ "$status" -ne 0 ] || { echo "FAIL: 空欄竟然通過" >&2; return 1; }
   [[ "$output" == *"是空的"* ]] || { echo "FAIL: 沒指出哪一欄是空的（${output}）" >&2; return 1; }
 
   # ⑥ 重複列（同目標檔／原文／換成，只換 id）＝把「40 支」灌大
-  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\ttests/pptx-slim.bats\tPPTX-SLIM-12\nMUT-B\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' \
+  printf 'MUT-A\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\nMUT-B\tskills/pptx-slim/scripts/pptx-verify.py\t%s\t        bad = None\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\n' \
     "$anchor" "$anchor" > "$W/duprow.tsv"
   run_mmd --table "$W/duprow.tsv" --list
   [ "$status" -ne 0 ] || { echo "FAIL: 同一個突變拆成兩列竟然通過" >&2; return 1; }
@@ -223,7 +232,7 @@ run_mmd() {
 }
 
 @test "MMD-4: a stale anchor (code changed, table not) must fail loudly, not pass silently" {
-  printf 'ROT-1\tskills/pptx-slim/scripts/pptx-verify.py\tTHIS_ANCHOR_DOES_NOT_EXIST_ANYWHERE\tx\ttests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/rot.tsv"
+  printf 'ROT-1\tskills/pptx-slim/scripts/pptx-verify.py\tTHIS_ANCHOR_DOES_NOT_EXIST_ANYWHERE\tx\tskills/pptx-slim/tests/pptx-slim.bats\tPPTX-SLIM-12\n' > "$W/rot.tsv"
   run_mmd --table "$W/rot.tsv"
   [ "$status" -ne 0 ]
   [[ "$output" == *"錨點"* ]] || { echo "FAIL: 沒有指出錨點失效" >&2; return 1; }

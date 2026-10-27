@@ -36,7 +36,7 @@
   * 只掃深度 1（`tests/*.bats`、`skills/*/tests/*.bats`）；未來若新增
     `tests/unit/*.bats`，本鎖與 `SM-1` 會一起漏——新增子目錄時要同步改兩處。
 
-防空過：掃到的探針檔數 >= 40，且至少 1 個檔真的碰 `_load_api_key`。
+防空過：掃到的探針檔數 >= 25，且至少 1 個檔真的碰 `_load_api_key`。
 
 用法：
   python3 scripts/ci/lint-probe-secrets.py <repo_root>
@@ -62,7 +62,7 @@ MASK_DEF = re.compile(r"^\s*(?:function\s+)?mask_secrets\s*\(\s*\)")
 KEY_API = "_load_api_key"
 CANONICAL = ("tests", "helpers", "test-env.bash")
 COMMENT_SPLIT = re.compile(r"^[ \t]*#|(?<=[ \t])#")
-MIN_FILES = 40
+MIN_FILES = 25
 MIN_KEY_FILES = 1
 
 

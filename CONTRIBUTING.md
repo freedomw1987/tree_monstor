@@ -26,11 +26,11 @@ brew install ffmpeg poppler pandoc tesseract
 # 移除/改名清單（本 repo 已改用新寫法，勿再引入舊旗標）：
 #   -vsync        → 已於 ffmpeg 8 移除，改用 -fps_mode（AC-V11 靜態擋）
 #   （下一個移除的旗標無法預期 → 靠 check-ffmpeg-version.sh 的能力實測 +
-#     tests/wiki-video-audio.bats 的功能探針一起兜底）
+#     skills/dav-wiki/tests/wiki-video-audio.bats 的功能探針一起兜底）
 
 # 確認 python3
 python3 --version
-# python-pptx：pptx-slim 探針（tests/pptx-slim.bats 造 fixture、verify G3b 開檔）的硬依賴
+# python-pptx：pptx-slim 探針（skills/pptx-slim/tests/pptx-slim.bats 造 fixture、verify G3b 開檔）的硬依賴
 python3 -m pip install python-pptx
 ```
 
@@ -48,7 +48,7 @@ sudo ./bats-core/install.sh /usr/local
 # 安裝 markdownlint
 npm install -g markdownlint-cli2
 
-# python-pptx：pptx-slim 探針（tests/pptx-slim.bats 造 fixture、verify G3b 開檔）的硬依賴
+# python-pptx：pptx-slim 探針（skills/pptx-slim/tests/pptx-slim.bats 造 fixture、verify G3b 開檔）的硬依賴
 python3 -m pip install python-pptx
 ```
 
@@ -64,14 +64,14 @@ bash skills/regression-guard/PoC/setup-venv.sh
 bats tests/
 
 # 跑單一測試
-bats tests/wiki-cleanup.bats
+bats skills/dav-wiki/tests/wiki-cleanup.bats
 
 # 跑邊緣案例
-bats tests/wiki-cleanup.bats --filter "E1"
+bats skills/dav-wiki/tests/wiki-cleanup.bats --filter "E1"
 ```
 
 ```bash
-# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 58 支 mutant 逐一種回去，
+# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 49 支 mutant 逐一種回去，
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
@@ -81,9 +81,13 @@ python3 scripts/ci/mutant-must-die.py
 # 新增防呆／護欄時請補一列 mutant，否則 CI 不會知道你補的東西有沒有被測到。
 ```
 
-> ⚠️ **本機綠 ≠ CI 綠**：CI 是 clean clone，拿不到未版控的檔案，也**沒有 `OPENROUTER_API_KEY` 與暖快取**。
-> 若新增測試素材，必須真的 `git add`（`tests/poc-clean-clone.bats` 會擋）；
+> ⚠️ **本機綠 ≠ CI 綠**（2026-10-27 TMO-084 降級後，呢個差距由「CI 閘」變成「本機閘要自己補齊」）：
+> CI 是 clean clone，拿不到未版控的檔案，也**沒有 `OPENROUTER_API_KEY` 與暖快取**。
+> 若新增測試素材，必須真的 `git add`（`skills/regression-guard/tests/poc-clean-clone.bats` 會擋）；
 > fixture 內也不得寫自己機器的絕對路徑。
+> → CI 而家係偵測器（唔阻你），但呢啲坑會令佢紅：**本機閘要自己守住呢一邊** ——
+> 新增素材一定要 `git add`；跑閘前先 `git add -A`（框架體重守門量嘅係 git tracked 檔，
+> 未 staged 嘅新檔量唔到 → 提交後守門先轉紅）。
 >
 > 會呼叫 Jev oracle 的 CLI（`fix_proposal*.py`）必須離線可跑：
 > 用版控的 `PoC/fixtures/US-101-run.json` + `PoC/cache-fixtures/` +
@@ -91,8 +95,8 @@ python3 scripts/ci/mutant-must-die.py
 > 探針內也要加 `JEV_ENV_FILE=/dev/null`（TMO-045），否則本機 `PoC/.env` 會在
 > cache miss 時拿真 key 去打 API，把「fixture 不够用」掩蓋成假綠。
 >
-> `tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
-> （目前即 `tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
+> `skills/regression-guard/tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
+> （目前即 `skills/regression-guard/tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
 > CI 等價環境下**整檔**重跑，任何一條回頭依賴真 API 或本機快取都會紅；
 > `CLEAN-POC-h` 另鎖「`PoC/.env` 與 `PoC/cache/` 不得被 git 追蹤」，
 > `CLEAN-POC-i` 則反向驗證 `JEV_ENV_FILE` seam 真的封得住兩個 .env 來源。
@@ -124,24 +128,25 @@ bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
 bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
 for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 
-# SKILL.md 行數檢查（≤ 150）
-wc -l skills/dav-wiki/SKILL.md
-
-# 框架體重守門 + 儀表板（TMO-082）：context 預算、指標完整性、框架／產品行數比
-python3 scripts/ci/check-framework-weight.py
+# 文檔行數限制（2026-10-27 起改由 dav-skill-creater 規範承擔，唔再靠機械探針）：
+#   主檔 ≤150 行／子檔 ≤300 行／單 skill context ≤700 行 → 寫完自己量
+wc -l skills/*/SKILL.md skills/*/*.md
 ```
 
-### 框架體重守門（TMO-082）
+### 文檔行數限制（2026-10-27 減法後：改由**規範**承擔，唔再靠機械探針）
 
-`scripts/ci/check-framework-weight.py` 守三樣嘢（設定在 `docs/ci/framework-weight.json`）：
+原本用 `scripts/ci/check-framework-weight.py`（＋ `tests/framework-weight.bats`、
+`tests/skill-size-guard.bats`）做機械守門。2026-10-27 減法：**兩支機械探針同守門腳本已刪**，
+規則改寫入 `dav-skill-creater` 規範（`skills/dav-skill-creater/editor-guide.md`「文檔行數限制」章）：
 
-| 守乜 | 意思 | 點解要有 |
-|------|------|---------|
-| **context 預算** | 每個 skill 嘅 `SKILL.md` + 支援 `.md` 行數 ≤ cap | 呢啲係 agent **每次觸發 skill 真金白銀要讀落 context** 嘅量；冇上限就會慢慢脹 |
-| **指標完整性** | `SKILL.md` 點名嘅子檔（`./xxx.md`）必須存在且非空 | 指標指住空檔 = agent 讀到空內容 = 假覆蓋 |
-| **框架／產品行數比** | (框架層 + context 層) / 產品層 ≤ baseline + tolerance | ratchet：加探針會推高比值，所以用 baseline + 餘裕；**明顯上升先紅** |
+| 守乜 | 上限 | 類型 |
+|------|------|------|
+| **主檔** `SKILL.md` | ≤ 150 行 | 硬上限（過長必拆子檔）|
+| **單一支援子檔** | ≤ 300 行 | 硬上限（拆檔或壓成表）|
+| **單 skill context 總量**（主檔 ＋ 支援 .md）| ≤ 700 行 | 軟上限（先減法：去重 → 表格化 → 指標化）|
 
-想睇儀表板（每個 skill 嘅 context 排行、框架體重、產物線檔案數）：直接跑上面嗰條命令。
+寫完／改完自己量：`wc -l skills/<name>/*.md`。
+**點解唔再機械守**：每加一支機械探針，框架層（tests/）就膨脹一次 → 探針自己都係 context ＋ 維護成本。
 
 ### markdownlint 政策（TMO-037 後）
 
@@ -151,21 +156,97 @@ python3 scripts/ci/check-framework-weight.py
 - `.venv/`、`node_modules/` 必排除（見 `.markdownlint-cli2.jsonc`），否則 PoC venv 會灌入假錯誤。
 - 表格列內若出現 `\|`、`||`、`a|b` 這類管線，需寫成 `\|`，否則整列會被當成非表格列（MD056 + 連帶 MD013）。
 
-## CI / GitHub Actions
+## 完成條件（閘）
+
+> **TMO-084 決策（2026-10-27，用戶）**：CI **降級為「偵測器」**，唔再係完成條件。
+
+| 嘢 | 定位 | 阻唔阻你 |
+|-----|------|---------|
+| **本機探針**（`bats tests/` ＋ skill-local ＋ mutant 全死） | **閘** | ✅ 紅就唔算完成 |
+| **本機 lint**（markdownlint / shellcheck / bash -n / heredoc / 文件漂移） | **閘** | ✅ 紅就唔算完成 |
+| **Reviewer 二審**（V03） | **閘** | ✅ 未過唔算完成 |
+| **CI（GitHub Actions）** | **偵測器** | ❌ 唔阻 merge、唔係完成條件 |
+
+**點解**：本 repo 係**平時自用嘅技能庫**，唔係要出貨嘅產品 → 唔需要另一部機做發佈閘。
+
+**一條指令跑齊本機閘**（11 步，由便宜到昂貴排，紅就停；**≈ 10–15 分鐘**，mutant 全表為主）：
+
+```bash
+bash scripts/check-all.sh
+```
+
+**本機 pre-push 閘**（可選；裝一次就長期生效，push 前自動跑上面嗰條）：
+
+```bash
+bash scripts/install-local-hooks.sh       # 安裝
+SKIP_LOCAL_CI=1 git push                   # 一次性繞過（CI 仍然會跑）
+bash scripts/install-local-hooks.sh --uninstall
+```
+
+> 本機閘嘅守門探針：`tests/local-ci-guard.bats`（LC-1..LC-8）—— 佢會**按 step 名**雙向對齊 `ci.yml` 同本機
+> runner（CI 有嘅 step 本機冇 → 紅；本機有嘅 CI 冇 → 紅），並用 mutant `LC-M1` 證明「有步驟失敗時整體一定紅」。
+> ⚠️ 對齊只及於 step **名**同 markdownlint glob／doc-drift `--from-date`（由 ci.yml 抽），**唔及於 step body**。
+
+## 測試喺邊、點跑（2026-10-27 探針 skill-local 化）
+
+| 位置 | 內容 | 幾時跑 |
+|---|---|---|
+| `tests/*.bats` | **repo 級**測試（install.sh、本機閘、等價性、mutant harness、secret 遮罩⋯⋯）| 改 repo 級嘢時 |
+| `skills/<name>/tests/*.bats` | **每個 skill 自己**嘅測試（跟 skill 搬；共用 repo 級 `tests/helpers/test-env.bash` → **離開 repo 就跑唔到**，唔係獨立套件）| 改**個別 skill** 時 |
+
+```bash
+# 改一個 skill → 只跑嗰個 skill（唔使等成 repo 套件）
+bash scripts/test-skill.sh regression-guard
+bash scripts/test-skill.sh dav-wiki pptx-slim     # 可以一次過幾個
+bash scripts/test-skill.sh --list                 # 列有測試嘅 skill
+
+# 或者直接用 bats（同一件事）
+bats skills/regression-guard/tests/
+
+# 全套（repo 級 ＋ 所有 skill 級）
+bash scripts/check-all.sh
+```
+
+> 搬動探針時注意：`skills/<name>/tests/` 嘅探針**唔可以用** `load 'helpers/test-env'`
+> （相對路徑相對 `BATS_TEST_DIRNAME`，搬咗 skill 就搵唔到）→ 用絕對路徑：
+> `REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"; load "$REPO_ROOT/tests/helpers/test-env"`。
+
+## regression-guard 嘅 CI：本機跑（唔喺 GitHub）
+
+> **2026-10-27 用戶決策**：「regression-guard 的 ci 在本地跑都得，不用在 github 上跑」
+> → `.github/workflows/regression-guard-jev-poc.yml` **已刪除**（探針 `CI-f` 鎖住唔准加返）。
+
+```bash
+bash skills/regression-guard/PoC/run_ci.sh list          # 列 subcommand
+bash skills/regression-guard/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
+OPENROUTER_API_KEY=sk-or-v1-... bash skills/regression-guard/PoC/run_ci.sh pipeline US-101
+bash skills/regression-guard/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
+bash skills/regression-guard/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
+bash skills/regression-guard/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
+```
+
+**Return code**：`0` 綠｜`2` 黃（警告）｜`1` 紅（擋）｜`3` 用法／環境錯誤。
+詳見 [`docs/ci/regression-guard-jev-poc.md`](docs/ci/regression-guard-jev-poc.md)。
+
+## CI / GitHub Actions（偵測器，唔係閘）
+
+> **定位（TMO-084，2026-10-27）**：CI 係**跨環境偵測器**，唔係完成條件；亦**刻意唔開** branch protection
+> （即係 CI 紅都 merge 得 —— 呢個係**有意識**嘅選擇，唔係「未設定」）。
+> 佢仲有價值嘅唯一原因：CI 係**另一部機**（clean clone、雙 OS、乾淨依賴、冇 API key、冇暖快取）——
+> 呢啲係你部機**結構上**捉唔到嘅。已知真實案例（2026-10-05 CI 首跑）：shellcheck apt 0.9 vs 本機 0.11
+> 嘅 SC2002 差異、macOS runner bash 3.2 令 31 條測試被靜默丟棄、clean clone 缺未版控 fixture 令 34 條紅、
+> ffmpeg 8 移除 `-vsync`。
+> → **CI 紅唔一定係你做錯**（多數係環境差異），但值得望一眼；真 bug 就要修。
 
 每個 PR 會自動跑（見 `.github/workflows/ci.yml`）：
 
-1. **bats 全套測試**（macOS + Linux；先建 PoC venv、裝 ffmpeg）
+1. **bats 測試**（macOS + Linux；先建 PoC venv、裝 ffmpeg）：repo 級 `tests/` ＋ 各 skill 自帶 `skills/*/tests/`
 2. **markdownlint**（全 repo：`skills/**/*.md`、`docs/**/*.md`、`tests/**/*.md`、`*.md`）
-   ——**阻擋式**（TMO-037 清完 270 個錯後已移除 `continue-on-error: true`）；由
-   `tests/markdownlint-guard.bats` 鎖住「必須存在、必須會擋、glob 不得縮小」
+   ——**阻擋式**（TMO-037 清完 270 個錯後已移除 `continue-on-error: true`）
 3. **bash -n** 驗證 CLI 腳本語法
-4. **SKILL.md 行數檢查**（≤ 150）
-5. **Python heredoc 平衡檢查**
-6. **框架體重守門**（`python3 scripts/ci/check-framework-weight.py`）：context 預算 + 指標完整性 +
-   框架／產品行數比（ratchet）。守門探針：`tests/framework-weight.bats`（FW-1..016，含死指標、
-   子檔被掏空、枚舉壞咗、ratio 超標四種壞情境嘅實測證明）。
-7. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 58 支
+4. **Python heredoc 平衡檢查**
+5. **文件漂移檢查**（D1–D8；`bash scripts/ci/check-doc-drift.sh --from-date 2026-10-26`）
+6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 49 支
    mutant 在副本上重跑一次（各類分佈見該檔本身——手寫明細會漂，交給 `awk` 自查），
    每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
@@ -181,8 +262,8 @@ python3 scripts/ci/check-framework-weight.py
    數目用這兩行自查（數字會隨表成長變動，記得同樣用這兩行重查；本行為最近一次查得的值）：
 
 ```bash
-awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 行為鎖 48
-awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 文件／資料契約鎖 10
+awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 行為鎖 47
+awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 文件／資料契約鎖 2
 ```
 
    另有 `MUTANT(text-lock):` 前綴慣例，只給「目標檔是程式、卻只想鎖文字」的罕見情況用。
@@ -196,15 +277,17 @@ awk -F'\t' '$1 !~ /^#/ && /MUTANT\(text-lock\)/' scripts/ci/mutants.tsv | wc -l 
    突變紅了也不算咬住（死因與語意無關），runner 在載入期就會用 `SYNTAX_LANGS` 的語法哨兵擋掉，
    這一類列連 `--list` 都過不了（`tests/mutant-must-die.bats` MMD-6 ⑦ 實測）。
 
-CI badge：見 [README.md](README.md) 頂部。
+CI badge：見 [README.md](README.md) 頂部。badge 仍然反映真實狀態（紅就係紅），但唔代表你未完成工作 ——
+閘喺本機（見上面「完成條件（閘）」）。
 
 ## 提 PR 流程
 
+> TMO-084 之後：**閘喺本機**，CI 係輔助偵測（見上面「完成條件（閘）」）。
+
 1. Fork → 開 feature branch（`feature/xxx` 或 `fix/xxx`）
-2. 本機跑 `bats tests/` 確認全綠
-3. 本機跑 `markdownlint-cli2 "skills/**/*.md" "docs/**/*.md" "tests/**/*.md" "*.md"` 確認 0 issues
-4. 提 PR → CI 自動跑
-5. 等待 review
+2. 本機跑 `bash scripts/check-all.sh` 確認全綠（≈ 5 分鐘；一條指令跑齊探針 ＋ lint ＋ mutant）
+3. 提 PR → CI 自動跑（**唔阻你**：冇 branch protection，CI 紅都 merge 得；值得望一眼）
+4. 等待 review
 
 ## 程式碼風格
 

@@ -14,9 +14,14 @@
 # 性質兩種（TMO-066 二審後明文化）：分類看**目標檔類型**（可機械判定，不看註解）——
 #   * 行為鎖：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 死因必須是語意差。
 #   * 文件／資料契約鎖：目標檔是 `.md`／`.json` 等，探針只斷言檔案文字。
-#   查到現在有幾列（行為鎖 48＋文件／資料契約鎖 10＝58；其中 TMO-071/072/073 再 +5
+#   查到現在有幾列（行為鎖 47＋文件／資料契約鎖 2＝49；TMO-071/072/073 再 +5
 #   —— DD-M1..DD-M3／DR-M1／DR-M2；PNA-M1／PNA-M2 為 TMO-074 掃描器重寫時補嘅
-#   PNA-4b／PNA-4c canary 對應條目）：
+#   PNA-4b／PNA-4c canary 對應條目；LC-M1 為 TMO-084「本機 CI 等價閘」新增；
+#   RG-CI-M1 為 TMO-084「regression-guard CI 改本機跑」嘅本機 runner 對應條目；
+#   ⚠️ 2026-10-27 減法：刪走 11 列（RG-M1..M3／DT-M1..M3／DR-M1／DR-M2／PNA-M1..M3；
+#   RG-M4 改指向 skill-local 探針後補回 → 48 → 49）
+#   —— 佢哋嘅探針（回歸-guard-watch-mode／restruct-*／probe-name-ascii）屬「測文件」性質，
+#   已隨「只保留真 python／shell 功能測試」嘅減法一併刪走）：
 #     awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
 #     awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
 #   ⚠️ 增刪列之後要**重新算一次**並把上面那行的數字改掉（數字過期＝文件與實作不符）。
@@ -40,64 +45,55 @@
 # 下次有人把 gate 改成恒真、把護欄拿掉，沒有人會知道。這張表把它變成 CI 會跑的檢查。
 # 原文用「整行精確比對」（含縮排）：程式碼一改，這張表就會找不到錨點而大聲失敗，
 # 不會靜默變成空過（找不到錨點＝FAIL，不是 skip）。
-IMG-M1	skills/pptx-slim/scripts/pptx-shrink-images.py	            img.thumbnail((args.image_max_edge, args.image_max_edge), Image.LANCZOS)	            pass  # MUTANT: lossy 不再縮圖	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-6
-IMG-M2	skills/pptx-slim/scripts/pptx-shrink-images.py	    allowed = LOSSLESS_IMAGE_EXT if mode == "lossless" else LOSSY_IMAGE_EXT	    allowed = LOSSY_IMAGE_EXT  # MUTANT: 無損模式也放行 JPEG（靜默有損）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-4
-IMG-M3	skills/pptx-slim/scripts/pptx-verify.py	    report.gate("G2d 圖片關", checked > 0 and not bad, detail)	    report.gate("G2d 圖片關", True, detail)  # MUTANT: 畫質關恒真	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-10
-IMG-M4	skills/pptx-slim/scripts/pptx-verify.py	                        if got < min_psnr:	                        if False:  # MUTANT: PSNR 門檻失效	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-11
-IMG-M5	skills/pptx-slim/scripts/pptx-shrink-images.py	            if ext == ".png" and png_bit_depth(local) not in (1, 2, 4, 8):	            if False:  # MUTANT: PNG 位深護欄移除	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-3
-IMG-M6	skills/pptx-slim/scripts/pptx-verify.py	                        if stream_same(zs, zd, name):	                        if False:  # MUTANT: 原檔豁免拿掉（刻意保留的原檔會誤紅）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-14
-IMG-M7	skills/pptx-slim/scripts/pptx-shrink-images.py	                except (SystemExit, OSError, ValueError) as exc:	                except SystemExit:  # MUTANT: Pillow 例外直出 traceback（rc=1）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-16
-IMG-M8	skills/pptx-slim/scripts/pptx_common.py	        if ref.size[0] * ref.size[1] > got.size[0] * got.size[1]:	        if False:  # MUTANT: 不比尺寸，小圖一律放大回母帶（誤殺合法縮圖）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-20
-IMG-M9	skills/pptx-slim/scripts/pptx-shrink-images.py	    if args.src.is_dir() and args.src.resolve() == args.out.resolve():	    if False:  # MUTANT: src==out 護欄移除（原地覆蓋原圖）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-21
-IMG-M10	skills/pptx-slim/scripts/pptx-verify.py	                    if is_media(n) and Path(n).suffix.lower() in RASTER_IMAGE_EXT)	                    if is_media(n) and Path(n).suffix.lower() in IMAGE_EXT)  # MUTANT: 向量圖也算進來（純向量 deck 誤紅）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-19
-IMG-M11	skills/pptx-slim/scripts/pptx-shrink-images.py	            if args.mode == "lossy" and args.png_colors > 0:	            if False:  # MUTANT: --png-colors 變成裝飾（PNG 不量化）	tests/pptx-slim-images.bats	PPTX-SLIM-IMG-17
-V-M1	skills/pptx-slim/scripts/pptx-shrink-media.py	    if not args.no_keep_original and after >= before:	    if False:  # MUTANT: 關掉「壓完更大就保留原檔」	tests/pptx-slim.bats	PPTX-SLIM-3
-V-M2	skills/pptx-slim/scripts/pptx-repack.py	                if len(payload) != original_size:	                if True:  # MUTANT: 一律 STORED（連保留原檔的 entry 也改壓縮方式）	tests/pptx-slim.bats	PPTX-SLIM-3
-V-M3	skills/pptx-slim/scripts/pptx-repack.py	                payload = zin.read(info.filename)  # 逐 byte 原樣，連 metadata 都不動	                payload = zin.read(info.filename).replace(b"<a:t>", b"<a:t> ")  # MUTANT: 動了非媒體 entry	tests/pptx-slim.bats	PPTX-SLIM-2
-V-M4	skills/pptx-slim/scripts/pptx-verify.py	    report.gate("G2b 非媒體 byte 相同", not changed_non_media,	    report.gate("G2b 非媒體 byte 相同", True,  # MUTANT: G2b 恒真	tests/pptx-slim.bats	PPTX-SLIM-4
-V-M5	skills/pptx-slim/scripts/pptx-verify.py	        report.gate("G3a rels 零斷鏈", not broken,	        report.gate("G3a rels 零斷鏈", True,  # MUTANT: G3a 恒真	tests/pptx-slim.bats	PPTX-SLIM-5
-V-M6	skills/pptx-slim/scripts/pptx-verify.py	    report.gate("G2c 媒體與 --media-dir 一致", bool(checked) and not mismatched, detail)	    report.gate("G2c 媒體與 --media-dir 一致", not mismatched, detail)  # MUTANT: 空目錄也算過	tests/pptx-slim.bats	PPTX-SLIM-8
-V-M7	skills/pptx-slim/scripts/pptx-verify.py	        report.gate("G4 時長漂移", False,	        report.gate("G4 時長漂移", True,  # MUTANT: 新檔缺影片也放行	tests/pptx-slim.bats	PPTX-SLIM-11
-V-M8	skills/pptx-slim/scripts/pptx-repack.py	        die("--dst 不可與 --src 相同（本工具絕不覆蓋原檔）")	        pass  # MUTANT: 移除「不可覆蓋原檔」的保護	tests/pptx-slim.bats	PPTX-SLIM-6
-V-M9	skills/pptx-slim/scripts/pptx-repack.py	    if args.dst.exists() and not args.force:	    if False:  # MUTANT: 不再拒絕覆蓋既有輸出	tests/pptx-slim.bats	PPTX-SLIM-9
-V-M10	skills/pptx-slim/scripts/pptx_common.py	        hits = exact_hits(word)	        hits = []  # MUTANT: 取消精確優先（一律子字串）	tests/pptx-slim.bats	PPTX-SLIM-10
-V-M11	skills/pptx-slim/scripts/pptx-verify.py	            if is_media(name):	            if True:  # MUTANT: 非媒體也當媒體（G2b 靜默失效）	tests/pptx-slim.bats	PPTX-SLIM-4
-V-M12	skills/pptx-slim/scripts/pptx-verify.py	        bad = zf.testzip()	        bad = None  # MUTANT: 不做 CRC 檢查	tests/pptx-slim.bats	PPTX-SLIM-12
+IMG-M1	skills/pptx-slim/scripts/pptx-shrink-images.py	            img.thumbnail((args.image_max_edge, args.image_max_edge), Image.LANCZOS)	            pass  # MUTANT: lossy 不再縮圖	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-6
+IMG-M2	skills/pptx-slim/scripts/pptx-shrink-images.py	    allowed = LOSSLESS_IMAGE_EXT if mode == "lossless" else LOSSY_IMAGE_EXT	    allowed = LOSSY_IMAGE_EXT  # MUTANT: 無損模式也放行 JPEG（靜默有損）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-4
+IMG-M3	skills/pptx-slim/scripts/pptx-verify.py	    report.gate("G2d 圖片關", checked > 0 and not bad, detail)	    report.gate("G2d 圖片關", True, detail)  # MUTANT: 畫質關恒真	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-10
+IMG-M4	skills/pptx-slim/scripts/pptx-verify.py	                        if got < min_psnr:	                        if False:  # MUTANT: PSNR 門檻失效	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-11
+IMG-M5	skills/pptx-slim/scripts/pptx-shrink-images.py	            if ext == ".png" and png_bit_depth(local) not in (1, 2, 4, 8):	            if False:  # MUTANT: PNG 位深護欄移除	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-3
+IMG-M6	skills/pptx-slim/scripts/pptx-verify.py	                        if stream_same(zs, zd, name):	                        if False:  # MUTANT: 原檔豁免拿掉（刻意保留的原檔會誤紅）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-14
+IMG-M7	skills/pptx-slim/scripts/pptx-shrink-images.py	                except (SystemExit, OSError, ValueError) as exc:	                except SystemExit:  # MUTANT: Pillow 例外直出 traceback（rc=1）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-16
+IMG-M8	skills/pptx-slim/scripts/pptx_common.py	        if ref.size[0] * ref.size[1] > got.size[0] * got.size[1]:	        if False:  # MUTANT: 不比尺寸，小圖一律放大回母帶（誤殺合法縮圖）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-20
+IMG-M9	skills/pptx-slim/scripts/pptx-shrink-images.py	    if args.src.is_dir() and args.src.resolve() == args.out.resolve():	    if False:  # MUTANT: src==out 護欄移除（原地覆蓋原圖）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-21
+IMG-M10	skills/pptx-slim/scripts/pptx-verify.py	                    if is_media(n) and Path(n).suffix.lower() in RASTER_IMAGE_EXT)	                    if is_media(n) and Path(n).suffix.lower() in IMAGE_EXT)  # MUTANT: 向量圖也算進來（純向量 deck 誤紅）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-19
+IMG-M11	skills/pptx-slim/scripts/pptx-shrink-images.py	            if args.mode == "lossy" and args.png_colors > 0:	            if False:  # MUTANT: --png-colors 變成裝飾（PNG 不量化）	skills/pptx-slim/tests/pptx-slim-images.bats	PPTX-SLIM-IMG-17
+V-M1	skills/pptx-slim/scripts/pptx-shrink-media.py	    if not args.no_keep_original and after >= before:	    if False:  # MUTANT: 關掉「壓完更大就保留原檔」	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-3
+V-M2	skills/pptx-slim/scripts/pptx-repack.py	                if len(payload) != original_size:	                if True:  # MUTANT: 一律 STORED（連保留原檔的 entry 也改壓縮方式）	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-3
+V-M3	skills/pptx-slim/scripts/pptx-repack.py	                payload = zin.read(info.filename)  # 逐 byte 原樣，連 metadata 都不動	                payload = zin.read(info.filename).replace(b"<a:t>", b"<a:t> ")  # MUTANT: 動了非媒體 entry	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-2
+V-M4	skills/pptx-slim/scripts/pptx-verify.py	    report.gate("G2b 非媒體 byte 相同", not changed_non_media,	    report.gate("G2b 非媒體 byte 相同", True,  # MUTANT: G2b 恒真	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-4
+V-M5	skills/pptx-slim/scripts/pptx-verify.py	        report.gate("G3a rels 零斷鏈", not broken,	        report.gate("G3a rels 零斷鏈", True,  # MUTANT: G3a 恒真	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-5
+V-M6	skills/pptx-slim/scripts/pptx-verify.py	    report.gate("G2c 媒體與 --media-dir 一致", bool(checked) and not mismatched, detail)	    report.gate("G2c 媒體與 --media-dir 一致", not mismatched, detail)  # MUTANT: 空目錄也算過	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-8
+V-M7	skills/pptx-slim/scripts/pptx-verify.py	        report.gate("G4 時長漂移", False,	        report.gate("G4 時長漂移", True,  # MUTANT: 新檔缺影片也放行	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-11
+V-M8	skills/pptx-slim/scripts/pptx-repack.py	        die("--dst 不可與 --src 相同（本工具絕不覆蓋原檔）")	        pass  # MUTANT: 移除「不可覆蓋原檔」的保護	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-6
+V-M9	skills/pptx-slim/scripts/pptx-repack.py	    if args.dst.exists() and not args.force:	    if False:  # MUTANT: 不再拒絕覆蓋既有輸出	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-9
+V-M10	skills/pptx-slim/scripts/pptx_common.py	        hits = exact_hits(word)	        hits = []  # MUTANT: 取消精確優先（一律子字串）	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-10
+V-M11	skills/pptx-slim/scripts/pptx-verify.py	            if is_media(name):	            if True:  # MUTANT: 非媒體也當媒體（G2b 靜默失效）	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-4
+V-M12	skills/pptx-slim/scripts/pptx-verify.py	        bad = zf.testzip()	        bad = None  # MUTANT: 不做 CRC 檢查	skills/pptx-slim/tests/pptx-slim.bats	PPTX-SLIM-12
 FF-M1	scripts/ci/check-ffmpeg-version.sh	MIN_MAJOR=5	MIN_MAJOR=0  # MUTANT: 版本底線失效	tests/ffmpeg-version.bats	FV-2
 FF-M2	scripts/ci/check-ffmpeg-version.sh	if [[ $cap2_rc -ne 0 ]]; then	if [[ 0 -ne 0 ]]; then  # MUTANT: 第二組能力實測失效	tests/ffmpeg-version.bats	FV-8
 FF-M3	scripts/ci/check-ffmpeg-version.sh	    -vf "scale='if(gt(iw,ih),min(1920,iw),-2)':'if(gt(iw,ih),-2,min(1920,ih))'" \	    -vf null \  # MUTANT: 不再驗 scale 表達式	tests/ffmpeg-version.bats	FV-9
-DW-M1	skills/dav-wiki/scripts/wiki-extract-audio.sh	        exit "$EXIT_TOOLMISSING"	        exit 0  # MUTANT: 缺工具也回成功	tests/wiki-toolmissing-contract.bats	WTM-2
-DW-M2	skills/dav-wiki/scripts/wiki-extract-media.sh	    require_tool pdfimages "brew install poppler"	    : # MUTANT: poppler 檢查拿掉	tests/wiki-toolmissing-contract.bats	WTM-8
-DW-M3	skills/dav-wiki/scripts/wiki-extract-media.sh	        pptx) extract_pptx_images ;;	        pptx) extract_docx_images ;;  # MUTANT: pptx 走錯路徑	tests/wiki-toolmissing-contract.bats	WTM-9
-DW-M4	skills/dav-wiki/SKILL.md	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就降級**：該模組自動降級為純文字模式（MUTANT）	tests/wiki-toolmissing-contract.bats	WTM-5
-DW-M5	skills/dav-wiki/scripts/wiki-ocr.sh	EXIT_NOINPUT=2	EXIT_NOINPUT=1  # MUTANT: 缺輸入的回傳碼改掉	tests/wiki-ocr.bats	AC-O4
-DW-M6	skills/dav-wiki/scripts/wiki-cleanup.sh	PURGE=false	PURGE=true  # MUTANT: 預設變真刪除	tests/wiki-cleanup.bats	--yes 90 deprecated
+DW-M1	skills/dav-wiki/scripts/wiki-extract-audio.sh	        exit "$EXIT_TOOLMISSING"	        exit 0  # MUTANT: 缺工具也回成功	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-2
+DW-M2	skills/dav-wiki/scripts/wiki-extract-media.sh	    require_tool pdfimages "brew install poppler"	    : # MUTANT: poppler 檢查拿掉	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-8
+DW-M3	skills/dav-wiki/scripts/wiki-extract-media.sh	        pptx) extract_pptx_images ;;	        pptx) extract_docx_images ;;  # MUTANT: pptx 走錯路徑	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-9
+DW-M4	skills/dav-wiki/SKILL.md	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就降級**：該模組自動降級為純文字模式（MUTANT）	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-5
+DW-M5	skills/dav-wiki/scripts/wiki-ocr.sh	EXIT_NOINPUT=2	EXIT_NOINPUT=1  # MUTANT: 缺輸入的回傳碼改掉	skills/dav-wiki/tests/wiki-ocr.bats	AC-O4
+DW-M6	skills/dav-wiki/scripts/wiki-cleanup.sh	PURGE=false	PURGE=true  # MUTANT: 預設變真刪除	skills/dav-wiki/tests/wiki-cleanup.bats	--yes 90 deprecated
 SM-M1	tests/helpers/test-env.bash	  sed -E 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g; s/([A-Za-z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Za-z0-9_]*)=[^[:space:]]*/\1=***MASKED***/g'	  cat  # MUTANT: 整段遮罩變 cat（直通，語意確為 bypass）	tests/secret-masking.bats	SM-3
 SM-M2	scripts/ci/lint-probe-secrets.py	            if not MASK_CALL_FORM.search(code):	            if False:  # MUTANT: R2 停用	tests/secret-masking.bats	SM-5
-SM-M3	tests/poc-clean-clone.bats	load 'helpers/test-env'	mask_secrets() { cat; }  # MUTANT: 自己再定義一份	tests/secret-masking.bats	SM-1
-RG-M1	skills/regression-guard/runner-cheatsheet.md	jest --ci	jest --watch	tests/regression-guard-watch-mode.bats	documents the watch-mode rule
-RG-M2	docs/sop/gates.json	詳見 regression-guard SKILL.md	詳見 SKILL.md	tests/regression-guard-watch-mode.bats	GATES: gates.json Gate 3 notes mention watch-mode rule
-RG-M3	docs/sop/handbook/2.3-execution.md	| 通用保險 | 指令後加 `< /dev/null` 強制關 stdin |	| 通用保險 | 指令後請自行記得關掉 stdin |	tests/regression-guard-watch-mode.bats	HANDBOOK: 2.3-execution.md has the watch-mode warning section
-RG-M4	skills/regression-guard/SKILL.md	見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	見本 skill 的 runner 對照表子檔。	tests/regression-guard-watch-mode.bats	CROSS: < /dev/null fallback reachable from all four documents
+SM-M3	skills/regression-guard/tests/poc-clean-clone.bats	load "$REPO_ROOT/tests/helpers/test-env"	mask_secrets() { cat; }  # MUTANT: 自己再定義一份	tests/secret-masking.bats	SM-1
 # LK-M1：這裡刻意**不加**行尾 `# MUTANT: ...` 註解 —— 錨點是**行中**片段（該行後面還有
 #   `*GLOBS],`），加註解會把後半行吞掉 → SyntaxError 假死因（TMO-066 二審 #1）。
 #   載入期語法哨兵（`SYNTAX_LANGS`）現在會直接擋下這類「靠語法壞掉才紅」的列。
 LK-M1	scripts/ci/lint-shell-var-nonascii.py	"ls-files", "-co", "--exclude-standard",	"ls-files", "-c", "--exclude-standard",	tests/env-equivalence.bats	ENV-EQ-17
-DT-M1	skills/dav-trust/SKILL.md	| **用戶叫停立即收斂**（v2.4 新增）| N/A | 先分流：「結束」→ 收斂 + `🏁 Trust Mode 已結束` + 退出身份；「暫停」→ 收斂 + `⏸️ Trust Mode 已暫停（可續跑）` + **不輸出結束標記、不退出身份**（序列見 resume.md §4）|	| **叫停處理**（v2.4 新增）| N/A | 先分流：「結束」→ 收斂 + `🏁 Trust Mode 已結束` + 退出身份；「暫停」→ 收斂 + `⏸️ Trust Mode 已暫停（可續跑）` + **不輸出結束標記、不退出身份**（序列見 resume.md §4）|	tests/restruct-dav-trust.bats	RESTRUCT-DAV-TRUST: main skill registers resume and stop rules
-DT-M2	skills/dav-trust/time-anchor.md	**進度錨點（v2.4）**：trust-log **檔頭**另需一行 `> 進度錨點: PHASE=…、DONE=…、NEXT=…、UPDATED_AT=…`，	MUTANT(text-lock): （進度錨點規範整行移除）	tests/restruct-dav-trust.bats	RESTRUCT-DAV-TRUST: trust-log checkpoint carries progress anchor
-DT-M3	skills/dav-trust/SKILL.md	- **產出**：對話中明示「Trust Mode 啟動 + START_TS + DEADLINE_TS」＋trust-log 檔頭寫進度錨點（PHASE / DONE / NEXT / UPDATED_AT）；拒絕啟動時輸出拒絕話術	- **產出**：對話中明示「Trust Mode 啟動 + START_TS + DEADLINE_TS」；拒絕啟動時輸出拒絕話術  # MUTANT(text-lock): 啟動時不寫進度錨點	tests/restruct-dav-trust.bats	RESTRUCT-DAV-TRUST: main skill registers resume and stop rules
 QD-M1	lib/install/symlink.sh	    if [[ "$current" != "$(abs_path "$target")" ]]; then	    if [[ "$current" == "$(abs_path "$target")" ]]; then  # MUTANT: 條件反轉 → foreign symlink 會被 repair（不得重新指向）	tests/install-qoder.bats	QODER-17
 QD-M2	lib/install/symlink.sh	    if [[ "$protect_foreign" -eq 1 ]]; then	    if [[ "$protect_foreign" -eq 0 ]]; then  # MUTANT: 條件反轉 → protect_foreign 失效（foreign per-skill symlink 會被重新指向）	tests/install-qoder.bats	QODER-31
 QD-M3	lib/install/symlink.sh	    log_warn "target exists and is not a symlink, skipping (will not overwrite): $link"	    rm -f "$link"  # MUTANT: 保護被拿掉 → 直接刪掉使用者自有的 AGENTS.md	tests/install-qoder.bats	QODER-16
 QD-M4	install.sh	          if [[ $agent_known -eq 0 ]]; then	          if [[ $agent_known -ne 0 ]]; then  # MUTANT: 條件反轉 → 未知 agent 靜默略過（必須 exit 2）	tests/install-qoder.bats	QODER-15
 QD-M5	install.sh	  if [[ "$current" == "$expected" ]] || [[ "$current" == "$(abs_path "$expected")" ]]; then	  if true; then  # MUTANT: 不驗 symlink target 就刪（會刪掉使用者自己的 symlink）	tests/install-qoder.bats	QODER-17
 QD-M6	lib/install/logging.sh	  if [[ ${DRY_RUN:-0} -eq 1 ]]; then	  if false; then  # MUTANT: dry-run 也真的執行 → 會寫檔	tests/install-qoder.bats	QODER-23
-RG-M5	skills/regression-guard/PoC/journey_runner.py	    return int.from_bytes(digest[:4], "big") % 1500	    return hash(step_id) % 1500  # MUTANT: 退回內建 hash() → PYTHONHASHSEED 隨機化 → payload/cache key 每跑必變	tests/v2.1-jev-poc.bats	M6.3-m
-DD-M1	skills/dav-reconciler/scripts/check-doc-drift.py	self.report("D6", stem, f"缺需求錨點檔 docs/req/{stem}-requirement.md")	pass  # MUTANT: D6 缺錨點檢查失效	tests/doc-drift.bats	DOC-DRIFT-017: D6 catches missing requirement anchor
-DR-M1	skills/dav-reconciler/reconcile-format.md	| 🚫 已作廢 | 該需求句已被取消（規劃階段標註「已作廢」）→ **不列入交付狀態判定**，但**必須列出**（不可省略）|		tests/restruct-dav-reconciler.bats	RECON-007: exactly four allowed status values are defined
-DR-M2	skills/dav-reconciler/reconcile-format.md	| ✅ 已實作 | 需求句的**全部條件**都能在變更清單裡找到對應實作，且有可驗證的證據 |	| ✅ 已實作 🟡 暫緩 | 需求句的**全部條件**都能在變更清單裡找到對應實作，且有可驗證的證據 |	tests/restruct-dav-reconciler.bats	RECON-007: exactly four allowed status values are defined
-DD-M2	skills/dav-reconciler/scripts/check-doc-drift.py	                if missing:	                if False:  # MUTANT: D7 覆蓋率檢查失效	tests/doc-drift.bats	DOC-DRIFT-024: D7 catches a reconcile table that misses an R-ID
-DD-M3	skills/dav-reconciler/scripts/check-doc-drift.py	            if gaps and declared.startswith("✅"):	            if False:  # MUTANT: D8 狀態矛盾檢查失效	tests/doc-drift.bats	DOC-DRIFT-028: D8 catches a deliverable claiming success while the reconcile has gaps
-PNA-M1	tests/helpers/probe-scan.bash	        if (s !~ /^\[\[/) continue	        if (s !~ /^\[\[/) continue; if (s ~ /^\[\[/) continue	tests/probe-name-ascii.bats	PNA-4b: the standalone-assertion scanner bites
-PNA-M2	tests/helpers/probe-scan.bash	              if (t != "}" && t != "};") break      # ③ 其他 code → 唔豁免	if (t != "}" && t != "};") continue    # MUTANT: 遇其他 code 唔停 → 內層區塊被錯誤豁免	tests/probe-name-ascii.bats	PNA-4c: the inner-block last-statement rule
-PNA-M3	tests/helpers/probe-scan.bash	found_body_close = 0	found_body_close = (i >= n)  # MUTANT: 斷言喺檔案最後一行就豁免（案例 E 就係咁 → 守門失效）	tests/probe-name-ascii.bats	PNA-4c: the inner-block last-statement rule
+RG-M5	skills/regression-guard/PoC/journey_runner.py	    return int.from_bytes(digest[:4], "big") % 1500	    return hash(step_id) % 1500  # MUTANT: 退回內建 hash() → PYTHONHASHSEED 隨機化 → payload/cache key 每跑必變	skills/regression-guard/tests/v2.1-jev-poc.bats	M6.3-m
+DD-M1	skills/dav-reconciler/scripts/check-doc-drift.py	self.report("D6", stem, f"缺需求錨點檔 docs/req/{stem}-requirement.md")	pass  # MUTANT: D6 缺錨點檢查失效	skills/dav-reconciler/tests/doc-drift.bats	DOC-DRIFT-017: D6 catches missing requirement anchor
+DD-M2	skills/dav-reconciler/scripts/check-doc-drift.py	                if missing:	                if False:  # MUTANT: D7 覆蓋率檢查失效	skills/dav-reconciler/tests/doc-drift.bats	DOC-DRIFT-024: D7 catches a reconcile table that misses an R-ID
+DD-M3	skills/dav-reconciler/scripts/check-doc-drift.py	            if gaps and declared.startswith("✅"):	            if False:  # MUTANT: D8 狀態矛盾檢查失效	skills/dav-reconciler/tests/doc-drift.bats	DOC-DRIFT-028: D8 catches a deliverable claiming success while the reconcile has gaps
+LC-M1	scripts/check-all.sh	overall_rc=1	overall_rc=0	tests/local-ci-guard.bats	LC-8: a failing step must make the whole run exit non-zero
+RG-CI-M1	skills/regression-guard/PoC/run_ci.sh	    red)    printf '2\n' ;;	    red)    printf '0\n' ;;	skills/regression-guard/tests/v2.1-jev-poc.bats	CI-d
+RG-M4	skills/regression-guard/SKILL.md	見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	見本 skill 的 runner 對照表子檔。	skills/regression-guard/tests/v2.1-jev-poc.bats	SKILL-e

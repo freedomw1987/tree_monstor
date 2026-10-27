@@ -101,9 +101,3 @@
 完成本 checklist 後，dev-checker-loop 才會進入 Step 4（dev 自動修復），最後跑 dav-submitter 產出 deliverable。
 
 ---
-
-## 變動歷史
-
-| 版本 | 日期 | 變動 | 為什麼 |
-| --- | --- | --- | --- |
-| v1.0 | 2026-09-26 | 初始 M02 Module 級校驗清單 | dev-checker-loop v2.2 範例 |

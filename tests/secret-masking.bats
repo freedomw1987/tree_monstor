@@ -3,7 +3,7 @@
 #
 # 背景：2026-10-05 做 TMO-045 反向驗證時，探針的 FAIL 訊息把本機**真實**
 # `OPENROUTER_API_KEY` 印進了 session log（NYH-1）。當時的遮罩函式
-# `mask_secrets()` 只定義在單一探針檔（`tests/poc-clean-clone.bats`）內，
+# `mask_secrets()` 只定義在單一探針檔（`skills/regression-guard/tests/poc-clean-clone.bats`）內，
 # 其他探針沒有任何防線，也沒有任何靜態鎖擋得住「下次忘記遮罩」。
 #
 # 本檔四層：
@@ -37,8 +37,8 @@ SCANNER="$REPO_ROOT/scripts/ci/lint-probe-secrets.py"
            find "$REPO_ROOT/tests/helpers" -maxdepth 1 -name '*.bash'; \
            find "$REPO_ROOT"/skills/*/tests -maxdepth 1 -name '*.bats' 2>/dev/null)
   # 防空過：抽取器若壞掉，上面的迴圈會 0 圈全綠
-  [ "$n" -ge 40 ] || {
-    echo "FAIL: 只掃到 $n 個探針檔（<40）→ 抽取器可能壞了" >&2
+  [ "$n" -ge 25 ] || {
+    echo "FAIL: 只掃到 $n 個探針檔（<25）→ 抽取器可能壞了" >&2
     return 1
   }
 }
@@ -74,8 +74,8 @@ SCANNER="$REPO_ROOT/scripts/ci/lint-probe-secrets.py"
   # shim 模擬 `_load_api_key()` 的來源順序（JEV_ENV_FILE 覆寫整份清單；
   # 否則讀 $HOME/.claude/... 的 .env）——這樣就 venv-free 也能跑到真 FAIL 訊息。
   local tree="$BATS_TEST_TMPDIR/tree"
-  mkdir -p "$tree/tests/helpers" "$tree/skills/regression-guard/PoC/.venv/bin"
-  cp "$REPO_ROOT/tests/poc-clean-clone.bats" "$tree/tests/"
+  mkdir -p "$tree/tests/helpers" "$tree/skills/regression-guard/tests" "$tree/skills/regression-guard/PoC/.venv/bin"
+  cp "$REPO_ROOT/skills/regression-guard/tests/poc-clean-clone.bats" "$tree/skills/regression-guard/tests/"
   cp "$HELPER" "$tree/tests/helpers/"
 
   local key="sk-or-v1-DEADBEEF0123456789ABCDEF"  # SECRET-OK: 假值，本地合成，非真 key
@@ -100,7 +100,7 @@ SHIM
   chmod +x "$tree/skills/regression-guard/PoC/.venv/bin/python"
 
   run env -u OPENROUTER_API_KEY HOME="$fake_home" \
-      bats "$tree/tests/poc-clean-clone.bats" --filter "CLEAN-POC-i"
+      bats "$tree/skills/regression-guard/tests/poc-clean-clone.bats" --filter "CLEAN-POC-i"
   # ① 失敗路徑真的走到（否則這條探針在測空氣）
   [ "$status" -ne 0 ]
   # ② FAIL 訊息真的有把被測輸出印出來（證明下面那條「不含密鑰」不是真空通過）

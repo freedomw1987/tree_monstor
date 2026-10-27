@@ -86,16 +86,6 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
 | 修改同時必清規範偏差 | 用戶明確「只動 A 不動 B」例外 | 不可累積技術債 |
 | 純文字引用（v2.2）| skill 子檔可用 markdown | 不寫跨 dir 路徑引用 |
 
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。本檔僅保留最近 3 條以節省 LLM 注意力。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v2.6 | 2026-10-26 | `examples/system-design.md` 152 → 136 行（§7 三個「為什麼這樣切割」合併成一張表：問題／理由／放棄嘅做法） | context 成本由 510 → 494 行；Module 切割示範嘅 5 條原則、邊界清單、對外 interface、資料模型、錯誤碼全部保留 |
-| v2.5 | 2026-09-26 | 自包含化：搬入 `examples/system-design.md`（原 monorepo 範例總目錄內的 docs 子目錄）；交叉引用段「見 monorepo 對應的 X」 → 「見本 skill 的 examples/system-design.md」 | skill 可離線讀、不綁定 monorepo；V03 Reviewer 二審通過 |
-| v2.4 | 2026-09-26 | 拆檔：主檔瘦身到 ~75 行，Step 1-5 全剖細節 → `workflow.md` | 達 150 行上限；與 dav-planner v2.2 拆檔哲學一致 |
-
 ---
 ---
 
@@ -105,4 +95,3 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
 - 規劃技巧（多輪提問 / INVEST AC / DoD）→ 見同套 dav-planner skill（需同套安裝，§2.1 規劃階段）
 - Module 完整生命週期範例 → 見本 skill 的 `examples/system-design.md`
 - 完整 SOP §2.1-§2.5 → 見 monorepo 對應的 handbook 目錄（路徑由 monorepo 約定）
-- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）

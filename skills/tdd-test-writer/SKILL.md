@@ -96,7 +96,7 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 > （`notes` 與 `remediation` 仍在 `gates.json` 與 handbook 2.3）。
 > **進本 Gate 時必須在對話引用下表的 `mandatory_phrase`；不引用＝視為 gate 未觸發**（屬「偽裝通過」，依 SOP 的違規回報規則處理）。
 > 2026-10-26 起 AGENTS.md 不再內嵌 SOP / Gate 表（只留「你是誰 + 萬事原則」）→
-> Gate 的定義改由**承載它的 skill** 負責，讓 skill 自足。`tests/gate-in-skill.bats` 鎖兩份一致。
+> Gate 的定義改由**承載它的 skill** 負責，讓 skill 自足。（鎖兩份一致嘅探針已於 2026-10-27 減法刪走 → 兩份要人手同步。）
 
 ### Gate 1 TDD gate
 
@@ -120,17 +120,3 @@ description: 在執行階段開始時，根據目標項目的 docs/backlog.md �
 
 > Gate 2 沒有專屬 skill（`gates.json` 的 `trigger_skill: null`）→ 由本 skill 承載。
 > bash/sh → shellcheck；python → ruff check 或 `python -m py_compile`；其他語言用對應工具。
-
-## 變動歷史
-
-完整變動歷史見 [`CHANGELOG.md`](./CHANGELOG.md)。
-
-| 版本 | 日期 | 變動 | 為什麼 |
-|------|------|------|------|
-| v2.4 | 2026-10-26 | 本輪支援檔無改動（只更新變動歷史以反映 TMO-083 全域瘦身） | 維持可追溯性 |
-| v2.3 | 2026-10-26 | 支援檔瘦身（TMO-082 A 刀）：`examples.md` 563 → 251 行（4 種框架嘅長範例 → 1 個完整 React 範例 ＋ 其餘骨架 ＋ 金字塔改用表格）；順手修走一個跨 skill 死指標（同 skill 寫法改抽象措辭，唔再指向唔存在嘅相對路徑） | context 成本由 699 行降至 387 行；死指標會令 agent 順指標讀到唔存在嘅檔（Reviewer 二審 P1-3） |
-| v2.2 | 2026-10-05 | 流程 6 步／觸發時機壓成表格、移除重複段（149 → 105 行） | TMO-046：主檔行數預檢（150 上限） |
-
-**交叉引用（純文字）**：
-- 測試結構示例 → 同套本 skill 子檔（`./examples.md`）
-- 全域 SOP 變動歷史 → 見 monorepo 對應的 changelog 檔（路徑由 monorepo 約定）
