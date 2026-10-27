@@ -13,7 +13,7 @@ CLI 直接抛 `RuntimeError` → `M6-g` / `M6.1-c` 探針紅。
 
 ## 檔案
 
-- **`e78dab15a3b78026.json`**
+- **`8b68c2cc7c16c510.json`**
   - 內容：
     fix_proposal(v2) 對 `fixtures/US-101-run.json` 的 3 題 noul 回應（problem_summary 0.22 / proposed_fix 0.12 /
     verification_steps 0.40）

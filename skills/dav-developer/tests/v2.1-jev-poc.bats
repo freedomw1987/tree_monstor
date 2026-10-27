@@ -266,7 +266,7 @@ print('OK: 4 fixtures, AC04=500')
 
 @test "M5-runtime-b: stale-test blocks journey (mock_observe_static works)" {
   need_poc_venv
-  local us_md="$REPO_ROOT/docs/ac/US-101.md"
+  local us_md="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-101.md"
   cd "$POC_DIR"
   # TMO-039：Oracle 改「注入 stub」——探針只驗 stale 偵測邏輯，
   # 不該依賴真 Jev API（本機有 key/快取才綠、CI 兩者皆無 → 假綠）
@@ -1004,7 +1004,7 @@ json.dump(a, open('$after', 'w'))
 }
 
 @test "M6.2-l: US-M62 AC file exists with 4 ACs" {
-  local f="$REPO_ROOT/docs/ac/US-M62.md"
+  local f="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md"
   assert_path_is_file "$f"
   for ac in "AC01" "AC02" "AC03" "AC04"; do
     assert_file_contains "$f" "$ac" || {
@@ -1061,7 +1061,7 @@ EOF
     --new 'return "planet"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
     --sandbox-dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: dry-run should return 0, got $status" >&2
@@ -1094,7 +1094,7 @@ EOF
     --new 'return "different-unrelated-text"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md"
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
   [ "$status" -eq 0 ] || {
     echo "FAIL: no_change should return 0, got $status" >&2
     return 1
@@ -1122,7 +1122,7 @@ EOF
     --new 'foo = "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md"
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
   # error=1（sandbox classification=error）
   [ "$status" -eq 1 ] || {
     echo "FAIL: ambiguous should return 1 (error), got $status" >&2
@@ -1158,7 +1158,7 @@ EOF
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
     --json 2>&1 || true)
   local after_count
   after_count=$(ls -a "$REPO_ROOT/tmp/" 2>/dev/null | grep -c "^\.sandbox-US-M63" || true)
@@ -1190,7 +1190,7 @@ EOF
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
     --json 2>&1) || true
   echo "$out" | "$PY" -c "
 import json, sys
@@ -1211,7 +1211,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
 }
 
 @test "M6.3-h: US-M63 AC file exists with 4 ACs" {
-  local f="$REPO_ROOT/docs/ac/US-M63.md"
+  local f="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
   assert_path_is_file "$f"
   for ac in "AC01" "AC02" "AC03" "AC04"; do
     assert_file_contains "$f" "$ac" || {
@@ -1248,7 +1248,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md"
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
   [ "$status" -eq 1 ] || {
     echo "FAIL: missing before.json should return 1, got $status" >&2
     return 1
@@ -1275,7 +1275,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
     --new 'return "planet"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
     --sandbox-dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: dry-run on out-of-repo file should return 0, got $status" >&2
@@ -1311,7 +1311,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
     --new 'return "planet"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/docs/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
     --sandbox-dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: 相對 .. 路徑應可安全處理，got $status" >&2
@@ -1516,7 +1516,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
   # 先清殘檔：否則上一次的 /tmp 檔會讓這條假綠（reviewer P2-4）
   rm -f $BATS_TEST_TMPDIR/flaky-test.md
   "$PY" flaky_check.py "$POC_DIR/journeys/US-M62.yaml" \
-    --source "$REPO_ROOT/docs/ac/US-M62.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md" \
     --story-id US-M62-flaky-test --runs 3 \
     --output $BATS_TEST_TMPDIR/flaky-test.md >/dev/null 2>&1 || true
   assert_path_is_file "$BATS_TEST_TMPDIR/flaky-test.md"
@@ -1620,7 +1620,7 @@ print('OK: wrote flaky_measured')
     --batch-report $BATS_TEST_TMPDIR/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
     --story-id US-M62 \
-    --source "$REPO_ROOT/docs/ac/US-M62.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md" \
     --runs 0
   # 應該成功（即使不額外跑）
   [ "$status" -le 1 ] || {
@@ -1755,7 +1755,7 @@ Path('$BATS_TEST_TMPDIR/gh-pr-test-batch.json').write_text(json.dumps(batch, ens
     --batch-report $BATS_TEST_TMPDIR/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
     --story-id US-M62 \
-    --source "$REPO_ROOT/docs/ac/US-M62.md" \
+    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md" \
     --runs 0 >/dev/null 2>&1 || true
   grep -q "flaky_measured" $BATS_TEST_TMPDIR/m62-batch.json || {
     echo "FAIL: batch_report missing flaky_measured" >&2
@@ -1841,8 +1841,8 @@ print('OK: high delta warning')
   assert_file_contains "$out_dir/matrix-summary.md" "US-999"
 }
 
-@test "M8-f: US-M81 AC file exists with 4 ACs" {
-  local f="$REPO_ROOT/docs/ac/US-M81.md"
+@test "M8-f: US-M81 AC fixture exists with 4 ACs (PoC fixture，已搬入 skill 內令 skill 自足)" {
+  local f="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M81.md"
   assert_path_is_file "$f"
   for ac in "AC01" "AC02" "AC03" "AC04"; do
     assert_file_contains "$f" "$ac" || {

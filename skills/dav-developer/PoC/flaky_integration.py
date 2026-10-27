@@ -15,7 +15,7 @@ M7 — flaky_integration.py
         --runs 2 \
         --journey journeys/US-M62.yaml \
         --story-id US-M62 \
-        --source docs/ac/US-M62.md
+        --source PoC/fixtures/ac/US-M62.md
 """
 
 from __future__ import annotations

@@ -3,7 +3,7 @@ Journey Gen CLI — 讀 AC 檔 → 產 journey YAML。
 
 用法:
     .venv/bin/python journey_gen.py <path/to/US-XXX.md> [output.yaml]
-    .venv/bin/python journey_gen.py ../../../docs/ac/US-101.md
+    .venv/bin/python journey_gen.py ../fixtures/ac/US-101.md
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from journey_generator import generate_journey, JOURNEYS_DIR
 def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print("用法: journey_gen.py <path/to/US-XXX.md> [output.yaml]")
-        print("例如: journey_gen.py ../../../docs/ac/US-101.md")
+        print("例如: journey_gen.py ../fixtures/ac/US-101.md")
         return 1
 
     src = Path(argv[1])

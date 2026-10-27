@@ -19,7 +19,7 @@ M6.3 — 互動式 sandbox runner
       --old "old text" --new "new text" \
       --journey journeys/US-M62.yaml \
       --story-id US-M62 \
-      --source docs/ac/US-M62.md \
+      --source PoC/fixtures/ac/US-M62.md \
       --sandbox-dry-run
 
     # 真的跑 sandbox 流程
@@ -29,7 +29,7 @@ M6.3 — 互動式 sandbox runner
       --old "..." --new "..." \
       --journey journeys/US-M62.yaml \
       --story-id US-M62 \
-      --source docs/ac/US-M62.md
+      --source PoC/fixtures/ac/US-M62.md
 """
 
 from __future__ import annotations

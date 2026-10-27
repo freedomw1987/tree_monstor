@@ -2,7 +2,7 @@
 Example runner — 證明 oracle 流程跑得起來。
 
 策略：
-1. 讀 docs/ac/US-101.md（真實檔）
+1. 讀 PoC/fixtures/ac/US-101.md（真實檔）
 2. 解析成 4 條 AC
 3. 對每條 AC 餵「模擬的觀察結果」（mock 但反映真實可能出現的 4 種 verdict）
 4. 跑 oracle（Jev Choice）

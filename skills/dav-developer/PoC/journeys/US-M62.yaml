@@ -1,6 +1,6 @@
 journey_id: US-M62
 title: AC 範本 — regression-guard M6.2 patch + re-validate 閉環
-source: ../../../docs/ac/US-M62.md
+source: fixtures/ac/US-M62.md
 generated_by: typesafe/jev-1.13
 generated_at: '2026-09-28T15:39:36+00:00'
 total_steps: 13

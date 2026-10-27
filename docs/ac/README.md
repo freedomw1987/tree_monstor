@@ -21,8 +21,9 @@
 | `docs/ac/<US-ID>.html` | AC 範本 HTML 版本 | 利害關係人（閱讀、列印、分享） |
 
 範例：
-- `docs/ac/US-101.md` — 對應 backlog 中的 US-101「信用卡快速結帳」
-- `docs/ac/US-101.html` — 同 US-101 的閱讀版
+- **PoC 嘅 fixture 放 skill 內**（`skills/dav-developer/PoC/fixtures/ac/`）→
+  令 `dav-developer` skill 自足（目標專案裝咗都跑得），唔使喺專案層 `docs/ac/` 養住歷史 AC
+- `docs/ac/<US-ID>.html` — 該 US 的閱讀版（與 `.md` 同 turn 產生）
 
 通用命名：`docs/ac/<US-ID>.md` 與 `docs/ac/<US-ID>.html`，其中 `<US-ID>` 是 backlog.md 中該 User Story 的 ID（如 `US-101`、`US-102`、`DE-201`）。
 
@@ -62,8 +63,8 @@
 
 ## 範例檔案
 
-- `docs/ac/US-101.md` — 信用卡快速結帳 AC 範本（Markdown）
-- `docs/ac/US-101.html` — 信用卡快速結帳 AC 範本（HTML 閱讀版）
+- `skills/dav-developer/PoC/fixtures/ac/US-101.md` — 信用卡快速結帳 AC 範本（Markdown；PoC 用嘅 fixture）
+- `docs/ac/<US-ID>.html` — 該 US 的閱讀版（與 `.md` 同 turn 產生；已交付 US 嘅 HTML 隨 AC 一併歸檔）
 
 ## 變更歷史
 

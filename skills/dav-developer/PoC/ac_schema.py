@@ -1,5 +1,5 @@
 """
-AC schema parser — 把 docs/ac/US-XXX.md 解析成結構化 ACContext list。
+AC schema parser — 把 PoC/fixtures/ac/US-XXX.md 解析成結構化 ACContext list。
 
 US-XXX.md 已知結構（從 US-101.md 觀察）：
   # US-XXX ...

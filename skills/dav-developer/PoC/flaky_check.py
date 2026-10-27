@@ -12,7 +12,7 @@ Flaky 驗證：跑 N 次同一 journey，比 verdict 分布差異，識別 flaky
 
 用法：
     .venv/bin/python flaky_check.py journeys/US-M62.yaml \
-        --source docs/ac/US-M62.md \
+        --source PoC/fixtures/ac/US-M62.md \
         --runs 5
 """
 

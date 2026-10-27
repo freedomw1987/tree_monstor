@@ -17,7 +17,7 @@
 #   9. CLEAN-POC-i — JEV_ENV_FILE seam 真的能封掉本機 .env（否則 f 是假隔離）
 #
 # 為什麼需要 a/c：`journeys/US-101.yaml` 曾寫死
-# `/Users/<作者>/…/docs/ac/US-101.md`，於是 5 條探針只在作者機器上過；
+# `/Users/<作者>/…/skills/dav-developer/PoC/fixtures/ac/US-101.md`，於是 5 條探針只在作者機器上過；
 # `journeys/US-M62.yaml`、`fixtures/US-M63-*.py` 則被 gitignore 又沒有任何人產生它們
 # → clean clone 必紅 5 條。
 

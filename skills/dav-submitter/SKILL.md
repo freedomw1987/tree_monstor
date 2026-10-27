@@ -116,6 +116,14 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 ### Step 5：更新 Backlog + 確認下一步（完成項要移出）
 
+- **動作**：更新 `docs/backlog.md` 嘅狀態 → **完成（done）嘅 row 要移出 backlog**
+  （記錄去交付摘要 ＋ 該 US 嘅需求錨點 ＋ git history；backlog 只留未完成嘅嘢）
+- **為什麼**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會愈滾愈大，
+  令 agent／用戶每次都要重讀已完嘅嘢（浪費時間同 token）
+- **產出**：backlog.md 只剩未完成（todo／doing／⏸️）嘅 row
+- **證據**：backlog.md 冇已完成 row；被移出嘅 row 在交付摘要有對應記錄
+- **參考**：同套 `dav-planner` 子檔（`./backlog-rules.md` §4.5）
+
 - **動作**：對應 `docs/backlog.md` 已更新；提示用戶下一步要做什麼、提供具體選項
 - **為什麼**：Backlog 同步狀態；引導用戶繼續 SOP 第一步
 - **產出**：對話中「下一步建議」段

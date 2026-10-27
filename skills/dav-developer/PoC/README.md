@@ -14,7 +14,7 @@
    - **語意判定而非字串比對**：Jev 看的是 AC 文字 + 觀察的 state，跑出 typed verdict
    - **Confidence gating**：低信心判定先送 review，不要誤導修正循環
    - **Cache-first**：沒 API key 時先用本地 cache 跑通流程；有 key 才打真實 API
-   - **AC schema = docs/ac/US-XXX.md 的 Given/When/Then 結構**（別自創格式）
+   - **AC schema = PoC/fixtures/ac/US-XXX.md 的 Given/When/Then 結構**（別自創格式）
 5. **必產出物**：`OracleResult { verdict, severity, confidence }` × 每條 AC + end-of-run summary
 
 ## 目錄結構
@@ -23,7 +23,7 @@
 /
 
 ├─ jev_oracle.py          # 核心：Jev HTTP 呼叫 + 回應解析 + cache
-├─ ac_schema.py           # 解析 docs/ac/US-XXX.md → 結構化 AC 條目
+├─ ac_schema.py           # 解析 PoC/fixtures/ac/US-XXX.md → 結構化 AC 條目
 ├─ example_run.py         # 示範：US-101 真實 AC + 4 個 mock 觀察 → 跑 oracle
 ├─ journey_generator.py   # 讀 AC → 走 Jev complexity + action plan → 產 Journey spec
 ├─ journey_gen.py         # CLI: journey_generator 的命令列 entry
@@ -100,7 +100,7 @@ POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force --yes     # 非互動（腳�
 
 .venv/bin/python example_run.py           # 走 oracle，cache hit 就 hit
 .venv/bin/python journey_gen.py \
-    ../../../docs/ac/US-101.md           # 產 journey YAML
+    ../fixtures/ac/US-101.md           # 產 journey YAML
 .venv/bin/python example_run.py --no-cache  # 強制 live
 ```
 
@@ -136,7 +136,7 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
 - **M1** oracle
   - 核心產出：`jev_oracle.py` + `ac_schema.py` + `example_run.py` + cache
   - 證據：
-    讀真實 `docs/ac/US-101.md` → parse 出 4 條 AC；跑出 4 種 verdict（pass / fail / flaky / over_assertion）；cache 機制（含 key
+    讀真實 `PoC/fixtures/ac/US-101.md` → parse 出 4 條 AC；跑出 4 種 verdict（pass / fail / flaky / over_assertion）；cache 機制（含 key
     雜湊 / save / load）；confidence + severity + verdict probabilities 完整呈現；end-of-run summary；真 API
     打接（`/api/alpha/decisions`）；API key 自動讀取（環境變數為主，`JEV_MODEL` 可切模型）
 - **M2** journey 生成

@@ -1,7 +1,7 @@
 {
   "journey_id": "US-101",
   "journey_title": "AC 範本",
-  "journey_source": "../../../docs/ac/US-101.md",
+  "journey_source": "fixtures/ac/US-101.md",
   "total_steps": 9,
   "blocked": false,
   "block_reason": "",

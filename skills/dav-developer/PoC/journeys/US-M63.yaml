@@ -1,6 +1,6 @@
 journey_id: US-M63
 title: AC 範本 — regression-guard M6.3 互動式 sandbox
-source: ../../../docs/ac/US-M63.md
+source: fixtures/ac/US-M63.md
 generated_by: typesafe/jev-1.13
 generated_at: '2026-09-28T15:53:28+00:00'
 total_steps: 15

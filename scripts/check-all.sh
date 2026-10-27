@@ -186,12 +186,20 @@ fi
 # ── --changed：計「受改動影響」嘅探針 ＋ mutant 列 ────────────────────────
 # 判定規則（刻意保守：唔肯定就當「要跑」）：
 #   改動檔案喺 skills/<name>/ 下      → 跑 skills/<name>/tests/*.bats
-#   改動檔案喺 tests/ scripts/ lib/ install.sh → 跑 repo 級 tests/
+#   改動檔案喺 tests/*.bats      → 只跑改動嗰支探針檔
+#   改動檔案喺 scripts/ lib/ install.sh → 跑晒 repo 級 tests/（核心工具改咗 → 保守全跑）
 #   改動檔案喺 docs/ .github/          → 跑 drift ＋ mdlint 步驟
 #   改動檔案喺其他位置（README 等）    → 跑 mdlint
 # mutant：只跑「目標檔喺改動清單入面」嘅列（`mutant-must-die.py --only`）
 changed_files() {
   { git diff --name-only "$CHANGED_BASE" 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u
+}
+# ⚠️ fail-closed：base 唔存在 → 直接報錯（唔准當「冇改動」→ 全部 SKIP → rc=0 假綠）
+check_base_exists() {
+  git rev-parse --verify --quiet "$CHANGED_BASE" >/dev/null 2>&1 || {
+    echo "FAIL: --changed 的 base '$CHANGED_BASE' 唔存在（打錯？用 git log 睇可用 ref）" >&2
+    exit 2
+  }
 }
 CHANGED_SKILL_PROBES=()
 CHANGED_REPO_PROBES=()
@@ -207,10 +215,16 @@ compute_changed_scope() {
       skills/*/*)
         skill="${f#skills/}"; skill="${skill%%/*}"
         [ -d "skills/${skill}/tests" ] && CHANGED_SKILL_PROBES+=("skills/${skill}/tests/"*.bats)
+        # ci.yml 嘅 mdlint glob 含 skills/** → 改 skill 入面嘅 .md 都要跑 lint／drift
+        # （呢個分支比下面嘅 skills/*|tests/* 早 → 唔加呢句就永遠食唔到，reviewer P1-2）
+        case "$f" in *.md) CHANGED_DOCS=1 ;; esac
         ;;
       tests/*.bats)    CHANGED_REPO_PROBES+=("$f") ;;
-      tests/*|scripts/*|lib/*|install.sh) CHANGED_REPO_ALL=1 ;;   # 核心工具改咗 → 跑晒 repo 級套件（保守）
+      scripts/*|lib/*|install.sh) CHANGED_REPO_ALL=1 ;;   # 核心工具改咗 → 跑晒 repo 級套件（保守）
       docs/*|.github/*) CHANGED_DOCS=1 ;;
+      tests/*)          # ci.yml 嘅 mdlint glob 含 tests/** → 改 tests/ 入面嘅 .md 都要跑 lint
+        case "$f" in *.md) CHANGED_DOCS=1 ;; esac
+        ;;
       *.md)             CHANGED_DOCS=1 ;;
     esac
   done < <(changed_files)
@@ -283,10 +297,16 @@ if [ "$INNER" -eq 1 ]; then
 fi
 
 if [ "$CHANGED_ONLY" -eq 1 ]; then
+  check_base_exists
   compute_changed_scope
-  echo "── --changed 模式 ──"
-  echo "改動檔案：$(changed_files | wc -l | tr -d ' ') 個"
+  changed_count="$(changed_files | wc -l | tr -d ' ')"
+  echo "── --changed 模式（base=${CHANGED_BASE}）──"
+  echo "改動檔案：${changed_count} 個"
   echo "受影響 repo 級探針：${#CHANGED_REPO_PROBES[@]} 個｜受影響 skill 探針：${#CHANGED_SKILL_PROBES[@]} 個｜受影響 mutant：${#CHANGED_MUTANTS[@]} 支"
+  if [ "$changed_count" -eq 0 ]; then
+    echo "FAIL: 冇任何改動（相對 '$CHANGED_BASE'）→ --changed 冇嘢可驗，唔會當通過（用全量：bash scripts/check-all.sh）" >&2
+    exit 1
+  fi
 fi
 
 overall_rc=0
