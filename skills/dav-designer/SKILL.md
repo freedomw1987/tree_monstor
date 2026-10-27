@@ -82,6 +82,7 @@ description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog
 | system-design.md 不可有真實程式碼 | 純文字示意（如 JSON 結構）允許 | 禁止 import / class / function 範例 |
 | PRD md 與 html 須內容一致 | 原型可加視覺化補充 | FR 編號、AC 條目、追溯矩陣需對齊 |
 | 與 dav-planner 邊界：本 skill 不寫 Backlog / US | N/A | US / AC 由 dav-planner（§2.1）產 |
+| **術語一致（跟 dav-planner 術語表）** | 專案層冇術語表 → 照常用詞 | 專案層有 `docs/glossary_list.md` → PRD / 原型一律用入面嘅術語，唔好用同義詞 |
 | 修改本 skill 必走 v2.3 修改流程 | 純錯字修正可跳過 | ≧ 3 行修改必走 M-Step 1-3 |
 | 修改同時必清規範偏差 | 用戶明確「只動 A 不動 B」例外 | 不可累積技術債 |
 | 純文字引用（v2.2）| skill 子檔可用 markdown | 不寫跨 dir 路徑引用 |

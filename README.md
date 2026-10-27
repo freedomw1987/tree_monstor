@@ -10,6 +10,8 @@
 > `bash skills/regression-guard/PoC/run_ci.sh all`（`probes`／`pipeline`／`matrix`／`cleanup-scan`）。
 
 `tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent、Qoder 等）的**工作 SOP + skills**。
+本專案嘅專屬術語統一喺 [`docs/glossary_list.md`](docs/glossary_list.md)：新寫嘅文件用表內「術語」欄嘅寫法，
+唔用「別名」欄嘅講法；發現新術語 → A-Z 插入同一張表。
 `install.sh` 把它 expose 到 agent 的讀取路徑（全域或專案層），以 symlink 為主，改源檔即時生效。
 
 ## Quick Start

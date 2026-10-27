@@ -19,6 +19,7 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
    - `docs/ac/<US-ID>.md`（含 Given-When-Then + DoD）
    - `docs/ac/<US-ID>.html`（列印友好版）
    - `docs/req/<US-ID>-requirement.md`（需求錨點：原話區唯讀 + R-ID 化）
+   - `docs/glossary_list.md`（術語表；**條件式**：專屬術語 ≥ 3 條先產 → 各階段統一用同一套詞語）
 
 ## 觸發時機
 
@@ -60,6 +61,15 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 - **產出**：對話中核心 4 維度都有對話 ＋ **觸發咗嘅**補充維度都有答案（答案已寫落文件）
 - **證據**：對話覆蓋核心 4 維度；觸發咗但冇問嘅補充維度 = 未覆蓋（唔算分）
 - **參考**：`reference.md` §3
+
+### Step 3.5：產出術語表（Glossary）
+
+- **動作**：把今次提問收集到嘅**專案／領域專屬術語**整理成一份 A-Z 術語表 → 專案層 `docs/glossary_list.md`
+- **為什麼**：各階段（設計 / 執行 / 驗收 / 交付）同用戶**用同一套詞語** → 減少理解落差，
+  亦令 LLM 唔使每個階段重新對齊用語（表細、A-Z、每條一句 → 讀入成本低）
+- **產出**：`docs/glossary_list.md`（**條件式**：專屬術語 ≥ 3 條先產；少過就唔開檔）
+- **證據**：檔案存在 ＋ A-Z 排序 ＋ 每條有定義同別名（或明示「無別名」）＋ 術語係由今次提問實得（唔係自己作）；**下一步寫 Backlog / AC 時要用呢套術語**（Step 4）
+- **參考**：`backlog-rules.md` §4.9
 
 ### Step 4：成熟度評估 + 寫 Backlog（§5 / §4）
 
@@ -117,12 +127,14 @@ description: 在 SOP「規劃」階段使用。透過多輪提問釐清「任務
 | AC 範本只含 AC（不重複 US 標題）| N/A | §4.3.2.3 規範 |
 | **複雜任務必走 Step 1.5（v2.6）** | **用戶已主動提供結構化 Markdown 來源** | **推薦 dav-wiki、避免手動抄 PDF；dav-wiki 未裝則退回用戶口述 + 提示安裝** |
 | **產 US 必產需求錨點檔（v2.7）** | 存量 US 不補 | `docs/req/<US-ID>-requirement.md`；「用戶原話」區唯讀、R-ID 連續唯一 |
+| **專案層術語表（`backlog-rules.md` §4.9）** | 專屬術語 < 3 條 → 唔產 | 專案層 `docs/glossary_list.md`；A-Z、每條一句；各階段統一用入面術語 |
 
 ---
 ---
 
 **交叉引用（純文字）**：
 - 提問技巧 / 維度展開 / 成熟度 → 同套 `reference.md`
+- 術語表規格（收錄標準 / 格式 / 維護）→ 同套 `backlog-rules.md` §4.9
 - Backlog 規則（含 Module 欄位範本 + Module 級 sprint）→ 同套 `backlog-rules.md`
 - SOP §2.1 詳細內容 → 見 monorepo 對應的規劃文件（路徑由 monorepo 約定）
 - AC 範本格式範例 → 見 monorepo 對應的 AC 範本文件（路徑由 monorepo 約定）

@@ -75,6 +75,7 @@ description: 雙 Subagent 工作循環：dev 開發任務、checker 校驗質量
 | 任一問題最多 20 次循環 | 用戶延長可放寬 | 超過則中斷、回報用戶 |
 | dev 領取後必更新 backlog 狀態 | N/A | 避免「兩個 dev 搶任務」|
 | 純文字引用（v2.1）| skill 子檔可用 markdown | 不寫 `../` 或 `docs/` 跨檔連結 |
+| **術語一致（跟 dav-planner 術語表）** | 專案層冇術語表 → 照常用詞 | 專案層有 `docs/glossary_list.md` → 派工、驗收結論、Reviewer 對話一律用入面嘅術語 |
 | 不可繞過校驗 | 用戶指定可跳過 | 預設 Gate 4 必跑 |
 | **Module 邊界即測試邊界**（v2.2 新增）| Module 邊界未定義時 fallback 到「整個 repo」 | 探針不得跨 Module 檢查 |
 | **dev 改檔不得跨 Module**（v2.2 新增）| 需跨 Module = 升級為新任務、不在原 Module 循環內處理 | 避免 Module 閃連修改 |
