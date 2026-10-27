@@ -17,7 +17,7 @@
 #   查到現在有幾列（行為鎖 47＋文件／資料契約鎖 2＝49；TMO-071/072/073 再 +5
 #   —— DD-M1..DD-M3／DR-M1／DR-M2；PNA-M1／PNA-M2 為 TMO-074 掃描器重寫時補嘅
 #   PNA-4b／PNA-4c canary 對應條目；LC-M1 為 TMO-084「本機 CI 等價閘」新增；
-#   RG-CI-M1 為 TMO-084「regression-guard CI 改本機跑」嘅本機 runner 對應條目；
+#   RG-CI-M1 為 TMO-084「dav-developer CI 改本機跑」嘅本機 runner 對應條目；
 #   ⚠️ 2026-10-27 減法：刪走 11 列（RG-M1..M3／DT-M1..M3／DR-M1／DR-M2／PNA-M1..M3；
 #   RG-M4 改指向 skill-local 探針後補回 → 48 → 49）
 #   —— 佢哋嘅探針（回歸-guard-watch-mode／restruct-*／probe-name-ascii）屬「測文件」性質，
@@ -74,12 +74,12 @@ FF-M3	scripts/ci/check-ffmpeg-version.sh	    -vf "scale='if(gt(iw,ih),min(1920,i
 DW-M1	skills/dav-wiki/scripts/wiki-extract-audio.sh	        exit "$EXIT_TOOLMISSING"	        exit 0  # MUTANT: 缺工具也回成功	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-2
 DW-M2	skills/dav-wiki/scripts/wiki-extract-media.sh	    require_tool pdfimages "brew install poppler"	    : # MUTANT: poppler 檢查拿掉	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-8
 DW-M3	skills/dav-wiki/scripts/wiki-extract-media.sh	        pptx) extract_pptx_images ;;	        pptx) extract_docx_images ;;  # MUTANT: pptx 走錯路徑	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-9
-DW-M4	skills/dav-wiki/SKILL.md	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字	| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就降級**：該模組自動降級為純文字模式（MUTANT）	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-5
+DW-M4	skills/dav-wiki/SKILL.md	**未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字	**未裝就降級**：該模組自動降級為純文字模式（MUTANT）	skills/dav-wiki/tests/wiki-toolmissing-contract.bats	WTM-5
 DW-M5	skills/dav-wiki/scripts/wiki-ocr.sh	EXIT_NOINPUT=2	EXIT_NOINPUT=1  # MUTANT: 缺輸入的回傳碼改掉	skills/dav-wiki/tests/wiki-ocr.bats	AC-O4
 DW-M6	skills/dav-wiki/scripts/wiki-cleanup.sh	PURGE=false	PURGE=true  # MUTANT: 預設變真刪除	skills/dav-wiki/tests/wiki-cleanup.bats	--yes 90 deprecated
 SM-M1	tests/helpers/test-env.bash	  sed -E 's/sk-[A-Za-z0-9_-]+/sk-***MASKED***/g; s/([A-Za-z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Za-z0-9_]*)=[^[:space:]]*/\1=***MASKED***/g'	  cat  # MUTANT: 整段遮罩變 cat（直通，語意確為 bypass）	tests/secret-masking.bats	SM-3
 SM-M2	scripts/ci/lint-probe-secrets.py	            if not MASK_CALL_FORM.search(code):	            if False:  # MUTANT: R2 停用	tests/secret-masking.bats	SM-5
-SM-M3	skills/regression-guard/tests/poc-clean-clone.bats	load "$REPO_ROOT/tests/helpers/test-env"	mask_secrets() { cat; }  # MUTANT: 自己再定義一份	tests/secret-masking.bats	SM-1
+SM-M3	skills/dav-developer/tests/poc-clean-clone.bats	load "$REPO_ROOT/tests/helpers/test-env"	mask_secrets() { cat; }  # MUTANT: 自己再定義一份	tests/secret-masking.bats	SM-1
 # LK-M1：這裡刻意**不加**行尾 `# MUTANT: ...` 註解 —— 錨點是**行中**片段（該行後面還有
 #   `*GLOBS],`），加註解會把後半行吞掉 → SyntaxError 假死因（TMO-066 二審 #1）。
 #   載入期語法哨兵（`SYNTAX_LANGS`）現在會直接擋下這類「靠語法壞掉才紅」的列。
@@ -90,10 +90,10 @@ QD-M3	lib/install/symlink.sh	    log_warn "target exists and is not a symlink, s
 QD-M4	install.sh	          if [[ $agent_known -eq 0 ]]; then	          if [[ $agent_known -ne 0 ]]; then  # MUTANT: 條件反轉 → 未知 agent 靜默略過（必須 exit 2）	tests/install-qoder.bats	QODER-15
 QD-M5	install.sh	  if [[ "$current" == "$expected" ]] || [[ "$current" == "$(abs_path "$expected")" ]]; then	  if true; then  # MUTANT: 不驗 symlink target 就刪（會刪掉使用者自己的 symlink）	tests/install-qoder.bats	QODER-17
 QD-M6	lib/install/logging.sh	  if [[ ${DRY_RUN:-0} -eq 1 ]]; then	  if false; then  # MUTANT: dry-run 也真的執行 → 會寫檔	tests/install-qoder.bats	QODER-23
-RG-M5	skills/regression-guard/PoC/journey_runner.py	    return int.from_bytes(digest[:4], "big") % 1500	    return hash(step_id) % 1500  # MUTANT: 退回內建 hash() → PYTHONHASHSEED 隨機化 → payload/cache key 每跑必變	skills/regression-guard/tests/v2.1-jev-poc.bats	M6.3-m
+RG-M5	skills/dav-developer/PoC/journey_runner.py	    return int.from_bytes(digest[:4], "big") % 1500	    return hash(step_id) % 1500  # MUTANT: 退回內建 hash() → PYTHONHASHSEED 隨機化 → payload/cache key 每跑必變	skills/dav-developer/tests/v2.1-jev-poc.bats	M6.3-m
 DD-M1	skills/dav-reconciler/scripts/check-doc-drift.py	self.report("D6", stem, f"缺需求錨點檔 docs/req/{stem}-requirement.md")	pass  # MUTANT: D6 缺錨點檢查失效	skills/dav-reconciler/tests/doc-drift.bats	DOC-DRIFT-017: D6 catches missing requirement anchor
 DD-M2	skills/dav-reconciler/scripts/check-doc-drift.py	                if missing:	                if False:  # MUTANT: D7 覆蓋率檢查失效	skills/dav-reconciler/tests/doc-drift.bats	DOC-DRIFT-024: D7 catches a reconcile table that misses an R-ID
 DD-M3	skills/dav-reconciler/scripts/check-doc-drift.py	            if gaps and declared.startswith("✅"):	            if False:  # MUTANT: D8 狀態矛盾檢查失效	skills/dav-reconciler/tests/doc-drift.bats	DOC-DRIFT-028: D8 catches a deliverable claiming success while the reconcile has gaps
 LC-M1	scripts/check-all.sh	overall_rc=1	overall_rc=0	tests/local-ci-guard.bats	LC-8: a failing step must make the whole run exit non-zero
-RG-CI-M1	skills/regression-guard/PoC/run_ci.sh	    red)    printf '2\n' ;;	    red)    printf '0\n' ;;	skills/regression-guard/tests/v2.1-jev-poc.bats	CI-d
-RG-M4	skills/regression-guard/SKILL.md	見 [`runner-cheatsheet.md`](./runner-cheatsheet.md)。	見本 skill 的 runner 對照表子檔。	skills/regression-guard/tests/v2.1-jev-poc.bats	SKILL-e
+RG-CI-M1	skills/dav-developer/PoC/run_ci.sh	    red)    printf '2\n' ;;	    red)    printf '0\n' ;;	skills/dav-developer/tests/v2.1-jev-poc.bats	CI-d
+RG-M4	skills/dav-developer/SKILL.md	Runner 對照表（TTY／watch 防線）→ 同套本 skill 子檔（`./runner-cheatsheet.md`）	Runner 對照表 → 見本 skill 的 runner 對照表子檔。	skills/dav-developer/tests/v2.1-jev-poc.bats	SKILL-e

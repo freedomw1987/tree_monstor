@@ -6,12 +6,12 @@
 > 探針全綠 ＋ lint 0 issue ＋ mutant 全死 ＋ Reviewer 二審。一條指令跑齊：
 > `bash scripts/check-all.sh`。CI 仍然會跑（跨環境偵測用），但**唔阻 merge**。
 >
-> **regression-guard 嘅 CI 完全唔喺 GitHub 跑**（2026-10-27 用戶決策）：改用本機 runner
-> `bash skills/regression-guard/PoC/run_ci.sh all`（`probes`／`pipeline`／`matrix`／`cleanup-scan`）。
+> **dav-developer 嘅 CI 完全唔喺 GitHub 跑**（2026-10-27 用戶決策）：改用本機 runner
+> `bash skills/dav-developer/PoC/run_ci.sh all`（`probes`／`pipeline`／`matrix`／`cleanup-scan`）。
 
 `tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent、Qoder 等）的**工作 SOP + skills**。
 本專案嘅專屬術語統一喺 [`docs/glossary_list.md`](docs/glossary_list.md)：新寫嘅文件用表內「術語」欄嘅寫法，
-唔用「別名」欄嘅講法；發現新術語 → A-Z 插入同一張表。
+唔用「勿用寫法」清單入面嘅講法；發現新術語 → A-Z 插入同一張表。
 `install.sh` 把它 expose 到 agent 的讀取路徑（全域或專案層），以 symlink 為主，改源檔即時生效。
 
 ## Quick Start
@@ -25,7 +25,7 @@ chmod +x install.sh        # 一次性（如果檔案沒執行權限）
 
 ```bash
 brew install bash                                # macOS 內建 /bin/bash 是 3.2；測試要 5.x（ubuntu CI 即是）
-bash skills/regression-guard/PoC/setup-venv.sh   # 建 PoC/.venv（v2.1-jev-poc.bats 的 40 條需要）
+bash skills/dav-developer/PoC/setup-venv.sh   # 建 PoC/.venv（v2.1-jev-poc.bats 的 40 條需要）
 ```
 
 少這兩步時本機會**大幅報紅且難以看懂**：缺 venv ⇒ 43 條紅；用 bash 3.2 ⇒ 部分 CJK 測試名被
@@ -82,9 +82,9 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 | Gate | 承載 skill |
 |---|---|
-| Gate 1 TDD / Gate 2 lint | [skills/tdd-test-writer](skills/tdd-test-writer/) |
-| Gate 3 regression | [skills/regression-guard](skills/regression-guard/) |
-| Gate 4 reviewer | [skills/dev-checker-loop](skills/dev-checker-loop/) |
+| Gate 1 TDD / Gate 2 lint | [skills/dav-developer](skills/dav-developer/) |
+| Gate 3 regression | [skills/dav-developer](skills/dav-developer/) |
+| Gate 4 reviewer | [skills/dav-developer](skills/dav-developer/) |
 | Gate 4.5 需求對帳 | [skills/dav-reconciler](skills/dav-reconciler/) |
 
 **沒有指定要用哪道 Gate 時，預設就是直接做**（不跑流程、不建 backlog、不寫交付摘要）。
@@ -101,12 +101,12 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 | Skill | 一句話 |
 |---|---|
-| [`dav-planner`](skills/dav-planner/SKILL.md) | §2.1 規劃：釐清背景/目的/驗收標準，拆 Backlog（含 INVEST AC） |
+| [`dav-planner`](skills/dav-planner/SKILL.md) | §2.1 規劃：釐清背景/目的/驗收條件，拆 Backlog（含 INVEST AC） |
 | [`dav-designer`](skills/dav-designer/SKILL.md) | §2.2 設計：DESIGN.md、system-design.md、PRD、互動 HTML 原型 |
-| [`tdd-test-writer`](skills/tdd-test-writer/SKILL.md) | Gate 1：依 backlog 先寫測試，紅後綠 |
-| [`regression-guard`](skills/regression-guard/SKILL.md) | Gate 3：埋探針，`REGRESSION_MODE` 自動回歸驗證 |
-| [`dev-checker-loop`](skills/dev-checker-loop/SKILL.md) | Gate 4：dev / checker 雙 subagent 循環校驗 |
-| [`dav-reflection`](skills/dav-reflection/SKILL.md) | §2.4 反省：US / Sprint / Module 六維度反思 |
+| [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 1：依 backlog 先寫測試，紅後綠 |
+| [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 3：埋探針，`REGRESSION_MODE` 自動回歸驗證 |
+| [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 4：dev / checker 雙 subagent 循環校驗 |
+| **反省**（併入 [`dav-submitter`](skills/dav-submitter/SKILL.md) Step 3.5）| US / Sprint / Module 六維度反思 |
 | [`dav-submitter`](skills/dav-submitter/SKILL.md) | §2.5 提交：交付摘要 + Markdown 詳錄 |
 | [`dav-reconciler`](skills/dav-reconciler/SKILL.md) | Gate 4.5 需求對帳：獨立 subagent 拿需求錨點逐條比對成果；未對上不得宣告完成 |
 | [`dav-wiki`](skills/dav-wiki/SKILL.md) | 文件知識庫化：PDF / 網頁 / OCR / 字幕 → Markdown |

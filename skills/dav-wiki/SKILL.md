@@ -1,6 +1,7 @@
 ---
 name: dav-wiki
-description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DOCX/PPTX、網頁 URL、圖片 OCR、影音字幕等多種來源，自動轉成結構化 Markdown 知識庫（含 frontmatter、tag、概念、交叉引用）。
+description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DOCX/PPTX、網頁 URL、圖片 OCR、影音字幕等多種來源，自動轉成結構化 Markdown 知識庫（含
+frontmatter、tag、概念、交叉引用）。
 
 ---
 
@@ -22,13 +23,16 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 ## 觸發時機
 
-| 情境 | 觸發 |
-|------|------|
-| 用戶給文件要轉 wiki | ✅ 「把這份 PDF 變 wiki」 |
-| 用戶給網址要收錄 | ✅ 「把這篇文章存進 wiki」 |
-| 用戶要批次處理 | ✅ 「把這 5 份報告都轉成 wiki」 |
-| 用戶要更新既有 | ✅ 「更新這篇 wiki 的概念」 |
-| 純提問 / 不需存檔 | ❌ 不觸發 |
+- **用戶給文件要轉 wiki**
+  - 觸發：✅ 「把這份 PDF 變 wiki」
+- **用戶給網址要收錄**
+  - 觸發：✅ 「把這篇文章存進 wiki」
+- **用戶要批次處理**
+  - 觸發：✅ 「把這 5 份報告都轉成 wiki」
+- **用戶要更新既有**
+  - 觸發：✅ 「更新這篇 wiki 的概念」
+- **純提問 / 不需存檔**
+  - 觸發：❌ 不觸發
 
 ## 流程（7 步主流程，FR-2 多模組擴充版）
 
@@ -86,17 +90,17 @@ description: 統一文件資料提取與 Markdown 化。支援純文字、PDF/DO
 
 ## 規則 / 例外 / 限制
 
-| 規則 | 例外 | 限制 |
-|------|------|------|
-| 一次只問一個問題（V01） | 確認型問題可一次多個 | 開放式問題必 1 題 |
-| 多選必標推薦（V02） | 開放式問題無推薦 | 必為第 1 個選項 |
-| 純文字引用（v2.1） | skill 自己的子檔可用 markdown 連結 | 不寫 `../` 或 `docs/` 跨檔連結 |
-| 不真刪除檔案 | 90 天後 deprecated 可移到 `_deprecated/` | 保留可追溯 |
-| 預測性 token < 2k | 大檔案例外可全文 | 預設用 `_index.json` 比對 |
-| 寫入失敗 rollback | N/A | temp file + rename 模式 |
-| OCR / 字幕為擴充模組 | 預設僅支援核心三來源（純文字 / Office / 網頁） | 需另裝 tesseract / yt-dlp |
-| FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）| **未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字 | 唯一例外：OCR 未裝 tesseract → 自動用 mock placeholder（有 WARN，見 `./scripts/wiki-ocr.sh`）|
-| Whisper / Vision 模組（`./scripts/wiki-media-describe.sh`）| real 模式尚未實作：要 `--mock` 或 `DAV_WIKI_MOCK=1`；未實作就 `exit 5`（不產出、不回報成功；寫入失敗 `exit 6`）| 這與「未裝工具」無關，不要期待安裝提示 |
+- **一次只問一個問題（V01）** — 例外：確認型問題可一次多個；限制：開放式問題必 1 題
+- **多選必標推薦（V02）** — 例外：開放式問題無推薦；限制：必為第 1 個選項
+- **純文字引用（v2.1）** — 例外：skill 自己的子檔可用 markdown 連結；限制：不寫 `../` 或 `docs/` 跨檔連結
+- **不真刪除檔案** — 例外：90 天後 deprecated 可移到 `_deprecated/`；限制：保留可追溯
+- **預測性 token < 2k** — 例外：大檔案例外可全文；限制：預設用 `_index.json` 比對
+- **寫入失敗 rollback** — 例外：N/A；限制：temp file + rename 模式
+- **OCR / 字幕為擴充模組** — 例外：預設僅支援核心三來源（純文字 / Office / 網頁）；限制：需另裝 tesseract / yt-dlp
+- **FR-2 缺必要工具（poppler / ffmpeg / pandoc / python-pptx）** — 例外：**未裝就停**：該模組直接 `exit 4` + 安裝提示，不降級成純文字；限制：唯一例外：OCR 未裝 t
+  esseract → 自動用 mock placeholder（有 WARN，見 `./scripts/wiki-ocr.sh`）
+- **Whisper / Vision 模組（`./scripts/wiki-media-describe.sh`）** — 例外：real 模式尚未實作：要 `--mock` 或 `DAV_WIKI_MOCK=1`；未實作就
+`exit 5`（不產出、不回報成功；寫入失敗 `exit 6`）；限制：這與「未裝工具」無關，不要期待安裝提示
 
 ## 輸出結構
 

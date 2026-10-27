@@ -7,7 +7,7 @@
   沒有任何探針會紅、也沒有人會記得重跑。這支腳本就是那張「重跑」的清單。
 
 （TMO-066）表後來從 26 支擴到 39 支：同一套 harness 再收了 dav-wiki（缺工具不得降級 6 支）、
-  探針機密遮罩（3 支）與 regression-guard（TTY fail-fast 四檔一致 4 支）的護欄 ——
+  探針機密遮罩（3 支）與 dav-developer（TTY fail-fast 四檔一致 4 支）的護欄 ——
   它們在此之前同樣只是「人工驗過一次」，驗完就沒有任何檢查記得。
   二審（verdict `request-changes`）後再 +1 → **48 支**（TMO-071/072/073 再 +5：DD-M1 / DD-M2 / DD-M3 / DR-M1 / DR-M2）：SM-M1 重寫（舊版掉續行反斜線，
   死因是 rc=127 parse error 而非遮罩失效）、DW-M5 由「文字契約鎖」升級為真行為鎖
@@ -232,7 +232,7 @@ def make_copy(root: Path, dest: Path) -> int:
     # （M6.3 系列走 need_poc_venv）會在副本裡直接紅 → baseline 紅 → 整個突變套件死。
     # 把原 venv 以 symlink 掛進副本：venv 是自解相對的（bin/python → base python，
     # site-packages 由 pyvenv.cfg 定位），從任何路徑掛過去都可用。
-    venv_rel = "skills/regression-guard/PoC/.venv"
+    venv_rel = "skills/dav-developer/PoC/.venv"
     venv_src = root / venv_rel
     venv_dst = dest / venv_rel
     if venv_src.is_dir() and not venv_dst.exists():

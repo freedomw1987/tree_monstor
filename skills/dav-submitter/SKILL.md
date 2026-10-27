@@ -22,31 +22,42 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 ## 觸發時機
 
-| 情境 | 觸發 |
-|------|------|
-| User Story 完成驗收 | ✅ 必須 |
-| 子任務完成 | ✅ 必須 |
-| Bug 修復完成 | ✅ 必須 |
-| 技術債處理完成 | ✅ 必須 |
-| Sprint 結束 | ❌ 屬於 dav-reflection 宏觀總結 |
-| Module 交付 | ❌ 屬於 dav-reflection 宏觀總結 |
-| 純提問、未執行任務 | ❌ 不觸發 |
+- **User Story 完成驗收**
+  - 觸發：✅ 必須
+- **子任務完成**
+  - 觸發：✅ 必須
+- **Bug 修復完成**
+  - 觸發：✅ 必須
+- **技術債處理完成**
+  - 觸發：✅ 必須
+- **Sprint 結束**
+  - 觸發：✅ 併入本 skill（Step 3.5 反省：Sprint 級別全 6 維度）
+- **Module 交付**
+  - 觸發：✅ 併入本 skill（Step 3.5 反省：Module 級別全 6 維度 + 跨模組協作檢查）
+- **純提問、未執行任務**
+  - 觸發：❌ 不觸發
 
 ### v2.2 Module 級交付（新場景）
 
 > v2.2 起：dav-submitter 可交付單個 Module（不只是單個 US）。
 
-| 場景 | 交付單位 | 適合 skill |
-| --- | -------- | ----------- |
-| **單個 US 交付** | 1 個 AC 套件 | dav-submitter（本 skill）|
-| **單個 Module 交付** | Module 內所有 US 集合 | dav-submitter（本 skill）+ dav-reflection 微總結 |
-| **多個 Module 交付** | Module 集合 + cross-module integration | dav-reflection 宏觀總結 |
-| **整個 repo / sprint 結束** | 整個交付歷史 | dav-reflection 宏觀總結 |
+- **單個 US 交付**
+  - 交付單位：1 個 AC 套件
+  - 適合 skill：dav-submitter（本 skill）
+- **單個 Module 交付**
+  - 交付單位：Module 內所有 US 集合
+  - 適合 skill：dav-submitter（本 skill）+ 本 skill Step 3.5 微總結
+- **多個 Module 交付**
+  - 交付單位：Module 集合 + cross-module integration
+  - 適合 skill：本 skill Step 3.5 宏觀總結
+- **整個 repo / sprint 結束**
+  - 交付單位：整個交付歷史
+  - 適合 skill：本 skill Step 3.5 宏觀總結
 
 **Module 級交付的差異**：
 
 1. **Backlog ID 格式**：`<MODULE_CODE>-<US_ID>`（如 `M01-US-101`、`M02-US-203`）；多 US 同 Module 交付時在 §2.1-2.3 用 `M01 多 US 集合` 代表
-2. **Module 邊界即測試邊界**（v2.8 dev-checker-loop 規則）：探針必含 Module prefix；交付檔必明記 Module
+2. **Module 邊界即測試邊界**（v2.8 dav-developer 規則）：探針必含 Module prefix；交付檔必明記 Module
 3. **deliverable.md 命名**：`docs/deliverable/<YYYY-MM-DD>-<module>-<slug>.md`（Module 級）或原本
    `<YYYY-MM-DD>-<task-slug>.md`（US 級）
 4. **Module 交付有「第 9 段」**：§9 Module 級總結（包含多 US 間的關聯、跨 Module 遺留問題、Module 級技術債）
@@ -77,6 +88,15 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 - **產出**：`docs/deliverable/<...>.md` 完整檔案（含為什麼）
 - **證據**：bats 探針驗證檔案存在；包含「為什麼做這個改動」段 + `## 反思` 段
 
+### Step 3.5：反省（v2.6 併入：原 dav-reflection skill）
+
+- **動作**：判斷反省層級（US／Sprint／Module）→ 逐項檢查 **6 維度**（UX/UI 一致性／RWD／技術債／
+  可維護性／測試覆蓋率／需求對齊）→ 每個 ❌ 必含「根因 + 建議」→ 產出 Action Items（動作 + 類型 + 驗收條件 + 預估）
+- **為什麼**：交付咗 ≠ 交付得好；6 維度係檢驗「交付物是否真的好」嘅核心（宏觀層面，唔重複個別 US 嘅驗收）
+- **產出**：交付摘要末段「## 反思」（US 級別只檢查關鍵 2 維度：需求對齊 + 測試覆蓋率；Sprint／Module 級別做全 6 維度）
+- **證據**：6 個維度都有標記，每個 ❌ 有根因 + 建議；發現嘅問題轉成 Backlog item
+- **參考**：同套本 skill 子檔（`./reflection-checklist.md`、`./reflection-templates.md`）
+
 ### Step 4：誠實標註問題 + 下一步
 
 - **動作**：第 5 節「已知問題」誠實填寫（含 pre-existing）；第 6 節「下一步建議」必含「驗收方式 / 預估時間 / 風險提示」
@@ -94,7 +114,7 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 - **產出**：交付摘要 §3.1 + 狀態欄位
 - **證據**：deliverable 內含對帳段且狀態與對帳結果一致
 
-### Step 5：更新 Backlog + 確認下一步
+### Step 5：更新 Backlog + 確認下一步（完成項要移出）
 
 - **動作**：對應 `docs/backlog.md` 已更新；提示用戶下一步要做什麼、提供具體選項
 - **為什麼**：Backlog 同步狀態；引導用戶繼續 SOP 第一步
@@ -103,26 +123,23 @@ description: 在 SOP「提交成果」階段使用。產出交付摘要（對話
 
 ## 規則 / 例外 / 限制
 
-| 規則 | 例外 | 限制 |
-|------|------|------|
-| 兩層交付物（對話 + Markdown）| N/A | v2.0 起**不寫 HTML** |
-| Markdown 必含 8 段（含反思末段）| 小任務可精簡次要段 | §1 / §2 / §3 / §5 / §6 / §8 不可少 |
-| 反思併進 `## 反思` 段（v2.0）| v1.7.1 / v1.8 / v1.9 獨立反思檔保留 | 未來不寫獨立反思檔 |
-| 對話摘要 ≤ 90 秒可讀 | Module 級交付可稍長 | 不超過 200 行對話 |
-| 下一步建議必含 3 項（驗收/預估/風險）| 緊急修復可精簡 | 不可只寫「待續」 |
-| 必誠實標註已知問題 | N/A | 不可「假完成」 |
-| 命名：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.md` | N/A | 日期用 ISO、slug 用 kebab-case |
-| **「為什麼」必含（v2.1 新增）** | 緊急修復可簡為一句話 | 對話摘要 + Markdown §1.2 + §2.4 都必含 |
-| **Module 級交付可觸發（v2.2 新增）** | 預設 US 級交付 | Module 級需在對話明示「Module 級交付」|
-| **需求對帳硬門檻（v2.5 新增）** | 本次 US 無需求錨點（存量任務）| 對帳未全數對上 → 不得標「✅ 完成」；缺對帳段 → 視同未對帳 |
-| **術語一致（跟 dav-planner 術語表）** | 專案層冇術語表 → 照常用詞 | 專案層有 `docs/glossary_list.md` → 交付摘要同對話一律用入面嘅術語 |
+- **兩層交付物（對話 + Markdown）** — 例外：N/A；限制：v2.0 起**不寫 HTML**
+- **Markdown 必含 8 段（含反思末段）** — 例外：小任務可精簡次要段；限制：§1 / §2 / §3 / §5 / §6 / §8 不可少
+- **反思併進 `## 反思` 段（v2.0）** — 例外：v1.7.1 / v1.8 / v1.9 獨立反思檔保留；限制：未來不寫獨立反思檔
+- **對話摘要 ≤ 90 秒可讀** — 例外：Module 級交付可稍長；限制：不超過 200 行對話
+- **下一步建議必含 3 項（驗收/預估/風險）** — 例外：緊急修復可精簡；限制：不可只寫「待續」
+- **必誠實標註已知問題** — 例外：N/A；限制：不可「假完成」
+- **命名：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`** — 例外：N/A；限制：日期用 ISO、slug 用 kebab-case
+- **「為什麼」必含（v2.1 新增）** — 例外：緊急修復可簡為一句話；限制：對話摘要 + Markdown §1.2 + §2.4 都必含
+- **Module 級交付可觸發（v2.2 新增）** — 例外：預設 US 級交付；限制：Module 級需在對話明示「Module 級交付」
+- **需求對帳硬門檻（v2.5 新增）** — 例外：本次 US 無需求錨點（存量任務）；限制：對帳未全數對上 → 不得標「✅ 完成」；缺對帳段 → 視同未對帳
+- **術語一致（跟 dav-planner 術語表）** — 例外：專案層冇術語表 → 照常用詞；限制：專案層有 `docs/glossary_list.md` → 交付摘要同對話一律用入面嘅術語
 
----
 ---
 
 **交叉引用**：
 - SOP §2.5 詳細內容 → 見 monorepo 對應的提交指南文件（路徑由 monorepo 約定）
 - Markdown 詳錄模板（含 `## 反思` 段 + v2.1 為什麼必含）→ 見同套本 skill 子檔（`./template.md`）
 - Module 級交付細節 → 見同套本 skill 子檔（`./module-delivery.md`）
-- 反思觸發 → 見同套 dav-reflection skill（需同套安裝）
+- 反省流程（6 維度 + 三級別模板）→ 同套本 skill 子檔（`./reflection-checklist.md`、`./reflection-templates.md`）
 - Module 完整生命週期範例（含 v2.2 Module 級交付樣本）→ 見本 skill 的 `examples/deliverable-sample.md`

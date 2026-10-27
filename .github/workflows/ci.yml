@@ -74,14 +74,14 @@ jobs:
         run: bash scripts/ci/check-ffmpeg-version.sh
 
       - name: Build PoC venv (httpx + PyYAML)
-        run: bash skills/regression-guard/PoC/setup-venv.sh
+        run: bash skills/dav-developer/PoC/setup-venv.sh
 
       - name: Run bats tests
         run: bats tests/
 
       - name: Run skill-local tests
         # 2026-10-27：探針跟 skill 搬入 skills/*/tests/ → 改動某個 skill 時可以只跑嗰個 skill。
-        # 單獨跑：bash scripts/test-skill.sh regression-guard
+        # 單獨跑：bash scripts/test-skill.sh dav-developer
         run: bats skills/*/tests/*.bats
 
       - name: Verify probes still kill mutants

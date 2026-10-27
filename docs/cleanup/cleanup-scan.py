@@ -58,20 +58,20 @@ PROTECTED_PATTERNS = [
     "**/ci/**",               # CI SOP
     "**/dav-designer/**",     # dav-designer skill 完整保留
     "**/dav-planner/**",      # dav-planner skill 完整保留
-    "**/dav-reflection/**",   # dav-reflection skill 完整保留
+    "**/dav-submitter/**",   # dav-submitter skill 完整保留
     "**/dav-skill-creater/**",
     "**/dav-submitter/**",
     "**/dav-trust/**",
     "**/dav-wiki/**",
-    "**/dev-checker-loop/**",
+    "**/dav-developer/**",
     "**/find-skills/**",
     "**/gsap-*/**",
     "**/council-mode/**",
     "**/orchestration/**",
     "**/pi-subagents/**",
-    "**/regression-guard/PoC/prompts/**",  # prompt templates
+    "**/dav-developer/PoC/prompts/**",  # prompt templates
     "**/orca-cli/**",
-    "**/tdd-test-writer/**",
+    "**/dav-developer/**",
 ]
 CROSS_LINK_RE = re.compile(r"\[.*?\]\(([^)]+\.md)(?:#[^)]*)?\)")
 
@@ -194,7 +194,7 @@ def main() -> int:
 
     # Human-readable
     print("═══════════════════════════════════════════════")
-    print("  文件減法盤點 — regression-guard PoC + 專案")
+    print("  文件減法盤點 — dav-developer PoC + 專案")
     print("═══════════════════════════════════════════════")
     print(f"  掃描目錄：     {' / '.join(SCAN_DIRS)}")
     print(f"  總 .md 檔數：  {len(results)}")

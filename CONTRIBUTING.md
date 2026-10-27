@@ -56,7 +56,7 @@ python3 -m pip install python-pptx
 
 ```bash
 # 建 PoC venv（httpx + PyYAML；v2.1-jev-poc.bats 的 40 條需要）
-bash skills/regression-guard/PoC/setup-venv.sh
+bash skills/dav-developer/PoC/setup-venv.sh
 # 重建：--force 會 rm -rf 目標目錄（TMO-040 護欄：危險路徑如 $HOME、/private/tmp、/usr
 # 直接拒；自訂 POC_VENV_DIR 且目錄已存在時需輸入目錄名確認，非互動腳本加 --yes）
 
@@ -75,7 +75,7 @@ bats skills/dav-wiki/tests/wiki-cleanup.bats --filter "E1"
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
-# 改了表內任何目標檔的碼（pptx-slim 腳本、dav-wiki 腳本、regression-guard 的文件／gates.json），
+# 改了表內任何目標檔的碼（pptx-slim 腳本、dav-wiki 腳本、dav-developer 的文件／gates.json），
 # 就要同步更新 scripts/ci/mutants.tsv：
 # 表的「原文」是整行精確比對，錨點對不上會直接 FAIL（不是 skip）；
 # 新增防呆／護欄時請補一列 mutant，否則 CI 不會知道你補的東西有沒有被測到。
@@ -83,7 +83,7 @@ python3 scripts/ci/mutant-must-die.py
 
 > ⚠️ **本機綠 ≠ CI 綠**（2026-10-27 TMO-084 降級後，呢個差距由「CI 閘」變成「本機閘要自己補齊」）：
 > CI 是 clean clone，拿不到未版控的檔案，也**沒有 `OPENROUTER_API_KEY` 與暖快取**。
-> 若新增測試素材，必須真的 `git add`（`skills/regression-guard/tests/poc-clean-clone.bats` 會擋）；
+> 若新增測試素材，必須真的 `git add`（`skills/dav-developer/tests/poc-clean-clone.bats` 會擋）；
 > fixture 內也不得寫自己機器的絕對路徑。
 > → CI 而家係偵測器（唔阻你），但呢啲坑會令佢紅：**本機閘要自己守住呢一邊** ——
 > 新增素材一定要 `git add`；跑閘前先 `git add -A`（框架體重守門量嘅係 git tracked 檔，
@@ -95,8 +95,8 @@ python3 scripts/ci/mutant-must-die.py
 > 探針內也要加 `JEV_ENV_FILE=/dev/null`（TMO-045），否則本機 `PoC/.env` 會在
 > cache miss 時拿真 key 去打 API，把「fixture 不够用」掩蓋成假綠。
 >
-> `skills/regression-guard/tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
-> （目前即 `skills/regression-guard/tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
+> `skills/dav-developer/tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
+> （目前即 `skills/dav-developer/tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
 > CI 等價環境下**整檔**重跑，任何一條回頭依賴真 API 或本機快取都會紅；
 > `CLEAN-POC-h` 另鎖「`PoC/.env` 與 `PoC/cache/` 不得被 git 追蹤」，
 > `CLEAN-POC-i` 則反向驗證 `JEV_ENV_FILE` seam 真的封得住兩個 .env 來源。
@@ -161,7 +161,7 @@ wc -l skills/*/SKILL.md skills/*/*.md
 本專案嘅專屬術語以 [`docs/glossary_list.md`](docs/glossary_list.md) 為準，三條規則：
 
 1. 新寫嘅文件／對話用**「術語」欄**嘅寫法（英文 key ＋ 中文對照）
-2. **唔好用「別名」欄**嗰啲講法（同一個概念只用一個講法）
+2. **唔好用「勿用寫法」清單**入面嘅講法（會指錯嘢嗰啲）；「同義寫法」欄只係俾你理解同一件事
 3. 發現新術語 → **A-Z 插入同一張表**（唔好各自發明叫法）
 
 ## 完成條件（閘）
@@ -204,12 +204,12 @@ bash scripts/install-local-hooks.sh --uninstall
 
 ```bash
 # 改一個 skill → 只跑嗰個 skill（唔使等成 repo 套件）
-bash scripts/test-skill.sh regression-guard
+bash scripts/test-skill.sh dav-developer
 bash scripts/test-skill.sh dav-wiki pptx-slim     # 可以一次過幾個
 bash scripts/test-skill.sh --list                 # 列有測試嘅 skill
 
 # 或者直接用 bats（同一件事）
-bats skills/regression-guard/tests/
+bats skills/dav-developer/tests/
 
 # 全套（repo 級 ＋ 所有 skill 級）
 bash scripts/check-all.sh
@@ -219,22 +219,22 @@ bash scripts/check-all.sh
 > （相對路徑相對 `BATS_TEST_DIRNAME`，搬咗 skill 就搵唔到）→ 用絕對路徑：
 > `REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"; load "$REPO_ROOT/tests/helpers/test-env"`。
 
-## regression-guard 嘅 CI：本機跑（唔喺 GitHub）
+## dav-developer 嘅 CI：本機跑（唔喺 GitHub）
 
-> **2026-10-27 用戶決策**：「regression-guard 的 ci 在本地跑都得，不用在 github 上跑」
-> → `.github/workflows/regression-guard-jev-poc.yml` **已刪除**（探針 `CI-f` 鎖住唔准加返）。
+> **2026-10-27 用戶決策**：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」
+> → `.github/workflows/dav-developer-jev-poc.yml` **已刪除**（探針 `CI-f` 鎖住唔准加返）。
 
 ```bash
-bash skills/regression-guard/PoC/run_ci.sh list          # 列 subcommand
-bash skills/regression-guard/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
-OPENROUTER_API_KEY=sk-or-v1-... bash skills/regression-guard/PoC/run_ci.sh pipeline US-101
-bash skills/regression-guard/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
-bash skills/regression-guard/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
-bash skills/regression-guard/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
+bash skills/dav-developer/PoC/run_ci.sh list          # 列 subcommand
+bash skills/dav-developer/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
+OPENROUTER_API_KEY=sk-or-v1-... bash skills/dav-developer/PoC/run_ci.sh pipeline US-101
+bash skills/dav-developer/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
+bash skills/dav-developer/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
+bash skills/dav-developer/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
 ```
 
 **Return code**：`0` 綠｜`2` 黃（警告）｜`1` 紅（擋）｜`3` 用法／環境錯誤。
-詳見 [`docs/ci/regression-guard-jev-poc.md`](docs/ci/regression-guard-jev-poc.md)。
+詳見 [`docs/ci/dav-developer-jev-poc.md`](docs/ci/dav-developer-jev-poc.md)。
 
 ## CI / GitHub Actions（偵測器，唔係閘）
 
@@ -317,7 +317,7 @@ symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做�
 - 新參數的預設值必須**維持舊行為**（如 `${3:-0}`），沒跟著改的呼叫端不受影響。
 - 新參數必須有**兩種值各一支探針**：既有預設路徑（回歸）＋ 新路徑（新行為）。
   只測新值＝舊的呼叫端沒人守護。
-- 守衛行為（會不會覆寫／刪掉使用者自有內容）最好也**各補一支 mutation row**，
+- 守衛行為（會不會覆寫／刪掉使用者自有內容）最好也**各補一支 mutant row**，
   證明「守衛被拿掉 → 探針會紅」（見上方突變測試段）。
 
 ### 2. 會進 oracle payload 的欄位必須跨 process 穩定
@@ -344,8 +344,8 @@ symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做�
 1. **規劃** (dav-planner)
 2. **設計** (dav-designer)
 3. **執行** (4 Gate: TDD / lint / regression / reviewer)
-4. **反省** (dav-reflection)
+4. **反省**（併入 dav-submitter Step 3.5）
 5. **提交** (dav-submitter)
 
-Gate 的定義在**各自的 skill**（`tdd-test-writer` / `regression-guard` / `dev-checker-loop` / `dav-reconciler`），
+Gate 的定義在**各自的 skill**（`dav-developer` / `dav-developer` / `dav-developer` / `dav-reconciler`），
 完整說明見 [`docs/sop/handbook/`](docs/sop/handbook/)。`AGENTS.md` 只放行為準則，不含流程。

@@ -3,8 +3,8 @@
 > **這份檔案只講「你是誰、怎麼跟你合作」。**
 >
 > 流程與 Gate **不在這裡** —— 它們寫在**各自的 skill** 裡，被觸發時才讀：
-> `tdd-test-writer`（Gate 1 TDD / Gate 2 lint）、`regression-guard`（Gate 3 regression）、
-> `dev-checker-loop`（Gate 4 reviewer）、`dav-reconciler`（Gate 4.5 需求對帳）。
+> `dav-developer`（Gate 1 TDD / Gate 2 lint）、`dav-developer`（Gate 3 regression）、
+> `dav-developer`（Gate 4 reviewer）、`dav-reconciler`（Gate 4.5 需求對帳）。
 >
 > **沒有指定要用哪道 Gate 時，預設就是直接做**：不跑流程、不建 backlog、不寫交付摘要。
 > 只有當任務真的需要（要寫 code、要改 SOP／契約、或你明示要走正式流程）才進對應的 Gate。
@@ -29,7 +29,7 @@
 - **V02 — 方案必標推薦**：給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：…」。
 - **V03 — 改規範必走二審**：產出 SOP／`AGENTS.md`／`gates.json`／handbook／skill／
   **探針**（`tests/**/*.bats`）／契約的修改提案時，
-  先經獨立 Reviewer subagent（`/skill:dev-checker-loop`）二審：附**風險分級** + **跨 SOP 一致性檢查**。
+  先經獨立 Reviewer subagent（`/skill:dav-developer`）二審：附**風險分級** + **跨 SOP 一致性檢查**。
   用戶收到「diff + verdict」兩者並呈後，可明確說「跳過 Reviewer」直接批准。
   探針修改比照辦理（「條件放寬」的判準見 `skills/dav-skill-creater/editor-guide.md`）。
   這條**不增加一般任務的步驟**——只有動到規範本身時才觸發。

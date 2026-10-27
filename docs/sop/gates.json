@@ -1,12 +1,12 @@
 {
   "$schema": "./gates.schema.json",
-  "version": "1.1.0",
-  "description": "tree_monstor SOP 的 4 個 Gate 定義。每個 Gate 是 fail-fast 屏障 — 不通過 = 不可進入下一階段或聲稱任務完成。2026-10-26 起 Gate 的定義另外落在**各自承載它的 skill**（gate-1/2 → tdd-test-writer、gate-3 → regression-guard、gate-4 → dev-checker-loop），本檔保留為**機器可讀副本**。（2026-10-27 減法：`tests/gate-in-skill.bats` 已刪 → 兩份一致靠人手同步；修改 Gate 規範時兩邊都要改。）v1.1.0 移除 Gate 5（RSI 機制已歸檔，詳見 commit ef2fd4e）。Schema 使用 Draft-07（非原計劃 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 $comment 與 TD-015。",
+  "version": "1.2.0",
+  "description": "tree_monstor SOP 的 4 個 Gate 定義。每個 Gate 是 fail-fast 屏障 — 不通過 = 不可進入下一階段或聲稱任務完成。2026-10-26 起 Gate 的定義另外落在**各自承載它的 skill**（gate-1/2 → dav-developer、gate-3 → dav-developer、gate-4 → dav-developer），本檔保留為**機器可讀副本**。（2026-10-27 減法：`tests/gate-in-skill.bats` 已刪 → 兩份一致靠人手同步；修改 Gate 規範時兩邊都要改。）v1.1.0 移除 Gate 5（RSI 機制已歸檔，詳見 commit ef2fd4e）。Schema 使用 Draft-07（非原計劃 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 $comment 與 TD-015。",
   "gates": [
     {
       "id": "gate-1",
       "name": "TDD gate",
-      "trigger_skill": "tdd-test-writer",
+      "trigger_skill": "dav-developer",
       "pass_criteria": [
         "測試可運行",
         "看到「先紅後綠」（失敗 → 通過）"
@@ -47,19 +47,19 @@
     {
       "id": "gate-3",
       "name": "regression gate",
-      "trigger_skill": "regression-guard",
+      "trigger_skill": "dav-developer",
       "pass_criteria": [
         "探針埋好（記錄關鍵 state / 行為 / boundary）",
-        "完整測試套件跑過"
+        "改動範圍內測試套件跑過"
       ],
       "required_evidence": [
-        "修改前 baseline（完整測試套件 output，含 pass/fail 計數）",
-        "修改後 output（完整測試套件 output）",
+        "修改前 baseline（改動範圍內測試 output，含 pass/fail 計數）",
+        "修改後 output（改動範圍內）",
         "Diff 對比（既有測試結果一致 + 新探針如預期觸發）"
       ],
       "fail_action": "不可聲稱『做完了』",
-      "mandatory_phrase": "依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 完整測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。",
-      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。測試指令必須禁用 interactive / watch 模式（vitest 用 --run、jest 用 --ci、npm test 加 CI=1 並顯式關 watch、或 < /dev/null 強制關 TTY）— 詳見 regression-guard SKILL.md「測試指令執行規範」。",
+      "mandatory_phrase": "依 gates.json 規範，Gate 3 (regression) 需要：探針埋好 + 改動範圍內測試套件跑過，並在對話貼出「修改前 baseline + 修改後 output + Diff 對比」。",
+      "notes": "探針是記錄關鍵 state / 行為 / boundary 的測試。測試指令必須禁用 interactive / watch 模式（vitest 用 --run、jest 用 --ci、npm test 加 CI=1 並顯式關 watch、或 < /dev/null 強制關 TTY）— 詳見 dav-developer SKILL.md「測試指令執行規範」。",
       "remediation": {
         "strategy": "auto_fix_with_limit",
         "max_attempts": 3,
@@ -70,7 +70,7 @@
     {
       "id": "gate-4",
       "name": "reviewer gate",
-      "trigger_skill": "dev-checker-loop",
+      "trigger_skill": "dav-developer",
       "pass_criteria": [
         "checker subagent 回傳『沒找到更多問題』",
         "playwright-cli E2E 全綠（含截圖證據，UI 任務必跑）"

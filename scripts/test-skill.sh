@@ -5,8 +5,8 @@
 #       只跑嗰個 skill 嘅探針，唔使等成 repo 嘅測試套件。
 #
 # 用法：
-#   bash scripts/test-skill.sh regression-guard        # 跑一個 skill
-#   bash scripts/test-skill.sh regression-guard dav-wiki   # 跑多個
+#   bash scripts/test-skill.sh dav-developer        # 跑一個 skill
+#   bash scripts/test-skill.sh dav-developer dav-wiki   # 跑多個
 #   bash scripts/test-skill.sh --list                 # 列有測試嘅 skill
 #
 # 退出碼：0 = 全綠；1 = 有測試紅；2 = 用法／環境錯誤（skill 名不存在、冇 tests/、缺 bats）

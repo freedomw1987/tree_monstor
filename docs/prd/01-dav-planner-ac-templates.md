@@ -253,7 +253,7 @@ HTML 結構（嵌入 CSS）：
 | 既有 backlog.md 條目被誤改 | 中 | 過渡期不動既有 US；新規則只適用 §4.5 之後新增的 US |
 | docs/ac/ 命名衝突（如 US-101 重複） | 低 | 用 US-ID 唯一識別；既有 backlog 已用 ID 區隔 |
 | HTML 樣式在不同瀏覽器不一致 | 中 | 用基礎 CSS（web-safe font、避免 vendor prefix）；不依賴框架 |
-| Reviewer 二審抓出 SOP 一致性問題 | 高（依 V03 必走） | 提前請 dev-checker-loop subagent 檢查 |
+| Reviewer 二審抓出 SOP 一致性問題 | 高（依 V03 必走） | 提前請 dav-developer subagent 檢查 |
 | bats 測試在 macOS / Linux 跨平台失敗 | 低 | 沿用既有 bats 慣例（homebrew + linux）；檔案存在性檢查跨平台一致 |
 
 ---

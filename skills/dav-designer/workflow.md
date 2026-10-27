@@ -22,25 +22,35 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 
 1. **可按 Module 獨立開發**：每個 Module 可被不同開發者 / 不同時間切片，Module 間只透過明確定義的介面互動。
 2. **可按 Module 增減**：新增或移除 Module 時，對項目全體影響最小（其他 Module 不需要重寫，只調整連接處）。
-3. **可按 Module 測試**：dev-checker-loop 與 regression-guard 可針對單一 Module 跑探針、跑校驗；測試粒度與 Module 對齊，不會「測了整個系統卻不知道是哪個 Module
+3. **可按 Module 測試**：dav-developer 可針對單一 Module 跑探針、跑校驗；測試粒度與 Module 對齊，不會「測了整個系統卻不知道是哪個 Module
    壞掉」。
 
 **切割原則**（依上述目的倒推）：
 
-| 原則 | 說明 | 反例 |
-|------|------|------|
-| **功能內聚** | 一個 Module 只做一件事或一類緊密相關的事 | ❌ 「用戶 + 訂單 + 支付」塞同一 Module |
-| **低耦合** | Module 間互動透過明確介面（API / 事件 / 資料契約），不共用內部狀態 | ❌ Module A 直接讀 Module B 的 DB table |
-| **可獨立交付** | 移除某 Module 後，其他 Module 仍能編譯 / 運行（雖可能缺功能）| ❌ 移除「認證」整個系統崩潰 |
-| **可獨立測試** | 有 mock 介面就能單獨跑該 Module 的測試，不依賴整個系統起起來 | ❌ 必須啟動完整後端才能測前端 |
-| **粒度適中** | 1 個 Module ≈ 3-15 個 User Story；太小（1-2 US）變成分類標籤，太大（20+ US）失去「獨立交付」意義 | ❌ 把整個後端當一個 Module |
+- **功能內聚**
+  - 說明：一個 Module 只做一件事或一類緊密相關的事
+  - 反例：❌ 「用戶 + 訂單 + 支付」塞同一 Module
+- **低耦合**
+  - 說明：Module 間互動透過明確介面（API / 事件 / 資料契約），不共用內部狀態
+  - 反例：❌ Module A 直接讀 Module B 的 DB table
+- **可獨立交付**
+  - 說明：移除某 Module 後，其他 Module 仍能編譯 / 運行（雖可能缺功能）
+  - 反例：❌ 移除「認證」整個系統崩潰
+- **可獨立測試**
+  - 說明：有 mock 介面就能單獨跑該 Module 的測試，不依賴整個系統起起來
+  - 反例：❌ 必須啟動完整後端才能測前端
+- **粒度適中**
+  - 說明：1 個 Module ≈ 3-15 個 User Story；太小（1-2 US）變成分類標籤，太大（20+ US）失去「獨立交付」意義
+  - 反例：❌ 把整個後端當一個 Module
 
 **DoD 深度選項**（Step 1 必問一次）：
 
-  | 模式 | 必含狀態 | 適用場景 |
-  |------|----------|----------|
-  | ⭐ **DoD-Lite（預設）** | Happy path | 玩具 / 內部工具 / 簡單模組 |
-  | **DoD-Full** | Happy + Loading + Empty + Error + Edge | 正式產品 / 對外功能 / 複雜模組 |
+- ⭐ **DoD-Lite（預設）**
+  - 必含狀態：Happy path
+  - 適用場景：玩具 / 內部工具 / 簡單模組
+- **DoD-Full**
+  - 必含狀態：Happy + Loading + Empty + Error + Edge
+  - 適用場景：正式產品 / 對外功能 / 複雜模組
 
 - **證據**：對話中明確列出「本次處理 Module X（含 backlog #A, #B）— DoD-Lite / DoD-Full」。
 
@@ -55,7 +65,7 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 
 - **動作**：定義技術棧、系統組成部件（前端 / 後端 / DB / 第三方服務），並依 Module 劃分系統邊界。**禁止**出現真實 / 示範程式碼。
 - **為什麼**：架構設計只描述「為什麼這樣切」與「怎麼互動」，實作留給開發階段。
-- **Module 邊界是測試邊界**（v2.3 新增）：system-design.md 中的 Module 邊界就是未來 dev-checker-loop 與 regression-guard 的執行邊界 — 探針只針對該
+- **Module 邊界是測試邊界**（v2.3 新增）：system-design.md 中的 Module 邊界就是未來 dav-developer 的執行邊界 — 探針只針對該
   Module 的介面與內部狀態，不會跨 Module 檢查（避免一個 Module 壞掉牽扯其他 Module 的綠燈 / 紅燈）。
 - **產出**：system-design.md（含技術棧、模組邊界圖（純文字）、資料流）。
 - **證據**：同步更新 monorepo 對應的 backlog 檔，給每個 User Story 標上 Module 與 Story Point。
@@ -90,21 +100,26 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 
 **原型必含規範**：
 
-| 必含項 | 說明 |
-|--------|------|
-| **頁面切換** | 多頁 Module 需有 SPA 式切換（hash router 或顯示 / 隱藏） |
-| **按鈕點擊** | 所有 CTA 必須有實際反應（切頁、開 modal、顯示 toast） |
-| **表單互動** | input / select / checkbox 改變需即時反映 UI |
-| **Mock 資料** | 用 JSON 常數或 JS 變數，不用真實 API / 後端 |
-| **高保真視覺** | 配色 / 字型 / 間距接近最終產品；避免灰階 wireframe 風格 |
+- **頁面切換**
+  - 說明：多頁 Module 需有 SPA 式切換（hash router 或顯示 / 隱藏）
+- **按鈕點擊**
+  - 說明：所有 CTA 必須有實際反應（切頁、開 modal、顯示 toast）
+- **表單互動**
+  - 說明：input / select / checkbox 改變需即時反映 UI
+- **Mock 資料**
+  - 說明：用 JSON 常數或 JS 變數，不用真實 API / 後端
+- **高保真視覺**
+  - 說明：配色 / 字型 / 間距接近最終產品；避免灰階 wireframe 風格
 
 **原型禁止項**：
 
-| 禁止 | 原因 |
-|------|------|
-| 真實後端 API 呼叫 | 原型階段不應有後端依賴 |
-| 假資料寫死「使用者看不到的隱藏欄位」| 容易誤導為「真實功能已實作」 |
-| 外部 build tool（webpack / vite / npm 依賴）| 違反「雙擊即開」紀律 |
-| 跨檔依賴（多 .css / 多 .js）| 單檔獨立原則；外部 CSS / JS 用 CDN 例外 |
+- **真實後端 API 呼叫**
+  - 原因：原型階段不應有後端依賴
+- **假資料寫死「使用者看不到的隱藏欄位」**
+  - 原因：容易誤導為「真實功能已實作」
+- **外部 build tool（webpack / vite / npm 依賴）**
+  - 原因：違反「雙擊即開」紀律
+- **跨檔依賴（多 .css / 多 .js）**
+  - 原因：單檔獨立原則；外部 CSS / JS 用 CDN 例外
 
 **互動複雜度判斷**：≤ 3 畫面單頁切換 / 4-7 畫面 hash router / > 7 畫面拆多檔。

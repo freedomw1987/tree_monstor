@@ -62,7 +62,7 @@
 
 - **路徑**：`<project>/docs/req/<US-ID>-requirement.md`（`<US-ID>` 與 `docs/ac/<US-ID>.md` 同名）
 - **產生者**：`dav-planner`（§2.1 產 US 時同 turn 產生）
-- **消費者**：`dav-designer`（設計時讀）、`tdd-test-writer`（測試對應）、`dav-reconciler`（對帳基準）、
+- **消費者**：`dav-designer`（設計時讀）、`dav-developer`（測試對應）、`dav-reconciler`（對帳基準）、
   `check-doc-drift.sh`（D6 檢查存在性；D7 檢查對帳表的 R-ID 覆蓋）
 
 ### 固定結構（4 段，段落標題為契約的一部分）
@@ -212,7 +212,7 @@
 | `skills/dav-planner/SKILL.md` | Step 4 增列「同步產出錨點檔」+ R-ID 規則 | V03 二審 |
 | `skills/dav-planner/backlog-rules.md` | §4.6 產出 SOP 增列錨點檔 | V03 二審 |
 | `skills/dav-submitter/SKILL.md` | 交付模板加「需求對帳」段 + 狀態降級規則 | V03 二審 |
-| `skills/dav-reflection/SKILL.md` | 說明「對帳先於反省」的順序 | V03 二審 |
+| `skills/dav-submitter/SKILL.md`（v2.6 併入反省 Step 3.5） | 說明「對帳先於反省」的順序 | V03 二審 |
 | `skills/dav-reconciler/`（新） | SKILL.md（≤150 行）+ `reconcile-format.md` + `examples.md` | 新建 |
 | `docs/sop/handbook/2.3-execution.md` | 新增「Gate 4.5 需求對帳」段落 | V03 二審 |
 | `docs/sop/handbook/2.4-reflection.md` | 前置說明（對帳 → 反省） | V03 二審 |

@@ -11,6 +11,7 @@
 
 ```yaml
 ---
+
 title: "React Server Components 深入解析"
 source:
   type: pdf                       # 必填：pdf | docx | pptx | txt | md | url | ocr | subtitle
@@ -62,53 +63,129 @@ superseded_by: null                # 選填：deprecated 時填新檔路徑
 
 ### 1.2 欄位規範
 
-| 欄位 | 型別 | 必填 | 約束 |
-| --- | --- | --- | --- |
-| `title` | string | ✅ | 50 字內、首字大寫 |
-| `source.type` | enum | ✅ | `pdf` `docx` `pptx` `txt` `md` `url` `ocr` `subtitle` |
-| `source.original` | string | ✅ | 原始檔名 / URL |
-| `source.url` | string \| null | ❌ | URL 來源時填 |
-| `extracted_at` | date | ✅ | ISO 8601（YYYY-MM-DD） |
-| `category` | string | ✅ | kebab-case 小寫 |
-| `tags` | string[] | ✅ | 3-8 個、kebab-case 小寫 |
-| `summary` | string | ✅ | 1-3 句 |
-| `keywords` | string[] | ✅ | 3-5 個關鍵詞（提升交叉引用品質） |
-| `related` | string[] | ✅ | `[[xxx]]` 雙鏈接，可空 |
-| `concepts` | string[] | ✅ | `[[xxx]]` 雙鏈接，可空 |
-| `images` | object[] | ❌ | 見 1.3 |
-| `videos` | object[] | ❌ | 見 1.4 |
-| `audio` | object[] | ❌ | 見 1.5 |
-| `deprecated` | boolean | ✅ | `true` / `false` |
-| `superseded_by` | string \| null | ❌ | deprecated 時填 |
+- **`title`**
+  - 型別：string
+  - 必填：✅
+  - 約束：50 字內、首字大寫
+- **`source.type`**
+  - 型別：enum
+  - 必填：✅
+  - 約束：`pdf` `docx` `pptx` `txt` `md` `url` `ocr` `subtitle`
+- **`source.original`**
+  - 型別：string
+  - 必填：✅
+  - 約束：原始檔名 / URL
+- **`source.url`**
+  - 型別：string \| null
+  - 必填：❌
+  - 約束：URL 來源時填
+- **`extracted_at`**
+  - 型別：date
+  - 必填：✅
+  - 約束：ISO 8601（YYYY-MM-DD）
+- **`category`**
+  - 型別：string
+  - 必填：✅
+  - 約束：kebab-case 小寫
+- **`tags`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：3-8 個、kebab-case 小寫
+- **`summary`**
+  - 型別：string
+  - 必填：✅
+  - 約束：1-3 句
+- **`keywords`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：3-5 個關鍵詞（提升交叉引用品質）
+- **`related`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：`[[xxx]]` 雙鏈接，可空
+- **`concepts`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：`[[xxx]]` 雙鏈接，可空
+- **`images`**
+  - 型別：object[]
+  - 必填：❌
+  - 約束：見 1.3
+- **`videos`**
+  - 型別：object[]
+  - 必填：❌
+  - 約束：見 1.4
+- **`audio`**
+  - 型別：object[]
+  - 必填：❌
+  - 約束：見 1.5
+- **`deprecated`**
+  - 型別：boolean
+  - 必填：✅
+  - 約束：`true` / `false`
+- **`superseded_by`**
+  - 型別：string \| null
+  - 必填：❌
+  - 約束：deprecated 時填
 
 ### 1.3 images 物件 schema（FR-2.2）
 
-| 欄位 | 型別 | 必填 | 約束 |
-| --- | --- | --- | --- |
-| `path` | string | ✅ | 相對 `assets/images/` 下的路徑 |
-| `caption` | string | ✅ | Vision 模型生成的 1-3 句描述 |
-| `ocr_text` | string | ❌ | OCR 提取的文字（圖含文字才填） |
-| `alt_text` | string | ❌ | 無障礙用 alt 文字 |
+- **`path`**
+  - 型別：string
+  - 必填：✅
+  - 約束：相對 `assets/images/` 下的路徑
+- **`caption`**
+  - 型別：string
+  - 必填：✅
+  - 約束：Vision 模型生成的 1-3 句描述
+- **`ocr_text`**
+  - 型別：string
+  - 必填：❌
+  - 約束：OCR 提取的文字（圖含文字才填）
+- **`alt_text`**
+  - 型別：string
+  - 必填：❌
+  - 約束：無障礙用 alt 文字
 
 ### 1.4 videos 物件 schema（FR-2.3）
 
-| 欄位 | 型別 | 必填 | 約束 |
-| --- | --- | --- | --- |
-| `path` | string | ✅ | 相對 `assets/videos/` 下的路徑 |
-| `duration` | number | ✅ | 影片秒數 |
-| `transcript_path` | string | ❌ | Whisper 字幕檔路徑（`*.transcript.md`） |
-| `chapters` | object[] | ❌ | 章節切分，見下表 |
-| `thumbnail` | string | ❌ | 封面圖路徑 |
+- **`path`**
+  - 型別：string
+  - 必填：✅
+  - 約束：相對 `assets/videos/` 下的路徑
+- **`duration`**
+  - 型別：number
+  - 必填：✅
+  - 約束：影片秒數
+- **`transcript_path`**
+  - 型別：string
+  - 必填：❌
+  - 約束：Whisper 字幕檔路徑（`*.transcript.md`）
+- **`chapters`**
+  - 型別：object[]
+  - 必填：❌
+  - 約束：章節切分，見下表
+- **`thumbnail`**
+  - 型別：string
+  - 必填：❌
+  - 約束：封面圖路徑
 
 **chapters 條目**：`title`（✅）、`start`（✅ 秒）、`end`（✅ 秒）、`summary`（✅ 1-3 句）。
 
 ### 1.5 audio 物件 schema（FR-2.4）
 
-| 欄位 | 型別 | 必填 | 約束 |
-| --- | --- | --- | --- |
-| `path` | string | ✅ | 相對 `assets/audio/` 下的路徑 |
-| `duration` | number | ✅ | 音訊秒數 |
-| `transcript_path` | string | ❌ | Whisper 字幕檔路徑 |
+- **`path`**
+  - 型別：string
+  - 必填：✅
+  - 約束：相對 `assets/audio/` 下的路徑
+- **`duration`**
+  - 型別：number
+  - 必填：✅
+  - 約束：音訊秒數
+- **`transcript_path`**
+  - 型別：string
+  - 必填：❌
+  - 約束：Whisper 字幕檔路徑
 
 ---
 
@@ -118,6 +195,7 @@ superseded_by: null                # 選填：deprecated 時填新檔路徑
 
 ```yaml
 ---
+
 slug: effect-shallow-compare                # 必填：唯一識別（kebab-case）
 title: "Effect 依賴淺比較陷阱"               # 必填：人類可讀名稱
 definition: "Effect 依賴淺比較，物件參考變化就重跑"  # 必填：一句話定義
@@ -141,22 +219,51 @@ history:                                    # 必填（可空）：演進歷史
 
 ### 2.2 欄位規範
 
-| 欄位 | 型別 | 必填 | 約束 |
-| --- | --- | --- | --- |
-| `slug` | string | ✅ | kebab-case、唯一 |
-| `title` | string | ✅ | 30 字內 |
-| `definition` | string | ✅ | 1-2 句話定義 |
-| `status` | enum | ✅ | `active` `draft` `deprecated` |
-| `deprecated` | boolean | ✅ | `true` / `false` |
-| `superseded_by` | string \| null | ❌ | slug 或 null |
-| `parents` | string[] | ✅ | `[[xxx]]`，可空 |
-| `children` | string[] | ✅ | `[[xxx]]`，可空 |
-| `related_docs` | string[] | ✅ | `[[xxx]]`，可空 |
-| `history` | object[] | ✅ | 可空，見 2.3 |
+- **`slug`**
+  - 型別：string
+  - 必填：✅
+  - 約束：kebab-case、唯一
+- **`title`**
+  - 型別：string
+  - 必填：✅
+  - 約束：30 字內
+- **`definition`**
+  - 型別：string
+  - 必填：✅
+  - 約束：1-2 句話定義
+- **`status`**
+  - 型別：enum
+  - 必填：✅
+  - 約束：`active` `draft` `deprecated`
+- **`deprecated`**
+  - 型別：boolean
+  - 必填：✅
+  - 約束：`true` / `false`
+- **`superseded_by`**
+  - 型別：string \| null
+  - 必填：❌
+  - 約束：slug 或 null
+- **`parents`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：`[[xxx]]`，可空
+- **`children`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：`[[xxx]]`，可空
+- **`related_docs`**
+  - 型別：string[]
+  - 必填：✅
+  - 約束：`[[xxx]]`，可空
+- **`history`**
+  - 型別：object[]
+  - 必填：✅
+  - 約束：可空，見 2.3
 
 ### 2.3 history 條目規範
 
-每條 history 係一個物件：`date`（✅ ISO 8601）、`action`（✅ `created` / `derived` / `revised` / `merged` / `deprecated`）、`note`（❌ 一句話說明）。
+每條 history 係一個物件：`date`（✅ ISO 8601）、`action`（✅ `created` / `derived` / `revised` / `merged` / `deprecated`）、`note`（❌
+一句話說明）。
 
 ---
 

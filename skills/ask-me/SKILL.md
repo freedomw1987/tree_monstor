@@ -1,13 +1,15 @@
 ---
 name: ask-me
-description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂」逐題跟用戶確認，同步回寫 need-you-help.md 的抉擇欄 + 雙寫進 docs/backlog.md 對應 US 的狀態（✅ 繼續做 / 📝 改設計 / ⏸️ 跳過）。**不適用於**：trust mode 進行中（會打斷 trust）、一般對話提問（用 ask_user_question）、純諮詢。
+description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂」逐題跟用戶確認，同步回寫 need-you-help.md 的抉擇欄 + 雙寫進 docs/backlog.md 對應
+US 的狀態（✅ 繼續做 / 📝 改設計 / ⏸️ 跳過）。**不適用於**：trust mode 進行中（會打斷 trust）、一般對話提問（用 ask_user_question）、純諮詢。
 ---
 
 # Ask Me
 
 ## TL;DR
 
-1. **做什麼**：trust mode 結束後，讀 `docs/need-you-help.md`（專案端路徑）把 ☐ 未確認的擔憂**一個一個**問用戶、確認後**雙寫**（要法 `need-you-help.md` + `docs/backlog.md`），全部處理完才退出。
+1. **做什麼**：trust mode 結束後，讀 `docs/need-you-help.md`（專案端路徑）把 ☐ 未確認的擔憂**一個一個**問用戶、確認後**雙寫**（要法 `need-you-help.md` +
+`docs/backlog.md`），全部處理完才退出。
 2. **何時觸發**：用戶說「處理 need-you-help」「ask-me」「跑完需要我幫的子問題」、trust mode 自然結束後有遺留擔憂。
 3. **不適用於**：trust mode 進行中（打斷 trust）、一般對話提問（用 ask_user_question 就好）、純諮詢（用戶只是問問題不需決策）。
 4. **關鍵紀律**：
@@ -19,14 +21,18 @@ description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂�
 
 ## 觸發時機
 
-| 情境 | 觸發 |
-|------|------|
-| 用戶說「ask-me」「處理 need-you-help」「跑一下要問我的」| ✅ 必須 |
-| Trust Mode 自然結束（deadline 到）+ `need-you-help.md` 有 ☐ | ✅ 自動建議（不在對話中自動啟動）|
-| Trust Mode 結束標記後用戶說「看看要問的」| ✅ 觸發 |
-| Trust Mode 進行中用戶提問 | ❌ 不觸發（打斷 trust，走普通對話）|
-| 一般任務的單次提問 | ❌ 用 `ask_user_question` |
-| 純諮詢（用戶只是問、不需決策）| ❌ 用普通對話回應 |
+- **用戶說「ask-me」「處理 need-you-help」「跑一下要問我的」**
+  - 觸發：✅ 必須
+- **Trust Mode 自然結束（deadline 到）+ `need-you-help.md` 有 ☐**
+  - 觸發：✅ 自動建議（不在對話中自動啟動）
+- **Trust Mode 結束標記後用戶說「看看要問的」**
+  - 觸發：✅ 觸發
+- **Trust Mode 進行中用戶提問**
+  - 觸發：❌ 不觸發（打斷 trust，走普通對話）
+- **一般任務的單次提問**
+  - 觸發：❌ 用 `ask_user_question`
+- **純諮詢（用戶只是問、不需決策）**
+  - 觸發：❌ 用普通對話回應
 
 ## 流程（4 步）
 
@@ -84,25 +90,29 @@ description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂�
 
 ## 規則 / 例外 / 限制
 
-| 規則 | 例外 | 限制 |
-|------|------|------|
-| 一次只問 1 題 | N/A | V01 紀律、批量會增加決策疲勞 |
-| 雙寫必齊（need-you-help + backlog）| N/A | 缺一即視為 ask-me 未完成 |
-| 全部 ☐ 變 ☑ 才退出 | 用戶中途叫停可提早退出 | 退出時標 `⏸️ 用戶中斷` |
-| 不動 `need-you-help.md` 以外的需求檔 | N/A | 只動 need-you-help + backlog，不改需求 / 設計相關文件 |
-| 不自動延伸（結束後不做事）| 用戶說「繼續 trust」可重啟 | 見同套上游 skill 結束後行為規範（需同套安裝） |
-| 退出後不重做 trust mode | N/A | trust 重啟由用戶決定 |
-| 信任標記 `✅/📝/⏸️` 三選一 | 不用其他 emoji 保持一致性 | 與 backlog 既有 emoji 對齊 |
-| 抉擇理由必含日期 | N/A | `YYYY-MM-DD ask-me：...` 格式便於 grep |
-| 對應 US 在 backlog.md 找不到 | 標 `⚠️ orphan` 在 need-you-help、不阻塞流程 | 結束時提醒用戶手動處理 |
-| **不走完整 SOP**（§2.1→§2.5）| N/A | ask-me 是輔助 skill、§2.6 簡化流程 |
+- **一次只問 1 題** — 例外：N/A；限制：V01 紀律、批量會增加決策疲勞
+- **雙寫必齊（need-you-help + backlog）** — 例外：N/A；限制：缺一即視為 ask-me 未完成
+- **全部 ☐ 變 ☑ 才退出** — 例外：用戶中途叫停可提早退出；限制：退出時標 `⏸️ 用戶中斷`
+- **不動 `need-you-help.md` 以外的需求檔** — 例外：N/A；限制：只動 need-you-help + backlog，不改需求 / 設計相關文件
+- **不自動延伸（結束後不做事）** — 例外：用戶說「繼續 trust」可重啟；限制：見同套上游 skill 結束後行為規範（需同套安裝）
+- **退出後不重做 trust mode** — 例外：N/A；限制：trust 重啟由用戶決定
+- **信任標記 `✅/📝/⏸️` 三選一** — 例外：不用其他 emoji 保持一致性；限制：與 backlog 既有 emoji 對齊
+- **抉擇理由必含日期** — 例外：N/A；限制：`YYYY-MM-DD ask-me：...` 格式便於 grep
+- **對應 US 在 backlog.md 找不到** — 例外：標 `⚠️ orphan` 在 need-you-help、不阻塞流程；限制：結束時提醒用戶手動處理
+- **不走完整 SOP**（§2.1→§2.5）
+  - 例外：N/A
+  - 限制：ask-me 是輔助 skill、§2.6 簡化流程
 
 ## 與上游 skill 的關係
 
-| 階段 | 上游 skill | 本 skill |
-|------|-----------|---------|
-| **上游 trust mode 進行中** | Agent 寫 `need-you-help.md` ☐ 條目 | ❌ 不觸發 |
-| **上游 trust mode 結束後** | 結束標記輸出（見同套上游 skill 結束後行為規範，需同套安裝）| ✅ 等待用戶說「ask-me」 |
-| **本 skill 結束後** | N/A | 對話輸出 `🏁 ask-me 結束`，等用戶說「繼續 trust」或新指示 |
+- **上游 trust mode 進行中**
+  - 上游 skill：Agent 寫 `need-you-help.md` ☐ 條目
+  - 本 skill：❌ 不觸發
+- **上游 trust mode 結束後**
+  - 上游 skill：結束標記輸出（見同套上游 skill 結束後行為規範，需同套安裝）
+  - 本 skill：✅ 等待用戶說「ask-me」
+- **本 skill 結束後**
+  - 上游 skill：N/A
+  - 本 skill：對話輸出 `🏁 ask-me 結束`，等用戶說「繼續 trust」或新指示
 
 > 本 skill 不是上游 trust skill 的一部分、是獨立 skill；雙方透過 monorepo 約定的待辦檔案介接（路徑由 monorepo 約定）。

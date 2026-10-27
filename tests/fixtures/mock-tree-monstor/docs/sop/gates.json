@@ -6,7 +6,7 @@
     {
       "id": "gate-1",
       "name": "TDD gate",
-      "trigger_skill": "tdd-test-writer",
+      "trigger_skill": "dav-developer",
       "pass_criteria": [
         "測試可運行",
         "看到「先紅後綠」（失敗 → 通過）"
@@ -47,7 +47,7 @@
     {
       "id": "gate-3",
       "name": "regression gate",
-      "trigger_skill": "regression-guard",
+      "trigger_skill": "dav-developer",
       "pass_criteria": [
         "探針埋好（記錄關鍵 state / 行為 / boundary）",
         "完整測試套件跑過"
@@ -70,7 +70,7 @@
     {
       "id": "gate-4",
       "name": "reviewer gate",
-      "trigger_skill": "dev-checker-loop",
+      "trigger_skill": "dav-developer",
       "pass_criteria": [
         "checker subagent 回傳『沒找到更多問題』",
         "playwright-cli E2E 全綠（含截圖證據，UI 任務必跑）"

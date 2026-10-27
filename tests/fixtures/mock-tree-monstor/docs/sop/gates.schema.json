@@ -53,7 +53,7 @@
               { "type": "string", "pattern": "^(dav-|tdd-|regression-|dev-|minimax-).*$" },
               { "type": "null" }
             ],
-            "description": "Skill that orchestrates this gate (e.g. \"/skill:tdd-test-writer\"), or null if no skill is involved (e.g. lint gate uses language-specific tools)."
+            "description": "Skill that orchestrates this gate (e.g. \"/skill:dav-developer\"), or null if no skill is involved (e.g. lint gate uses language-specific tools)."
           },
           "pass_criteria": {
             "type": "array",

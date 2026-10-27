@@ -467,7 +467,13 @@ EOF
     TERM="${TERM:-xterm}" \
     NO_COLOR="1" \
     bash "$INSTALL_SH" --global --agent qoder --yes
-  [ "$status" -eq 0 ]
+  # 失敗時一定要印安裝器輸出（2026-10-27：呢支曾喺一次全套跑入面紅、單跑綠 →
+  # 冇輸出就查唔到原因；TMO-089 待觀察項）
+  [ "$status" -eq 0 ] || {
+    echo "FAIL: install.sh --agent qoder 離開碼 ${status}（安裝器輸出見下）" >&2
+    printf '%s\n' "$output" >&2
+    return 1
+  }
 
   assert_path_is_symlink "$TEST_HOME/.qoder/AGENTS.md" "$REPO_ROOT/AGENTS.md"
   assert_path_is_symlink "$TEST_HOME/.qoder/skills/dav-planner" "$REPO_ROOT/skills/dav-planner"

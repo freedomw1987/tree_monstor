@@ -10,13 +10,51 @@
 
 ## Backlog（Sprint 1：M02-payment 整體交付）
 
-| US ID | 類型 | Module | 標題 | AC | 優先級 | SP | 狀態 | 依賴 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| M02-US-201 | US | M02 | 信用卡付款 | 4 條 BDD | P0 | 8 | PENDING | — |
-| M02-US-202 | US | M02 | 付款回呼更新訂單 | 3 條 BDD | P0 | 5 | PENDING | M02-US-201 |
-| M02-US-203 | US | M02 | 付款失敗重試 | 3 條 BDD | P1 | 3 | PENDING | M02-US-201 |
-| M02-DE-301 | DE | M02 | 修正付款 timeout 沒釋放 DB connection | — | P1 | 2 | PENDING | — |
-| INT-M01-M02-01 | US | INT | 登入後付款完整流程 | 2 條 BDD | P0 | 5 | PENDING | M01-US-101, M02-US-201 |
+- **M02-US-201**
+  - 類型：US
+  - Module：M02
+  - 標題：信用卡付款
+  - AC：4 條 BDD
+  - 優先級：P0
+  - SP：8
+  - 狀態：PENDING
+  - 依賴：—
+- **M02-US-202**
+  - 類型：US
+  - Module：M02
+  - 標題：付款回呼更新訂單
+  - AC：3 條 BDD
+  - 優先級：P0
+  - SP：5
+  - 狀態：PENDING
+  - 依賴：M02-US-201
+- **M02-US-203**
+  - 類型：US
+  - Module：M02
+  - 標題：付款失敗重試
+  - AC：3 條 BDD
+  - 優先級：P1
+  - SP：3
+  - 狀態：PENDING
+  - 依賴：M02-US-201
+- **M02-DE-301**
+  - 類型：DE
+  - Module：M02
+  - 標題：修正付款 timeout 沒釋放 DB connection
+  - AC：—
+  - 優先級：P1
+  - SP：2
+  - 狀態：PENDING
+  - 依賴：—
+- **INT-M01-M02-01**
+  - 類型：US
+  - Module：INT
+  - 標題：登入後付款完整流程
+  - AC：2 條 BDD
+  - 優先級：P0
+  - SP：5
+  - 狀態：PENDING
+  - 依賴：M01-US-101, M02-US-201
 
 **Sprint 總計**：4 個 M02 US + 1 個跨 Module INT + 1 個 M02 Bug；合計 23 SP。
 
@@ -90,7 +128,7 @@
 - **業務規則**: N/A（無計算 / 狀態 / 權限 / 冪等規則）
 - **依賴**: M01-US-101（用戶登入）, M02-US-201（信用卡付款）
 - **驗收方式**: 跑 `REGRESSION_MODULE=INT ./run_pipeline.sh INT-M01-M02-01`
-- **為什麼這個優先**（dav-planner v2.3 新增）：P0 是因為這是 user-facing 完整流程；商業價值最高；但因為跨 Module，依 dev-checker-loop v2.2 規則升級為新任務
+- **為什麼這個優先**（dav-planner v2.3 新增）：P0 是因為這是 user-facing 完整流程；商業價值最高；但因為跨 Module，依 dav-developer v2.2 規則升級為新任務
 
 ---
 
@@ -98,17 +136,22 @@
 
 ### 派工計劃
 
-| dev | Module | 負責 US | 平行 / 順序 |
-| --- | --- | --- | --- |
-| dev-A | M02 | M02-US-201, M02-US-202, M02-US-203, M02-DE-301 | 順序（同 Module）|
-| dev-B | INT | INT-M01-M02-01 | 順序（M02 + M01 都完成後才能開始）|
+- **dev-A**
+  - Module：M02
+  - 負責 US：M02-US-201, M02-US-202, M02-US-203, M02-DE-301
+  - 平行 / 順序：順序（同 Module）
+- **dev-B**
+  - Module：INT
+  - 負責 US：INT-M01-M02-01
+  - 平行 / 順序：順序（M02 + M01 都完成後才能開始）
 
-**為什麼 dev-B 等 dev-A 結束才開始**：INT-M01-M02-01 跨 Module，依 dev-checker-loop v2.2 規則，跨 Module 任務需獨立派工、不混在原 Module 循環內處理。
+**為什麼 dev-B 等 dev-A 結束才開始**：INT-M01-M02-01 跨 Module，依 dav-developer v2.2 規則，跨 Module 任務需獨立派工、不混在原 Module 循環內處理。
 
-### regression-guard 執行計劃
+### dav-developer 執行計劃
 
 ```bash
 # M02 內部驗證（每個 US 完成後跑）
+
 REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201
 
 # M02 整體驗證（sprint 結束跑）
@@ -118,19 +161,27 @@ REGRESSION_MODULE=M02 ./run_pipeline.sh --all
 REGRESSION_MODULE=INT ./run_pipeline.sh INT-M01-M02-01
 ```
 
-### dev-checker-loop 校驗計劃
+### dav-developer 校驗計劃
 
 - 每個 US 完成 → dev 標「等待校驗」→ checker 校驗 Module 內 → dev 自動修復
 - 跨 Module issue（INT 任務發現）→ 升級為新任務，不在原 Module 循環內處理
 
 ### dav-submitter 交付計劃
 
-| 完成時間 | 交付單位 | 交付檔案 |
-| --- | --- | --- |
-| M02-US-201 完成 | US 級 | `docs/deliverable/2026-XX-XX-m02-us-201-credit-card.md` |
-| M02-US-202 完成 | US 級 | `docs/deliverable/2026-XX-XX-m02-us-202-callback.md` |
-| ... | ... | ... |
-| M02 全部 US 完成 | **Module 級** | `docs/deliverable/2026-XX-XX-m02-payment-module.md`（含 §9 Module 級總結）|
-| INT 完成 | Module 級 | `docs/deliverable/2026-XX-XX-int-checkout-full-flow.md` |
+- **M02-US-201 完成**
+  - 交付單位：US 級
+  - 交付檔案：`docs/deliverable/2026-XX-XX-m02-us-201-credit-card.md`
+- **M02-US-202 完成**
+  - 交付單位：US 級
+  - 交付檔案：`docs/deliverable/2026-XX-XX-m02-us-202-callback.md`
+- **...**
+  - 交付單位：...
+  - 交付檔案：...
+- **M02 全部 US 完成**
+  - 交付單位：**Module 級**
+  - 交付檔案：`docs/deliverable/2026-XX-XX-m02-payment-module.md`（含 §9 Module 級總結）
+- **INT 完成**
+  - 交付單位：Module 級
+  - 交付檔案：`docs/deliverable/2026-XX-XX-int-checkout-full-flow.md`
 
 ---

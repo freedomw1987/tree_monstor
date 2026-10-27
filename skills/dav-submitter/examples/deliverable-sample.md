@@ -36,61 +36,89 @@
 
 ### 2.1 新增檔案
 
-| 檔案路徑 | 用途 |
-| --- | --- |
-| `src/payment/PaymentService.ts` | M02 對外 interface |
-| `src/payment/PaymentServiceImpl.ts` | M02 實作（含 retry / idempotency / connection 釋放）|
-| `src/payment/models/Payment.ts` | 付款單 model + `PaymentStatus` enum |
-| `src/payment-gateway/GatewayAdapter.ts` | 第三方閘道 adapter interface（`StripeAdapter.ts` 為 mock 實作）|
-| `probes/M02-*.test.ts` / `probes/INT-M01-M02-checkout.test.ts` | 5 個 Module 內探針 ＋ 1 個跨 Module 整合探針 |
+- **`src/payment/PaymentService.ts`**
+  - 用途：M02 對外 interface
+- **`src/payment/PaymentServiceImpl.ts`**
+  - 用途：M02 實作（含 retry / idempotency / connection 釋放）
+- **`src/payment/models/Payment.ts`**
+  - 用途：付款單 model + `PaymentStatus` enum
+- **`src/payment-gateway/GatewayAdapter.ts`**
+  - 用途：第三方閘道 adapter interface（`StripeAdapter.ts` 為 mock 實作）
+- **`probes/M02-*.test.ts` / `probes/INT-M01-M02-checkout.test.ts`**
+  - 用途：5 個 Module 內探針 ＋ 1 個跨 Module 整合探針
 
 ### 2.2 修改檔案
 
-| 檔案路徑 | 改動內容 |
-| --- | --- |
-| `src/event-bus/index.ts` | +`payment.success` / `payment.failed` event type |
-| `db/schema.sql` | +`payments` table（含 `gateway_ref` 唯一索引，支援冪等）|
+- **`src/event-bus/index.ts`**
+  - 改動內容：+`payment.success` / `payment.failed` event type
+- **`db/schema.sql`**
+  - 改動內容：+`payments` table（含 `gateway_ref` 唯一索引，支援冪等）
 
 ### 2.3 刪除檔案（如有）
 
-| 檔案路徑 | 刪除原因 |
-| --- | --- |
-| `src/legacy/old-payment.ts` | M02 舊版（重構成 Module 邊界內乾淨版本）|
+- **`src/legacy/old-payment.ts`**
+  - 刪除原因：M02 舊版（重構成 Module 邊界內乾淨版本）
 
 ### 2.4 改動背後的理由（v2.1 新增）
 
-| 改動 | 為什麼這樣設計 | 放棄的選項 |
-| --- | --- | --- |
-| **PaymentService 用 interface 對外** | 易測試（M04 可 mock）、易替換（換閘道不影響）、易演進 | 對外暴露 class（M04 會 import 整個 class，耦合度高；測試難）|
-| **冪等處理付款回呼** | 第三方付款閘道會重試回呼（網路不穩）、不冪等會重複扣款（商業災難）| 用 transaction 處理（無法保證跨 process 冪等；unique index 是更強保證）|
-| **DB connection 在 finally 釋放** | 高併發下 timeout 會堆積 connection、最終 crash（DE-301 的根因）| 用 middleware 釋放（跨 function 時容易漏；finally 是顯而易見的釋放點）|
-| **event bus 而非直接 import M03** | M02 不應該依賴 M03 內部；event bus 讓 M03 故障不影響 M02 | 直接 `import { OrderModel } from 'src/order'`（破壞 Module 邊界、測試時要 mock M03）|
+- **PaymentService 用 interface 對外**
+  - 為什麼這樣設計：易測試（M04 可 mock）、易替換（換閘道不影響）、易演進
+  - 放棄的選項：對外暴露 class（M04 會 import 整個 class，耦合度高；測試難）
+- **冪等處理付款回呼**
+  - 為什麼這樣設計：第三方付款閘道會重試回呼（網路不穩）、不冪等會重複扣款（商業災難）
+  - 放棄的選項：用 transaction 處理（無法保證跨 process 冪等；unique index 是更強保證）
+- **DB connection 在 finally 釋放**
+  - 為什麼這樣設計：高併發下 timeout 會堆積 connection、最終 crash（DE-301 的根因）
+  - 放棄的選項：用 middleware 釋放（跨 function 時容易漏；finally 是顯而易見的釋放點）
+- **event bus 而非直接 import M03**
+  - 為什麼這樣設計：M02 不應該依賴 M03 內部；event bus 讓 M03 故障不影響 M02
+  - 放棄的選項：直接 `import { OrderModel } from 'src/order'`（破壞 Module 邊界、測試時要 mock M03）
 
-## 3. 驗收標準對應
+## 3. 驗收條件對應
 
-| AC | 描述 | 結果 | 證據 |
-| --- | --- | --- | --- |
-| M02-US-201 AC-1 / AC-3 | 有效信用卡建立付款單／Timeout 釋放 DB connection | ✅ | `M02-create-payment-returns-success-on-valid-card`、`M02-payment-timeout-releases-db-connection` 探針 |
-| M02-US-202 AC-2 | 同一 callback 重複 3 次結果冪等 | ✅ | `M02-payment-callback-is-idempotent` 探針 |
-| M02-US-203 AC-2 | 連續失敗 3 次鎖卡 | ✅ | `M02-payment-retry-blocks-after-3-failures` 探針 |
-| INT-M01-M02-01 AC-1 | 登入後付款完整流程 | ✅ | INT 探針 |
+- **M02-US-201 AC-1 / AC-3**
+  - 描述：有效信用卡建立付款單／Timeout 釋放 DB connection
+  - 結果：✅
+  - 證據：`M02-create-payment-returns-success-on-valid-card`、`M02-payment-timeout-releases-db-connection` 探針
+- **M02-US-202 AC-2**
+  - 描述：同一 callback 重複 3 次結果冪等
+  - 結果：✅
+  - 證據：`M02-payment-callback-is-idempotent` 探針
+- **M02-US-203 AC-2**
+  - 描述：連續失敗 3 次鎖卡
+  - 結果：✅
+  - 證據：`M02-payment-retry-blocks-after-3-failures` 探針
+- **INT-M01-M02-01 AC-1**
+  - 描述：登入後付款完整流程
+  - 結果：✅
+  - 證據：INT 探針
 
 ## 4. 測試結果
 
-| 測試類型 | 通過 / 總數 | 備註 |
-| --- | --- | --- |
-| M02 單元測試 | 5 / 5 | 全綠 |
-| M02 整合測試（Module 內）| 3 / 3 | 全綠 |
-| INT 整合測試（跨 Module）| 1 / 1 | 全綠 |
-| 回歸測試（REGRESSION_MODULE=M02）| 5 / 5 | 全綠 |
+- **M02 單元測試**
+  - 通過 / 總數：5 / 5
+  - 備註：全綠
+- **M02 整合測試（Module 內）**
+  - 通過 / 總數：3 / 3
+  - 備註：全綠
+- **INT 整合測試（跨 Module）**
+  - 通過 / 總數：1 / 1
+  - 備註：全綠
+- **回歸測試（REGRESSION_MODULE=M02）**
+  - 通過 / 總數：5 / 5
+  - 備註：全綠
 
 ## 5. 已知問題 / 限制
 
-| 問題 | 嚴重性 | 已記錄位置 |
-| --- | --- | --- |
-| M02 不支援部分退款（只有全額退款）| P1 | TECH-501 backlog |
-| Stripe mock 沒實作 webhook signature 真實驗證（用 hardcoded `valid_signature`）| P2 | TECH-502 backlog |
-| event bus 沒實作 retry / dead letter queue（M03 消費失敗會掉訊息）| P1 | TECH-503 backlog |
+- **M02 不支援部分退款（只有全額退款）**
+  - 嚴重性：P1
+  - 已記錄位置：TECH-501 backlog
+- **Stripe mock 沒實作 webhook signature 真實驗證（用 hardcoded `valid_signature`）**
+  - 嚴重性：P2
+  - 已記錄位置：TECH-502 backlog
+- **event bus 沒實作 retry / dead letter queue（M03 消費失敗會掉訊息）**
+  - 嚴重性：P1
+  - 已記錄位置：TECH-503 backlog
 
 ## 6. 下一步建議
 
@@ -117,20 +145,36 @@
 - [Backlog 對應項目](./docs/backlog.md)
 - [系統設計](./docs/system-design.md)
 - [M02 探針](./probes/)
-- [dev-checker-loop 校驗清單](見同套 dev-checker-loop skill 子檔)
+- [dav-developer 校驗清單](見同套 dav-developer skill 子檔)
 
 ## 8. 反思（Reflection 末段，v2.0 新：併入此處）
 
 ### 8.1 6 維度檢查（US 級）
 
-| # | 維度 | 結果 | 備註 |
-| - | --- | --- | --- |
-| 1 | UX/UI 一致性 | ✅ | 付款流程錯誤訊息風格統一（M02 Module 內）|
-| 2 | RWD 響應式設計 | ✅ | 不適用（M02 是後端 Module）|
-| 3 | 技術債 | ⚠️ | TECH-501 / TECH-502 / TECH-503 三條已知 |
-| 4 | 可維護性 | ✅ | Module 內聚度高、對外 interface 清晰 |
-| 5 | 測試覆蓋率 | ✅ | 5 / 5 探針全綠、覆蓋率 ~85% |
-| 6 | 需求對齊 | ✅ | 對齊 system-design.md 的 M02 職責定義 |
+- **1**
+  - 維度：UX/UI 一致性
+  - 結果：✅
+  - 備註：付款流程錯誤訊息風格統一（M02 Module 內）
+- **2**
+  - 維度：RWD 響應式設計
+  - 結果：✅
+  - 備註：不適用（M02 是後端 Module）
+- **3**
+  - 維度：技術債
+  - 結果：⚠️
+  - 備註：TECH-501 / TECH-502 / TECH-503 三條已知
+- **4**
+  - 維度：可維護性
+  - 結果：✅
+  - 備註：Module 內聚度高、對外 interface 清晰
+- **5**
+  - 維度：測試覆蓋率
+  - 結果：✅
+  - 備註：5 / 5 探針全綠、覆蓋率 ~85%
+- **6**
+  - 維度：需求對齊
+  - 結果：✅
+  - 備註：對齊 system-design.md 的 M02 職責定義
 
 ### 8.2 問題清單（每個 ❌ 必含「根因 + 建議」）
 
@@ -138,14 +182,28 @@
 - ⚠️ [P2] Stripe mock 沒實作 webhook signature 真實驗證 — 根因：測試環境不需；建議：TECH-502 排入 Sprint 3
 - ⚠️ [P1] event bus 沒 retry / dead letter queue — 根因：MVP 簡化；建議：TECH-503 立即修（P1 已知問題）
 
-### 8.3 Action Items（每個填滿「動作 + 類型 + 驗收標準 + 預估」）
+### 8.3 Action Items（每個填滿「動作 + 類型 + 驗收條件 + 預估」）
 
-| # | 動作 | 類型 | 驗收標準 | 預估 |
-| - | --- | --- | --- | --- |
-| 1 | 執行 Sprint 2：M03-order 完整交付 | Sprint | M03 所有 US 完成、探針全綠 | 13 SP |
-| 2 | 修 TECH-503 event bus retry | TECH | 訊息失敗 retry 3 次後入 dead letter queue | 5 SP |
-| 3 | 修 TECH-501 部分退款 | TECH | 探針 `M02-partial-refund` 通過 | 8 SP |
-| 4 | 修 TECH-502 Stripe signature 驗證 | TECH | 探針 `M02-stripe-signature-verification` 通過 | 3 SP |
+- **1**
+  - 動作：執行 Sprint 2：M03-order 完整交付
+  - 類型：Sprint
+  - 驗收條件：M03 所有 US 完成、探針全綠
+  - 預估：13 SP
+- **2**
+  - 動作：修 TECH-503 event bus retry
+  - 類型：TECH
+  - 驗收條件：訊息失敗 retry 3 次後入 dead letter queue
+  - 預估：5 SP
+- **3**
+  - 動作：修 TECH-501 部分退款
+  - 類型：TECH
+  - 驗收條件：探針 `M02-partial-refund` 通過
+  - 預估：8 SP
+- **4**
+  - 動作：修 TECH-502 Stripe signature 驗證
+  - 類型：TECH
+  - 驗收條件：探針 `M02-stripe-signature-verification` 通過
+  - 預估：3 SP
 
 ### 8.4 Reviewer 二審結果（V03 紀律）
 
@@ -157,8 +215,9 @@
 
 ### 9.1 多 US 間關聯
 
-```
-M02-DE-301 → M02-US-201（修完 DB connection 才能正確做付款）
+```M02
+-DE-301 → M02-US-201（修完 DB connection 才能正確做付款）
+
 M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 ```
 
@@ -166,26 +225,32 @@ M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 
 ### 9.2 跨 Module 遺留問題
 
-| 問題 | 影響 | 升級為 |
-| --- | --- | --- |
-| INT-M01-M02-01 整合測試只驗證 happy path | 沒測跨 Module 失敗情境 | 待 Sprint 2 加入負面測試 |
+- **INT-M01-M02-01 整合測試只驗證 happy path**
+  - 影響：沒測跨 Module 失敗情境
+  - 升級為：待 Sprint 2 加入負面測試
 
 ### 9.3 Module 級技術債
 
-| 技術債 | 跨 sprint | 影響範圍 |
-| --- | --- | --- |
-| TECH-501 部分退款 | 是 | M02 |
-| TECH-502 Stripe signature 真實驗證 | 是 | M02 + INT |
-| TECH-503 event bus retry | 是 | 全 repo（影響 M02 / M03 / M04）|
+- **TECH-501 部分退款**
+  - 跨 sprint：是
+  - 影響範圍：M02
+- **TECH-502 Stripe signature 真實驗證**
+  - 跨 sprint：是
+  - 影響範圍：M02 + INT
+- **TECH-503 event bus retry**
+  - 跨 sprint：是
+  - 影響範圍：全 repo（影響 M02 / M03 / M04）
 
 ### 9.4 Module 級指標
 
-| 指標 | 數值 |
-| --- | --- |
-| 探針總數 | 5（4 個 M02 + 1 個 INT）|
-| Module 大小（LOC）／測試覆蓋率 | ~800／~85% |
-| Module 內聚度 | 高（dav-designer 5 條原則驗證通過）|
-| Module 耦合度 | 低（對外 interface、無直接 import M01 / M03）|
+- **探針總數**
+  - 數值：5（4 個 M02 + 1 個 INT）
+- **Module 大小（LOC）／測試覆蓋率**
+  - 數值：~800／~85%
+- **Module 內聚度**
+  - 數值：高（dav-designer 5 條原則驗證通過）
+- **Module 耦合度**
+  - 數值：低（對外 interface、無直接 import M01 / M03）
 
 ### 9.5 Module 級下一步
 

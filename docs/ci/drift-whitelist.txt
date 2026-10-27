@@ -36,7 +36,7 @@ D4#2026-10-26-context-slim-framework-weight.md:tests/dav-wiki.bats#2026-10-27 �
 D4#2026-10-26-context-slim-framework-weight.md:tests/doc-drift.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-context-slim-framework-weight.md:tests/doc-facts.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-context-slim-framework-weight.md:tests/framework-weight.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-context-slim-framework-weight.md:tests/regression-guard-watch-mode.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:tests/dav-developer-watch-mode.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-context-slim-framework-weight.md:tests/restruct-dav-trust.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-context-slim-framework-weight.md:tests/v2.1-jev-poc.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-context-slim-round2.md:docs/sop/handbook/changelog.md#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
@@ -51,3 +51,17 @@ D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/sop/handbook/changelog.md#20
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:tests/doc-drift.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:tests/probe-name-ascii.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:tests/restruct-dav-reconciler.bats#2026-10-27 減法（只保留真 python／shell 功能測試 ＋ 刪所有 CHANGELOG ＋ 文檔行數限制改寫入 dav-skill-creater 規範）：該檔已刪；歷史交付摘要為 append-only、不回改
+#
+# 2026-10-27 合併 skill 後：以下被交付摘要引用嘅檔案已刪／已搬
+D4#2026-10-26-context-slim-framework-weight.md:skills/dav-reflection/checklist.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/dav-reflection/template.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/dev-checker-loop/workflow.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/regression-guard/PoC/README.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/regression-guard/examples.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/regression-guard/jev-oracle.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/regression-guard/runner-cheatsheet.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/regression-guard/testing-methods.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:skills/tdd-test-writer/examples.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-framework-weight.md:tests/regression-guard-watch-mode.bats#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-round2.md:skills/dav-reflection/template.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-context-slim-round2.md:skills/regression-guard/jev-oracle.md#2026-10-27 合併 skill（tdd-test-writer + dev-checker-loop + regression-guard → dav-developer；dav-reflection 併入 dav-submitter）：該檔已刪／已搬；歷史交付摘要為 append-only、不回改

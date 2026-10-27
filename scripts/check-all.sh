@@ -14,7 +14,12 @@
 #   ③ fail-closed：任何一步失敗 → 整體非 0 退出。全檔冇 fail-open 寫法。
 #   ④ 機械可比對：`--list`（步驟清單）同 `--plan`（解析後嘅實際指令）畀探針直接比。
 #
-# 用法：bash scripts/check-all.sh [--only <id>] [--keep-going] [--list] [--plan]
+# 用法：bash scripts/check-all.sh [--only <id>] [--keep-going] [--changed[=<base>]] [--list] [--plan]
+#   --changed[**<base>**]：**只跑受改動影響**嘅探針（git diff <base> + 未追蹤檔 → 相關 skill 嘅
+#              probe 檔 ＋ 目標檔被改過嘅 mutant 列）。開發 loop 用（4 分鐘 → ~20-40 秒）；
+#              `--changed origin/master` = 同遠端比（PR 前用）。
+#              push 前照樣可以跑全量（唔加 --changed）。skip 嘅步驟會明講「點解跳」，
+#              唔會靜靜哋當通過（fail-closed 語義不變）。
 # 退出碼：0 = 全部通過；1 = 有步驟失敗；2 = 用法／環境錯誤
 # ⚠️ 自我測試 seam：`LOCAL_CI_SELF_TEST_FAIL=<step_id>` 會**強制**嗰一步失敗。佢係**只會令嘢變紅**
 #    嘅 seam（冇辦法令嘢變綠）→ 用嚟證明「有步驟失敗時整體一定紅」（探針 LC-8 靠佢做行為自證）。
@@ -114,15 +119,15 @@ EOF
     venv) cat <<'EOF'
 set -euo pipefail
 # 已存在而且 import 得 → 唔重裝（省時間，亦令離線機唔使為咗「確認」而下網）
-VENV="skills/regression-guard/PoC/.venv"
+VENV="skills/dav-developer/PoC/.venv"
 if [ -x "$VENV/bin/python" ] && "$VENV/bin/python" -c 'import httpx, yaml' >/dev/null 2>&1; then
   echo "OK: PoC venv 已存在而且依賴齊（唔重裝）"
   exit 0
 fi
-bash skills/regression-guard/PoC/setup-venv.sh
+bash skills/dav-developer/PoC/setup-venv.sh
 EOF
       ;;
-    bats)         printf '%s\n' 'set -euo pipefail' 'bats tests/' ;;
+    bats)         printf '%s\n' 'set -euo pipefail' 'bats tests/' ;;   # --changed 會另外收窄
     skill-tests) cat <<'EOF'
 set -euo pipefail
 # 探針跟 skill 搬咗入 skills/*/tests/（2026-10-27）→ 呢一步跑晒所有 skill 自帶探針。
@@ -145,10 +150,12 @@ EOF
 MODE=run
 ONLY=""
 KEEP_GOING=0
+CHANGED_ONLY=0
+CHANGED_BASE="HEAD" 
 
 usage() {
   cat <<'EOF'
-用法：bash scripts/check-all.sh [--only <id>] [--keep-going] [--list] [--plan] [-h]
+用法：bash scripts/check-all.sh [--only <id>] [--keep-going] [--changed[=<base>]] [--list] [--plan] [-h]
   --list        印步驟清單（id<TAB>ci-ref<TAB>label）　--plan  印解析後嘅實際指令
   --only <id>   只跑指定步驟（id 見 --list）　　　--keep-going  唔 fail-fast
 EOF
@@ -160,6 +167,8 @@ while [ $# -gt 0 ]; do
     --plan)       MODE=plan ;;
     --only)       shift; [ $# -gt 0 ] || die2 "--only 需要參數"; ONLY="$1" ;;
     --keep-going) KEEP_GOING=1 ;;
+    --changed)   CHANGED_ONLY=1 ;;
+    --changed=*)  CHANGED_ONLY=1; CHANGED_BASE="${1#--changed=}" ;;
     -h|--help)    usage; exit 0 ;;
     *)            die2 "未知參數：${1}（用 --help 睇用法）" ;;
   esac
@@ -173,6 +182,57 @@ if [ -n "$ONLY" ]; then
   done
   [ "$found" -eq 1 ] || die2 "未知步驟：${ONLY}（用 --list 睇清單）"
 fi
+
+# ── --changed：計「受改動影響」嘅探針 ＋ mutant 列 ────────────────────────
+# 判定規則（刻意保守：唔肯定就當「要跑」）：
+#   改動檔案喺 skills/<name>/ 下      → 跑 skills/<name>/tests/*.bats
+#   改動檔案喺 tests/ scripts/ lib/ install.sh → 跑 repo 級 tests/
+#   改動檔案喺 docs/ .github/          → 跑 drift ＋ mdlint 步驟
+#   改動檔案喺其他位置（README 等）    → 跑 mdlint
+# mutant：只跑「目標檔喺改動清單入面」嘅列（`mutant-must-die.py --only`）
+changed_files() {
+  { git diff --name-only "$CHANGED_BASE" 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u
+}
+CHANGED_SKILL_PROBES=()
+CHANGED_REPO_PROBES=()
+CHANGED_MUTANTS=()
+CHANGED_DOCS=0
+CHANGED_REPO_ALL=0
+compute_changed_scope() {
+  local f skill
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in
+      skills/*/tests/*.bats) ;;                 # 探針自己改咗 → 跑佢
+      skills/*/*)
+        skill="${f#skills/}"; skill="${skill%%/*}"
+        [ -d "skills/${skill}/tests" ] && CHANGED_SKILL_PROBES+=("skills/${skill}/tests/"*.bats)
+        ;;
+      tests/*.bats)    CHANGED_REPO_PROBES+=("$f") ;;
+      tests/*|scripts/*|lib/*|install.sh) CHANGED_REPO_ALL=1 ;;   # 核心工具改咗 → 跑晒 repo 級套件（保守）
+      docs/*|.github/*) CHANGED_DOCS=1 ;;
+      *.md)             CHANGED_DOCS=1 ;;
+    esac
+  done < <(changed_files)
+  # 去重（同一個 skill 好多個檔改 → glob 會重複加 → ARG_MAX 爆）
+  if [ "${#CHANGED_SKILL_PROBES[@]}" -gt 0 ]; then
+    mapfile -t CHANGED_SKILL_PROBES < <(printf '%s\n' "${CHANGED_SKILL_PROBES[@]}" | sort -u)
+  fi
+  if [ "${#CHANGED_REPO_PROBES[@]}" -gt 0 ]; then
+    mapfile -t CHANGED_REPO_PROBES < <(printf '%s\n' "${CHANGED_REPO_PROBES[@]}" | sort -u)
+  fi
+  # mutant：目標檔被改動嘅列
+  while IFS=$'\t' read -r mid mtarget _rest; do
+    [ -n "${mid:-}" ] || continue
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      if [ "$f" = "$mtarget" ]; then
+        CHANGED_MUTANTS+=("${mid}")
+        break
+      fi
+    done < <(changed_files)
+  done < <(grep -v '^#' scripts/ci/mutants.tsv | cut -f1,2)
+}
 
 case "$MODE" in
   list)
@@ -222,6 +282,13 @@ if [ "$INNER" -eq 1 ]; then
   echo "內層呼叫（偵測到 bats 環境）→ 會跳過重步驟（${HEAVY}）以免遞歸"
 fi
 
+if [ "$CHANGED_ONLY" -eq 1 ]; then
+  compute_changed_scope
+  echo "── --changed 模式 ──"
+  echo "改動檔案：$(changed_files | wc -l | tr -d ' ') 個"
+  echo "受影響 repo 級探針：${#CHANGED_REPO_PROBES[@]} 個｜受影響 skill 探針：${#CHANGED_SKILL_PROBES[@]} 個｜受影響 mutant：${#CHANGED_MUTANTS[@]} 支"
+fi
+
 overall_rc=0
 results=""
 failed_count=0
@@ -236,10 +303,52 @@ for id in "${STEPS[@]}"; do
     esac
   fi
   IFS=$'\t' read -r refs label <<< "$(step_meta "$id")"
+  # --changed：呢步要唔要跑？用邊個指令？（skip 會明講原因，唔會靜靜哋當通過）
+  cmd="$(step_code "$id")"
+  skip=""
+  if [ "$CHANGED_ONLY" -eq 1 ]; then
+    case "$id" in
+      bats)
+        if [ "$CHANGED_REPO_ALL" -eq 1 ]; then
+          cmd="set -euo pipefail
+bats tests/"
+        elif [ "${#CHANGED_REPO_PROBES[@]}" -eq 0 ]; then
+          skip="冇 repo 級探針檔受改動影響"
+        else
+          cmd="set -euo pipefail
+bats ${CHANGED_REPO_PROBES[*]}"
+        fi ;;
+      skill-tests)
+        if [ "${#CHANGED_SKILL_PROBES[@]}" -eq 0 ]; then
+          skip="冇 skill 探針檔受改動影響"
+        else
+          cmd="set -euo pipefail
+bats ${CHANGED_SKILL_PROBES[*]}"
+        fi ;;
+      mutant)
+        if [ "${#CHANGED_MUTANTS[@]}" -eq 0 ]; then
+          skip="冇 mutant 嘅目標檔受改動影響"
+        else
+          ids="$(IFS=,; echo "${CHANGED_MUTANTS[*]}")"
+          cmd="set -euo pipefail
+python3 scripts/ci/mutant-must-die.py --only ${ids}"
+        fi ;;
+      drift|mdlint)
+        if [ "$CHANGED_DOCS" -eq 0 ]; then
+          skip="冇文件／CI 相關改動"
+        fi ;;
+    esac
+  fi
+  if [ -n "$skip" ]; then
+    printf '\n=== [%s] %s ===\n' "$id" "$label"
+    echo "SKIP（--changed：${skip}）"
+    results="${results}${id}  SKIP  ${skip}"$'\n'
+    continue
+  fi
   printf '\n=== [%s] %s ===\n' "$id" "$label"
   start="$(date +%s)"
   rc=0
-  bash -c "$(step_code "$id")" || rc=$?
+  bash -c "$cmd" || rc=$?
   end="$(date +%s)"
   secs=$((end - start))
   if [ "${LOCAL_CI_SELF_TEST_FAIL:-}" = "$id" ]; then
@@ -262,6 +371,8 @@ printf '\n===== 匯總 =====\n'
 printf '%s' "$results"
 if [ "$failed_count" -gt 0 ]; then
   echo "結果：${failed_count} 步失敗 → 唔好 push（詳見上面嘅紅）"
+elif [ "$CHANGED_ONLY" -eq 1 ]; then
+  echo "結果：受改動影響嘅步驟全部通過（--changed 模式；**唔等於全量閘通過** → push 前請跑全量）"
 else
   echo "結果：全部通過（本機 CI 等價）"
 fi

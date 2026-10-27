@@ -12,6 +12,7 @@
 
 ```
 [1] 來源識別 → [2] 內容處理 → [3] Category 建議（用戶揀） → [4] Tag 自動提取
+
    → [4b] Keywords 提取 → [5] 交叉引用（讀 _index.json） → [6] 概念提取 → [7] 寫入 + 重建索引
 ```
 
@@ -25,6 +26,7 @@
 
 ```
 ⏳ [1/7] 來源識別：PDF，使用 pdf2text 提取
+
 ⏳ [2/7] 內容處理：清理 + 結構 + 摘要
 ⏳ [3/7] Category 建議：
   A. frontend（推薦 — 內容是 React 技術，與你既有的 frontend/ 同類）
@@ -42,12 +44,14 @@
 
 **產出**：
 
-| 產物 | 路徑 |
-|---|---|
-| 文件 | `docs/wiki/frontend/2026-01/react-server-components-deep-dive.md` |
-| 概念 | `docs/concepts/server-component-serialization-boundary.md` |
-| 索引 | `_index.json` (+1)、`_tags.json` (+4 tags)、`_concepts.json` (+1) |
-| 導航 | `docs/README.md` |
+- **文件**
+  - 路徑：`docs/wiki/frontend/2026-01/react-server-components-deep-dive.md`
+- **概念**
+  - 路徑：`docs/concepts/server-component-serialization-boundary.md`
+- **索引**
+  - 路徑：`_index.json` (+1)、`_tags.json` (+4 tags)、`_concepts.json` (+1)
+- **導航**
+  - 路徑：`docs/README.md`
 
 ---
 
@@ -57,6 +61,7 @@
 
 ```
 ⏳ [1/7] 來源識別：URL，使用 fetch_content 抓取
+
 ⏳ [2/7] 內容處理（2547 字 → 精簡為 890 字 + 結構）
 ⏳ [3/7] Category 建議：A. architecture（推薦 — 錯誤處理架構）/ B. patterns / C. 自訂
 用戶: A
@@ -81,6 +86,7 @@
 
 ```
 ⏳ [1/7] 來源識別：純文字（內嵌輸入）
+
 ⏳ [2/7] 內容處理
 ⏳ [3/7] Category 建議：A. meeting-notes（推薦）/ B. planning / C. 自訂
 用戶: A
@@ -132,6 +138,7 @@
 
 ```
 ⏳ [1-5/7] 來源 / 處理 / Category (frontend) / Tag / 交叉引用
+
 ⏳ [6/7] 概念提取 —— 發現新概念與既有概念部分重疊，需要決策：
 
   候選 concept：1. "useMemo 依賴淺比較"（與既有 80% 重疊）
@@ -145,10 +152,10 @@
 
 **產出**：
 
-| 對象 | 變動 |
-|---|---|
-| `[[effect-shallow-compare]]` | definition 更新（加入 useMemo 案例）＋ history `+= {date, action: revised, note}` |
-| 新文件 | `docs/wiki/frontend/2026-02/react-18-usememo-pitfalls.md`，`related: ["[[effect-shallow-compare]]"]` |
+- **`[[effect-shallow-compare]]`**
+  - 變動：definition 更新（加入 useMemo 案例）＋ history `+= {date, action: revised, note}`
+- **新文件**
+  - 變動：`docs/wiki/frontend/2026-02/react-18-usememo-pitfalls.md`，`related: ["[[effect-shallow-compare]]"]`
 
 ---
 
@@ -158,6 +165,7 @@
 
 ```
 ⚠️ 兩個既有概念高度重疊（> 80%）：
+
   - [[react-state-batching]]（2026-01-15 建立）
   - [[react-automatic-batching]]（2026-01-20 建立）
 
@@ -170,10 +178,12 @@
 
 **產出**：
 
-| 對象 | 變動 |
-|---|---|
-| `[[react-state-batching]]` | definition 合併兩者精華 ＋ history `+= {merged, "合併自 [[react-automatic-batching]]"}` |
-| `[[react-automatic-batching]]` | `deprecated: true`、`superseded_by`、`status: deprecated`、history `+= {merged}`、從 `_concepts.json` 移除（檔案保留）、從 `docs/README.md` 隱藏 |
+- **`[[react-state-batching]]`**
+  - 變動：definition 合併兩者精華 ＋ history `+= {merged, "合併自 [[react-automatic-batching]]"}`
+- **`[[react-automatic-batching]]`**
+  - 變動：
+    `deprecated: true`、`superseded_by`、`status: deprecated`、history `+= {merged}`、從 `_concepts.json` 移除（檔案保留）、從
+    `docs/README.md` 隱藏
 
 ---
 
@@ -183,6 +193,7 @@
 
 ```
 用戶：把 docs/wiki/frontend/2025-12/class-components-cheatsheet.md 標棄用，
+
      因為我們已經全面轉用 hooks 了
 
 Agent: 確認棄用動作：
@@ -196,10 +207,12 @@ Agent: 確認棄用動作：
 
 **產出**：
 
-| 對象 | 變動 |
-|---|---|
-| wiki 文件 | frontmatter 加 `deprecated: true`；從 `_index.json` 移除；README 隱藏；檔案保留可追溯 |
-| 概念 | `status: deprecated` + `deprecated: true` + `superseded_by` + history `+= {action: deprecated}`；從 `_concepts.json` 移除；README 隱藏 |
+- **wiki 文件**
+  - 變動：frontmatter 加 `deprecated: true`；從 `_index.json` 移除；README 隱藏；檔案保留可追溯
+- **概念**
+  - 變動：
+    `status: deprecated` + `deprecated: true` + `superseded_by` + history `+= {action: deprecated}`；從
+    `_concepts.json` 移除；README 隱藏
 
 ---
 
@@ -209,6 +222,7 @@ Agent: 確認棄用動作：
 
 ```
 ⏳ [1/7] 來源識別：圖片，使用 tesseract OCR
+
 ⚠️ [2/7] OCR 失敗：圖片品質過低，無法提取文字
 
 建議動作：
@@ -226,16 +240,25 @@ C. 中止（用戶手動處理後再來）
 
 > 單一步驟同上，但 **[2] 內容處理** 會分岔成多條子步驟（PDF / PPTX 偵測到圖片或影片時）。
 
-| 子步驟 | 動作 | 產出 |
-|---|---|---|
-| **2a** | 圖片提取（`pdfimages` / PPTX slide 圖） | `assets/images/{1-N}.png` |
-| **2b** | Vision API 描述（每張圖 1-3 句 caption） | frontmatter `images[].caption` / `alt_text` |
-| **2c** | 影片提取（`ffmpeg`） | `assets/videos/demo.mp4` |
-| **2d** | Whisper 字幕轉錄（每段影片一份） | `assets/videos/demo.transcript.md` |
-| **2e** | 章節切分（場景偵測 + AI 摘要） | `assets/videos/demo.chapters.json` |
+- **2a**
+  - 動作：圖片提取（`pdfimages` / PPTX slide 圖）
+  - 產出：`assets/images/{1-N}.png`
+- **2b**
+  - 動作：Vision API 描述（每張圖 1-3 句 caption）
+  - 產出：frontmatter `images[].caption` / `alt_text`
+- **2c**
+  - 動作：影片提取（`ffmpeg`）
+  - 產出：`assets/videos/demo.mp4`
+- **2d**
+  - 動作：Whisper 字幕轉錄（每段影片一份）
+  - 產出：`assets/videos/demo.transcript.md`
+- **2e**
+  - 動作：章節切分（場景偵測 + AI 摘要）
+  - 產出：`assets/videos/demo.chapters.json`
 
 ```
 ⏳ [2/7] 內容處理（多模組）：
+
    [2a] 圖片提取（pdfimages） → assets/images/{1-5}.png
    [2b] Vision API 描述：為每張圖生 1-3 句描述
    [2c] 影片提取（ffmpeg） → assets/videos/demo.mp4

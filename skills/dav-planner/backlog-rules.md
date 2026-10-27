@@ -22,12 +22,13 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 ### §4.3.1 Module 欄位範本（v2.3 新增）
 
-> v2.3 起：Backlog 表格加 `Module` 欄位，讓 dav-designer 的 Module 定義能直接被 dev-checker-loop 派工用、regression-guard 探針也能綁 Module。
+> v2.3 起：Backlog 表格加 `Module` 欄位，讓 dav-designer 的 Module 定義能直接被 dav-developer 派工用、dav-developer 探針也能綁 Module。
 
 **Backlog 表格範本（含 Module 欄位）**：
 
 ```markdown
-## Backlog
+#
+# Backlog
 
 | US ID | 類型 | Module | 標題 | AC | 優先級 | Story Point | 狀態 | 依賴 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -40,14 +41,20 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 | TECH-401 | TECH | M02 | 付款 API 重構為 async | — | P2 | 8 | PENDING | — |
 ```
 
-**Module 代碼規則**（v2.3 沿用 dav-designer / dev-checker-loop 共識）：
+**Module 代碼規則**（v2.3 沿用 dav-designer / dav-developer 共識）：
 
-| 代碼格式 | 語義 | 範例 |
-| --- | --- | --- |
-| `M<NN>` | 單一 Module | `M01`、`M02`、`M10` |
-| `M<NN>-M<NN>` | 多 Module 關聯（跨 Module 邊界）| `INT-M01-M02` |
-| `INT-<Mxx>-<Myy>` | Integration test Module（跨 Module）| `INT-M01-M02-01` |
-| 未定義 | Module 未切割 fallback = `M00`（整個 repo）| `M00-US-XXX` |
+- **`M<NN>`**
+  - 語義：單一 Module
+  - 範例：`M01`、`M02`、`M10`
+- **`M<NN>-M<NN>`**
+  - 語義：多 Module 關聯（跨 Module 邊界）
+  - 範例：`INT-M01-M02`
+- **`INT-<Mxx>-<Myy>`**
+  - 語義：Integration test Module（跨 Module）
+  - 範例：`INT-M01-M02-01`
+- **未定義**
+  - 語義：Module 未切割 fallback = `M00`（整個 repo）
+  - 範例：`M00-US-XXX`
 
 **US ID 規則**（與 Module 欄位一致）：
 
@@ -59,7 +66,8 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 **AC 段範本**（v2.3 沿用 INVEST + Given-When-Then；**完整可抄範例**見同套本 skill 子檔 `./examples/backlog.md`）：
 
 ```
-## <US-ID> 詳細
+# <US-ID> 詳細
+
 - **對應 Module**: <Module 代碼（名稱）>
 - **負責 dev**: （派工後填入）
 - **預估時間**: <N> SP
@@ -72,15 +80,16 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 ### §4.3.2 Module 級 sprint 規劃（v2.3 新增）
 
-> dav-designer v2.3 規範 + dev-checker-loop v2.2 + regression-guard v2.10 共同鋪路下，backlog 規劃可以 Module 級而非純 US 級。
-> 1 個 sprint 交付 1 個 Module（M01）；dav-submitter v2.2 Module 級交付語法記錄；dev-checker-loop v2.2 用 Module 級派工；
-> regression-guard v2.10 用 `REGRESSION_MODULE=M01` 跑全 Module 探針。
+> dav-designer v2.3 規範 + dav-developer v2.2 + dav-developer v2.10 共同鋪路下，backlog 規劃可以 Module 級而非純 US 級。
+> 1 個 sprint 交付 1 個 Module（M01）；dav-submitter v2.2 Module 級交付語法記錄；dav-developer v2.2 用 Module 級派工；
+> dav-developer v2.10 用 `REGRESSION_MODULE=M01` 跑全 Module 探針。
 > **為什麼 Module 級 sprint**：平行化加速（M01 / M02 兩個 dev 同時做）｜錯誤範圍隔離｜探針邊界清楚（`REGRESSION_MODULE` 限定）。
 
 **Module 級 sprint 範本**（完整範例見同套本 skill 子檔 `./examples/backlog.md`「Module 級 Sprint 規劃」節）：
 
 ```markdown
-## Sprint 1（Module M01 整體交付）
+#
+# Sprint 1（Module M01 整體交付）
 
 | US ID | 類型 | Module | 標題 | 優先級 | SP | 狀態 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -97,6 +106,13 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 - 每一個項目目錄只有並唯一有一份 `docs/backlog.md`
 - 每次新 Backlog item 填到表格最下方，不估算 / Sprint / Module，預設 PENDING
+- **只保留未完成**：backlog.md 只留 **未完成**（`todo`／`doing`／`⏸️`）嘅 row；
+  **完成（done）嘅 row 要移出**（唔留喺 backlog）
+  - 完成嘅記錄去邊：交付摘要（`docs/deliverable/<...>.md`，含做咗乜 ＋ 對帳段）＋
+    該 US 嘅需求錨點（`docs/req/`）＋ 該 US 嘅 AC（`docs/ac/`）＋ git history
+  - **點解**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會令 backlog 愈滾愈大、
+    令 agent／用戶每次都要重讀已完嘅嘢（浪費時間同 token）
+  - 每次更新 backlog 都要順手檢查：有冇已完成嘅 row 殘留 → 有就移出（並喺交付摘要記低）
 
 ## §4.6 AC 範本生成 SOP（v1.8 新增，含 HTML）
 
@@ -141,13 +157,16 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 ### R-ID 規則（跨檔追溯的唯一鍵）
 
-| 規則 | 說明 |
-|------|------|
-| 格式 | `R<n>`，n 從 1 起連續 |
-| 唯一 | 同一錨點檔內不可重複、不可跳號 |
-| 一對一 | 「用戶原話」與「澄清後驗收句」同 R-ID 對應 |
-| 唯讀 | 後續階段（設計 / 實作 / 對帳）**不得改寫**「用戶原話」段；澄清只能寫進「澄清後驗收句」並在「變更歷史」留痕 |
-| 不可刪 | 已存在的 R-ID 不可刪除（需求被砍掉也要留 R-ID 並標註「已作廢」）——對帳時記為 🚫 已作廢（仍須列出，但不列入交付狀態判定）|
+- **格式**
+  - 說明：`R<n>`，n 從 1 起連續
+- **唯一**
+  - 說明：同一錨點檔內不可重複、不可跳號
+- **一對一**
+  - 說明：「用戶原話」與「澄清後驗收句」同 R-ID 對應
+- **唯讀**
+  - 說明：後續階段（設計 / 實作 / 對帳）**不得改寫**「用戶原話」段；澄清只能寫進「澄清後驗收句」並在「變更歷史」留痕
+- **不可刪**
+  - 說明：已存在的 R-ID 不可刪除（需求被砍掉也要留 R-ID 並標註「已作廢」）——對帳時記為 🚫 已作廢（仍須列出，但不列入交付狀態判定）
 
 ### 自我檢查清單（5 項）
 
@@ -170,11 +189,12 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 ### 收錄標準（Domain-Specific）
 
-| 收錄 | 不收錄 |
-|------|--------|
-| 專案／領域專屬術語（例：付款閘道、狀態機、`Jev Oracle`、探針命名規則）| 通用詞（用戶、系統、資料庫、API、錯誤）|
-| 同一件事嘅**第二種叫法**（別名）→ 記低並指定統一用邊個 | 一次性描述、句子、需求細節 |
-| 縮寫 ＋ 英文全名 | 同義重複詞（只記一個 ＋ 別名欄）|
+- **專案／領域專屬術語（例：付款閘道、狀態機、`Jev Oracle`、探針命名規則）**
+  - 不收錄：通用詞（用戶、系統、資料庫、API、錯誤）
+- 同一件事嘅**第二種叫法**（別名）→ 記低並指定統一用邊個
+  - 不收錄：一次性描述、句子、需求細節
+- **縮寫 ＋ 英文全名**
+  - 不收錄：同義重複詞（只記一個 ＋ 同義寫法欄）
 
 ### 格式（A-Z 排序 ＋ 簡潔定義）
 
@@ -183,14 +203,15 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 
 > A-Z 排序 ｜ 用途：各階段同用戶用同一套詞語 ｜ 來源：規劃階段提問整理
 
-| 術語 | 定義（一句，≤ 40 字）| 別名（唔應該再用嘅其他講法）|
+| 術語 | 定義（一句，≤ 40 字）| 同義寫法（同一件事嘅其他講法）|
 |------|----------------------|------------------------|
-| AC（驗收條件）| 一條 US 嘅可驗收行為描述（Given-When-Then）| 驗收標準 |
+| AC（驗收條件）| 一條 US 嘅可驗收行為描述（Given-When-Then）| — |
 | Backlog（待辦清單）| 本專案所有 US／DE／TECH／Spike 嘅總表 | 待辦、任務清單 |
 ```
 
-> ⚠️ **「術語」欄 = 應該用嘅**（英文 key ＋ 中文對照）；**「別名」欄 = 唔應該再用嘅其他講法**。
-> 唔好將術語本身嘅中文對照擺落別名欄 —— 否則「統一用術語欄」會禁咗專案本身最常用嘅中文寫法。
+> ⚠️ **「術語」欄 = 應該用嘅**（英文 key ＋ 中文對照）；**「同義寫法」欄 = 同一件事嘅其他講法**
+> （可以咁理解，但唔會另立新詞）；**會指錯嘢嘅寫法另列「勿用寫法」清單，唔好混喺呢欄**。
+> ⚠️ **兩欄互斥**：任何字串只准出現喺其中一欄。
 
 ### 排序規則
 

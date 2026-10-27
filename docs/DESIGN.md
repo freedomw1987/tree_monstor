@@ -226,7 +226,7 @@ error_template:
 | ✅❌⚠️ℹ️⏳ | 統一 emoji 語意 | 所有 skill |
 | YAML frontmatter | 統一格式（title / status / date） | 所有 skill |
 | `docs/backlog.md` | 統一任務登記處 | 所有 skill |
-| Wiki link `[[xxx]]` | 統一雙向連結語法 | dav-wiki、dav-reflection |
+| Wiki link `[[xxx]]` | 統一雙向連結語法 | dav-wiki、dav-submitter |
 
 ---
 

@@ -7,8 +7,8 @@
 #   把精確比對改成子字串，都不會有探針紅，也不會有人記得重跑那張清單。
 #   本檔把「那張清單」變成 CI 會跑的檢查（實作：scripts/ci/mutant-must-die.py + scripts/ci/mutants.tsv）。
 #
-# TMO-066：表擴到 39 支（+6 dav-wiki「缺工具不得降級」／+3 探針機密遮罩／+4 regression-guard
-#   TTY fail-fast 文件一致性）；二審後再 +1 → 40 支。dav-wiki 與 regression-guard 的護欄從「人工種過一次」變成 CI 每次跑。
+# TMO-066：表擴到 39 支（+6 dav-wiki「缺工具不得降級」／+3 探針機密遮罩／+4 dav-developer
+#   TTY fail-fast 文件一致性）；二審後再 +1 → 40 支。dav-wiki 與 dav-developer 的護欄從「人工種過一次」變成 CI 每次跑。
 # TMO-070：表再 +7（QD-M1..QD-M6 安裝器護欄／RG-M5 oracle payload 跨行程穩定性）→ 50 支；
 #   TMO-071/072/073 再 +5（DD-M1..DD-M3／DR-M1／DR-M2）→ **55 支**。
 #   同時把 MMD-1 的「只列到 >= 40 支」收緊成「**恰好 50 支**」——舊門檻下，刪掉本次新增的 7 列
@@ -40,13 +40,13 @@
 #     TMO-069 Qoder 安裝：QD-M1..QD-M6；TMO-070 jev 間歇紅：RG-M5）；
 #     TMO-084（CI 降級為偵測器 ＋ 落地本機等價閘）再加 LC-M1
 #     （本機 runner 嘅「失敗匯總」改成唔會令整體變紅 → 探針 LC-8 必須紅）→ **59 支**；
-#     同一票再加 RG-CI-M1（regression-guard 本機 runner 嘅紅燈 verdict 映射改成綠燈
+#     同一票再加 RG-CI-M1（dav-developer 本機 runner 嘅紅燈 verdict 映射改成綠燈
 #     → 探針 CI-d 必須紅）→ **60 支**。
 #   * 2026-10-27 減法（只保留真 python／shell 功能測試）：刪走 **11 列** →
 #     **49 支**（RG-M1..M3／DT-M1..M3／DR-M1／DR-M2／PNA-M1..M3 —— 佢哋鎖嘅探針
 #     屬「測文件內容」性質，已隨探針刪走；RG-M4 改指向 skill-local 探針後補回）。
 #     現況：**47 列行為鎖 ＋ 2 列文件／資料契約鎖**（DW-M4→`skills/dav-wiki/SKILL.md`、
-#     RG-M4→`skills/regression-guard/SKILL.md`）。
+#     RG-M4→`skills/dav-developer/SKILL.md`）。
 #
 # 【第 2 輪 V03 二審（reviewer subagent、verdict = request-changes）後追加】
 #   * 二審 #1（P1）：LK-M1 原本的『換成』在**行中**錨點尾接 `# MUTANT: ...` → 註解吞掉該行
@@ -115,14 +115,14 @@ run_mmd() {
   printf '%s\n' "${targets[@]}" | grep -qF 'scripts/ci/check-ffmpeg-version.sh' ||
     { echo "FAIL: 突變表沒有覆蓋 scripts/ci/check-ffmpeg-version.sh" >&2; return 1; }
 
-  # TMO-066：其他 skill 的護欄也在表內（dav-wiki「缺工具不得降級」、regression-guard
+  # TMO-066：其他 skill 的護欄也在表內（dav-wiki「缺工具不得降級」、dav-developer
   # TTY fail-fast 文件一致性）。少了就紅，避免有人只保留 pptx-slim 那段而靜默丟掉別人的護欄。
   local d
   for d in skills/dav-wiki/scripts/wiki-extract-audio.sh \
            skills/dav-wiki/scripts/wiki-extract-media.sh \
            skills/dav-wiki/scripts/wiki-cleanup.sh \
            skills/dav-wiki/SKILL.md \
-           skills/regression-guard/SKILL.md; do
+           skills/dav-developer/SKILL.md; do
     printf '%s\n' "${targets[@]}" | grep -qF "$d" ||
       { echo "FAIL: 突變表沒有覆蓋 ${d}（TMO-066 的跨 skill 護欄）" >&2; return 1; }
   done
@@ -134,7 +134,7 @@ run_mmd() {
   for q in lib/install/symlink.sh \
            lib/install/logging.sh \
            install.sh \
-           skills/regression-guard/PoC/journey_runner.py; do
+           skills/dav-developer/PoC/journey_runner.py; do
     printf '%s\n' "${targets[@]}" | grep -qxF "$q" ||
       { echo "FAIL: 突變表沒有覆蓋 ${q}（TMO-070 的新護欄）" >&2; return 1; }
   done

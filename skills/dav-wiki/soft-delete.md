@@ -22,13 +22,16 @@
 deprecated 超過 90 天的檔案可用同套本 skill 的 `scripts/wiki-cleanup.sh` 移到
 `docs/wiki/_deprecated/{YYYY-Qn}/`，從主索引移除但保留可追溯。
 
-| 參數 | 作用 |
-|------|------|
-| `--target <docs>` | 目標 `docs/` 目錄 |
-| `--older-than 90` | 天數門檻（依 frontmatter `deprecated_at`；無此欄位則用檔案 mtime）|
-| `--dry-run` | 只列出將搬移的檔案，不動磁碟 |
-| `--yes` / `-y` | 跳過互動確認 |
-| `--purge` | 真刪除（危險，預設禁用）|
+- **`--target <docs>`**
+  - 作用：目標 `docs/` 目錄
+- **`--older-than 90`**
+  - 作用：天數門檻（依 frontmatter `deprecated_at`；無此欄位則用檔案 mtime）
+- **`--dry-run`**
+  - 作用：只列出將搬移的檔案，不動磁碟
+- **`--yes` / `-y`**
+  - 作用：跳過互動確認
+- **`--purge`**
+  - 作用：真刪除（危險，預設禁用）
 
 ## 4. 邊界
 

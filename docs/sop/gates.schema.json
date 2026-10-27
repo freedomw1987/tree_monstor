@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://tree-monstor.local/sop/gates.schema.json",
   "title": "tree_monstor SOP Gates Definition",
-  "description": "Schema for docs/sop/gates.json — defines the 4 development gates (TDD / lint / regression / reviewer) that agents must pass before declaring a task complete. Since 2026-10-26 the gate definitions also live in their owning skills (gate-1/2 -> tdd-test-writer, gate-3 -> regression-guard, gate-4 -> dev-checker-loop); this file stays as the machine-readable copy (the lock probe tests/gate-in-skill.bats was removed in the 2026-10-27 test-suite reduction, so the two must be synced by hand).",
+  "description": "Schema for docs/sop/gates.json — defines the 4 development gates (TDD / lint / regression / reviewer) that agents must pass before declaring a task complete. Since 2026-10-26 the gate definitions also live in their owning skills (gate-1/2 -> dav-developer, gate-3 -> dav-developer, gate-4 -> dav-developer); this file stays as the machine-readable copy (the lock probe tests/gate-in-skill.bats was removed in the 2026-10-27 test-suite reduction, so the two must be synced by hand).",
   "$comment": "Schema uses Draft-07 (not Draft 2020-12 as originally planned) because ajv-cli (the validation tool used by `npm install -g ajv-cli` and invoked via `ajv validate -s ... -d ...`) only supports Draft-07 and Draft 2019-09. Draft 2020-12 features (prefixItems, $dynamicRef, etc.) are not used here, so Draft-07 is functionally equivalent for this schema. To upgrade to 2020-12, switch from ajv-cli to ajv API (Node.js import). See TD-015.",
   "type": "object",
   "required": ["version", "gates"],
@@ -53,7 +53,7 @@
               { "type": "string", "pattern": "^(dav-|tdd-|regression-|dev-|minimax-).*$" },
               { "type": "null" }
             ],
-            "description": "Skill that orchestrates this gate (e.g. \"/skill:tdd-test-writer\"), or null if no skill is involved (e.g. lint gate uses language-specific tools)."
+            "description": "Skill that orchestrates this gate (e.g. \"/skill:dav-developer\"), or null if no skill is involved (e.g. lint gate uses language-specific tools)."
           },
           "pass_criteria": {
             "type": "array",

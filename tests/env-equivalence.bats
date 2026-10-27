@@ -42,7 +42,7 @@
 setup() {
   load 'helpers/test-env'
   load 'helpers/probe-scan'
-  POC_DIR="$REPO_ROOT/skills/regression-guard/PoC"
+  POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
 }
 
 # 宣告數普查用：只算 bats 真的會當成 @test 的行 —— heredoc 內容（示範碼）不算。
@@ -265,7 +265,7 @@ printf "%s\n" "${a[@]}"'
 @test "ENV-EQ-7: oracle subset stays green with the network black-holed" {
   local py="$POC_DIR/.venv/bin/python"
   [ -x "$py" ] || {
-    echo "FAIL: 缺 PoC venv（bash skills/regression-guard/PoC/setup-venv.sh）" >&2
+    echo "FAIL: 缺 PoC venv（bash skills/dav-developer/PoC/setup-venv.sh）" >&2
     return 1
   }
   # 黑洞代理：指向一個不會有人聽的 port → 任何真連線都會立刻被拒
@@ -280,7 +280,7 @@ printf "%s\n" "${a[@]}"'
     return 1
   }
 
-  local fails="$REPO_ROOT/skills/regression-guard/tests/v2.1-jev-poc.bats"
+  local fails="$REPO_ROOT/skills/dav-developer/tests/v2.1-jev-poc.bats"
   local filter ok_total=0 notok_total=0 ran=0 rc f
   for f in 'M5-runtime-b' '^M6-g' 'M6.1-c'; do
     run env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
@@ -544,8 +544,8 @@ printf "%s\n" "${a[@]}"'
   }
   run bash "$REPO_ROOT/scripts/test-skill.sh" --list
   [[ "$status" -eq 0 ]] || { echo "FAIL: test-skill.sh --list 唔係 0 退出" >&2; return 1; }
-  [[ "$output" == *"regression-guard"* ]] || {
-    echo "FAIL: test-skill.sh --list 唔見 regression-guard → 佢嘅 tests/ 唔見咗？" >&2
+  [[ "$output" == *"dav-developer"* ]] || {
+    echo "FAIL: test-skill.sh --list 唔見 dav-developer → 佢嘅 tests/ 唔見咗？" >&2
     return 1
   }
   # 行為自證（唔係 grep 文字鎖）：喺 temp git repo 起一個「淨跑一個 skill」嘅場景

@@ -333,7 +333,7 @@ M4 — Self-Evolution
 │       └─ 每個 diff 附「證據」+「影響專案數」+「rollback 指令」              │
 │                │                                                  │
 │                ▼                                                  │
-│  [3] Reviewer 二審  dev-checker-loop  ← V03 紀律要求                 │
+│  [3] Reviewer 二審  dav-developer  ← V03 紀律要求                 │
 │       │                          │
 │       ├─ 風險分級 🟢/🟡/🔴                                    │
 │       ├─ 跨 SOP 一致性檢查                                       │
@@ -372,7 +372,7 @@ M4 — Self-Evolution
     "gate-3-regression": "fail",
     "gate-4-reviewer": "pass"
   },
-  "skills_used": ["dav-planner", "tdd-test-writer"],
+  "skills_used": ["dav-planner", "dav-developer"],
   "failure_signals": [
     {"gate": "gate-3-regression", "type": "test_timeout", "count": 2}
   ],
@@ -386,7 +386,7 @@ M4 — Self-Evolution
 
 1. **觀察/改動分離**：裝在專案裡的 tree_monstor **只能觀察**，不能改 SOP。驗證：專案裡打 `/evolve` 應被拒絕。
 2. **匿名化**：observation 只記結構化信號，不收 raw 對話、code、路徑。
-3. **Reviewer 二審必經**：所有 SOP 改動提案都走 dev-checker-loop 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律）。
+3. **Reviewer 二審必經**：所有 SOP 改動提案都走 dav-developer 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律）。
 4. **一鍵回滾**：每次合併自動寫 git tag (`rsi-vYYYYMMDD-NN`)，`rsi-rollback.sh` 從 rsi-log.md 找 diff 還原。
 
 ### 4.6 量化指標（6 個）
@@ -514,9 +514,9 @@ M4 — Self-Evolution
 
 | 層級 | 工具 | 範圍 |
 | --- | --- | --- |
-| **單元** | tdd-test-writer + bats | frontmatter 生成、索引更新、concept extraction |
-| **整合** | dev-checker-loop | 端到端流程（餵 PDF → 產出 wiki + concepts） |
-| **回歸** | regression-guard | 跨 skill 一致性（frontmatter schema、命名規範） |
+| **單元** | dav-developer + bats | frontmatter 生成、索引更新、concept extraction |
+| **整合** | dav-developer | 端到端流程（餵 PDF → 產出 wiki + concepts） |
+| **回歸** | dav-developer | 跨 skill 一致性（frontmatter schema、命名規範） |
 | **審查** | reviewer (subagent) | 文件品質、AC 達成度 |
 
 ### 7.2 關鍵測試案例（US-009-T2）
