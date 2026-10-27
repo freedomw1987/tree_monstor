@@ -33,6 +33,7 @@
   - **AC-3** (Given-When-Then): Given 第三方閘道 timeout When 超過 30 秒 Then 付款單狀態為 FAILED 且釋放 DB connection
   - **AC-4** (DoD): 探針 `M02-create-payment-returns-success-on-valid-card`
     必通過；`REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201` 必綠
+- **業務規則**: 付款單狀態機 PENDING→PAID/FAILED；第三方 timeout 30 秒即 FAILED 並釋放 DB connection；同一支付重複提交只會產生一張付款單（冪等）
 - **依賴**: —
 - **驗收方式**: 跑 `REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201`；M02 內部所有探針全綠
 - **為什麼這個優先**（dav-planner v2.3 新增）：P0 是因為這是 M02 Module 的入口；沒這個 US，M02 其他 US 無法測試；INT-M01-M02-01 也依賴它
@@ -46,6 +47,7 @@
   - **AC-1** (Given-When-Then): Given 第三方閘道回呼 POST 到 `/webhook/stripe` When 收到合法簽名 Then 觸發 `handleCallback` 並更新付款單狀態
   - **AC-2** (Given-When-Then): Given 同一回呼重複發送 3 次 When 處理回呼 Then 結果冪等（付款單狀態不變）
   - **AC-3** (DoD): 探針 `M02-payment-callback-is-idempotent` 必通過
+- **業務規則**: 第三方回呼只認簽名；同一回呼重複送達要冪等（訂單狀態唔變）
 - **依賴**: M02-US-201
 - **驗收方式**: 跑回呼測試 + 探針全綠
 - **為什麼這個優先**（dav-planner v2.3 新增）：P0 是因為沒有回呼處理，付款成功後訂單狀態不會更新；是 M02 最關鍵的「冪等性」測試
@@ -59,6 +61,7 @@
   - **AC-1** (Given-When-Then): Given 用戶付款失敗 When 點擊「重試」 Then 用同一張卡再試一次
   - **AC-2** (Given-When-Then): Given 同一張卡連續失敗 3 次 When 第 3 次失敗 Then 鎖卡 1 小時
   - **AC-3** (DoD): 探針 `M02-payment-retry-blocks-after-3-failures` 必通過
+- **業務規則**: N/A（無計算 / 狀態 / 權限 / 冪等規則）
 - **依賴**: M02-US-201
 - **驗收方式**: 跑重試探針
 - **為什麼這個優先**（dav-planner v2.3 新增）：P1 是因為這是商業風險控制（避免暴力試卡），但不是 MVP 必要功能
@@ -71,6 +74,7 @@
 - **AC**:
   - **AC-1** (DoD): 探針 `M02-payment-timeout-releases-db-connection` 必通過
   - **AC-2** (DoD): regression test 在 timeout 情境下 DB pool 不會爆
+- **業務規則**: N/A（無計算 / 狀態 / 權限 / 冪等規則）
 - **依賴**: —
 - **驗收方式**: 探針 + 壓力測試
 - **為什麼這個優先**（dav-planner v2.3 新增）：P1 是因為這是已知 production 問題，不修會讓 M02 在高併發下 crash
@@ -83,6 +87,7 @@
 - **AC**:
   - **AC-1** (Given-When-Then): Given 用戶已登入且購物車有商品 When 進入結帳頁並完成付款 Then 訂單狀態變 PAID 且購物車清空
   - **AC-2** (DoD): 探針 `INT-M01-M02-checkout-full-flow` 必通過（跨 Module 整合測試）
+- **業務規則**: N/A（無計算 / 狀態 / 權限 / 冪等規則）
 - **依賴**: M01-US-101（用戶登入）, M02-US-201（信用卡付款）
 - **驗收方式**: 跑 `REGRESSION_MODULE=INT ./run_pipeline.sh INT-M01-M02-01`
 - **為什麼這個優先**（dav-planner v2.3 新增）：P0 是因為這是 user-facing 完整流程；商業價值最高；但因為跨 Module，依 dev-checker-loop v2.2 規則升級為新任務

@@ -18,6 +18,7 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 - 表格欄位：US ID / 類型 / 標題 / **Module（v2.3 新增）** / AC / 優先級 / Story Point / 狀態 / 依賴
 - 詳細段：放在表格下方（## TMO-XXX 詳細）
 - 既有 US 不主動遷移；新 US 走新格式
+- **「依賴」欄／「業務規則」行嘅來源**：由 §3「業務邏輯與依賴」維度填入（問完就要寫落文件）
 
 ### §4.3.1 Module 欄位範本（v2.3 新增）
 
@@ -63,6 +64,7 @@ description: dav-planner 的「Backlog 編寫規則」附件（v2.2 拆分自主
 - **負責 dev**: （派工後填入）
 - **預估時間**: <N> SP
 - **AC**: 3 條以上 Given-When-Then + DoD（技術視角 checklist）
+- **業務規則**: —（有計算 / 狀態 / 權限 / 冪等規則時必填；冇就寫 N/A。來源：§3「業務邏輯與依賴」維度）
 - **依賴**: —
 - **驗收方式**: 跑 `REGRESSION_MODULE=<M> ./run_pipeline.sh <US-ID>`
 - **為什麼這個優先**: <一句講清優先級理由>
