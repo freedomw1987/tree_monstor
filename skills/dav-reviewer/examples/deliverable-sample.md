@@ -6,14 +6,14 @@
 >
 > **交付日期**: 2026-09-26
 > **對應 Backlog**: M02-US-201, M02-US-202, M02-US-203, M02-DE-301
-> **Sprint / Module**: Sprint 1 / M02-payment
+> **批次 / Module**: 批次 1（M02-payment）/ M02-payment
 > **交付狀態**: ✅ 完成（Module 級交付）
 
 ---
 
 ## 1. 這次完成什麼
 
-本 sprint 完整交付 M02-payment Module 的 4 個 US + 1 個 Bug 修復，建立電商信用卡付款的完整功能（建立付款單、第三方閘道整合、付款回呼、付款失敗重試）。
+本批次完整交付 M02-payment Module 的 4 個 US + 1 個 Bug 修復，建立電商信用卡付款的完整功能（建立付款單、第三方閘道整合、付款回呼、付款失敗重試）。
 
 **關鍵成果**：
 
@@ -124,12 +124,12 @@
 
 ### 6.1 立即可做（建議優先）
 
-1. **執行 Sprint 2：M03-order Module 完整交付** — 解鎖 INT-M01-M02-02
+1. **執行批次 2：M03-order Module 完整交付** — 解鎖 INT-M01-M02-02
    - **為什麼這個優先**：M03 是 M02 的下游 consumer，TECH-503 P1 問題要靠 M03 完整測試才能驗證
 2. **修正 TECH-503（event bus retry / dead letter queue）** — 避免 M03 故障時 M02 訊息掉
    - **為什麼這個優先**：production 風險高、目前是 P1 已知問題
 
-### 6.2 下一個 Sprint 考慮
+### 6.2 下一批次考慮
 
 - [ ] M03-order Module 完整交付（BACKLOG: M03-*）
 - [ ] TECH-501（M02 部分退款）｜TECH-503（event bus retry）
@@ -178,15 +178,15 @@
 
 ### 8.2 問題清單（每個 ❌ 必含「根因 + 建議」）
 
-- ⚠️ [P1] M02 不支援部分退款 — 根因：MVP 範圍沒包含；建議：TECH-501 排入 Sprint 3
-- ⚠️ [P2] Stripe mock 沒實作 webhook signature 真實驗證 — 根因：測試環境不需；建議：TECH-502 排入 Sprint 3
+- ⚠️ [P1] M02 不支援部分退款 — 根因：MVP 範圍沒包含；建議：TECH-501 排入批次 3
+- ⚠️ [P2] Stripe mock 沒實作 webhook signature 真實驗證 — 根因：測試環境不需；建議：TECH-502 排入批次 3
 - ⚠️ [P1] event bus 沒 retry / dead letter queue — 根因：MVP 簡化；建議：TECH-503 立即修（P1 已知問題）
 
 ### 8.3 Action Items（每個填滿「動作 + 類型 + 驗收條件 + 預估」）
 
 - **1**
-  - 動作：執行 Sprint 2：M03-order 完整交付
-  - 類型：Sprint
+  - 動作：執行批次 2：M03-order 完整交付
+  - 類型：批次
   - 驗收條件：M03 所有 US 完成、探針全綠
   - 預估：13 SP
 - **2**
@@ -221,24 +221,24 @@
 M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 ```
 
-4 個 US 都集中在 M02 Module 內、可單獨交付（順序或平行），INT 跨 Module 任務不在本 sprint。
+4 個 US 都集中在 M02 Module 內、可單獨交付（順序或平行），INT 跨 Module 任務不在本批次。
 
 ### 9.2 跨 Module 遺留問題
 
 - **INT-M01-M02-01 整合測試只驗證 happy path**
   - 影響：沒測跨 Module 失敗情境
-  - 升級為：待 Sprint 2 加入負面測試
+  - 升級為：待批次 2 加入負面測試
 
 ### 9.3 Module 級技術債
 
 - **TECH-501 部分退款**
-  - 跨 sprint：是
+  - 跨批次：是
   - 影響範圍：M02
 - **TECH-502 Stripe signature 真實驗證**
-  - 跨 sprint：是
+  - 跨批次：是
   - 影響範圍：M02 + INT
 - **TECH-503 event bus retry**
-  - 跨 sprint：是
+  - 跨批次：是
   - 影響範圍：全 repo（影響 M02 / M03 / M04）
 
 ### 9.4 Module 級指標
@@ -254,7 +254,7 @@ M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 
 ### 9.5 Module 級下一步
 
-1. **Sprint 2 派 M03-order**：M03 是 M02 的下游 consumer，需先交付完整才能驗證跨 Module 流程
+1. **批次 2 派 M03-order**：M03 是 M02 的下游 consumer，需先交付完整才能驗證跨 Module 流程
 2. **修 TECH-503 event bus retry**：影響全 repo，是其他 Module 的隱性風險
 3. **M04 checkout 編排**：需 M01 + M02 + M03 都完成後才能完整測試
 

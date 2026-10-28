@@ -51,7 +51,7 @@ PROTECTED_PATTERNS = [
     "README.md",
     "**/SKILL.md",
     "**/ac/US-*.md",          # User Story AC 範本
-    "**/deliverable/**",      # Sprint deliverable（保留歷史）
+    "**/deliverable/**",      # 交付摘要（保留歷史）
     "**/backlog.md",
     "**/ci/**",               # CI SOP
     "**/dav-designer/**",     # dav-designer skill 完整保留

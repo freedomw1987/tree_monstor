@@ -356,7 +356,7 @@ symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做�
 - `skills/dav-wiki/scripts/wiki-cross-ref.sh`：交叉引用演算法
 - `tools/install.sh`：安裝 agent config
 
-## Sprint / SOP
+## 批次 / SOP
 
 本專案有一條 SOP（**規則本體喺各自承載它嘅 skill**），但**不是每個任務都要走**。需要時走：
 1. **規劃** (dav-planner)

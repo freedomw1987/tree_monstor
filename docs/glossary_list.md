@@ -12,6 +12,7 @@
 |------|----------------------|------------------------|
 | AC（驗收條件）| 一條 US 嘅可驗收行為描述（Given-When-Then）| — |
 | Backlog（待辦清單）| 本專案所有 US／DE／TECH／Spike 嘅總表 | 待辦、任務清單 |
+| Batch（批次）| 一個 Module 嘅完整交付單位（批次 = 交付 = 測試 = 回報邊界）| 交付批次 |
 | DE（Defect，缺陷）| Backlog 一類：已存在嘅錯誤行為要修 | Bug |
 | Deliverable（交付摘要）| 提交階段產出嘅交付文件（含對話摘要＋對帳段）；檔名 deliverable.md | 交付文件 |
 | DoD（完成定義）| 一條 US 嘅技術視角完成清單（checklist）| — |
@@ -24,7 +25,7 @@
 | INVEST（US 品質準則）| US 應滿足：獨立／可協商／有價值／可估／細／可測 | — |
 | Line cap（行數上限）| skill 主檔 ≤50 行／子檔 ≤150 行／context ≤400 行（硬門檻）| 行數上限 |
 | Local gate（本機等價閘）| 本機一次跑齊 CI 檢查步驟嘅閘（CI 已降級為偵測器）| — |
-| Module（模組）| 開發切割單位；一個 Module 一個 sprint | — |
+| Module（模組）| 開發切割單位；一個 Module = 一個批次 | — |
 | Mutant（突變）| 故意改壞程式碼，用嚟證明探針真係咬得住 | — |
 | Mutant table（突變表）| 逐支記錄「改邊個檔／改成乜／邊支探針要紅」嘅表（mutants.tsv）| — |
 | Plain-text reference（純文字引用）| 唔用跨目錄連結或路徑引用，改用抽象詞講明出處 | — |
@@ -37,7 +38,6 @@
 | Skill（技能）| 一個可獨立安裝嘅能力包（SKILL.md ＋ 支援檔）| — |
 | SOP（標準作業流程）| 本 repo 定義嘅多階段流程（規劃→設計→執行→反省→交付）| 流程規範 |
 | Spike（研究項）| Backlog 一類：先研究／驗證，唔直接交功能 | 技術研究 |
-| Sprint（迭代批次）| 一個 Module 整體交付嘅批次 | sprint、批次 |
 | Story Point（故事點）| 相對工作量單位（唔係工時）| SP |
 | Support file（支援子檔）| SKILL.md 以外嘅 skill 內 .md（主檔連結指向佢）| 子檔、支援檔 |
 | Task navigation（任務導航）| SKILL.md 嘅 4 段結構（TL;DR／觸發時機／流程／規則）| — |
@@ -58,6 +58,7 @@
 | Mutant（突變）| mutation | mutation 係「突變行為」，mutant 係「被改壞嗰個」—— 唔係同一樣嘢 |
 | Local gate（本機等價閘）| 本機閘 / 等價閘 | 兩者都指唔到「同 CI 步驟等價」呢層意思 |
 | Requirement maturity（需求成熟度）| 成熟度 | 「成熟度」泛指任何成熟度（產品、團隊⋯⋯）|
+| Batch（批次）| sprint / 迭代批次 | 批次已由 Module 承載（一個 Module = 一個批次）；用「sprint」會令人以為係獨立於 Module 嘅容量批次 |
 | Task navigation（任務導航）| 導航結構 | 冇講明係 SKILL.md 嘅結構 |
 
 > 存量文件仲有以上寫法 → 屬「術語統一」嘅待辦（逐份改寫）；新文件唔可以用。

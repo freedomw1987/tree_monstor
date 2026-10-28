@@ -6,8 +6,8 @@
 
 ## 適用情境 ＋ 交付單位
 
-- **交付單位 4 級**：單個 US（1 個 AC 套件）｜單個 Module（Module 內所有 US 集合）｜多個 Module（＋ cross-module integration）｜
-  整個 repo / sprint 結束（整個交付歷史）—— 後三級用 Step 3.5 微總結
+- **交付單位 3 級**：單個 US（1 個 AC 套件）｜單個 Module（＝1 個批次，Module 內所有 US 集合）｜專案級（一輪 Module 全完成／發佈，含整個交付歷史）
+  —— 後兩級用 Step 3.5 微總結
 - **觸發情境**：整個 Module 完成（內所有 US 驗收完 ＋ Module 級整合測試通過）／Module 級里程碑（未全部交付但達可發佈狀態）／Module 重構完成（技術債清理 ＋ 探針重寫）
 
 ## 四個差異
@@ -21,7 +21,7 @@
   （例：US 級 `2026-09-26-m01-us-101-login.md`、Module 級 `2026-09-26-m01-auth-module.md`）
 - **4. Module 交付有「第 9 段」** — US 級 deliverable 是 8 段（§1-§8）；Module 級多加 §9「Module 級總結」：
   9.1 多 US 間關聯（依賴關係：邊啲互相依賴、邊啲可獨立交付）｜9.2 跨 Module 遺留問題（如 `INT-M01-M02-checkout-flow` 未跑）｜
-  9.3 Module 級技術債（本次未修 ＋ 跨 sprint 的）｜9.4 Module 級指標（探針總數／覆蓋率／LOC／變動歷史）｜9.5 Module 級下一步（vs US 級小行動）
+  9.3 Module 級技術債（本次未修 ＋ 跨 Module 的）｜9.4 Module 級指標（探針總數／覆蓋率／LOC／變動歷史）｜9.5 Module 級下一步（vs US 級小行動）
 
 ## Module 級 vs US 級交付對照
 
@@ -50,7 +50,7 @@ Module 級反思在 US 級反思之上再加 Module 級 6 維度：① UX/UI 一
 - <如 INT-M01-M02-checkout-flow 未跑：點解、要幾時補>
 
 ### 9.3 Module 級技術債
-- <本次未修 ＋ 跨 sprint 的>
+- <本次未修 ＋ 跨 Module 的>
 
 ### 9.4 Module 級指標
 - 探針總數：<n>｜覆蓋率：<n>%｜LOC：<n>｜變動歷史：<摘要>

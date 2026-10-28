@@ -1,14 +1,14 @@
-# Backlog — 電商 M02-payment Module Sprint
+# Backlog — 電商 M02-payment Module
 
-> **本檔為範例**，由 dav-planner skill v2.3 產出。展示含 Module 欄位的 backlog 格式 + Module 級 sprint 規劃。
+> **本檔為範例**，由 dav-planner skill v2.3 產出。展示含 Module 欄位的 backlog 格式（Module 內容由設計期回填）。
 >
-> 對應 skill：`dav-planner`（v2.3 加 Module 欄位範本 + Module 級 sprint）
+> 對應 skill：`dav-planner`（v2.3 加 Module 欄位範本）
 >
-> 對應模組：`M02-payment`（單 Module 完整 sprint）
+> 對應模組：`M02-payment`（1 批次 = 1 Module）
 
 ---
 
-## Backlog（Sprint 1：M02-payment 整體交付）
+## Backlog（M02-payment 批次：Module 整體交付）
 
 - **M02-US-201**
   - 類型：US
@@ -56,7 +56,7 @@
   - 狀態：PENDING
   - 依賴：M01-US-101, M02-US-201
 
-**Sprint 總計**：4 個 M02 US + 1 個跨 Module INT + 1 個 M02 Bug；合計 23 SP。
+**批次總計**：4 個 M02 US + 1 個跨 Module INT + 1 個 M02 Bug；合計 23 SP。
 
 ---
 
@@ -132,9 +132,18 @@
 
 ---
 
-## Module 級 Sprint 規劃（dav-planner v2.3 §4.3.2）
+## Module 批次規劃（設計階段產出 — `dav-designer` Step 1）
 
-### 派工計劃
+> **planner 不產呢節**：Module 切割、批次清單、批次先後順序都係設計階段產物；planner 只填 US／AC／依賴，Module 欄位留 `M00` 直到設計期回填。
+
+### 批次清單（1 批次 = 1 Module）
+
+| 批次 | Module | 涵蓋 US | 先後 |
+| --- | --- | --- | --- |
+| 批次 1 | M02-payment | M02-US-201, M02-US-202, M02-US-203, M02-DE-301 | 1 |
+| 批次 2 | INT-M01-M02 | INT-M01-M02-01 | 2（M02 ＋ M01 完成後） |
+
+### 派工計劃（`dav-developer` 產出）
 
 - **dev-A**
   - Module：M02
@@ -154,7 +163,7 @@
 
 REGRESSION_MODULE=M02 ./run_pipeline.sh M02-US-201
 
-# M02 整體驗證（sprint 結束跑）
+# M02 整體驗證（批次結束跑）
 REGRESSION_MODULE=M02 ./run_pipeline.sh --all
 
 # 跨 Module 整合驗證（INT 跑完後）

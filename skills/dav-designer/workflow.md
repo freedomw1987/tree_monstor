@@ -14,7 +14,7 @@ description: dav-designer 的「6 步流程細節」附件（v2.4 拆分自主�
 - **動作**：讀取 monorepo 對應的 backlog 檔，篩選 `status = PENDING` 的項目；依功能內聚性分群為
   Module。**同時詢問用戶每個 Module 的 DoD 深度（DoD-Lite / DoD-Full）**。
 - **為什麼**：避免一次處理全部 backlog 導致設計過廣；DoD 深度在 Step 1 一次問清，避免 Step 5 再打斷流程。
-- **產出**：Module 清單（含 Module 名稱 / backlog IDs / **DoD 深度**）。
+- **產出**：Module 清單（含 Module 名稱 / backlog IDs / **DoD 深度**）＋ **批次清單**（1 批次 = 1 Module，見下）。
 
 **Module 目的與切割原則**（v2.3 新增）：
 
@@ -43,6 +43,15 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
   - 說明：1 個 Module ≈ 3-15 個 User Story；太小（1-2 US）變成分類標籤，太大（20+ US）失去「獨立交付」意義
   - 反例：❌ 把整個後端當一個 Module
 
+**批次 = 1 Module（v2.5 新增）**：
+
+- **唯一批次單位**：1 個批次 = 1 個完整 Module；**冇 sprint 層、冇 velocity 容量**（見同套 `design-gate.md`）
+- **批次清單（Step 1 產出）**：每個 Module 一行 —— Module 名稱／涵蓋 backlog IDs／DoD 深度／先後次序
+- **先後次序**：按「依賴」排（前置 Module 先做）；冇依賴就按 P0 → P3；互唔依賴嘅可標「可平行」
+- **為什麼**：批次 = 交付邊界 = 測試邊界 = 回報邊界，四重合一 → 單 Module 探針、單 Module 交付摘要、單 Module 回顧
+- **INT US 歸屬**：跨 Module 整合測試（`INT-<M>-<M>-01`）掛喺**後完成**嗰個 Module 嘅批次；兩個 Module 都未完成就唔開批次
+- **證據**：對話中列明「批次 1 = M01（含 #A, #B）→ 批次 2 = M02」
+
 **DoD 深度選項**（Step 1 必問一次）：
 
 - ⭐ **DoD-Lite（預設）**
@@ -68,7 +77,7 @@ Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切�
 - **Module 邊界是測試邊界**（v2.3 新增）：system-design.md 中的 Module 邊界就是未來 dav-developer 的執行邊界 — 探針只針對該
   Module 的介面與內部狀態，不會跨 Module 檢查（避免一個 Module 壞掉牽扯其他 Module 的綠燈 / 紅燈）。
 - **產出**：system-design.md（含技術棧、模組邊界圖（純文字）、資料流）。
-- **證據**：同步更新 monorepo 對應的 backlog 檔，給每個 User Story 標上 Module 與 Story Point。
+- **證據**：同步更新 monorepo 對應的 backlog 檔，給每個 User Story 標上 Module 與 Story Point；並按實際依賴**校正批次先後次序**（Step 1 定、Step 3 校正）。
 
 ## Step 4：模組 PRD（md，含追溯矩陣）
 

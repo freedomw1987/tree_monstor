@@ -27,7 +27,7 @@ description: >-
 - **Step 2 決策點判斷**：判斷任務升級／是否觸發 SWOT；觸發則出草案 → 用戶驗證；參考 `./reference.md` §2.5／§2.6
 - **Step 3 維度展開 ＋ Step 3.5 術語表**：核心 4 維度必問 ＋ 觸發咗嘅補充維度；答案寫落文件；術語表 → `docs/glossary_list.md`；參考 `reference.md` §3
 - **Step 4 成熟度評估 ＋ 寫 Backlog**：3 維度 ≥ 2 分先寫；出 backlog row ＋ 詳細段 ＋ AC ＋ 錨點；
-  參考 `reference.md` §5／`backlog-rules.md` §4；**Plan Gate 通過條件 → 同套 `./plan-gate.md`**
+  參考 `reference.md` §5／`backlog-rules.md` §4；**Plan Gate → 同套 `./plan-gate.md`**；Module 欄位留 `M00`（切割 ＋ 批次屬 `dav-designer`）
 - **Step 1.5 來源抽取（可選；Step 1 之後、Step 2 之前）**：複雜任務 → 調用同套 `dav-wiki` skill 抽取 → 回 Step 1 加來源清單；細節 → `reference.md` §6
 
 ## 規則 / 例外 / 限制
@@ -35,7 +35,7 @@ description: >-
 - **一次只問 1 題（V01）＋方案必標 ⭐ 推薦（V02）** — 例外：確認型問題可一次多個／開放式問題無推薦；限制：開放式問題必 1 題、V02 必為第 1 個選項
 - **改規範自查行數上限（V03；已取消二審）** — 例外：無；限制：主檔 ≤50 行／子檔 ≤150 行／context ≤400 行；**代碼／契約嘅品質把關走同套 `dav-developer` skill（Gate 1/2/3）**
 - **SWOT 不輕易觸發（§2.6）** — 例外：4 觸發條件之一即觸發；限制：不可「為 SWOT 而 SWOT」
-- **AC 欄位精簡為「摘要 + 連結」（v1.8）＋AC 範本只含 AC（不重複 US 標題）** — 例外：存量 US 不重寫；限制：新 US 必走新格式；§4.3.2.3 規範
+- **AC 欄位精簡為「摘要 + 連結」（v1.8）＋AC 範本只含 AC（不重複 US 標題）** — 例外：存量 US 不重寫；限制：新 US 必走新格式；backlog-rules.md §4.6 規範
 - **反思併進 deliverable.md（v2.0）** — 例外：存量反思檔保留；限制：未來不寫獨立反思
 - **3 維度都 ≥ 2 分才寫 Backlog（§5）** — 例外：1 分項加 ⚠️ 註明；限制：0 分項不可寫
 - **每個 US 都產 .md + .html（同 turn）** — 例外：存量 US 不補；限制：新 US 必走
@@ -45,6 +45,6 @@ description: >-
 
 ## 交叉引用（純文字）
 
-- 提問技巧／維度展開／需求成熟度／Step 1.5 來源抽取 → 同套 `reference.md`；Backlog 規則（INVEST／AC／Module 編號／更新規則／錨點檔契約／術語表規格）→ `backlog-rules.md`
-- Backlog ＋ AC ＋ 錨點 ＋ 術語表格式範本 → 同套 `templates/backlog-format.md`；Module 生命週期範例 → `examples/backlog.md`
+- 提問技巧／維度展開／需求成熟度／Step 1.5 來源抽取 → 同套 `reference.md`；Backlog 規則（INVEST／AC／Module 欄位格式／更新規則／錨點檔契約／術語表規格）→ `backlog-rules.md`
+- Backlog ＋ AC ＋ 錨點 ＋ 術語表格式範本 → 同套 `templates/backlog-format.md`；Module 批次規劃範例（設計期產出）→ `examples/backlog.md`
 - Plan Gate（規劃 gate）通過條件 ＋ 通過聲明格式 → 同套 `./plan-gate.md`

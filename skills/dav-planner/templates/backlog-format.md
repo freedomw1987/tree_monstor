@@ -1,6 +1,6 @@
 ---
 name: dav-planner-backlog-format
-description: dav-planner 的「Backlog 格式範本」附件。含 Backlog 表格欄位範本、AC 段範本、Module 級 sprint 範本、需求錨點檔固定結構範本、術語表格式範本。規則語意見同套 `backlog-rules.md`。
+description: dav-planner 的「Backlog 格式範本」附件。含表格欄位範本、AC 段範本、Module 欄位填法、需求錨點檔固定結構範本、術語表格式範本。規則語意見同套 `backlog-rules.md`。
 ---
 
 # Dav Planner — Backlog 格式範本
@@ -41,19 +41,15 @@ description: dav-planner 的「Backlog 格式範本」附件。含 Backlog 表�
 - **為什麼這個優先**: <一句講清優先級理由>
 ```
 
-## §4.3.2 Module 級 sprint 範本
+## §4.3.2 Module 欄位填法（planner 不預設）
 
-> 完整範例見同套 `examples/backlog.md`「Module 級 Sprint 規劃」節。
+> Module 內容由 `dav-designer` Step 1 切割、Step 3 回填 backlog；planner 階段一律 `M00`（未定義）。
+> 批次清單（**1 批次 = 1 Module**）由設計階段產出 —— planner 唔另開 sprint／批次表。
 
-```markdown
-#
-# Sprint 1（Module M01 整體交付）
-
-| US ID | 類型 | Module | 標題 | 優先級 | SP | 狀態 |
-| --- | --- | --- | --- | --- | --- | --- |
-| M01-US-101 | US | M01 | 用戶登入 | P0 | 3 | PENDING |
-| M01-DE-301 | DE | M01 | 修正登入 token 過期 | P1 | 2 | PENDING |
-```
+| 情況 | Module 欄填法 |
+| --- | --- |
+| 設計期未切割（planner 階段） | `M00`（未定義） |
+| 已切割 | `M01`（單一 Module）｜`INT`（跨 Module 整合）｜`DE-301`／`TECH-401`（唔綁 Module） |
 
 ## §4.7 需求錨點檔固定結構範本
 

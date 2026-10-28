@@ -32,9 +32,9 @@ Jev PoC 已喺同套本 skill 子檔（`./PoC/`）跑出 M1-M5 完整 milestone�
 
 ## 實作成本預估
 
-- **PoC 評估** — 預估：1 sprint；重點：以一個 PENDING US 跑 M1-M5 驗證 4 維度判定是否準確
-- **整合進主流程** — 預估：1 sprint；重點：把 Jev 該在的 Gate 調進 Steps 1-4；不是取代是補充
-- **換 driver** — 預估：1 sprint；重點：從 fixture 轉 Playwright Chrome／Chrome DevTools Protocol
+- **PoC 評估** — 預估：1 批次（1 個 Module）；重點：以一個 PENDING US 跑 M1-M5 驗證 4 維度判定是否準確
+- **整合進主流程** — 預估：1 批次；重點：把 Jev 該在的 Gate 調進 Steps 1-4；不是取代是補充
+- **換 driver** — 預估：1 批次；重點：從 fixture 轉 Playwright Chrome／Chrome DevTools Protocol
 - **CI 接 batch report** — 預估：半天；重點：batch report JSON 進 issue tracker／Slack
 
 ## 探針選名參考
@@ -62,7 +62,7 @@ Jev PoC 已喺同套本 skill 子檔（`./PoC/`）跑出 M1-M5 完整 milestone�
 - Reviewer 接手起點：**看信心度表格 → 找最低那一維 → 對應走跡去定位 component**
 - 0.5 為 gating 門檻：≥0.5 自動接手；<0.5 先加 observer context 再跑
 
-**升級路徑**（M6.1+，需另起 sprint）：接 Claude／GPT 生成實際 fix 文字（Jev 信心度作為 gating）、接 patch ＋ re-validate 自動迴圈。
+**升級路徑**（M6.1+，需另起批次）：接 Claude／GPT 生成實際 fix 文字（Jev 信心度作為 gating）、接 patch ＋ re-validate 自動迴圈。
 **輸出範例**（fix proposal 嘅完整樣子）→ 同套本 skill 子檔（`./examples.md`）「Jev Oracle 範例」章節。
 
 ## M6.1 修正循環補充：LLM Relay（v2 接力）

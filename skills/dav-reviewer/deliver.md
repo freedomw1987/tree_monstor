@@ -5,8 +5,8 @@
 
 ## §1 Step 4：寫交付摘要（兩層產出物）
 
-- **先確認交付範圍** — 對應 Backlog item（US／DE／TECH／SPIKE ID）、Sprint／Module、收集變更清單（檔案、測試、文檔）；
-  對話明示「Backlog = X、Module = Y」（交付單位 4 級 → 見同套 `./templates/module-delivery.md`）
+- **先確認交付範圍** — 對應 Backlog item（US／DE／TECH／SPIKE ID）、Module／批次、收集變更清單（檔案、測試、文檔）；
+  對話明示「Backlog = X、Module = Y」（交付單位 3 級 → 見同套 `./templates/module-delivery.md`）
 - **對話摘要** — 90 秒內可讀，讲「做了什麼／**為什麼**／下一步」；「為什麼」獨立一段、唔混喺「做了什麼」；含 emoji 標記；限制：不超過 200 行對話
 - **Markdown 詳錄** — 套用同 skill 子檔 `./templates/deliverable-template.md`（含 `## 1.2 為什麼做這個改動`、
   `## 2.4 改動背後的理由`、`## 8. 反思`、`## 3.1 需求對帳` 段）→ 寫入 `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
@@ -17,11 +17,11 @@
 ### 1.1 反省（Step 3.5，併入交付摘要末段）
 
 - **觸發時機（三層級）**：**US 級** — 每個 US 完成驗收後輕量反省（Agent 自動執行）；
-  **Sprint 級** — 每個 Sprint 結束後標準反省（Agent ＋ 用戶共同檢視）；**Module 級** — 每個功能模組交付後深度反省（Agent ＋ 用戶共同檢視）
+  **Module 級** — 每個 Module 批次交付後標準反省（Agent ＋ 用戶共同檢視）；**專案級** — 一輪 Module 全完成／發佈後深度反省（Agent ＋ 用戶共同檢視）
   （trust mode 進行中：Agent 自動完成 ＋ 待決事項寫 need-you-help 檔，視為通過）
-- **判斷層級**（US／Sprint／Module）→ 逐項檢查 **6 維度**（UX/UI 一致性／RWD／技術債／可維護性／測試覆蓋率／需求對齊）
+- **判斷層級**（US／Module／專案）→ 逐項檢查 **6 維度**（UX/UI 一致性／RWD／技術債／可維護性／測試覆蓋率／需求對齊）
 - **每個 ❌ 必含「根因 ＋ 建議」** → 產出 Action Items（動作 ＋ 類型 ＋ 驗收條件 ＋ 預估）
-- **US 級只檢查關鍵 2 維度**（需求對齊 ＋ 測試覆蓋率）；**Sprint／Module 級做全 6 維度**
+- **US 級只檢查關鍵 2 維度**（需求對齊 ＋ 測試覆蓋率）；**Module／專案級做全 6 維度**
 - 清單 → 同 skill 子檔 `./templates/reflection-checklist.md`；三級別模板 → `./templates/reflection-templates.md`
 
 ### 1.2 誠實標註 ＋ 下一步
@@ -43,13 +43,13 @@
   2. 每個 ❌ 都有「**根因 ＋ 建議**」（可執行性）
   3. 每個 Action Item 都填滿「**動作 ＋ 類型 ＋ 驗收條件 ＋ 預估**」
   4. **更新 `docs/backlog.md`** —— 問題清單轉化為：技術債問題 → Technical Debt（TECH）｜Bug → Defects（DE）｜缺失功能 → User Story（US）｜需研究 → Spike
-  5. **用戶參與確認**（Sprint／Module 級必參與；US 級可 Agent 自動；**trust mode 進行中：由 Agent 自動完成 ＋ 待決事項寫 need-you-help 檔，視為通過**）
+  5. **用戶參與確認**（Module／專案級必參與；US 級可 Agent 自動；**trust mode 進行中：由 Agent 自動完成 ＋ 待決事項寫 need-you-help 檔，視為通過**）
 - **「假裝通過」視為失敗**（見同套 `dav-router` skill 嘅違規回報規則）：
   - ❌ 交付 deliverable 但沒反思末段
   - ❌ 更新 `docs/backlog.md` 但 deliverable 沒對應嘅 Action Items
   - ❌ Action Items 缺「驗收條件」或「預估」
   - ❌ 問題清單嘅 ❌ 沒「根因 ＋ 建議」
-  - ❌ Sprint／Module 級別沒用戶參與確認（trust mode 進行中除外）
+  - ❌ Module／專案級別沒用戶參與確認（trust mode 進行中除外）
 
 ### 1.5 提交前 Self-Check 清單（V19 — Agent 必逐項 ✅）
 
@@ -65,7 +65,7 @@
 - [ ] 本次 US 有需求錨點時：已含「3.1 需求對帳」段，且**交付狀態與對帳結果一致**（有 ⚠️／❌ → 不得標「✅ 完成」）
 
 > 未通過 self-check = 不可提交，必須補完。
-> Sprint／Module 級別嘅總結交由 §1.1 反省處理，唔好重複。
+> Module／專案級別嘅總結交由 §1.1 反省處理，唔好重複。
 
 ## §2 Step 5：更新受影響文檔 ＋ `docs/backlog.md`
 

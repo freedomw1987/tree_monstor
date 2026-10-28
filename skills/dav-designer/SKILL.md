@@ -19,12 +19,12 @@ description: >-
 
 - **SOP 進入設計 Gate**，或用戶說「幫我設計 / 規劃 / 拉架構」／「畫個原型 / 做 wireframe / mockup」 → ✅ 必須
 - **用戶說「更新 PRD / DESIGN」** → ✅ 觸發本 skill 增量更新
-- **純開發實作（寫 code / 跑測試）** → ❌ 走 dav-developer；**純回顧（sprint 結束反省）** → ❌ 走 dav-reviewer（Step 3.5 反省）；**純諮詢 / 問問題** → ❌
+- **純開發實作（寫 code / 跑測試）** → ❌ 走 dav-developer；**純回顧（Module 批次結束反省）** → ❌ 走 dav-reviewer（Step 3.5 反省）；**純諮詢 / 問問題** → ❌
 不觸發
 
 ## 流程（6 步）
 
-- **Step 1 讀 backlog ＋ Module 切割 ＋ DoD 深度** → Module 清單（名稱／backlog IDs／DoD 深度）；細節見 [`workflow.md`](./workflow.md) Step 1
+- **Step 1 讀 backlog ＋ Module 切割 ＋ 批次清單 ＋ DoD 深度** → Module 清單 ＋ 批次清單；細節見 [`workflow.md`](./workflow.md) Step 1
 - **Step 2 UX/UI 規劃** → `DESIGN.md`（畫面樹、互動流程、元件庫）；細節見 [`workflow.md`](./workflow.md) Step 2
 - **Step 3 系統架構設計** → `system-design.md`（技術棧、模組邊界圖、資料流）＋ backlog 每個 US 標 Module／Story Point；細節見
 [`workflow.md`](./workflow.md) Step 3

@@ -2,7 +2,7 @@
 
 > 版本：v1.0（2026-09-25 配合 dav-planner v1.8 建立）
 > 對應 Backlog：[docs/backlog.md](../backlog.md)
-> 對應 Skill：`dav-planner/SKILL.md` §4.3.2 + §4.6
+> 對應 Skill：`dav-planner/backlog-rules.md` §4.6 + `dav-planner/templates/backlog-format.md` §4.3.1
 
 ## 用途
 
@@ -35,7 +35,7 @@
 
 ## 生成規則
 
-依 `dav-planner/SKILL.md` §4.6，每個新生成的 US 必須同時產出：
+依 `dav-planner/backlog-rules.md` §4.6，每個新生成的 US 必須同時產出：
 
 1. `<US-ID>.md`（AC 範本）
 2. `<US-ID>.html`（對應 HTML 版）

@@ -24,6 +24,7 @@ SOP、術語表規格。格式範本見同套 `templates/backlog-format.md`。
 
 > v2.3 起：Backlog 表格加 `Module` 欄位，令 dav-designer 嘅 Module 定義可直接俾 dav-developer 派工、dav-developer 探針亦能綁 Module。表格範本見同套
 > `templates/backlog-format.md`。
+> **planner 不預設 Module**：模組內容由 `dav-designer` Step 1 切割、Step 3 回填 backlog；planner 階段未切割 = `M00` fallback。批次規劃亦屬設計階段。
 
 - **`M<NN>`** — 語義：單一 Module；範例：`M01`、`M02`、`M10`
 - **`M<NN>-M<NN>`** — 語義：多 Module 關聯（跨 Module 邊界）；範例：`INT-M01-M02`
@@ -37,13 +38,6 @@ SOP、術語表規格。格式範本見同套 `templates/backlog-format.md`。
 - `DE-301`／`TECH-401`：跨 Module 的 Bug／技術債（不綁 Module）
 - 不寫 Module 欄位 = `M00` fallback
 
-### §4.3.2 Module 級 sprint 規劃（v2.3 新增）
-
-- 1 個 sprint 交付 1 個 Module（如 M01）；Module 定義（dav-designer）、Module 級交付語法（dav-reviewer）、Module 級派工 ＋
-`REGRESSION_MODULE=M01` 跑全 Module 探針（dav-developer）→ 見同套 `dav-designer`／`dav-reviewer`／`dav-developer` skill
-- **為什麼 Module 級 sprint**：平行化加速（M01／M02 兩個 dev 同時做）｜錯誤範圍隔離｜探針邊界清楚（`REGRESSION_MODULE` 限定）
-- Sprint 範本見同套 `templates/backlog-format.md`
-
 ## §4.4 類型混合管理
 
 - 類型：User Story（新功能）／Defects（Bug）／Technical Debt（技術債）／Spike（研究）
@@ -52,7 +46,7 @@ SOP、術語表規格。格式範本見同套 `templates/backlog-format.md`。
 ## §4.5 Backlog 更新規則
 
 - 每一個項目目錄只有並唯一有一份 `docs/backlog.md`
-- 每次新 Backlog item 填到表格最下方，不估算／Sprint／Module，預設 PENDING
+- 每次新 Backlog item 填到表格最下方，不估算／不預設 Module（設計期回填；未定義 = `M00`），預設 PENDING
 - **只保留未完成**：`backlog.md` 只留 **未完成**（`todo`／`doing`／`⏸️`）嘅 row；**完成（done）嘅 row 要移出**
   - 完成嘅記錄去邊：交付摘要（`docs/deliverable/<...>.md`，含做咗乜 ＋ 對帳段）＋ 該 US 嘅需求錨點（`docs/req/`）＋ 該 US 嘅 AC（`docs/ac/`）＋ git history
   - **點解**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會令 backlog 愈滾愈大、令 agent／用戶每次都要重讀已完嘅嘢（浪費時間同 token）
@@ -65,7 +59,7 @@ SOP、術語表規格。格式範本見同套 `templates/backlog-format.md`。
 - **生成時機**：用戶確認新 US 後、寫進 backlog.md 之前
 - **生成順序（同 turn）**：先 .md → 再 .html → 最後更新 backlog.md
 - **為什麼同 turn**：避免 .md 與 .html 不同步
-- **過渡期規則**：既有 US（§4.3.2 之前）不主動生成 AC 範本
+- **過渡期規則**：既有 US（v1.8 之前）不主動生成 AC 範本
 - **自我檢查清單**：5 項（檔案存在／連結路徑／CSS 媒體查詢）—— 詳見同套 `examples/backlog.md`
 
 ## §4.7 需求錨點檔生成 SOP（v2.7 新增）
