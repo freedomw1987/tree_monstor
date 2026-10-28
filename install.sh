@@ -10,6 +10,10 @@
 # Architecture: this script is the dispatch layer; helper functions live
 # in lib/install/*.sh (logging / paths / symlink / agents / sop / agents_dir).
 # This keeps the entry point short and the lib functions unit-testable.
+#
+# 2026-10-28：sop/ 部署功能（`docs/sop/*.json` → `~/.pi/sop/`、`~/.claude/sop/`）已移除
+# —— Gate 定義搬入各自承載它的 skill（dav-developer／dav-reviewer），repo 唔再需要
+# 機器可讀副本。`lib/install/sop.sh` 只剩「舊版安裝遺留嘅 symlink 清理」（uninstall 用）。
 
 set -euo pipefail
 
@@ -287,10 +291,6 @@ print_plan() {
             log_plan "$TARGET_ROOT/.claude/skills (skip: leave alone)"
             ;;
         esac
-        # US-007 AC-6: sop/gates.json deployment plan
-        if [[ -d "$SOURCE_DIR/docs/sop" ]]; then
-          log_plan "$TARGET_ROOT/.claude/sop/*.json (per-file symlinks into docs/sop/)"
-        fi
         ;;
       pi)
         # Pi Agent global resource dir is ~/.pi/agent/ (per pi docs/usage.md),
@@ -308,10 +308,6 @@ print_plan() {
         # Currently pi-only (pi-subagents discovers them automatically).
         if [[ -d "$SOURCE_DIR/agents" ]]; then
           log_plan "$TARGET_ROOT/.agents/*.md (merge: per-agent symlinks)"
-        fi
-        # US-007 AC-6: sop/gates.json deployment plan
-        if [[ -d "$SOURCE_DIR/docs/sop" ]]; then
-          log_plan "$TARGET_ROOT/.pi/sop/*.json (per-file symlinks into docs/sop/)"
         fi
         ;;
       qoder)
@@ -536,9 +532,8 @@ uninstall_claude() {
     remove_merged_skills "$claude_root/skills" "$SOURCE_DIR/skills"
   fi
   remove_managed_path "$claude_root/CLAUDE.md" marker-file
-  # ~/.claude/sop/ may be either a tree-level symlink (legacy install)
-  # or a real directory holding our per-file .json symlinks. Handle both,
-  # mirroring the skills logic so user-owned .json files are preserved.
+  # ~/.claude/sop/ 係舊版安裝（2026-10-28 前）部署 gates.json 嘅位置；今次已唔再部署，
+  # 但仍然要喺 uninstall 清走遺留 symlink（user-owned 檔案要保留）。
   if [[ -L "$claude_root/sop" ]]; then
     remove_managed_path "$claude_root/sop" symlink
   elif [[ -d "$claude_root/sop" ]]; then
@@ -553,8 +548,8 @@ uninstall_pi() {
   remove_managed_path "$pi_root/agent/AGENTS.md" symlink
   # Skills are merged per-skill into $pi_root/agent/skills/.
   remove_merged_skills "$pi_root/agent/skills" "$SOURCE_DIR/skills"
-  # sop/ is merged per-file into $pi_root/sop/ (mirrors the skills logic
-  # so user-owned .json files are preserved).
+  # sop/ 係舊版安裝（2026-10-28 前）部署 gates.json 嘅位置；今次已唔再部署，
+  # uninstall 仍然要清走遺留 symlink（user-owned 檔案要保留）。
   if [[ -L "$pi_root/sop" ]]; then
     remove_managed_path "$pi_root/sop" symlink
   elif [[ -d "$pi_root/sop" ]]; then
@@ -674,11 +669,9 @@ main() {
     case "$agent" in
       claude)
         install_claude
-        install_sop "$TARGET_ROOT/${DIR_CLAUDE}"
         ;;
       pi)
         install_pi
-        install_sop "$TARGET_ROOT/${DIR_PI}"
         ;;
       qoder)
         install_qoder

@@ -205,7 +205,7 @@
   - 驗收條件：探針 `M02-stripe-signature-verification` 通過
   - 預估：3 SP
 
-### 8.4 Reviewer 二審結果（V03 紀律）
+### 8.4 Reviewer 審核結果（Gate 4）
 
 - Verdict：✅ PASS
 - 問題數：P0=0、P1=2（已記錄在 TECH backlog）、P2=1

@@ -3,7 +3,7 @@
 # skills/dav-reviewer/tests/skill-contract.bats —— dav-reviewer 結構契約探針
 #
 # 為什麼有呢支：2026-10-28 起，Gate 4（品質審核）＋ Gate 4.5（需求對帳）由本 skill 承載，
-# 而且**人手觸發**（§2.3 自動執行段只做 Gate 1/2/3 → 拆出嚟加快 dav-developer）。
+# 而且**人手觸發**（執行段（自動段）只做 Gate 1/2/3 → 拆出嚟加快 dav-developer）。
 # 呢兩道 Gate 嘅定義（pass_criteria／required_evidence／fail_action／mandatory_phrase）
 # 係全 repo 最敏感嘅規則語意 → 一旦搬運／改寫時漏咗欄位，就會變成「冇人守」嘅假綠。
 #
@@ -77,24 +77,31 @@ PYEOF
   assert_file_contains "$GATES" "視為 gate 未觸發"
 }
 
-@test "RV-5: both gates are declared as 人手觸發 (唔喺 §2.3 自動執行段內)" {
+@test "RV-5: both gates are declared as 人手觸發 (唔喺執行段（自動段）內)" {
   assert_file_contains "$SKILL_DIR/SKILL.md" "人手觸發"
   assert_file_contains "$GATES" "人手觸發"
-  # 機器可讀副本：gate-4 嘅 trigger_skill 必須係 dav-reviewer
-  python3 - "$REPO_ROOT/docs/sop/gates.json" <<'PYEOF'
-import json, sys
-d = json.load(open(sys.argv[1], encoding="utf-8"))
-gates = {g["id"]: g for g in d["gates"]}
-g4 = gates.get("gate-4")
-if g4 is None:
-    print("FAIL: gates.json 冇 gate-4", file=sys.stderr); sys.exit(1)
-if g4.get("trigger_skill") != "dav-reviewer":
-    print(f"FAIL: gates.json 嘅 gate-4 trigger_skill = {g4.get('trigger_skill')!r}（應為 dav-reviewer）", file=sys.stderr)
-    sys.exit(1)
-if "gate-4.5" in gates:
-    print("FAIL: gates.json 唔可以有 gate-4.5（內嵌子閘，受 schema 限制）", file=sys.stderr); sys.exit(1)
+  # 2026-10-28：`docs/sop/gates.json`（機器可讀副本）已退役 → Gate 定義嘅唯一本 = 本 skill 嘅 gates.md。
+  # → 呢度直接驗 gates.md 本身：Gate 4 同 Gate 4.5 兩段都存在，而且 Gate 4.5 係「內嵌子閘」
+  #    （唔係另一道獨立 Gate id）。
+  python3 - "$GATES" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+text = open(path, encoding="utf-8").read()
+sections = re.split(r"^## ", text, flags=re.M)
+names = [s.split("\n", 1)[0].strip() for s in sections if s.strip()]
+if not any(n.startswith("Gate 4 reviewer gate") for n in names):
+    print("FAIL: gates.md 缺 Gate 4 定義段", file=sys.stderr); sys.exit(1)
+if not any(n.startswith("Gate 4.5") for n in names):
+    print("FAIL: gates.md 缺 Gate 4.5 定義段", file=sys.stderr); sys.exit(1)
+if "內嵌" not in text:
+    print("FAIL: gates.md 冇寫明 Gate 4.5 係內嵌子閘", file=sys.stderr); sys.exit(1)
 PYEOF
   [ "$?" -eq 0 ] || return 1
+  # repo 唔再應該有機器可讀嘅 gate 副本（退役咗就唔准復活 → 免得兩份 again 要人手同步）
+  [ ! -e "$REPO_ROOT/docs/sop/gates.json" ] || {
+    echo "FAIL: docs/sop/gates.json 應該已退役（Gate 定義唯一本 = 各 skill 嘅 gates.md）" >&2
+    return 1
+  }
 }
 
 @test "RV-6: the review flow and the reconcile flow both have their own file" {
@@ -129,7 +136,7 @@ PYEOF
   local pat='Gate 1/2/3/4|Gate 1-4|Gate 1–4|gate-4 → `?dav-developer'
   local hit
   hit="$(grep -rInE "$pat" \
-    "$REPO_ROOT/skills" "$REPO_ROOT/docs/sop" "$REPO_ROOT/docs/ci" \
+    "$REPO_ROOT/skills" "$REPO_ROOT/docs/ci" \
     "$REPO_ROOT/README.md" "$REPO_ROOT/AGENTS.md" "$REPO_ROOT/CONTRIBUTING.md" \
     2>/dev/null | grep -v "/tests/" || true)"
   [ -z "$hit" ] || {

@@ -75,7 +75,7 @@ bats skills/dav-wiki/tests/wiki-cleanup.bats --filter "E1"
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
-# 改了表內任何目標檔的碼（pptx-slim 腳本、dav-wiki 腳本、dav-developer 的文件／gates.json），
+# 改了表內任何目標檔的碼（pptx-slim 腳本、dav-wiki 腳本、dav-developer 的文件／gates.md），
 # 就要同步更新 scripts/ci/mutants.tsv：
 # 表的「原文」是整行精確比對，錨點對不上會直接 FAIL（不是 skip）；
 # 新增防呆／護欄時請補一列 mutant，否則 CI 不會知道你補的東西有沒有被測到。
@@ -182,7 +182,7 @@ git ls-files skills/<name> | grep '\.md$' | grep -viE 'example|template|fixture|
 |-----|------|---------|
 | **本機探針**（`bats tests/` ＋ skill-local ＋ mutant 全死） | **閘** | ✅ 紅就唔算完成 |
 | **本機 lint**（markdownlint / shellcheck / bash -n / heredoc / 文件漂移） | **閘** | ✅ 紅就唔算完成 |
-| **Reviewer 二審**（V03：只限代碼／契約／探針改動；純 markdown 改動不適用，惟屬 V03 例外〈規範語意〉者仍需） | **閘** | ✅ 未過唔算完成 |
+| **改規範自查行數上限**（V03：主檔 ≤50 行／子檔 ≤150 行／context ≤400 行；代碼改動嘅品質把關走對應 skill 嘅 Gate） | **閘** | ✅ 未過唔算完成 |
 | **CI（GitHub Actions）** | **偵測器** | ❌ 唔阻 merge、唔係完成條件 |
 
 **點解**：本 repo 係**平時自用嘅技能庫**，唔係要出貨嘅產品 → 唔需要另一部機做發佈閘。
@@ -358,11 +358,12 @@ symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做�
 
 ## Sprint / SOP
 
-本專案有一條 SOP（`docs/sop/`），但**不是每個任務都要走**。需要時走：
+本專案有一條 SOP（**規則本體喺各自承載它嘅 skill**），但**不是每個任務都要走**。需要時走：
 1. **規劃** (dav-planner)
 2. **設計** (dav-designer)
 3. **執行** (3 Gate: TDD / lint / regression；`dav-developer`，自動段)
 4. **審核 ＋ 反省 ＋ 提交** (`dav-reviewer`：**人手觸發** —— Gate 4 品質審核 ＋ Gate 4.5 需求對帳 → 交付摘要 ＋ 六維度反省 → 更新受影響文檔同 `docs/backlog.md`)
 
 Gate 的定義在**各自的 skill**（Gate 1/2/3 → `dav-developer`、Gate 4 → `dav-reviewer`〔人手觸發〕），
-完整說明見 [`docs/sop/handbook/`](docs/sop/handbook/)。`AGENTS.md` 只放行為準則，不含流程。
+就係唯一本（`skills/dav-developer/gates.md`、`skills/dav-reviewer/gates.md`）；
+任務分流 ＋ 違規防線喺 `dav-router` skill；`AGENTS.md` 只放行為準則（§1 ＋ §1.5），唔含流程細節。

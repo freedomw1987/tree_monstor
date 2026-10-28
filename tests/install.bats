@@ -453,106 +453,49 @@ teardown() {
   fi
 }
 
-# ---------- US-007: sop/gates.json deployment ----------
+# ---------- 2026-10-28：sop/ 部署功能已退役（Gate 定義搬入各自 skill）----------
 
-# Helper: pre-populate source fixture with a docs/sop/ directory
-create_source_sop_dir() {
-  mkdir -p "$TEST_SOURCE/docs/sop"
-  cat > "$TEST_SOURCE/docs/sop/gates.json" <<'EOF'
-{"version": "1.0.0", "gates": []}
-EOF
-  cat > "$TEST_SOURCE/docs/sop/gates.schema.json" <<'EOF'
-{"$schema": "https://json-schema.org/draft/2020-12/schema"}
-EOF
-}
-
-@test "US-007 AC-5: install copies docs/sop/gates.json to ~/.pi/sop/" {
-  create_source_sop_dir
-  run run_install --global --agent pi --yes
+@test "SOP-RETIRE-1: install 唔再建立 ~/.pi/sop/ 或 ~/.claude/sop/" {
+  run run_install --global --yes
   [ "$status" -eq 0 ]
-  assert_path_is_file "$TEST_HOME/.pi/sop/gates.json"
-  assert_file_contains "$TEST_HOME/.pi/sop/gates.json" '"version": "1.0.0"'
+  [ ! -e "$TEST_HOME/.pi/sop" ]
+  [ ! -e "$TEST_HOME/.claude/sop" ]
 }
 
-@test "US-007 AC-5b: install copies docs/sop/gates.json to ~/.claude/sop/" {
-  create_source_sop_dir
-  run run_install --global --agent claude --yes
-  [ "$status" -eq 0 ]
-  assert_path_is_file "$TEST_HOME/.claude/sop/gates.json"
-  assert_file_contains "$TEST_HOME/.claude/sop/gates.json" '"version": "1.0.0"'
-}
-
-@test "US-007 AC-5c: install copies docs/sop/gates.schema.json alongside gates.json" {
-  create_source_sop_dir
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  assert_path_is_file "$TEST_HOME/.pi/sop/gates.schema.json"
-}
-
-@test "US-007 AC-6: install --dry-run mentions sop/ deployment in plan (no actual copy)" {
-  create_source_sop_dir
+@test "SOP-RETIRE-2: --dry-run 計劃唔再提及 sop/ 部署" {
   run run_install --global --agent pi --dry-run --yes
   [ "$status" -eq 0 ]
-  # Plan output must mention the sop/ target path.
-  printf '%s\n' "$output" | grep -F -q "/.pi/sop/"
-  # But actual file must NOT be created (dry-run)
-  [ ! -e "$TEST_HOME/.pi/sop/gates.json" ]
+  if printf '%s\n' "$output" | grep -F -q "/.pi/sop/"; then
+    echo "FAIL: dry-run 計劃仲提及 /.pi/sop/ 部署（sop 部署功能已退役）" >&2
+    return 1
+  fi
 }
 
-@test "US-007 AC-7: install gracefully skips sop/ if source has no docs/sop/ (no error)" {
-  # Do NOT call create_source_sop_dir — source has no docs/sop/.
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  # sop/ dir may or may not exist; the key requirement is no error.
-}
-
-# ---------- TD-014: --uninstall removes managed sop/ symlinks ----------
-
-@test "TD-014 AC-1: --uninstall removes ~/.pi/sop/gates.json symlink created by installer" {
-  create_source_sop_dir
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  assert_path_is_file "$TEST_HOME/.pi/sop/gates.json"
-
-  run run_install --uninstall --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  # Our gates.json symlink must be gone.
-  [ ! -e "$TEST_HOME/.pi/sop/gates.json" ]
-  [ ! -e "$TEST_HOME/.pi/sop/gates.schema.json" ]
-}
-
-@test "TD-014 AC-2: --uninstall removes ~/.claude/sop/gates.json symlink" {
-  create_source_sop_dir
-  run run_install --global --agent claude --yes
-  [ "$status" -eq 0 ]
-  assert_path_is_file "$TEST_HOME/.claude/sop/gates.json"
-
-  run run_install --uninstall --global --agent claude --yes
-  [ "$status" -eq 0 ]
-  [ ! -e "$TEST_HOME/.claude/sop/gates.json" ]
-  [ ! -e "$TEST_HOME/.claude/sop/gates.schema.json" ]
-}
-
-@test "TD-014 AC-3: --uninstall preserves user-owned .json files in ~/.pi/sop/" {
-  create_source_sop_dir
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-
-  # User adds their own JSON file to ~/.pi/sop/ after install.
+@test "SOP-RETIRE-3: --uninstall 清走舊版安裝遺留嘅 sop symlink（user 檔案保留）" {
+  # 模擬舊版（2026-10-28 前）安裝：~/.pi/sop/gates.json → <source>/docs/sop/gates.json
+  # （docs/sop/ 已退役 → 個 symlink 變死連結；uninstall 仍然要清走「我哋建立嘅」嗰啲）
+  mkdir -p "$TEST_HOME/.pi/sop"
+  ln -sfn "$TEST_SOURCE/docs/sop/gates.json" "$TEST_HOME/.pi/sop/gates.json"
   echo '{"user": "data"}' > "$TEST_HOME/.pi/sop/my-rules.json"
-  assert_path_is_file "$TEST_HOME/.pi/sop/my-rules.json"
 
   run run_install --uninstall --global --agent pi --yes
   [ "$status" -eq 0 ]
-  # Our gates.json symlinks must be gone.
-  [ ! -e "$TEST_HOME/.pi/sop/gates.json" ]
-  [ ! -e "$TEST_HOME/.pi/sop/gates.schema.json" ]
-  # But user's file must remain.
+  # 死連結要用 -L 判斷（-e 對 dangling symlink 為 false → 會假綠）
+  [ ! -L "$TEST_HOME/.pi/sop/gates.json" ]
+  # user 自己嘅檔案要保留
   assert_path_is_file "$TEST_HOME/.pi/sop/my-rules.json"
 }
 
-@test "TD-014 AC-4: --uninstall gracefully handles missing ~/.pi/sop/ (no error)" {
-  # No install first — no ~/.pi/sop/ exists.
+@test "SOP-RETIRE-4: --uninstall 唔會誤刪唔係我哋建立嘅 symlink" {
+  mkdir -p "$TEST_HOME/.pi/sop"
+  ln -sfn "$TEST_HOME/somewhere-else.json" "$TEST_HOME/.pi/sop/foreign.json"
+
+  run run_install --uninstall --global --agent pi --yes
+  [ "$status" -eq 0 ]
+  [ -L "$TEST_HOME/.pi/sop/foreign.json" ]
+}
+
+@test "SOP-RETIRE-5: --uninstall 對完全冇 ~/.pi/sop/ 嘅情況唔報錯" {
   run run_install --uninstall --global --agent pi --yes
   [ "$status" -eq 0 ]
 }
@@ -570,52 +513,4 @@ EOF
   # Look for ESC[1m (bold on) in the install output.
   [[ "$output" == *$'\033[1m'* ]] || {
     echo 'FAIL: tests/install.bats:571: assertion failed' >&2; return 1; }
-}
-
-# ---------- TD-018: handbook/*.md deploy ----------
-
-@test "TD-018 AC-1: --global install creates ~/.pi/sop/handbook/ symlinks (per-file)" {
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  # Should have created at least one handbook symlink.
-  [ -L "$TEST_HOME/.pi/sop/handbook/2.1-planning.md" ]
-}
-
-@test "TD-018 AC-2: --global install creates ~/.claude/sop/handbook/ symlinks (per-file)" {
-  run run_install --global --agent claude --yes
-  [ "$status" -eq 0 ]
-  # Should have created at least one handbook symlink.
-  [ -L "$TEST_HOME/.claude/sop/handbook/2.1-planning.md" ]
-}
-
-@test "TD-018 AC-3: handbook symlink resolves to source file in repo" {
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  # The symlink should resolve (follow it) to the source file in the repo.
-  [ -f "$TEST_HOME/.pi/sop/handbook/2.1-planning.md" ]
-  # The target must be inside the repo's docs/sop/handbook/ dir.
-  local target
-  target=$(readlink "$TEST_HOME/.pi/sop/handbook/2.1-planning.md")
-  [[ "$target" == *"/docs/sop/handbook/2.1-planning.md" ]] || {
-    echo 'FAIL: tests/install.bats:599: assertion failed' >&2; return 1; }
-}
-
-@test "TD-018 AC-4: --uninstall removes handbook symlinks but preserves user files" {
-  run run_install --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  # Create a user-owned handbook file (should survive uninstall).
-  touch "$TEST_HOME/.pi/sop/handbook/my-custom.md"
-  # Uninstall.
-  run run_install --uninstall --global --agent pi --yes
-  [ "$status" -eq 0 ]
-  # Managed symlink gone, user file preserved.
-  [ ! -L "$TEST_HOME/.pi/sop/handbook/2.1-planning.md" ]
-  [ -f "$TEST_HOME/.pi/sop/handbook/my-custom.md" ]
-}
-
-@test "TD-018 AC-5: --dry-run shows handbook deployment in plan" {
-  run run_install --global --agent pi --dry-run
-  [ "$status" -eq 0 ]
-  # Plan should mention handbook deployment.
-  [[ "$output" == *"handbook"* ]] || [[ "$output" == *"sop"* ]]
 }

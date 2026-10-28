@@ -10,14 +10,14 @@ description: >-
 ## TL;DR
 
 1. **做什麼**：把 backlog 拆成 UX/UI、系統架構、模組 PRD 三層文件 ＋ 每模組互動 HTML 原型（取代靜態 PRD html）。
-2. **何時觸發／SOP 路徑**：SOP §2.2 設計 Gate，或用戶要求「設計 / 規劃 / 拉架構 / 畫原型」；§2.6 一般任務（設計本身不寫程式碼、不跑測試，屬輔助產出）。
-3. **關鍵紀律**：V01 一次一個問題；V02 方案必標推薦；V03 代碼／契約改動先走 Reviewer 二審（純 markdown 只自查行數上限）；互動原型先於實作（未過 Step 4.5 簽核不得入 Step 5）。
+2. **何時觸發／SOP 路徑**：SOP 設計 Gate，或用戶要求「設計 / 規劃 / 拉架構 / 畫原型」；一般任務（設計本身不寫程式碼、不跑測試，屬輔助產出）。
+3. **關鍵紀律**：V01 一次一個問題；V02 方案必標推薦；V03 改規範自查行數上限（代碼品質把關走同套 `dav-developer` skill）；互動原型先於實作（未過 Step 4.5 簽核不得入 Step 5）。
 4. **必產出物**：`DESIGN.md` ＋ `system-design.md` ＋ `docs/prd/<序號-module>.md`（含追溯矩陣）＋ `docs/prd/<序號-module>.html`（互動原型）＋
 自審報告（對話產出）。
 
 ## 觸發時機
 
-- **SOP 進入 §2.2 設計 Gate**，或用戶說「幫我設計 / 規劃 / 拉架構」／「畫個原型 / 做 wireframe / mockup」 → ✅ 必須
+- **SOP 進入設計 Gate**，或用戶說「幫我設計 / 規劃 / 拉架構」／「畫個原型 / 做 wireframe / mockup」 → ✅ 必須
 - **用戶說「更新 PRD / DESIGN」** → ✅ 觸發本 skill 增量更新
 - **純開發實作（寫 code / 跑測試）** → ❌ 走 dav-developer；**純回顧（sprint 結束反省）** → ❌ 走 dav-reviewer（Step 3.5 反省）；**純諮詢 / 問問題** → ❌
 不觸發
@@ -32,7 +32,7 @@ description: >-
 - **Step 4.5 設計自審 ＋ 用戶簽核（必走）** → 自審報告 ＋ 用戶「簽核／退回」；未簽核不進 Step 5；細節見 [`workflow.md`](./workflow.md) Step 4.5 ＋
 [`prototype-quality.md`](./prototype-quality.md) §2
 - **Step 5 互動 HTML 原型** → `docs/prd/<序號-module>.html`（單檔、內嵌 CSS ＋ JS、雙擊即開），依 Step 1 選定 DoD 深度；細節見
-[`workflow.md`](./workflow.md) Step 5
+[`workflow.md`](./workflow.md) Step 5；**Design Gate 通過條件 → 同套 [`design-gate.md`](./design-gate.md)**
 
 ## 規則 / 例外 / 限制
 
@@ -46,5 +46,4 @@ description: >-
 
 - 規則／例外／限制完整版 → 同套 [`rules.md`](./rules.md)；Step 1-5 流程細節 → 同套 [`workflow.md`](./workflow.md)；原型品質細節 → 同 skill 子檔 [`prototype-quality.md`](./prototype-quality.md)
 - 規劃技巧（多輪提問／INVEST AC／DoD）→ 見同套 dav-planner skill；Module 完整生命週期範例 → 見本 skill 的
-[`examples/system-design.md`](./examples/system-design.md)；完整 SOP §2.1-§2.5 → 見 monorepo 對應的 handbook 目錄（路徑由 monorepo
-  約定）
+[`examples/system-design.md`](./examples/system-design.md)；Design Gate（設計 gate）通過條件 → 同套 [`design-gate.md`](./design-gate.md)

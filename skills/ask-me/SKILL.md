@@ -39,7 +39,7 @@ description: >-
 - **不自動延伸（結束後不做事）；退出後不重做 trust mode** — 例外：用戶說「繼續 trust」可重啟；限制：見同套上游 skill 結束後行為規範（需同套安裝）；trust 重啟由用戶決定
 - **信任標記 `✅/📝/⏸️` 三選一；抉擇理由必含日期** — 例外：不用其他 emoji 保持一致性／N/A；限制：與 backlog 既有 emoji 對齊；`YYYY-MM-DD ask-me：...` 格式便於 grep
 - **對應 US 在 backlog.md 找不到** — 例外：標 `⚠️ orphan` 在 need-you-help、不阻塞流程；限制：結束時提醒用戶手動處理
-- **不走完整 SOP**（§2.1→§2.5） — 例外：N/A；限制：ask-me 是輔助 skill、§2.6 簡化流程
+- **唔走完整 SOP** — 例外：N/A；限制：ask-me 係輔助 skill，走簡化流程
 
 ## 交叉引用
 

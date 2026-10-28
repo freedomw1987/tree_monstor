@@ -27,7 +27,7 @@
 
 - **本 skill 不寫 Backlog / US（與 dav-planner 邊界）；術語一致（跟 dav-planner 術語表）**
   - 例外：N/A；專案層冇術語表 → 照常用詞
-  - 限制：US／AC 由 dav-planner（§2.1）產；專案層有 `docs/glossary_list.md` → PRD／原型一律用入面嘅術語，唔好用同義詞
+  - 限制：US／AC 由 dav-planner（規劃階段）產；專案層有 `docs/glossary_list.md` → PRD／原型一律用入面嘅術語，唔好用同義詞
 
 ## §5 修改流程 ＋ 引用規範
 

@@ -89,9 +89,9 @@
 
 ---
 
-## 為什麼這個 checklist 對應 SOP §2.3 Gate 4（Reviewer Gate）
+## 為什麼這個 checklist 對應 SOP Gate 4（Reviewer Gate）
 
-依 gates.json 規範，Gate 4 是 Reviewer Gate，需做以下事：
+依 Gate 規範，Gate 4 是 Reviewer Gate，需做以下事：
 
 1. **確認範圍（Module 邊界）**：本 checklist Step 1 確認派工範圍、Step 3-4 校驗限 Module 內
 2. **校驗探針**：本 checklist Step 5 確認探針品質

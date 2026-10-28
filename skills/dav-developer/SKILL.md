@@ -6,12 +6,12 @@ description: 在代碼開發SOP「執行」階段使用。負責 TDD 寫測試 �
 
 ## TL;DR
 1. **做什麼**：一條龍做完「**寫測試 → 開發令紅變綠 → 埋探針**」，承載 Gate 1（TDD）／Gate 2（lint）／Gate 3（regression）。
-2. **何時觸發**：§2.3 執行階段開始（規劃已完成、實作未開始）。
-3. **關鍵紀律**：測試先於實作（TDD）；一次一個問題（V01）／方案必標推薦（V02）；skill 代碼／契約改動必走二審（V03）。
+2. **何時觸發**：執行階段開始（規劃已完成、實作未開始）。
+3. **關鍵紀律**：測試先於實作（TDD）；一次一個問題（V01）／方案必標推薦（V02）；改規範自查行數上限（V03）。
 4. **必產出物**：測試檔 ＋ 埋好嘅探針 ＋ Gate 1／2／3 嘅證據貼喺對話。
 
 ## 觸發時機
-- **§2.3 執行階段開始／規劃完成後、實作代碼前**、**寫測試先行／建立測試覆蓋** → ✅ 必須
+- **執行階段開始／規劃完成後、實作代碼前**、**寫測試先行／建立測試覆蓋** → ✅ 必須
 - **純提問、不寫測試／已有完整測試（除非用戶要求補）**、**規劃／設計／反省交付** → ❌ 不觸發
 
 ## 流程（4 步）
@@ -32,12 +32,13 @@ description: 在代碼開發SOP「執行」階段使用。負責 TDD 寫測試 �
 - **探針要 fail-loud ＋ 帶修復建議** — 例外：無；限制：紅嘅訊息要講得出「點解紅 ＋ 點修」
 - **測試指令禁用 interactive／watch 模式** — 例外：無；限制：否則卡住等 stdin、凍結成個 session
 - **回歸只跑改動範圍** — 例外：跨 Module 影響或大重構 → 跑全項目；限制：範圍要講得出
-- **一次一個問題（V01）／方案必標 ⭐ 推薦（V02）／skill 代碼改動必走二審（V03）** — 例外：確認型問題可一次多個；限制：V02 必為第 1 個選項
+- **一次一個問題（V01）／方案必標 ⭐ 推薦（V02）／改規範自查行數上限（V03；已取消二審）** — 例外：確認型問題可一次多個；限制：V02 必為第 1 個選項；主檔 ≤50 行／子檔 ≤150 行／context ≤400 行
 - **純文字引用（v2.1）** — 例外：skill 子檔可用 markdown（含 `examples/` 內回指主檔嘅 `../`）；限制：不寫指向 **skill dir 以外** 嘅連結或讀檔引用
 - **Gate 4（審核）唔屬本 skill** — 例外：無；限制：Gate 4 ＋ Gate 4.5 由**人手觸發**嘅 `dav-reviewer` skill 承載（2026-10-28 起）
 
 ## 交叉引用（純文字）
-- Gate 1–3 定義（pass_criteria／required_evidence／fail_action／mandatory_phrase）→ 同套 `./gates.md`
+- Gate 1–3 定義（pass_criteria／required_evidence／fail_action／mandatory_phrase／remediation）→ 同套 `./gates.md`
+- 執行段心法（fail-fast 成本排序／Agent 必做動作／本機閘點跑／trust 例外）→ 同套 `./execution.md`
 - Step 1／2 細節（TDD 6 步、Dev-Checker loop、backlog 狀態機、Module 取得、jev 整合）→ 同套 `./workflow.md`
 - 探針命名／粒度／回歸範圍／Module 互動 → 同套 `./probes.md`
 - Gate 4 品質審核 ＋ Gate 4.5 需求對帳（**人手觸發**）→ 見同套 `dav-reviewer` skill

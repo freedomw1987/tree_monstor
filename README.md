@@ -3,7 +3,7 @@
 [![CI](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml)
 
 > **CI 係偵測器，唔係閘**（TMO-084，2026-10-27）：本 repo 係平時自用嘅技能庫，閘喺本機 ——
-> 探針全綠 ＋ lint 0 issue ＋ mutant 全死 ＋ Reviewer 二審（V03：只限代碼／契約／探針改動；純 markdown 改動不適用）。一條指令跑齊：
+> 探針全綠 ＋ lint 0 issue ＋ mutant 全死 ＋ 改規範自查行數上限（V03；代碼改動嘅品質把關走 `dav-developer`／`dav-reviewer` skill 嘅 Gate）。一條指令跑齊：
 > `bash scripts/check-all.sh`。CI 仍然會跑（跨環境偵測用），但**唔阻 merge**。
 >
 > **dav-developer 嘅 CI 完全唔喺 GitHub 跑**（2026-10-27 用戶決策）：改用本機 runner
@@ -76,7 +76,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | 章節 | 內容 |
 |---|---|
 | §1 萬事原則 | 行為基礎：誠實、負責、有承擔、Think Big |
-| §1.5 行為紀律 | V01 一次一問、V02 方案必標推薦、V03 改規範按內容分流（純 markdown 自查行數上限；代碼／契約／探針走 Reviewer 二審） |
+| §1.5 行為紀律 | V01 一次一問、V02 方案必標推薦、V03 改規範自查行數上限（純 markdown 零額外步驟；代碼品質把關走對應 skill 嘅 Gate） |
 
 **流程與 Gate 不在 `AGENTS.md`** —— 它們寫在**各自的 skill** 裡，被觸發時才讀：
 
@@ -91,9 +91,9 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 深入閱讀：
 
-- SOP handbook 全文：[docs/sop/handbook/](docs/sop/handbook/)（按需查，非必讀）
-- Gate 定義（機器可讀副本；定義本體在各自的 skill）：[docs/sop/gates.json](docs/sop/gates.json)
-- 安裝後會以 symlink 出現在 `~/.pi/sop/` 與 `~/.claude/sop/`（gates + handbook）
+- SOP 各階段規則本體 → 喺**各自承載它嘅 skill** 入面（規劃 → `dav-planner`｜設計 → `dav-designer`｜
+  執行 → `dav-developer`｜反省 ＋ 提交 → `dav-reviewer`；任務分流 ＋ 違規防線 → `dav-router`）
+- Gate 定義（唯一本）：[skills/dav-developer/gates.md](skills/dav-developer/gates.md) ＋ [skills/dav-reviewer/gates.md](skills/dav-reviewer/gates.md)
 
 ## Skills
 
@@ -101,11 +101,12 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 | Skill | 一句話 |
 |---|---|
-| [`dav-planner`](skills/dav-planner/SKILL.md) | §2.1 規劃：釐清背景/目的/驗收條件，拆 Backlog（含 INVEST AC） |
-| [`dav-designer`](skills/dav-designer/SKILL.md) | §2.2 設計：DESIGN.md、system-design.md、PRD、互動 HTML 原型 |
+| [`dav-planner`](skills/dav-planner/SKILL.md) | 規劃：釐清背景/目的/驗收條件，拆 Backlog（含 INVEST AC） |
+| [`dav-designer`](skills/dav-designer/SKILL.md) | 設計：DESIGN.md、system-design.md、PRD、互動 HTML 原型 |
 | [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 1/2/3：依 backlog 先寫測試（紅後綠）→ 埋探針、`REGRESSION_MODE` 自動回歸驗證（自動執行段）|
 | [`dav-jev-oracle`](skills/dav-jev-oracle/SKILL.md) | LLM 語意判斷（Jev Oracle）：PoC ＋ 探針 ＋ 信心度報告，可選加深 |
-| [`dav-reviewer`](skills/dav-reviewer/SKILL.md) | 人手觸發嘅審核＋交付：Gate 4 品質審核 ＋ Gate 4.5 需求對帳（獨立 subagent 逐條比對；未對上不得宣告完成）→ §2.5 交付摘要（對話 ＋ Markdown 詳錄 ＋ 六維度反省 ＋ 需求對帳段）＋ 更新受影響文檔同 `docs/backlog.md`|
+| [`dav-reviewer`](skills/dav-reviewer/SKILL.md) | 人手觸發嘅審核＋交付：Gate 4 品質審核 ＋ Gate 4.5 需求對帳（獨立 subagent 逐條比對；未對上不得宣告完成）→ 交付摘要（對話 ＋ Markdown 詳錄 ＋ 六維度反省 ＋ 需求對帳段）＋ 更新受影響文檔同 `docs/backlog.md`|
+| [`dav-router`](skills/dav-router/SKILL.md) | 任務分流 ＋ 防線：一般任務走輕量流程；發現要寫 code 就「任務升級」；跳過 gate／假報通過要即刻停低講 |
 | [`dav-wiki`](skills/dav-wiki/SKILL.md) | 文件知識庫化：PDF / 網頁 / OCR / 字幕 → Markdown |
 | [`dav-trust`](skills/dav-trust/SKILL.md) | 信任模式：給大目標 + deadline 後自主跑完 SOP 執行段（執行 → 反省 → 提交；規劃 / 設計須啟動前完成；支援中斷續跑 / 用戶叫停）|
 | [`ask-me`](skills/ask-me/SKILL.md) | 逐題確認 trust 期間的待決擔憂，回寫 backlog |

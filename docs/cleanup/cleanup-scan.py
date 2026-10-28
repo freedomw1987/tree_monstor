@@ -50,11 +50,9 @@ PROTECTED_PATTERNS = [
     "AGENTS.md",
     "README.md",
     "**/SKILL.md",
-    "**/handbook/**",
     "**/ac/US-*.md",          # User Story AC 範本
     "**/deliverable/**",      # Sprint deliverable（保留歷史）
     "**/backlog.md",
-    "**/gates.json",
     "**/ci/**",               # CI SOP
     "**/dav-designer/**",     # dav-designer skill 完整保留
     "**/dav-planner/**",      # dav-planner skill 完整保留

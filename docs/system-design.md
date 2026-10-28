@@ -13,7 +13,7 @@
 | **Skill 格式** | Markdown + YAML frontmatter | skill 定義 | ≤50 行/SKILL.md（v2.11 減法版）|
 | **腳本語言** | Bash (≥4.0) | install.sh / 系統腳本 | macOS + Linux 兼容 |
 | **測試框架** | bats | 自動化測試 | 覆蓋 install.sh、SOP gates |
-| **Schema 驗證** | ajv-cli + JSON Schema Draft 07 | 驗證 gates.json | |
+| **Schema 驗證** | 🚨 已退役（2026-10-28）| 原用 ajv-cli + JSON Schema Draft 07 驗 `docs/sop/gates.json`；該副本已刪 → Gate 定義唯一本 = 各 skill 嘅 `gates.md` | |
 | **文件格式** | Markdown + YAML | 知識庫、計畫、反省 | |
 | **配置管理** | JSON / YAML | 索引、配置、metadata | |
 | **版本控制** | Git | 源碼、文件、計畫 | |
@@ -38,7 +38,7 @@ tree_monstor/
 | Module | 職責 | 邊界 | 變更影響 |
 | --- | --- | --- | --- |
 | **M1** Installer | 安裝 / 卸載 / 路徑處理 | 不管 SOP 內容 | 全域 / 專案安裝 |
-| **M2** SOP Infra | SOP 規範 / Gate 規則 | 不管業務邏輯 | AGENTS.md / gates.json / skill 定義 |
+| **M2** SOP Infra | SOP 規範 / Gate 規則 | 不管業務邏輯 | AGENTS.md / skill 定義（Gate 規則本體喺 skill 入面）|
 | **M3** Knowledge | 知識提取 / 概念演進 / 交叉引用 | 不管 agent runtime | docs/wiki / docs/concepts |
 | **M4** Self-Evolution | 🚨 **已歸檔移除 2026-09-22** — RSI 觀察 / 聚合 / 提案 / 審批 / 合併 / 同步 | （已移除）| （已移除） |
 | **M5** Delivery Fidelity | 需求錨點（產出）/ 需求對帳（驗收）/ 文件漂移探針（防線） | 不改業務邏輯、不改執行段 | 專案端 docs/req/、docs/reconcile/、CI 步驟 |
@@ -61,7 +61,7 @@ tree_monstor/
 
 ```
   用戶原話（對話）
-        │  dav-planner（§2.1，唯一產生者）
+        │  dav-planner（規劃階段，唯一產生者）
         ▼
   錨點檔 docs/req/<US-ID>-requirement.md      ← FR-01（根節點：R-ID 化）
         │  （下游只讀；澄清只寫「澄清後驗收句」）
@@ -87,10 +87,10 @@ tree_monstor/
 
 | 邊界 | 說明 |
 |------|------|
-| M5 不改執行段 | §2.3 的四道大 Gate 不變（2026-10-28 起：Gate 4 ＋ Gate 4.5 已移出自動執行段，改由人手觸發的 `dav-reviewer` skill 承載）；M5 只在尾段加一道**子關卡**（Gate 4.5）|
+| M5 不改執行段 | 執行段嘅四道大 Gate 不變（2026-10-28 起：Gate 4 ＋ Gate 4.5 已移出自動執行段，改由人手觸發的 `dav-reviewer` skill 承載）；M5 只在尾段加一道**子關卡**（Gate 4.5）|
 | M5 不判斷語意 | 「這段程式碼有沒有滿足需求」交給獨立 subagent；機械層只保證**覆蓋率與格式** |
 | M5 不回補存量 | 存量 US 缺錨點 → 豁免（WHITELIST），覆蓋率從 0% 起步並誠實揭露 |
-| M5 不進 gates.json | gate id 受 schema 限制（`^gate-[0-9]+$`），見 PRD-05 §7 ADR-D1 |
+| M5 不另立 Gate 定義檔 | Gate 4.5 係 `dav-reviewer` 內嵌子閘；2026-10-28 起 `docs/sop/gates.json` 副本已退役 → Gate 定義唯一本 = 各 skill 嘅 `gates.md` |
 
 ---
 
@@ -287,7 +287,7 @@ M4 — Self-Evolution
 │   ├── rsi-rollback.sh                # 一鍵回滾 + git tag
 │   └── rsi-sync.sh                    # 同步 SOP 到已裝專案
 │
-├── docs/sop/                          # M2 產出被 M4 修改
+├── docs/sop/                          # M2 產出被 M4 修改（🚨 2026-10-28 已退役：SOP 規則搬入各自 skill）
 │   ├── gates.json                     # + Gate 5 (RSI gate)
 │   ├── handbook/2.8-rsi-evolution.md  # RSI 完整 SOP
 │   └── rsi-log.md                     # 自我改進日誌
@@ -386,7 +386,7 @@ M4 — Self-Evolution
 
 1. **觀察/改動分離**：裝在專案裡的 tree_monstor **只能觀察**，不能改 SOP。驗證：專案裡打 `/evolve` 應被拒絕。
 2. **匿名化**：observation 只記結構化信號，不收 raw 對話、code、路徑。
-3. **Reviewer 二審必經**：**當年**所有 SOP 改動提案都走 dav-developer 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律；現行分流見 ADR-010）。
+3. **Reviewer 二審必經**：**當年**所有 SOP 改動提案都走 dav-developer 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律；該分流已於 2026-10-28 取消 → 見 ADR-012）。
 4. **一鍵回滾**：每次合併自動寫 git tag (`rsi-vYYYYMMDD-NN`)，`rsi-rollback.sh` 從 rsi-log.md 找 diff 還原。
 
 ### 4.6 量化指標（6 個）
@@ -441,11 +441,21 @@ M4 — Self-Evolution
 - **影響**：多餘欄位自動 reject；`project_id` 用 SHA256 雜湊不存明文路徑
 
 ### ADR-010：SOP 改動按內容分流 —— 代碼／契約／探針必走 Reviewer subagent 二審（V03）
+> 🚨 **已於 2026-10-28 取消（見 ADR-012）**；以下保留作歷史決策記錄。
 - **理由**：agent 自己提案自己改易形成自我強化偏見；Reviewer subagent 提供跨 SOP 一致性檢查與風險分級；
   但純 markdown 文件改動風險低（行數可控）→ 只自查行數上限，唔使二審
 - **影響**：用戶收到「diff + reviewer verdict」兩者並呈；可明確說「跳過 Reviewer」直接批；
   純 markdown 改動免二審（自查 skill 主檔 ≤50 行／子檔 ≤150 行／context ≤400 行）；
   但「規範語意」改動（AGENTS.md §1.5 V03 例外、handbook、gates.json、skill 規則段、markdown 形式嘅契約）仍必走二審
+
+### ADR-012：取消 AGENTS.md 嘅二審 —— 代碼品質把關交返 skill 嘅 Gate（V03 改版，2026-10-28）
+- **理由**：二審本身係「針對代碼開發」嘅品質閘；而代碼路徑本身已經有 Gate 1／2／3（TDD／lint／回歸，`dav-developer`）
+  ＋ Gate 4（獨立 reviewer，`dav-reviewer`）→ AGENTS.md 再寫一道二審，只會同 `dav-developer` skill 撞
+  （重複要求 ＋ 指標指錯 skill：二審屬 `dav-reviewer`，唔係 `dav-developer`）
+- **影響**：V03 改成「改規範自查行數上限」（主檔 ≤50 行／子檔 ≤150 行／context ≤400 行）；純 markdown 改動零額外步驟；
+  代碼／契約／探針改動嘅品質把關走對應 skill 嘅 Gate；同時 `docs/sop/`（handbook ＋ gates.json 副本）退役 ——
+  SOP 各階段規則搬入各自承載它嘅 skill（規劃 dav-planner／設計 dav-designer／執行 dav-developer／反省 ＋ 提交 dav-reviewer），
+  任務分流 ＋ 違規防線新開 `dav-router` skill；`AGENTS.md` 只留 §1 ＋ §1.5（行為準則）；Gate 定義唯一本 = 各 skill 嘅 `gates.md`（唔再兩份要人手同步）
 
 ### ADR-011：rsi-sync 不覆蓋本地 override
 - **理由**：用戶可能在已裝專案上調 SOP；如果 sync 強制覆蓋會造成無謂損失
@@ -490,7 +500,7 @@ M4 — Self-Evolution
 
 ```
 ~/.pi/agent/
-├── AGENTS.md                         # symlink → <source>/AGENTS.md（行為準則；SOP 全文在 docs/sop/handbook/）
+├── AGENTS.md                         # symlink → <source>/AGENTS.md（行為準則 §1 ＋ §1.5；SOP 各階段規則喺各自 skill）
 └── skills/
     └── dav-wiki/                     # per-skill symlink 到源碼
 
@@ -549,7 +559,7 @@ M4 — Self-Evolution
 
 ## 9. 參考資料
 
-- [docs/sop/handbook/](../docs/sop/handbook/) — SOP 各階段（按需查；AGENTS.md 自 2026-10-26 起只留行為準則與萬事原則）
+- SOP 各階段規則 → 各自承載它嘅 skill（規劃 dav-planner／設計 dav-designer／執行 dav-developer／反省 ＋ 提交 dav-reviewer）；AGENTS.md 只留行為準則（§1 ＋ §1.5）
 - [Google Stitch DESIGN.md](https://stitch.withgoogle.com/docs/design-md/specification/) — frontmatter 格式
 - [Obsidian Wiki Links](https://help.obsidian.md/Linking/Internal+links) — `[[xxx]]` 語法
 - [JSON Schema Draft 07](https://json-schema.org/draft-07/json-schema-release-notes.html) — Schema 規範

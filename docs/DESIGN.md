@@ -285,5 +285,6 @@ rc 契約：`0` 無違規（含全部豁免）｜`1` 有違規｜`2` 用法或�
 ## 9. 參考資料
 
 - [Google Stitch DESIGN.md spec](https://stitch.withgoogle.com/docs/design-md/specification/)
-- tree_monstor SOP（`sop/handbook/` 目錄）— V01 / V02 提問與建議紀律（2026-10-27 起 SOP 唔再另存 changelog）
+- tree_monstor SOP（規則本體喺各自承載它嘅 skill）— V01 / V02 提問與建議紀律
+  （2026-10-27 起 SOP 唔再另存 changelog；2026-10-28 起 `docs/sop/handbook/` 已搬入 skill）
 - [dav-skill-creater](../skills/dav-skill-creater/SKILL.md) — skill 命名與結構規範

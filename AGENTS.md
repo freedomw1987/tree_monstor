@@ -1,15 +1,8 @@
 # tree_monstor — Agent 行為準則
 
 > **這份檔案只講「你是誰、怎麼跟你合作」。**
->
-> 流程與 Gate **不在這裡** —— 它們寫在**各自的 skill** 裡，被觸發時才讀：
-> `dav-developer`（Gate 1 TDD / Gate 2 lint）、`dav-developer`（Gate 3 regression）、
-> `dav-developer`（Gate 1/2/3）、`dav-reviewer`（Gate 4 reviewer ＋ Gate 4.5 需求對帳，**人手觸發**）。
->
-> **沒有指定要用哪道 Gate 時，預設就是直接做**：不跑流程、不建 backlog、不寫交付摘要。
-> 只有當任務真的需要（要寫 code、要改 SOP／契約、或你明示要走正式流程）才進對應的 Gate。
->
-> 完整說明在 `docs/sop/handbook/`（按需查，非必讀）；機器可讀的 Gate 定義在 `docs/sop/gates.json`。
+> 流程同 Gate **唔喺這裡** —— 佢哋寫喺**各自承載它的 skill** 入面，被觸發時才讀。
+> **冇指定要用哪道 Gate 時，預設就係直接做**：唔跑流程、唔建 backlog、唔寫交付摘要。
 
 ## §1 萬事原則（必讀，行為的基礎）
 
@@ -27,20 +20,13 @@
 
 - **V01 — 一次一個問題**：每輪對話最多問 1 個問題（同一主題）。
 - **V02 — 方案必標推薦**：給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：…」。
-- **V03 — 改規範按內容分流**（2026-10-28 改版：純 markdown 文件改動唔再二審）：
-  - **只改 markdown 文件**（SOP／`AGENTS.md`／handbook／skill 內文／一般 `.md`）→ **唔使二審**，
-    只自查**行數上限**：skill 主檔 ≤50 行（硬）、支援子檔 ≤150 行（硬）、
-    單 skill context ≤400 行（硬；`example`／`template`／`fixture`／`PoC` 檔除外），
-    細則見 `skills/dav-skill-creater/editor-guide.md`「文檔行數限制」；非 skill 文件無硬上限。
-  - **改到代碼／契約／探針**（python／shell／`.bats`／`gates.json`／其餘非 markdown 檔如
-    `.html`／`.json`／`.yaml`／`.tsv` 等）→ **走原二審**：先經獨立 Reviewer subagent
-    （`/skill:dav-developer`）二審：附**風險分級** + **跨 SOP 一致性檢查**；
-    用戶收到「diff + verdict」兩者並呈後，可明確說「跳過 Reviewer」直接批准。
-  - **例外（規則語意自指防線）**：命中以下任一 → 一律走二審，唔可以靠改文件繞過：
-    ① `AGENTS.md` §1.5（行為紀律）段；② `docs/sop/handbook/**`；③ `docs/sop/gates.json`；
-    ④ `skills/*/SKILL.md` 嘅「規則 / 例外 / 限制」段同「Gate 定義」段；
-    ⑤ skill 內嘅契約／門檻子檔（檔名含 `contract` / `rules` / `naming`）；
-    ⑥ 其他 markdown 改到「必須／唔准／門檻／應／須／不得／只可／必填」等要求 → 一律當規範語意（fail-closed）；
-    只係說明／範例／註解／typo → 仍屬文件分支。
-  - 同一改動同時碰文件同代碼 → 一律當**代碼分支**；探針屬代碼分支（「條件放寬」判準見 editor-guide.md）。
-  這條**不增加一般任務的步驟**——只有動到規範本身時才觸發；其餘**非規範語意**嘅文件改動零步驟。
+- **V03 — 改規範自查行數**（2026-10-28 改版：**取消二審**）：
+  - 改任何 skill 規格／契約／探針 → 只自查**行數上限**：skill 主檔 ≤50 行（硬）、支援子檔 ≤150 行（硬）、
+    單 skill context ≤400 行（硬；`example`／`template`／`fixture`／`PoC` 檔除外），細則見
+    `skills/dav-skill-creater/editor-guide.md`「文檔行數限制」。
+  - **代碼／契約嘅品質把關 → 走對應 skill 嘅 Gate**（唔另開一道二審）：代碼改動 → `dav-developer`
+    Gate 1（TDD）／Gate 2（lint）／Gate 3（回歸）；用戶叫 review 先做 `dav-reviewer` Gate 4（品質審核）
+    ＋ Gate 4.5（需求對帳）。
+  - 純 markdown 改動 → 零額外步驟（自查行數就夠）。
+  - **點解取消二審**：二審本身係「針對代碼開發」嘅品質閘 → 已經由上面兩個 skill 嘅 Gate 承載；
+    AGENTS.md 再寫一道二審，只會同 `dav-developer` skill 撞（重複要求 ＋ 指標指錯 skill）。

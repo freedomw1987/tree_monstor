@@ -117,14 +117,12 @@ description: |
 ```text
 ~/.claude/
 ├── CLAUDE.md        ← wrapper，用 @ 引用 tree_monstor 的 AGENTS.md / SOUL.md
-├── skills/          ← per-skill symlink（merge，保留你原有的 skills）
-└── sop/             ← gates.json / gates.schema.json / handbook/*.md（per-file symlinks）
+└── skills/          ← per-skill symlink（merge，保留你原有的 skills）
 
 ~/.pi/
 ├── agent/
 │   ├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink)
 │   └── skills/   ← per-skill symlink（merge，保留你原有的 skills）
-└── sop/          ← 同 ~/.claude/sop/（gates + handbook，per-file symlinks）
 
 ~/.qoder/
 ├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink，Qoder CLI 使用者層記憶)
@@ -137,6 +135,11 @@ description: |
 └── skills/...
 ```
 
+> **2026-10-28：`sop/` 目錄已取消**（`~/.claude/sop/`、`~/.pi/sop/`）—— Gate 定義同 SOP 各階段規則
+> 已經喺**各自承載它嘅 skill** 入面（`skills/dav-developer/gates.md`、`skills/dav-reviewer/gates.md` 等），
+> 所以唔再需要另裝一份 `gates.json`／handbook。舊版本裝過嘅 `sop/` 會留低死連結，
+> 用 `./install.sh --uninstall` 會清走（你自己放落去嘅檔案會保留）。
+
 ### 專案層安裝（`--local` 或 `--target <path>`）
 
 ```text
@@ -144,13 +147,11 @@ description: |
 ├── AGENTS.md → <tree_monstor>/AGENTS.md   (symlink；Qoder CLI 與 IDE 都讀)
 ├── .claude/
 │   ├── CLAUDE.md
-│   ├── skills/   ← per-skill symlink（merge，保留你原有的 skills）
-│   └── sop/      ← gates + handbook symlinks
+│   └── skills/   ← per-skill symlink（merge，保留你原有的 skills）
 ├── .pi/
 │   ├── agent/
 │   │   ├── AGENTS.md → <tree_monstor>/AGENTS.md
 │   │   └── skills/   ← per-skill symlink（merge，保留你原有的 skills）
-│   └── sop/      ← gates + handbook symlinks
 ├── .qoder/
 │   ├── skills/   ← per-skill symlink（Qoder IDE 與 CLI 都讀）
 │   └── agents/   ← per-file symlink

@@ -94,6 +94,10 @@ D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-reconciler/SKILL.md#2026-1
 D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-reconciler/examples.md#2026-10-28 dav-reconciler skill 改名為 dav-reviewer（Gate 4 ＋ Gate 4.5 合併、人手觸發）；交付摘要寫於改名前（內容完整保留在 git history）
 D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-reconciler/scripts/check-doc-drift.py#2026-10-28 dav-reconciler skill 改名為 dav-reviewer（Gate 4 ＋ Gate 4.5 合併、人手觸發）；交付摘要寫於改名前（內容完整保留在 git history）
 #
+# 2026-10-28 SOP 退役：`docs/sop/`（handbook ＋ gates.json 副本）已刪 —— 規則搬入各自承載它嘅 skill
+# → 交付摘要提到嘅舊路徑已搬／已刪（歷史交付摘要為 append-only，不回改）
+D4#2026-10-28-tmo-089-091-backlog-close.md:docs/sop/handbook/2.3-execution.md#2026-10-28 `docs/sop/` 退役：SOP 各階段規則搬入各自承載它嘅 skill（§2.3 執行 → skills/dav-developer/execution.md ＋ gates.md）；該檔已刪，歷史交付摘要為 append-only、不回改
+#
 # 2026-10-28 skill 合併：dav-submitter skill 併入 dav-reviewer skill
 # → 子檔搬到 skills/dav-reviewer/（見 git history）；交付摘要提到嘅舊路徑已搬
 D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-submitter/SKILL.md#2026-10-28 dav-submitter skill 併入 dav-reviewer（主檔合併後刪除）；交付摘要寫於合併前（內容完整保留在 git history）

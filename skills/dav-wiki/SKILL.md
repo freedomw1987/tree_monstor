@@ -10,7 +10,7 @@ description: >-
 1. **做什麼**：把任何來源（純文字／Office／網頁／OCR／字幕）統一轉成 Markdown 知識庫（存 `docs/wiki/` ＋ 概念入 `docs/concepts/`），可用 Obsidian `[[xxx]]`
 交叉引用。
 2. **何時觸發**：用戶給文件要轉 wiki／給網址要收錄／批次處理多份文件／更新既有 wiki。
-3. **預設 SOP 路徑**：§2.3 執行（無單獨 SOP Gate，由同套 `dav-planner` skill 啟動後調用）。
+3. **預設 SOP 路徑**：執行（無單獨 SOP Gate，由同套 `dav-planner` skill 啟動後調用）。
 4. **關鍵紀律**：V01 一次只問一個問題；V02 多選必標推薦（放第一）；純文字引用（skill 內不放跨檔 markdown 連結）；Trust 整合（`/trust <內容>` → 同套 `dav-trust` skill
 自主模式）。
 5. **必產出物**：`docs/wiki/{category}/{YYYY-MM}/{title}.md` ＋ `docs/concepts/{slug}.md` ＋ 更新

@@ -9,7 +9,7 @@ description: >-
 ## TL;DR
 1. **做什麼**：提煉可重複應用嘅概念 → 產出新 skill（frontmatter + 4 段導航）→ 存進 `skills/<name>/SKILL.md`；**亦係「修改既有 skill」嘅規範權威**（v2.3）。
 2. **何時觸發**：用戶話「做 skill」／對話出現可重複應用嘅模式；或**任何** `skills/<name>/SKILL.md` 被改動。
-3. **預設 SOP 路徑**：§2.6 一般任務（skill 係輔助元工具，唔使走完整 SOP）。
+3. **預設 SOP 路徑**：一般任務（skill 係輔助元工具，唔使走完整 SOP）。
 4. **關鍵紀律**：概念提煉 ≠ 操作記錄；**行數硬門檻**（主檔 ≤50／子檔 ≤150／context ≤400，樣例／模板除外）；唔記變動歷史；表格禁令；純文字引用；frontmatter 必填。
 5. **必產出物**：`skills/<name>/SKILL.md`（frontmatter + 4 段結構 + ≤50 行）＋ 必要支援子檔（每支 ≤150 行）。
 
@@ -43,4 +43,4 @@ description: >-
 
 ## 交叉引用（純文字）
 - 完整編寫準則（4 段結構、可讀性原則、反模式、純文字引用、行數限制 v2.11、表格禁令、變動歷史禁令）→ 見同套本 skill 子檔 [`editor-guide.md`](./editor-guide.md)
-- 規劃技巧（V01/V02 提問紀律）→ 見同套 dav-planner skill；SOP 完整流程（§2.1-§2.5）→ 見 monorepo 對應的 handbook 目錄
+- 規劃技巧（V01/V02 提問紀律）→ 見同套 dav-planner skill；SOP 完整流程 → 見各自承載它嘅 skill（dav-planner／dav-designer／dav-developer／dav-reviewer）

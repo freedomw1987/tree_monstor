@@ -670,7 +670,12 @@ printf "%s\n" "${a[@]}"'
   npy=$(echo "$py" | grep -c . || true)
   njs=$(echo "$js" | grep -c . || true)
   [ "$npy" -ge 25 ] || { echo "FAIL: 只列舉到 $npy 支 .py（<25）→ 列舉器壞了" >&2; return 1; }
-  [ "$njs" -ge 5 ] || { echo "FAIL: 只列舉到 $njs 支 .json（<5）→ 列舉器壞了" >&2; return 1; }
+  # 2026-10-28：`docs/sop/gates.json` ＋ `gates.schema.json` 退役（Gate 定義搬入 skill）→
+  #   被追蹤嘅 .json 由 7 支跌到 4 支 → 下限由 5 收窄到 4（仍然捉得到「列舉器壞咗」：壞咗會列到 0）。
+  #   再加一條「已知檔一定要列到」→ 令「只列到一部分」嘅半壞 linter 都捉得返。
+  [ "$njs" -ge 4 ] || { echo "FAIL: 只列舉到 $njs 支 .json（<4）→ 列舉器壞了" >&2; return 1; }
+  echo "$js" | grep -qF '.markdownlint.json' || {
+    echo "FAIL: 列舉器漏咗已知嘅 .markdownlint.json → lister 壞咗" >&2; return 1; }
 
   run env PYTHONDONTWRITEBYTECODE=1 python3 -c '
 import ast, json, sys

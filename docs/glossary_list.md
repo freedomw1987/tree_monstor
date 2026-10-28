@@ -13,7 +13,7 @@
 | AC（驗收條件）| 一條 US 嘅可驗收行為描述（Given-When-Then）| — |
 | Backlog（待辦清單）| 本專案所有 US／DE／TECH／Spike 嘅總表 | 待辦、任務清單 |
 | DE（Defect，缺陷）| Backlog 一類：已存在嘅錯誤行為要修 | Bug |
-| Deliverable（交付摘要）| §2.5 產出嘅交付文件（含對話摘要＋對帳段）；檔名 deliverable.md | 交付文件 |
+| Deliverable（交付摘要）| 提交階段產出嘅交付文件（含對話摘要＋對帳段）；檔名 deliverable.md | 交付文件 |
 | DoD（完成定義）| 一條 US 嘅技術視角完成清單（checklist）| — |
 | Drift（文件漂移）| 同一件事喺多份文件各說各話（漂移檢查 D1..D8）| 漂移、文件不一致 |
 | Fail-closed（失敗即閉）| 檢查件數為 0／工具壞咗都當紅，唔准靜靜哋放行 | — |
@@ -33,7 +33,7 @@
 | Reconcile（對帳）| 逐條需求句對住實作比對；產出檔＝對帳表 | reconciliation |
 | Requirement anchor（需求錨點）| 存用戶原話＋R-ID 驗收句嘅檔（全鏈路嘅根節點）；產出檔＝錨點檔 | 錨點 |
 | Requirement maturity（需求成熟度）| 寫 US 前按涵蓋率／清晰度／可行性評分 | — |
-| Second review（二審）| 規範改動涉代碼／契約／探針時必走獨立 Reviewer subagent 覆核（V03）；純 markdown 改動只自查行數上限 | Reviewer 二審 |
+| Second review（二審）| **已退役（2026-10-28）**：原本「代碼／契約／探針改動必走獨立 Reviewer subagent 覆核」嘅 V03 分流已取消；代碼品質把關而家由 `dav-developer` Gate 1/2/3 ＋ `dav-reviewer` Gate 4 承載 | Reviewer 二審 |
 | Skill（技能）| 一個可獨立安裝嘅能力包（SKILL.md ＋ 支援檔）| — |
 | SOP（標準作業流程）| 本 repo 定義嘅多階段流程（規劃→設計→執行→反省→交付）| 流程規範 |
 | Spike（研究項）| Backlog 一類：先研究／驗證，唔直接交功能 | 技術研究 |
