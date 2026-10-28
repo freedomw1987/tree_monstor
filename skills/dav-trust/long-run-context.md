@@ -21,7 +21,7 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
   1. 更新 `docs/trust-log.md` 檔頭 checkpoint（見 §3）；
   2. 確保 `docs/backlog.md` 當前 row 狀態／剩餘項已寫實；
   3. 下一步避開「大字串」：唔好一次讀超長檔／貼大 log，改 `limit` 分段讀。
-- **opportunity（≥55%）＝壓縮窗口** → 揀最好邊界：完成當前 Backlog row／測試綠／checkpoint 已更新 → 呢個就係時機。唔准為咗等「更好時機」而拖；將剩低工作切成細步，令下一個邊界幾步之內就到（fuse 喺下一個模型回應前會開火）。
+- **opportunity（≥55%）＝壓縮窗口** → 揀最好邊界：完成當前 Backlog row／測試綠／checkpoint 已更新。唔准為咗等「更好時機」而拖；剩低工作切細，令下個邊界幾步內就到（fuse 喺下個回應前開火）。
 - **hard（≥60%）＝死線＋警報** → fuse 理應已喺窗口內開火；仍然見到 60% 代表 `reserveTokens` 太遲 → 收尾 ＋ 喺 trust-log 記低（唔問用戶），退出後提示改設定。
 - **unknown（剛壓縮完，`percent` 讀到 null）** → 唔准當「已回落」；下一輪模型回應後即刻再量一次。
 
@@ -52,11 +52,12 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
 
 ## §5 subagent 派工（trust mode 常用）
 
-- **優先用現成 agent**：`agent: dav-long-run`（repo `agents/dav-long-run.md`，`tools` 已含 `ctx_status` ＋ 內建交接筆記模板）→ 佢自己會量 zone、soft 寫筆記、hard 收尾停手。
+- **優先用現成 agent**：`agent: dav-long-run`（`agents/dav-long-run.md` 含 `ctx_status` ＋ 交接筆記模板）→ 佢自己量 zone、soft 寫筆記、hard 收尾。
 - 派長工（預計 >20 次工具呼叫／要讀多個大檔）→ Task 描述**必**寫：交付物落檔位置、checkpoint 落檔位置、「≥50% 寫 checkpoint、≥60% 收尾等原生壓縮」。
 - 有 `ctx_status` 就要求 subagent 回報時附 zone（例：「完成，ctx 42%」）；**冇**就要求佢報「大概做咗幾多輪工具呼叫」＋ 主動寫 checkpoint。
-- 前台 subagent **唔會**自動載入全域 extension，`tools` 亦係嚴格 allowlist → 想佢自己量度，要喺 agent frontmatter 加 `extensions:` 同 `tools: [..., ctx_status]`（陷阱細節 → 同套 `dav-self-compact` 嘅 `protocol.md` §7）。
-- **實測**：一次性 subagent 嘅被動提示唔會觸發（run 開始時 usage 未知）→ 子 agent 一定係「有 tool 就主動 call、冇 tool 就靠 Task 指令寫 checkpoint」兩種情況，唔存在「佢自己會知」。
+- 前台 subagent **唔會**自動載入全域 extension，`tools` 亦係嚴格 allowlist → 想佢自己量度，要喺 agent frontmatter 加
+  `extensions:` 同 `tools: [..., ctx_status]`（陷阱細節 → 同套 `dav-self-compact` 嘅 `protocol.md` §7）。
+- **實測**：一次性 subagent 嘅被動提示唔會觸發（usage 未知）→ 子 agent 一定係「有 tool 就主動 call、冇 tool 就靠 Task 指令寫 checkpoint」，唔存在「佢自己會知」。
 - 冇 `ctx_status` 就靠 fallback：**每個 Backlog 完成即寫 checkpoint**，唔好等 context 爆。
 
 ## §6 trust mode 必須遵守 dav-self-compact（唔准拒絕壓縮）
@@ -66,4 +67,5 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
 - **到 hard（≥60%）**：① 停新工作 ② 更新 checkpoint ③ 喺 trust-log 記「fuse 太遲」④ 等原生壓縮，唔准繼續燒 context。
 - **為什麼壓縮唔會令 trust 失控**：真相來源係檔（trust-log checkpoint ＋ backlog row），唔係對話記憶；壓縮後第一件事就係讀返 checkpoint 續跑（`resume.md` §2）。
 - **機械後盾**：`skills/dav-trust/extension/` 每次 run 開始驗 fuse（太遲 → 注入警告 ＋ 通知用戶），hard 區每輪注入強制指令（首次即出，之後每 5 輪）。
-- **啟動前必驗 fuse**（Step 1 檢查項）：`ctx_status` 要顯示 `native auto-compaction fires at … = inside the opportunity window`；唔對 → **先修** `~/.pi/agent/settings.json`（`reserveTokens = contextWindow − opportunityTokens`）再啟動 trust，唔好帶住一個「唔會自動壓縮」嘅環境跑長任務。
+- **啟動前必驗 fuse**（Step 1 檢查項）：`ctx_status` 要顯示 `native auto-compaction fires at … = inside the opportunity window`；唔對 →
+  **先修** `~/.pi/agent/settings.json`（`reserveTokens = contextWindow − opportunityTokens`）再啟動 trust，唔好帶住「唔會自動壓縮」嘅環境跑長任務。

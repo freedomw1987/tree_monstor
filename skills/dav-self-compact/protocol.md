@@ -4,7 +4,8 @@
 
 - 呼叫 `ctx_status`，讀 `zone` 同 `action`：`keep_working` / `prepare_then_compact` / `compact_now`。
 - 冇 `ctx_status` 工具（前台 subagent 未掛 extension）→ 叫父 agent 幫手查，或者問用戶睇 pi footer；兩樣都冇就當 soft 區保守處理。
-- **footer 嘅 % 唔可以直接用**：footer 用真實窗口做分母。設咗 `absoluteCapTokens: 200000`（窗口 1M）時，hard block 係 120k tokens ＝ footer 12%；footer 顯示 30% 其實已經係 300k，早已過 hard。
+- **footer 嘅 % 唔可以直接用**：footer 用真實窗口做分母。設咗 `absoluteCapTokens: 200000`（窗口 1M）時，hard block 係 120k tokens ＝ footer 12%；
+  footer 顯示 30% 其實已經係 300k，早已過 hard。
 - **唔好每個工具呼叫都查**；查嘅時機：進入新階段、連續 20＋ 次工具呼叫、覺得「唔記得早前做咗乜」、或者見到注入提示。
 - **里程碑訊息**：跨過 20%／40%／60% 會自動印一條（使用率 ＋ zone ＋ 要做乜）—— 見到就順手對一次自己嘅判斷，唔需要另外查。
 - `zone=unknown` = 剛剛壓縮完、未有新模型回應 → 唔係錯誤，等下一輪再查。
@@ -63,7 +64,8 @@
 1. **唔准開新嘅大範圍工作**（大讀取／大重構／新 Backlog）；將剩低工作切成細步，令「好邊界」盡快出現。
 2. **主動造出好邊界**：收尾當前步驟 → 更新筆記 → 呢一輪就係邊界。
 3. **互動 session**：喺邊界主動叫用戶打 `/compact`（呢個係唯一可以由你揀時機嘅做法；講明「而家係好時機：本階段已完成 ＋ 筆記已更新」）。
-4. **非互動 session（trust mode／subagent）**：你冇手掣可以按 —— 交俾 fuse。pi 喺「工具批次完、下一個 assistant 回應之前」檢查門檻，所以**只要保持每步細，下一個邊界就喺幾步之內**，fuse 自然喺窗口內開火。
+4. **非互動 session（trust mode／subagent）**：你冇手掣可以按 —— 交俾 fuse。pi 喺「工具批次完、
+   下一個 assistant 回應之前」檢查門檻，所以**只要保持每步細，下一個邊界就喺幾步之內**，fuse 自然喺窗口內開火。
 5. **壓縮後**：下一輪回應之後 `ctx_status` 驗證（§6）。
 
 ### §4.3 為何唔可以「再等一個更好嘅時機」
@@ -75,7 +77,8 @@ fuse 係 token 門檻，唔識分辨好唔好嘅時機；拖得越久，越可�
 1. **唔准開新工作**：只做緊嗰個步驟收尾（如果係不可中斷嘅寫檔／部署，就等佢完成）。
 2. **收尾即更新交接筆記**（§3）。
 3. **停手交俾原生壓縮**：pi 喺下一個 assistant 回應之前（`prepareNextTurn`）見到門檻就會自動壓縮，壓縮完繼續跑 —— 你只需要「唔再開新工作」。
-4. **見到 hard 就係警報**：正常情況 fuse 應該喺 opportunity（55%）已經開火，所以 60% 仍然見到代表 **fuse 設得太遲** → 報告 ＋ 叫用戶照 `./setup.md` §1 改 `reserveTokens`（`ctx_status` 會顯示 `⚠ …too late…` 同建議值）；唔好靜靜當無事。
+4. **見到 hard 就係警報**：正常情況 fuse 應該喺 opportunity（55%）已經開火，所以 60% 仍然見到代表 **fuse 設得太遲** → 報告 ＋ 叫用戶照 `./setup.md` §1 改
+   `reserveTokens`（`ctx_status` 會顯示 `⚠ …too late…` 同建議值）；唔好靜靜當無事。
 5. **壓縮失敗／太細**：`Nothing to compact（session too small）` = 正常（context 未超過 `keepRecentTokens`）；其他錯誤 → 報告，唔好硬 loop 重試。
 
 ## §6 壓縮後驗證
@@ -97,8 +100,11 @@ fuse 係 token 門檻，唔識分辨好唔好嘅時機；拖得越久，越可�
 ## §8 派工俾 subagent（父 agent 視角）
 
 - 帶 skill：`options: { skill: "dav-self-compact" }`（或 agent frontmatter `skills: [dav-self-compact]`）。
-- **現成方案**：repo 內 `agents/dav-long-run.md`（`tools` 已含 `ctx_status`、附交接筆記模板）→ installer 會 symlink 去 `~/.agents/`，派工直接用 `agent: dav-long-run` 就自己量得到。
-- 想自己定義 agent：agent frontmatter 加 `extensions: [<extension 目錄路徑>]`（前台 subagent 唔自動載入全域 extension；後台預設載入），**並且** `tools` 要包含 `ctx_status` —— `tools` 係嚴格 allowlist，唔列名嘅 tool 會被過濾（extension 代碼載入都冇用）。
-- 全域一次過搞掂：settings 加 `subagents.defaultSubagentOnlyExtensions: ["<路徑>"]` → 所有冇自己清單嘅 subagent 都會載入 extension（被動提示照生效；tool 仍然要入 allowlist 先 call 得到）。
+- **現成方案**：repo 內 `agents/dav-long-run.md`（`tools` 已含 `ctx_status`、
+  附交接筆記模板）→ installer 會 symlink 去 `~/.agents/`，派工直接用 `agent: dav-long-run` 就自己量得到。
+- 想自己定義 agent：agent frontmatter 加 `extensions: [<extension 目錄路徑>]`（前台 subagent 唔自動載入全域 extension；
+  後台預設載入），**並且** `tools` 要包含 `ctx_status` —— `tools` 係嚴格 allowlist，唔列名嘅 tool 會被過濾（extension 代碼載入都冇用）。
+- 全域一次過搞掂：settings 加 `subagents.defaultSubagentOnlyExtensions: ["<路徑>"]` → 所有冇自己清單嘅 subagent 都會載入 extension（被動提示照生效；
+  tool 仍然要入 allowlist 先 call 得到）。
 - Task 描述寫明三樣：**交付物邊度落檔**、**交接筆記邊度寫**、**到 50%／60% 要點做**。
 - 要求回報附 zone（例：「完成，ctx 42%」），父 agent 就知子 agent 仲有幾多氣。

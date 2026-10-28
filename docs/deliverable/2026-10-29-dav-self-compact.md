@@ -10,15 +10,21 @@
 並且可以處理 long-running 長任務。經實測後落地為 **skill（紀律）＋ extension（量尺／提醒／保險絲審核）**：
 
 - ✅ `skills/dav-self-compact/`：`SKILL.md`（46 行）＋ `protocol.md`（78）＋ `reference.md`（63）＋ `setup.md`（71）＝ context 258 行
-- ✅ `skills/dav-self-compact/extension/`：`index.ts`（`ctx_status` 工具、每輪 run 開始自動注入 zone 提示（smart 區靜默）、`/ctx` 指令、原生保險絲審核）＋ `lib/zone.ts`（純計算層，可獨立單元測試）
-- ✅ `skills/dav-self-compact/tests/zone.bats`：9 條單元測試鎖住軟／硬門檻（100k／120k）、fuse 觸發點（120k）、病態設定（reserve ≥ window）、壓縮後 `percent=null`
-- ✅ `install.sh` ＋ `lib/install/agents.sh`：新增 `install_pi_extensions`／`uninstall_pi_extensions`（skill 內附 extension 自動裝卸，唔會誤刪用戶自己嘅 extension）
-- ✅ 本機設定對齊：`compaction.modelOverrides.reserveTokens=880000`（三個 1M 模型）、`subagents.defaultSubagentOnlyExtensions`、`~/.pi/agent/dav-self-compact.json`（`absoluteCapTokens: 200000`）
-- ✅ `skills/dav-trust/long-run-context.md`（新子檔）：trust mode 長跑嘅 context 紀律（3 個量度 checkpoint、checkpoint 格式、壓縮後續跑、subagent 派工）
+- ✅ `skills/dav-self-compact/extension/`：`index.ts`（`ctx_status` 工具、每輪 run 開始自動注入 zone 提示（smart 區靜默）、`/ctx` 指令、
+  原生保險絲審核）＋ `lib/zone.ts`（純計算層，可獨立單元測試）
+- ✅ `skills/dav-self-compact/tests/zone.bats`：9 條單元測試鎖住軟／硬門檻（100k／120k）、fuse 觸發點（120k）、病態設定（reserve ≥ window）、
+  壓縮後 `percent=null`
+- ✅ `install.sh` ＋ `lib/install/agents.sh`：新增 `install_pi_extensions`／`uninstall_pi_extensions`（skill 內附 extension
+  自動裝卸，唔會誤刪用戶自己嘅 extension）
+- ✅ 本機設定對齊：`compaction.modelOverrides.reserveTokens=880000`（三個 1M 模型）、`subagents.defaultSubagentOnlyExtensions`、
+  `~/.pi/agent/dav-self-compact.json`（`absoluteCapTokens: 200000`）
+- ✅ `skills/dav-trust/long-run-context.md`（新子檔）：trust mode 長跑嘅 context 紀律（3 個量度 checkpoint、checkpoint 格式、壓縮後續跑、
+  subagent 派工）
 - ✅ `AGENTS.md` 加 **V04 長跑必守聰明區**（把「派長工要帶 skill ＋ 寫 checkpoint」變成每次載入嘅硬規則）
 - ✅ Gate 4（品質審核）＋ Gate 4.5（需求對帳）由獨立 subagent 完成；F1–F7 全部處理
 
-**關鍵數字（本機設定）**：有效窗口 200k → soft 100k（50%）／機會窗口 110k（55%）／hard 120k（60%）；原生自動壓縮觸發點 `1,000,000 − 890,000 = 110,000` ＝ **機會窗口內**，避免拖到 hard 之後才被迫壓縮。
+**關鍵數字（本機設定）**：有效窗口 200k → soft 100k（50%）／機會窗口 110k（55%）／hard 120k（60%）；
+原生自動壓縮觸發點 `1,000,000 − 890,000 = 110,000` ＝ **機會窗口內**，避免拖到 hard 之後才被迫壓縮。
 
 ### 1.6 追加修正：trust mode 必須遵守 dav-self-compact（用戶報：到 hard block 都唔肯壓縮）
 
@@ -73,7 +79,8 @@
 用戶要求：agent／subagent 應該喺 soft／hard 之間**揀最好時機**壓縮，盡量避免過了 hard 才被迫壓。
 
 - 新增 **opportunity（機會窗口）** 區間（默認 55%），四區變成 smart／soft／opportunity／hard
-- **fuse 對齊改為 opportunity**（`reserveTokens = window − opportunityTokens`，本機 890000）：pi 喺「工具批次完、下一個 assistant 回應之前」檢查，所以壓縮一定落喺機會窗口內嘅安全邊界
+- **fuse 對齊改為 opportunity**（`reserveTokens = window − opportunityTokens`，本機 890000）：pi 喺「工具批次完、
+  下一個 assistant 回應之前」檢查，所以壓縮一定落喺機會窗口內嘅安全邊界
 - **hard 由「觸發點」改為「死線＋警報」**：正常唔應該見到；見到代表 fuse 太遲，要報告
 - `protocol.md` §4 新增「揀最好時機」程序：**好邊界清單**（原子步驟完成／測試綠／筆記已更新／冇不可中斷動作）＋ 窗口內「切成細步令邊界盡快到」＋ 互動 session 主動叫用戶 `/compact`
 - fuse 審核改為「早過 soft（太早）／遲過 opportunity（太遲）都出 ⚠ ＋ 建議值」
@@ -81,7 +88,8 @@
 ### 1.2 為什麼做這個改動
 
 - **問題／脈絡**：LLM 嘅有效注意力遠低於 window 上限；1M 窗口用咗 50%＝500k tokens 時，模型早已「唔聰明」，但 pi 默認 `reserveTokens=16384` 要 98.4% 才壓縮。
-- **為什麼選這個解法**：實測證明「模型自己叫 compact」喺 pi 1.4.0 唔可行（`compact()` 先 `abort()` → 連 summarization 一齊 abort；`agent_end` 內 await 會死鎖；`setTimeout` 延後會 ctx stale）。所以硬保險絲交俾 pi 原生自動壓縮（run 中途 `prepareNextTurn` 觸發並繼續跑），skill 只負責「量度 → 判定 → 準備（交接筆記）」。
+- **為什麼選這個解法**：實測證明「模型自己叫 compact」喺 pi 1.4.0 唔可行（`compact()` 先 `abort()` → 連 summarization 一齊 abort；`agent_end` 內 await
+  會死鎖；`setTimeout` 延後會 ctx stale）。所以硬保險絲交俾 pi 原生自動壓縮（run 中途 `prepareNextTurn` 觸發並繼續跑），skill 只負責「量度 → 判定 → 準備（交接筆記）」。
 - **成功怎麼看**：`ctx_status` 回傳得到 zone／action／fuse 狀態；zone 離開 smart 後每輪自動注入；原生壓縮觸發點與 hard block 一致；文件講清「唔准假報已 compact」。
 
 ## 2. 做了什麼改動
@@ -152,9 +160,11 @@
 ### 3.1 需求對帳（Gate 4.5 產物）
 
 - 對帳者: 獨立 Reviewer subagent（未參與實作；2026-10-29）
-- 覆蓋率: **7 / 7（100%）**；對帳時 R1／R4 標「部分」，兩條已於第二輪補齊（R4 → F3 修正 ＋ zone.bats Z4；R1 → AGENTS.md V04 ＋ dav-trust §5 ＋ defaultSubagentOnlyExtensions）
+- 覆蓋率: **7 / 7（100%）**；對帳時 R1／R4 標「部分」，兩條已於第二輪補齊（R4 → F3 修正 ＋ zone.bats Z4；
+  R1 → AGENTS.md V04 ＋ dav-trust §5 ＋ defaultSubagentOnlyExtensions）
 - 對帳員原話（摘要）：「7/7 需求錨點都有落地證據（覆蓋率 100%）；R1、R4 標 ⚠️ 部分…冇任何 ❌。Merge verdict: OK with notes」
-- 對帳員提出嘅 P1 兩條：F1（`changes.patch` 與 working tree 不符 → 已重出 diff，714 行 9 個檔）、F2（50%／60% 基準未講清 → 已在 `SKILL.md` Step 2 ＋ `protocol.md` §1 補「百分比按有效窗口計／footer % 唔可以直接用」）
+- 對帳員提出嘅 P1 兩條：F1（`changes.patch` 與 working tree 不符 → 已重出 diff，714 行 9 個檔）、
+  F2（50%／60% 基準未講清 → 已在 `SKILL.md` Step 2 ＋ `protocol.md` §1 補「百分比按有效窗口計／footer % 唔可以直接用」）
 
 ## 4. 測試結果
 
@@ -186,9 +196,11 @@
 
 ### 6.1 立即可做（建議優先）
 
-0. **觀察機會窗口嘅實際落點**：真跑一個長任務，睇 `zone=opportunity` 出現之後幾多個回合內 fuse 開火；如果經常落到 `hard`，代表 `opportunityPercent` 要再校（或 `keepRecentTokens` 太大）。
+0. **觀察機會窗口嘅實際落點**：真跑一個長任務，睇 `zone=opportunity` 出現之後幾多個回合內 fuse 開火；
+   如果經常落到 `hard`，代表 `opportunityPercent` 要再校（或 `keepRecentTokens` 太大）。
 
-1. **`AGENTS.md` 加一條硬規則：派 long-running subagent 必須帶 `skill: dav-self-compact` 並要求回報 zone** —— 補 R1 subagent 側嘅唯一缺口（依家只有 skill 文件講，冇每次都會載入嘅規則檔講）。
+1. **`AGENTS.md` 加一條硬規則：派 long-running subagent 必須帶 `skill: dav-self-compact` 並要求回報 zone** —— 補 R1 subagent 側嘅唯一缺口（依家只有
+   skill 文件講，冇每次都會載入嘅規則檔講）。
 2. **為 extension 加一支單元測試**（export `readUsage`／`fuseNote`，用假 `ctx` 斷言 zone／fuse）—— 令 120k／880k 呢類關鍵數字有機械鎖，唔靠文件。
 3. **`ctx_compact` 類工具唔好再試**：已記錄三種失敗模式；如 pi 日後修好 `compact()` 嘅 abort 行為，再開票評估。
 
@@ -226,9 +238,12 @@
 
 ### 8.2 問題清單
 
-- ✅ [P2]（已修）Extension 計算邏輯零測試 → 以 `extension/lib/zone.ts` 抽純函式 ＋ `skills/dav-self-compact/tests/zone.bats`（`node --experimental-strip-types`）鎖住關鍵數字
-- ✅ [P2]（已修）subagent 側「自動遵守」原本只係紀律 → 加 `AGENTS.md` V04 ＋ `dav-trust/long-run-context.md` §5；餘下限制：`tools` 嚴格 allowlist 令 `ctx_status` 要顯式列名
-- ⚠️ [P1] 流程偏差：直接做 skill 冇建 US／需求錨點 → 根因：用戶即時指派、我未堅持走 `dav-planner` → 建議：下次同類「新 skill」任務先建一支 US（1 SP）再開工，令 Gate 4.5 有正式錨點
+- ✅ [P2]（已修）Extension 計算邏輯零測試 → 以 `extension/lib/zone.ts` 抽純函式 ＋
+  `skills/dav-self-compact/tests/zone.bats`（`node --experimental-strip-types`）鎖住關鍵數字
+- ✅ [P2]（已修）subagent 側「自動遵守」原本只係紀律 → 加 `AGENTS.md` V04 ＋ `dav-trust/long-run-context.md` §5；
+  餘下限制：`tools` 嚴格 allowlist 令 `ctx_status` 要顯式列名
+- ⚠️ [P1] 流程偏差：直接做 skill 冇建 US／需求錨點 → 根因：用戶即時指派、
+  我未堅持走 `dav-planner` → 建議：下次同類「新 skill」任務先建一支 US（1 SP）再開工，令 Gate 4.5 有正式錨點
 
 ### 8.3 Action Items
 

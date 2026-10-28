@@ -68,7 +68,9 @@ context 壓縮）後靠它續跑（契約見 resume.md §2）
 
 ## §6 唔准等時間（deadline 係上限，唔係要坐夠鐘）
 
-- **禁止**：`sleep` 長過 30 秒、長度證明唔到嘅 `sleep`（例：`sleep $(date +%s)`）、空轉迴圈（`while true`／`until false`）、淨係 `wait`。**機械守門**：`skills/dav-trust/extension/`（喺 trust mode 進行中擋走呢類 bash 指令，並回覆「應該點做」；門檻／開關 → `~/.pi/agent/dav-trust.json` 嘅 `maxSleepSeconds`／`enabled`）。
+- **禁止**：`sleep` 長過 30 秒、長度證明唔到嘅 `sleep`（例：`sleep $(date +%s)`）、空轉迴圈（`while true`／`until false`）、淨係 `wait`。
+  **機械守門**：`skills/dav-trust/extension/`（trust mode 中擋走呢類 bash ＋ 回覆「應該點做」；門檻 → `~/.pi/agent/dav-trust.json` `maxSleepSeconds`）。
 - **為什麼**：deadline 係「幾時一定要停」嘅授權上限；提早做完就係做完，坐夠鐘唔會多咗價值，只燒 token 同時間。
-- **提早做完嘅正確出口**：L1（下一個 PENDING）→ L2（重訪 ⏸️）→ L3（`docs/` 預先規劃擴量）；**全部耗盡** → 收斂 → 同套 `dav-reviewer` skill 交付 → 輸出 `🏁 Trust Mode 已結束（提早完成）` → 明示「已無可做工作，要繼續請重新發起」（唔需要等到 deadline，亦唔准問用戶 —— 呢個係報告唔係提問）。
-- **唯一例外**：真係等外部事件（background job／CI／port 起）→ 短 sleep（≤ 30 秒）＋ 必須講明等乜；要等好耐 → 用 `bg_wait`／subagent 或收窄 polling 上限，唔准 `sleep 3600`。
+- **提早做完嘅正確出口**：L1（下一個 PENDING）→ L2（重訪 ⏸️）→ L3（`docs/` 預先規劃擴量）；**全部耗盡** → 收斂 → 同套 `dav-reviewer` skill 交付
+  → 輸出 `🏁 Trust Mode 已結束（提早完成）` → 明示「已無可做工作，要繼續請重新發起」（唔需要等到 deadline，亦唔准問用戶 —— 呢個係報告唔係提問）。
+- **唯一例外**：真係等外部事件（CI／port 起）→ 短 sleep（≤ 30 秒）＋ 必須講明等乜；要等好耐 → 用 `bg_wait`／subagent 或收窄 polling 上限，唔准 `sleep 3600`。
