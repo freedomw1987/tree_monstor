@@ -1,8 +1,8 @@
 # Dav Reconciler — 實戰範例
 
 > 本檔示範「一次真的對帳」長什麼樣。範例資料取自 tree_monstor 自身的 TMO-071/072/073（框架層工作）。
-> ⚠️ 2026-10-28：TMO-071/072/073 嘅錨點 ＋ 對帳表已依保留策略歸檔（內容完整保留在 git history），
-> 本檔保留做**格式示範**；最新一次實際對帳 → `docs/reconcile/TMO-092-reconcile.md`。
+> ⚠️ 2026-10-28：TMO-071/072/073 ＋ TMO-092 嘅錨點 ＋ 對帳表已依保留策略歸檔（內容完整保留在 git history），
+> 本檔保留做**格式示範**；最新一次實際對帳 → `docs/reconcile/TMO-089-reconcile.md` ＋ `docs/reconcile/TMO-091-reconcile.md`。
 
 ---
 

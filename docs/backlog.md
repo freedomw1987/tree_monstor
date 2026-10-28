@@ -1,4 +1,4 @@
-# Backlog — tree_monstor 5 條優化（Trust Mode）
+# Backlog — tree_monstor 未完成項
 
 > 來源：2026-09-23 用戶對話「in tree_monstor 現在你覺得什麼地方可以優化？」→「全部 #1 至 #5 都做」
 > 模式：Trust Mode（deadline 2026-09-23 10:03）
@@ -9,12 +9,11 @@
 
 | ID | 主題 | 優先級 | 點數 | 狀態 | 依賴 |
 |----|------|--------|------|------|------|
-| TMO-054 | OpenRouter API key 輪替（人工項，僅用戶可執行）（NYH-1，2026-10-05 開票）：到… | P1 | 1 | ⏸️ 跳過（接受風險，2026-10-05） | — |
-| TMO-089 | **清 flaky ＋ 存量文件統一術語**（2026-10-27 用戶決策「做您建議的 3-> 1」）：① `tests/install-qoder.bats` QODER-30 曾偶發紅（一次全套閃紅；之後 3 次全套 ＋ 3 次單跑全綠；該次閘跑嗰陣實作者正喺同一 repo 改檔 → 最可能係工作樹被改動）→ **已加失敗時印安裝器輸出**（可診斷）＋ 記為待觀察，未當真 bug 改；② **量度後**先定範圍：live 文件「別名」寫法共 791 處，但大部份係同一概念嘅短形（錨點 131／子檔 75／trust 242⋯）→ **唔做大範圍改寫**；只統一**會指錯嘢**嘅 34 處（驗收標準→驗收條件、子關卡→子閘、mutation row→mutant row、成熟度→需求成熟度），而「Gate 語意嘅完成條件（閘）」「docs/README.md 導航結構」（另一概念）唔改；③ `docs/glossary_list.md` 詞典分兩類：**同義寫法**（可接受短形）＋ **勿用寫法**（9 條 ＋ 點解會指錯）。錨點 `docs/req/TMO-089-requirement.md`；對帳 `docs/reconcile/TMO-089-reconcile.md` | P2 | 2 | doing (2026-10-27) | TMO-088 |
-| TMO-091 | **docs 減磅 ＋ 閘提速（`--changed`）**（2026-10-27 用戶 3 條指示）：① `backlog.md` **只留未完成**（完成 row 移出 ＋ 記錄去交付摘要／需求錨點／git history），並喺**會改 backlog 嘅 skill** 寫明規範（`dav-planner` §4.5 ＋ `dav-submitter` Step 5）；② `docs/` 減磅：完成 US 嘅 ac／req／reconcile **一併**歸檔（保持 doc-drift D1/D6/D7 一致）、`prd/`（已完成專案）歸檔、`deliverable/` 只留最近一次交付（連帶引用鏈，因 D8 fail-closed 要求窗內有件可對帳）、SOP／CI／工具／術語表／設計文件 **全部保留**（ac 19→7、req 15→3、reconcile 14→3、deliverable 3→1、prd 2→0）；③ PoC 依賴嘅 AC fixture 搬入 `skills/dav-jev-oracle/PoC/fixtures/ac/` → **skill 自足**（目標專案都跑得）；④ `check-all.sh` 加 `--changed[=<base>]`：只跑受改動影響嘅探針 ＋ 收窄 mutant（閘 4 分 10 秒 → 改動範圍內 ~20-40 秒）。⚠️ 一律先 commit 入 git history 再刪（可追溯）。錨點 `docs/req/TMO-091-requirement.md`；對帳 `docs/reconcile/TMO-091-reconcile.md` | P1 | 5 | doing (2026-10-27) | TMO-090 |
+| TMO-054 | **OpenRouter API key 輪替（人工項，僅用戶可執行）**（NYH-1，2026-10-05 開票）：到 OpenRouter 撤銷舊 key、產生新 key 並更新本機 key 來源（PoC `.env` 檔，gitignore 內；或 `~/.zshrc` 環境變數）；完成後由 Agent 複驗 sha256 已變＋新值未出現在任何被追蹤檔／本輪 diff。**Agent 無法代為撤銷**（見 NYH-1）。**結案（2026-10-05）**：用戶改以系統環境變數（`~/.zshrc`）提供 key；Agent 比對該值 sha256 與 `.env` **完全相同**＝仍為原洩漏舊 key、**未輪替**。用戶決策＝**接受風險、不輪替、保留現狀**（舊 key 續用；兩處並存），故本票不處理。 | P1 | 1 | blocked (2026-10-05 接受風險；⏸️ 跳過 —— 只有用戶可執行) | — |
 
-> **本檔現況（2026-10-28 收 TMO-092 後）**：本表**只保留未完成**（todo／doing／⏸️）嘅 row；
+> **本檔現況（2026-10-28 收埋 TMO-089／TMO-091 後）**：本表**只保留未完成**（todo／doing／⏸️）嘅 row；
 > 已完成嘅 row 已移出（記錄去交付摘要 ＋ 需求錨點 ＋ git history；規則見 `skills/dav-planner/backlog-rules.md` §4.5）。
+> 收埋記錄：`docs/deliverable/2026-10-28-tmo-089-091-backlog-close.md`。
 
 ## 欄位說明
 

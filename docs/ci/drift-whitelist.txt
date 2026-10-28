@@ -80,3 +80,10 @@ D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/deliverable/2026-10-26-delivery-f
 D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/req/TMO-071-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-092（內容完整保留在 git history）
 D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/req/TMO-072-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-092（內容完整保留在 git history）
 D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/req/TMO-073-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-092（內容完整保留在 git history）
+#
+# 2026-10-28 TMO-089/091 收埋：交付摘要只留最近一次 → 舊交付摘要同上一輪引用鏈已歸檔（內容在 git history）
+D4#2026-10-28-tmo-089-091-backlog-close.md:docs/ac/TMO-089.md#2026-10-28 TMO-089 收埋：AC 檔依保留策略歸檔（Backlog row 移出 → D1 要求一併歸檔；內容完整保留在 git history，判定見對帳表同交付摘要）
+D4#2026-10-28-tmo-089-091-backlog-close.md:docs/ac/TMO-091.md#2026-10-28 TMO-091 收埋：AC 檔依保留策略歸檔（Backlog row 移出 → D1 要求一併歸檔；內容完整保留在 git history，判定見對帳表同交付摘要）
+D4#2026-10-28-tmo-089-091-backlog-close.md:docs/req/TMO-092-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-089/TMO-091（內容完整保留在 git history）
+D4#2026-10-28-tmo-089-091-backlog-close.md:docs/reconcile/TMO-092-reconcile.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-089/TMO-091（內容完整保留在 git history）
+D4#2026-10-28-tmo-089-091-backlog-close.md:docs/deliverable/2026-10-28-tmo-092-jev-oracle-split.md#2026-10-28 交付摘要只留最近一次：舊摘要已歸檔（內容完整保留在 git history）
