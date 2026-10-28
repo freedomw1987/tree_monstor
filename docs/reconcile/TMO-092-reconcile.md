@@ -12,7 +12,10 @@
 ## 結論
 
 - 全部已實作（1/1；0 項部分實作、0 項未實作、0 項已作廢）
-- 對帳者備註: R1 三個條件逐條以工作樹實況核對通過（1,208／1,569 行數、48 檔 PoC、4 支探針、死引用掃描均有本人覆核）；但 AC DoD「閘 11 步全綠」在工作樹內無可查證據（對帳者無 shell 權限、未實跑），且二審末輪 verdict 係 BLOCK、其唯一 P1 係修好之後、無第三輪覆核記錄 —— 交付摘要若標「✅ 完成」宜附此兩點。
+- 對帳者備註: R1 三個條件逐條以工作樹實況核對通過（1,208／1,569 行數、48 檔 PoC、4 支探針、
+  死引用掃描均有本人覆核）；但 AC DoD「閘 11 步全綠」在工作樹內無可查證據（對帳者無 shell 權限、
+  未實跑），且二審末輪 verdict 係 BLOCK、其唯一 P1 係修好之後、無第三輪覆核記錄 ——
+  交付摘要若標「✅ 完成」宜附此兩點。
 
 ## R1 三個條件逐條判定
 
@@ -47,10 +50,15 @@
 ## 對帳後續處理（supervisor，2026-10-28；對帳結論本身未改）
 
 - **README §Skills 表漏格**（對帳備註②）→ 已補：`README.md` 加 `dav-jev-oracle` 一行 ＋ 標題句「13 個 skill」→「11 個 skill」（`skills/` 實際 11 個目錄）。
-- **二審末輪 P1**（`docs/ac/TMO-091.md:29`、`docs/reconcile/TMO-091-reconcile.md:14`、`docs/ac/README.md:25` 三處舊路徑）→ 已修（改指 `skills/dav-jev-oracle/PoC/fixtures/ac/`，並保留「拆分前路徑」歷史註明）＋ 第三輪窄幅覆核。
-- **刻意保留不修**：`skills/dav-jev-oracle/PoC/playwright_observer.py:38` 嘅 USER_AGENT `dav-developer-jev-poc/3.1`（UA 係對外協議值，改動會改 UA 行為，無下游需求唔亂改）；`X-Title: dav-developer-jev-*` 三個協議標頭值同樣唔改。
+- **二審末輪 P1**（`docs/ac/TMO-091.md:29`、`docs/reconcile/TMO-091-reconcile.md:14`、
+  `docs/ac/README.md:25` 三處舊路徑）→ 已修（改指 `skills/dav-jev-oracle/PoC/fixtures/ac/`，
+  並保留「拆分前路徑」歷史註明）＋ 第三輪窄幅覆核。
+- **刻意保留不修**：`skills/dav-jev-oracle/PoC/playwright_observer.py:38` 嘅 USER_AGENT
+  `dav-developer-jev-poc/3.1`（UA 係對外協議值，改動會改 UA 行為，無下游需求唔亂改）；
+  `X-Title: dav-developer-jev-*` 三個協議標頭值同樣唔改。
 - **已知待辦（唔阻本次交付，另開票跟）**：
   - `ENV-EQ-21` 只做結構檢查、唔係真 YAML parse（block scalar body 縮排／value 內含 `": "` 有假綠窗口）
   - `skills/dav-developer/tests/skill-contract.bats` SD-6 只驗 3 個路徑存在，未逐個驗 4 支探針同 4 支子檔
   - `skills/dav-developer/develop.md` 仍留 62 行「jev 整合細節」（講 `jev-use` CLI 流程，已加指標指去 `dav-jev-oracle`）
-  - `docs/cleanup/cleanup-scan.py` 嘅 `**/dav-jev-oracle/**` 只覆蓋一層（Python ≤3.12 `PurePath.match` 唔支援 recursive `**`；本機 3.14 正常）
+  - `docs/cleanup/cleanup-scan.py` 嘅 `**/dav-jev-oracle/**` 只覆蓋一層
+    （Python ≤3.12 `PurePath.match` 唔支援 recursive `**`；本機 3.14 正常）

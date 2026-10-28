@@ -20,8 +20,10 @@
 
 ### 2.1 新增檔案
 
-- `skills/dav-jev-oracle/`：獨立 skill（主檔 ＋ `jev-oracle.md`／`examples.md`／`api-contract.md`／`output-format.md` ＋ `PoC/` ＋ `tests/` 4 支探針）
-- `skills/dav-developer/tests/skill-contract.bats`：7 條結構契約（4 段導航／150 行上限／指標可達／Step 順序／Jev 邊界／`dav-jev-oracle` 自足／4 道 Gate 齊）
+- `skills/dav-jev-oracle/`：獨立 skill（主檔 ＋ `jev-oracle.md`／`examples.md`／`api-contract.md`／
+  `output-format.md` ＋ `PoC/` ＋ `tests/` 4 支探針）
+- `skills/dav-developer/tests/skill-contract.bats`：7 條結構契約（4 段導航／150 行上限／指標可達／
+  Step 順序／Jev 邊界／`dav-jev-oracle` 自足／4 道 Gate 齊）
 - `docs/req/TMO-092-requirement.md`：需求錨點（用戶原話 ＋ 驗收句）
 - `docs/ac/TMO-092.md`：AC 範本（AC01–AC05 ＋ DoD）
 - `docs/reconcile/TMO-092-reconcile.md`：需求對帳表（Gate 4.5 產物）
@@ -30,7 +32,9 @@
 
 - `skills/dav-developer/SKILL.md`（收窄成 4 步 ＋ 指標去 `dav-jev-oracle`）、`skills/dav-developer/develop.md`（jev 整合段加指標、刪孤兒小標）
 - `skills/dav-skill-creater/editor-guide.md`（baseline ratchet 表 ＋ 量法改 `git ls-files` 口徑 ＋ 存量例外登記 ＋ 探針比照 V03 路徑補 `skills/*/tests/**`）
-- `.github/workflows/ci.yml`、`scripts/check-all.sh`、`scripts/ci/mutant-must-die.py`、`scripts/ci/mutants.tsv`、`.gitignore`、`tests/env-equivalence.bats`、`tests/secret-masking.bats`、`tests/mutant-must-die.bats`（路徑搬遷 ＋ `ENV-EQ-21`）
+- `.github/workflows/ci.yml`、`scripts/check-all.sh`、`scripts/ci/mutant-must-die.py`、
+  `scripts/ci/mutants.tsv`、`.gitignore`、`tests/env-equivalence.bats`、
+  `tests/secret-masking.bats`、`tests/mutant-must-die.bats`（路徑搬遷 ＋ `ENV-EQ-21`）
 - `docs/ci/dav-jev-oracle.md`（由原 docs/ci/dav-developer-jev-poc.md rename）、`docs/install-reference.md`、`docs/ac/README.md`、`docs/ac/TMO-091.md`、`docs/reconcile/TMO-091-reconcile.md`（舊路徑死引用修正）
 - `docs/cleanup/cleanup-scan.py`（保護清單加 `**/dav-jev-oracle/**`、刪死規則 `**/dav-developer/PoC/prompts/**`）
 - `README.md`、`CONTRIBUTING.md`、`docs/backlog.md`、`docs/glossary_list.md`、`docs/system-design.md`（導航 ＋ 術語 ＋ 規則同步）
@@ -78,7 +82,8 @@
 - `ENV-EQ-21` 只做結構檢查、唔係真 YAML parse（block scalar body 縮排、value 內含 `": "` 有假綠窗口）→ 已記錄，另開票
 - `skills/dav-developer/tests/skill-contract.bats` SD-6 只驗 3 個路徑存在，未逐個驗 4 支探針同 4 支子檔 → 另開票
 - `skills/dav-developer/develop.md` 仍留 62 行「jev 整合細節」（講 `jev-use` CLI 流程，已加指標指去 `dav-jev-oracle`）
-- `skills/dav-jev-oracle` 3 支檔案超 300 行（`jev-oracle.md` 361／`examples.md` 334）＋ context 1,569 超 1,500 硬上限 → 依 v2.8 登記存量例外（ratchet 只可下唔可上），瘦身另開票
+- `skills/dav-jev-oracle` 3 支檔案超 300 行（`jev-oracle.md` 361／`examples.md` 334）＋ context 1,569
+  超 1,500 硬上限 → 依 v2.8 登記存量例外（ratchet 只可下唔可上），瘦身另開票
 - `PoC/playwright_observer.py` 嘅 USER_AGENT 仍係 `dav-developer-jev-poc/3.1`（UA 係對外協議值，無下游需求唔亂改）
 
 ## 6. 下一步建議
@@ -140,4 +145,6 @@
 
 ## 9. 交付後的文件保留狀態
 
-依 `skills/dav-submitter/retention.md`：交付摘要只留最近一次（本次呢份）；TMO-092 嘅**引用鏈**（`docs/req/TMO-092-requirement.md` ＋ `docs/reconcile/TMO-092-reconcile.md`）保留；已完成 US 嘅 ac／req／reconcile 其餘歸檔；`docs/backlog.md` 移出完成 row。
+依 `skills/dav-submitter/retention.md`：交付摘要只留最近一次（本次呢份）；TMO-092 嘅**引用鏈**
+（`docs/req/TMO-092-requirement.md` ＋ `docs/reconcile/TMO-092-reconcile.md`）保留；
+已完成 US 嘅 ac／req／reconcile 其餘歸檔；`docs/backlog.md` 移出完成 row。

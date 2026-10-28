@@ -73,3 +73,10 @@ D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M71.md#2026-10-27 docs
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/prd/05-delivery-fidelity.md#2026-10-27 docs 減磅：該 PRD 隨已完成專案歸檔（記錄保留在 git history）；歷史交付摘要為 append-only、不回改
+#
+# 2026-10-28 TMO-092 收尾：交付摘要只留最近一次 → 舊交付摘要同上一輪引用鏈已歸檔（內容在 git history）
+D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/ac/TMO-092.md#2026-10-28 TMO-092 收尾：AC 檔依保留策略歸檔（內容完整保留在 git history，判定見對帳表同交付摘要）
+D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/deliverable/2026-10-26-delivery-fidelity-tmo-069-071.md#2026-10-28 交付摘要只留最近一次：舊摘要已歸檔（內容完整保留在 git history）
+D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/req/TMO-071-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-092（內容完整保留在 git history）
+D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/req/TMO-072-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-092（內容完整保留在 git history）
+D4#2026-10-28-tmo-092-jev-oracle-split.md:docs/req/TMO-073-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-092（內容完整保留在 git history）
