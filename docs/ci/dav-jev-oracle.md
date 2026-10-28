@@ -1,4 +1,4 @@
-# CI Integration — dav-developer（**本機跑**）
+# CI Integration — dav-jev-oracle（**本機跑**）
 
 > **狀態**：✅ 2026-09-28 落地（commit 83336eb + workflow + 本 SOP）
 > **改動**：🔄 2026-10-27 —— **本 repo 唔再喺 GitHub Actions 跑**（用戶決策：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」）
@@ -10,19 +10,19 @@
 
 ```bash
 # 由 repo 根目錄行（runner 喺 skill 入面，跟安裝一齊到位）
-bash skills/dav-developer/PoC/run_ci.sh list          # 列 subcommand
-bash skills/dav-developer/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
-bash skills/dav-developer/PoC/run_ci.sh pipeline US-101
-bash skills/dav-developer/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
-bash skills/dav-developer/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
-bash skills/dav-developer/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
+bash skills/dav-jev-oracle/PoC/run_ci.sh list          # 列 subcommand
+bash skills/dav-jev-oracle/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
+bash skills/dav-jev-oracle/PoC/run_ci.sh pipeline US-101
+bash skills/dav-jev-oracle/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
+bash skills/dav-jev-oracle/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
+bash skills/dav-jev-oracle/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
 ```
 
 ### Subcommand 對照（原本 GH workflow 嘅 4 個 job → 而家 4 個 subcommand）
 
 | 原本 job | 而家 | 用途 | 需 API key |
 |---|---|---|---|
-| `bats` | `probes` | 跑 `skills/dav-developer/tests/v2.1-jev-poc.bats` | ❌ |
+| `bats` | `probes` | 跑 `skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` | ❌ |
 | `pipeline` | `pipeline` | 跑 `run_pipeline.sh <story>` | ✅（本機環境變數 `OPENROUTER_API_KEY`）|
 | `aggregate-matrix` | `matrix` | 跑多個 story ＋ 匯總 `matrix-summary.md` | ✅ |
 | `cleanup-scan` | `cleanup-scan` | 跑 `docs/cleanup/cleanup-scan.py` | ❌ |
@@ -140,17 +140,17 @@ CI／本機 runner 跑掛的時候，直接重現：
 
 ```bash
 # 1. 重跑探針
-bats skills/dav-developer/tests/v2.1-jev-poc.bats
+bats skills/dav-jev-oracle/tests/v2.1-jev-poc.bats
 
 # 2. 重跑 pipeline（要 OPENROUTER_API_KEY 環境變量）
 OPENROUTER_API_KEY=sk-or-v1-... \
 REGRESSION_REPORT_PATH=/tmp/debug-report \
-  bash skills/dav-developer/PoC/run_pipeline.sh US-101
+  bash skills/dav-jev-oracle/PoC/run_pipeline.sh US-101
 echo "exit: $?"
 
 # 3. 用 runner 跑（會印 verdict → rc 對照）
 OPENROUTER_API_KEY=sk-or-v1-... \
-  bash skills/dav-developer/PoC/run_ci.sh pipeline US-101
+  bash skills/dav-jev-oracle/PoC/run_ci.sh pipeline US-101
 echo "rc: $?"
 
 # 4. 檢查產物
@@ -163,7 +163,7 @@ ls -la /tmp/US-101-run.json /tmp/debug-report.{json,md}
 
 | 限制 | 影響 | 緩解 |
 |---|---|---|
-| **cleanup-scan 冇自動每週跑**（原本係 workflow 嘅 `cron` job）| 文件減法盤點要人手／自己排程先會做 | `bash skills/dav-developer/PoC/run_ci.sh cleanup-scan`；或自己用 `cron`／`launchd` 排程 |
+| **cleanup-scan 冇自動每週跑**（原本係 workflow 嘅 `cron` job）| 文件減法盤點要人手／自己排程先會做 | `bash skills/dav-jev-oracle/PoC/run_ci.sh cleanup-scan`；或自己用 `cron`／`launchd` 排程 |
 | **跨 OS／跨版本差異冇人偵測**（本機 runner 只係一部機）| 同 TMO-084 記錄嘅 CI 降級代價一致 | repo 嘅**通用** CI（`.github/workflows/ci.yml`）仍然跑（探針／lint／mutant）→ 通用部分照舊有跨環境偵測 |
 | **真 API key 只喺本機** | 冇 secret 洩漏風險，但要自己 export | `OPENROUTER_API_KEY` 放喺本機環境變數／`.env`（已 gitignore）|
 | **冇 artifact／PR comment** | 本機冇 30 天留存、唔會自動贴 PR | 報告落 `<RG_REPORT_DIR>`；要分享就直接貼檔 |

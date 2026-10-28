@@ -25,7 +25,7 @@
 
 ## 怎麼試
 
-Jev PoC 已在 `skills/dav-developer/PoC/` 跑出 M1-M5 完整 milestone，**以 `US-101` 付款頁為範例**：
+Jev PoC 已在 `skills/dav-jev-oracle/PoC/` 跑出 M1-M5 完整 milestone，**以 `US-101` 付款頁為範例**：
 
 - **`PoC/README.md`**
   - 用途：Milestone 紀錄 + 快用範例（點跑）
@@ -237,7 +237,7 @@ d = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
 
 **適用情境**：repo 文件會隨時間累積（PRD、reflection、audit trail）；定期自動掃描找出「建議刪除」的文件。
 **排程**：2026-10-27 起本 repo 唔喺 GitHub Actions 跑 → **自己排程或人手跑**
-`bash skills/dav-developer/PoC/run_ci.sh cleanup-scan`（內部行 `cleanup-scan.py --json`）。
+`bash skills/dav-jev-oracle/PoC/run_ci.sh cleanup-scan`（內部行 `cleanup-scan.py --json`）。
 
 **cleanup-scan.py 4 類**：
 
@@ -257,7 +257,7 @@ d = Σ(verdict_max - verdict_min) / (Σ verdict_max + 1)
 **為什麼不自動刪 DELETE**：可能是 audit trail｜可能是重要文件但缺交叉引用｜可能是 contributor 故意留下的 work-in-progress。
 **為什麼是 weekly 不是 daily**：文件分類變化不快；daily 太頻繁，CI minutes 浪費。
 
-**本機觸發**：`bash skills/dav-developer/PoC/run_ci.sh cleanup-scan`（2026-10-27 起本 repo 唔再喺 GitHub Actions 跑 → 冇 cron
+**本機觸發**：`bash skills/dav-jev-oracle/PoC/run_ci.sh cleanup-scan`（2026-10-27 起本 repo 唔再喺 GitHub Actions 跑 → 冇 cron
 自動跑，要自己排程或人手跑）。
 
 ## M7 修正循環補充：flaky 整合 + gh pr comment
@@ -328,8 +328,8 @@ comment 失敗不中斷 → CI 不會因 gh token 問題 block。
 ## CI 整合補充（本機跑）
 
 2026-10-27 用戶決策：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」
-→ `.github/workflows/dav-developer-jev-poc.yml` **已刪除**；原本 4 個 job 改由本機 runner
-`skills/dav-developer/PoC/run_ci.sh` 承擔：
+→ 原本嘅 GitHub Actions workflow **已刪除**；原本 4 個 job 改由本機 runner
+`skills/dav-jev-oracle/PoC/run_ci.sh` 承擔：
 
 - **`bats`**
   - 而家：`probes`
@@ -358,4 +358,4 @@ comment 失敗不中斷 → CI 不會因 gh token 問題 block。
 ⚠️ verdict 由 batch report JSON 嘅 `overall_health` 讀（`run_pipeline.sh` 嘅離開碼永遠係 0 → 捉唔到紅燈）。
 
 目標專案想自己喺 GitHub Actions 跑（secrets／branch protection）見
-[`docs/ci/dav-developer-jev-poc.md`](../../docs/ci/dav-developer-jev-poc.md)。
+[`docs/ci/dav-jev-oracle.md`](../../docs/ci/dav-jev-oracle.md)。

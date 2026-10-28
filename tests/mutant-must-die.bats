@@ -134,7 +134,7 @@ run_mmd() {
   for q in lib/install/symlink.sh \
            lib/install/logging.sh \
            install.sh \
-           skills/dav-developer/PoC/journey_runner.py; do
+           skills/dav-jev-oracle/PoC/journey_runner.py; do
     printf '%s\n' "${targets[@]}" | grep -qxF "$q" ||
       { echo "FAIL: 突變表沒有覆蓋 ${q}（TMO-070 的新護欄）" >&2; return 1; }
   done

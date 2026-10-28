@@ -133,16 +133,26 @@
 
 - **`SKILL.md`（主檔）**：**150 行**（硬上限）→ 超標必拆子檔：內容留子檔、主檔只留指標
 - **單一支援子檔**（`examples.md` / `workflow.md` / …）：**300 行**（硬上限）→ 拆成兩份，或壓成清單
-- **單一 skill 嘅 context 總量**（主檔 ＋ 全部支援 .md）：**700 行**（目標值，ratchet）
+- **單一 skill 嘅 context 總量**（主檔 ＋ 全部支援 .md）：**見下面 baseline**（ratchet，只可下唔可上）
   → 先做減法（去重 → 表格化 → 指標化），再考慮拆檔；**只可下唔可上**
 - **新增支援檔** → **新增前必先問：可唔可以合併入現有子檔？**
   （淨係新檔 ＋ 新指標 ＝ context 成本淨增）
 
-**ratchet baseline（2026-10-27 現況）**：四個大 skill 仲超 700 目標值 ——
-`dav-developer` 2,098 行（合併 tdd-test-writer ＋ dev-checker-loop ＋ regression-guard 後）｜
-`dav-submitter` 930 行（併入反省後）｜`dav-trust` 866 行｜`dav-wiki` 753 行。
-→ 呢幾個係**已記錄嘅技術債**：改佢哋之前要減，唔准再加；其餘 skill 全部 ≤ 700 ✓
-（瘦身可另開票做 —— `dav-developer` 可再拆「Jev Oracle」做獨立 skill）。
+**ratchet baseline（2026-10-27 現況）** —— 每個 skill 嘅 context 行數上限（只可下唔可上）：
+
+| skill | baseline | 註 |
+|---|---|---|
+| `dav-jev-oracle` | 1,649 | Jev Oracle ＋ PoC ＋ 4 支探針（2026-10-27 由 dav-developer 拆出）|
+| `dav-developer` | 1,208 | 拆分後（拆分前 2,098 行）|
+| `dav-submitter` | 1,094 | 併入反省 ＋ retention.md 後 |
+| `dav-trust` | 1,007 | |
+| `dav-wiki` | 933 | |
+| 其餘 skill | ≤ 700 | |
+
+**點解用 baseline 而唔係一個絕對數字**：本 repo 13 個 skill 合計 ~7,500 行、平均 ~580 行；
+一個「全部 ≤700」嘅絕對規則喺內容量面前根本冇人跟得到 → **跟唔到嘅規則 = 假規則**。
+→ 改用 **ratchet**：每個 skill 有自己嘅 baseline，**只可下唔可上**；
+一個 skill 嘅 context 超過 **1,500 行**（硬上限）→ 必拆成兩個「專注一件事」嘅 skill。
 主檔 ≤150 ＋ 子檔 ≤300 兩條**硬上限現況全部守住** ✓。
 
 **點樣量**：寫完／改完跑 `wc -l skills/<name>/*.md`（主檔 ＋ 每個子檔逐個）。

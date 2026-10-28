@@ -15,7 +15,7 @@ M6.3 — 互動式 sandbox runner
     # dry-run：只算 sandbox 該做什麼、不真的 apply
     .venv/bin/python sandbox_runner.py \
       --before /tmp/before.json \
-      --file skills/dav-developer/PoC/patch_parser.py \
+      --file skills/dav-jev-oracle/PoC/patch_parser.py \
       --old "old text" --new "new text" \
       --journey journeys/US-M62.yaml \
       --story-id US-M62 \
@@ -47,7 +47,7 @@ from typing import Optional
 
 THIS_DIR = Path(__file__).parent
 POC_DIR = THIS_DIR
-REPO_ROOT = POC_DIR.parent.parent.parent  # skills/dav-developer/PoC → tree_monstor
+REPO_ROOT = POC_DIR.parent.parent.parent  # skills/dav-jev-oracle/PoC → tree_monstor
 sys.path.insert(0, str(POC_DIR))
 
 from playwright_patcher import apply_patch, rollback as patch_rollback

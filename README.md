@@ -7,7 +7,7 @@
 > `bash scripts/check-all.sh`。CI 仍然會跑（跨環境偵測用），但**唔阻 merge**。
 >
 > **dav-developer 嘅 CI 完全唔喺 GitHub 跑**（2026-10-27 用戶決策）：改用本機 runner
-> `bash skills/dav-developer/PoC/run_ci.sh all`（`probes`／`pipeline`／`matrix`／`cleanup-scan`）。
+> `bash skills/dav-jev-oracle/PoC/run_ci.sh all`（`probes`／`pipeline`／`matrix`／`cleanup-scan`）。
 
 `tree_monstor` 是給 AI coding agents（Claude Code、Pi Agent、Qoder 等）的**工作 SOP + skills**。
 本專案嘅專屬術語統一喺 [`docs/glossary_list.md`](docs/glossary_list.md)：新寫嘅文件用表內「術語」欄嘅寫法，
@@ -25,7 +25,7 @@ chmod +x install.sh        # 一次性（如果檔案沒執行權限）
 
 ```bash
 brew install bash                                # macOS 內建 /bin/bash 是 3.2；測試要 5.x（ubuntu CI 即是）
-bash skills/dav-developer/PoC/setup-venv.sh   # 建 PoC/.venv（v2.1-jev-poc.bats 的 40 條需要）
+bash skills/dav-jev-oracle/PoC/setup-venv.sh   # 建 PoC/.venv（v2.1-jev-poc.bats 的 40 條需要）
 ```
 
 少這兩步時本機會**大幅報紅且難以看懂**：缺 venv ⇒ 43 條紅；用 bash 3.2 ⇒ 部分 CJK 測試名被

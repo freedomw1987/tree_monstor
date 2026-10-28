@@ -4,8 +4,8 @@
 #
 # TMO-029：dav-developer PoC 的「可重建性」守門。
 #
-# 背景：clean clone（沒有 skills/dav-developer/PoC/.venv）時
-# `skills/dav-developer/tests/v2.1-jev-poc.bats` 裡 venv-dependent 的 **38 / 98 條**會以 `No such file or directory`
+# 背景：clean clone（沒有 skills/dav-jev-oracle/PoC/.venv）時
+# `skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 裡 venv-dependent 的 **38 / 98 條**會以 `No such file or directory`
 # (127) 失敗（其餘 60 條是純靜態檔案檢查、不需 venv），
 # repo 內卻沒有任何 requirements / setup 腳本，CI 也從未安裝 httpx / PyYAML
 # → 「怎麼把環境建起來」只存在于某人腦中。
@@ -28,7 +28,7 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
   load "$REPO_ROOT/tests/helpers/test-env"
 
-  POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
+  POC_DIR="$REPO_ROOT/skills/dav-jev-oracle/PoC"
   CI_YML="$REPO_ROOT/.github/workflows/ci.yml"
 }
 
@@ -213,7 +213,7 @@ PY
 }
 
 @test "POC-BOOTSTRAP: every venv-dependent test carries the fail-loud guard" {
-  local probe="$REPO_ROOT/skills/dav-developer/tests/v2.1-jev-poc.bats"
+  local probe="$REPO_ROOT/skills/dav-jev-oracle/tests/v2.1-jev-poc.bats"
   grep -qE 'need_poc_venv' "$probe" || {
     echo "FAIL: $probe 未使用 need_poc_venv（缺 venv 只會 127 噪音）" >&2
     return 1
@@ -317,7 +317,7 @@ PY
     echo "FAIL: ${gi} 未列 .venv/（uv 建的 venv 自帶 .gitignore(*)，python3 -m venv 的沒有）" >&2
     return 1
   }
-  run git -C "$REPO_ROOT" check-ignore -q "skills/dav-developer/PoC/.venv/bin/python"
+  run git -C "$REPO_ROOT" check-ignore -q "skills/dav-jev-oracle/PoC/.venv/bin/python"
   [ "$status" -eq 0 ] || {
     echo "FAIL: git 實際未忽略 PoC/.venv（git add -A 會誤收數千檔）" >&2
     return 1
@@ -399,7 +399,7 @@ PY
     fi
   done
   [ -n "$py" ] || {
-    echo "FAIL: 找不到含 PyYAML 的 python（本探針不做字串替代；請先跑 bash skills/dav-developer/PoC/setup-venv.sh）" >&2
+    echo "FAIL: 找不到含 PyYAML 的 python（本探針不做字串替代；請先跑 bash skills/dav-jev-oracle/PoC/setup-venv.sh）" >&2
     return 1
   }
 

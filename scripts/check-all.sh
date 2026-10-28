@@ -123,12 +123,12 @@ EOF
     venv) cat <<'EOF'
 set -euo pipefail
 # 已存在而且 import 得 → 唔重裝（省時間，亦令離線機唔使為咗「確認」而下網）
-VENV="skills/dav-developer/PoC/.venv"
+VENV="skills/dav-jev-oracle/PoC/.venv"
 if [ -x "$VENV/bin/python" ] && "$VENV/bin/python" -c 'import httpx, yaml' >/dev/null 2>&1; then
   echo "OK: PoC venv 已存在而且依賴齊（唔重裝）"
   exit 0
 fi
-bash skills/dav-developer/PoC/setup-venv.sh
+bash skills/dav-jev-oracle/PoC/setup-venv.sh
 EOF
       ;;
     bats)         printf '%s\n' 'set -euo pipefail' 'bats tests/' ;;   # --changed 會另外收窄

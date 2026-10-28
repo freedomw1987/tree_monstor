@@ -289,13 +289,13 @@ bats --version                           # 應顯示 Bats 1.14.0
 
 ### 跑全套測試前：建 Jev PoC venv（必需）
 
-`skills/dav-developer/skills/dav-developer/tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
+`skills/dav-developer/skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
 靜態檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時
 這批案例會全紅，而且每一條失敗測試各自印出修復指令（TMO-038 起該名單由探針自動列舉，不再硬編；
-**確切條數以 `bats --count skills/dav-developer/tests/v2.1-jev-poc.bats` 為準**）：
+**確切條數以 `bats --count skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 為準**）：
 
 ```bash
-bash skills/dav-developer/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
+bash skills/dav-jev-oracle/PoC/setup-venv.sh        # 有 uv 用 uv，否則 python3 -m venv
 ```
 
 skill 自帶探針（`skills/*/tests/*.bats`）**不在** `bats tests/` 內，要自己跑；它們預設掃
@@ -307,12 +307,12 @@ bats skills/*/tests/*.bats
 
 CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
-> **clean clone（無 venv）會有一批紅**（確切條數 = `bats --count skills/dav-developer/tests/` 減去實跑 `ok`，隨新增探針變動）：
+> **clean clone（無 venv）會有一批紅**（確切條數 = `bats --count skills/dav-jev-oracle/tests/` 減去實跑 `ok`，隨新增探針變動）：
 > - `v2.1-jev-poc.bats` 的 venv-dependent 子集
 > - `poc-clean-clone.bats`（CLEAN-POC-f/i，整檔離線重跑也要 venv）
 > - `env-equivalence.bats`（ENV-EQ-7 網路黑洞下的 oracle 子集）
 > - `poc-bootstrap.bats`（**只在缺 PyYAML 的機器上紅**：TMO-038 的 CI 契約語意斷言用 PyYAML 解 workflow）
-> 全部都是**紅＋修復指令**（不 skip）；`skills/dav-developer/tests/poc-bootstrap.bats` 那條是刻意取捨：
+> 全部都是**紅＋修復指令**（不 skip）；`skills/dav-jev-oracle/tests/poc-bootstrap.bats` 那條是刻意取捨：
 > 字串比對看不到 trigger／步驟先後／矩陣，而 CI 的執行次序保證了 venv 先建好。
 
 ### 環境等價探針（TMO-041）
@@ -358,7 +358,7 @@ CI（`.github/workflows/ci.yml`）也在 `bats tests/` 前跑同一支腳本。
 
 CI 的 bats-core 已釘版：兩個 runner 都 `git clone --branch v1.14.0`＋`install.sh /usr/local`
 （apt 的 bats 與 brew 的 bats-core 版本會漂移，`@test` 名稱／旗標行為跟著變），契約由
-`skills/dav-developer/tests/poc-bootstrap.bats` 的 PyYAML 語意斷言鎖住（兩平台同 tag、`>= v1.14.0`）。
+`skills/dav-jev-oracle/tests/poc-bootstrap.bats` 的 PyYAML 語意斷言鎖住（兩平台同 tag、`>= v1.14.0`）。
 
 2026-10-05 CI 首跑後另修三件事（見 `ENV-EQ-17/18/19`）：clone 位置改 `$RUNNER_TEMP`
 （過去 clone 進工作區，會被 `ENV-EQ-12` 當成 ~250 個孤兒 `.bats`）、macOS leg 改裝 bash 5

@@ -74,7 +74,7 @@ jobs:
         run: bash scripts/ci/check-ffmpeg-version.sh
 
       - name: Build PoC venv (httpx + PyYAML)
-        run: bash skills/dav-developer/PoC/setup-venv.sh
+        run: bash skills/dav-jev-oracle/PoC/setup-venv.sh
 
       - name: Run bats tests
         run: bats tests/

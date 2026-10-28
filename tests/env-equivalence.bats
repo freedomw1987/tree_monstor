@@ -42,7 +42,7 @@
 setup() {
   load 'helpers/test-env'
   load 'helpers/probe-scan'
-  POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
+  POC_DIR="$REPO_ROOT/skills/dav-jev-oracle/PoC"
 }
 
 # 宣告數普查用：只算 bats 真的會當成 @test 的行 —— heredoc 內容（示範碼）不算。
@@ -265,7 +265,7 @@ printf "%s\n" "${a[@]}"'
 @test "ENV-EQ-7: oracle subset stays green with the network black-holed" {
   local py="$POC_DIR/.venv/bin/python"
   [ -x "$py" ] || {
-    echo "FAIL: 缺 PoC venv（bash skills/dav-developer/PoC/setup-venv.sh）" >&2
+    echo "FAIL: 缺 PoC venv（bash skills/dav-jev-oracle/PoC/setup-venv.sh）" >&2
     return 1
   }
   # 黑洞代理：指向一個不會有人聽的 port → 任何真連線都會立刻被拒
@@ -280,7 +280,7 @@ printf "%s\n" "${a[@]}"'
     return 1
   }
 
-  local fails="$REPO_ROOT/skills/dav-developer/tests/v2.1-jev-poc.bats"
+  local fails="$REPO_ROOT/skills/dav-jev-oracle/tests/v2.1-jev-poc.bats"
   local filter ok_total=0 notok_total=0 ran=0 rc f
   for f in 'M5-runtime-b' '^M6-g' 'M6.1-c'; do
     run env -u OPENROUTER_API_KEY HOME="$BATS_TEST_TMPDIR/nohome" \
@@ -544,10 +544,16 @@ printf "%s\n" "${a[@]}"'
   }
   run bash "$REPO_ROOT/scripts/test-skill.sh" --list
   [[ "$status" -eq 0 ]] || { echo "FAIL: test-skill.sh --list 唔係 0 退出" >&2; return 1; }
-  [[ "$output" == *"dav-developer"* ]] || {
-    echo "FAIL: test-skill.sh --list 唔見 dav-developer → 佢嘅 tests/ 唔見咗？" >&2
-    return 1
-  }
+  # 每個有 tests/ 嘅 skill 都必須喺 --list 出現（唔寫死 skill 名 → 合併／拆分後唔會失效）
+  local s name
+  for s in "$REPO_ROOT"/skills/*/; do
+    [ -d "${s}tests" ] || continue
+    name="$(basename "$s")"
+    [[ "$output" == *"$name"* ]] || {
+      echo "FAIL: test-skill.sh --list 唔見 '$name' → 佢有 tests/ 但列唔出" >&2
+      return 1
+    }
+  done
   # 行為自證（唔係 grep 文字鎖）：喺 temp git repo 起一個「淨跑一個 skill」嘅場景
   #   ① 嗰個 skill 嘅探針紅 → 整體 rc=1；② 未知 skill → rc=2（用法錯誤）
   local tmprepo="$BATS_TEST_TMPDIR/skillrepo"
@@ -847,6 +853,42 @@ PYEOF
 # 起因：SSG-3 只在 macOS leg 紅，因為本機 PATH 上的 bash 是 5.x；CI 的 macOS leg 用 3.2。
 # 這是 ENV-EQ-2（wiki-cleanup 套件逐 bash 版本）的「護欄腳本版」——把 CI 才咬得到的
 # 版本差異搬回本機咬（先量測，再斷言；locale 以實際可用者為準並印出來當證據）。
+@test "ENV-EQ-21: every skill frontmatter is valid YAML (description must be one line or a block scalar)" {
+  # 2026-10-27 事故：折行時把 `description:` 折成 2 行（plain scalar 唔准跨行）
+  #   → YAML 解析成「隱式 map key」→ **成個 skill 讀唔到**（frontmatter 壞，system 報 skill conflict）
+  # 規則：`description:` 之後嘅續行必須以 `>-` / `|` 開頭（block scalar），否則 description 必須單行。
+  local f ok=0
+  for f in "$REPO_ROOT"/skills/*/SKILL.md; do
+    ok=1
+    python3 - "$f" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+lines = open(path, encoding="utf-8").read().splitlines()
+if not lines or lines[0].strip() != "---":
+    print(f"FAIL: {path} 冇 frontmatter"); sys.exit(1)
+end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+if end is None:
+    print(f"FAIL: {path} frontmatter 冇收尾 ---"); sys.exit(1)
+fm = lines[1:end]
+desc = [i for i, l in enumerate(fm) if l.startswith("description:")]
+if len(desc) != 1:
+    print(f"FAIL: {path} frontmatter 要恰好 1 個 description（現 {len(desc)}）"); sys.exit(1)
+i = desc[0]
+rest = fm[i][len("description:"):].strip()
+if rest in (">-", "|", ">", "|-", "|+"):
+    pass                                   # block scalar → 續行合法
+elif rest:
+    # 單行 scalar → 下一行唔可以係續行（要係新 key）
+    if i + 1 < len(fm) and fm[i + 1].strip() and not re.match(r"^[A-Za-z_][\w-]*:", fm[i + 1]):
+        print(f"FAIL: {path} 嘅 description 跨行（plain scalar 唔准跨行）→ 用 '>-' block scalar"); sys.exit(1)
+print("OK")
+PYEOF
+    [ "$?" -eq 0 ] || return 1
+  done
+  [ "$ok" -eq 1 ] || { echo "FAIL: 搵唔到任何 skills/*/SKILL.md" >&2; return 1; }
+  echo "OK: 所有 skill frontmatter 合法" >&2
+}
+
 @test "ENV-EQ-19: every scripts/ci guard script runs clean under every local bash version" {
   local vers="$BATS_TEST_TMPDIR/bash-versions.tsv"
   collect_bash_versions "$vers" || {

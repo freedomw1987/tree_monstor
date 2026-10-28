@@ -1,7 +1,7 @@
 ---
 name: dav-skill-creater
-description: 從用戶對話或操作中提煉可重複應用的概念，產出新 skill（含 frontmatter + 「任務導航」4 段結構 + 純文字引用），存進 `skills/<name>/SKILL.md`。同時對「修改既有
-skill」生效：任何 skill 檔案修改都要遵守本 skill 的編寫規範（v2.1 4 段結構 + v2.2 純文字引用 + 150 行上限 + v2.8 文檔行數限制 + frontmatter 必填）。
+description: >-
+  從用戶對話或操作中提煉可重複應用的概念，產出新 skill（含 frontmatter + 「任務導航」4 段結構 + 純文字引用），存進 `skills/<name>/SKILL.md`。同時對「修改既有 skill」生效：任何 skill 檔案修改都要遵守本 skill 的編寫規範（v2.1 4 段結構 + v2.2 純文字引用 + 150 行上限 + v2.8 文檔行數限制 + frontmatter 必填）。
 
 ---
 

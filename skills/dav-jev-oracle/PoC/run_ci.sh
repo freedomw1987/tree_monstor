@@ -3,7 +3,7 @@
 #
 # 做咩：把原本放喺 GitHub Actions 嘅 4 個 job 搬返本機。
 #   背景（2026-10-27 用戶決策）：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」
-#   → `.github/workflows/dav-developer-jev-poc.yml` 已刪除（探針 CI-f 鎖住「唔准加返」）。
+#   → 原本嘅 GitHub Actions workflow 已刪除（探針 CI-f 鎖住「唔准加返」）。
 #   原本 4 個 job → 而家 4 個 subcommand：
 #     probes       ← bats job        （跑本 repo 嘅 tests/v2.1-jev-poc.bats；唔使 API key）
 #     pipeline     ← pipeline job    （跑 run_pipeline.sh <story>；要 OPENROUTER_API_KEY）
@@ -40,7 +40,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 REPORT_DIR="${RG_REPORT_DIR:-${REPO_ROOT}/tmp/rg-reports}"
-PROBES_FILE="${REPO_ROOT}/skills/dav-developer/tests/v2.1-jev-poc.bats"
+PROBES_FILE="${REPO_ROOT}/skills/dav-jev-oracle/tests/v2.1-jev-poc.bats"
 CLEANUP_SCAN="${REPO_ROOT}/docs/cleanup/cleanup-scan.py"
 DEFAULT_STORIES=(US-101 US-M62 US-M63)
 
@@ -54,7 +54,7 @@ usage() {
 用法：bash run_ci.sh <subcommand> [args...]
 
   list          列 subcommand（機械可比對）
-  probes        跑本 skill 嘅 bats 探針（skills/dav-developer/tests/v2.1-jev-poc.bats；唔使 API key）
+  probes        跑本 skill 嘅 bats 探針（skills/dav-jev-oracle/tests/v2.1-jev-poc.bats；唔使 API key）
   pipeline      跑 run_pipeline.sh <story_id> [--stale]
   matrix        跑多個 story（預設 US-101 US-M62 US-M63）+ 匯總 matrix-summary.md
   cleanup-scan  跑 docs/cleanup/cleanup-scan.py（文件減法盤點）

@@ -1,7 +1,7 @@
 ---
 name: dav-trust
-description: 信任模式。用戶給「大目標 + deadline」後 Agent 自主完成 SOP 執行段（執行 → 反省 → 提交），中途不問問題（自己寫 trust-log 代答），deadline 到 /
-用戶叫停時自動退出 trust 身份。規劃 / 設計須在啟動前完成，trust 內不跑。
+description: >-
+  信任模式。用戶給「大目標 + deadline」後 Agent 自主完成 SOP 執行段（執行 → 反省 → 提交），中途不問問題（自己寫 trust-log 代答），deadline 到 / 用戶叫停時自動退出 trust 身份。規劃 / 設計須在啟動前完成，trust 內不跑。
 ---
 
 # Dav Trust

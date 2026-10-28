@@ -1,7 +1,7 @@
 ---
 name: dav-developer
-description: 在 SOP「執行」階段使用。合併 TDD 寫測試 → 開發令紅變綠 → 探針與回歸 → Reviewer 二審（Gate 1/2/3/4 全部由本 skill 承載）。寫測試部分取
-dav-developer 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 已覆蓋）。
+description: >-
+  在 代碼開發SOP「執行」階段使用。負責 TDD 寫測試 → 開發令紅變綠 → 埋探針同回歸 → Reviewer 二審（Gate 1/2/3/4 全部由本 skill 承載）。寫測試部分取原 regression-guard 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 已覆蓋）。LLM 語意判斷（Jev Oracle）係同套 dav-jev-oracle skill 嘅可選加深。dav-developer 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 已覆蓋）。
 ---
 
 # Dav Developer
@@ -53,7 +53,7 @@ dav-developer 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 
 - **證據**：對話貼「修改前 baseline ＋ 修改後 output ＋ Diff 對比」（Gate 3 證據）
 - **範圍點決定**：改咗邊個 Module／邊啲檔 → 就跑邊啲（Module 級派工時用 `REGRESSION_MODULE=<M>`；
   唔涉及跨 Module 影響時唔需要全項目跑）
-- **參考**：同套本 skill 子檔（`./api-contract.md`、`./probe-naming.md`、`./runner-cheatsheet.md`）
+- **參考**：同套本 skill 子檔（`./probe-naming.md`、`./runner-cheatsheet.md`）；PoC API contract → 同套 `dav-jev-oracle` skill
 
 ### Step 4：Reviewer 二審（Gate 4）
 
@@ -131,10 +131,9 @@ dav-developer 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 
 - 寫測試流程 ＋ 框架選擇 → 同套本 skill 子檔（`./tdd.md`）／範例（`./tdd-examples.md`）
 - 開發流程（紅 → 綠、Module 派工）→ 同套本 skill 子檔（`./develop.md`）
 - Reviewer 二審細節 → 同套本 skill 子檔（`./review.md`、`./reviewer-checklist.md`、`./module-rules.md`）
-- API contract ＋ 環境變量 → 同套本 skill 子檔（`./api-contract.md`）
-- 輸出格式 → 同套本 skill 子檔（`./output-format.md`）
+- API contract ＋ 環境變量 ＋ 輸出格式 → 同套 `dav-jev-oracle` skill
 - 探針命名 ＋ 粒度 → 同套本 skill 子檔（`./probe-naming.md`）
 - Runner 對照表（TTY／watch 防線）→ 同套本 skill 子檔（`./runner-cheatsheet.md`）
 - 測試方法指南 → 同套本 skill 子檔（`./testing-methods.md`）
-- Jev Oracle 補充（進階）→ 同套本 skill 子檔（`./jev-oracle.md`）／範例（`./examples.md`）
+- **LLM 語意判斷（Jev Oracle）／修正循環／flaky 整合／多 story 矩陣** → 同套 `dav-jev-oracle` skill（可選加深；Gate 3 唔強制）
 - Module 完整生命週期範例（含 Module prefix 探針）→ 見本 skill 的 `examples/probes/`

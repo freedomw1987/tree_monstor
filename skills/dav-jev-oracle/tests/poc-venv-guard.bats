@@ -27,7 +27,7 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
   load "$REPO_ROOT/tests/helpers/test-env"
 
-  POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
+  POC_DIR="$REPO_ROOT/skills/dav-jev-oracle/PoC"
   SH="$POC_DIR/setup-venv.sh"
   SHIM="$BATS_TEST_TMPDIR/shim"
   SHIM_LOG="$BATS_TEST_TMPDIR/calls.log"
@@ -40,7 +40,7 @@ setup() {
 }
 
 # 假的 python3：記錄呼叫；被要求 `-m venv <dir>` 時偽造 <dir>/bin/python。
-# （與 skills/dav-developer/tests/poc-bootstrap.bats 的 shim 同構；刻意各自持有，避免動到已綠的檔。）
+# （與 skills/dav-jev-oracle/tests/poc-bootstrap.bats 的 shim 同構；刻意各自持有，避免動到已綠的檔。）
 make_fake_python3() {
   local shim="$1"
   mkdir -p "$shim"

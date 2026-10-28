@@ -100,7 +100,7 @@ def _env_file_candidates() -> list[Path]:
 def _load_api_key() -> str:
     """取得 OpenRouter API key。
 
-    順序：**環境變數** > PoC/.env > ~/.claude/skills/dav-developer/PoC/.env
+    順序：**環境變數** > PoC/.env > ~/.claude/skills/dav-jev-oracle/PoC/.env
 
     ⚠️ **本機嘅正規來源係 `~/.zshrc` 嘅 `export OPENROUTER_API_KEY=...`**（→ 環境變數），
        本 repo 不版控任何 key。兩個 `.env` 檔只係**後備**。
@@ -302,7 +302,7 @@ def evaluate_ac(context: ACContext, *, model: str | None = None,
             "Cache miss 且 OPENROUTER_API_KEY 找不到。請：\n"
             "  1. cp PoC/.env.example PoC/.env && 編輯補 key\n"
             "  或 2. set OPENROUTER_API_KEY env\n"
-            "  或 3. 放 ~/.claude/skills/dav-developer/PoC/.env"
+            "  或 3. 放 ~/.claude/skills/dav-jev-oracle/PoC/.env"
         )
 
     headers = {

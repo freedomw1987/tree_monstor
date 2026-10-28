@@ -63,13 +63,13 @@ D4#2026-10-26-context-slim-round2.md:skills/regression-guard/jev-oracle.md#2026-
 #
 #
 # 2026-10-27 docs 減磅：交付摘要引用嘅 AC 檔已歸檔到 skill 內（PoC fixture）
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/TMO-073.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M62.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M62.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M63.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M63.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M71.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M71.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
-D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-developer/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/TMO-073.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M62.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M62.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M63.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M63.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M71.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M71.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.html#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
+D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/ac/US-M81.md#2026-10-27 docs 減磅：該 AC 檔已歸檔到 skill 內（skills/dav-jev-oracle/PoC/fixtures/ac/，令 skill 自足）；歷史交付摘要為 append-only、不回改
 D4#2026-10-26-delivery-fidelity-tmo-069-071.md:docs/prd/05-delivery-fidelity.md#2026-10-27 docs 減磅：該 PRD 隨已完成專案歸檔（記錄保留在 git history）；歷史交付摘要為 append-only、不回改

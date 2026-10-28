@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# skills/dav-developer/tests/v2.1-jev-poc.bats
+# skills/dav-jev-oracle/tests/v2.1-jev-poc.bats
 #
 # Regression guards for "dav-developer Jev PoC v2.1" (TMO-012, M5).
 # 4 探針 + 1 runtime：
@@ -20,18 +20,18 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
   load "$REPO_ROOT/tests/helpers/test-env"
 
-  POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
-  # POC_PY 可覆寫：讓 skills/dav-developer/tests/poc-bootstrap.bats 能驗證「缺 venv 時大聲紅」
+  POC_DIR="$REPO_ROOT/skills/dav-jev-oracle/PoC"
+  # POC_PY 可覆寫：讓 skills/dav-jev-oracle/tests/poc-bootstrap.bats 能驗證「缺 venv 時大聲紅」
   PY="${POC_PY:-$POC_DIR/.venv/bin/python}"
 }
 
 # 缺 venv 必須「大聲紅」（TMO-029）：只守住真的會用 $PY 的測試。
 # 純靜態（grep 檔案）的測試不需要 venv，不能一起誤紅。
-# 修法一行：bash skills/dav-developer/PoC/setup-venv.sh
+# 修法一行：bash skills/dav-jev-oracle/PoC/setup-venv.sh
 need_poc_venv() {
   [ -x "$PY" ] && return 0
   echo "FAIL: 缺 PoC venv（${PY}）" >&2
-  echo "  修法：bash skills/dav-developer/PoC/setup-venv.sh" >&2
+  echo "  修法：bash skills/dav-jev-oracle/PoC/setup-venv.sh" >&2
   echo "  本測試需要 PoC 專用 venv（httpx + PyYAML）；缺它一律紅、不 skip。" >&2
   return 1
 }
@@ -266,7 +266,7 @@ print('OK: 4 fixtures, AC04=500')
 
 @test "M5-runtime-b: stale-test blocks journey (mock_observe_static works)" {
   need_poc_venv
-  local us_md="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-101.md"
+  local us_md="$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-101.md"
   cd "$POC_DIR"
   # TMO-039：Oracle 改「注入 stub」——探針只驗 stale 偵測邏輯，
   # 不該依賴真 Jev API（本機有 key/快取才綠、CI 兩者皆無 → 假綠）
@@ -384,15 +384,15 @@ print('OK: module imports, _is_playwright_available=False')
 
 @test "SKILL-a: SKILL.md points to the Jev Oracle subfile" {
   # 2026-10-27 合併後：Jev Oracle 內容喺子檔 jev-oracle.md，主檔只留指標（可達可尋）
-  local f="$REPO_ROOT/skills/dav-developer/SKILL.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/SKILL.md"
   assert_file_contains "$f" "jev-oracle.md"
 }
 
 @test "SKILL-b: Jev Oracle chapter mentions 3 backends (ac_aware/mock/playwright)" {
   # v2.9 拆檔：Jev 章節內文搬到 jev-oracle.md（主檔只留指標）
-  local f="$REPO_ROOT/skills/dav-developer/jev-oracle.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/jev-oracle.md"
   # 主檔仍須留下進子檔的指標（可達可尋）
-  assert_file_contains "$REPO_ROOT/skills/dav-developer/SKILL.md" "jev-oracle.md"
+  assert_file_contains "$REPO_ROOT/skills/dav-jev-oracle/SKILL.md" "jev-oracle.md"
   for backend in ac_aware mock playwright; do
     assert_file_contains "$f" "$backend" || {
       echo "FAIL: jev-oracle.md should mention $backend" >&2
@@ -402,7 +402,7 @@ print('OK: module imports, _is_playwright_available=False')
 }
 
 @test "SKILL-c: examples.md has Jev Oracle chapter with 4 example types" {
-  local f="$REPO_ROOT/skills/dav-developer/examples.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/examples.md"
   assert_file_contains "$f" "## 🧠 Jev Oracle 範例"
   for example in "journey YAML" "dry-run" "batch report" "JSON 報告"; do
     assert_file_contains "$f" "$example" || {
@@ -439,15 +439,15 @@ print('OK: module imports, _is_playwright_available=False')
 # 2026-10-27 用戶決策：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」
 # → `.github/workflows/dav-developer-jev-poc.yml` 已刪除（CI-f 鎖住唔准加返）；
 #   原本 4 個 job（bats / pipeline / aggregate-matrix / cleanup-scan）改由本機 runner
-#   `skills/dav-developer/PoC/run_ci.sh` 承擔（probes / pipeline / matrix / cleanup-scan）。
+#   `skills/dav-jev-oracle/PoC/run_ci.sh` 承擔（probes / pipeline / matrix / cleanup-scan）。
 # ────────────────────────────────────────────────────────────────────
 
 @test "CI-a: the local Jev CI runner exists, is syntax-clean and exposes the 4 subcommands" {
   # 原本呢支鎖住「GitHub Actions workflow 存在」；2026-10-27 用戶決策：
   # 「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」→ workflow 已刪除，
-  # CI 整合改由本機 runner `skills/dav-developer/PoC/run_ci.sh` 承擔。
+  # CI 整合改由本機 runner `skills/dav-jev-oracle/PoC/run_ci.sh` 承擔。
   # ⚠️ 呢支**唔可以**需要 PoC venv（poc-bootstrap.bats 用「CI-a:」驗「靜態測試唔會被連坐誤紅」）。
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_path_is_file "$f"
   bash -n "$f" || { echo "FAIL: bash -n 紅：$f" >&2; return 1; }
   if command -v shellcheck >/dev/null 2>&1; then
@@ -469,13 +469,13 @@ print('OK: module imports, _is_playwright_available=False')
 }
 
 @test "CI-b: the runner takes a story id and supports --stale" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_file_contains "$f" "--stale"
   assert_file_contains "$f" "run_pipeline.sh"
 }
 
 @test "CI-c: the runner reads OPENROUTER_API_KEY from the local environment" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_file_contains "$f" "OPENROUTER_API_KEY"
   # 唔准再靠 GitHub secrets（workflow 已刪除；本 repo 改本機跑）
   if grep -q "secrets\." "$f"; then
@@ -486,7 +486,7 @@ print('OK: module imports, _is_playwright_available=False')
 
 @test "CI-d: verdict maps to the same return codes as the old workflow" {
   # 行為自證（唔係 grep 文字鎖）：用 mock seam 走真嘅 rc mapping
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   local green yellow red
   run env RG_CI_MOCK_VERDICT=green bash "$f" pipeline US-101
   green="$status"
@@ -500,7 +500,7 @@ print('OK: module imports, _is_playwright_available=False')
 }
 
 @test "CI-e: the CI SOP documents the local runner and keeps the target-project GitHub reference" {
-  local f="$REPO_ROOT/docs/ci/dav-developer-jev-poc.md"
+  local f="$REPO_ROOT/docs/ci/dav-jev-oracle.md"
   assert_path_is_file "$f"
   for content in "## " "run_ci.sh" "branch protection" "gh secret set"; do
     assert_file_contains "$f" "$content" || {
@@ -572,13 +572,13 @@ print('OK: FixProposal has 3 conf fields')
 
 @test "M6-e: Jev Oracle has M6 fix-loop section" {
   # M6 補充喺 jev-oracle.md（2026-10-27 起 skill 唔記歷史變動 → 冇 CHANGELOG 可查）
-  local f="$REPO_ROOT/skills/dav-developer/jev-oracle.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/jev-oracle.md"
   assert_file_contains "$f" "修正循環補充"
   assert_file_contains "$f" "JEV_FIX_PROPOSAL"
 }
 
 @test "M6-f: examples.md has fix proposal example" {
-  local f="$REPO_ROOT/skills/dav-developer/examples.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/examples.md"
   assert_file_contains "$f" "Fix proposal"
   assert_file_contains "$f" "JEV_FIX_PROPOSAL"
 }
@@ -658,13 +658,13 @@ print('OK: FixProposal has 3 conf fields')
 
 @test "M6.1-e: Jev Oracle v2.4 has LLM Relay section" {
   # M6.1 補充喺 jev-oracle.md（2026-10-27 起 skill 唔記歷史變動 → 冇 CHANGELOG 可查）
-  local f="$REPO_ROOT/skills/dav-developer/jev-oracle.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/jev-oracle.md"
   assert_file_contains "$f" "M6.1 修正循環補充"
   assert_file_contains "$f" "LLM Relay"
 }
 
 @test "M6.1-f: examples.md has v2 LLM relay example" {
-  local f="$REPO_ROOT/skills/dav-developer/examples.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/examples.md"
   assert_file_contains "$f" "Fix proposal v2"
   assert_file_contains "$f" "JEV_FIX_PROPOSAL_V2"
   assert_file_contains "$f" "skill 本身 LLM"
@@ -1004,7 +1004,7 @@ json.dump(a, open('$after', 'w'))
 }
 
 @test "M6.2-l: US-M62 AC file exists with 4 ACs" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M62.md"
   assert_path_is_file "$f"
   for ac in "AC01" "AC02" "AC03" "AC04"; do
     assert_file_contains "$f" "$ac" || {
@@ -1061,7 +1061,7 @@ EOF
     --new 'return "planet"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md" \
     --sandbox-dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: dry-run should return 0, got $status" >&2
@@ -1094,7 +1094,7 @@ EOF
     --new 'return "different-unrelated-text"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md"
   [ "$status" -eq 0 ] || {
     echo "FAIL: no_change should return 0, got $status" >&2
     return 1
@@ -1122,7 +1122,7 @@ EOF
     --new 'foo = "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md"
   # error=1（sandbox classification=error）
   [ "$status" -eq 1 ] || {
     echo "FAIL: ambiguous should return 1 (error), got $status" >&2
@@ -1158,7 +1158,7 @@ EOF
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md" \
     --json 2>&1 || true)
   local after_count
   after_count=$(ls -a "$REPO_ROOT/tmp/" 2>/dev/null | grep -c "^\.sandbox-US-M63" || true)
@@ -1190,7 +1190,7 @@ EOF
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md" \
     --json 2>&1) || true
   echo "$out" | "$PY" -c "
 import json, sys
@@ -1211,7 +1211,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
 }
 
 @test "M6.3-h: US-M63 AC file exists with 4 ACs" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md"
   assert_path_is_file "$f"
   for ac in "AC01" "AC02" "AC03" "AC04"; do
     assert_file_contains "$f" "$ac" || {
@@ -1248,7 +1248,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
     --new 'return "y"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md"
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md"
   [ "$status" -eq 1 ] || {
     echo "FAIL: missing before.json should return 1, got $status" >&2
     return 1
@@ -1275,7 +1275,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
     --new 'return "planet"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md" \
     --sandbox-dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: dry-run on out-of-repo file should return 0, got $status" >&2
@@ -1311,7 +1311,7 @@ print(f'OK: classification={d[\"classification\"]}, cleanup_ok={d[\"cleanup_ok\"
     --new 'return "planet"' \
     --journey "$POC_DIR/journeys/US-M63.yaml" \
     --story-id US-M63 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M63.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M63.md" \
     --sandbox-dry-run
   [ "$status" -eq 0 ] || {
     echo "FAIL: 相對 .. 路徑應可安全處理，got $status" >&2
@@ -1401,7 +1401,7 @@ run_dry(journey, story.acs, stale_test=False, story_id=journey.journey_id)
   }
   [ "$key" = "bbfaa5bfe583507a" ] || {
     echo "FAIL: cache key 應為 bbfaa5bfe583507a（= 版控 fixture 檔名），got $key" >&2
-    echo "  修法：重錄 skills/dav-developer/PoC/cache-fixtures/<新 key>.json 並更新 README 索引" >&2
+    echo "  修法：重錄 skills/dav-jev-oracle/PoC/cache-fixtures/<新 key>.json 並更新 README 索引" >&2
     return 1
   }
   assert_path_is_file "$POC_DIR/cache-fixtures/bbfaa5bfe583507a.json"
@@ -1516,7 +1516,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
   # 先清殘檔：否則上一次的 /tmp 檔會讓這條假綠（reviewer P2-4）
   rm -f $BATS_TEST_TMPDIR/flaky-test.md
   "$PY" flaky_check.py "$POC_DIR/journeys/US-M62.yaml" \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M62.md" \
     --story-id US-M62-flaky-test --runs 3 \
     --output $BATS_TEST_TMPDIR/flaky-test.md >/dev/null 2>&1 || true
   assert_path_is_file "$BATS_TEST_TMPDIR/flaky-test.md"
@@ -1530,14 +1530,14 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 
 @test "CLEAN-CI-a: the runner has a cleanup-scan subcommand" {
   # 原本係 GH workflow 嘅每週 cron job；刪咗 workflow → 改成本機手動／自己排程時跑
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_path_is_file "$f"
   assert_file_contains "$f" "cleanup-scan"
   assert_file_contains "$f" "docs/cleanup/cleanup-scan.py"
 }
 
 @test "CLEAN-CI-b: cleanup-scan output is counted by category (KEEP/REVIEW/DELETE)" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_file_contains "$f" "--json"
   # 按 cleanup-scan.py 每筆嘅 `category` 欄統計（KEEP／REVIEW／DELETE／MERGE 係掃描器嘅分類）
   assert_file_contains "$f" "category"
@@ -1546,7 +1546,7 @@ print(f'OK: classification={r.classification} flaky={r.flaky_likelihood}')
 }
 
 @test "CLEAN-CI-c: cleanup-scan is a local step, not an automatic push/PR trigger" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_file_contains "$f" "cmd_cleanup_scan"
   # .github/workflows 唔准仲有 cleanup-scan 觸發（dav-developer CI 已決定唔喺 GitHub 跑）
   if grep -rq "cleanup-scan" "$REPO_ROOT/.github/workflows" 2>/dev/null; then
@@ -1620,7 +1620,7 @@ print('OK: wrote flaky_measured')
     --batch-report $BATS_TEST_TMPDIR/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
     --story-id US-M62 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M62.md" \
     --runs 0
   # 應該成功（即使不額外跑）
   [ "$status" -le 1 ] || {
@@ -1755,7 +1755,7 @@ Path('$BATS_TEST_TMPDIR/gh-pr-test-batch.json').write_text(json.dumps(batch, ens
     --batch-report $BATS_TEST_TMPDIR/m62-batch.json \
     --journey "$POC_DIR/journeys/US-M62.yaml" \
     --story-id US-M62 \
-    --source "$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M62.md" \
+    --source "$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M62.md" \
     --runs 0 >/dev/null 2>&1 || true
   grep -q "flaky_measured" $BATS_TEST_TMPDIR/m62-batch.json || {
     echo "FAIL: batch_report missing flaky_measured" >&2
@@ -1806,7 +1806,7 @@ print('OK: high delta warning')
 # ────────────────────────────────────────────────────────────────────
 
 @test "M8-a: the local matrix runs the 3 default story_ids" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_path_is_file "$f"
   for story in US-101 US-M62 US-M63; do
     assert_file_contains "$f" "$story" || {
@@ -1817,19 +1817,19 @@ print('OK: high delta warning')
 }
 
 @test "M8-b: the matrix writes matrix-summary.md" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_file_contains "$f" "matrix-summary.md"
 }
 
 @test "M8-c: the matrix summary has a Per-Story Results table" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   assert_file_contains "$f" "Per-Story Results"
   assert_file_contains "$f" "Fix Priority"
 }
 
 @test "M8-d: the matrix accepts a custom story list and writes one row per story" {
   # 行為自證：用 mock seam 跑一個自訂 story → 產出 summary（入面有嗰個 story 嘅列）
-  local f="$REPO_ROOT/skills/dav-developer/PoC/run_ci.sh"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/run_ci.sh"
   local out_dir="$BATS_TEST_TMPDIR/rg-reports"
   run env RG_CI_MOCK_VERDICT=green RG_REPORT_DIR="$out_dir" bash "$f" matrix US-999
   [[ "$status" -eq 0 ]] || {
@@ -1842,7 +1842,7 @@ print('OK: high delta warning')
 }
 
 @test "M8-f: US-M81 AC fixture exists with 4 ACs (PoC fixture，已搬入 skill 內令 skill 自足)" {
-  local f="$REPO_ROOT/skills/dav-developer/PoC/fixtures/ac/US-M81.md"
+  local f="$REPO_ROOT/skills/dav-jev-oracle/PoC/fixtures/ac/US-M81.md"
   assert_path_is_file "$f"
   for ac in "AC01" "AC02" "AC03" "AC04"; do
     assert_file_contains "$f" "$ac" || {

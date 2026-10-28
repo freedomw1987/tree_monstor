@@ -232,7 +232,7 @@ def make_copy(root: Path, dest: Path) -> int:
     # （M6.3 系列走 need_poc_venv）會在副本裡直接紅 → baseline 紅 → 整個突變套件死。
     # 把原 venv 以 symlink 掛進副本：venv 是自解相對的（bin/python → base python，
     # site-packages 由 pyvenv.cfg 定位），從任何路徑掛過去都可用。
-    venv_rel = "skills/dav-developer/PoC/.venv"
+    venv_rel = "skills/dav-jev-oracle/PoC/.venv"
     venv_src = root / venv_rel
     venv_dst = dest / venv_rel
     if venv_src.is_dir() and not venv_dst.exists():

@@ -1,7 +1,7 @@
 ---
 name: ask-me
-description: 把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂」逐題跟用戶確認，同步回寫 need-you-help.md 的抉擇欄 + 雙寫進 docs/backlog.md 對應
-US 的狀態（✅ 繼續做 / 📝 改設計 / ⏸️ 跳過）。**不適用於**：trust mode 進行中（會打斷 trust）、一般對話提問（用 ask_user_question）、純諮詢。
+description: >-
+  把 trust mode 期間寫進 need-you-help.md 的「待確認擔憂」逐題跟用戶確認，同步回寫 need-you-help.md 的抉擇欄 + 雙寫進 docs/backlog.md 對應 US 的狀態（✅ 繼續做 / 📝 改設計 / ⏸️ 跳過）。**不適用於**：trust mode 進行中（會打斷 trust）、一般對話提問（用 ask_user_question）、純諮詢。
 ---
 
 # Ask Me

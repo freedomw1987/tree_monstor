@@ -1,7 +1,7 @@
 ---
 name: pptx-slim
-description: 減少 PPTX 檔體積而不破壞內容 — 偵察媒體佔比、ffmpeg 重編碼影片、無損／有損重壓圖片、只換媒體重打包、四關驗證（CRC／entry 齊全且非媒體 byte 相同／rels
-零斷鏈／時長漂移，換圖片時再加畫質關）。觸發於「PPT 太大開不動／傳不出／上載失敗」；不適用於純 zip 壓縮、加密或損壞檔救援、非 Office 容器。
+description: >-
+  減少 PPTX 檔體積而不破壞內容 — 偵察媒體佔比、ffmpeg 重編碼影片、無損／有損重壓圖片、只換媒體重打包、四關驗證（CRC／entry 齊全且非媒體 byte 相同／rels 零斷鏈／時長漂移，換圖片時再加畫質關）。觸發於「PPT 太大開不動／傳不出／上載失敗」；不適用於純 zip 壓縮、加密或損壞檔救援、非 Office 容器。
 ---
 
 # PPTX Slim

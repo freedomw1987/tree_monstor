@@ -1,7 +1,7 @@
 ---
 name: dav-designer
-description: 在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog 檔，依 PENDING 狀態項目輸出/更新 DESIGN.md、system-design.md、按模組拆分 PRD（md）+
-強制追溯矩陣，並為每個模組產出可即點即試的互動 HTML 原型（高保真，DoD 含 5 種狀態）。原型出爐前必走「設計自審」請用戶簽核。**不適用於**：純開發實作、純測試撰寫、純回顧。
+description: >-
+  在 SOP「設計」階段使用。讀取 monorepo 對應的 backlog 檔，依 PENDING 狀態項目輸出/更新 DESIGN.md、system-design.md、按模組拆分 PRD（md）+ 強制追溯矩陣，並為每個模組產出可即點即試的互動 HTML 原型（高保真，DoD 含 5 種狀態）。原型出爐前必走「設計自審」請用戶簽核。**不適用於**：純開發實作、純測試撰寫、純回顧。
 ---
 
 # Dav Designer

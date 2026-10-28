@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# skills/dav-developer/PoC/setup-venv.sh
+# skills/dav-jev-oracle/PoC/setup-venv.sh
 #
 # 建立 Jev PoC 專用 venv（.venv/）並安裝 requirements.txt。
 # 目的（TMO-029）：clean clone 後 `bats tests/` 不再 38 條全紅（venv-dependent）——一行就能把環境建起來。
 #
 # 用法：
-#   bash skills/dav-developer/PoC/setup-venv.sh               # 建/更新 .venv
-#   bash skills/dav-developer/PoC/setup-venv.sh --force       # 砍掉重建（預設路徑免確認）
-#   bash skills/dav-developer/PoC/setup-venv.sh --force --yes # 自訂 POC_VENV_DIR 時的非互動豁免
-#   bash skills/dav-developer/PoC/setup-venv.sh --check-danger <path> # 純查詢：<path> 是否命中危險清單（rc 1=危險）
+#   bash skills/dav-jev-oracle/PoC/setup-venv.sh               # 建/更新 .venv
+#   bash skills/dav-jev-oracle/PoC/setup-venv.sh --force       # 砍掉重建（預設路徑免確認）
+#   bash skills/dav-jev-oracle/PoC/setup-venv.sh --force --yes # 自訂 POC_VENV_DIR 時的非互動豁免
+#   bash skills/dav-jev-oracle/PoC/setup-venv.sh --check-danger <path> # 純查詢：<path> 是否命中危險清單（rc 1=危險）
 #
 # 依賴：uv（最快，若有）或 python3（-m venv）—— uv 非必要。
 # 環境變數 POC_VENV_DIR 可覆寫 venv 位置（探針用），預設 PoC/.venv。
@@ -242,4 +242,4 @@ echo "==> 驗證"
 echo
 echo "完成。接著可跑："
 echo "  bats tests/                                    # 全套"
-echo "  bats skills/dav-developer/tests/v2.1-jev-poc.bats                   # 只跑 PoC 探針"
+echo "  bats skills/dav-jev-oracle/tests/v2.1-jev-poc.bats                   # 只跑 PoC 探針"

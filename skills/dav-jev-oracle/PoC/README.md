@@ -51,7 +51,7 @@
 
 ```bash
 c
-d skills/dav-developer/PoC
+d skills/dav-jev-oracle/PoC
 
 # 1. 建 venv 並裝依賴（httpx + PyYAML）；有 uv 用 uv，沒有就 python3 -m venv
 bash setup-venv.sh
@@ -95,7 +95,7 @@ POC_VENV_DIR=~/tmp/venv bash setup-venv.sh --force --yes     # 非互動（腳�
 #   ⚠️ ~/.zshrc 只喺互動 shell 讀；非互動 shell 請改用 ~/.zshenv（zsh 唯一全 shell 都讀嘅檔）。
 #   ⚠️ CI 唔讀本機檔 → 用 secrets.OPENROUTER_API_KEY。
 #
-# 程式讀取順序：環境變數 → PoC/.env → ~/.claude/skills/dav-developer/PoC/.env
+# 程式讀取順序：環境變數 → PoC/.env → ~/.claude/skills/dav-jev-oracle/PoC/.env
 # （**後兩者**係後備；JEV_ENV_FILE=/dev/null 可令「完全冇 .env」）
 
 .venv/bin/python example_run.py           # 走 oracle，cache hit 就 hit
@@ -159,7 +159,7 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
   - 核心產出：`fixtures/US-101.yaml` + `_load_fixture()`
   - 證據：
     config-driven 觀察（脫離 hardcoded dict）；stale 限「同一 AC」（`current_ac_id` 狀態機）；`mock_observe_static`（stale-test 門檻降為
-    2）；`run_dry()` 統一入口（CLI 從 ~50 行收縮到 ~20 行）；`skills/dav-developer/tests/v2.1-jev-poc.bats` 16 探針全綠；向後相容（仍 3 pass
+    2）；`run_dry()` 統一入口（CLI 從 ~50 行收縮到 ~20 行）；`skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 16 探針全綠；向後相容（仍 3 pass
     / 6 fail）
 
 **M5 化解決的 TMO-011 反思問題**：
@@ -169,10 +169,10 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
 ## CI 整合（本機跑）
 
 2026-10-27 用戶決策：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」
-→ GitHub Actions workflow 已刪除；改用本機 runner `skills/dav-developer/PoC/run_ci.sh`：
+→ GitHub Actions workflow 已刪除；改用本機 runner `skills/dav-jev-oracle/PoC/run_ci.sh`：
 
 - **`probes`**
-  - 用途：跑 `skills/dav-developer/tests/v2.1-jev-poc.bats`
+  - 用途：跑 `skills/dav-jev-oracle/tests/v2.1-jev-poc.bats`
   - 不需 / 需 API key：不需
 - **`pipeline`**
   - 用途：跑 `run_pipeline.sh <story>`
@@ -187,7 +187,7 @@ report.md                ← batch report 人讀版（emoji + 表格 + 每步結
 **Return code gate**：`0` (green) 通過｜`2` (yellow) warning（唔擋）｜`1` (red) error，擋｜`3` 用法／環境錯誤。
 
 詳細（本機用法 ＋ 目標專案用 GH Actions 參考）見
-[`docs/ci/dav-developer-jev-poc.md`](../../../docs/ci/dav-developer-jev-poc.md)。
+[`docs/ci/dav-jev-oracle.md`](../../../docs/ci/dav-jev-oracle.md)。
 
 ---
 

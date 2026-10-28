@@ -17,7 +17,7 @@
 #   9. CLEAN-POC-i — JEV_ENV_FILE seam 真的能封掉本機 .env（否則 f 是假隔離）
 #
 # 為什麼需要 a/c：`journeys/US-101.yaml` 曾寫死
-# `/Users/<作者>/…/skills/dav-developer/PoC/fixtures/ac/US-101.md`，於是 5 條探針只在作者機器上過；
+# `/Users/<作者>/…/skills/dav-jev-oracle/PoC/fixtures/ac/US-101.md`，於是 5 條探針只在作者機器上過；
 # `journeys/US-M62.yaml`、`fixtures/US-M63-*.py` 則被 gitignore 又沒有任何人產生它們
 # → clean clone 必紅 5 條。
 
@@ -27,7 +27,7 @@ REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
 load "$REPO_ROOT/tests/helpers/test-env"
 
 
-POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
+POC_DIR="$REPO_ROOT/skills/dav-jev-oracle/PoC"
 
 # FAIL 訊息不得外洩密鑰（reviewer round-A P1：CLEAN-POC-i 的失敗訊息曾把本機真 key 印進 log）。
 # 遮罩函式已移到共用 helper（`tests/helpers/test-env.bash` 的 `mask_secrets`，TMO-053），
@@ -36,7 +36,7 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
 @test "CLEAN-POC-a: every journey source resolves relative to PoC (no absolute path)" {
   cd "$REPO_ROOT"
   local journeys count bad=0 j src
-  journeys=$(git ls-files 'skills/dav-developer/PoC/journeys/*.yaml')
+  journeys=$(git ls-files 'skills/dav-jev-oracle/PoC/journeys/*.yaml')
   count=$(printf '%s\n' "$journeys" | grep -c . || true)
   # 防止探針空過：至少要看到 3 個 journey（US-101 / US-M62 / US-M63）
   [ "$count" -ge 3 ] || {
@@ -64,15 +64,15 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   cd "$REPO_ROOT"
   local hit files
   # 防空過（二審 P2-2）：素材目錄若被搬走/清空，grep 回非零會被 `|| true` 吞 → 靜默通過
-  files=$(find skills/dav-developer/PoC/journeys skills/dav-developer/PoC/fixtures \
+  files=$(find skills/dav-jev-oracle/PoC/journeys skills/dav-jev-oracle/PoC/fixtures \
             -type f 2>/dev/null | wc -l | tr -d ' ')
   [ "$files" -ge 5 ] || {
     echo "FAIL: journeys/fixtures 只找到 $files 個檔（<5）→ 探針可能空過" >&2
     return 1
   }
   hit=$(grep -rlE '/Users/|/home/[a-z]' \
-    skills/dav-developer/PoC/journeys \
-    skills/dav-developer/PoC/fixtures 2>/dev/null || true)
+    skills/dav-jev-oracle/PoC/journeys \
+    skills/dav-jev-oracle/PoC/fixtures 2>/dev/null || true)
   [ -z "$hit" ] || {
     echo "FAIL: 發現機器特定路徑，clean clone 會失效：" >&2
     echo "$hit" >&2
@@ -95,7 +95,7 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
         print m
         line = substr(line, RSTART + RLENGTH)
       }
-    }' skills/dav-developer/tests/v2.1-jev-poc.bats | sort -u)
+    }' skills/dav-jev-oracle/tests/v2.1-jev-poc.bats | sort -u)
   # 防止探針空過
   [ -n "$refs" ] || {
     echo "FAIL: 抓不到任何 fixture/journey 引用，探針失效" >&2
@@ -103,7 +103,7 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   }
   while IFS= read -r f; do
     [ -n "$f" ] || continue
-    if ! git ls-files --error-unmatch "skills/dav-developer/PoC/$f" >/dev/null 2>&1; then
+    if ! git ls-files --error-unmatch "skills/dav-jev-oracle/PoC/$f" >/dev/null 2>&1; then
       echo "FAIL: $f 未被 git 追蹤 → clean clone 缺檔，探針必紅" >&2
       missing=1
     fi
@@ -154,8 +154,8 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   #      否則本機 key 會把 fixture 缺口掩蓋成假綠
   cd "$REPO_ROOT"
   local run_json cache_dir n empty_cache
-  run_json="skills/dav-developer/PoC/fixtures/US-101-run.json"
-  cache_dir="skills/dav-developer/PoC/cache-fixtures"
+  run_json="skills/dav-jev-oracle/PoC/fixtures/US-101-run.json"
+  cache_dir="skills/dav-jev-oracle/PoC/cache-fixtures"
   # 離線 fixture 必須版控（clean clone 才拿得到）
   git ls-files --error-unmatch "$run_json" >/dev/null 2>&1 || {
     echo "FAIL: $run_json 未被 git 追蹤 → clean clone 沒這個檔" >&2
@@ -175,7 +175,7 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   # 掃「repo 級 tests/ ＋ 各 skill 自帶 tests/」（2026-10-27 skill-local 化：探針跟 skill 搬）
   for f in tests/*.bats skills/*/tests/*.bats; do
     case "$f" in
-      skills/dav-developer/tests/poc-clean-clone.bats) continue ;;   # 自己（巢狀重跑沒意義）
+      skills/dav-jev-oracle/tests/poc-clean-clone.bats) continue ;;   # 自己（巢狀重跑沒意義）
       tests/env-equivalence.bats) excluded=$((excluded + 1)); continue ;;  # 唯一條件式排除
     esac
     grep -qE 'jev_oracle|fix_proposal|JEV_CACHE_DIR|JEV_ENV_FILE' "$f" || continue
@@ -235,19 +235,19 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
     echo "FAIL: git ls-files 只有 $tracked_total 個檔 → 檢查機制失效" >&2
     return 1
   }
-  poc_tracked=$(git ls-files skills/dav-developer/PoC | wc -l | tr -d ' ')
+  poc_tracked=$(git ls-files skills/dav-jev-oracle/PoC | wc -l | tr -d ' ')
   [ "$poc_tracked" -ge 10 ] || {
     echo "FAIL: PoC 只有 $poc_tracked 個檔案被追蹤（<10）→ 檢查機制失效" >&2
     return 1
   }
   # 正錨點：.env.example 必須在版控
-  git ls-files --error-unmatch "skills/dav-developer/PoC/.env.example" >/dev/null 2>&1 || {
+  git ls-files --error-unmatch "skills/dav-jev-oracle/PoC/.env.example" >/dev/null 2>&1 || {
     echo "FAIL: PoC/.env.example 未被追蹤（範本應該進版控）" >&2
     return 1
   }
 
   local hit
-  hit=$(git ls-files | grep -E '^skills/dav-developer/PoC/(\.env|\.env\.local)$|^skills/dav-developer/PoC/cache/' || true)
+  hit=$(git ls-files | grep -E '^skills/dav-jev-oracle/PoC/(\.env|\.env\.local)$|^skills/dav-jev-oracle/PoC/cache/' || true)
   if [ -n "$hit" ]; then
     echo "FAIL: 以下機敏/本機檔案被 git 追蹤（必須 git rm --cached + 保留 .gitignore）：" >&2
     printf '%s\n' "$hit" >&2
@@ -255,7 +255,7 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   fi
 
   # 第二道：.gitignore 必須真的擋著（免得下次被 `git add -A` 掃進去）
-  local gi="skills/dav-developer/PoC/.gitignore"
+  local gi="skills/dav-jev-oracle/PoC/.gitignore"
   grep -qxF '.env' "$gi" || { echo "FAIL: $gi 少了 .env 規則" >&2; return 1; }
   grep -qxF 'cache/' "$gi" || { echo "FAIL: $gi 少了 cache/ 規則" >&2; return 1; }
 }
@@ -267,7 +267,7 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   local py="$POC_DIR/.venv/bin/python"
   if [ ! -x "$py" ]; then
     echo "FAIL: 缺 PoC venv（${py}）" >&2
-    echo "  修法：bash skills/dav-developer/PoC/setup-venv.sh" >&2
+    echo "  修法：bash skills/dav-jev-oracle/PoC/setup-venv.sh" >&2
     return 1
   fi
   local fake_env="$BATS_TEST_TMPDIR/fake.env"
@@ -293,9 +293,9 @@ POC_DIR="$REPO_ROOT/skills/dav-developer/PoC"
   # 第二個來源（~/.claude/...）也要一起被蓋掉：seam 必須是「取代整份清單」，
   # 不是只擋 PoC/.env（否則修改只做半套，本機仍可能拿到 key）
   local fake_home="$BATS_TEST_TMPDIR/fakehome"
-  mkdir -p "$fake_home/.claude/skills/dav-developer/PoC"
+  mkdir -p "$fake_home/.claude/skills/dav-jev-oracle/PoC"
   printf 'OPENROUTER_API_KEY=sk-fake-home\n' \
-    > "$fake_home/.claude/skills/dav-developer/PoC/.env"
+    > "$fake_home/.claude/skills/dav-jev-oracle/PoC/.env"
   run env -u OPENROUTER_API_KEY HOME="$fake_home" JEV_ENV_FILE=/dev/null \
       "$py" -c "import jev_oracle; print(repr(jev_oracle._load_api_key()))"
   [ "$status" -eq 0 ]

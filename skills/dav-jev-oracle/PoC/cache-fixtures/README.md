@@ -53,7 +53,7 @@ M6.3 系列的斷言是「patch 與 AC 無關 → 重跑後 verdict 分布不變
 2. 本機 `PoC/cache/` 有殘留命中 → 哪一次命中會隨 `elapsed_ms` 變；
 3. `PoC/.env` / `~/.claude/.../PoC/.env` 裡的 key。
 
-所以 M6.3 探針一律用這組環境變數（見 `skills/dav-developer/tests/v2.1-jev-poc.bats` 的 `m63_hermetic_env`）：
+所以 M6.3 探針一律用這組環境變數（見 `skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 的 `m63_hermetic_env`）：
 
 ```bash
 en
@@ -79,7 +79,7 @@ v -u OPENROUTER_API_KEY \
 
 ```bash
 c
-d skills/dav-developer/PoC
+d skills/dav-jev-oracle/PoC
 
 rm -rf cache-fixtures && mkdir -p cache-fixtures
 JEV_CACHE_DIR="$PWD/cache-fixtures" OPENROUTER_API_KEY=<key> \
@@ -94,7 +94,7 @@ git add cache-fixtures   # 記得只 commit *.json，不要 commit 密鑰
 
 ```bash
 c
-d skills/dav-developer/PoC
+d skills/dav-jev-oracle/PoC
 
 # 跑一次 journey → 從 stderr 的 "Cache miss" 對照 payload 算出新 key
 JEV_CACHE_DIR="$PWD/cache-fixtures" OPENROUTER_API_KEY=<key> \
@@ -105,7 +105,7 @@ JEV_CACHE_DIR="$PWD/cache-fixtures" OPENROUTER_API_KEY=<key> \
 ## 防線
 
 - `tests/poc-clean-clone.bats` → `CLEAN-POC-f`：動態挑出所有提到 oracle 的測試檔
-  （目前是 `skills/dav-developer/tests/v2.1-jev-poc.bats`），把環境清成跟 CI 一樣
+  （目前是 `skills/dav-jev-oracle/tests/v2.1-jev-poc.bats`），把環境清成跟 CI 一樣
   （無 key、`HOME` 換掉、`JEV_CACHE_DIR` 指向空目錄、**`JEV_ENV_FILE=/dev/null`**）
   整檔重跑；任何一條回頭依賴真 API / 本機暖快取 / 本機 `.env` 就會紅。
 - `CLEAN-POC-h`：`PoC/.env`、`PoC/.env.local`、`PoC/cache/*` 一律不得被 git 追蹤

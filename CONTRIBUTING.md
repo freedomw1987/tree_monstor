@@ -56,7 +56,7 @@ python3 -m pip install python-pptx
 
 ```bash
 # 建 PoC venv（httpx + PyYAML；v2.1-jev-poc.bats 的 40 條需要）
-bash skills/dav-developer/PoC/setup-venv.sh
+bash skills/dav-jev-oracle/PoC/setup-venv.sh
 # 重建：--force 會 rm -rf 目標目錄（TMO-040 護欄：危險路徑如 $HOME、/private/tmp、/usr
 # 直接拒；自訂 POC_VENV_DIR 且目錄已存在時需輸入目錄名確認，非互動腳本加 --yes）
 
@@ -83,7 +83,7 @@ python3 scripts/ci/mutant-must-die.py
 
 > ⚠️ **本機綠 ≠ CI 綠**（2026-10-27 TMO-084 降級後，呢個差距由「CI 閘」變成「本機閘要自己補齊」）：
 > CI 是 clean clone，拿不到未版控的檔案，也**沒有 `OPENROUTER_API_KEY` 與暖快取**。
-> 若新增測試素材，必須真的 `git add`（`skills/dav-developer/tests/poc-clean-clone.bats` 會擋）；
+> 若新增測試素材，必須真的 `git add`（`skills/dav-jev-oracle/tests/poc-clean-clone.bats` 會擋）；
 > fixture 內也不得寫自己機器的絕對路徑。
 > → CI 而家係偵測器（唔阻你），但呢啲坑會令佢紅：**本機閘要自己守住呢一邊** ——
 > 新增素材一定要 `git add`；跑閘前先 `git add -A`（框架體重守門量嘅係 git tracked 檔，
@@ -95,8 +95,8 @@ python3 scripts/ci/mutant-must-die.py
 > 探針內也要加 `JEV_ENV_FILE=/dev/null`（TMO-045），否則本機 `PoC/.env` 會在
 > cache miss 時拿真 key 去打 API，把「fixture 不够用」掩蓋成假綠。
 >
-> `skills/dav-developer/tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
-> （目前即 `skills/dav-developer/tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
+> `skills/dav-jev-oracle/tests/poc-clean-clone.bats` 的 `CLEAN-POC-f` 會把**所有提到 oracle 的測試檔**
+> （目前即 `skills/dav-jev-oracle/tests/v2.1-jev-poc.bats`，100 條）在「無 key／無暖快取／`.env` 已封」的
 > CI 等價環境下**整檔**重跑，任何一條回頭依賴真 API 或本機快取都會紅；
 > `CLEAN-POC-h` 另鎖「`PoC/.env` 與 `PoC/cache/` 不得被 git 追蹤」，
 > `CLEAN-POC-i` 則反向驗證 `JEV_ENV_FILE` seam 真的封得住兩個 .env 來源。
@@ -217,7 +217,7 @@ bash scripts/test-skill.sh dav-wiki pptx-slim     # 可以一次過幾個
 bash scripts/test-skill.sh --list                 # 列有測試嘅 skill
 
 # 或者直接用 bats（同一件事）
-bats skills/dav-developer/tests/
+bats skills/dav-jev-oracle/tests/
 
 # 全套（repo 級 ＋ 所有 skill 級）
 bash scripts/check-all.sh
@@ -230,19 +230,19 @@ bash scripts/check-all.sh
 ## dav-developer 嘅 CI：本機跑（唔喺 GitHub）
 
 > **2026-10-27 用戶決策**：「dav-developer 的 ci 在本地跑都得，不用在 github 上跑」
-> → `.github/workflows/dav-developer-jev-poc.yml` **已刪除**（探針 `CI-f` 鎖住唔准加返）。
+> → 原本嘅 GitHub Actions workflow **已刪除**（探針 `CI-f` 鎖住唔准加返）。
 
 ```bash
-bash skills/dav-developer/PoC/run_ci.sh list          # 列 subcommand
-bash skills/dav-developer/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
-OPENROUTER_API_KEY=sk-or-v1-... bash skills/dav-developer/PoC/run_ci.sh pipeline US-101
-bash skills/dav-developer/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
-bash skills/dav-developer/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
-bash skills/dav-developer/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
+bash skills/dav-jev-oracle/PoC/run_ci.sh list          # 列 subcommand
+bash skills/dav-jev-oracle/PoC/run_ci.sh probes       # 跑探針（唔使 API key）
+OPENROUTER_API_KEY=sk-or-v1-... bash skills/dav-jev-oracle/PoC/run_ci.sh pipeline US-101
+bash skills/dav-jev-oracle/PoC/run_ci.sh matrix        # 預設 US-101 / US-M62 / US-M63
+bash skills/dav-jev-oracle/PoC/run_ci.sh cleanup-scan  # 文件減法盤點
+bash skills/dav-jev-oracle/PoC/run_ci.sh all           # probes → matrix → cleanup-scan
 ```
 
 **Return code**：`0` 綠｜`2` 黃（警告）｜`1` 紅（擋）｜`3` 用法／環境錯誤。
-詳見 [`docs/ci/dav-developer-jev-poc.md`](docs/ci/dav-developer-jev-poc.md)。
+詳見 [`docs/ci/dav-jev-oracle.md`](docs/ci/dav-jev-oracle.md)。
 
 ## CI / GitHub Actions（偵測器，唔係閘）
 

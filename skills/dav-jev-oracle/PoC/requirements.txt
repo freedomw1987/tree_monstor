@@ -4,7 +4,7 @@
 # tests/v2.1-jev-poc.bats 的 38 條 venv-dependent 探針會全紅並印出修復指令。
 # 用下面一行重建：
 #
-#   bash skills/dav-developer/PoC/setup-venv.sh
+#   bash skills/dav-jev-oracle/PoC/setup-venv.sh
 #
 # 上限鎖 httpx<1：不鎖的話 CI 每次重解最新版，上游 breaking 會以
 # 「與該 commit 無關的紅」出現（reviewer P2-7）。
