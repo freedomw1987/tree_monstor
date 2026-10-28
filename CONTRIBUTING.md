@@ -71,7 +71,7 @@ bats skills/dav-wiki/tests/wiki-cleanup.bats --filter "E1"
 ```
 
 ```bash
-# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 49 支 mutant 逐一種回去，
+# 跑突變測試（TMO-065／066）：在 working tree 的**副本**上把 52 支 mutant 逐一種回去，
 # 每支都必須讓對應探針變紅（紅＝探針真的咬得住）；working tree 不會被改到（md5 自證）
 python3 scripts/ci/mutant-must-die.py
 # 只跑幾支（除錯用）：python3 scripts/ci/mutant-must-die.py --only V-M1,IMG-M3
@@ -128,25 +128,35 @@ bash -n skills/dav-wiki/scripts/wiki-cleanup.sh
 bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
 for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 
-# 文檔行數限制（2026-10-27 起改由 dav-skill-creater 規範承擔，唔再靠機械探針）：
-#   主檔 ≤150 行／子檔 ≤300 行／單 skill context ≤ baseline（見 editor-guide.md）→ 寫完自己量
-find skills -name '*.md' -type f -exec cat {} + | wc -l   # 遞迴（含嵌套目錄，同 baseline 表同口徑）
+# 文檔行數限制（v2.11 減法版；由探針 tests/skill-size.bats 機械守）：
+#   主檔 ≤50 行／子檔 ≤150 行／單 skill context ≤400 行（example/template/fixture/PoC 檔除外）→ 寫完自己量
+git ls-files skills/<name> | grep '\.md$' | grep -viE 'example|template|fixture|poc' | xargs -r cat | wc -l
 ```
 
-### 文檔行數限制（2026-10-27 減法後：改由**規範**承擔，唔再靠機械探針）
+### 文檔行數限制（v2.11 減法版：**機械探針**守 ＋ 規範承擔）
 
-原本用 `scripts/ci/check-framework-weight.py`（＋ `tests/framework-weight.bats`、
-`tests/skill-size-guard.bats`）做機械守門。2026-10-27 減法：**兩支機械探針同守門腳本已刪**，
-規則改寫入 `dav-skill-creater` 規範（`skills/dav-skill-creater/editor-guide.md`「文檔行數限制」章）：
+2026-10-27 減法曾把機械守門（`scripts/ci/check-framework-weight.py` ＋ 兩支 bats）刪走，
+改由規範承擔 → 實測失效（2026-10-28：11 個 skill **全部**主檔超 50 行、7 支子檔超 150 行）。
+2026-10-28 改版：**上限收緊 ＋ 探針返嚟**（`tests/skill-size.bats`，repo 級、逐個 skill 掃）。
 
 | 守乜 | 上限 | 類型 |
 |------|------|------|
-| **主檔** `SKILL.md` | ≤ 150 行 | 硬上限（過長必拆子檔）|
-| **單一支援子檔** | ≤ 300 行 | 硬上限（拆檔或壓成表；存量 3 支例外見 editor-guide，改就要 ratchet 返 ≤300）|
-| **單 skill context 總量**（主檔 ＋ 支援 .md）| ≤ baseline（見 editor-guide.md baseline 表；硬上限 1,500 行，`dav-jev-oracle` 已登記例外）| 軟上限（先減法：去重 → 表格化 → 指標化）|
+| **主檔** `SKILL.md` | ≤ 50 行 | 硬上限（過長必拆子檔）|
+| **單一支援子檔** | ≤ 150 行 | 硬上限（拆檔或壓成清單）|
+| **單 skill context 總量**（主檔 ＋ 支援 .md）| ≤ 400 行 | 硬上限（先減法：去重 → 列表化 → 指標化 → 拆 skill）|
 
-寫完／改完自己量：`find skills/<name> -name '*.md' -type f -exec cat {} + | wc -l`（遞迴，同 baseline 表同口徑）。
-**點解唔再機械守**：每加一支機械探針，框架層（tests/）就膨脹一次 → 探針自己都係 context ＋ 維護成本。
+**例外口徑**：支援檔嘅路徑或檔名命中 `example` / `template` / `fixture` / `poc` 者**唔計**
+（樣例資料、可填充模板、demo 實作）→ 唔准靠改名喺呢個口徑下逃避上限。
+
+寫完／改完自己量（**量已 commit 嘅檔**；探針 `tests/skill-size.bats` 用 `find`，
+連**未 commit** 嘅新檔都計 → 探針嚴過手量法，冇規則漏洞）：
+
+```bash
+git ls-files skills/<name> | grep '\.md$' | grep -viE 'example|template|fixture|poc' | xargs -r cat | wc -l
+```
+
+**點解要有探針**：50 行上限係「每加一個新 skill 都要守」嘅規則，靠自律會漏 →
+探針逐個 skill 目錄掃，**之後新造嘅 skill 自動受約束**。
 
 ### markdownlint 政策（TMO-037 後）
 
@@ -262,7 +272,7 @@ bash skills/dav-jev-oracle/PoC/run_ci.sh all           # probes → matrix → c
 3. **bash -n** 驗證 CLI 腳本語法
 4. **Python heredoc 平衡檢查**
 5. **文件漂移檢查**（D1–D8；`bash scripts/ci/check-doc-drift.sh --from-date 2026-10-26`）
-6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 49 支
+6. **突變測試**（`python3 scripts/ci/mutant-must-die.py`）：把 `scripts/ci/mutants.tsv` 的 52 支
    mutant 在副本上重跑一次（各類分佈見該檔本身——手寫明細會漂，交給 `awk` 自查），
    每支都必須讓對應探針變紅——人工種 mutant 只在「當下那個 commit」
    證明得了探針咬得住，之後把某個 gate 改成恒真不會有人知道；`tests/mutant-must-die.bats`
@@ -278,8 +288,8 @@ bash skills/dav-jev-oracle/PoC/run_ci.sh all           # probes → matrix → c
    數目用這兩行自查（數字會隨表成長變動，記得同樣用這兩行重查；本行為最近一次查得的值）：
 
 ```bash
-awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 行為鎖 47
-awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 文件／資料契約鎖 2
+awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 行為鎖 49
+awk -F'\t' '$1 !~ /^#/ && NF && $2 !~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l   # 文件／資料契約鎖 3
 ```
 
    另有 `MUTANT(text-lock):` 前綴慣例，只給「目標檔是程式、卻只想鎖文字」的罕見情況用。
@@ -310,7 +320,7 @@ CI badge：見 [README.md](README.md) 頂部。badge 仍然反映真實狀態（
 - bash：使用 `while ... case ... shift` 旗標解析模式（見 `skills/dav-wiki/scripts/wiki-cleanup.sh`）
 - markdown：遵守 `.markdownlint.json` 規則（MD013=120, MD022/MD032/MD040 等禁用）
 - YAML frontmatter：`docs/wiki/` 文件需含 `keywords` 欄位（3-5 個）
-- Skill 文件：SKILL.md ≤ 150 行，超出需在附件引用
+- Skill 文件：SKILL.md ≤ 50 行、支援子檔 ≤ 150 行、單 skill context ≤ 400 行（上限見上面表格 ＋ `editor-guide.md`）
 
 ## 改共用程式碼的兩條規則
 

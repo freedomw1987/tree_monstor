@@ -14,12 +14,13 @@
 # 性質兩種（TMO-066 二審後明文化）：分類看**目標檔類型**（可機械判定，不看註解）——
 #   * 行為鎖：目標檔是程式／腳本（`.py`／`.sh`／`.bash`／`.bats`）→ 死因必須是語意差。
 #   * 文件／資料契約鎖：目標檔是 `.md`／`.json` 等，探針只斷言檔案文字。
-#   查到現在有幾列（行為鎖 47＋文件／資料契約鎖 2＝49；TMO-071/072/073 再 +5
+#   查到現在有幾列（行為鎖 49＋文件／資料契約鎖 3＝52；TMO-071/072/073 再 +5
 #   —— DD-M1..DD-M3／DR-M1／DR-M2；PNA-M1／PNA-M2 為 TMO-074 掃描器重寫時補嘅
 #   PNA-4b／PNA-4c canary 對應條目；LC-M1 為 TMO-084「本機 CI 等價閘」新增；
 #   RG-CI-M1 為 TMO-084「dav-developer CI 改本機跑」嘅本機 runner 對應條目；
 #   ⚠️ 2026-10-27 減法：刪走 11 列（RG-M1..M3／DT-M1..M3／DR-M1／DR-M2／PNA-M1..M3；
-#   RG-M4 改指向 skill-local 探針後補回 → 48 → 49）
+#   RG-M4 改指向 skill-local 探針後補回 → 48 → 49；
+#   2026-10-28 v2.11 減法版再加 SS-M1／SS-M2／SS-M3（新探針 tests/skill-size.bats 嘅規則鎖）→ 49 → 52）
 #   —— 佢哋嘅探針（回歸-guard-watch-mode／restruct-*／probe-name-ascii）屬「測文件」性質，
 #   已隨「只保留真 python／shell 功能測試」嘅減法一併刪走）：
 #     awk -F'\t' '$1 !~ /^#/ && NF &&  $2 ~ /\.(py|sh|bash|bats)$/' scripts/ci/mutants.tsv | wc -l
@@ -97,3 +98,6 @@ DD-M3	skills/dav-reconciler/scripts/check-doc-drift.py	            if gaps and d
 LC-M1	scripts/check-all.sh	overall_rc=1	overall_rc=0	tests/local-ci-guard.bats	LC-8: a failing step must make the whole run exit non-zero
 RG-CI-M1	skills/dav-jev-oracle/PoC/run_ci.sh	    red)    printf '2\n' ;;	    red)    printf '0\n' ;;	skills/dav-jev-oracle/tests/v2.1-jev-poc.bats	CI-d
 RG-M4	skills/dav-developer/SKILL.md	Runner 對照表（TTY／watch 防線）→ 同套本 skill 子檔（`./runner-cheatsheet.md`）	Runner 對照表 → 見本 skill 的 runner 對照表子檔。	skills/dav-jev-oracle/tests/v2.1-jev-poc.bats	SKILL-e
+SS-M1	skills/dav-skill-creater/editor-guide.md	≤ 50 行	≤ 500 行	tests/skill-size.bats	SS-5
+SS-M2	tests/skill-size.bats	MAIN_CAP=50	MAIN_CAP=500	tests/skill-size.bats	SS-5
+SS-M3	tests/skill-size.bats	example|template|fixture|poc	example|template|fixture	tests/skill-size.bats	SS-5

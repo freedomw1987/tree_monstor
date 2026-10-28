@@ -1244,3 +1244,19 @@ PY
   [ "$status" -eq 0 ] || { echo "$output" >&2; return 1; }
   [[ "$output" == *"OK:"* ]] || { echo "FAIL: 預期 OK：$output" >&2; return 1; }
 }
+
+@test "DOC-DRIFT-056: Gate 4.5 definition lives in ./gate-4.5.md with all four fields" {
+  # ⚠️ 2026-10-28 v2.11 減法版：Gate 4.5 定義由主檔搬去 ./gate-4.5.md（主檔 ≤ 50 行嘅硬上限）
+  #    → 呢條探針守住搬咗出嚟嘅契約欄位（pass_criteria／required_evidence／fail_action／mandatory_phrase）
+  #    同「不引用 mandatory_phrase = 視為 gate 未觸發」嗰句，唔准喺搬運／改寫時漏咗。
+  local g="$REPO_ROOT/skills/dav-reconciler/gate-4.5.md"
+  [ -f "$g" ] || {
+    echo "FAIL: 缺 ${g}（Gate 4.5 定義嘅單一真相）" >&2
+    return 1
+  }
+  for f in "pass_criteria" "required_evidence" "fail_action" "mandatory_phrase"; do
+    assert_file_contains "$g" "**$f**"
+  done
+  assert_file_contains "$g" "視為 gate 未觸發"
+  assert_file_contains "$REPO_ROOT/skills/dav-reconciler/SKILL.md" "./gate-4.5.md"
+}

@@ -858,9 +858,17 @@ PYEOF
   #   → YAML 解析成「隱式 map key」→ **成個 skill 讀唔到**（frontmatter 壞，system 報 skill conflict）
   # 規則：`description:` 之後嘅續行必須以 `>-` / `|` 開頭（block scalar），否則 description 必須單行。
   local f ok=0
+  # 真 YAML parse 層要用有 PyYAML 嘅 python：CI 嘅系統 python3 多數冇 PyYAML
+  # → 優先用 PoC venv（CI 嘅 venv 步驟喺 bats 之前行，裝好 PyYAML）；冇就退回系統 python3。
+  local py=python3
+  local vpy="$REPO_ROOT/skills/dav-jev-oracle/PoC/.venv/bin/python"
+  if [ -x "$vpy" ] && "$vpy" -c 'import yaml' >/dev/null 2>&1; then
+    py="$vpy"
+  fi
+  local out rc
   for f in "$REPO_ROOT"/skills/*/SKILL.md; do
     ok=1
-    python3 - "$f" <<'PYEOF'
+    out="$("$py" - "$f" 2>&1 <<'PYEOF'
 import re, sys
 path = sys.argv[1]
 lines = open(path, encoding="utf-8").read().splitlines()
@@ -876,14 +884,50 @@ if len(desc) != 1:
 i = desc[0]
 rest = fm[i][len("description:"):].strip()
 if rest in (">-", "|", ">", "|-", "|+"):
-    pass                                   # block scalar → 續行合法
+    # ⚠️ 2026-10-28 事故（v2.11 減法版）：自動折行時把 block scalar 嘅續行「去咗縮排」→
+    #    YAML 即刻壞（隱式 map key）→ 成個 skill 讀唔到（system 報 skill conflict）。
+    #    → block scalar 嘅續行**必須有縮排**；呢度逐行驗（唔靠 yaml 套件，CI 冇 PyYAML 都行）。
+    j = i + 1
+    while j < len(fm) and fm[j].strip() == "":
+        j += 1
+    while j < len(fm) and not re.match(r"^[A-Za-z_][\w-]*:", fm[j]):
+        if not fm[j].startswith((" ", "\t")):
+            print(f"FAIL: {path} 嘅 description block scalar 續行冇縮排（第 {j + 2} 行）→ YAML 會壞")
+            sys.exit(1)
+        j += 1
 elif rest:
     # 單行 scalar → 下一行唔可以係續行（要係新 key）
     if i + 1 < len(fm) and fm[i + 1].strip() and not re.match(r"^[A-Za-z_][\w-]*:", fm[i + 1]):
         print(f"FAIL: {path} 嘅 description 跨行（plain scalar 唔准跨行）→ 用 '>-' block scalar"); sys.exit(1)
+# 真 YAML parse（比對「行」更嚴：任何 YAML 錯誤都捉到）。冇 PyYAML 就跳過呢層（唔硬賴）。
+try:
+    import yaml
+except ImportError:
+    # fail-open  ONLY for 呢層（新增層，唔係放寬舊斷言）；縮排層（上面）始終生效。
+    # ⚠️ 必須講明，唔准靜靜哋 skip（否則以為真 YAML parse 有行過）。
+    print("WARN: PyYAML 不可用 → 真 YAML parse 層跳過（縮排層仍生效）", file=sys.stderr)
+    print("OK (skipped yaml parse: PyYAML 不可用)")
+    sys.exit(0)
+try:
+    data = yaml.safe_load("\n".join(fm))
+except Exception as e:
+    print(f"FAIL: {path} frontmatter 真 YAML parse 失敗：{str(e)[:120]}"); sys.exit(1)
+if not isinstance(data, dict) or "name" not in data or "description" not in data:
+    print(f"FAIL: {path} frontmatter 唔係含 name + description 嘅 map"); sys.exit(1)
 print("OK")
 PYEOF
-    [ "$?" -eq 0 ] || return 1
+)"
+    rc=$?
+    [ "$rc" -eq 0 ] || { echo "$out" >&2; return 1; }
+    # 唔准靜靜哋 skip：真 YAML parse 層行過 → 印「OK」；冇 PyYAML → 必須印「WARN:」（縮排層仍生效）
+    case "$out" in
+      *"OK"*) : ;;
+      *WARN:*) : ;;
+      *)
+        echo "FAIL: ENV-EQ-21 嘅 YAML parse 層冇印 OK／WARN → 唔准靜靜哋 skip：${out}" >&2
+        return 1
+        ;;
+    esac
   done
   [ "$ok" -eq 1 ] || { echo "FAIL: 搵唔到任何 skills/*/SKILL.md" >&2; return 1; }
   echo "OK: 所有 skill frontmatter 合法" >&2

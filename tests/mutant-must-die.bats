@@ -45,7 +45,8 @@
 #   * 2026-10-27 減法（只保留真 python／shell 功能測試）：刪走 **11 列** →
 #     **49 支**（RG-M1..M3／DT-M1..M3／DR-M1／DR-M2／PNA-M1..M3 —— 佢哋鎖嘅探針
 #     屬「測文件內容」性質，已隨探針刪走；RG-M4 改指向 skill-local 探針後補回）。
-#     現況：**47 列行為鎖 ＋ 2 列文件／資料契約鎖**（DW-M4→`skills/dav-wiki/SKILL.md`、
+#     現況：**49 列行為鎖 ＋ 3 列文件／資料契約鎖 ＝ 52**（v2.11 減法版加 SS-M1／SS-M2／SS-M3
+#     → 探針 `tests/skill-size.bats` 嘅規則鎖；DW-M4→`skills/dav-wiki/SKILL.md`、
 #     RG-M4→`skills/dav-developer/SKILL.md`）。
 #
 # 【第 2 輪 V03 二審（reviewer subagent、verdict = request-changes）後追加】
@@ -88,7 +89,7 @@ run_mmd() {
   printf '%s\n' "$output" | awk -F'\t' 'NF==4' > "$W/list.txt"
   local n
   n=$(grep -c . "$W/list.txt")
-  [ "$n" -eq 49 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 49；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
+  [ "$n" -eq 52 ] || { echo "FAIL: 只列到 $n 支 mutant（預期 52；增刪列必須同步 scripts/ci/mutants.tsv 檔頭的數字）→ 有人在偷偷刪表" >&2; return 1; }
 
   local -a ids=() targets=()
   local line id target probe_file probe

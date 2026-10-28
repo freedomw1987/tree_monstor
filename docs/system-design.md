@@ -10,7 +10,7 @@
 | 層 | 技術 | 用途 | 備註 |
 | --- | --- | --- | --- |
 | **Agent Runtime** | Pi / Claude Code | AI agent 執行環境 | skill 跨兩者兼容 |
-| **Skill 格式** | Markdown + YAML frontmatter | skill 定義 | ≤150 行/SKILL.md |
+| **Skill 格式** | Markdown + YAML frontmatter | skill 定義 | ≤50 行/SKILL.md（v2.11 減法版）|
 | **腳本語言** | Bash (≥4.0) | install.sh / 系統腳本 | macOS + Linux 兼容 |
 | **測試框架** | bats | 自動化測試 | 覆蓋 install.sh、SOP gates |
 | **Schema 驗證** | ajv-cli + JSON Schema Draft 07 | 驗證 gates.json | |
@@ -100,7 +100,7 @@ tree_monstor/
 
 ```
 dav-wiki skill (M3)
-├── SKILL.md                       # 主流程定義（≤150 行）
+├── SKILL.md                       # 主流程定義（≤50 行）
 ├── examples.md                    # 5+ 操作範例
 ├── frontmatter-schema.md          # frontmatter 欄位定義（含 FR-3 圖/影/音）
 └── concept-evolution.md           # 概念演進規則
@@ -274,7 +274,7 @@ dav-trust skill 接管
 ```
 M4 — Self-Evolution
 ├── skills/sop-evolver/                # 核心入口 skill
-│   ├── SKILL.md                       # ≤150 行
+│   ├── SKILL.md                       # ≤50 行
 │   ├── observation.md                 # 觀察模式規範 + JSON schema
 │   ├── aggregator.md                  # 聚合模式規範
 │   ├── proposer.md                    # 提案 prompt 模板
@@ -444,7 +444,7 @@ M4 — Self-Evolution
 - **理由**：agent 自己提案自己改易形成自我強化偏見；Reviewer subagent 提供跨 SOP 一致性檢查與風險分級；
   但純 markdown 文件改動風險低（行數可控）→ 只自查行數上限，唔使二審
 - **影響**：用戶收到「diff + reviewer verdict」兩者並呈；可明確說「跳過 Reviewer」直接批；
-  純 markdown 改動免二審（自查 skill 主檔 ≤150 行／子檔 ≤300 行）；
+  純 markdown 改動免二審（自查 skill 主檔 ≤50 行／子檔 ≤150 行／context ≤400 行）；
   但「規範語意」改動（AGENTS.md §1.5 V03 例外、handbook、gates.json、skill 規則段、markdown 形式嘅契約）仍必走二審
 
 ### ADR-011：rsi-sync 不覆蓋本地 override

@@ -29,10 +29,9 @@
 - **V02 — 方案必標推薦**：給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：…」。
 - **V03 — 改規範按內容分流**（2026-10-28 改版：純 markdown 文件改動唔再二審）：
   - **只改 markdown 文件**（SOP／`AGENTS.md`／handbook／skill 內文／一般 `.md`）→ **唔使二審**，
-    只自查**行數上限**：skill 主檔 ≤150 行（硬）、子檔 ≤300 行（存量 3 支例外見 editor-guide）、
-    單 skill context 總量 ratchet
-    （只可下唔可上；操作目標主檔 ≤130 行；細則見 `skills/dav-skill-creater/editor-guide.md`
-    「文檔行數限制」）；非 skill 文件無硬上限。
+    只自查**行數上限**：skill 主檔 ≤50 行（硬）、支援子檔 ≤150 行（硬）、
+    單 skill context ≤400 行（硬；`example`／`template`／`fixture`／`PoC` 檔除外），
+    細則見 `skills/dav-skill-creater/editor-guide.md`「文檔行數限制」；非 skill 文件無硬上限。
   - **改到代碼／契約／探針**（python／shell／`.bats`／`gates.json`／其餘非 markdown 檔如
     `.html`／`.json`／`.yaml`／`.tsv` 等）→ **走原二審**：先經獨立 Reviewer subagent
     （`/skill:dav-developer`）二審：附**風險分級** + **跨 SOP 一致性檢查**；

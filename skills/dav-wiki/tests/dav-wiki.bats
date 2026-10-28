@@ -109,10 +109,11 @@ setup() {
   fi
 }
 
-# ---------- AC-2: SKILL.md ≤ 150 lines ----------
-# ⚠️ 2026-10-27 減法：原本呢度有一支機械「SKILL.md ≤150 行」探針。
-# 已刪 —— 主檔行數上限改由 `dav-skill-creater` 規範（「文檔行數限制 v2.8」）承擔，
-# 唔再為守一條行數規則寫機械探針（見 editor-guide.md「文檔行數限制」章嘅說明）。
+# ---------- AC-2: SKILL.md 行數上限（由 repo 級探針統一守） ----------
+# ⚠️ 2026-10-27 減法：原本呢度有一支機械「SKILL.md ≤150 行」探針，已刪。
+# ⚠️ 2026-10-28 v2.11 減法版：上限收緊到主檔 ≤50／子檔 ≤150／context ≤400，
+# 並改由 **repo 級 `tests/skill-size.bats`（SS-1..SS-3）機械守**（逐個 skill 目錄掃，
+# 連新造嘅 skill 都自動受約束）→ 本 skill 唔再另設行數探針（避免同一條上限兩處定義）。
 
 # ---------- AC-3: SKILL.md frontmatter ----------
 @test "AC-3: SKILL.md has valid YAML frontmatter with name + description" {

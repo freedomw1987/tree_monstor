@@ -22,6 +22,7 @@
 | Frontmatter（前置元資料）| SKILL.md 開頭嘅 `---` 區塊（name＋description）| YAML 頭、文件頭 |
 | Gate（閘）| SOP 每階段嘅 fail-fast 屏障；唔通過唔准入下一階段 | — |
 | INVEST（US 品質準則）| US 應滿足：獨立／可協商／有價值／可估／細／可測 | — |
+| Line cap（行數上限）| skill 主檔 ≤50 行／子檔 ≤150 行／context ≤400 行（硬門檻）| 行數上限 |
 | Local gate（本機等價閘）| 本機一次跑齊 CI 檢查步驟嘅閘（CI 已降級為偵測器）| — |
 | Module（模組）| 開發切割單位；一個 Module 一個 sprint | — |
 | Mutant（突變）| 故意改壞程式碼，用嚟證明探針真係咬得住 | — |
@@ -29,7 +30,6 @@
 | Plain-text reference（純文字引用）| 唔用跨目錄連結或路徑引用，改用抽象詞講明出處 | — |
 | PRD（產品需求文檔）| dav-designer 產出嘅模組級需求＋追溯矩陣＋原型 | 需求文檔 |
 | Probe（探針）| 開發期埋入嘅自動化驗證；紅就帶修復建議 | — |
-| Ratchet（棘輪上限）| 只可下唔可上嘅上限（baseline ＋ tolerance）| 棘輪、只減不增 |
 | Reconcile（對帳）| 逐條需求句對住實作比對；產出檔＝對帳表 | reconciliation |
 | Requirement anchor（需求錨點）| 存用戶原話＋R-ID 驗收句嘅檔（全鏈路嘅根節點）；產出檔＝錨點檔 | 錨點 |
 | Requirement maturity（需求成熟度）| 寫 US 前按涵蓋率／清晰度／可行性評分 | — |

@@ -2,190 +2,56 @@
 
 > 本檔定義 dav-wiki 產出檔案的 frontmatter 欄位。
 > 分兩種：**文件 frontmatter**（`docs/wiki/`）與 **概念 frontmatter**（`docs/concepts/`）。
+> 完整可複製範例 → 同套本 skill 樣例檔（`./examples/frontmatter-full-examples.md`）。
 
 ---
 
 ## 1. 文件 frontmatter（docs/wiki/{title}.md）
 
-### 1.1 完整範例（含選填的多模組欄位）
+### 1.1 完整範例
 
-```yaml
----
-
-title: "React Server Components 深入解析"
-source:
-  type: pdf                       # 必填：pdf | docx | pptx | txt | md | url | ocr | subtitle
-  original: "rsc-deep-dive.pdf"   # 必填：原始檔名 或 URL
-  url: null                       # 選填：網頁來源時填
-extracted_at: 2026-01-15          # 必填：ISO 8601 日期
-category: frontend                # 必填：用戶確認的 category（kebab-case）
-tags:                             # 必填：3-8 個 tag（kebab-case，小寫）
-  - react
-  - server-components
-  - rsc
-  - rendering
-summary: "深入講解 RSC 的運作原理、與 SSR 的差異、效能影響"  # 必填：1-3 句
-keywords:                         # 必填：3-5 個關鍵詞（從 summary 提取、提升交叉引用品質）
-  - serialization
-  - hydration
-  - bundle-size
-  - streaming
-related:                          # 必填（可空陣列）：交叉引用
-  - "[[nextjs-app-router-guide]]"
-  - "[[streaming-ssr-patterns]]"
-concepts:                         # 必填（可空陣列）：本文件提煉的概念
-  - "[[server-component-serialization-boundary]]"
-images:                           # 選填（FR-2.2）：文件內含的圖片清單
-  - path: "assets/images/1.png"
-    caption: "RSC 架構圖"
-    ocr_text: ""
-    alt_text: "React Server Components 架構示意圖"
-videos:                           # 選填（FR-2.3）：文件內含的影片清單
-  - path: "assets/videos/demo.mp4"
-    duration: 180
-    transcript_path: "assets/videos/demo.transcript.md"
-    thumbnail: "assets/videos/demo.jpg"
-    chapters:
-      - title: "開場"
-        start: 0
-        end: 30
-        summary: "介紹 RSC 動機與優勢"
-audio:                            # 選填（FR-2.4）：文件內含的音訊清單
-  - path: "assets/audio/podcast.mp3"
-    duration: 1800
-    transcript_path: "assets/audio/podcast.transcript.md"
-deprecated: false                 # 必填：true | false
-superseded_by: null                # 選填：deprecated 時填新檔路徑
----
-```
-
-> 純文字 / URL 來源**唔使**填 `images` / `videos` / `audio`；刪走嗰三段即可（其餘欄位不變）。
+- 完整可複製範例（含選填的多模組欄位）→ 同套本 skill 樣例檔（`./examples/frontmatter-full-examples.md`）§1
+- 純文字 / URL 來源**唔使**填 `images` / `videos` / `audio`；刪走嗰三段即可（其餘欄位不變）。
 
 ### 1.2 欄位規範
 
-- **`title`**
-  - 型別：string
-  - 必填：✅
-  - 約束：50 字內、首字大寫
-- **`source.type`**
-  - 型別：enum
-  - 必填：✅
-  - 約束：`pdf` `docx` `pptx` `txt` `md` `url` `ocr` `subtitle`
-- **`source.original`**
-  - 型別：string
-  - 必填：✅
-  - 約束：原始檔名 / URL
-- **`source.url`**
-  - 型別：string \| null
-  - 必填：❌
-  - 約束：URL 來源時填
-- **`extracted_at`**
-  - 型別：date
-  - 必填：✅
-  - 約束：ISO 8601（YYYY-MM-DD）
-- **`category`**
-  - 型別：string
-  - 必填：✅
-  - 約束：kebab-case 小寫
-- **`tags`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：3-8 個、kebab-case 小寫
-- **`summary`**
-  - 型別：string
-  - 必填：✅
-  - 約束：1-3 句
-- **`keywords`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：3-5 個關鍵詞（提升交叉引用品質）
-- **`related`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：`[[xxx]]` 雙鏈接，可空
-- **`concepts`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：`[[xxx]]` 雙鏈接，可空
-- **`images`**
-  - 型別：object[]
-  - 必填：❌
-  - 約束：見 1.3
-- **`videos`**
-  - 型別：object[]
-  - 必填：❌
-  - 約束：見 1.4
-- **`audio`**
-  - 型別：object[]
-  - 必填：❌
-  - 約束：見 1.5
-- **`deprecated`**
-  - 型別：boolean
-  - 必填：✅
-  - 約束：`true` / `false`
-- **`superseded_by`**
-  - 型別：string \| null
-  - 必填：❌
-  - 約束：deprecated 時填
+- **`title`** — 型別：string；必填：✅；約束：50 字內、首字大寫
+- **`source.type`** — 型別：enum；必填：✅；約束：`pdf` `docx` `pptx` `txt` `md` `url` `ocr` `subtitle`
+- **`source.original`** — 型別：string；必填：✅；約束：原始檔名 / URL
+- **`source.url`** — 型別：string \| null；必填：❌；約束：URL 來源時填
+- **`extracted_at`** — 型別：date；必填：✅；約束：ISO 8601（YYYY-MM-DD）
+- **`category`** — 型別：string；必填：✅；約束：kebab-case 小寫
+- **`tags`** — 型別：string[]；必填：✅；約束：3-8 個、kebab-case 小寫
+- **`summary`** — 型別：string；必填：✅；約束：1-3 句
+- **`keywords`** — 型別：string[]；必填：✅；約束：3-5 個關鍵詞（提升交叉引用品質）
+- **`related`** — 型別：string[]；必填：✅；約束：`[[xxx]]` 雙鏈接，可空
+- **`concepts`** — 型別：string[]；必填：✅；約束：`[[xxx]]` 雙鏈接，可空
+- **`images`** — 型別：object[]；必填：❌；約束：見 1.3
+- **`videos`** — 型別：object[]；必填：❌；約束：見 1.4
+- **`audio`** — 型別：object[]；必填：❌；約束：見 1.5
+- **`deprecated`** — 型別：boolean；必填：✅；約束：`true` / `false`
+- **`superseded_by`** — 型別：string \| null；必填：❌；約束：deprecated 時填
 
 ### 1.3 images 物件 schema（FR-2.2）
 
-- **`path`**
-  - 型別：string
-  - 必填：✅
-  - 約束：相對 `assets/images/` 下的路徑
-- **`caption`**
-  - 型別：string
-  - 必填：✅
-  - 約束：Vision 模型生成的 1-3 句描述
-- **`ocr_text`**
-  - 型別：string
-  - 必填：❌
-  - 約束：OCR 提取的文字（圖含文字才填）
-- **`alt_text`**
-  - 型別：string
-  - 必填：❌
-  - 約束：無障礙用 alt 文字
+- **`path`** — 型別：string；必填：✅；約束：相對 `assets/images/` 下的路徑
+- **`caption`** — 型別：string；必填：✅；約束：Vision 模型生成的 1-3 句描述
+- **`ocr_text`** — 型別：string；必填：❌；約束：OCR 提取的文字（圖含文字才填）
+- **`alt_text`** — 型別：string；必填：❌；約束：無障礙用 alt 文字
 
 ### 1.4 videos 物件 schema（FR-2.3）
 
-- **`path`**
-  - 型別：string
-  - 必填：✅
-  - 約束：相對 `assets/videos/` 下的路徑
-- **`duration`**
-  - 型別：number
-  - 必填：✅
-  - 約束：影片秒數
-- **`transcript_path`**
-  - 型別：string
-  - 必填：❌
-  - 約束：Whisper 字幕檔路徑（`*.transcript.md`）
-- **`chapters`**
-  - 型別：object[]
-  - 必填：❌
-  - 約束：章節切分，見下表
-- **`thumbnail`**
-  - 型別：string
-  - 必填：❌
-  - 約束：封面圖路徑
-
-**chapters 條目**：`title`（✅）、`start`（✅ 秒）、`end`（✅ 秒）、`summary`（✅ 1-3 句）。
+- **`path`** — 型別：string；必填：✅；約束：相對 `assets/videos/` 下的路徑
+- **`duration`** — 型別：number；必填：✅；約束：影片秒數
+- **`transcript_path`** — 型別：string；必填：❌；約束：Whisper 字幕檔路徑（`*.transcript.md`）
+- **`chapters`** — 型別：object[]；必填：❌；約束：章節切分；**chapters 條目**含 `title`（✅）、`start`（✅ 秒）、`end`（✅ 秒）、`summary`（✅ 1-3 句）
+- **`thumbnail`** — 型別：string；必填：❌；約束：封面圖路徑
 
 ### 1.5 audio 物件 schema（FR-2.4）
 
-- **`path`**
-  - 型別：string
-  - 必填：✅
-  - 約束：相對 `assets/audio/` 下的路徑
-- **`duration`**
-  - 型別：number
-  - 必填：✅
-  - 約束：音訊秒數
-- **`transcript_path`**
-  - 型別：string
-  - 必填：❌
-  - 約束：Whisper 字幕檔路徑
+- **`path`** — 型別：string；必填：✅；約束：相對 `assets/audio/` 下的路徑
+- **`duration`** — 型別：number；必填：✅；約束：音訊秒數
+- **`transcript_path`** — 型別：string；必填：❌；約束：Whisper 字幕檔路徑
 
 ---
 
@@ -193,72 +59,20 @@ superseded_by: null                # 選填：deprecated 時填新檔路徑
 
 ### 2.1 完整範例
 
-```yaml
----
-
-slug: effect-shallow-compare                # 必填：唯一識別（kebab-case）
-title: "Effect 依賴淺比較陷阱"               # 必填：人類可讀名稱
-definition: "Effect 依賴淺比較，物件參考變化就重跑"  # 必填：一句話定義
-status: active                              # 必填：active | draft | deprecated
-deprecated: false                           # 必填
-superseded_by: null                         # 選填：deprecated 時填新 concept slug
-parents: []                                 # 必填（可空）：父概念 [[xxx]]
-children:                                   # 必填（可空）：子概念 [[xxx]]
-  - "[[effect-shallow-compare-vs-deep]]"
-related_docs:                               # 必填（可空）：引用此概念的文件
-  - "[[react-hooks-cheatsheet]]"
-history:                                    # 必填（可空）：演進歷史
-  - date: 2026-01-15
-    action: created
-    note: "初版建立"
-  - date: 2026-02-03
-    action: revised
-    note: "加入 useMemo 案例"
----
-```
+- 完整可複製範例 → 同套本 skill 樣例檔（`./examples/frontmatter-full-examples.md`）§2
 
 ### 2.2 欄位規範
 
-- **`slug`**
-  - 型別：string
-  - 必填：✅
-  - 約束：kebab-case、唯一
-- **`title`**
-  - 型別：string
-  - 必填：✅
-  - 約束：30 字內
-- **`definition`**
-  - 型別：string
-  - 必填：✅
-  - 約束：1-2 句話定義
-- **`status`**
-  - 型別：enum
-  - 必填：✅
-  - 約束：`active` `draft` `deprecated`
-- **`deprecated`**
-  - 型別：boolean
-  - 必填：✅
-  - 約束：`true` / `false`
-- **`superseded_by`**
-  - 型別：string \| null
-  - 必填：❌
-  - 約束：slug 或 null
-- **`parents`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：`[[xxx]]`，可空
-- **`children`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：`[[xxx]]`，可空
-- **`related_docs`**
-  - 型別：string[]
-  - 必填：✅
-  - 約束：`[[xxx]]`，可空
-- **`history`**
-  - 型別：object[]
-  - 必填：✅
-  - 約束：可空，見 2.3
+- **`slug`** — 型別：string；必填：✅；約束：kebab-case、唯一
+- **`title`** — 型別：string；必填：✅；約束：30 字內
+- **`definition`** — 型別：string；必填：✅；約束：1-2 句話定義
+- **`status`** — 型別：enum；必填：✅；約束：`active` `draft` `deprecated`
+- **`deprecated`** — 型別：boolean；必填：✅；約束：`true` / `false`
+- **`superseded_by`** — 型別：string \| null；必填：❌；約束：slug 或 null
+- **`parents`** — 型別：string[]；必填：✅；約束：`[[xxx]]`，可空
+- **`children`** — 型別：string[]；必填：✅；約束：`[[xxx]]`，可空
+- **`related_docs`** — 型別：string[]；必填：✅；約束：`[[xxx]]`，可空
+- **`history`** — 型別：object[]；必填：✅；約束：可空，見 2.3
 
 ### 2.3 history 條目規範
 
@@ -292,5 +106,4 @@ history:                                    # 必填（可空）：演進歷史
 
 - [Obsidian Internal Links](https://help.obsidian.md/Linking/Internal+links) — `[[xxx]]` 語法
 - [JSON Schema Draft 07](https://json-schema.org/draft-07/json-schema-release-notes.html) — 索引格式
-- [SKILL.md](SKILL.md) — 主流程
-- [concept-evolution.md](concept-evolution.md) — 演進規則
+- 主流程 → 同套本 skill 主檔（`./SKILL.md`）；演進規則 → 同套本 skill 子檔（`./concept-evolution.md`）

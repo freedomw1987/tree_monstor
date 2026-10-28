@@ -1,12 +1,20 @@
+---
+name: dav-submitter-module-delivery
+description: dav-submitter 的「Module 級交付」附件。講 Module 級交付嘅適用情境、同 US 級嘅 4 點差異（Backlog ID 格式／測試邊界／檔案命名／§9 Module 級總結）同
+Module 級反思 6 維度。流程見主檔。
+---
+
 # Module 級交付（v2.2 新增）
 
 > 本檔為 dav-submitter 的 Module 級交付細節。
-> 引用：`SKILL.md`「v2.2 Module 級交付」章節
+> 引用：主檔 `SKILL.md` 流程 Step 3.5 反省 ＋ 規則「Module 級交付可觸發（v2.2）」
 >
 > 從 SKILL.md v2.2 起，本檔獨立。理由：Module 級交付與 US 級交付差異多（Backlog ID 格式 / 探針綁定 / §9 總結），屬於「進階場景」。
 
 ## 適用情境
 
+- **交付單位 4 級**：單個 US（1 個 AC 套件）｜單個 Module（Module 內所有 US 集合）｜多個 Module（＋ cross-module integration）｜整個 repo / sprint
+結束（整個交付歷史）—— 後三級用 Step 3.5 微總結
 - **整個 Module 完成**：Module 內所有 US 都驗收完、Module 級整合測試通過
 - **Module 級里程碑**：Module 內 US 不全部交付、但達到某個「可發佈」的狀態
 - **Module 重構完成**：Module 內部技術債清理 + 探針重寫

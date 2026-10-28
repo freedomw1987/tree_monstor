@@ -1,7 +1,12 @@
+---
+name: dav-submitter-retention
+description: dav-submitter 的「保留 vs 歸檔」規格附件。定義交付摘要只留最近一次、Backlog 只留未完成、docs/ 層面保留／歸檔清單同每次交收嘅執行次序。流程見主檔。
+---
+
 # Dav Submitter — 交付摘要 ＋ docs 保留策略
 
 > 本檔為 `dav-submitter` 嘅「保留 vs 歸檔」規格（2026-10-27 訂）。
-> 引用：`SKILL.md` Step 3（寫交付摘要）＋ Step 5（更新 Backlog）＋ 規則表。
+> 引用：主檔 `SKILL.md` Step 3（寫交付摘要）＋ Step 5（更新 Backlog）＋ 規則表。
 
 ## 為什麼要有這份規格
 
@@ -12,19 +17,17 @@
 
 ## 交付摘要：只留最近一次
 
-| 項目 | 規則 |
-|---|---|
-| 位置 | `docs/deliverable/<YYYY-MM-DD>-<task-slug>.md` |
-| 保留 | **只留最近一次**交付摘要；舊嘅刪（靠 git history）|
-| 例外（要留低）| **嗰次交付嘅引用鏈**：`docs/req/<US>-requirement.md` ＋ `docs/reconcile/<US>-reconcile.md` |
-| 點解要留引用鏈 | 文件漂移檢查嘅 **D8 硬門檻**（窗內要有交付摘要可對帳）靠佢；唔留 → 檢查件數為 0 → fail-closed 紅 |
+- **位置**：`docs/deliverable/<YYYY-MM-DD>-<task-slug>.md`
+- **保留**：**只留最近一次**交付摘要；舊嘅刪（靠 git history）
+- **例外（要留低）**：**嗰次交付嘅引用鏈**：`docs/req/<US>-requirement.md` ＋ `docs/reconcile/<US>-reconcile.md`
+- **點解要留引用鏈**：文件漂移檢查嘅 **D8 硬門檻**（窗內要有交付摘要可對帳）靠佢；唔留 → 檢查件數為 0 → fail-closed 紅
 
 ## Backlog：只留未完成
 
 - `docs/backlog.md` 只留 **未完成**（`todo`／`doing`／`⏸️`）嘅 row
 - **完成（done）嘅 row 要移出**（記錄去交付摘要 ＋ 需求錨點 ＋ git history）
 - 每次更新 backlog 都要順手檢查：有冇已完成 row 殘留 → 有就移出
-- 規格細節 ＋ 去邊記錄 → 同套 `dav-planner` 子檔（`./backlog-rules.md` §4.5）
+- 規格細節 ＋ 去邊記錄 → 見同套 `dav-planner` skill
 
 ## `docs/` 保留 vs 歸檔（全局判斷）
 
