@@ -58,3 +58,12 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
 - 前台 subagent **唔會**自動載入全域 extension，`tools` 亦係嚴格 allowlist → 想佢自己量度，要喺 agent frontmatter 加 `extensions:` 同 `tools: [..., ctx_status]`（陷阱細節 → 同套 `dav-self-compact` 嘅 `protocol.md` §7）。
 - **實測**：一次性 subagent 嘅被動提示唔會觸發（run 開始時 usage 未知）→ 子 agent 一定係「有 tool 就主動 call、冇 tool 就靠 Task 指令寫 checkpoint」兩種情況，唔存在「佢自己會知」。
 - 冇 `ctx_status` 就靠 fallback：**每個 Backlog 完成即寫 checkpoint**，唔好等 context 爆。
+
+## §6 trust mode 必須遵守 dav-self-compact（唔准拒絕壓縮）
+
+- **硬規則**：trust 內區間判定同壓縮係**強制**，唔係可選項。agent **冇**壓縮手掣（pi 1.4.0 實測），所以「拒絕壓縮」實際表現係：唔收尾、唔更新 checkpoint、繼續開新工作硬撐 → 呢個係違規。
+- **到機會窗口（≥55%）**：完成當前 Backlog row → 更新 `docs/trust-log.md` 檔頭 checkpoint ＋ backlog row → 交俾 fuse。唔准用「怕失憶」做理由拖。
+- **到 hard（≥60%）**：① 停新工作 ② 更新 checkpoint ③ 喺 trust-log 記「fuse 太遲」④ 等原生壓縮，唔准繼續燒 context。
+- **為什麼壓縮唔會令 trust 失控**：真相來源係檔（trust-log checkpoint ＋ backlog row），唔係對話記憶；壓縮後第一件事就係讀返 checkpoint 續跑（`resume.md` §2）。
+- **機械後盾**：`skills/dav-trust/extension/` 每次 run 開始驗 fuse（太遲 → 注入警告 ＋ 通知用戶），hard 區每輪注入強制指令（首次即出，之後每 5 輪）。
+- **啟動前必驗 fuse**（Step 1 檢查項）：`ctx_status` 要顯示 `native auto-compaction fires at … = inside the opportunity window`；唔對 → **先修** `~/.pi/agent/settings.json`（`reserveTokens = contextWindow − opportunityTokens`）再啟動 trust，唔好帶住一個「唔會自動壓縮」嘅環境跑長任務。

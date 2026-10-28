@@ -20,6 +20,43 @@
 
 **關鍵數字（本機設定）**：有效窗口 200k → soft 100k（50%）／機會窗口 110k（55%）／hard 120k（60%）；原生自動壓縮觸發點 `1,000,000 − 890,000 = 110,000` ＝ **機會窗口內**，避免拖到 hard 之後才被迫壓縮。
 
+### 1.6 追加修正：trust mode 必須遵守 dav-self-compact（用戶報：到 hard block 都唔肯壓縮）
+
+用戶報：trust 階段 agent 唔肯壓縮 context，到 hard block 都唔壓 —— 要杜絕，必須遵守 dav-self-compact。
+
+**先講清根因**：agent **冇**壓縮手掣（pi 1.4.0 實測三種觸發方式全失敗）。所以「唔肯壓縮」實際係兩件事：
+① fuse（`compaction.reserveTokens`）冇對齊 → 根本唔會自動壓；② agent 到機會窗口／hard 都唔收尾、
+唔更新 checkpoint、硬撐開新工作。兩件都要處理：
+
+- **紀律**：`dav-trust/long-run-context.md` 新增 §6 —— trust 內區間判定同壓縮係**強制**；
+  到機會窗口要收尾＋更新 checkpoint；到 hard 要停新工作／更新 checkpoint／記「fuse 太遲」／等原生壓縮；
+  並講清「壓縮唔會令 trust 失控，因為真相來源係 trust-log checkpoint ＋ backlog row」。
+  主檔 Step 1 加「fuse 已對齊機會窗口」為啟動檢查項。
+- **機械守門**：`skills/dav-trust/extension/` 加兩個 hook：
+  - `before_agent_start`（trust 進行中）：用 `pi.getSettings()` ＋ 目前 model 計 fuse；唔對就注入警告
+    （TOO LATE／too early ＋ 精確 `reserveTokens` 修法）＋ TUI 通知
+  - `turn_end`（trust 進行中、已入 hard 區）：注入強制指令（停新工作／更新 checkpoint／報告 fuse 太遲）；
+    節流為「首次即出，之後每 5 輪」
+- 純判定層 `extension/lib/fuse-audit.ts`（`auditFuse`／`resolveReserveTokens`／`normalizeTrustZones`／`fuseAuditText`）
+  ＋ `skills/dav-trust/tests/fuse-audit.bats` 5 條（FA-1..FA-5）
+- 實跑驗證：fuse 正常 → 無警告；fuse 設 16384（太遲）→ 注入 `⚠ TOO LATE … reserveTokens = 890000`；
+  模擬 hard 區 → 注入 `hard block reached in trust mode …`（節流後同一 run 由 14 條降到 1 條）
+
+### 1.5 追加修正：dav-trust 禁止「等時間」（用戶報：完成得快就用 `sleep` 等夠鐘）
+
+用戶報：trust mode 提早做完之後，agent 會用 `sleep` 等 deadline 到 —— 要禁止。純文字規則擋唔住
+（agent 自己發明指令），所以做**紀律 ＋ 機械守門**兩層：
+
+- `skills/dav-trust/extension/`（新）：`tool_call` 攔截 bash —— 擋 `sleep` > 30 秒、長度證明唔到嘅
+  `sleep`（例 `sleep $(date +%s)`）、空轉迴圈（`while true`／`until false`）、淨係 `wait`；
+  短 sleep（≤30 秒，等 port／retry backoff）照放行
+- **只在 trust mode 進行中生效**：讀 `<cwd>/docs/trust-log.md` 檔頭（有 `Deadline:` 且 `PHASE` 唔係
+  終局）→ 其他情境零干預；門檻／開關 → `~/.pi/agent/dav-trust.json`（`maxSleepSeconds`／`enabled`）
+- 擋嗰陣回覆「應該點做」：繼續 L1→L2→L3；全部耗盡 → 收斂、交付、報告提早完成、退出 trust
+- `time-anchor.md` 新增 §6；主檔規則改為「提早完成不停下（但唔准等時間）— 例外：L1／L2／L3 全耗盡 →
+  收斂 ＋ 交付 ＋ 報告提早完成 ＋ 退出（唔等 deadline）」
+- 實跑驗證：trust 專案內 `sleep 600` → **blocked**，agent 回報「never ran」；非 trust 目錄 `sleep 40` → 照跑
+
 ### 1.0 追加優化（第三輪）：使用率里程碑提示（20%／40%／60%）
 
 用戶要求：每逢使用率到 20%／40%／60% 都印一條訊息，講出使用率 ＋ 身處 normal／soft block／hard block。
@@ -64,6 +101,11 @@
 | `tests/fixtures/mock-tree-monstor/skills/dav-planner/extension/index.ts` | install 測試用 fixture（驗證 skill 內附 extension 目錄嘅裝卸）|
 | `agents/dav-long-run.md` | 現成 long-run subagent：`tools` 含 `ctx_status`、內建交接筆記模板、soft/hard 行為寫死（R1 subagent 側嘅機械保證）|
 | `tests/fixtures/mock-tree-monstor/agents/mock-agent.md` | install 測試用 subagent fixture |
+| `skills/dav-trust/extension/index.ts` | 「唔准等時間」守門：`tool_call` 攔截 bash，只在 trust mode 進行中生效 |
+| `skills/dav-trust/extension/lib/sleep-guard.ts` | 純判定層：`findIdleWait`／`parseSleepSeconds`／`blockReason` |
+| `skills/dav-trust/tests/sleep-guard.bats` | 8 條單元測試（SG-1..SG-8） |
+| `skills/dav-trust/extension/lib/fuse-audit.ts` | fuse 審核純函數（trust 前提：壓縮要自己發生） |
+| `skills/dav-trust/tests/fuse-audit.bats` | 5 條單元測試（FA-1..FA-5） |
 | `docs/deliverable/2026-10-29-dav-self-compact.md` | 本交付摘要 |
 
 ### 2.2 修改檔案
@@ -73,7 +115,9 @@
 | `install.sh` | `print_plan` 加 extension 計劃行；`uninstall_pi()` 呼叫 `uninstall_pi_extensions`；新增 `uninstall_pi_extensions()`（只刪指向本 repo extension 嘅 symlink）|
 | `lib/install/agents.sh` | 新增 `install_pi_extensions()`；`install_pi()` 呼叫佢；檔案頭「Defines」清單補一行 |
 | `tests/install.bats` | AC-1 加 extension 目錄 symlink ＋ subagent symlink 斷言；AC-4(no-agents-dir) 改為斷言「唔裝 copy 但 subagent 仍 symlink」；AC-8 加「用戶自建 extension 不會被 uninstall 刪走」負向案例 |
-| `skills/dav-trust/SKILL.md` | 子檔導航加 `./long-run-context.md`；「中斷後續跑」規則指向新子檔（行數仍 50）|
+| `skills/dav-trust/SKILL.md` | 子檔導航加 `./long-run-context.md`；「提早完成唔准等時間」規則（行數仍 50）|
+| `skills/dav-trust/time-anchor.md` | 新增 §6「唔准等時間」；削走 §5（meta 填充）騰出 context 額度 |
+| `skills/dav-trust/long-run-context.md` | 新增 §6「trust 必須遵守 dav-self-compact（唔准拒絕壓縮）」|
 | `AGENTS.md` | 加 V04（長跑必守聰明區）；標題「三條行為紀律」→「四條行為紀律」（32 → 34 行）|
 
 ### 2.3 刪除檔案
@@ -117,10 +161,12 @@
 | 測試類型 | 通過 / 總數 | 備註 |
 |---------|-------------|------|
 | `bats tests/` 全量 | 128 / 128 | 包含 `skill-size`、`install`（32）、`mutant-must-die`、`env-equivalence` 等 |
-| `bats skills/*/tests/*.bats`（skill 自帶探針）| 448 / 448 | 含 `skills/dav-self-compact/tests/zone.bats` 16 條（機會窗口 Z2b／Z2c／Z7b；里程碑 Z10–Z13）|
+| `bats skills/*/tests/*.bats`（skill 自帶探針）| 461 / 461 | 含 `skills/dav-self-compact/tests/zone.bats` 16 條（機會窗口 Z2b／Z2c／Z7b；里程碑 Z10–Z13）|
 | `bats tests/skill-size.bats` | 6 / 6 | 主檔 46 ≤50、子檔 ≤150、context 258 ≤400 |
 | `bats tests/install.bats` | 32 / 32 | 含新 extension 裝／卸斷言 |
 | 文件漂移檢查 D1–D8 | 綠（11 項豁免）| `bash scripts/ci/check-doc-drift.sh --from-date 2026-10-20` |
+| Trust 守門 smoke（實跑 pi）| ✅ | trust 專案內 `sleep 600` 被擋（agent 回報 never ran）；非 trust 目錄 `sleep 40` 照跑 |
+| Trust fuse／hard 提示 smoke（實跑 pi）| ✅ | fuse 太遲 → `⚠ TOO LATE … reserveTokens = 890000`；hard 區 → 強制指令（節流生效）|
 | Subagent smoke（實跑 `dav-long-run`）| ✅ | `ctx_status` 存在並回傳 `ctx 1.6% (3k/200k tokens, window 1000k)`；紀律指令確認收到 |
 | Extension smoke（實跑 pi）| 7 個情境全過 | smart 區輸出、soft 注入、機會窗口 advice（`compact_at_boundary`）、fuse ⚠「too late」＋建議值、目錄 symlink 載入、**里程碑訊息（20% 跨過實跑）**、hard 里程碑文案 |
 | Gate 4（品質審核）| OK with notes | 7 findings，全部 minor；F1／F2／F6 已修 |

@@ -66,9 +66,9 @@ context 壓縮）後靠它續跑（契約見 resume.md §2）
 換算（`date -d "DEADLINE"'+%s'`）避免字串比對漂移
 - **4.8 Agent 與用戶時區不同** — Agent 動作：啟動時問用戶時區；同時記 `USER_TS` 同 `AGENT_TS`；trust-log 用用戶時區顯示、內部計算用 epoch
 
-## §5 與 SOP 規範的關係
+## §6 唔准等時間（deadline 係上限，唔係要坐夠鐘）
 
-- **`AGENTS.md` §1.5 V01（一次一個問題）** — 與本檔關係：時間錨點鎖死 deadline 只問一次，合規
-- **`AGENTS.md` §1.5 V02（必標推薦）** — 與本檔關係：啟動對話明示時間錨點（START/DEADLINE）合規
-- **`AGENTS.md` §1.5 V03（改規範按內容分流）** — 與本檔關係：規則文件改動按內容分流，契約／門檻檔一律走二審
-- **`dav-skill-creater` 主檔行數上限 50** — 與本檔關係：本檔外移避免主檔觸上限
+- **禁止**：`sleep` 長過 30 秒、長度證明唔到嘅 `sleep`（例：`sleep $(date +%s)`）、空轉迴圈（`while true`／`until false`）、淨係 `wait`。**機械守門**：`skills/dav-trust/extension/`（喺 trust mode 進行中擋走呢類 bash 指令，並回覆「應該點做」；門檻／開關 → `~/.pi/agent/dav-trust.json` 嘅 `maxSleepSeconds`／`enabled`）。
+- **為什麼**：deadline 係「幾時一定要停」嘅授權上限；提早做完就係做完，坐夠鐘唔會多咗價值，只燒 token 同時間。
+- **提早做完嘅正確出口**：L1（下一個 PENDING）→ L2（重訪 ⏸️）→ L3（`docs/` 預先規劃擴量）；**全部耗盡** → 收斂 → 同套 `dav-reviewer` skill 交付 → 輸出 `🏁 Trust Mode 已結束（提早完成）` → 明示「已無可做工作，要繼續請重新發起」（唔需要等到 deadline，亦唔准問用戶 —— 呢個係報告唔係提問）。
+- **唯一例外**：真係等外部事件（background job／CI／port 起）→ 短 sleep（≤ 30 秒）＋ 必須講明等乜；要等好耐 → 用 `bg_wait`／subagent 或收窄 polling 上限，唔准 `sleep 3600`。
