@@ -21,7 +21,8 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
   1. 更新 `docs/trust-log.md` 檔頭 checkpoint（見 §3）；
   2. 確保 `docs/backlog.md` 當前 row 狀態／剩餘項已寫實；
   3. 下一步避開「大字串」：唔好一次讀超長檔／貼大 log，改 `limit` 分段讀。
-- **hard（≥60%）** → 唔准開新 Backlog／新大範圍改動；**收尾當前原子步驟 → 寫 checkpoint → 交俾 pi 原生自動壓縮**（佢喺下一個模型回應前會壓），壓縮完繼續 L1/L2/L3。
+- **opportunity（≥55%）＝壓縮窗口** → 揀最好邊界：完成當前 Backlog row／測試綠／checkpoint 已更新 → 呢個就係時機。唔准為咗等「更好時機」而拖；將剩低工作切成細步，令下一個邊界幾步之內就到（fuse 喺下一個模型回應前會開火）。
+- **hard（≥60%）＝死線＋警報** → fuse 理應已喺窗口內開火；仍然見到 60% 代表 `reserveTokens` 太遲 → 收尾 ＋ 喺 trust-log 記低（唔問用戶），退出後提示改設定。
 - **unknown（剛壓縮完，`percent` 讀到 null）** → 唔准當「已回落」；下一輪模型回應後即刻再量一次。
 
 **唔准自己叫 compact**：trust mode 內一樣受 `dav-self-compact` 嘅限制 —— pi 1.4.0 喺 tool call 內觸發壓縮會連摘要一齊 abort。

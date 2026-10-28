@@ -5,10 +5,14 @@
  * 模型注意力下降、指令遺失。呢個 extension 令 model 同 subagent 自己睇得到使用率
  * （`ctx_status` 工具 ＋ 每輪 run 開始時自動注入提示），唔需要靠估。
  *
- * 三區（默認值；可用 ~/.pi/agent/dav-self-compact.json 覆寫）：
- *   smart  <  soft (50%) → 繼續做
- *   soft   >= soft (50%) → 寫交接筆記、避開大讀取；下一步大就壓縮
- *   hard   >= hard (60%) → 唔開新大工作，交俾 pi 原生自動壓縮
+ * 四區（默認值；可用 ~/.pi/agent/dav-self-compact.json 覆寫）：
+ *   smart       <  soft (50%)        → 繼續做
+ *   soft        >= soft (50%)        → 寫交接筆記、避開大讀取，等機會窗口
+ *   opportunity >= win (55%)         → 機會窗口：揀最好嘅邊界壓縮（最佳時機）
+ *   hard        >= hard (60%)        → 死線：唔開新大工作；fuse 理應已喺窗口內開火
+ *
+ * 目標係「喺機會窗口內壓縮」，唔好等到 hard 之後才被迫壓縮 —— 所以 fuse 對齊嘅係
+ * opportunityTokens（唔係 hardTokens）。
  *
  * 「有效 window」= min(contextWindow, absoluteCapTokens)；absoluteCapTokens > 0 時，
  * 1M window 模型嘅 50% 唔會等於 50 萬 tokens（實際上早已唔聰明）。
@@ -90,7 +94,8 @@ const ctxStatusTool = defineTool({
 	description:
 		"Report this session's context-window usage (tokens, percent, zone) and the action it demands: " +
 		"keep_working (<50%), prepare_then_compact (>=50%: write the handoff note, keep next steps small), " +
-		"compact_now (>=60%: finish the current step and stop opening new large work). " +
+		"compact_at_boundary (>=55%: the window to compact — pick the best boundary now), " +
+		"compact_now (>=60%: past the deadline — stop opening new large work). " +
 		"Call it before a big step in a long task. After a compaction, usage reads as unknown until the next " +
 		"model response, so call it again then to confirm the window is back inside the smart zone.",
 	parameters: Type.Object({}),

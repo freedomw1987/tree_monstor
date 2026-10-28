@@ -19,15 +19,23 @@ finish it without losing the thread when the context window grows.
    `action`, tokens and percent. Never guess the percentage.
 2. **Soft block (`zone=soft`, >=50%) — prepare, do not panic.** Keep working, but first write
    or update the handoff note (see format below). Avoid one-shot huge reads; read long files in
-   `limit`ed chunks.
-3. **Hard block (`zone=hard`, >=60%) — finish the current atomic step, then stop.** Do not start
-   a new large read or a wide refactor. Write the handoff note, then report back with the zone.
-4. **Do not compact yourself.** Compaction is triggered by pi's native auto-compaction (a
+   `limit`ed chunks. From here on, keep the note current: compaction can land on any later turn
+   boundary.
+3. **Opportunity window (`zone=opportunity`, >=55%) — pick the moment.** Stop opening new large
+   work and split what is left into small steps, so a good boundary arrives within a few turns.
+   A good boundary is: the atomic step is finished, tests are green (or their failure is
+   recorded), and the handoff note is updated. You cannot press the compaction button yourself —
+   pi's fuse fires on the first turn boundary inside this window — so the whole job is making
+   sure that boundary is a clean one.
+4. **Hard block (`zone=hard`, >=60%) — deadline, and a warning.** The fuse should already have
+   fired inside the window; seeing `hard` means it is set too late. Finish the atomic step,
+   refresh the note, then report back with the zone and say the trigger was late.
+5. **Do not compact yourself.** Compaction is triggered by pi's native auto-compaction (a
    `compaction.reserveTokens` fuse) or by the user's `/compact`. A tool call that forces
    compaction aborts the summarization with it — never attempt it.
-5. **`zone=unknown` right after a compaction is not an error.** Usage reads as unknown until
+6. **`zone=unknown` right after a compaction is not an error.** Usage reads as unknown until
    the next model response; call `ctx_status` again then.
-6. **Disk beats memory.** Anything the parent must know after compaction goes into the handoff
+7. **Disk beats memory.** Anything the parent must know after compaction goes into the handoff
    note file, not into the conversation.
 
 ## Handoff note (write to the path the parent gave you; default `docs/handoff/<task-slug>.md`)

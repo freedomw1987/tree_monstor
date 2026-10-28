@@ -18,7 +18,17 @@
 - ✅ `AGENTS.md` 加 **V04 長跑必守聰明區**（把「派長工要帶 skill ＋ 寫 checkpoint」變成每次載入嘅硬規則）
 - ✅ Gate 4（品質審核）＋ Gate 4.5（需求對帳）由獨立 subagent 完成；F1–F7 全部處理
 
-**關鍵數字（本機設定）**：有效窗口 200k → soft 100k（50%）／hard 120k（60%）；原生自動壓縮觸發點 `1,000,000 − 880,000 = 120,000` ＝ hard block，三者對齊。
+**關鍵數字（本機設定）**：有效窗口 200k → soft 100k（50%）／機會窗口 110k（55%）／hard 120k（60%）；原生自動壓縮觸發點 `1,000,000 − 890,000 = 110,000` ＝ **機會窗口內**，避免拖到 hard 之後才被迫壓縮。
+
+### 1.1 追加優化（第二輪）：由「hard 才壓」改成「機會窗口揀時機」
+
+用戶要求：agent／subagent 應該喺 soft／hard 之間**揀最好時機**壓縮，盡量避免過了 hard 才被迫壓。
+
+- 新增 **opportunity（機會窗口）** 區間（默認 55%），四區變成 smart／soft／opportunity／hard
+- **fuse 對齊改為 opportunity**（`reserveTokens = window − opportunityTokens`，本機 890000）：pi 喺「工具批次完、下一個 assistant 回應之前」檢查，所以壓縮一定落喺機會窗口內嘅安全邊界
+- **hard 由「觸發點」改為「死線＋警報」**：正常唔應該見到；見到代表 fuse 太遲，要報告
+- `protocol.md` §4 新增「揀最好時機」程序：**好邊界清單**（原子步驟完成／測試綠／筆記已更新／冇不可中斷動作）＋ 窗口內「切成細步令邊界盡快到」＋ 互動 session 主動叫用戶 `/compact`
+- fuse 審核改為「早過 soft（太早）／遲過 opportunity（太遲）都出 ⚠ ＋ 建議值」
 
 ### 1.2 為什麼做這個改動
 
@@ -37,8 +47,8 @@
 | `skills/dav-self-compact/reference.md` | 區間定義、閾值設定、量度方式、原生壓縮對齊、為何 extension 唔自己壓縮（實測）|
 | `skills/dav-self-compact/setup.md` | 安裝／驗證／故障排除 |
 | `skills/dav-self-compact/extension/index.ts` | pi 入口：`ctx_status` ＋ `before_agent_start` 注入 ＋ `/ctx` ＋ fuse 審核（讀 settings／config）|
-| `skills/dav-self-compact/extension/lib/zone.ts` | 純計算層（zone／fuse／文案），無 I/O 無 pi API → 可單元測試 |
-| `skills/dav-self-compact/tests/zone.bats` | 9 條單元測試（Z1–Z9）鎖住關鍵數字 |
+| `skills/dav-self-compact/extension/lib/zone.ts` | 純計算層（四區判定／機會窗口／fuse 審核／文案），無 I/O 無 pi API → 可單元測試 |
+| `skills/dav-self-compact/tests/zone.bats` | 12 條單元測試（Z1–Z9，含機會窗口）鎖住關鍵數字 |
 | `skills/dav-trust/long-run-context.md` | trust mode 長跑 context 紀律（57 行）|
 | `tests/fixtures/mock-tree-monstor/skills/dav-planner/extension/index.ts` | install 測試用 fixture（驗證 skill 內附 extension 目錄嘅裝卸）|
 | `agents/dav-long-run.md` | 現成 long-run subagent：`tools` 含 `ctx_status`、內建交接筆記模板、soft/hard 行為寫死（R1 subagent 側嘅機械保證）|
@@ -81,7 +91,7 @@
 | R3 | 處理 long-running 長任務 | ✅ | `protocol.md` §3／§6（交接筆記 ＋ 長任務紀律）|
 | R4 | 知道當前 LLM 嘅 context window | ✅ | `ctx_status` 印 `14k/200k tokens, window 1000k`（F3 修正後，真跑實測）；`skills/dav-self-compact/tests/zone.bats` Z4 鎖住 |
 | R5 | ≥50% soft block：準備，唔一定要即刻壓縮 | ✅ | `reference.md` §1；`protocol.md` §2 |
-| R6 | ≥60% hard block：做完當前任務即刻 compact | ✅ | 原生自動壓縮（`reserveTokens=880000`）；`protocol.md` §4；`reference.md` §6（實測）|
+| R6 | ≥60% hard block：做完當前任務即刻 compact | ✅ | 原生自動壓縮（`reserveTokens=890000`，喺機會窗口 110k 開火，早於死線）；`protocol.md` §4／§5；`reference.md` §5–§6（實測）|
 | R7 | 確認 compact 成功＋壓縮後 ≤50%（建議 20–35%）| ✅ | `protocol.md` §5（`percent=null` 處理、JSONL `"type": "compaction"` 事件層確認、連續兩次失敗停手）|
 
 ### 3.1 需求對帳（Gate 4.5 產物）
@@ -96,12 +106,12 @@
 | 測試類型 | 通過 / 總數 | 備註 |
 |---------|-------------|------|
 | `bats tests/` 全量 | 128 / 128 | 包含 `skill-size`、`install`（32）、`mutant-must-die`、`env-equivalence` 等 |
-| `bats skills/*/tests/*.bats`（skill 自帶探針）| 441 / 441 | 含新增 `skills/dav-self-compact/tests/zone.bats` 9 條 |
+| `bats skills/*/tests/*.bats`（skill 自帶探針）| 444 / 444 | 含 `skills/dav-self-compact/tests/zone.bats` 12 條（其中 Z2b／Z2c／Z7b 專測機會窗口）|
 | `bats tests/skill-size.bats` | 6 / 6 | 主檔 46 ≤50、子檔 ≤150、context 258 ≤400 |
 | `bats tests/install.bats` | 32 / 32 | 含新 extension 裝／卸斷言 |
 | 文件漂移檢查 D1–D8 | 綠（11 項豁免）| `bash scripts/ci/check-doc-drift.sh --from-date 2026-10-20` |
 | Subagent smoke（實跑 `dav-long-run`）| ✅ | `ctx_status` 存在並回傳 `ctx 1.6% (3k/200k tokens, window 1000k)`；紀律指令確認收到 |
-| Extension smoke（實跑 pi）| 4 個情境全過 | smart 區輸出（`14k/200k tokens, window 1000k`）、soft／hard 注入、fuse ⚠ 分支、目錄 symlink 載入（`extensions/dav-self-compact/index.ts`）|
+| Extension smoke（實跑 pi）| 5 個情境全過 | smart 區輸出、soft 注入、**機會窗口 advice（`compact_at_boundary`）**、fuse ⚠「too late」＋建議值、目錄 symlink 載入 |
 | Gate 4（品質審核）| OK with notes | 7 findings，全部 minor；F1／F2／F6 已修 |
 
 ## 5. 已知問題 / 限制
@@ -118,6 +128,8 @@
 ## 6. 下一步建議
 
 ### 6.1 立即可做（建議優先）
+
+0. **觀察機會窗口嘅實際落點**：真跑一個長任務，睇 `zone=opportunity` 出現之後幾多個回合內 fuse 開火；如果經常落到 `hard`，代表 `opportunityPercent` 要再校（或 `keepRecentTokens` 太大）。
 
 1. **`AGENTS.md` 加一條硬規則：派 long-running subagent 必須帶 `skill: dav-self-compact` 並要求回報 zone** —— 補 R1 subagent 側嘅唯一缺口（依家只有 skill 文件講，冇每次都會載入嘅規則檔講）。
 2. **為 extension 加一支單元測試**（export `readUsage`／`fuseNote`，用假 `ctx` 斷言 zone／fuse）—— 令 120k／880k 呢類關鍵數字有機械鎖，唔靠文件。
@@ -153,7 +165,7 @@
 | 3 | 技術債 | ✅ | extension 邏輯已有 9 條單元測試；subagent 側有 V04 硬規則 ＋ trust 子檔 |
 | 4 | 可維護性 | ✅ | 閾值集中一個 JSON 檔；fuse 審核會自報錯配；文件分行數上限 |
 | 5 | 測試覆蓋率 | ✅ | install 32 條、skill-size 6 條、extension 計算 9 條、全量 128 條 |
-| 6 | 需求對齊 | ✅ | 7/7 覆蓋；R1／R4 由「部分」補到「落地」（F2／F3）|
+| 6 | 需求對齊 | ✅ | 7/7 覆蓋；R1／R4 由「部分」補到「落地」（F2／F3）；第二輪再加「機會窗口揀時機」|
 
 ### 8.2 問題清單
 

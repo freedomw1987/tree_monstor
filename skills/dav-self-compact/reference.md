@@ -4,16 +4,18 @@
 
 - **smart（聰明區）**：`percent < softPercent`（默認 50%）→ 照常做嘢，唔使理 context。
 - **soft block**：`percent >= softPercent`（默認 50%）→ 軟阻塞：開始為壓縮做準備（寫交接筆記、記低下一步），**唔代表一定要即刻壓縮**。
-- **hard block**：`percent >= hardPercent`（默認 60%）→ 硬阻塞：處理完當前步驟之後**馬上**壓縮，唔准開新大工作。
+- **opportunity（機會窗口）**：`percent >= opportunityPercent`（默認 55%）→ **最佳壓縮時機**：揀一個好邊界（原子步驟完成／測試綠／筆記已更新）就壓，唔好再等。
+- **hard block**：`percent >= hardPercent`（默認 60%）→ **死線／警報**：正常應該已經壓咗；仍然見到代表 fuse 太遲，要收尾 ＋ 報告。
 - **target（壓縮後落點）**：默認 20%–35%（建議值，唔係硬規定）；硬規定只有一條 —— 壓縮後必須 ≤ softPercent（50%）。
 - `percent` 係「已用 tokens ÷ context window」；設咗 `absoluteCapTokens` 時，zone 判定改用「已用 tokens ÷ 有效窗口」。
 
 ## §2 閾值設定
 
 - 設定檔：`~/.pi/agent/dav-self-compact.json`（唔存在就用默認值，唔會出錯；改完即時生效，唔使重啟）。
-- 欄位：`softPercent`（默認 50）、`hardPercent`（默認 60）、`targetPercent`（默認 35）、`targetMinPercent`（默認 20）、`absoluteCapTokens`（默認 0 = 只用百分比）。
+- 欄位：`softPercent`（默認 50）、`opportunityPercent`（默認 55）、`hardPercent`（默認 60）、`targetPercent`（默認 35）、`targetMinPercent`（默認 20）、`absoluteCapTokens`（默認 0 = 只用百分比）。
+- `opportunityPercent` 會被夾入 `(softPercent, hardPercent]`：細過 soft 就同 soft 重疊、大過 hard 就永遠追唔到。
 - `absoluteCapTokens > 0` → 有效窗口 = `min(contextWindow, absoluteCapTokens)`，百分比門檻按有效窗口計。
-- 例：窗口 1,000,000、`absoluteCapTokens: 200000` → soft = 100,000 tokens、hard = 120,000 tokens。
+- 例：窗口 1,000,000、`absoluteCapTokens: 200000` → soft = 100,000、opportunity = 110,000、hard = 120,000 tokens。
 - **點解要有絕對上限**：1M 窗口嘅 50% = 500k tokens，比例睇落「安全」，但模型注意力喺咁上下文明顯退化；絕對上限先真正貼近「聰明區」。
 
 ## §3 量度方式（由準到唔準）
@@ -33,13 +35,15 @@
 - **父 session 責任**：派長工時講明「到 50% 寫交接筆記、到 60% 停新工作」，並要求回報附 zone（例：「完成，ctx 42%」）。
 - **注意**：`inheritSkills` 默認 false —— 唔顯式傳 skill，子 agent 根本睇唔到呢份指引。
 
-## §5 同原生 pi 自動壓縮對齊（hard block 嘅真保險絲）
+## §5 同原生 pi 自動壓縮對齊（機會窗口嘅真保險絲）
 
-- 觸發式：`contextTokens > contextWindow - reserveTokens`；默認 `reserveTokens = 16384` → 1M 窗口要 **98.4%** 先壓，太遲。
-- 對齊後：`reserveTokens = contextWindow − hardTokens`（`hardTokens` = 有效窗口 × hardPercent）。
-  - 純百分比模式（`absoluteCapTokens: 0`）：1M ＋ hard 60% → `reserveTokens = 400000`（60% 觸發）。
-  - 設咗 `absoluteCapTokens: 200000`：hardTokens = 120k → `reserveTokens = 880000`（＝窗口嘅 88%；即用到 12%／120k 就觸發，仍然係同一個 hard block）。
-- **對齊要用 tokens 比，唔好用百分比比**：設咗絕對上限之後，hard block 係絕對 token 數。
+- 觸發式：`contextTokens > contextWindow - reserveTokens`；默認 `reserveTokens = 16384` → 1M 窗口要 **98.4%** 先壓，遠超死線。
+- **對齊目標係 opportunity（唔係 hard）**：`reserveTokens = contextWindow − opportunityTokens`（`opportunityTokens` = 有效窗口 × opportunityPercent）。
+  - 純百分比模式：1M ＋ opportunity 55% → `reserveTokens = 450000`。
+  - 設咗 `absoluteCapTokens: 200000`：opportunityTokens = 110k → `reserveTokens = 890000`（＝窗口嘅 89%；用到 11%／110k 就觸發）。
+- 判 OK 的條件：`softTokens < nativeTriggerTokens <= opportunityTokens` —— fuse 要**喺機會窗口之內**開火；早過 soft（太早，會過度壓縮）或遲過 opportunity（太遲，會拖到 hard）都會出 ⚠ 同建議值。
+- **對齊要用 tokens 比，唔好用百分比比**：設咗絕對上限之後，門檻係絕對 token 數。
+- **fuse 嘅觸發位置**：pi 喺「工具批次完、下一個 assistant 回應之前」（`prepareNextTurn`）檢查 —— 呢個本身已經係一個安全邊界（冇半套 tool call）。所以「揀時機」嘅實際做法係**保持每步細**，令最近嘅邊界就係好邊界。
 - pi 喺**多輪 run 中途**（工具結果 append 之後、下一個 assistant 回應之前，`prepareNextTurn`）會檢查並壓縮，壓縮完**繼續跑**——正好等於「做完當前步驟就壓」。
 - `keepRecentTokens`（默認 20000）係壓縮後保留嘅近期 tokens：越大保越多細節，佔用越多。
 - 同一份 settings 覆蓋父 session 同全部 subagent（含後台）。

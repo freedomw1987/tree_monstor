@@ -33,13 +33,27 @@ run_zone() {
 @test "Z1: cap 200000 makes soft=100k and hard=120k even on a 1M window" {
   run run_zone '{"softPercent":50,"hardPercent":60,"absoluteCapTokens":200000}' 10000 1000000 880000
   [ "$status" -eq 0 ]
-  echo "$output" | grep -q 'soft=100k hard=120k'
+  echo "$output" | grep -q 'soft=100k win=110k hard=120k'
 }
 
-@test "Z2: native fuse fires exactly at the hard block when reserveTokens = window - hardTokens" {
+@test "Z2: native fuse fires inside the opportunity window when reserveTokens = window - opportunityTokens" {
+  run run_zone '{"softPercent":50,"hardPercent":60,"absoluteCapTokens":200000}' 10000 1000000 890000
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'fires at 11.0% (110k tokens) = inside the opportunity window'
+}
+
+@test "Z2b: default config opens the opportunity window at 55% (110k of a 200k budget)" {
+  run run_zone '{"softPercent":50,"hardPercent":60,"absoluteCapTokens":200000}' 110000 1000000 890000
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'zone=opportunity'
+  echo "$output" | grep -q 'action=compact_at_boundary'
+}
+
+@test "Z2c: a fuse that fires after the opportunity window is reported as too late" {
   run run_zone '{"softPercent":50,"hardPercent":60,"absoluteCapTokens":200000}' 10000 1000000 880000
   [ "$status" -eq 0 ]
-  echo "$output" | grep -q 'fires at 12.0% (120k tokens) = hard block'
+  echo "$output" | grep -q 'too late (hard block is 120k tokens)'
+  echo "$output" | grep -q 'set compaction.reserveTokens=890000'
 }
 
 @test "Z3: 120k tokens on a 1M window with cap 200k reads as zone=hard (not 12%)" {
@@ -68,11 +82,24 @@ run_zone() {
   echo "$output" | grep -q '⚠ compaction.reserveTokens is larger than the context window'
 }
 
-@test "Z7: fuse too late (default reserve) is reported with the fix value" {
-  run run_zone '{"softPercent":50,"hardPercent":60,"absoluteCapTokens":0}' 10000 1000000 16384
+@test "Z7: default pi reserve (16384) is far too late and reports the fix value" {
+  run run_zone '{"softPercent":50,"hardPercent":60,"absoluteCapTokens":200000}' 10000 1000000 16384
   [ "$status" -eq 0 ]
-  echo "$output" | grep -q '⚠ native auto-compaction only fires at'
-  echo "$output" | grep -q 'set compaction.reserveTokens=400000'
+  echo "$output" | grep -q '⚠ native auto-compaction fires at'
+  echo "$output" | grep -q 'set compaction.reserveTokens=890000'
+}
+
+@test "Z7b: opportunityPercent is clamped into (soft, hard]" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const high = m.normalizeZones({ softPercent: 50, hardPercent: 60, opportunityPercent: 90 });
+    if (high.opportunityPercent !== 60) { console.error("high=" + high.opportunityPercent); process.exit(1); }
+    const low = m.normalizeZones({ softPercent: 50, hardPercent: 60, opportunityPercent: 10 });
+    if (low.opportunityPercent !== 51) { console.error("low=" + low.opportunityPercent); process.exit(1); }
+    const ok = m.normalizeZones({ softPercent: 50, hardPercent: 60 });
+    if (ok.opportunityPercent !== 55) { console.error("default=" + ok.opportunityPercent); process.exit(1); }
+    console.log("clamp OK");
+  '
 }
 
 # ---------- AC: percent null right after compaction ----------

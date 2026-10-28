@@ -24,14 +24,15 @@ ln -sfn "$PWD/skills/dav-self-compact" ~/.pi/agent/skills/dav-self-compact
 {
   "compaction": {
     "modelOverrides": {
-      "minimax/MiniMax-M3.1-Flash": { "reserveTokens": 880000 }
+      "minimax/MiniMax-M3.1-Flash": { "reserveTokens": 890000 }
     }
   }
 }
 ```
 
-- 公式：`reserveTokens = contextWindow − hardTokens`（hardTokens = 有效窗口 × hardPercent）。
-- 純百分比模式：1M ＋ hard 60% → `400000`；設咗 `absoluteCapTokens: 200000` → hardTokens = 120k → `880000`。
+- 公式：`reserveTokens = contextWindow − opportunityTokens`（opportunityTokens = 有效窗口 × opportunityPercent）。
+- 純百分比模式：1M ＋ opportunity 55% → `450000`；設咗 `absoluteCapTokens: 200000` → opportunityTokens = 110k → `890000`。
+- **對齊機會窗口，唔係 hard**：對齊 hard ＝ 每次都要捱到死線；fuse 太遲會出 ⚠ 同建議值。
 - 摘要長度唔受 `reserveTokens` 影響（pi 用模型輸出上限做摘要），所以調大唔會整肥摘要。
 - key 係 `provider/modelId`（大小寫敏感）；同一 provider 其他 1M 模型要各自加一條。
 - **只可以對真係咁大窗口嘅模型設大值**：若模型窗口細過 `reserveTokens`，條件永遠成立 → 每輪都壓縮。
@@ -52,6 +53,7 @@ ln -sfn "$PWD/skills/dav-self-compact" ~/.pi/agent/skills/dav-self-compact
 ```json
 {
   "softPercent": 50,
+  "opportunityPercent": 55,
   "hardPercent": 60,
   "targetPercent": 35,
   "targetMinPercent": 20,
@@ -66,7 +68,7 @@ ln -sfn "$PWD/skills/dav-self-compact" ~/.pi/agent/skills/dav-self-compact
 
 - **`ctx_status` 唔見**：extension 冇載入 → 檢查 `~/.pi/agent/extensions/dav-self-compact/`（要係 symlink 去 `<repo>/skills/dav-self-compact/extension`，而該目錄有 `index.ts`）＋ `lib/zone.ts` 存在；`/reload` 或重開 pi。
 - **`zone=unknown`**：剛壓縮完、未有新模型回應 → 等下一輪再查（唔係錯誤）。
-- **見到 `⚠ native auto-compaction only fires at X%`**：settings 未設 `reserveTokens` → 照 §1 第 3 點改。
+- **見到 `⚠ native auto-compaction fires at X%`**：settings 未設好 `reserveTokens`（太早或太遲都會出現）→ 照 §1 第 3 點改。
 - **壓縮冇發生**：先睇 `keepRecentTokens`（默認 20000）——context 未超過它就「冇嘢可壓」；再睇 `compaction.enabled` 有冇被關。
 - **壓縮完 usage 唔跌**：通常係交接筆記太薄，或者對話有超大字串（貼咗長 log）→ 拆細啲、再壓；連續兩次唔跌就停低報告。
 - **前台 subagent 冇 `ctx_status`**：前台 subagent 唔自動載入全域 extension → agent frontmatter 加 `extensions: [<extension 目錄>]` 同 `tools: [..., ctx_status]`（見 `protocol.md` §7），或者接受「靠父 agent ＋ 交接筆記」嘅 fallback。

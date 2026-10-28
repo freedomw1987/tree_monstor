@@ -12,6 +12,8 @@
 export type Zones = {
 	/** soft block 門檻（佔有效 context window 百分比） */
 	softPercent: number;
+	/** 機會窗口門檻（佔有效 context window 百分比）：細過 hard 但大過 soft */
+	opportunityPercent: number;
 	/** hard block 門檻（佔有效 context window 百分比） */
 	hardPercent: number;
 	/** 壓縮後建議落點下限（百分比） */
@@ -29,13 +31,14 @@ export type Usage = {
 };
 
 export type Reading = {
-	zone: "smart" | "soft" | "hard" | "unknown";
-	action: "keep_working" | "prepare_then_compact" | "compact_now" | "unknown";
+	zone: "smart" | "soft" | "opportunity" | "hard" | "unknown";
+	action: "keep_working" | "prepare_then_compact" | "compact_at_boundary" | "compact_now" | "unknown";
 	percent: number | null;
 	tokens: number | null;
 	contextWindow: number;
 	effectiveWindow: number;
 	softTokens: number;
+	opportunityTokens: number;
 	hardTokens: number;
 	/** 原生自動壓縮嘅觸發點（% of window） */
 	nativeTriggerPercent: number | null;
@@ -47,6 +50,7 @@ export type Reading = {
 
 export const DEFAULT_ZONES: Zones = {
 	softPercent: 50,
+	opportunityPercent: 55,
 	hardPercent: 60,
 	targetMinPercent: 20,
 	targetPercent: 35,
@@ -65,9 +69,14 @@ function num(value: unknown, fallback: number, min: number, max: number): number
 /** 把設定檔（可能係壞 JSON 或缺欄位）夾成合法 Zones。 */
 export function normalizeZones(raw: unknown): Zones {
 	const parsed = (typeof raw === "object" && raw !== null ? raw : {}) as Partial<Zones>;
+	const softPercent = num(parsed.softPercent, DEFAULT_ZONES.softPercent, 1, 100);
+	const hardPercent = num(parsed.hardPercent, DEFAULT_ZONES.hardPercent, 1, 100);
+	// 機會窗口必須落喺 (soft, hard] 之內：細過 soft 會同 soft 重疊，大過 hard 就永遠追唔到。
+	const rawOpportunity = num(parsed.opportunityPercent, DEFAULT_ZONES.opportunityPercent, 1, 100);
 	return {
-		softPercent: num(parsed.softPercent, DEFAULT_ZONES.softPercent, 1, 100),
-		hardPercent: num(parsed.hardPercent, DEFAULT_ZONES.hardPercent, 1, 100),
+		softPercent,
+		hardPercent,
+		opportunityPercent: Math.min(Math.max(rawOpportunity, softPercent + 1), hardPercent),
 		targetMinPercent: num(parsed.targetMinPercent, DEFAULT_ZONES.targetMinPercent, 0, 100),
 		targetPercent: num(parsed.targetPercent, DEFAULT_ZONES.targetPercent, 1, 100),
 		absoluteCapTokens: num(parsed.absoluteCapTokens, DEFAULT_ZONES.absoluteCapTokens, 0, 100_000_000),
@@ -81,6 +90,7 @@ export function computeReading(usage: Usage | undefined, reserveTokens: number, 
 			? Math.min(contextWindow > 0 ? contextWindow : zones.absoluteCapTokens, zones.absoluteCapTokens)
 			: contextWindow;
 	const softTokens = Math.floor((effectiveWindow * zones.softPercent) / 100);
+	const opportunityTokens = Math.floor((effectiveWindow * zones.opportunityPercent) / 100);
 	const hardTokens = Math.floor((effectiveWindow * zones.hardPercent) / 100);
 	const tokens = usage?.tokens ?? null;
 	const nativeTriggerTokens = contextWindow > 0 ? contextWindow - reserveTokens : null;
@@ -92,16 +102,36 @@ export function computeReading(usage: Usage | undefined, reserveTokens: number, 
 		contextWindow,
 		effectiveWindow,
 		softTokens,
+		opportunityTokens,
 		hardTokens,
 		nativeTriggerPercent: nativeTriggerTokens !== null ? (nativeTriggerTokens / contextWindow) * 100 : null,
 		nativeTriggerTokens,
+		// 目標：fuse 喺「機會窗口」內開火，唔好等到 hard 之後才被迫壓縮。
 		// trigger <= 0 代表 reserveTokens >= contextWindow（病態設定，每輪都會壓縮）→ 唔算 OK。
-		nativeFuseOk: nativeTriggerTokens !== null && nativeTriggerTokens > 0 && nativeTriggerTokens <= hardTokens,
+		nativeFuseOk:
+			nativeTriggerTokens !== null &&
+			nativeTriggerTokens > 0 &&
+			nativeTriggerTokens <= opportunityTokens &&
+			nativeTriggerTokens > softTokens,
 	};
 	if (!usage || contextWindow <= 0 || tokens === null) return base;
 	const percent = effectiveWindow > 0 ? (tokens / effectiveWindow) * 100 : null;
-	const zone = tokens >= hardTokens ? "hard" : tokens >= softTokens ? "soft" : "smart";
-	const action = zone === "hard" ? "compact_now" : zone === "soft" ? "prepare_then_compact" : "keep_working";
+	const zone =
+		tokens >= hardTokens
+			? "hard"
+			: tokens >= opportunityTokens
+				? "opportunity"
+				: tokens >= softTokens
+					? "soft"
+					: "smart";
+	const action =
+		zone === "hard"
+			? "compact_now"
+			: zone === "opportunity"
+				? "compact_at_boundary"
+				: zone === "soft"
+					? "prepare_then_compact"
+					: "keep_working";
 	return { ...base, zone, action, percent };
 }
 
@@ -121,7 +151,7 @@ export function oneLine(r: Reading): string {
 		`ctx ${pct(r.percent)} (${k(r.tokens)}/${k(denominator)} tokens${capped ? `, window ${k(r.contextWindow)}` : ""})`,
 		`zone=${r.zone}`,
 		`action=${r.action}`,
-		`soft=${k(r.softTokens)} hard=${k(r.hardTokens)}`,
+		`soft=${k(r.softTokens)} win=${k(r.opportunityTokens)} hard=${k(r.hardTokens)}`,
 	].join(" · ");
 }
 
@@ -134,26 +164,36 @@ export function fuseNote(r: Reading, zones: Zones): string {
 		);
 	}
 	if (r.nativeFuseOk) {
-		return `native auto-compaction fires at ${pct(r.nativeTriggerPercent)} (${k(r.nativeTriggerTokens)} tokens) = hard block`;
+		return (
+			`native auto-compaction fires at ${pct(r.nativeTriggerPercent)} (${k(r.nativeTriggerTokens)} tokens) = inside the opportunity window`
+		);
 	}
-	const reserve = Math.round(r.contextWindow - r.hardTokens);
+	const reserve = Math.round(r.contextWindow - r.opportunityTokens);
+	const late = r.nativeTriggerTokens > r.opportunityTokens;
 	return (
-		`⚠ native auto-compaction only fires at ${pct(r.nativeTriggerPercent)} (${k(r.nativeTriggerTokens)} tokens) — ` +
-		`set compaction.reserveTokens=${reserve} (or a per-model override) to make it fire at the hard block (${k(r.hardTokens)} tokens)`
+		`⚠ native auto-compaction fires at ${pct(r.nativeTriggerPercent)} (${k(r.nativeTriggerTokens)} tokens) — ` +
+		`${late ? "too late (hard block is " + k(r.hardTokens) + " tokens)" : "too early (soft block is " + k(r.softTokens) + " tokens)"}; ` +
+		`set compaction.reserveTokens=${reserve} to fire inside the opportunity window (${k(r.opportunityTokens)} tokens)`
 	);
 }
 
 export function advice(r: Reading, zones: Zones): string {
 	if (r.zone === "hard") {
 		return (
-			"do not start a new large read or wide refactor; finish the current atomic step, write the handoff note " +
-			"to disk, and let compaction happen (pi compacts mid-run at this level, or the user runs /compact)"
+			"PAST the deadline: stop opening new work, finish the current atomic step, write the handoff note, and let " +
+			"compaction happen (the fuse should have fired earlier — report the late trigger if you see this)"
+		);
+	}
+	if (r.zone === "opportunity") {
+		return (
+			"this is the window to compact: pick the best boundary now (atomic step done, tests green, files written), " +
+			"refresh the handoff note, then let the fuse fire on it — in an interactive session ask the user to run /compact here"
 		);
 	}
 	if (r.zone === "soft") {
 		return (
-			"write the handoff note now (done / next / key paths) and keep the next steps small so the " +
-			`post-compaction reading lands in ${zones.targetMinPercent}%-${zones.targetPercent}%`
+			"write the handoff note now (done / next / key paths) and keep every step small, so any later compaction lands " +
+			`in ${zones.targetMinPercent}%-${zones.targetPercent}% — the opportunity window opens at ${zones.opportunityPercent}%`
 		);
 	}
 	return "keep working; no action needed";
