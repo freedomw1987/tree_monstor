@@ -14,6 +14,7 @@
 - 設定檔：`~/.pi/agent/dav-self-compact.json`（唔存在就用默認值，唔會出錯；改完即時生效，唔使重啟）。
 - 欄位：`softPercent`（默認 50）、`opportunityPercent`（默認 55）、`hardPercent`（默認 60）、`targetPercent`（默認 35）、`targetMinPercent`（默認 20）、`absoluteCapTokens`（默認 0 = 只用百分比）。
 - `opportunityPercent` 會被夾入 `(softPercent, hardPercent]`：細過 soft 就同 soft 重疊、大過 hard 就永遠追唔到。
+- `noticePercents`（默認 `[20, 40, 60]`）：**使用率里程碑**。每跨過一個就印一次訊息（使用率 ＋ zone ＋ 要做乜），一次最多印一個（最高嗰個），唔會重複；壓縮後使用率大跌（< 上次 × 0.6）會自動重置，之後再跨過會再通知。寫法：`[20, 40, 60, 80]`；唔合法／空陣列 → 用默認。
 - `absoluteCapTokens > 0` → 有效窗口 = `min(contextWindow, absoluteCapTokens)`，百分比門檻按有效窗口計。
 - 例：窗口 1,000,000、`absoluteCapTokens: 200000` → soft = 100,000、opportunity = 110,000、hard = 120,000 tokens。
 - **點解要有絕對上限**：1M 窗口嘅 50% = 500k tokens，比例睇落「安全」，但模型注意力喺咁上下文明顯退化；絕對上限先真正貼近「聰明區」。
@@ -21,6 +22,7 @@
 ## §3 量度方式（由準到唔準）
 
 - **`ctx_status` 工具**（本 skill 附帶嘅 extension）→ 最準：直接讀 pi 內部 `getContextUsage()`，回傳 tokens／contextWindow／percent／zone／action，並附「原生保險絲觸發點」審核。
+- **里程碑訊息（自動）**：跨過 `noticePercents`（默認 20%／40%／60%）時，喺 `turn_end` 邊界掛一條 `custom_message`（transcript 可見 ＋ 入下一輪 context），例：`ctx 20.5% just crossed 20% — 27k/130k tokens · zone=smart (normal) · action=keep_working …`。TUI 之下同時出通知。
 - **自動注入**：`before_agent_start` 喺 zone 離開 smart 之後，每輪 run 開始自動注入一行提示（唔會喺 smart 區浪費 token）。
 - **pi footer** → TUI 底部嘅 context %，俾人睇；agent 睇唔到，要人主動講。
 - **自己估算** → 最唔準，只作 fallback：估算對話字數 ÷ 4 ÷ contextWindow。

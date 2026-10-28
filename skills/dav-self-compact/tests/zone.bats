@@ -126,3 +126,69 @@ run_zone() {
     console.log("defaults OK");
   '
 }
+
+# ---------- AC: usage milestones (20 / 40 / 60 by default) ----------
+@test "Z10: a milestone fires once, and only the highest newly crossed one" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({});
+    let announced = new Set();
+
+    // Jump straight past 20% and 40%: one notice, for 40.
+    let step = m.nextNotice(42, zones.noticePercents, announced);
+    if (step.notice !== 40) { console.error("first=" + step.notice); process.exit(1); }
+    announced = step.announced;
+
+    // Nothing new below the next milestone.
+    step = m.nextNotice(45, zones.noticePercents, announced);
+    if (step.notice !== null) { console.error("repeat=" + step.notice); process.exit(1); }
+
+    // Crossing 60 later fires exactly once.
+    step = m.nextNotice(61, zones.noticePercents, step.announced);
+    if (step.notice !== 60) { console.error("sixty=" + step.notice); process.exit(1); }
+    step = m.nextNotice(70, zones.noticePercents, step.announced);
+    if (step.notice !== null) { console.error("again=" + step.notice); process.exit(1); }
+    console.log("milestones OK");
+  '
+}
+
+@test "Z11: null usage does not disturb milestone state; a big drop resets it" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({});
+    const announced = new Set([20, 40]);
+    const afterNull = m.nextNotice(null, zones.noticePercents, announced);
+    if (afterNull.notice !== null || afterNull.announced.size !== 2) { console.error("null disturbed state"); process.exit(1); }
+    if (!m.shouldResetNotices(45, 12)) { console.error("drop not detected"); process.exit(1); }
+    if (m.shouldResetNotices(45, 44)) { console.error("false reset"); process.exit(1); }
+    const reset = m.nextNotice(21, zones.noticePercents, new Set());
+    if (reset.notice !== 20) { console.error("no re-notify after reset"); process.exit(1); }
+    console.log("reset OK");
+  '
+}
+
+@test "Z12: milestone text carries the reading, the zone label and the advice" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({ softPercent: 50, opportunityPercent: 55, hardPercent: 60, absoluteCapTokens: 200000 });
+    const soft = m.computeReading({ tokens: 102000, contextWindow: 1000000, percent: null }, 890000, zones);
+    const text = m.milestoneText(soft, zones, 40);
+    for (const want of ["just crossed 40%", "51.0%", "102k/200k tokens", "window 1000k", "zone=soft (soft block)", "action=prepare_then_compact", "handoff note"]) {
+      if (!text.includes(want)) { console.error("missing: " + want + " | " + text); process.exit(1); }
+    }
+    const hard = m.computeReading({ tokens: 120000, contextWindow: 1000000, percent: null }, 890000, zones);
+    if (!m.milestoneText(hard, zones, 60).includes("zone=hard (hard block)")) { console.error("hard label"); process.exit(1); }
+    console.log("text OK");
+  '
+}
+
+@test "Z13: noticePercents is sanitised (dedupe, sort, drop junk, fall back to default)" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const cleaned = m.normalizeZones({ noticePercents: [60, 20, 40, 40, "x", 0, 140] }).noticePercents;
+    if (JSON.stringify(cleaned) !== "[20,40,60]") { console.error(JSON.stringify(cleaned)); process.exit(1); }
+    const fallback = m.normalizeZones({ noticePercents: [] }).noticePercents;
+    if (JSON.stringify(fallback) !== "[20,40,60]") { console.error(JSON.stringify(fallback)); process.exit(1); }
+    console.log("noticePercents OK");
+  '
+}

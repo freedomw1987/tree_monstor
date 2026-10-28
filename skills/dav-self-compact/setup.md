@@ -57,17 +57,20 @@ ln -sfn "$PWD/skills/dav-self-compact" ~/.pi/agent/skills/dav-self-compact
   "hardPercent": 60,
   "targetPercent": 35,
   "targetMinPercent": 20,
-  "absoluteCapTokens": 0
+  "absoluteCapTokens": 0,
+  "noticePercents": [20, 40, 60]
 }
 ```
 
 - 想真係長期留喺「聰明區」而唔係「窗口嘅一半」→ 設 `absoluteCapTokens`（例：`200000`）。
+- `noticePercents` 係**使用率里程碑**（默認 20／40／60）：每跨過一個就印一次（使用率 ＋ zone ＋ 要做乜）；想更密就加（例：`[10, 20, …, 60]`）。
 - 檔案唔存在／壞咗 → 用默認值，唔會令 session 死機。
 
 ## §4 故障排除
 
 - **`ctx_status` 唔見**：extension 冇載入 → 檢查 `~/.pi/agent/extensions/dav-self-compact/`（要係 symlink 去 `<repo>/skills/dav-self-compact/extension`，而該目錄有 `index.ts`）＋ `lib/zone.ts` 存在；`/reload` 或重開 pi。
 - **`zone=unknown`**：剛壓縮完、未有新模型回應 → 等下一輪再查（唔係錯誤）。
+- **冇見到里程碑訊息**：① 未跨過門檻（睇 `ctx_status` 嘅實際 %）；② 今個 session 已經印過（唔會重複）；③ 剛壓縮完 → 要再跨過先會再印。
 - **見到 `⚠ native auto-compaction fires at X%`**：settings 未設好 `reserveTokens`（太早或太遲都會出現）→ 照 §1 第 3 點改。
 - **壓縮冇發生**：先睇 `keepRecentTokens`（默認 20000）——context 未超過它就「冇嘢可壓」；再睇 `compaction.enabled` 有冇被關。
 - **壓縮完 usage 唔跌**：通常係交接筆記太薄，或者對話有超大字串（貼咗長 log）→ 拆細啲、再壓；連續兩次唔跌就停低報告。

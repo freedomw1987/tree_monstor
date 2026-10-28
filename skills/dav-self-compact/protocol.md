@@ -6,6 +6,7 @@
 - 冇 `ctx_status` 工具（前台 subagent 未掛 extension）→ 叫父 agent 幫手查，或者問用戶睇 pi footer；兩樣都冇就當 soft 區保守處理。
 - **footer 嘅 % 唔可以直接用**：footer 用真實窗口做分母。設咗 `absoluteCapTokens: 200000`（窗口 1M）時，hard block 係 120k tokens ＝ footer 12%；footer 顯示 30% 其實已經係 300k，早已過 hard。
 - **唔好每個工具呼叫都查**；查嘅時機：進入新階段、連續 20＋ 次工具呼叫、覺得「唔記得早前做咗乜」、或者見到注入提示。
+- **里程碑訊息**：跨過 20%／40%／60% 會自動印一條（使用率 ＋ zone ＋ 要做乜）—— 見到就順手對一次自己嘅判斷，唔需要另外查。
 - `zone=unknown` = 剛剛壓縮完、未有新模型回應 → 唔係錯誤，等下一輪再查。
 
 ## §2 soft block 準備程序（percent ≥ 50%）

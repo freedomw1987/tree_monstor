@@ -20,6 +20,17 @@
 
 **關鍵數字（本機設定）**：有效窗口 200k → soft 100k（50%）／機會窗口 110k（55%）／hard 120k（60%）；原生自動壓縮觸發點 `1,000,000 − 890,000 = 110,000` ＝ **機會窗口內**，避免拖到 hard 之後才被迫壓縮。
 
+### 1.0 追加優化（第三輪）：使用率里程碑提示（20%／40%／60%）
+
+用戶要求：每逢使用率到 20%／40%／60% 都印一條訊息，講出使用率 ＋ 身處 normal／soft block／hard block。
+
+- 新增 `noticePercents`（默認 `[20, 40, 60]`，可自訂）
+- 喺 `turn_end` 邊界掛 `custom_message`（`display: true`）：**transcript 可見 ＋ 入下一輪 context**，TUI 之下同時出通知
+- 一次最多印一個（最高新跨過嘅里程碑），唔會重複；壓縮後使用率大跌（< 上次 × 0.6）自動重置，之後再跨過會再通知；`percent=null` 期間唔改狀態
+- 訊息同時帶 `zone`（＋人話標籤 `normal`／`soft block`／`opportunity window`／`hard block`）、`action`、soft／win／hard token 門檻同建議動作
+- 實跑驗證：`ctx 20.5% just crossed 20% — 27k/130k tokens · zone=smart (normal) · action=keep_working …`
+- `zone.bats` 12 → 16 條（新增 Z10 里程碑只印一次／Z11 重置／Z12 文案內容／Z13 noticePercents 消毒）
+
 ### 1.1 追加優化（第二輪）：由「hard 才壓」改成「機會窗口揀時機」
 
 用戶要求：agent／subagent 應該喺 soft／hard 之間**揀最好時機**壓縮，盡量避免過了 hard 才被迫壓。
@@ -48,7 +59,7 @@
 | `skills/dav-self-compact/setup.md` | 安裝／驗證／故障排除 |
 | `skills/dav-self-compact/extension/index.ts` | pi 入口：`ctx_status` ＋ `before_agent_start` 注入 ＋ `/ctx` ＋ fuse 審核（讀 settings／config）|
 | `skills/dav-self-compact/extension/lib/zone.ts` | 純計算層（四區判定／機會窗口／fuse 審核／文案），無 I/O 無 pi API → 可單元測試 |
-| `skills/dav-self-compact/tests/zone.bats` | 12 條單元測試（Z1–Z9，含機會窗口）鎖住關鍵數字 |
+| `skills/dav-self-compact/tests/zone.bats` | 16 條單元測試（Z1–Z9 ＋ Z10–Z13 里程碑）鎖住關鍵數字 |
 | `skills/dav-trust/long-run-context.md` | trust mode 長跑 context 紀律（57 行）|
 | `tests/fixtures/mock-tree-monstor/skills/dav-planner/extension/index.ts` | install 測試用 fixture（驗證 skill 內附 extension 目錄嘅裝卸）|
 | `agents/dav-long-run.md` | 現成 long-run subagent：`tools` 含 `ctx_status`、內建交接筆記模板、soft/hard 行為寫死（R1 subagent 側嘅機械保證）|
@@ -106,12 +117,12 @@
 | 測試類型 | 通過 / 總數 | 備註 |
 |---------|-------------|------|
 | `bats tests/` 全量 | 128 / 128 | 包含 `skill-size`、`install`（32）、`mutant-must-die`、`env-equivalence` 等 |
-| `bats skills/*/tests/*.bats`（skill 自帶探針）| 444 / 444 | 含 `skills/dav-self-compact/tests/zone.bats` 12 條（其中 Z2b／Z2c／Z7b 專測機會窗口）|
+| `bats skills/*/tests/*.bats`（skill 自帶探針）| 448 / 448 | 含 `skills/dav-self-compact/tests/zone.bats` 16 條（機會窗口 Z2b／Z2c／Z7b；里程碑 Z10–Z13）|
 | `bats tests/skill-size.bats` | 6 / 6 | 主檔 46 ≤50、子檔 ≤150、context 258 ≤400 |
 | `bats tests/install.bats` | 32 / 32 | 含新 extension 裝／卸斷言 |
 | 文件漂移檢查 D1–D8 | 綠（11 項豁免）| `bash scripts/ci/check-doc-drift.sh --from-date 2026-10-20` |
 | Subagent smoke（實跑 `dav-long-run`）| ✅ | `ctx_status` 存在並回傳 `ctx 1.6% (3k/200k tokens, window 1000k)`；紀律指令確認收到 |
-| Extension smoke（實跑 pi）| 5 個情境全過 | smart 區輸出、soft 注入、**機會窗口 advice（`compact_at_boundary`）**、fuse ⚠「too late」＋建議值、目錄 symlink 載入 |
+| Extension smoke（實跑 pi）| 7 個情境全過 | smart 區輸出、soft 注入、機會窗口 advice（`compact_at_boundary`）、fuse ⚠「too late」＋建議值、目錄 symlink 載入、**里程碑訊息（20% 跨過實跑）**、hard 里程碑文案 |
 | Gate 4（品質審核）| OK with notes | 7 findings，全部 minor；F1／F2／F6 已修 |
 
 ## 5. 已知問題 / 限制

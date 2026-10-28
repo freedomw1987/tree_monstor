@@ -22,6 +22,8 @@ export type Zones = {
 	targetPercent: number;
 	/** 有效 window 的絕對上限（tokens）；0 = 只用百分比 */
 	absoluteCapTokens: number;
+	/** 使用率里程碑（%）：跨過就通知一次（默認 20／40／60） */
+	noticePercents: number[];
 };
 
 export type Usage = {
@@ -55,6 +57,7 @@ export const DEFAULT_ZONES: Zones = {
 	targetMinPercent: 20,
 	targetPercent: 35,
 	absoluteCapTokens: 0,
+	noticePercents: [20, 40, 60],
 };
 
 /** pi 未設 compaction.reserveTokens 時嘅內建默認值。 */
@@ -67,6 +70,15 @@ function num(value: unknown, fallback: number, min: number, max: number): number
 }
 
 /** 把設定檔（可能係壞 JSON 或缺欄位）夾成合法 Zones。 */
+/** 里程碑清單：只收 1..100 嘅有限數，去重後升序（唔合法 → 用默認）。 */
+function noticeList(value: unknown): number[] {
+	if (!Array.isArray(value)) return [...DEFAULT_ZONES.noticePercents];
+	const cleaned = [...new Set(value.filter((n): n is number => typeof n === "number" && Number.isFinite(n) && n >= 1 && n <= 100))].sort(
+		(a, b) => a - b,
+	);
+	return cleaned.length > 0 ? cleaned : [...DEFAULT_ZONES.noticePercents];
+}
+
 export function normalizeZones(raw: unknown): Zones {
 	const parsed = (typeof raw === "object" && raw !== null ? raw : {}) as Partial<Zones>;
 	const softPercent = num(parsed.softPercent, DEFAULT_ZONES.softPercent, 1, 100);
@@ -80,7 +92,58 @@ export function normalizeZones(raw: unknown): Zones {
 		targetMinPercent: num(parsed.targetMinPercent, DEFAULT_ZONES.targetMinPercent, 0, 100),
 		targetPercent: num(parsed.targetPercent, DEFAULT_ZONES.targetPercent, 1, 100),
 		absoluteCapTokens: num(parsed.absoluteCapTokens, DEFAULT_ZONES.absoluteCapTokens, 0, 100_000_000),
+		noticePercents: noticeList(parsed.noticePercents),
 	};
+}
+
+/** 人話 zone 標籤（用戶要求見到 normal／soft block／hard block）。 */
+export function zoneLabel(zone: Reading["zone"]): string {
+	switch (zone) {
+		case "smart":
+			return "normal";
+		case "soft":
+			return "soft block";
+		case "opportunity":
+			return "opportunity window";
+		case "hard":
+			return "hard block";
+		default:
+			return "unknown";
+	}
+}
+
+/**
+ * 跨過里程碑嘅判定（純函數）：回傳今次應該通知嘅里程碑（一次最多一個 = 最高嗰個），
+ * 同更新後嘅已通知集合。`percent === null`（剛壓縮完）唔會改動狀態。
+ */
+export function nextNotice(
+	percent: number | null,
+	noticePercents: number[],
+	announced: ReadonlySet<number>,
+): { notice: number | null; announced: Set<number> } {
+	const kept = new Set(announced);
+	if (percent === null) return { notice: null, announced: kept };
+	const pending = noticePercents.filter((m) => percent >= m && !kept.has(m));
+	if (pending.length === 0) return { notice: null, announced: kept };
+	for (const m of pending) kept.add(m);
+	return { notice: pending[pending.length - 1] ?? null, announced: kept };
+}
+
+/** 壓縮後使用率大跌 → 清掉已通知集合，之後再跨過里程碑要再通知。 */
+export function shouldResetNotices(previousPercent: number | null, percent: number | null): boolean {
+	if (previousPercent === null || percent === null) return false;
+	return percent < previousPercent * 0.6;
+}
+
+/** 里程碑訊息（跨過門檻嗰一刻印出：使用率 ＋ zone ＋ 要做乜）。 */
+export function milestoneText(r: Reading, zones: Zones, notice: number): string {
+	const denominator = r.effectiveWindow > 0 && r.effectiveWindow < r.contextWindow ? r.effectiveWindow : r.contextWindow;
+	return (
+		`[dav-self-compact] ctx ${pct(r.percent)} just crossed ${notice}% — ` +
+		`${k(r.tokens)}/${k(denominator)} tokens${denominator !== r.contextWindow ? ` (window ${k(r.contextWindow)})` : ""} · ` +
+		`zone=${r.zone} (${zoneLabel(r.zone)}) · action=${r.action} · soft=${k(r.softTokens)} win=${k(r.opportunityTokens)} hard=${k(r.hardTokens)}` +
+		` — ${advice(r, zones)}.`
+	);
 }
 
 export function computeReading(usage: Usage | undefined, reserveTokens: number, zones: Zones): Reading {

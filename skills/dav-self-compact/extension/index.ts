@@ -14,6 +14,9 @@
  * 目標係「喺機會窗口內壓縮」，唔好等到 hard 之後才被迫壓縮 —— 所以 fuse 對齊嘅係
  * opportunityTokens（唔係 hardTokens）。
  *
+ * 另外每跨過一個使用率里程碑（默認 20%／40%／60%）就印一次：使用率 ＋ zone ＋ 要做乜
+ * （transcript 可見 ＋ 入下一輪 context）。
+ *
  * 「有效 window」= min(contextWindow, absoluteCapTokens)；absoluteCapTokens > 0 時，
  * 1M window 模型嘅 50% 唔會等於 50 萬 tokens（實際上早已唔聰明）。
  *
@@ -36,8 +39,11 @@ import {
 	DEFAULT_ZONES,
 	FALLBACK_RESERVE_TOKENS,
 	fuseNote,
+	milestoneText,
+	nextNotice,
 	normalizeZones,
 	oneLine,
+	shouldResetNotices,
 	type Reading,
 	type Zones,
 } from "./lib/zone.ts";
@@ -88,6 +94,31 @@ function read(ctx: ExtensionContext, zones: Zones): Reading {
 	return computeReading(ctx.getContextUsage(), readReserveTokens(ctx), zones);
 }
 
+/**
+ * 里程碑狀態（每個 session 一份）：
+ *   lastPercent  = 上一次觀察到嘅使用率（用嚟偵測壓縮後大跌）
+ *   announced    = 已經通知過嘅里程碑（壓縮後會清空，令之後可以再通知）
+ */
+let lastPercent: number | null = null;
+let announced = new Set<number>();
+
+export function resetMilestoneState_(): void {
+	lastPercent = null;
+	announced = new Set<number>();
+}
+
+/** 跨過里程碑就回傳一條要顯示／要入 context 嘅訊息（一次最多一條）。 */
+function takeMilestone(ctx: ExtensionContext, zones: Zones, reading: Reading): string | null {
+	const percent = reading.percent;
+	if (shouldResetNotices(lastPercent, percent) && zones.noticePercents.some((m) => !announced.has(m))) {
+		announced = new Set<number>();
+	}
+	const { notice, announced: next } = nextNotice(percent, zones.noticePercents, announced);
+	announced = next;
+	if (percent !== null) lastPercent = percent;
+	return notice === null ? null : milestoneText(reading, zones, notice);
+}
+
 const ctxStatusTool = defineTool({
 	name: "ctx_status",
 	label: "Context Status",
@@ -127,6 +158,32 @@ export default function (pi: ExtensionAPI): void {
 				content: `[dav-self-compact] ${oneLine(reading)} — ${advice(reading, zones)}.`,
 			},
 		};
+	});
+
+	// 跨過 20%／40%／60%（可設定）就印一次：使用率 ＋ zone ＋ 要做乜。
+	// turn_end 係可掛 entry 嘅邊界：custom_message 會入下一輪 context，display:true 令
+	// 人類喺 transcript 都見到（唔需要額外 renderer）。
+	pi.on("turn_end", (_event, ctx) => {
+		const zones = loadZones();
+		const reading = read(ctx, zones);
+		const text = takeMilestone(ctx, zones, reading);
+		if (!text) return;
+		if (ctx.hasUI) ctx.ui.notify(text, reading.zone === "smart" ? "info" : "warning");
+		return {
+			entries: [
+				{
+					type: "custom_message",
+					customType: "dav-self-compact",
+					content: text,
+					display: true,
+				},
+			],
+		};
+	});
+
+	// 換 session 就重新開始計里程碑（否則新 session 會漏通知）。
+	pi.on("session_start", () => {
+		resetMilestoneState_();
 	});
 
 	pi.registerCommand("ctx", {

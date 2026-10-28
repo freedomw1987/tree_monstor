@@ -24,7 +24,7 @@ description: >-
 
 ## 流程（4 步）
 
-- **Step 1 量度** — `ctx_status` 讀 `zone` 同 `action`；冇工具就睇 pi footer 嘅 % （由人講俾你聽）→ 詳情 `./protocol.md` §1
+- **Step 1 量度** — `ctx_status` 讀 `zone` 同 `action`；跨過 20%／40%／60% 會自動印里程碑訊息；冇工具就睇 footer % → `./protocol.md` §1
 - **Step 2 判定** — smart（<50%）繼續；soft（≥50%）準備；**opportunity（≥55%）＝壓縮窗口**；hard（≥60%）= 死線（百分比按**有效窗口**計，footer 嘅 % 要用真實窗口換算）→ `./reference.md` §1
 - **Step 3 執行** — soft：寫交接筆記 ＋ 避開大讀取；opportunity：**揀最好邊界**（原子步驟完成／測試綠／檔案已寫）＋ 更新筆記 ＋ 交俾 fuse（互動時主動叫用戶 `/compact`）；hard：死線，只收尾報告 → `./protocol.md` §2–§5
 - **Step 4 驗證** — 壓縮後 usage 變 unknown，**下一輪回應之後**再 `ctx_status`：必須 ≤50%（目標 20–35%）；唔合格 → 補筆記再壓 → `./protocol.md` §5
