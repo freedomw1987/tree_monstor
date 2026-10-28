@@ -103,7 +103,7 @@ def render_comment(
     if section3:
         parts.append(section3)
     parts.append(section4)
-    parts.append("\n---\n_由 dav-developer skill 自動產生_")
+    parts.append("\n---\n_由 dav-jev-oracle skill 自動產生_")
     return "\n\n".join(parts) + "\n"
 
 

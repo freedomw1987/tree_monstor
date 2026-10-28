@@ -1,4 +1,4 @@
-# Dav Developer 多語言實現示例
+# Dav Jev Oracle 多語言實現示例
 
 > 本檔是「探針點樣寫」嘅速查表：跨語言 API 對照 + 命名規範 + 輸出格式。
 > **Jev Oracle 嘅完整用法**（M6 / M6.1 / M6.2 / M6.3 / M7 / M8 / flaky / CI matrix）→ 同套本 skill 子檔（`./jev-oracle.md`）；

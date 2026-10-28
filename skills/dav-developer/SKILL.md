@@ -1,7 +1,7 @@
 ---
 name: dav-developer
 description: >-
-  在 代碼開發SOP「執行」階段使用。負責 TDD 寫測試 → 開發令紅變綠 → 埋探針同回歸 → Reviewer 二審（Gate 1/2/3/4 全部由本 skill 承載）。寫測試部分取原 regression-guard 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 已覆蓋）。LLM 語意判斷（Jev Oracle）係同套 dav-jev-oracle skill 嘅可選加深。dav-developer 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 已覆蓋）。
+  在代碼開發SOP「執行」階段使用。負責 TDD 寫測試 → 開發令紅變綠 → 埋探針同回歸 → Reviewer 二審（Gate 1/2/3/4 全部由本 skill 承載）。寫測試部分取原 regression-guard 的嚴謹性；回歸不需要全項目跑探針（Reviewer agent 已覆蓋）。LLM 語意判斷（Jev Oracle）係同套 dav-jev-oracle skill 嘅可選加深。
 ---
 
 # Dav Developer

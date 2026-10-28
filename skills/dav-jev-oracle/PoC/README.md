@@ -1,4 +1,4 @@
-# Dav Developer — Jev PoC (M1)
+# Dav Jev Oracle — PoC (M1)
 
 > 把 `dav-developer` skill 升級成「**用戶旅程模擬回歸測試**」的最小可行 PoC。
 >

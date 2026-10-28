@@ -96,9 +96,10 @@ G → 進行中 → 等待校驗 → 需修復 →（循環）→ 等待校驗
 
 ## jev 整合細節（v2.4 新增）
 
-本節係 SKILL.md Step 0 / Step 3 / 規則表嘅「jev 整合」全文。主檔為咗行數控制只留摘要、完整規則在此展開。
+本節獨立說明「jev 整合」（Jev Oracle 已於 2026-10-28 拆去同套 `dav-jev-oracle` skill；主檔已無 jev 整合段）。
+Jev Oracle 本體（probe／assert／describe 介面）→ 同套 `dav-jev-oracle` skill；本節只講 dev 流程點用佢。
 
-### 可用性偵測（Step 0）
+### 可用性偵測
 
 ```bash
 i
@@ -114,13 +115,13 @@ fi
 **為什麼**：避免 agent 在沒裝 jev 的機器上 fail-fast 卡住；保持 skill 向下相容。
 **內部失敗 fallback（S3）**：jev 內部失敗（API key 缺失 / 網路錯誤 / `jev_judge` 拋例外）→ 視同 `JEV_AVAILABLE=false`、走軟性降級、不 fail-fast。
 
-### 校驗前 jev 快篩（Step 3）
+### 校驗前 jev 快篩
 
 **觸發條件**：限 `JEV_AVAILABLE=true` 且 Module 檔案數 ≥ 5（輕量路徑 S2：< 5 跳過以節省 jev API call 成本）。
 **動作**：校驗前用 `jev_judge` 對 Module 內可疑點批次評分（`noul / choice / score` 三類混合批次），找出高風險點優先查。
 **這只是輔助，不取代主動校驗**。
 
-### 校驗後 jev 驗證（Step 3）
+### 校驗後 jev 驗證
 
 **觸發條件**：限 `JEV_AVAILABLE=true`。
 **動作**：校驗報告出來後用 `jev_judge`（`noul` 類型）驗證「這個校驗結論有沒有遺漏風險」。
@@ -136,7 +137,7 @@ fi
 
 本 skill 用 `noul / choice / score` 三類混合（聚焦不同風險類型）；反省（dav-submitter）只用 `score`（6 維度單類打分）。兩者屬設計選擇、不是錯。
 
-### v2.4 6 條規則（主檔規則表完整版）
+### v2.4 6 條規則
 
 - **jev 軟性降級**
   - 例外：N/A

@@ -289,7 +289,7 @@ bats --version                           # 應顯示 Bats 1.14.0
 
 ### 跑全套測試前：建 Jev PoC venv（必需）
 
-`skills/dav-developer/skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
+`skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 裡有一批 venv-dependent 案例要跑 PoC 解譯器（`httpx` + `PyYAML`），其餘是純
 靜態檔案檢查、不需要 venv。這個 venv **不入版控**（`PoC/.gitignore` 有 `.venv/`），clean clone 沒建它時
 這批案例會全紅，而且每一條失敗測試各自印出修復指令（TMO-038 起該名單由探針自動列舉，不再硬編；
 **確切條數以 `bats --count skills/dav-jev-oracle/tests/v2.1-jev-poc.bats` 為準**）：

@@ -64,14 +64,13 @@ PROTECTED_PATTERNS = [
     "**/dav-trust/**",
     "**/dav-wiki/**",
     "**/dav-developer/**",
+    "**/dav-jev-oracle/**",     # dav-jev-oracle skill 完整保留（2026-10-28 由 dav-developer 拆出）
     "**/find-skills/**",
     "**/gsap-*/**",
     "**/council-mode/**",
     "**/orchestration/**",
     "**/pi-subagents/**",
-    "**/dav-developer/PoC/prompts/**",  # prompt templates
     "**/orca-cli/**",
-    "**/dav-developer/**",
 ]
 CROSS_LINK_RE = re.compile(r"\[.*?\]\(([^)]+\.md)(?:#[^)]*)?\)")
 

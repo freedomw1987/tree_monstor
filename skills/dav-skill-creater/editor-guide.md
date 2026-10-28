@@ -81,7 +81,7 @@
 
 **為什麼**（2026-10-27 減上下文決定）：
 - 變動歷史對「當下執行任務」冇直接幫助 → 只係稀釋主檔注意力、消耗 context
-- `CHANGELOG.md` 一個檔就係一份 context 成本（13 個 skill × 平均 19 行 ≈ 250 行），
+- `CHANGELOG.md` 一個檔就係一份 context 成本（11 個 skill × 平均 19 行 ≈ 210 行），
   而 agent 觸發 skill 時**根本唔會讀**佢 → 純維護面
 - 演進嘅真實記錄**已經喺 git**（`git log skills/<name>/`）→ 唔需要第二份
 
@@ -144,22 +144,23 @@
 
 | skill | baseline | 註 |
 |---|---|---|
-| `dav-jev-oracle` | 1,649 | Jev Oracle ＋ PoC ＋ 4 支探針（2026-10-27 由 dav-developer 拆出）；**已登記例外：超過 1,500 硬上限，ratchet 只可下唔可上**（瘦身另開票）|
+| `dav-jev-oracle` | 1,569 | Jev Oracle ＋ PoC ＋ 4 支探針（2026-10-27 由 dav-developer 拆出）；**已登記例外：超過 1,500 硬上限，ratchet 只可下唔可上**（瘦身另開票）|
 | `dav-developer` | 1,208 | 拆分後（拆分前 2,098 行）|
 | `dav-submitter` | 1,095 | 併入反省 ＋ retention.md 後（2026-10-28 V03 分流改版後）|
 | `dav-trust` | 1,007 | |
 | `dav-wiki` | 933 | |
 | 其餘 skill | ≤ 700 | |
 
-**點解用 baseline 而唔係一個絕對數字**：本 repo 13 個 skill 合計 ~7,500 行、平均 ~580 行；
+**點解用 baseline 而唔係一個絕對數字**：本 repo 11 個 skill 合計 8,395 行、平均 ~763 行；
 一個「全部 ≤700」嘅絕對規則喺內容量面前根本冇人跟得到 → **跟唔到嘅規則 = 假規則**。
 → 改用 **ratchet**：每個 skill 有自己嘅 baseline，**只可下唔可上**；
 一個 skill 嘅 context 超過 **1,500 行**（硬上限）→ 必拆成兩個「專注一件事」嘅 skill
 （`dav-jev-oracle` 已登記例外，ratchet 只可下唔可上）。
 主檔 ≤150 全部守住 ✓；子檔 ≤300 有 **3 支存量例外**（見上面清單，改佢哋要 ratchet 返 ≤300）。
 
-**點樣量**：寫完／改完跑 `find skills/<name> -name '*.md' -type f -exec cat {} + | wc -l`
-（主檔 ＋ 全部子檔，**遞迴含嵌套目錄**；baseline 表就係用呢個口徑量）。
+**點樣量**：寫完／改完跑 `git ls-files skills/<name> | grep '\.md$' | xargs -r cat | wc -l`
+（主檔 ＋ 全部子檔，**遞迴含嵌套目錄、只計 git 追蹤嘅檔**；baseline 表就係用呢個口徑量 ——
+用 `find` 會把 `PoC/.venv/` 內嘅 LICENSE.md 一齊計入 → 數字機器相關）。
 主檔改動前另外跑 `wc -l` 預檢（見下面「主檔行數預檢規範」）。
 
 **點解唔用機械探針守**：機械探針守嘅係「文件寫得啱唔啱」，但每加一支探針，
@@ -180,7 +181,7 @@
 2. 若 ≥ 150 → 必先瘦身（主檔 ≤ 130 行再進 §2.2）
 3. 若 130-149 → 在設計草案加「行數預警」、避免觸發 150 上限
 4. 若 < 130 → 不預警
-5. 順手檢支援子檔：`find skills/<name> -name '*.md' -type f -exec wc -l {} + | sort -rn`
+5. 順手檢支援子檔：`git ls-files skills/<name> | grep '\.md$' | xargs -r -n1 wc -l | sort -rn`
    → 任何一個 > 300 行 → 拆檔或壓成表（存量 3 支例外見上面）
 
 **為什麼**：
@@ -193,7 +194,7 @@
 
 **同源**：AGENTS.md §1.5 的 V03 **代碼分支**（改探針 = 改代碼 → 必走二審）。
 
-`tests/**/*.bats` 的修改**視同規範修改**（新增 / 刪除 / **條件放寬**），必走 V03 Reviewer 二審；
+`tests/**/*.bats` 同 `skills/*/tests/**/*.bats` 的修改**視同規範修改**（新增 / 刪除 / **條件放寬**），必走 V03 Reviewer 二審；
 純文字修正（typo / link / 註解 / 訊息文字微調）不觸發。修訂完成後、Reviewer 必附
 「`bats tests/<檔>` 跑動輸出」（修改前 fail / 修改後 pass 兩次輸出必貼）。
 

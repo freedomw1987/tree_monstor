@@ -97,7 +97,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 ## Skills
 
-13 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
+11 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
 
 | Skill | 一句話 |
 |---|---|
@@ -106,6 +106,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 1：依 backlog 先寫測試，紅後綠 |
 | [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 3：埋探針，`REGRESSION_MODE` 自動回歸驗證 |
 | [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 4：dev / checker 雙 subagent 循環校驗 |
+| [`dav-jev-oracle`](skills/dav-jev-oracle/SKILL.md) | LLM 語意判斷（Jev Oracle）：PoC ＋ 探針 ＋ 信心度報告，可選加深 |
 | **反省**（併入 [`dav-submitter`](skills/dav-submitter/SKILL.md) Step 3.5）| US / Sprint / Module 六維度反思 |
 | [`dav-submitter`](skills/dav-submitter/SKILL.md) | §2.5 提交：交付摘要 + Markdown 詳錄 |
 | [`dav-reconciler`](skills/dav-reconciler/SKILL.md) | Gate 4.5 需求對帳：獨立 subagent 拿需求錨點逐條比對成果；未對上不得宣告完成 |

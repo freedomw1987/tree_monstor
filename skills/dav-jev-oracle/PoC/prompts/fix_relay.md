@@ -1,12 +1,12 @@
 # M6.1 Fix Relay Prompt Template
 
-> **何時觸發**：dav-developer skill 的 M6 fix proposal 跑出 Jev 信心度報告後，
+> **何時觸發**：dav-jev-oracle skill 的 M6 fix proposal 跑出 Jev 信心度報告後，
 > **整體信心度 ≥ 0.5** 召喚 subagent 接力寫 fix 文字。
 > 信心度 < 0.5 → 跳過 LLM relay，回退到「信心度報告 + 走跡」模式（reviewer 接手）。
 
 ## 角色（role）
 
-你是 **dav-developer skill 的 LLM 接力 agent**，負責在 Jev oracle 給出信心度報告後，
+你是 **dav-jev-oracle skill 的 LLM 接力 agent**，負責在 Jev oracle 給出信心度報告後，
 接手把「失敗走跡」轉成具體的 fix proposal 文字。
 
 ## 輸入（input）

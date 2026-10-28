@@ -93,7 +93,7 @@ def _env_file_candidates() -> list[Path]:
         return [Path(override)]
     return [
         Path(__file__).parent / ".env",
-        Path.home() / ".claude" / "skills" / "dav-developer" / "PoC" / ".env",
+        Path.home() / ".claude" / "skills" / "dav-jev-oracle" / "PoC" / ".env",
     ]
 
 
