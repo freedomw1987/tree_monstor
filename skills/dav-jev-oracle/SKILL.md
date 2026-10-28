@@ -9,7 +9,7 @@ description: >-
 ## TL;DR
 1. **做什麼**：用 Jev（LLM 裁判）判斷「呢個 fail 係真 bug、flaky 定 AC 本身寫得唔好」，並提供「診斷 → 產 fix proposal → 套 patch → 重驗 → 自動 rollback」嘅閉環。
 2. **何時觸發**：需要**語意層面**判斷（AC 本身含糊、UI 體驗、跨模組一致性），或者要自動產修正建議 → 由同套 `dav-developer` skill 決定要用時調用。
-3. **預設 SOP 路徑**：§2.3 執行段（Gate 3 regression 之後、Gate 4 reviewer 之前）—— **可選**。
+3. **預設 SOP 路徑**：§2.3 執行段（Gate 3 regression 期間，Gate 4 之前）—— **可選**。
 4. **關鍵紀律**：**成本自覺**（只喺語意判斷真係有用時用）｜**只做輔助**（Jev 結果係參考，唔取代 LLM 自評或人工判斷）｜**失敗要降級唔要中斷**（冇 API key／網絡錯 → 純 LLM 評分）。
 5. **必產出物**：診斷結果（`overall_health`／`fix_priority`／`flaky_likelihood`／`regression_type`）＋ 需要時嘅 fix proposal ＋ 驗證後嘅報告。
 
@@ -34,7 +34,8 @@ PR comment（4 段格式）。
 - **失敗要降級唔好中斷**（冇 key／網絡錯 → 純 LLM 評分）— 例外：無；限制：降級要明示
 - **禁用 watch／interactive 模式** — 例外：無；限制：會卡住等 stdin
 - **本 skill 唔做一般回歸** — 例外：無；限制：一般回歸係同套 `dav-developer` skill 嘅 Gate 3 事
-- **Gate 定義**：本 skill **唔新增 Gate**（Gate 1/2/3/4 仍由同套 `dav-developer` skill 承載）；本 skill 係 Gate 3 嘅**可選加深**，用唔用都唔影響 Gate
+- **Gate 定義**：本 skill **唔新增 Gate**（Gate 1/2/3 → 同套 `dav-developer` skill、Gate 4 → 同套 `dav-reviewer` skill〔人手觸發〕）；本
+  skill 係 Gate 3 嘅**可選加深**，用唔用都唔影響 Gate
 判定。
 
 ## 交叉引用（純文字）

@@ -54,7 +54,7 @@ command_prefix:
 
 | Token | 規則 | 範例 |
 | --- | --- | --- |
-| Skill 名稱 | kebab-case（小寫 + 連字號） | `dav-wiki`、`dav-submitter` |
+| Skill 名稱 | kebab-case（小寫 + 連字號） | `dav-wiki`、`dav-reviewer` |
 | Trust 前綴 | `/trust` 後接任意任務 | `/trust 批次處理這 5 份 PDF` |
 | 旗標 | `--kebab-case` | `--auto-confirm` |
 | 簡寫 | `-X`（單字符） | `-y` (yes), `-v` (verbose) |
@@ -226,7 +226,7 @@ error_template:
 | ✅❌⚠️ℹ️⏳ | 統一 emoji 語意 | 所有 skill |
 | YAML frontmatter | 統一格式（title / status / date） | 所有 skill |
 | `docs/backlog.md` | 統一任務登記處 | 所有 skill |
-| Wiki link `[[xxx]]` | 統一雙向連結語法 | dav-wiki、dav-submitter |
+| Wiki link `[[xxx]]` | 統一雙向連結語法 | dav-wiki、dav-reviewer |
 
 ---
 

@@ -39,8 +39,8 @@ SOP、術語表規格。格式範本見同套 `templates/backlog-format.md`。
 
 ### §4.3.2 Module 級 sprint 規劃（v2.3 新增）
 
-- 1 個 sprint 交付 1 個 Module（如 M01）；Module 定義（dav-designer）、Module 級交付語法（dav-submitter）、Module 級派工 ＋
-`REGRESSION_MODULE=M01` 跑全 Module 探針（dav-developer）→ 見同套 `dav-designer`／`dav-submitter`／`dav-developer` skill
+- 1 個 sprint 交付 1 個 Module（如 M01）；Module 定義（dav-designer）、Module 級交付語法（dav-reviewer）、Module 級派工 ＋
+`REGRESSION_MODULE=M01` 跑全 Module 探針（dav-developer）→ 見同套 `dav-designer`／`dav-reviewer`／`dav-developer` skill
 - **為什麼 Module 級 sprint**：平行化加速（M01／M02 兩個 dev 同時做）｜錯誤範圍隔離｜探針邊界清楚（`REGRESSION_MODULE` 限定）
 - Sprint 範本見同套 `templates/backlog-format.md`
 
@@ -58,7 +58,7 @@ SOP、術語表規格。格式範本見同套 `templates/backlog-format.md`。
   - **點解**：backlog 係「仲要做嘅嘢」清單；完成嘅 row 留低只會令 backlog 愈滾愈大、令 agent／用戶每次都要重讀已完嘅嘢（浪費時間同 token）
   - 每次更新 backlog 都要順手檢查：有冇已完成嘅 row 殘留 → 有就移出（並喺交付摘要記低）
 - **同一套「保留 vs 歸檔」判斷（docs 層）**（2026-10-27）：`docs/` 淨留「仲有用」嘅（SOP／CI／工具／術語表／設計文件／範本／未完成 US 嘅檔 ＋ 最近一次交付摘要 ＋ 佢引用鏈）；其餘（完成 US
-嘅 ac／req／reconcile、已交付專案嘅 PRD、舊交付摘要）靠 git history 歸檔 —— 完整清單 ＋ 執行次序 → 見同套 `dav-submitter` skill
+嘅 ac／req／reconcile、已交付專案嘅 PRD、舊交付摘要）靠 git history 歸檔 —— 完整清單 ＋ 執行次序 → 見同套 `dav-reviewer` skill
 
 ## §4.6 AC 範本生成 SOP（v1.8 新增，含 HTML）
 

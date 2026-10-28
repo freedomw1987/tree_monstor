@@ -1,4 +1,4 @@
-# Dav Developer — Gate 1–4 定義
+# Dav Developer — Gate 1–3 定義
 
 > 本檔為 `dav-developer` 嘅「Gate 定義」子檔（2026-10-28 v2.11 減法版由主檔搬出，主檔只留指標）。
 > 本檔係 single source 之一；機器可讀副本 `docs/sop/gates.json`（`notes` 與 `remediation` 仍在嗰度）。
@@ -35,17 +35,10 @@
 - **機器可讀副本**：`docs/sop/gates.json`（鎖兩邊一致嘅探針已刪 → 兩邊要人手同步）。
 - **測試指令必須禁用 interactive / watch 模式**（詳見同套 `./runner-cheatsheet.md`）。
 
-## Gate 4 reviewer gate
-
-- **pass_criteria**：① checker subagent 回傳「沒找到更多問題」② playwright-cli E2E 全綠（含截圖證據，UI 任務必跑）
-- **required_evidence**：① checker subagent 原文回傳 ② playwright test 報告路徑 + 截圖路徑（若有 UI）
-- **fail_action**：不可進入 §2.4 反省
-- **mandatory_phrase**：依 gates.json 規範，Gate 4 (reviewer) 需要：checker 回傳「沒找到更多問題」
-  - playwright-cli E2E 全綠（含截圖），並在對話貼出 checker subagent 原文回傳。
-- **豁免**：純後端／CLI／腳本任務可跳過 playwright-cli，但要在對話明示「無 UI 故不適用」及理由。
-
 ## Gate 定義點解搬出主檔
 
 - 主檔 ≤ 50 行係硬門檻（v2.11 減法版）→ Gate 定義內容留喺子檔，主檔只留指標
 - Gate 定義屬**規則語意**：搬位唔可以改字；`pass_criteria`／`required_evidence`／`fail_action`／`mandatory_phrase` 四欄一個都唔准刪
 - 改動呢一檔＝改規範 → 依 `AGENTS.md` §1.5 V03 走獨立 Reviewer 二審
+- **Gate 4（reviewer）唔喺本檔**：2026-10-28 起 Gate 4 ＋ Gate 4.5 由**人手觸發**嘅
+  `dav-reviewer` skill 承載（見同套 `dav-reviewer` skill 嘅 `gates.md`）→ 本 skill 只做 Gate 1／2／3

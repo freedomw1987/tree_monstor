@@ -1,7 +1,7 @@
 {
   "$schema": "./gates.schema.json",
   "version": "1.2.0",
-  "description": "tree_monstor SOP 的 4 個 Gate 定義。每個 Gate 是 fail-fast 屏障 — 不通過 = 不可進入下一階段或聲稱任務完成。2026-10-26 起 Gate 的定義另外落在**各自承載它的 skill**（gate-1/2 → dav-developer、gate-3 → dav-developer、gate-4 → dav-developer），本檔保留為**機器可讀副本**。（2026-10-27 減法：`tests/gate-in-skill.bats` 已刪 → 兩份一致靠人手同步；修改 Gate 規範時兩邊都要改。）v1.1.0 移除 Gate 5（RSI 機制已歸檔，詳見 commit ef2fd4e）。Schema 使用 Draft-07（非原計劃 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 $comment 與 TD-015。",
+  "description": "tree_monstor SOP 的 4 個 Gate 定義。每個 Gate 是 fail-fast 屏障 — 不通過 = 不可進入下一階段或聲稱任務完成。2026-10-26 起 Gate 的定義另外落在**各自承載它的 skill**（gate-1/2/3 → dav-developer、gate-4 → dav-reviewer〔人手觸發〕），本檔保留為**機器可讀副本**。（2026-10-27 減法：`tests/gate-in-skill.bats` 已刪 → 兩份一致靠人手同步；修改 Gate 規範時兩邊都要改。）v1.1.0 移除 Gate 5（RSI 機制已歸檔，詳見 commit ef2fd4e）。Schema 使用 Draft-07（非原計劃 Draft 2020-12）因為 ajv-cli 兼容性限制，詳見 gates.schema.json 的 $comment 與 TD-015。",
   "gates": [
     {
       "id": "gate-1",
@@ -70,7 +70,7 @@
     {
       "id": "gate-4",
       "name": "reviewer gate",
-      "trigger_skill": "dav-developer",
+      "trigger_skill": "dav-reviewer",
       "pass_criteria": [
         "checker subagent 回傳『沒找到更多問題』",
         "playwright-cli E2E 全綠（含截圖證據，UI 任務必跑）"
@@ -81,7 +81,7 @@
       ],
       "fail_action": "不可進入 §2.4 反省",
       "mandatory_phrase": "依 gates.json 規範，Gate 4 (reviewer) 需要：checker 回傳『沒找到更多問題』+ playwright-cli E2E 全綠（含截圖），並在對話貼出 checker subagent 原文回傳。",
-      "notes": "純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示『無 UI 故不適用』及理由。",
+      "notes": "純後端 / CLI / 腳本任務可跳過 playwright-cli，但要在對話明示『無 UI 故不適用』及理由。（2026-10-28 起：Gate 4 ＋ Gate 4.5 由人手觸發的 dav-reviewer skill 承載；§2.3 自動執行段只做 Gate 1/2/3）",
       "remediation": {
         "strategy": "ask_user",
         "description": "reviewer 已是 subagent 給建議；最終決策（接受 / 退回 / 改架構）由用戶決定，agent 不自動修。"

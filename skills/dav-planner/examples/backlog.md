@@ -161,12 +161,12 @@ REGRESSION_MODULE=M02 ./run_pipeline.sh --all
 REGRESSION_MODULE=INT ./run_pipeline.sh INT-M01-M02-01
 ```
 
-### dav-developer 校驗計劃
+### dav-reviewer 校驗計劃
 
 - 每個 US 完成 → dev 標「等待校驗」→ checker 校驗 Module 內 → dev 自動修復
 - 跨 Module issue（INT 任務發現）→ 升級為新任務，不在原 Module 循環內處理
 
-### dav-submitter 交付計劃
+### dav-reviewer 交付計劃
 
 - **M02-US-201 完成**
   - 交付單位：US 級

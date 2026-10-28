@@ -1,4 +1,4 @@
-# Dav Reconciler — 實戰範例
+# Dav Reviewer — 實戰範例
 
 > 本檔示範「一次真的對帳」長什麼樣。範例資料取自 tree_monstor 自身的 TMO-071/072/073（框架層工作）。
 > ⚠️ 2026-10-28：TMO-071/072/073 ＋ TMO-092 嘅錨點 ＋ 對帳表已依保留策略歸檔（內容完整保留在 git history），
@@ -20,7 +20,7 @@
 
 | 需求 ID | 需求句（摘要） | 狀態 | 實作位置 | 證據 | 備註 |
 |---------|---------------|------|---------|------|------|
-| R1 | 產出機制做成框架級能力 | ✅ 已實作 | skills/dav-reconciler/SKILL.md:1 | skills/dav-reconciler/tests/doc-drift.bats
+| R1 | 產出機制做成框架級能力 | ✅ 已實作 | skills/dav-reviewer/SKILL.md（流程 Step 4） | skills/dav-reviewer/tests/doc-drift.bats
 DOC-DRIFT-008 | |
 | R2 | 本 repo 先跑驗證 | ✅ 已實作 | docs/req/TMO-071-requirement.md:1 | bats tests/doc-drift.bats | |
 | R3 | 原文區唯讀 | ✅ 已實作 | skills/dav-planner/backlog-rules.md §4.7 | DOC-DRIFT-002 | |
@@ -49,8 +49,8 @@ DOC-DRIFT-008 | |
 
 | 需求 ID | 需求句（摘要） | 狀態 | 實作位置 | 證據 | 備註 |
 |---------|---------------|------|---------|------|------|
-| R1 | 對帳由獨立 subagent 執行 | ✅ 已實作 | skills/dav-reconciler/SKILL.md:38 | RECON-009 | |
-| R2 | 對帳未過不得宣告完成 | ⚠️ 部分實作 | skills/dav-submitter/SKILL.md:60 | — | 規則已寫，但交付摘要模板的欄位強制尚未接上 |
+| R1 | 對帳由獨立 subagent 執行 | ✅ 已實作 | skills/dav-reviewer/SKILL.md（流程 Step 4） | RECON-009 | |
+| R2 | 對帳未過不得宣告完成 | ⚠️ 部分實作 | skills/dav-reviewer/SKILL.md（流程 Step 4） | — | 規則已寫，但交付摘要模板的欄位強制尚未接上 |
 | R3 | 對帳降級時必須標註 | ❌ 未實作 | — | — | 降級路徑的標註位置尚未選定 |
 
 ## 結論

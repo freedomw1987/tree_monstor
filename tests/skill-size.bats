@@ -108,8 +108,10 @@ check_ctx() {
   done
   # fail-closed：列舉唔到 skill 目錄 → glob 失效 → 唔准靜靜哋全綠
   #（repo 慣例，見 scripts/check-all.sh 嘅 skill-tests 步驟）
-  [ "$n" -ge 11 ] || {
-    echo "FAIL: 只列舉到 $n 個 skill 目錄（下限 11）→ glob 失效，唔准空過" >&2
+  # 下限刻意唔綁死 skill 數（skill 會增減：2026-10-28 dav-submitter 併入 dav-reviewer 就由 11 → 10）：
+  # → 用低下限（5）純為捉「glob 失效 → 0 個目錄」，唔會因為加／減 skill 就誤紅。
+  [ "$n" -ge 5 ] || {
+    echo "FAIL: 只列舉到 $n 個 skill 目錄（下限 5）→ glob 失效，唔准空過" >&2
     return 1
   }
 }
@@ -121,8 +123,8 @@ check_ctx() {
     n=$((n + 1))
     check_sub "$d" || return 1
   done
-  [ "$n" -ge 11 ] || {
-    echo "FAIL: 只列舉到 $n 個 skill 目錄（下限 11）→ glob 失效，唔准空過" >&2
+  [ "$n" -ge 5 ] || {
+    echo "FAIL: 只列舉到 $n 個 skill 目錄（下限 5）→ glob 失效，唔准空過" >&2
     return 1
   }
 }
@@ -134,8 +136,8 @@ check_ctx() {
     n=$((n + 1))
     check_ctx "$d" || return 1
   done
-  [ "$n" -ge 11 ] || {
-    echo "FAIL: 只列舉到 $n 個 skill 目錄（下限 11）→ glob 失效，唔准空過" >&2
+  [ "$n" -ge 5 ] || {
+    echo "FAIL: 只列舉到 $n 個 skill 目錄（下限 5）→ glob 失效，唔准空過" >&2
     return 1
   }
 }

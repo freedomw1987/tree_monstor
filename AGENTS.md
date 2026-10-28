@@ -4,7 +4,7 @@
 >
 > 流程與 Gate **不在這裡** —— 它們寫在**各自的 skill** 裡，被觸發時才讀：
 > `dav-developer`（Gate 1 TDD / Gate 2 lint）、`dav-developer`（Gate 3 regression）、
-> `dav-developer`（Gate 4 reviewer）、`dav-reconciler`（Gate 4.5 需求對帳）。
+> `dav-developer`（Gate 1/2/3）、`dav-reviewer`（Gate 4 reviewer ＋ Gate 4.5 需求對帳，**人手觸發**）。
 >
 > **沒有指定要用哪道 Gate 時，預設就是直接做**：不跑流程、不建 backlog、不寫交付摘要。
 > 只有當任務真的需要（要寫 code、要改 SOP／契約、或你明示要走正式流程）才進對應的 Gate。

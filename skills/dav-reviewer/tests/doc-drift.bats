@@ -1214,12 +1214,12 @@ MD
   }
 }
 
-@test "DOC-DRIFT-055: the submitter template declares its US before the first '##' heading" {
+@test "DOC-DRIFT-055: the deliverable template declares its US before the first '##' heading" {
   # D8 的新規則（2026-10-26）是「只認標題區宣告的 US」。那個規則的**隱含依賴**是
-  # `dav-submitter` 模板把 `> **對應 Backlog**: …` 放在第一個 `##` 之前 —— 沒有探針在守這件事。
+  # `dav-reviewer` 交付摘要模板把 `> **對應 Backlog**: …` 放在第一個 `##` 之前 —— 沒有探針在守這件事。
   # 若模板哪天把該行移到 `##` 之後，所有照模板寫的交付摘要都會落到「標題區沒宣告」
   # → 靠 fallback 掃全文（暫時不會紅，但等於新規則失效）。
-  local tpl="$REPO_ROOT/skills/dav-submitter/template.md"
+  local tpl="$REPO_ROOT/skills/dav-reviewer/templates/deliverable-template.md"
   [ -f "$tpl" ] || { echo "FAIL: 缺 $tpl" >&2; return 1; }
   # 注意：**只看 fenced code block 內**的模板本體 —— 模板檔自己的 `## 模板正文` 是外層標題，
   # 不是交付摘要的標題區（第一版探針看錯範圍，對真實模板誤報）。
@@ -1245,11 +1245,11 @@ PY
   [[ "$output" == *"OK:"* ]] || { echo "FAIL: 預期 OK：$output" >&2; return 1; }
 }
 
-@test "DOC-DRIFT-056: Gate 4.5 definition lives in ./gate-4.5.md with all four fields" {
-  # ⚠️ 2026-10-28 v2.11 減法版：Gate 4.5 定義由主檔搬去 ./gate-4.5.md（主檔 ≤ 50 行嘅硬上限）
+@test "DOC-DRIFT-056: Gate 4.5 definition lives in ./gates.md with all four fields" {
+  # ⚠️ 2026-10-28：Gate 4.5 定義由主檔搬去 ./gates.md（主檔 ≤ 50 行嘅硬上限；同 Gate 4 同一檔）
   #    → 呢條探針守住搬咗出嚟嘅契約欄位（pass_criteria／required_evidence／fail_action／mandatory_phrase）
   #    同「不引用 mandatory_phrase = 視為 gate 未觸發」嗰句，唔准喺搬運／改寫時漏咗。
-  local g="$REPO_ROOT/skills/dav-reconciler/gate-4.5.md"
+  local g="$REPO_ROOT/skills/dav-reviewer/gates.md"
   [ -f "$g" ] || {
     echo "FAIL: 缺 ${g}（Gate 4.5 定義嘅單一真相）" >&2
     return 1
@@ -1258,5 +1258,5 @@ PY
     assert_file_contains "$g" "**$f**"
   done
   assert_file_contains "$g" "視為 gate 未觸發"
-  assert_file_contains "$REPO_ROOT/skills/dav-reconciler/SKILL.md" "./gate-4.5.md"
+  assert_file_contains "$REPO_ROOT/skills/dav-reviewer/SKILL.md" "./gates.md"
 }

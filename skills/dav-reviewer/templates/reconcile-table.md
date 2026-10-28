@@ -1,6 +1,6 @@
 # 需求對帳表 — 可複製範本
 
-> 本檔為 `dav-reconciler` skill 的子檔：**填好就可以直接寫入** `docs/reconcile/<US-ID>-reconcile.md` 嘅對帳表骨架。
+> 本檔為 `dav-reviewer` skill 的子檔：**填好就可以直接寫入** `docs/reconcile/<US-ID>-reconcile.md` 嘅對帳表骨架。
 > 欄位規則、狀態值判定、完整性規則 → 見同 skill 子檔 `reconcile-format.md`。
 >
 > ⚠️ 對帳表**必須**用 markdown 表格：文件漂移檢查（D7）靠 `| R<n> |` 列 + 狀態符號（✅／⚠️／❌／🚫）解析對帳表 → 改成列表會令 D7 變「解析不到任何列」。

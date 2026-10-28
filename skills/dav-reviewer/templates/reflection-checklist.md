@@ -1,11 +1,13 @@
 ---
-name: dav-submitter-reflection-checklist
-description: dav-submitter 的「反省檢查清單」附件。列出反省 6 維度（UX/UI 一致性／RWD／技術債／可維護性／測試覆蓋率／需求對齊）嘅逐條檢查問題、各維度門檻、標記標準同 jev_judge
+name: dav-reviewer-reflection-checklist
+description: dav-reviewer 的「反省檢查清單」附件。列出反省 6 維度（UX/UI 一致性／RWD／技術債／可維護性／測試覆蓋率／需求對齊）嘅逐條檢查問題、各維度門檻、標記標準同 jev_judge
 對接表。反省流程見主檔。
 ---
 
 # 反省檢查清單
 
+> 本檔係**可填充嘅反省檢查清單模板**（直接抄落交付摘要嘅「## 反思」段）。
+>
 > 本文件列出 6 項檢查維度的詳細檢查問題，供 Agent 在執行反省時逐項檢視。
 >
 > **點解要做**：交付咗 ≠ 交付得好；6 維度係檢驗「交付物是否真的好」嘅核心（宏觀層面，唔重複個別 US 嘅驗收）。

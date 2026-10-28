@@ -361,9 +361,8 @@ symlink」時，Claude／Pi 走 repair、Qoder 走 skip-and-warn），正確做�
 本專案有一條 SOP（`docs/sop/`），但**不是每個任務都要走**。需要時走：
 1. **規劃** (dav-planner)
 2. **設計** (dav-designer)
-3. **執行** (4 Gate: TDD / lint / regression / reviewer)
-4. **反省**（併入 dav-submitter Step 3.5）
-5. **提交** (dav-submitter)
+3. **執行** (3 Gate: TDD / lint / regression；`dav-developer`，自動段)
+4. **審核 ＋ 反省 ＋ 提交** (`dav-reviewer`：**人手觸發** —— Gate 4 品質審核 ＋ Gate 4.5 需求對帳 → 交付摘要 ＋ 六維度反省 → 更新受影響文檔同 `docs/backlog.md`)
 
-Gate 的定義在**各自的 skill**（`dav-developer` / `dav-developer` / `dav-developer` / `dav-reconciler`），
+Gate 的定義在**各自的 skill**（Gate 1/2/3 → `dav-developer`、Gate 4 → `dav-reviewer`〔人手觸發〕），
 完整說明見 [`docs/sop/handbook/`](docs/sop/handbook/)。`AGENTS.md` 只放行為準則，不含流程。

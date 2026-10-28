@@ -1,8 +1,8 @@
 # M02-payment Module 完整交付
 
-> **本檔為範例**，由 dav-submitter skill v2.2 產出。展示 Module 級交付語法 + §9 Module 級總結。
+> **本檔為範例**，由 dav-reviewer skill v2.2 產出。展示 Module 級交付語法 + §9 Module 級總結。
 >
-> 對應 skill：`dav-submitter`（v2.2 加 Module 級交付語法）
+> 對應 skill：`dav-reviewer`（v2.2 加 Module 級交付語法）
 >
 > **交付日期**: 2026-09-26
 > **對應 Backlog**: M02-US-201, M02-US-202, M02-US-203, M02-DE-301
@@ -145,7 +145,7 @@
 - [Backlog 對應項目](./docs/backlog.md)
 - [系統設計](./docs/system-design.md)
 - [M02 探針](./probes/)
-- [dav-developer 校驗清單](見同套 dav-developer skill 子檔)
+- [校驗清單](見同套 `dav-reviewer` skill 子檔 `examples/reviewer-checklist.md`)
 
 ## 8. 反思（Reflection 末段，v2.0 新：併入此處）
 
@@ -260,5 +260,5 @@ M02-US-201 → M02-US-202 → M02-US-203（順序依賴）
 
 ---
 
-**產生者**: Agent (透過 dav-submitter skill v2.2)
+**產生者**: Agent (透過 dav-reviewer skill v2.2)
 **產生時間**: 2026-09-26 12:00

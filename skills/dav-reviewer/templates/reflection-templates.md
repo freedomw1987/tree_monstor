@@ -39,7 +39,7 @@
 <整體評價>
 ```
 
-> 檢查問題清單（6 維度逐條）→ 見同套本 skill 子檔（`./reflection-checklist.md`）。
+> 檢查問題清單（6 維度逐條）→ 見同套本 skill 子檔（`./reflection-checklist.md`，同 templates/ 內）。
 
 ---
 

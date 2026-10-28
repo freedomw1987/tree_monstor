@@ -1,6 +1,6 @@
-# Dav Developer — 探針、回歸同 Reviewer 二審
+# Dav Developer — 探針、回歸同 Gate 4 交接
 
-> 本檔為 `dav-developer` 嘅 Step 3（埋探針 + 回歸）＋ Step 4（Reviewer 二審）子檔；主檔只留指標。
+> 本檔為 `dav-developer` 嘅 Step 3（埋探針 + 回歸）＋ Step 4（交畀 `dav-reviewer`）子檔；主檔只留指標。
 > Step 1／2 細節 → 同套 `./workflow.md`；Gate 定義 → 同套 `./gates.md`。
 
 ## §1 Step 3：埋探針 + 回歸（唔使全項目跑）
@@ -9,7 +9,7 @@
 
 - **動作**：為新行為埋**探針**（記錄關鍵 state／行為／boundary）→ 跑**改動範圍內**嘅測試套件 → 對比修改前後結果
 - **為什麼**：探針係「防復發」嘅最小單位；回歸只需覆蓋**改動範圍**，全項目跑探針嘅成本遠高過收益
-  （而且 Reviewer agent 下一 step 會再覆蓋一次）
+  （而且 Gate 4 由用戶叫先做嘅 `dav-reviewer` skill 會再覆蓋一次）
 - **產出**：探針檔 ＋ 範圍內測試輸出（baseline ＋ 修改後）＋ Diff 對比
 - **證據**：對話貼「修改前 baseline ＋ 修改後 output ＋ Diff 對比」（Gate 3 證據）
 - **範圍點決定**：改咗邊個 Module／邊啲檔 → 就跑邊啲（Module 級派工時用 `REGRESSION_MODULE=<M>`；
@@ -43,28 +43,9 @@
 - **Fail-fast 自檢**（出現任一項 = Gate 3 失敗）：shell 卡住 > 30 秒無輸出／輸出末端出現 `Watch Usage` 或
   `press h to show help`／進程未退出要 `Ctrl+C` → 正確做法：kill 進程 → 補前綴規則 → 重跑
 
-## §2 Step 4：Reviewer 二審（Gate 4）
+## §2 交畀 dav-reviewer 做 Gate 4（人手觸發）
 
-### 2.1 核心角色
-
-- **dev** — 職責：領取任務 → 依 DESIGN.md／system-design.md／PRD 開發 → 保留探針 → 標記「等待校驗」
-- **checker** — 職責：監控 backlog → 發現「等待校驗」→ 全面校驗 → 問題記錄 → dev 自動修復
-
-### 2.2 Gate 4 前置
-
-- **前置**：Step 1 測試已紅、Step 2 已綠、Step 3 探針已埋好（否則 reviewer 會捉到「測試係假綠」）
-- **角色分工**：dev 做實作 → checker subagent 做獨立校驗 → 有問題返 dev 修 → 重複
-- **證據**：checker subagent **原文回傳**（唔准自己改寫成「已通過」）
-
-### 2.3 循環終止條件
-
-- **用戶手動終止** — 由用戶決定何時停止
-- **所有任務完成** — backlog 為空且所有狀態為「已完成」
-- **循環上限** — 任一問題超過 20 次循環仍未解決則中斷（見同套 `./workflow.md` §2.4）
-
-### 2.4 二審規則
-
-- **獨立 reviewer 必開 subagent** — 例外：環境無 subagent 能力 → 降級並明示；限制：唔准自己審自己
-- **UI 任務必跑 playwright-cli E2E**（連截圖證據） — 例外：純後端／CLI／腳本可跳過；限制：要在對話明示「無 UI 故不適用」及理由
-- **有問題就返 Step 2 修** — 例外：無；限制：修完要重跑 Gate 3（探針／回歸）
-- **證據要原文回傳** — 例外：無；限制：唔准改寫成「已通過」
+- **Gate 4（品質審核）＋ Gate 4.5（需求對帳）由 `dav-reviewer` skill 承載**，2026-10-28 起**人手觸發**
+  （唔喺 §2.3 自動執行段內 → 執行段做完 Gate 1/2/3 就交返用戶，唔使等審核）
+- 本 skill 嘅責任到此為止：交付「探針已埋好 ＋ 改動範圍內回歸已過 ＋ 證據貼齊」畀審核者
+- 詳細（審核流程 ＋ 需求對帳）→ 見同套 `dav-reviewer` skill

@@ -19,7 +19,7 @@ description: >-
 
 - **SOP 進入 §2.2 設計 Gate**，或用戶說「幫我設計 / 規劃 / 拉架構」／「畫個原型 / 做 wireframe / mockup」 → ✅ 必須
 - **用戶說「更新 PRD / DESIGN」** → ✅ 觸發本 skill 增量更新
-- **純開發實作（寫 code / 跑測試）** → ❌ 走 dav-developer；**純回顧（sprint 結束反省）** → ❌ 走 dav-submitter（Step 3.5 反省）；**純諮詢 / 問問題** → ❌
+- **純開發實作（寫 code / 跑測試）** → ❌ 走 dav-developer；**純回顧（sprint 結束反省）** → ❌ 走 dav-reviewer（Step 3.5 反省）；**純諮詢 / 問問題** → ❌
 不觸發
 
 ## 流程（6 步）

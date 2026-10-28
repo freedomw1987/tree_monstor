@@ -14,6 +14,7 @@
 > **本檔現況（2026-10-28 收埋 TMO-089／TMO-091 後）**：本表**只保留未完成**（todo／doing／⏸️）嘅 row；
 > 已完成嘅 row 已移出（記錄去交付摘要 ＋ 需求錨點 ＋ git history；規則見 `skills/dav-planner/backlog-rules.md` §4.5）。
 > 收埋記錄：`docs/deliverable/2026-10-28-tmo-089-091-backlog-close.md`。
+> **流程現況（2026-10-28）**：本檔嘅更新屬交付流程嘅 Step 5（`dav-reviewer` skill：審核 ＋ 需求對帳 → 交付摘要 → 更新受影響文檔 ＋ 本檔）。
 
 ## 欄位說明
 

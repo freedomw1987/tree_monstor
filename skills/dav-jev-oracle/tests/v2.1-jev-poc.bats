@@ -702,7 +702,7 @@ print('OK: FixProposal has 3 conf fields')
 
 @test "CLEAN-d: cleanup-scan.py protects skill directories" {
   local f="$REPO_ROOT/docs/cleanup/cleanup-scan.py"
-  for skill in dav-designer dav-planner dav-submitter dav-developer; do
+  for skill in dav-designer dav-planner dav-reviewer dav-developer; do
     assert_file_contains "$f" "$skill" || {
       echo "FAIL: cleanup-scan.py should protect $skill/**" >&2
       return 1

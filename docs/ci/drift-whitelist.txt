@@ -87,3 +87,14 @@ D4#2026-10-28-tmo-089-091-backlog-close.md:docs/ac/TMO-091.md#2026-10-28 TMO-091
 D4#2026-10-28-tmo-089-091-backlog-close.md:docs/req/TMO-092-requirement.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-089/TMO-091（內容完整保留在 git history）
 D4#2026-10-28-tmo-089-091-backlog-close.md:docs/reconcile/TMO-092-reconcile.md#2026-10-28 上一輪交付嘅引用鏈已讓位畀 TMO-089/TMO-091（內容完整保留在 git history）
 D4#2026-10-28-tmo-089-091-backlog-close.md:docs/deliverable/2026-10-28-tmo-092-jev-oracle-split.md#2026-10-28 交付摘要只留最近一次：舊摘要已歸檔（內容完整保留在 git history）
+#
+# 2026-10-28 skill 拆分：Gate 4 ＋ Gate 4.5 由人手觸發嘅 dav-reviewer skill 承載
+# → dav-reconciler skill 改名為 dav-reviewer（內容併入，見 git history）；上一輪交付摘要提到嘅舊路徑已改名
+D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-reconciler/SKILL.md#2026-10-28 dav-reconciler skill 改名為 dav-reviewer（Gate 4 ＋ Gate 4.5 合併、人手觸發）；交付摘要寫於改名前（內容完整保留在 git history）
+D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-reconciler/examples.md#2026-10-28 dav-reconciler skill 改名為 dav-reviewer（Gate 4 ＋ Gate 4.5 合併、人手觸發）；交付摘要寫於改名前（內容完整保留在 git history）
+D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-reconciler/scripts/check-doc-drift.py#2026-10-28 dav-reconciler skill 改名為 dav-reviewer（Gate 4 ＋ Gate 4.5 合併、人手觸發）；交付摘要寫於改名前（內容完整保留在 git history）
+#
+# 2026-10-28 skill 合併：dav-submitter skill 併入 dav-reviewer skill
+# → 子檔搬到 skills/dav-reviewer/（見 git history）；交付摘要提到嘅舊路徑已搬
+D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-submitter/SKILL.md#2026-10-28 dav-submitter skill 併入 dav-reviewer（主檔合併後刪除）；交付摘要寫於合併前（內容完整保留在 git history）
+D4#2026-10-28-tmo-089-091-backlog-close.md:skills/dav-submitter/retention.md#2026-10-28 dav-submitter skill 併入 dav-reviewer（子檔搬到 skills/dav-reviewer/deliver.md）；交付摘要寫於搬遷前（內容完整保留在 git history）

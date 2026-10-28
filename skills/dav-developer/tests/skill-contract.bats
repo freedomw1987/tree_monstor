@@ -91,7 +91,7 @@ JEV_SKILL_DIR="$REPO_ROOT/skills/dav-jev-oracle"
   }
 }
 
-@test "SD-7: the four gates are declared in ./gates.md (主檔只留指標)" {
+@test "SD-7: Gate 1/2/3 are declared in ./gates.md (Gate 4 已搬去 dav-reviewer)" {
   # ⚠️ 2026-10-28 v2.11 減法版：Gate 定義由主檔搬去 ./gates.md（主檔 ≤ 50 行嘅硬上限）。
   #    → 呢條探針要跟住搬，否則「主檔出現過 Gate 1..4 字串」會變成假綠、Gate 定義零機械保護。
   local gates="$SKILL_DIR/gates.md"
@@ -106,7 +106,8 @@ text = open(path, encoding="utf-8").read()
 sections = re.split(r"^## ", text, flags=re.M)
 need = ["pass_criteria", "required_evidence", "fail_action", "mandatory_phrase"]
 bad = []
-for g in ("Gate 1", "Gate 2", "Gate 3", "Gate 4"):
+# ⚠️ 2026-10-28：Gate 4 ＋ Gate 4.5 搬去人手觸發嘅 `dav-reviewer` skill → 本檔只驗 Gate 1/2/3
+for g in ("Gate 1", "Gate 2", "Gate 3"):
     body = next((s for s in sections if s.startswith(g)), None)
     if body is None:
         bad.append(f"{g} 缺段落")
@@ -123,4 +124,9 @@ PYEOF
   assert_file_contains "$gates" "視為 gate 未觸發"
   # 主檔要指標去 gates.md（指標唔可以靜靜哋消失）
   assert_file_contains "$SKILL_DIR/SKILL.md" "./gates.md"
+  # Gate 4 已搬走 → dav-developer 嘅 gates.md 唔可以再留 Gate 4 定義（避免兩處定義漂移）
+  if grep -qE '^## Gate 4 ' "$gates"; then
+    echo "FAIL: ${gates} 仲有 Gate 4 定義 → Gate 4 屬 dav-reviewer skill" >&2
+    return 1
+  fi
 }

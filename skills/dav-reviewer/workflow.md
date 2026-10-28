@@ -1,13 +1,11 @@
-# Dav Reconciler — 流程細節（5 步）
+# Dav Reviewer — 需求對帳流程（Gate 4.5，5 步）
 
-> 本檔為 `dav-reconciler` skill 的子檔，逐Step 寫「動作 / 為什麼 / 產出 / 證據」。入口在同套 `SKILL.md`。
-
----
+> 本檔為 `dav-reviewer` skill 嘅「Gate 4.5 需求對帳」流程子檔，逐 Step 寫「動作 / 為什麼 / 產出 / 證據」。
+> 品質審核（Gate 4）嘅流程 → 同套 `./review.md`；兩道 Gate 嘅定義 → 同套 `./gates.md`。
 
 ## Step 1：準備輸入（刻意做少）
 
-- **動作**：組出對帳者要拿的東西 —（a）目標專案的需求錨點檔全文（`docs/req/<US-ID>-requirement.md`）
-  （b）本次的最終變更清單（檔案 + diff）（c）該 US 的既有文件（AC 範本、backlog 該列）
+- **動作**：組出對帳者要拿的東西 —（a）需求錨點檔全文（`docs/req/<US-ID>-requirement.md`）（b）最終變更清單（檔案 + diff）（c）該 US 既有文件（AC 範本、backlog 該列）
 - **為什麼不給更多**：執行者的完成宣告與過程自述會把對帳者帶向「照著我說的寫」；對帳的價值在獨立比對
 - **產出**：一份給對帳者的輸入包（對話內直接給，不落檔）
 - **證據**：對話中可見「我給了什麼、沒給什麼」

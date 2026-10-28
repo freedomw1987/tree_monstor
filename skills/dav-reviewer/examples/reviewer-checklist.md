@@ -1,8 +1,8 @@
-# dav-developer Checklist — M02-payment 校驗清單
+# dav-reviewer Checklist — M02-payment 校驗清單
 
-> **本檔為範例**，由 dav-developer skill v2.2 產出。展示 Module 級校驗清單。
+> **本檔為範例**，由 dav-reviewer skill 產出。展示 Module 級校驗清單。
 >
-> 對應 skill：`dav-developer`（v2.2 加 Module 級派工 / Module 邊界 / Module 級校驗）
+> 對應 skill：`dav-reviewer`（Gate 4 品質審核；2026-10-28 起由本 skill 承載，人手觸發）
 >
 > 對應模組：M02-payment（M02-US-201 完成後）
 
@@ -48,7 +48,7 @@
 - [ ] 函數長度 ≤ 50 行
 - [ ] 檔案長度 ≤ 300 行
 
-### ✅ Step 5：校驗 dav-developer 探針
+### ✅ Step 5：校驗回歸探針
 
 - [ ] 探針命名具體（避免 `test1`）
 - [ ] 粒度適中（每個 AC 1-2 個探針、不過粗不過細）
@@ -98,6 +98,6 @@
 3. **標記問題分級**：本 checklist「發現的問題」段 P0/P1/P2 分級
 4. **跨 Module 問題處理**：本 checklist「跨 Module 問題」段標記 + 升級為新任務
 
-完成本 checklist 後，dav-developer 才會進入 Step 4（dev 自動修復），最後跑 dav-submitter 產出 deliverable。
+完成本 checklist 後 → 返 dev 修復（流程見同套 `review.md` §2）→ 修完重跑 Gate 3（探針／回歸）→ 再由同套 `dav-reviewer` skill 產出交付摘要。
 
 ---

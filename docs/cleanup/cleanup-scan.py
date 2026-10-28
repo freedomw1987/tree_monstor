@@ -58,9 +58,8 @@ PROTECTED_PATTERNS = [
     "**/ci/**",               # CI SOP
     "**/dav-designer/**",     # dav-designer skill 完整保留
     "**/dav-planner/**",      # dav-planner skill 完整保留
-    "**/dav-submitter/**",   # dav-submitter skill 完整保留
+    "**/dav-reviewer/**",    # dav-reviewer skill 完整保留（Gate 4 ＋ Gate 4.5 ＋ 交付摘要）
     "**/dav-skill-creater/**",
-    "**/dav-submitter/**",
     "**/dav-trust/**",
     "**/dav-wiki/**",
     "**/dav-developer/**",
