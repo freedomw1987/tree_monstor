@@ -209,7 +209,7 @@
 
 - Verdict：✅ PASS
 - 問題數：P0=0、P1=2（已記錄在 TECH backlog）、P2=1
-- 連結 Reviewer 原路徑：N/A（本 sprint 為開發任務，非 SOP 修改）
+- 連結 Reviewer 原路徑：N/A（本次為功能開發，非規範修改）
 
 ## 9. Module 級總結（v2.2 新增：Module 級交付專用）
 

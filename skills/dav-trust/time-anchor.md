@@ -173,7 +173,7 @@ fi
   - 與本檔關係：時間錨點鎖死 deadline 只問一次，合規
 - **`AGENTS.md` §1.5 V02（必標推薦）**
   - 與本檔關係：啟動對話明示時間錨點（START/DEADLINE）合規
-- **`AGENTS.md` §1.5 V03（SOP 改走二審）**
+- **`AGENTS.md` §1.5 V03（改規範按內容分流）**
   - 與本檔關係：本次 v2.2 走 V03 Reviewer 二審通過
 - **`dav-skill-creater` 主檔行數上限 150**
   - 與本檔關係：本檔外移避免主檔觸上限

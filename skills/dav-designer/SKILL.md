@@ -14,7 +14,7 @@ description: >-
 4. **關鍵紀律**：
    - **V01**：一次一個問題，模組多時依序處理
    - **V02**：方案必標推薦
-   - **V03**：本 skill 修改必走 Reviewer 二審
+   - **V03**：本 skill 代碼／契約改動先走 Reviewer 二審（純 markdown 只自查行數上限）
    - **互動原型先於實作**：未走 Step 4.5 自審 + 用戶簽核，不得進入 Step 5 產原型
 5. **必產出物**：`DESIGN.md` + `system-design.md` + `docs/prd/<序號-module>.md`（含追溯矩陣）+ `docs/prd/<序號-module>.html`（**互動原型**）+
    自審報告（對話產出）

@@ -129,8 +129,8 @@ bash -n skills/dav-wiki/scripts/wiki-cross-ref.sh
 for f in skills/dav-wiki/scripts/*.sh; do bash -n "$f"; done
 
 # 文檔行數限制（2026-10-27 起改由 dav-skill-creater 規範承擔，唔再靠機械探針）：
-#   主檔 ≤150 行／子檔 ≤300 行／單 skill context ≤700 行 → 寫完自己量
-wc -l skills/*/SKILL.md skills/*/*.md
+#   主檔 ≤150 行／子檔 ≤300 行／單 skill context ≤ baseline（見 editor-guide.md）→ 寫完自己量
+find skills -name '*.md' -type f -exec cat {} + | wc -l   # 遞迴（含嵌套目錄，同 baseline 表同口徑）
 ```
 
 ### 文檔行數限制（2026-10-27 減法後：改由**規範**承擔，唔再靠機械探針）
@@ -142,10 +142,10 @@ wc -l skills/*/SKILL.md skills/*/*.md
 | 守乜 | 上限 | 類型 |
 |------|------|------|
 | **主檔** `SKILL.md` | ≤ 150 行 | 硬上限（過長必拆子檔）|
-| **單一支援子檔** | ≤ 300 行 | 硬上限（拆檔或壓成表）|
-| **單 skill context 總量**（主檔 ＋ 支援 .md）| ≤ 700 行 | 軟上限（先減法：去重 → 表格化 → 指標化）|
+| **單一支援子檔** | ≤ 300 行 | 硬上限（拆檔或壓成表；存量 3 支例外見 editor-guide，改就要 ratchet 返 ≤300）|
+| **單 skill context 總量**（主檔 ＋ 支援 .md）| ≤ baseline（見 editor-guide.md baseline 表；硬上限 1,500 行，`dav-jev-oracle` 已登記例外）| 軟上限（先減法：去重 → 表格化 → 指標化）|
 
-寫完／改完自己量：`wc -l skills/<name>/*.md`。
+寫完／改完自己量：`find skills/<name> -name '*.md' -type f -exec cat {} + | wc -l`（遞迴，同 baseline 表同口徑）。
 **點解唔再機械守**：每加一支機械探針，框架層（tests/）就膨脹一次 → 探針自己都係 context ＋ 維護成本。
 
 ### markdownlint 政策（TMO-037 後）
@@ -172,7 +172,7 @@ wc -l skills/*/SKILL.md skills/*/*.md
 |-----|------|---------|
 | **本機探針**（`bats tests/` ＋ skill-local ＋ mutant 全死） | **閘** | ✅ 紅就唔算完成 |
 | **本機 lint**（markdownlint / shellcheck / bash -n / heredoc / 文件漂移） | **閘** | ✅ 紅就唔算完成 |
-| **Reviewer 二審**（V03） | **閘** | ✅ 未過唔算完成 |
+| **Reviewer 二審**（V03：只限代碼／契約／探針改動；純 markdown 改動不適用，惟屬 V03 例外〈規範語意〉者仍需） | **閘** | ✅ 未過唔算完成 |
 | **CI（GitHub Actions）** | **偵測器** | ❌ 唔阻 merge、唔係完成條件 |
 
 **點解**：本 repo 係**平時自用嘅技能庫**，唔係要出貨嘅產品 → 唔需要另一部機做發佈閘。

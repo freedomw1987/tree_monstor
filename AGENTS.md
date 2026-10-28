@@ -27,9 +27,21 @@
 
 - **V01 — 一次一個問題**：每輪對話最多問 1 個問題（同一主題）。
 - **V02 — 方案必標推薦**：給多個方案時，**第一個必須是最推薦**，標明「**最推薦 X**，原因：…」。
-- **V03 — 改規範必走二審**：產出 SOP／`AGENTS.md`／`gates.json`／handbook／skill／
-  **探針**（`tests/**/*.bats`）／契約的修改提案時，
-  先經獨立 Reviewer subagent（`/skill:dav-developer`）二審：附**風險分級** + **跨 SOP 一致性檢查**。
-  用戶收到「diff + verdict」兩者並呈後，可明確說「跳過 Reviewer」直接批准。
-  探針修改比照辦理（「條件放寬」的判準見 `skills/dav-skill-creater/editor-guide.md`）。
-  這條**不增加一般任務的步驟**——只有動到規範本身時才觸發。
+- **V03 — 改規範按內容分流**（2026-10-28 改版：純 markdown 文件改動唔再二審）：
+  - **只改 markdown 文件**（SOP／`AGENTS.md`／handbook／skill 內文／一般 `.md`）→ **唔使二審**，
+    只自查**行數上限**：skill 主檔 ≤150 行（硬）、子檔 ≤300 行（存量 3 支例外見 editor-guide）、
+    單 skill context 總量 ratchet
+    （只可下唔可上；操作目標主檔 ≤130 行；細則見 `skills/dav-skill-creater/editor-guide.md`
+    「文檔行數限制」）；非 skill 文件無硬上限。
+  - **改到代碼／契約／探針**（python／shell／`.bats`／`gates.json`／其餘非 markdown 檔如
+    `.html`／`.json`／`.yaml`／`.tsv` 等）→ **走原二審**：先經獨立 Reviewer subagent
+    （`/skill:dav-developer`）二審：附**風險分級** + **跨 SOP 一致性檢查**；
+    用戶收到「diff + verdict」兩者並呈後，可明確說「跳過 Reviewer」直接批准。
+  - **例外（規則語意自指防線）**：命中以下任一 → 一律走二審，唔可以靠改文件繞過：
+    ① `AGENTS.md` §1.5（行為紀律）段；② `docs/sop/handbook/**`；③ `docs/sop/gates.json`；
+    ④ `skills/*/SKILL.md` 嘅「規則 / 例外 / 限制」段同「Gate 定義」段；
+    ⑤ skill 內嘅契約／門檻子檔（檔名含 `contract` / `rules` / `naming`）；
+    ⑥ 其他 markdown 改到「必須／唔准／門檻／應／須／不得／只可／必填」等要求 → 一律當規範語意（fail-closed）；
+    只係說明／範例／註解／typo → 仍屬文件分支。
+  - 同一改動同時碰文件同代碼 → 一律當**代碼分支**；探針屬代碼分支（「條件放寬」判準見 editor-guide.md）。
+  這條**不增加一般任務的步驟**——只有動到規範本身時才觸發；其餘**非規範語意**嘅文件改動零步驟。

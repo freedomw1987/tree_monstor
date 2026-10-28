@@ -154,7 +154,8 @@
 
 ### 8.4 Reviewer 二審結果（V03 紀律）
 
-> 若本次變更為 SOP 修改（V03 ），填寫 Reviewer verdict 摘要。
+> 若本次變更含代碼／契約／探針（V03 代碼分支），填寫 Reviewer verdict 摘要；
+> 純 markdown 改動填「不適用（純文件改動，已自查行數上限）」。
 
 - Verdict：✅ PASS / ⚠️ OK with P1 / ❌ FAIL
 - 問題數：P0=?、P1=?、P2=?

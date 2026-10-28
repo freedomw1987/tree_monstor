@@ -333,7 +333,7 @@ M4 — Self-Evolution
 │       └─ 每個 diff 附「證據」+「影響專案數」+「rollback 指令」              │
 │                │                                                  │
 │                ▼                                                  │
-│  [3] Reviewer 二審  dav-developer  ← V03 紀律要求                 │
+│  [3] Reviewer 二審  dav-developer  ← V03（歷史；分流見 ADR-010）   │
 │       │                          │
 │       ├─ 風險分級 🟢/🟡/🔴                                    │
 │       ├─ 跨 SOP 一致性檢查                                       │
@@ -386,7 +386,7 @@ M4 — Self-Evolution
 
 1. **觀察/改動分離**：裝在專案裡的 tree_monstor **只能觀察**，不能改 SOP。驗證：專案裡打 `/evolve` 應被拒絕。
 2. **匿名化**：observation 只記結構化信號，不收 raw 對話、code、路徑。
-3. **Reviewer 二審必經**：所有 SOP 改動提案都走 dav-developer 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律）。
+3. **Reviewer 二審必經**：**當年**所有 SOP 改動提案都走 dav-developer 二審，用戶收到「diff + verdict」兩者並呈（V03 紀律；現行分流見 ADR-010）。
 4. **一鍵回滾**：每次合併自動寫 git tag (`rsi-vYYYYMMDD-NN`)，`rsi-rollback.sh` 從 rsi-log.md 找 diff 還原。
 
 ### 4.6 量化指標（6 個）
@@ -440,9 +440,12 @@ M4 — Self-Evolution
 - **理由**：跨專案觀察最怕意外洩漏敏感資料；白名單強制結構化、黑名單明文拒絕
 - **影響**：多餘欄位自動 reject；`project_id` 用 SHA256 雜湊不存明文路徑
 
-### ADR-010：所有 SOP 改動必走 Reviewer subagent 二審（V03）
-- **理由**：agent 自己提案自己改易形成自我強化偏見；Reviewer subagent 提供跨 SOP 一致性檢查與風險分級
-- **影響**：用戶收到「diff + reviewer verdict」兩者並呈；可明確說「跳過 Reviewer」直接批
+### ADR-010：SOP 改動按內容分流 —— 代碼／契約／探針必走 Reviewer subagent 二審（V03）
+- **理由**：agent 自己提案自己改易形成自我強化偏見；Reviewer subagent 提供跨 SOP 一致性檢查與風險分級；
+  但純 markdown 文件改動風險低（行數可控）→ 只自查行數上限，唔使二審
+- **影響**：用戶收到「diff + reviewer verdict」兩者並呈；可明確說「跳過 Reviewer」直接批；
+  純 markdown 改動免二審（自查 skill 主檔 ≤150 行／子檔 ≤300 行）；
+  但「規範語意」改動（AGENTS.md §1.5 V03 例外、handbook、gates.json、skill 規則段、markdown 形式嘅契約）仍必走二審
 
 ### ADR-011：rsi-sync 不覆蓋本地 override
 - **理由**：用戶可能在已裝專案上調 SOP；如果 sync 強制覆蓋會造成無謂損失

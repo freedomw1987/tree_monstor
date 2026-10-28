@@ -33,7 +33,7 @@
 | Reconcile（對帳）| 逐條需求句對住實作比對；產出檔＝對帳表 | reconciliation |
 | Requirement anchor（需求錨點）| 存用戶原話＋R-ID 驗收句嘅檔（全鏈路嘅根節點）；產出檔＝錨點檔 | 錨點 |
 | Requirement maturity（需求成熟度）| 寫 US 前按涵蓋率／清晰度／可行性評分 | — |
-| Second review（二審）| 規範改動必走獨立 Reviewer subagent 覆核（V03）| Reviewer 二審 |
+| Second review（二審）| 規範改動涉代碼／契約／探針時必走獨立 Reviewer subagent 覆核（V03）；純 markdown 改動只自查行數上限 | Reviewer 二審 |
 | Skill（技能）| 一個可獨立安裝嘅能力包（SKILL.md ＋ 支援檔）| — |
 | SOP（標準作業流程）| 本 repo 定義嘅多階段流程（規劃→設計→執行→反省→交付）| 流程規範 |
 | Spike（研究項）| Backlog 一類：先研究／驗證，唔直接交功能 | 技術研究 |

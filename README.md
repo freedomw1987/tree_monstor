@@ -3,7 +3,7 @@
 [![CI](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml/badge.svg)](https://github.com/freedomw1987/tree_monstor/actions/workflows/ci.yml)
 
 > **CI 係偵測器，唔係閘**（TMO-084，2026-10-27）：本 repo 係平時自用嘅技能庫，閘喺本機 ——
-> 探針全綠 ＋ lint 0 issue ＋ mutant 全死 ＋ Reviewer 二審。一條指令跑齊：
+> 探針全綠 ＋ lint 0 issue ＋ mutant 全死 ＋ Reviewer 二審（V03：只限代碼／契約／探針改動；純 markdown 改動不適用）。一條指令跑齊：
 > `bash scripts/check-all.sh`。CI 仍然會跑（跨環境偵測用），但**唔阻 merge**。
 >
 > **dav-developer 嘅 CI 完全唔喺 GitHub 跑**（2026-10-27 用戶決策）：改用本機 runner
@@ -76,7 +76,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | 章節 | 內容 |
 |---|---|
 | §1 萬事原則 | 行為基礎：誠實、負責、有承擔、Think Big |
-| §1.5 行為紀律 | V01 一次一問、V02 方案必標推薦、V03 改規範走 Reviewer 二審 |
+| §1.5 行為紀律 | V01 一次一問、V02 方案必標推薦、V03 改規範按內容分流（純 markdown 自查行數上限；代碼／契約／探針走 Reviewer 二審） |
 
 **流程與 Gate 不在 `AGENTS.md`** —— 它們寫在**各自的 skill** 裡，被觸發時才讀：
 
