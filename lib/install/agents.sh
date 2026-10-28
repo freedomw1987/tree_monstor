@@ -103,6 +103,11 @@ install_pi() {
 
   # SOUL.md is NOT installed globally. See plan output above for rationale.
 
+  # Extensions: skill-bundled tools (<skill>/extension/*.ts) must be discovered
+  # by pi, so symlink each into ~/.pi/agent/extensions/. A skill's instructions
+  # cannot call a tool that was never registered.
+  install_pi_extensions "$agent_root/extensions"
+
   # Subagents: per-file symlinks into ~/.agents/<name>.md (user-scope).
   # pi-subagents discovers them automatically and they take precedence
   # over builtins but lose to project-scope agents.
@@ -233,5 +238,56 @@ install_subagents() {
   local total=$((installed + updated + ok + skipped))
   if (( total > 0 )); then
     log_info "subagents: installed=$installed, updated=$updated, ok=$ok, skipped=$skipped"
+  fi
+}
+
+# install_pi_extensions: symlink every skill-bundled extension into pi's
+# extension discovery dir (~/.pi/agent/extensions/), so a skill can ship the
+# tool its instructions rely on (e.g. dav-self-compact's ctx_status).
+#
+# The extension DIRECTORY is symlinked (not each file): pi discovers
+# <dir>/index.ts, and relative imports inside the extension (./lib/zone.ts)
+# resolve against the symlink's real path. Symlinking a single file would
+# break those relative imports.
+install_pi_extensions() {
+  local dst_ext_dir="$1"
+  [[ -d "$dst_ext_dir" ]] || run mkdir -p "$dst_ext_dir"
+
+  shopt -s nullglob
+  local src_ext_dir link target_abs installed=0 updated=0 ok=0 skipped=0 total=0
+  for src_ext_dir in "$SOURCE_DIR"/skills/*/extension; do
+    [[ -f "$src_ext_dir/index.ts" ]] || continue
+    total=$((total + 1))
+    local skill_name
+    skill_name="$(basename "$(dirname "$src_ext_dir")")"
+    link="$dst_ext_dir/$skill_name"
+    target_abs="$(abs_path "$src_ext_dir")"
+
+    if [[ -L "$link" ]]; then
+      local current
+      current="$(readlink "$link")"
+      if [[ "$current" == "$target_abs" ]]; then
+        log_ok "extension OK: $link -> $target_abs"
+        ok=$((ok + 1))
+        continue
+      fi
+      ensure_symlink "$link" "$src_ext_dir"
+      updated=$((updated + 1))
+      continue
+    fi
+
+    if [[ -e "$link" ]]; then
+      log_warn "extension: target exists and is not a symlink, skipping: $link"
+      skipped=$((skipped + 1))
+      continue
+    fi
+
+    ensure_symlink "$link" "$src_ext_dir"
+    installed=$((installed + 1))
+  done
+  shopt -u nullglob
+
+  if (( total > 0 )); then
+    log_info "extensions: installed=$installed, updated=$updated, ok=$ok, skipped=$skipped"
   fi
 }

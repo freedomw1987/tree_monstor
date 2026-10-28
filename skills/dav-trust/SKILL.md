@@ -12,7 +12,7 @@ description: >-
 3. **預設 SOP 路徑**：啟動 → 執行（Gate 1/2/3）→ 反省 ＋ 提交（同套 `dav-reviewer` skill）→ 退出；**規劃／設計係前置條件**（trust 內不可跑）。
 4. **關鍵紀律**：不問用戶（歧義／選型／命名自己決定 ＋ 寫 trust-log）／不自動停下（Step 4 三段接力）／deadline 到或叫停即退出。
 5. **必產出物**：`docs/backlog.md` ＋ `docs/trust-log.md` ＋ `docs/need-you-help.md`（如有）＋ `docs/deliverable/<...>.md`。
-6. **子檔導航**：啟動前檢查／拒絕啟動 → `./preflight.md`；續跑／叫停 → `./resume.md`；時間錨點 → `./time-anchor.md`；範例 → `./examples.md`。
+6. **子檔導航**：啟動前檢查／拒絕啟動 → `./preflight.md`；續跑／叫停 → `./resume.md`；時間錨點 → `./time-anchor.md`；長跑 context 紀律 → `./long-run-context.md`；範例 → `./examples.md`。
 
 ## 觸發時機
 - ✅ **觸發**：用戶給「大目標 + Deadline」且明確說「trust mode」；大型獨立功能；已有清晰技術棧的擴展；用戶可長時間不看對話。
@@ -43,7 +43,7 @@ backlog／設計全缺 → **拒絕啟動**（唯一例外：用戶明確覆核 
 - **deadline 是 L3 硬上限** — 例外：deadline 到自動停止；限制：剩餘 < 10% 主動收斂、不再啟動新 L3 項目
 - **時間錨點須真實查時間** — 例外：N/A；限制：啟動／完成每 Backlog／L3 收斂／退出 4 個 checkpoint 必查 `date`；詳見 time-anchor.md
 - **不可發外部指令／不可改不可逆文件** — 例外：N/A；限制：見底線規則 ① ②
-- **中斷後續跑** — 例外：用戶說「繼續 trust」；限制：session 崩潰／context 壓縮 → 讀 trust-log 檔頭 checkpoint 重建狀態；已過 deadline → 收斂
+- **中斷後續跑** — 例外：用戶說「繼續 trust」；限制：session 崩潰／context 壓縮 → 讀 trust-log 檔頭 checkpoint 重建狀態（長跑 context 紀律 → `./long-run-context.md`）；已過 deadline → 收斂
 - **用戶叫停立即收斂** — 例外：N/A；限制：先分流「結束」／「暫停」；序列見 resume.md §4
 - **退出 trust 後不再自動做事** — 例外：用戶說「繼續 trust」可續跑（已過 deadline → 只能收斂）；限制：必須等用戶指示
 - **底線規則（不可跨越）** — ①不可發外部指令（email／課金／推送／刪線上資料／付費 API）②不可改不可逆文件（push master/main／改 production）③不可擅自改

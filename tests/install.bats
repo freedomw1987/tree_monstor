@@ -36,8 +36,18 @@ teardown() {
   assert_path_is_symlink "$TEST_HOME/.pi/agent/skills/dav-planner" "$TEST_SOURCE/skills/dav-planner"
   assert_path_is_symlink "$TEST_HOME/.pi/agent/skills/dav-designer" "$TEST_SOURCE/skills/dav-designer"
 
+  # Subagent definitions are symlinked per file into ~/.agents/ (home-level
+  # user config for pi-subagents; project-scope .agents/*.md is the legacy form).
+  assert_path_is_symlink "$TEST_HOME/.agents/mock-agent.md" "$TEST_SOURCE/agents/mock-agent.md"
+
   # ~/.pi/skills (the legacy wrong location) must NOT be created.
   [ ! -e "$TEST_HOME/.pi/skills" ]
+
+  # Skill-bundled extensions (<skill>/extension/ with index.ts) are symlinked as
+  # a DIRECTORY into pi's extension discovery dir — pi discovers <dir>/index.ts,
+  # and relative imports inside the extension resolve against the real path.
+  assert_path_is_symlink "$TEST_HOME/.pi/agent/extensions/dav-planner" \
+    "$TEST_SOURCE/skills/dav-planner/extension"
 }
 
 # ---------- AC-2: Claude wrapper with @ references ----------
@@ -85,7 +95,11 @@ teardown() {
 @test "AC-4 (no-agents-dir): skips .agents/ when --no-agents-dir" {
   run run_install --global --no-agents-dir --yes
   [ "$status" -eq 0 ]
-  [ ! -e "$TEST_HOME/.agents" ]
+  # --no-agents-dir skips the tree_monstor COPY, not the directory: the pi
+  # install still symlinks subagent definitions into ~/.agents/ (that is where
+  # pi-subagents discovers them), which legitimately creates the directory.
+  [ ! -e "$TEST_HOME/.agents/tree_monstor" ]
+  assert_path_is_symlink "$TEST_HOME/.agents/mock-agent.md" "$TEST_SOURCE/agents/mock-agent.md"
 }
 
 # ---------- AC-5: --local installs to cwd ----------
@@ -141,6 +155,9 @@ teardown() {
 
   # Pre-create an unrelated file in .claude/ to ensure installer doesn't touch it
   echo "user's own stuff" > "$TEST_HOME/.claude/user-notes.md"
+  # Pre-create a user-owned extension: uninstall must only remove OUR symlinks.
+  mkdir -p "$TEST_HOME/.pi/agent/extensions"
+  echo "user's own extension" > "$TEST_HOME/.pi/agent/extensions/user-tool.ts"
 
   run run_install --uninstall --global --yes
   [ "$status" -eq 0 ]
@@ -156,7 +173,11 @@ teardown() {
   # the dir to take the merge path; we only assert our per-skill symlinks
   # are gone, not the dir itself.
   [ ! -L "$TEST_HOME/.pi/agent/skills/dav-planner" ]
+  [ ! -L "$TEST_HOME/.agents/mock-agent.md" ]
   [ ! -e "$TEST_HOME/.agents/tree_monstor" ]
+  # Our extension symlink goes; a user-owned extension file must survive.
+  [ ! -L "$TEST_HOME/.pi/agent/extensions/dav-planner" ]
+  assert_path_is_file "$TEST_HOME/.pi/agent/extensions/user-tool.ts"
   # Unrelated file must remain
   assert_path_is_file "$TEST_HOME/.claude/user-notes.md"
 }

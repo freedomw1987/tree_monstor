@@ -301,6 +301,7 @@ print_plan() {
         # Claude Code's merge mode). Tree-level symlink would clobber the
         # user's other global skills (e.g. ~/.agents/skills/ peers).
         log_plan "$TARGET_ROOT/.pi/agent/skills/ (merge: per-skill symlinks)"
+        log_plan "$TARGET_ROOT/.pi/agent/extensions/<skill> (merge: directory symlinks for skill-bundled extensions)"
         # SOUL.md is intentionally NOT installed globally:
         #   - pi does not read SOUL.md (no mention in any pi doc).
         #   - tree_monstor/AGENTS.md references SOUL.md via [[SOUL]] (same dir).
@@ -548,6 +549,8 @@ uninstall_pi() {
   remove_managed_path "$pi_root/agent/AGENTS.md" symlink
   # Skills are merged per-skill into $pi_root/agent/skills/.
   remove_merged_skills "$pi_root/agent/skills" "$SOURCE_DIR/skills"
+  # Skill-bundled extensions are symlinked per directory into $pi_root/agent/extensions/.
+  uninstall_pi_extensions "$pi_root/agent/extensions"
   # sop/ 係舊版安裝（2026-10-28 前）部署 gates.json 嘅位置；今次已唔再部署，
   # uninstall 仍然要清走遺留 symlink（user-owned 檔案要保留）。
   if [[ -L "$pi_root/sop" ]]; then
@@ -595,6 +598,34 @@ uninstall_qoder() {
   remove_merged_skills "$qoder_root/skills" "$SOURCE_DIR/skills"
   # Subagents live in <qoder_root>/agents/.
   uninstall_subagents "$qoder_root/agents"
+}
+
+# uninstall_pi_extensions: remove the skill-bundled extension DIRECTORY symlinks
+# we created in ~/.pi/agent/extensions/ (install_pi_extensions symlinks
+# <skill>/extension/ as extensions/<skill>). Only removes symlinks pointing into
+# our SOURCE_DIR/skills/*/extension/ (safe against user-owned extensions,
+# mirrors remove_merged_skills() pattern).
+uninstall_pi_extensions() {
+  local dst_ext_dir="$1"
+  [[ -d "$dst_ext_dir" ]] || return 0
+
+  shopt -s nullglob
+  local src_ext_dir link current target_abs skill_name
+  for src_ext_dir in "$SOURCE_DIR"/skills/*/extension; do
+    [[ -d "$src_ext_dir" ]] || continue
+    skill_name="$(basename "$(dirname "$src_ext_dir")")"
+    link="$dst_ext_dir/$skill_name"
+    target_abs="$(abs_path "$src_ext_dir")"
+    [[ -L "$link" ]] || continue
+    current="$(readlink "$link")"
+    if [[ "$current" == "$target_abs" ]]; then
+      run rm "$link"
+      log_ok "removed extension symlink: $link"
+    else
+      log_warn "skipping extension symlink (not ours): $link -> $current"
+    fi
+  done
+  shopt -u nullglob
 }
 
 # uninstall_subagents: remove symlinks we created in ~/.agents/ (or in an
