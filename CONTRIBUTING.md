@@ -177,13 +177,21 @@ wc -l skills/*/SKILL.md skills/*/*.md
 
 **點解**：本 repo 係**平時自用嘅技能庫**，唔係要出貨嘅產品 → 唔需要另一部機做發佈閘。
 
-**一條指令跑齊本機閘**（11 步，由便宜到昂貴排，紅就停；**≈ 10–15 分鐘**，mutant 全表為主）：
+**開發 loop → 用 `--changed`（快 6–10 倍）**；**push 前 → 跑全量**：
 
 ```bash
+# 開發中（改完即跑）：只驗受改動影響嘅探針 ＋ 受影響嘅 mutant 列（≈ 20–40 秒）
+bash scripts/check-all.sh --changed
+bash scripts/check-all.sh --changed=origin/master   # 同遠端比（PR 前用）
+
+# push 前（最後一道閘）：全量 11 步（≈ 4 分鐘）
 bash scripts/check-all.sh
 ```
 
-**本機 pre-push 閘**（可選；裝一次就長期生效，push 前自動跑上面嗰條）：
+> `--changed` 會明講邊步驟跳過同點解跳（唔會靜靜哋當通過）；base 打錯 → rc=2、冇改動 → rc=1（fail-closed）。
+> **注意**：`--changed` **唔等於全量閘通過** → 報告交付時要講明驗過嘅範圍。
+
+**本機 pre-push 閘**（可選；裝一次就長期生效，push 前自動跑**全量**嗰條 `bash scripts/check-all.sh`）：
 
 ```bash
 bash scripts/install-local-hooks.sh       # 安裝

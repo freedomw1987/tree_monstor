@@ -16,7 +16,11 @@
 #
 # 用法：bash scripts/check-all.sh [--only <id>] [--keep-going] [--changed[=<base>]] [--list] [--plan]
 #   --changed[**<base>**]：**只跑受改動影響**嘅探針（git diff <base> + 未追蹤檔 → 相關 skill 嘅
-#              probe 檔 ＋ 目標檔被改過嘅 mutant 列）。開發 loop 用（4 分鐘 → ~20-40 秒）；
+#              probe 檔 ＋ 目標檔被改過嘅 mutant 列）。**開發 loop 用呢個**（4 分鐘 → ~20-40 秒）；
+#              **push 前跑全量**（唔帶參數）→ 最後一道閘；
+#              ⚠️ `--changed` **唔等於全量閘通過** → 交付時要講明驗過嘅範圍；
+#              ⚠️ base 要用 `=` 形（`--changed=origin/master`；用空格會被當成未知參數 → rc=2）；
+#              ⚠️ rc 圖例：0 全綠／1 有步驟失敗 **或** 冇改動可驗（fail-closed）／2 用法或環境錯誤
 #              `--changed origin/master` = 同遠端比（PR 前用）。
 #              push 前照樣可以跑全量（唔加 --changed）。skip 嘅步驟會明講「點解跳」，
 #              唔會靜靜哋當通過（fail-closed 語義不變）。
