@@ -17,6 +17,9 @@
 - `opportunityPercent` 會被夾入 `(softPercent, hardPercent]`：細過 soft 就同 soft 重疊、大過 hard 就永遠追唔到。
 - `noticePercents`（默認 `[20, 40, 60]`）：**使用率里程碑**。每跨過一個就印一次訊息（使用率 ＋ zone ＋ 要做乜），一次最多印一個（最高嗰個），唔會重複；壓縮後使用率大跌（< 上次 ×
   0.6）會自動重置，之後再跨過會再通知。寫法：`[20, 40, 60, 80]`；唔合法／空陣列 → 用默認。
+- `liveFuse`（默認 `true`）：**即時對齊** —— extension patch 咗 pi 查門檻嘅入口，pi 每個回合都用 config 即時計值
+  → 改 config 即時生效，唔使 `/reload`、唔使開新 session。
+- `autoSyncSettings`（默認 `true`）：session 開始時把對齊值寫返 settings.json（per-model override）→ 令其他工具／下次 session 都係啱嘅。
 - `absoluteCapTokens > 0` → 有效窗口 = `min(contextWindow, absoluteCapTokens)`，百分比門檻按有效窗口計。
 - 例：窗口 1,000,000、`absoluteCapTokens: 200000` → soft = 100,000、opportunity = 110,000、hard = 120,000 tokens。
 - **點解要有絕對上限**：1M 窗口嘅 50% = 500k tokens，比例睇落「安全」，但模型注意力喺咁上下文明顯退化；絕對上限先真正貼近「聰明區」。
@@ -56,11 +59,31 @@
 - 判 OK 的條件：`softTokens < nativeTriggerTokens <= opportunityTokens` —— fuse 要**喺機會窗口之內**開火；
   早過 soft（太早，會過度壓縮）或遲過 opportunity（太遲，會拖到 hard）都會出 ⚠ 同建議值。
 - **對齊要用 tokens 比，唔好用百分比比**：設咗絕對上限之後，門檻係絕對 token 數。
-- **fuse 嘅觸發位置**：pi 喺「工具批次完、
-  下一個 assistant 回應之前」（`prepareNextTurn`）檢查 —— 呢個本身已經係一個安全邊界（冇半套 tool call）。所以「揀時機」嘅實際做法係**保持每步細**，令最近嘅邊界就係好邊界。
-- pi 喺**多輪 run 中途**（工具結果 append 之後、下一個 assistant 回應之前，`prepareNextTurn`）會檢查並壓縮，壓縮完**繼續跑**——正好等於「做完當前步驟就壓」。
+
+### §5.1 單一真相源 ＋ live fuse（v2：唔會再漂移）
+
+- **舊問題（真實事故）**：閾值喺 `dav-self-compact.json`、保險絲喺 `settings.json`，人手同步 → 改咗閾值就漂移 →
+  fuse 98.4% 先開火 → 硬死線先到 → **無人睇嘅長任務就停咗**（用戶唔會揀時間撳 `/compact`）。
+- **v2 做法（三層）**：
+  1. **live fuse**：extension patch `SettingsManager.getCompactionSettings()`（pi 唯一問門檻嘅入口：
+     `_exceedsCompactionThreshold`／`_checkCompaction`／`_runAutoCompaction` 都行經佢）→ 每次都用 config
+     **即時**計出嘅值 → 改 config 即刻生效，唔使 `/reload`、唔使開新 session。
+  2. **自動對齊 settings.json**：session 開始時把對齊值寫成 **per-model override**
+     （`compaction.modelOverrides["provider/modelId"].reserveTokens`）→ per-model 先唔會污染窗口大小唔同嘅模型；
+     原子寫（temp + rename）＋ 留 `.dav-self-compact.bak`。
+  3. **壓縮仍然由 pi 原生機制做**：`prepareNextTurn` 之間、**唔 abort**、壓完**繼續跑** → 無人睇都會自動壓縮。
+- **唔好手動改 settings.json 嘅 `reserveTokens`**：會同 config 兩邊打架（extension 會覆蓋，但手改值會令人誤判）。
+  要即刻生效又唔想等 session：`/ctx --sync`（寫檔 + reload）。
+- **記憶體都會同步**：live fuse 改到門檻嗰陣，順手把 pi 記憶體入面嘅 settings 對齊 → 其它讀設定嘅角色
+  （例如 `dav-trust` 嘅 fuse 審核）見到嘅係同一個值；改咗閾值之後嘅**第一個 session** 仍可能見到舊值（session 尾段對齊），
+  下一個 session 起就準。
+- **live fuse 嘅安全護欄**：窗口細到 `opportunityTokens ≤ keepRecentTokens`（壓縮會「冇嘢可壓」）→ 唔改動，維持 pi 原本值；
+  已喺窗口內 → 唔郁（尊重人手微調）。
+- **fuse 嘅觸發位置**：pi 喺「工具批次完、下一個 assistant 回應之前」（`prepareNextTurn`）檢查 —— 呢個本身已經係一個安全邊界
+  （冇半套 tool call）。所以「揀時機」嘅實際做法係**保持每步細**，令最近嘅邊界就係好邊界。
+- 門檻係 token 數：每個 tool result 都可以一次過跳過門檻 → 實際開火點會比理論值高少少（正常，唔算 bug）。
 - `keepRecentTokens`（默認 20000）係壓縮後保留嘅近期 tokens：越大保越多細節，佔用越多。
-- 同一份 settings 覆蓋父 session 同全部 subagent（含後台）。
+- 同一份設定覆蓋父 session 同全部 subagent（含後台）。
 - 原生機制**唔會**喺 soft 區出手 —— soft 區嘅準備工作（交接筆記）只有 skill 嘅紀律做得到。
 
 ## §6 為何本 extension 唔自己叫 compact（實測）
@@ -69,7 +92,8 @@
   喺 tool call 內觸發 → 連 summarization 都一齊被 abort（實測錯誤：`Turn prefix summarization failed: This operation was aborted`）。
 - 改喺 `agent_end` handler 內 `await compact()` → **死鎖**（`abort()` 等 run 收尾，run 收尾又等 handler，實測卡死 90 秒）。
 - 改 `setTimeout` 延後 → headless 收咗 session，`ctx` 已失效（`stale after session replacement`）。
-- 結論：模型自己觸發壓縮喺 pi 1.4.0 唔可靠 → 硬保險絲交俾原生自動壓縮；要提早壓縮就用戶打 `/compact`。
+- 結論：模型自己觸發壓縮喺 pi 1.4.0 唔可靠 → 硬保險絲交俾**原生自動壓縮**（live fuse 對齊後，佢會喺窗口內自動開火、壓完繼續跑）。
+- **所以長任務唔使等人**：trust mode／subagent／無人睇嘅長跑 → 原生 fuse 會自己壓；你嘅責任只係「揀好邊界」＋「筆記保持最新」。
 - 「Nothing to compact（session too small）」係正常：context 未超過 `keepRecentTokens` 時冇嘢可壓。
 
 ## §7 術語

@@ -48,6 +48,36 @@
 - 實跑驗證：fuse 正常 → 無警告；fuse 設 16384（太遲）→ 注入 `⚠ TOO LATE … reserveTokens = 890000`；
   模擬 hard 區 → 注入 `hard block reached in trust mode …`（節流後同一 run 由 14 條降到 1 條）
 
+### 1.7 追加優化（第四輪）：閾值單一真相源 ＋ live fuse 自動對齊（用戶報：改咗 config 但 settings.json 唔對齊，長任務停咗）
+
+**用戶報（另一個項目）**：`dav-self-compact.json` 嘅閾值一改，`settings.json` 嘅 `reserveTokens` 唔會跟住變 →
+原生自動壓縮仍然喺 98.4% 先開火 → hard block 先到 → **無人睇嘅長任務就停咗**（用戶唔會揀時間撳 `/compact`）。
+
+**根因**：閾值（config 檔）同保險絲（settings.json）係兩個地方，人手同步 → 必然漂移；而且舊版只會「報警」，
+冇人喺場就冇人修。
+
+**v2 解法（三層，全部自動）**：
+
+1. **live fuse**（`skills/dav-self-compact/extension/lib/zone.ts` 純函數 `applyLiveFuse` +
+   `skills/dav-self-compact/extension/index.ts` patch `SettingsManager.getCompactionSettings()`）
+   → pi 每個回合問門檻都係用 config **即時**計出嚟嘅值
+   （`reserveTokens = contextWindow − opportunityTokens`）→ 改 config 即刻生效，**唔使 `/reload`、唔使新 session**。
+   安全護欄：已喺窗口內 → 唔郁；窗口細到「壓縮會冇嘢可壓」→ 唔改。
+2. **自動對齊 settings.json**（新 `skills/dav-self-compact/extension/lib/settings.ts`）→ session 開始時寫 per-model override
+   （`compaction.modelOverrides["provider/modelId"].reserveTokens`；原子寫 temp+rename，連 `.dav-self-compact.bak`）→
+   其他工具／下一個 session 都係啱嘅。
+3. **壓縮仍然由 pi 原生機制做**（`prepareNextTurn` 之間、唔 abort、壓完繼續跑）→ **無人睇嘅長任務都會自動壓縮**。
+
+**實測驗證**：
+
+- 壞態（global `reserveTokens=16384`）下跑 `pi -p` → `ctx_status` 報
+  `native auto-compaction fires at 55.0% (450000 reserveTokens) → inside the opportunity window ✓ (live fuse)`；
+  同一個 session 內 `settings.json` 自動補上 per-model override。
+- 改 `opportunityPercent`（55 → 58）→ **唔使 reload** 即刻變成 `58.0% (420000 reserveTokens)`。
+- 端到端：把 `absoluteCapTokens` 暫時設 60000（窗口 33k）跑一個多輪工具任務 → session JSONL 有 `"type":"compaction"`
+  → 原生壓縮喺 run 中途開火、壓完繼續跑（任務冇停）。
+- 測試：`skills/dav-self-compact/tests/zone.bats` 由 16 條加到 22 條（F1–F6：目標值／對齊判定／live fuse 修正／護欄／config 開關／settings 覆蓋次序）。
+
 ### 1.5 追加修正：dav-trust 禁止「等時間」（用戶報：完成得快就用 `sleep` 等夠鐘）
 
 用戶報：trust mode 提早做完之後，agent 會用 `sleep` 等 deadline 到 —— 要禁止。純文字規則擋唔住

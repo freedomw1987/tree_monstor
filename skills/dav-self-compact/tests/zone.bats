@@ -192,3 +192,86 @@ run_zone() {
     console.log("noticePercents OK");
   '
 }
+
+# ---------- AC: 單一真相源 → live fuse（閾值即時生效，唔使人手對齊 settings.json）----------
+
+@test "F1: 目標 reserveTokens 令觸發點啱啱落喺機會窗口" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({});
+    if (m.desiredReserveTokens(1000000, zones) !== 450000) { console.error("1M default"); process.exit(1); }
+    const capped = m.normalizeZones({ absoluteCapTokens: 200000 });
+    if (m.desiredReserveTokens(1000000, capped) !== 890000) { console.error("cap 200k"); process.exit(1); }
+    if (m.desiredReserveTokens(0, zones) !== null) { console.error("window 0"); process.exit(1); }
+    console.log("desired OK");
+  '
+}
+
+@test "F2: fuse 現況分得出 aligned / too_late / too_early / invalid" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({});
+    const late = m.fusePlan(1000000, 16384, zones);
+    if (late.alignment !== "too_late") { console.error("late=" + late.alignment); process.exit(1); }
+    if (Math.round(late.triggerPercent) !== 98) { console.error("late%=" + late.triggerPercent); process.exit(1); }
+    const aligned = m.fusePlan(1000000, 450000, zones);
+    if (aligned.alignment !== "aligned") { console.error("aligned=" + aligned.alignment); process.exit(1); }
+    const early = m.fusePlan(1000000, 950000, zones);
+    if (early.alignment !== "too_early") { console.error("early=" + early.alignment); process.exit(1); }
+    const invalid = m.fusePlan(1000000, 1000000, zones);
+    if (invalid.alignment !== "invalid") { console.error("invalid=" + invalid.alignment); process.exit(1); }
+    console.log("alignment OK");
+  '
+}
+
+@test "F3: live fuse 會把太遲嘅門檻拉返入窗口；已對齊就唔郁" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({});
+    const fixed = m.applyLiveFuse({ reserveTokens: 16384, keepRecentTokens: 20000 }, 1000000, zones);
+    if (!fixed.changed || fixed.reserveTokens !== 450000) { console.error("not fixed: " + JSON.stringify(fixed)); process.exit(1); }
+    const kept = m.applyLiveFuse({ reserveTokens: 450000, keepRecentTokens: 20000 }, 1000000, zones);
+    if (kept.changed || kept.reason !== "aligned") { console.error("moved an aligned fuse: " + JSON.stringify(kept)); process.exit(1); }
+    const early = m.applyLiveFuse({ reserveTokens: 950000, keepRecentTokens: 20000 }, 1000000, zones);
+    if (!early.changed || early.reserveTokens !== 450000) { console.error("too-early not fixed"); process.exit(1); }
+    console.log("live fuse OK");
+  '
+}
+
+@test "F4: 窗口細到「壓縮會冇嘢可壓」→ live fuse 唔改動（安全護欄）" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const zones = m.normalizeZones({});
+    const small = m.applyLiveFuse({ reserveTokens: 16384, keepRecentTokens: 20000 }, 32000, zones);
+    if (small.changed) { console.error("changed a too-small window: " + JSON.stringify(small)); process.exit(1); }
+    if (small.reason !== "keep-recent-too-big") { console.error("reason=" + small.reason); process.exit(1); }
+    console.log("guard OK");
+  '
+}
+
+@test "F5: config 開關有默認值，壞值唔會令 extension 死機" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    const def = m.normalizeConfig({});
+    if (def.liveFuse !== true || def.autoSyncSettings !== true) { console.error("defaults"); process.exit(1); }
+    const off = m.normalizeConfig({ liveFuse: false, autoSyncSettings: false });
+    if (off.liveFuse !== false || off.autoSyncSettings !== false) { console.error("off"); process.exit(1); }
+    const junk = m.normalizeConfig({ liveFuse: "yes", softPercent: "nope" });
+    if (junk.liveFuse !== true) { console.error("junk"); process.exit(1); }
+    if (junk.zones.softPercent !== 50) { console.error("zones junk"); process.exit(1); }
+    console.log("config OK");
+  '
+}
+
+@test "F6: 讀 settings.json 嘅覆蓋次序跟足 pi（project → global → 內建）" {
+  SETTINGS_TS="$BATS_TEST_DIRNAME/../extension/lib/settings.ts" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.SETTINGS_TS);
+    const g = { compaction: { reserveTokens: 450000, modelOverrides: { "p/m": { reserveTokens: 111 } } } };
+    const p = { compaction: { reserveTokens: 222000, modelOverrides: { "p/m": { reserveTokens: 333 } } } };
+    if (m.effectiveReserveTokens(g, p, "p/m", 16384) !== 333) { console.error("project model override"); process.exit(1); }
+    if (m.effectiveReserveTokens(g, p, "other/m", 16384) !== 222000) { console.error("project ordinary"); process.exit(1); }
+    if (m.effectiveReserveTokens(g, null, "other/m", 16384) !== 450000) { console.error("global ordinary"); process.exit(1); }
+    if (m.effectiveReserveTokens(null, null, "x", 16384) !== 16384) { console.error("fallback"); process.exit(1); }
+    console.log("precedence OK");
+  '
+}

@@ -18,35 +18,30 @@
    ln -sfn "$PWD/skills/dav-self-compact" ~/.pi/agent/skills/dav-self-compact
    ```
 
-3. **原生自動壓縮對齊**（hard block 嘅真保險絲）—— 改 `~/.pi/agent/settings.json`：
+3. **原生自動壓縮對齊（live fuse，自動）** —— 裝好 extension 就自動做，**唔使手改 settings.json**：
 
-   ```json
-   {
-     "compaction": {
-       "modelOverrides": {
-         "minimax/MiniMax-M3.1-Flash": { "reserveTokens": 890000 }
-       }
-     }
-   }
-   ```
-
-- 公式：`reserveTokens = contextWindow − opportunityTokens`（opportunityTokens = 有效窗口 × opportunityPercent）。
-- 純百分比模式：1M ＋ opportunity 55% → `450000`；設咗 `absoluteCapTokens: 200000` → opportunityTokens = 110k → `890000`。
-- **對齊機會窗口，唔係 hard**：對齊 hard ＝ 每次都要捱到死線；fuse 太遲會出 ⚠ 同建議值。
-- 摘要長度唔受 `reserveTokens` 影響（pi 用模型輸出上限做摘要），所以調大唔會整肥摘要。
-- key 係 `provider/modelId`（大小寫敏感）；同一 provider 其他 1M 模型要各自加一條。
-- **只可以對真係咁大窗口嘅模型設大值**：若模型窗口細過 `reserveTokens`，條件永遠成立 → 每輪都壓縮。
-- 改完唔使重開 pi，但**新 session** 先用到新值；`ctx_status` 會顯示原生觸發點，對唔上就有 ⚠ 提示。
+   - extension patch 咗 pi 查門檻嘅入口 → 每次都用 `~/.pi/agent/dav-self-compact.json` 嘅閾值**即時**計出
+     `reserveTokens = contextWindow − opportunityTokens`（1M 窗口 ＋ opportunity 55% → `450000`）。
+   - session 開始時仲會把同一個值寫成 per-model override 入 `~/.pi/agent/settings.json`
+     （`compaction.modelOverrides["provider/modelId"]`），令其他工具／下次 session 都啱。
+   - 手動同步嘅公式（只喺 live fuse 裝唔到時用）：`reserveTokens = contextWindow − opportunityTokens`；
+     設咗 `absoluteCapTokens: 200000` → opportunityTokens = 110k → `890000`。
+   - 摘要長度唔受 `reserveTokens` 影響（pi 用模型輸出上限做摘要），所以調大唔會整肥摘要。
+   - **唔好手動改 settings.json 嘅 `reserveTokens`**（會同 config 兩邊打架）；要即刻生效：`/ctx --sync`（寫檔 ＋ reload）。
+   - key 係 `provider/modelId`（大小寫敏感）；同一 provider 其他窗口大小嘅模型要各自計（extension 會自動補）。
+   - **只可以對真係咁大窗口嘅模型設大值**：若模型窗口細過 `reserveTokens`，條件永遠成立 → 每輪都壓縮（extension 有護欄：唔會咁做）。
 
 ## §2 驗證
 
 - **Extension 載入咗未**：`pi -p "call ctx_status and report the result"` → 應回覆一條
-  `ctx …% … zone=… …（native auto-compaction fires at …%）`。
-- **手動睇**：`/ctx` → 顯示 usage、zone、action 同保險絲狀態。
+  `ctx …% … zone=… …（native auto-compaction fires at …% → inside the opportunity window ✓ (live fuse)）`。
+- **手動睇**：`/ctx` → 顯示 usage、zone、action 同保險絲狀態；`/ctx --sync` → 寫檔 ＋ reload，即刻生效。
+- **live fuse 真係生效**：改 `~/.pi/agent/dav-self-compact.json` 嘅 `opportunityPercent`（例：55 → 50）→
+  即刻再跑 `ctx_status` → 顯示嘅觸發點應該**即刻變**（唔使 `/reload`、唔使開新 session）。
 - **Skill 載入咗未**：開新 session 問「dav-self-compact 嘅三個區係咩？」→ 應答得出 smart／soft／hard。
 - **行數規矩**：`bats tests/skill-size.bats` → 全綠（主檔 ≤50 行、子檔 ≤150 行、context ≤400 行）。
-- **保險絲有冇真係生效**：把 `reserveTokens` 暫時設細（例：`contextWindow − 30000`），跑一段長對話，睇 session JSONL 有冇 `"type": "compaction"`；
-  驗完記得改返。
+- **保險絲有冇真係生效**：把 config 嘅 `absoluteCapTokens` 暫時設細（例如 `60000` → 機會窗口 33k），
+  跑一段長對話，睇 session JSONL 有冇 `"type": "compaction"`；驗完記得改返 `absoluteCapTokens: 0`。
 
 ## §3 閾值設定檔（可選）
 
@@ -60,12 +55,16 @@
   "targetPercent": 35,
   "targetMinPercent": 20,
   "absoluteCapTokens": 0,
-  "noticePercents": [20, 40, 60]
+  "noticePercents": [20, 40, 60],
+  "liveFuse": true,
+  "autoSyncSettings": true
 }
 ```
 
 - 想真係長期留喺「聰明區」而唔係「窗口嘅一半」→ 設 `absoluteCapTokens`（例：`200000`）。
 - `noticePercents` 係**使用率里程碑**（默認 20／40／60）：每跨過一個就印一次（使用率 ＋ zone ＋ 要做乜）；想更密就加（例：`[10, 20, …, 60]`）。
+- `liveFuse`（默認 true）：即時對齊 fuse —— 改上面任何閾值，即刻生效（唔使 `/reload`）。
+- `autoSyncSettings`（默認 true）：session 開始時把對齊值寫返 settings.json（per-model override）。
 - 檔案唔存在／壞咗 → 用默認值，唔會令 session 死機。
 
 ## §4 故障排除
@@ -74,7 +73,9 @@
   `<repo>/skills/dav-self-compact/extension`，而該目錄有 `index.ts`）＋ `lib/zone.ts` 存在；`/reload` 或重開 pi。
 - **`zone=unknown`**：剛壓縮完、未有新模型回應 → 等下一輪再查（唔係錯誤）。
 - **冇見到里程碑訊息**：① 未跨過門檻（睇 `ctx_status` 嘅實際 %）；② 今個 session 已經印過（唔會重複）；③ 剛壓縮完 → 要再跨過先會再印。
-- **見到 `⚠ native auto-compaction fires at X%`**：settings 未設好 `reserveTokens`（太早或太遲都會出現）→ 照 §1 第 3 點改。
+- **見到 `⚠ native auto-compaction fires at X%`**：live fuse 裝唔到（pi 改咗 API）→ 照 §1 第 3 點手動改 settings.json。
+- **改咗 config 但 settings.json 唔郁**：正常 —— live fuse 已經即刻生效；`settings.json` 會喺**下一個 session** 開始時自動對齊；
+  想即刻寫檔就 `/ctx --sync`。
 - **壓縮冇發生**：先睇 `keepRecentTokens`（默認 20000）——context 未超過它就「冇嘢可壓」；再睇 `compaction.enabled` 有冇被關。
 - **壓縮完 usage 唔跌**：通常係交接筆記太薄，或者對話有超大字串（貼咗長 log）→ 拆細啲、再壓；連續兩次唔跌就停低報告。
 - **前台 subagent 冇 `ctx_status`**：前台 subagent 唔自動載入全域 extension → agent frontmatter 加 `extensions: [<extension 目錄>]` 同

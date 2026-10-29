@@ -63,6 +63,34 @@ export const DEFAULT_ZONES: Zones = {
 /** pi 未設 compaction.reserveTokens 時嘅內建默認值。 */
 export const FALLBACK_RESERVE_TOKENS = 16384;
 
+/** fuse 對齊狀態：觸發點同機會窗口嘅關係。 */
+export type FuseAlignment = "aligned" | "too_late" | "too_early" | "invalid" | "unknown";
+
+export type FusePlan = {
+	alignment: FuseAlignment;
+	/** 原生觸發點（tokens）；null = 窗口未知 */
+	triggerTokens: number | null;
+	/** 原生觸發點佔窗口百分比 */
+	triggerPercent: number | null;
+	/** 目標 reserveTokens（觸發點 = opportunityTokens）；null = 計唔到 */
+	desiredReserveTokens: number | null;
+};
+
+/** 設定檔加埋兩個開關（單一真相源嘅延伸）。 */
+export type Config = {
+	zones: Zones;
+	/** 即時對齊 fuse（patch pi 嘅門檻查詢 → 改 config 即時生效，唔使 reload） */
+	liveFuse: boolean;
+	/** 自動把對齊後嘅 reserveTokens 寫返 settings.json（per-model override） */
+	autoSyncSettings: boolean;
+};
+
+export const DEFAULT_CONFIG: Config = {
+	zones: DEFAULT_ZONES,
+	liveFuse: true,
+	autoSyncSettings: true,
+};
+
 function num(value: unknown, fallback: number, min: number, max: number): number {
 	if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
 	if (value < min || value > max) return fallback;
@@ -77,6 +105,17 @@ function noticeList(value: unknown): number[] {
 		(a, b) => a - b,
 	);
 	return cleaned.length > 0 ? cleaned : [...DEFAULT_ZONES.noticePercents];
+}
+
+/** 讀完整設定檔（閾值 + 兩個開關）；壞檔 → 默認值。 */
+export function normalizeConfig(raw: unknown): Config {
+	const parsed = (typeof raw === "object" && raw !== null ? raw : {}) as Partial<Config> & Partial<Zones>;
+	const bool = (value: unknown, fallback: boolean): boolean => (typeof value === "boolean" ? value : fallback);
+	return {
+		zones: normalizeZones(parsed),
+		liveFuse: bool(parsed.liveFuse, DEFAULT_CONFIG.liveFuse),
+		autoSyncSettings: bool(parsed.autoSyncSettings, DEFAULT_CONFIG.autoSyncSettings),
+	};
 }
 
 export function normalizeZones(raw: unknown): Zones {
@@ -144,6 +183,68 @@ export function milestoneText(r: Reading, zones: Zones, notice: number): string 
 		`zone=${r.zone} (${zoneLabel(r.zone)}) · action=${r.action} · soft=${k(r.softTokens)} win=${k(r.opportunityTokens)} hard=${k(r.hardTokens)}` +
 		` — ${advice(r, zones)}.`
 	);
+}
+
+/**
+ * 目標 reserveTokens：令原生觸發點（contextWindow − reserveTokens）啱啱好落喺機會窗口。
+ * 計唔到（窗口未知／細到無嘢可壓）→ null（保持 pi 原本嘅值）。
+ */
+export function desiredReserveTokens(contextWindow: number, zones: Zones): number | null {
+	if (!Number.isFinite(contextWindow) || contextWindow <= 0) return null;
+	const effectiveWindow =
+		zones.absoluteCapTokens > 0 ? Math.min(contextWindow, zones.absoluteCapTokens) : contextWindow;
+	const opportunityTokens = Math.floor((effectiveWindow * zones.opportunityPercent) / 100);
+	if (opportunityTokens <= 0) return null;
+	const desired = Math.round(contextWindow - opportunityTokens);
+	if (desired <= 0 || desired >= contextWindow) return null;
+	return desired;
+}
+
+/** 計 fuse 現況：觸發點喺邊、同目標差幾遠。 */
+export function fusePlan(contextWindow: number, effectiveReserveTokens: number, zones: Zones): FusePlan {
+	const desired = desiredReserveTokens(contextWindow, zones);
+	if (!Number.isFinite(contextWindow) || contextWindow <= 0) {
+		return { alignment: "unknown", triggerTokens: null, triggerPercent: null, desiredReserveTokens: desired };
+	}
+	const triggerTokens = contextWindow - effectiveReserveTokens;
+	const effectiveWindow =
+		zones.absoluteCapTokens > 0 ? Math.min(contextWindow, zones.absoluteCapTokens) : contextWindow;
+	const softTokens = Math.floor((effectiveWindow * zones.softPercent) / 100);
+	const opportunityTokens = Math.floor((effectiveWindow * zones.opportunityPercent) / 100);
+	const alignment: FuseAlignment =
+		triggerTokens <= 0 ? "invalid" : triggerTokens > opportunityTokens ? "too_late" : triggerTokens <= softTokens ? "too_early" : "aligned";
+	return {
+		alignment,
+		triggerTokens,
+		triggerPercent: (triggerTokens / contextWindow) * 100,
+		desiredReserveTokens: desired,
+	};
+}
+
+/**
+ * live fuse 嘅純邏輯：pi 每個回合問「幾時壓縮」時，用呢個函數改寫門檻。
+ *   - 已經喺 (soft, opportunity] 窗口內 → 唔郁（尊重人手調過嘅值）
+ *   - 太遲（預設 16384 → 98.4% 先壓）→ 改成目標值
+ *   - 太早 → 改成目標值（避免過度壓縮）
+ *   - 目標值會令「冇嘢可壓」（opportunity ≤ keepRecentTokens）→ 唔改
+ */
+export function applyLiveFuse(
+	settings: { reserveTokens: number; keepRecentTokens: number },
+	contextWindow: number,
+	zones: Zones,
+): { reserveTokens: number; keepRecentTokens: number; changed: boolean; reason: string } {
+	const keep = { ...settings };
+	const desired = desiredReserveTokens(contextWindow, zones);
+	if (desired === null) return { ...keep, changed: false, reason: "no-target" };
+	const effectiveWindow =
+		zones.absoluteCapTokens > 0 ? Math.min(contextWindow, zones.absoluteCapTokens) : contextWindow;
+	const opportunityTokens = Math.floor((effectiveWindow * zones.opportunityPercent) / 100);
+	if (opportunityTokens <= settings.keepRecentTokens) {
+		return { ...keep, changed: false, reason: "keep-recent-too-big" };
+	}
+	const plan = fusePlan(contextWindow, settings.reserveTokens, zones);
+	if (plan.alignment === "aligned") return { ...keep, changed: false, reason: "aligned" };
+	return { reserveTokens: desired, keepRecentTokens: settings.keepRecentTokens, changed: true, reason: plan.alignment };
 }
 
 export function computeReading(usage: Usage | undefined, reserveTokens: number, zones: Zones): Reading {
