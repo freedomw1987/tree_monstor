@@ -21,12 +21,13 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
   1. 更新 `docs/trust-log.md` 檔頭 checkpoint（見 §3）；
   2. 確保 `docs/backlog.md` 當前 row 狀態／剩餘項已寫實；
   3. 下一步避開「大字串」：唔好一次讀超長檔／貼大 log，改 `limit` 分段讀。
-- **opportunity（≥55%）＝壓縮窗口** → 揀最好邊界：完成當前 Backlog row／測試綠／checkpoint 已更新。唔准為咗等「更好時機」而拖；剩低工作切細，令下個邊界幾步內就到（fuse 喺下個回應前開火）。
-- **hard（≥60%）＝死線＋警報** → fuse 理應已喺窗口內開火；仍然見到 60% 代表 `reserveTokens` 太遲 → 收尾 ＋ 喺 trust-log 記低（唔問用戶），退出後提示改設定。
+- **opportunity（≥55%）＝壓縮窗口** → 揀最好邊界：完成當前 Backlog row／測試綠／checkpoint 已更新。
+  唔准為咗等「更好時機」而拖；剩低工作切細，令下個邊界幾步內就到；**然後自己叫 `ctx_compact`**（pi 喺下一個安全邊界壓縮、壓完繼續跑）。
+- **hard（≥60%）＝死線＋警報** → fuse 理應已喺窗口內開火；仍然見到 60% 代表一個大批次跨過咗門檻 → 收尾 ＋ **叫 `ctx_compact`** ＋ 喺 trust-log 記低（唔問用戶）。
 - **unknown（剛壓縮完，`percent` 讀到 null）** → 唔准當「已回落」；下一輪模型回應後即刻再量一次。
 
-**唔准自己叫 compact**：trust mode 內一樣受 `dav-self-compact` 嘅限制 —— pi 1.4.0 喺 tool call 內觸發壓縮會連摘要一齊 abort。
-要即時壓縮只有兩條路：交俾原生保險絲（`compaction.reserveTokens`），或者由用戶打 `/compact`。
+**壓縮由 agent 自己發起**：trust mode 一樣用 `ctx_compact`（dav-self-compact 提供）→ 令原生門檻即刻跨過，pi 喺下一個安全邊界壓縮、壓完繼續跑。
+**唔准叫用戶打 `/compact`**，亦唔准直接叫 pi 嘅手動 compact（pi 1.4.0 喺 tool call 內叫會 abort 個回合同埋摘要）。
 
 ## §3 checkpoint 格式（寫入 `docs/trust-log.md` 檔頭）
 

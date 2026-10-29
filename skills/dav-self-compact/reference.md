@@ -81,19 +81,41 @@
   已喺窗口內 → 唔郁（尊重人手微調）。
 - **fuse 嘅觸發位置**：pi 喺「工具批次完、下一個 assistant 回應之前」（`prepareNextTurn`）檢查 —— 呢個本身已經係一個安全邊界
   （冇半套 tool call）。所以「揀時機」嘅實際做法係**保持每步細**，令最近嘅邊界就係好邊界。
+- **粒度陷阱（實測）**：門檻只喺**批次之間**檢查 → 一個大批次可以由 55% 直接跳到 66%（用戶實測事故）。
+  → 所以唔可以單靠等 fuse：agent 應該**自己喺好邊界叫 `ctx_compact`**（見 §5.2）。
+- **兩套百分比口徑**：zone 判定用**總 usage**（含 system prompt／工具定義，同 pi footer 一致）；
+  原生門檻比較嘅係**對話 projection**（唔含 system prompt）→ 同一個門檻，兩邊差大約 system prompt 嘅量（≈1%）。
 - 門檻係 token 數：每個 tool result 都可以一次過跳過門檻 → 實際開火點會比理論值高少少（正常，唔算 bug）。
 - `keepRecentTokens`（默認 20000）係壓縮後保留嘅近期 tokens：越大保越多細節，佔用越多。
 - 同一份設定覆蓋父 session 同全部 subagent（含後台）。
 - 原生機制**唔會**喺 soft 區出手 —— soft 區嘅準備工作（交接筆記）只有 skill 嘅紀律做得到。
 
-## §6 為何本 extension 唔自己叫 compact（實測）
+### §5.2 agent 自己發起壓縮（`ctx_compact`）—— 唔使人手
 
-- `ctx.compact()` 內部第一步係 `await this.abort()`；
-  喺 tool call 內觸發 → 連 summarization 都一齊被 abort（實測錯誤：`Turn prefix summarization failed: This operation was aborted`）。
-- 改喺 `agent_end` handler 內 `await compact()` → **死鎖**（`abort()` 等 run 收尾，run 收尾又等 handler，實測卡死 90 秒）。
-- 改 `setTimeout` 延後 → headless 收咗 session，`ctx` 已失效（`stale after session replacement`）。
-- 結論：模型自己觸發壓縮喺 pi 1.4.0 唔可靠 → 硬保險絲交俾**原生自動壓縮**（live fuse 對齊後，佢會喺窗口內自動開火、壓完繼續跑）。
-- **所以長任務唔使等人**：trust mode／subagent／無人睇嘅長跑 → 原生 fuse 會自己壓；你嘅責任只係「揀好邊界」＋「筆記保持最新」。
+- **問題**：原生 fuse 睇 token 數，唔識分辨好唔好嘅時機；而門檻只喺批次之間檢查 → 大批次會跨過窗口。
+  舊做法叫用戶撳 `/compact` → 錯（壓縮係 agent 嘅事，唔關用戶事）。
+- **做法**：extension 提供 `ctx_compact` 工具 → agent 喺好邊界叫 → extension 令**門檻即刻跨過**
+  （`reserveTokens = contextWindow`）→ pi 喺**下一個安全邊界**用**原生**路徑壓縮 → **唔 abort、壓完繼續跑**。
+- **實測**：`pi -p` 多輪任務入面叫 `ctx_compact` → session JSONL 出現 `"type":"compaction"`（tokensBefore≈29k），
+  之後個 assistant 繼續行落去、照樣出最終報告 → **冇 abort、冇停低**。
+- **護欄**：context 未過 `keepRecentTokens`（真係冇嘢可壓）→ 工具會拒絕並講明；`liveFuse=false` → 工具會講明唔支援。
+- **「冇嘢可壓」嘅真定義**：pi 睇嘅係**對話 projection**（唔含 system prompt／工具定義）→
+  對話本身要過 `keepRecentTokens`（默認 20000）先壓得到；總 usage 大唔代表有得壓。
+  工具會用對話估算嚟判斷，拒絕時會講明「對話只有 X tokens」。
+- **粒度陷阱（實測）**：門檻只喺**批次之間**檢查 → 一個大批次可以由 55% 直接跳到 66%（用戶實測事故）。
+  → 所以唔可以單靠等 fuse：agent 應該**自己喺好邊界叫 `ctx_compact`**（見上）。
+- **紀律**：叫之前先更新交接筆記（摘要會壓走細節）；叫之後下一輪回應先 `ctx_status` 驗證（會顯示「壓縮要求 → 已完成／冇壓成」）。
+
+## §6 為何唔用 `ctx.compact()`（實測，pi 1.4.0）
+
+- `ctx.compact()`（手動路徑）內部第一步係 `await this.abort()` → **喺 tool call 內叫會令個回合死**：
+  實測輸出 `This operation was aborted`，agent 個回合即刻收工（工具結果都唔返）。
+- 而且喺 split-turn 情況（cut point 落喺一個 user-message span 入面）摘要會被一齊 abort：
+  實測 `Turn prefix summarization failed: This operation was aborted`。
+- 改喺 `agent_end` handler 內 `await compact()` → **死鎖**（`abort()` 等 run 收尾，run 收尾又等 handler）。
+- 結論：**唔好**由 tool call 直接叫 `ctx.compact()`。
+- **替代（v2 採用）**：令**門檻**即刻跨過（§5.2）→ 走 pi 原生路徑 → 唔 abort、壓完繼續跑。
+  原生機制（live fuse 對齊後）亦會喺窗口內自動壓縮 → 無人睇嘅長任務都會自動壓縮。
 - 「Nothing to compact（session too small）」係正常：context 未超過 `keepRecentTokens` 時冇嘢可壓。
 
 ## §7 術語

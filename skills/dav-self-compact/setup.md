@@ -36,7 +36,9 @@
 - **Extension 載入咗未**：`pi -p "call ctx_status and report the result"` → 應回覆一條
   `ctx …% … zone=… …（native auto-compaction fires at …% → inside the opportunity window ✓ (live fuse)）`。
 - **手動睇**：`/ctx` → 顯示 usage、zone、action 同保險絲狀態；`/ctx --sync` → 寫檔 ＋ reload，即刻生效。
-- **live fuse 真係生效**：改 `~/.pi/agent/dav-self-compact.json` 嘅 `opportunityPercent`（例：55 → 50）→
+- **agent 自己壓縮（`ctx_compact`）work 唔 work**：`pi -p` 跑一個多輪任務，叫 agent 叫 `ctx_compact`，
+  之後查 session JSONL 有冇 `"type":"compaction"`，而且個任務要**照樣做完**（唔係 aborted）→ 兩樣都係就 OK。
+- **live fuse 真係生效**：改 `~/.pi/agent/dav-self-compact.json` 嘅 `opportunityPercent`（例：55 → 58）→
   即刻再跑 `ctx_status` → 顯示嘅觸發點應該**即刻變**（唔使 `/reload`、唔使開新 session）。
 - **Skill 載入咗未**：開新 session 問「dav-self-compact 嘅三個區係咩？」→ 應答得出 smart／soft／hard。
 - **行數規矩**：`bats tests/skill-size.bats` → 全綠（主檔 ≤50 行、子檔 ≤150 行、context ≤400 行）。

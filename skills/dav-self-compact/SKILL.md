@@ -14,7 +14,7 @@ description: >-
 2. **何時觸發**：長任務（多階段／多輪工具呼叫）、覺得「唔記得早前做咗乜」、subagent 長跑、跨多個 US 嘅工作。
 3. **關鍵紀律**：soft 起就要保持筆記最新；**機會窗口（55%）一開就揀邊界壓縮，唔好等 hard**；hard 係死線唔係觸發點；壓縮後要等下一輪回應先驗證。
 4. **必產出物**：交接筆記（落檔案）＋ 壓縮後 zone 確認。
-5. **壓縮邊個做**：**原生 fuse 自動做**（閾值單一真相源 → live 對齊 → 機會窗口開火、壓完繼續跑）→ 無人睇嘅長任務都會自動壓縮；你只負責揀邊界＋寫筆記。
+5. **壓縮邊個做**：**你自己發起** —— 好邊界叫 `ctx_compact`（pi 喺下一個安全邊界壓、壓完繼續跑）；或者等原生 fuse（live 對齊）。**唔關用戶事，唔准叫佢撳 `/compact`**。
 
 ## 觸發時機
 
@@ -27,7 +27,7 @@ description: >-
 - **Step 1 量度** — `ctx_status` 讀 `zone` 同 `action`；跨過 20%／40%／60% 會自動印里程碑訊息；冇工具就睇 footer % → `./protocol.md` §1
 - **Step 2 判定** — smart（<50%）繼續；soft（≥50%）準備；**opportunity（≥55%）＝壓縮窗口**；
   hard（≥60%）= 死線（百分比按**有效窗口**計，footer 嘅 % 要用真實窗口換算）→ `./reference.md` §1
-- **Step 3 執行** — soft：寫交接筆記 ＋ 避開大讀取；opportunity：**揀最好邊界**（原子步驟完成／測試綠／檔案已寫）＋ 更新筆記 ＋ 交俾 fuse 壓；
+- **Step 3 執行** — soft：寫交接筆記 ＋ 避開大讀取；opportunity：**揀最好邊界**（原子步驟完成／測試綠／檔案已寫）＋ 更新筆記 ＋ 叫 `ctx_compact`；
   hard：死線，只收尾報告 → `./protocol.md` §2–§5
 - **Step 4 驗證** — 壓縮後 usage 變 unknown，**下一輪回應之後**再 `ctx_status`：必須 ≤50%（目標 20–35%）；唔合格 → 補筆記再壓 → `./protocol.md` §6
 
@@ -37,7 +37,7 @@ description: >-
 - **機會窗口一開就要揀時機** — 例外：正在跑不可中斷嘅指令；限制：唔准為咗「等更好嘅時機」而拖過 hard（hard 只係死線，唔係觸發點）→ `./protocol.md` §4
 - **hard block 係警報** — 例外：fuse 未設好；限制：見到 hard 代表 fuse 太遲，要收尾報告 ＋ 提示改閾值，唔可以靜靜當正常
 - **閾值係單一真相源** — 例外：無；限制：只改 config 檔，**唔准**手動改 settings.json 嘅 `reserveTokens` → `./reference.md` §5
-- **壓縮由原生 fuse 做** — 例外：互動時想手動控制可叫用戶 `/compact`；限制：唔准假報「已 compact」；唔好用自製 tool 觸發壓縮 → `./reference.md` §6
+- **壓縮由 agent 自己發起** — 例外：對話未過 keepRecentTokens（冇嘢可壓）；限制：**唔准叫用戶撳 `/compact`**；叫 `ctx_compact` → `./reference.md` §5
 - **壓縮後唔准即刻報數** — 例外：無；限制：壓縮後 `percent` 讀到 `null`，要等下一輪模型回應先算數
 - **原生保險絲必須對齊** — 例外：窗口細到 60% 已接近上限；限制：live fuse 會自動對齊；對唔上要報警 → `./setup.md` §1
 - **subagent 一樣要守** — 例外：極短一次性任務；限制：派工要帶 skill，前台 subagent 要明掛 extension → `./protocol.md` §7

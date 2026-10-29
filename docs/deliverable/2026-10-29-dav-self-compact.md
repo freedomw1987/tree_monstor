@@ -78,6 +78,31 @@
   → 原生壓縮喺 run 中途開火、壓完繼續跑（任務冇停）。
 - 測試：`skills/dav-self-compact/tests/zone.bats` 由 16 條加到 22 條（F1–F6：目標值／對齊判定／live fuse 修正／護欄／config 開關／settings 覆蓋次序）。
 
+### 1.8 追加優化（第五輪）：`ctx_compact` —— agent 自己發起壓縮（用戶報：「為什麼要求我人手用 compact? 應該是 pi agent 自己做 compact 吧」）
+
+**用戶報（另一個項目）**：agent 叫人手撳 `/compact`；用戶反問「應該係 pi agent 自己 compact 啦」。
+第二張截圖更顯示：agent 自己講「自動壓縮喺我交還控制權嗰個邊界觸發」，由 55% 一路行到 66% 先停手。
+
+**實測 pi 1.4.0（2026-10-29）**：
+
+- `ctx.compact()`（手動路徑）喺 tool call 內叫 → 第一步 `await this.abort()` → **個回合即死**
+  （實測輸出 `This operation was aborted`）；split-turn 情況連摘要都一齊 abort
+  （`Turn prefix summarization failed: This operation was aborted`）→ 所以**唔可以直接叫**。
+- 原生門檻**只喺批次之間檢查** → 一個大批次可以由 55% 跳到 66%（用戶截圖嘅情況）。
+- 「冇嘢可壓」嘅真定義：pi 睇**對話 projection**（唔含 system prompt／工具定義）→
+  對話本身要過 `keepRecentTokens`（默認 20000）先壓得到；總 usage 大唔代表有得壓。
+
+**解法（三層，全部自動、唔關用戶事）**：
+
+1. **`ctx_compact` 工具**：agent 喺好邊界叫 → extension 令**門檻即刻跨過**（`reserveTokens = contextWindow`）
+   → pi 喺**下一個安全邊界**用**原生**路徑壓縮 → **唔 abort、壓完繼續跑**。
+   實測：`pi -p` 多輪任務叫 `ctx_compact` → session JSONL 有 `"type":"compaction"`（tokensBefore≈29k），
+   之後 assistant 繼續行、照樣出最終報告。
+2. **結果要對外講清楚**：工具會先用對話估算擋「冇嘢可壓」；`ctx_status` 會附「壓縮要求 → 已完成／冇壓成」，
+   避免 agent 收到一個冇效果嘅「已登記」就當壓咗。
+3. **文案改掉「叫用戶撳 /compact」**：`SKILL.md`／`protocol.md`／`reference.md`／`dav-trust/long-run-context.md`／
+   `agents/dav-long-run.md` 全部改成「agent 自己叫 `ctx_compact`」，並加「唔准硬 loop」紀律。
+
 ### 1.5 追加修正：dav-trust 禁止「等時間」（用戶報：完成得快就用 `sleep` 等夠鐘）
 
 用戶報：trust mode 提早做完之後，agent 會用 `sleep` 等 deadline 到 —— 要禁止。純文字規則擋唔住

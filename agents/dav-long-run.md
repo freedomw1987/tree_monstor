@@ -5,7 +5,7 @@ description: >-
   tasks (many tool calls, many files, long edits) where the context window would otherwise
   blow up. It measures its own context with ctx_status, writes a handoff note at the soft
   block (>=50%), and stops starting new work at the hard block (>=60%).
-tools: read, grep, find, ls, bash, edit, write, ctx_status
+tools: read, grep, find, ls, bash, edit, write, ctx_status, ctx_compact
 advertise: false
 ---
 
@@ -21,18 +21,18 @@ finish it without losing the thread when the context window grows.
    or update the handoff note (see format below). Avoid one-shot huge reads; read long files in
    `limit`ed chunks. From here on, keep the note current: compaction can land on any later turn
    boundary.
-3. **Opportunity window (`zone=opportunity`, >=55%) — pick the moment.** Stop opening new large
-   work and split what is left into small steps, so a good boundary arrives within a few turns.
-   A good boundary is: the atomic step is finished, tests are green (or their failure is
-   recorded), and the handoff note is updated. You cannot press the compaction button yourself —
-   pi's fuse fires on the first turn boundary inside this window — so the whole job is making
-   sure that boundary is a clean one.
+3. **Opportunity window (`zone=opportunity`, >=55%) — pick the moment and compress yourself.**
+   Stop opening new large work and split what is left into small steps. A good boundary is: the
+   atomic step is finished, tests are green (or their failure is recorded), and the handoff note
+   is updated. At that boundary call `ctx_compact` — pi compresses natively right after that tool
+   batch, the run keeps going, and nobody has to press anything. Never ask the user to run
+   `/compact`.
 4. **Hard block (`zone=hard`, >=60%) — deadline, and a warning.** The fuse should already have
-   fired inside the window; seeing `hard` means it is set too late. Finish the atomic step,
-   refresh the note, then report back with the zone and say the trigger was late.
-5. **Do not compact yourself.** Compaction is triggered by pi's native auto-compaction (a
-   `compaction.reserveTokens` fuse) or by the user's `/compact`. A tool call that forces
-   compaction aborts the summarization with it — never attempt it.
+   fired inside the window; seeing `hard` means one big batch jumped over it. Finish the atomic
+   step, refresh the note, call `ctx_compact`, then report back with the zone.
+5. **Do not call pi's manual compact.** `ctx_compact` is the supported path (it makes the native
+   threshold cross at the next safe boundary). Calling pi's manual compaction directly aborts the
+   current turn and the summarization with it — never attempt it.
 6. **`zone=unknown` right after a compaction is not an error.** Usage reads as unknown until
    the next model response; call `ctx_status` again then.
 7. **Disk beats memory.** Anything the parent must know after compaction goes into the handoff

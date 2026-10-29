@@ -247,6 +247,16 @@ export function applyLiveFuse(
 	return { reserveTokens: desired, keepRecentTokens: settings.keepRecentTokens, changed: true, reason: plan.alignment };
 }
 
+/**
+ * 強制壓縮用嘅 reserveTokens：令門檻即刻跨過（觸發點 = 0 tokens）。
+ * 用喺「agent 主動要求壓縮」：pi 喺下一個安全邊界（工具批次完、下一個 assistant 回應之前）
+ * 見到門檻已跨 → 用**原生**路徑壓縮 → 唔 abort、壓完繼續跑（唔會停低）。
+ */
+export function forcedReserveTokens(contextWindow: number): number {
+	if (!Number.isFinite(contextWindow) || contextWindow <= 0) return 0;
+	return Math.round(contextWindow);
+}
+
 export function computeReading(usage: Usage | undefined, reserveTokens: number, zones: Zones): Reading {
 	const contextWindow = usage?.contextWindow ?? 0;
 	const effectiveWindow =

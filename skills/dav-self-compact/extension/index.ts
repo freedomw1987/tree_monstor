@@ -39,7 +39,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { Type } from "@earendil-works/pi-ai";
-import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { defineTool, estimateTokens, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 // namespace import：萬一將來 pi 唔再 export SettingsManager，都唔會令成個 extension 載入失敗
 // （named import 遇到唔存在嘅 export 係 link error → 連 ctx_status 都冇）。
 import * as PiCodingAgent from "@earendil-works/pi-coding-agent";
@@ -50,6 +50,7 @@ import {
 	DEFAULT_CONFIG,
 	desiredReserveTokens,
 	FALLBACK_RESERVE_TOKENS,
+	forcedReserveTokens,
 	fuseNote,
 	fusePlan,
 	milestoneText,
@@ -65,6 +66,47 @@ import { alignSettingsObject, effectiveReserveTokens, readJsonFile, syncModelRes
 const CONFIG_PATH = join(homedir(), ".pi", "agent", "dav-self-compact.json");
 const GLOBAL_SETTINGS_PATH = join(homedir(), ".pi", "agent", "settings.json");
 const LIVE_FUSE_FLAG = "__davSelfCompactLiveFuse";
+
+/**
+ * 「agent 主動要求壓縮」嘅旗標。
+ *
+ * 點解唔直接叫 pi 嘅手動 compact（`ctx.compact()`）：實測 pi 1.4.0 佢第一步就
+ * `await this.abort()` → 個回合會死（畫面：This operation was aborted），而且
+ * split-turn 情況下摘要會被一齊 abort（Turn prefix summarization failed）。
+ * → 所以唔用手動路徑。
+ *
+ * 而家嘅做法：令門檻即刻跨過（reserveTokens = contextWindow）→ pi 喺**下一個安全邊界**
+ * （工具批次完、下一個 assistant 回應之前）用**原生**路徑壓縮 → 唔 abort、壓完繼續跑。
+ */
+let forceCompactRequested = false;
+
+/** 上一個壓縮要求嘅結果（畀 ctx_status 報告，等 agent 知到底壓咗未）。 */
+type ForceOutcome = { state: "pending" | "done" | "skipped"; tokensBefore?: number; note?: string; turns?: number };
+let lastForceOutcome: ForceOutcome | null = null;
+
+/** 壓縮要求嘅結果一行（畀 ctx_status 附帶）。 */
+function forceOutcomeNote(): string {
+	if (!lastForceOutcome) return "";
+	if (lastForceOutcome.state === "done") return `壓縮要求 → 已完成（tokensBefore=${lastForceOutcome.tokensBefore ?? "?"}）`;
+	if (lastForceOutcome.state === "skipped") return `壓縮要求 → 冇壓成（${lastForceOutcome.note ?? "未知原因"}）`;
+	return "壓縮要求 → 等緊下一個邊界";
+}
+
+/**
+ * 對話部分（**唔含** system prompt 同工具定義）嘅 token 估算。
+ * 點解要分開：pi 決定「有冇嘢可壓」睇嘅係**對話 projection**，唔係總 context；
+ * 總 usage 就算好大，對話本身未過 `keepRecentTokens` → pi 會原樣保留 → 冇嘢可壓。
+ */
+function conversationTokens(ctx: ExtensionContext): number {
+	try {
+		const projection = ctx.sessionManager.buildSessionProjection();
+		let total = 0;
+		for (const message of projection.messages) total += estimateTokens(message as never);
+		return total;
+	} catch {
+		return 0;
+	}
+}
 
 /** 讀設定檔；唔存在／壞 JSON → 默認值（唔會令 session 死機）。 */
 function loadConfig(): Config {
@@ -83,6 +125,13 @@ function fileReserveTokens(ctx: ExtensionContext): { key: string; reserve: numbe
 	return { key, reserve: effectiveReserveTokens(global, project, key, FALLBACK_RESERVE_TOKENS) };
 }
 
+/** pi 真正會用嘅 keepRecentTokens（壓縮後保留嘅近期 tokens；少過呢個 = 冇嘢可壓）。 */
+function effectiveKeepRecent(ctx: ExtensionContext): number {
+	const key = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "";
+	const global = readJsonFile(GLOBAL_SETTINGS_PATH);
+	return global?.compaction?.modelOverrides?.[key]?.keepRecentTokens ?? global?.compaction?.keepRecentTokens ?? 20_000;
+}
+
 /** live fuse 狀態：file（settings.json 嘅值）＋ live（pi 實際會用嘅值）。 */
 type FuseStatus = {
 	key: string;
@@ -97,8 +146,7 @@ function fuseStatus(ctx: ExtensionContext, config: Config): FuseStatus {
 	const { key, reserve } = fileReserveTokens(ctx);
 	const window = ctx.model?.contextWindow ?? 0;
 	const global = readJsonFile(GLOBAL_SETTINGS_PATH);
-	const keepRecent =
-		global?.compaction?.modelOverrides?.[key]?.keepRecentTokens ?? global?.compaction?.keepRecentTokens ?? 20_000;
+	const keepRecent = effectiveKeepRecent(ctx);
 	const live = applyLiveFuse({ reserveTokens: reserve, keepRecentTokens: keepRecent }, window, config.zones);
 	return { key, window, fileReserve: reserve, liveReserve: live.reserveTokens, changed: live.changed, reason: live.reason };
 }
@@ -119,6 +167,10 @@ function installLiveFuse(): { installed: boolean; reason: string } {
 			const config = loadConfig();
 			if (!config.liveFuse) return settings;
 			const contextWindow = (model as { contextWindow?: number } | undefined)?.contextWindow ?? 0;
+			// ① agent 主動要求 → 門檻即刻跨過 → pi 喺下一個安全邊界用原生路徑壓縮。
+			if (forceCompactRequested && contextWindow > 0) {
+				return { ...settings, reserveTokens: forcedReserveTokens(contextWindow) };
+			}
 			const next = applyLiveFuse(settings, contextWindow, config.zones);
 			if (!next.changed) return settings;
 			// 順手對齊 pi 記憶體入面嘅 settings → 其它讀設定嘅角色（例如 dav-trust 嘅 fuse
@@ -207,16 +259,73 @@ const ctxStatusTool = defineTool({
 		const reading = read(ctx, config);
 		const status = fuseStatus(ctx, config);
 		const fuse = config.liveFuse ? fuseStatusNote(status, config) : fuseNote(reading, config.zones);
+		const outcome = forceOutcomeNote();
 		const text =
 			reading.zone === "unknown"
 				? `${oneLine(reading)} — usage is unknown until the next model response (normal right after compaction); call ctx_status again after it. (${fuse}).`
-				: `${oneLine(reading)} — ${advice(reading, config.zones)} (${fuse}).`;
+				: `${oneLine(reading)} — ${advice(reading, config.zones)} (${fuse})${outcome ? ` · ${outcome}` : ""}.`;
 		return { content: [{ type: "text", text }], details: { ...reading, zones: config.zones, fuse: status } };
+	},
+});
+
+const ctxCompactTool = defineTool({
+	name: "ctx_compact",
+	label: "Context Compact",
+	description:
+		"Request a context compaction at the next safe boundary (right after this tool call's batch finishes). " +
+		"Call it when you are at a GOOD boundary — atomic step done, tests green, handoff note already updated — " +
+		"and you want to free context before the automatic threshold fires. " +
+		"pi compresses natively at that boundary: the run keeps going, no human action, no abort. " +
+		"After the compaction the usage reads as unknown until the next model response — call ctx_status again then. " +
+		"Do not call it when the context is still small (below the soft block): there is nothing to compact.",
+	parameters: Type.Object({ reason: Type.Optional(Type.String({ description: "One line: why now (helps the summary focus)" })) }),
+	async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+		const config = loadConfig();
+		if (!config.liveFuse) {
+			return {
+				content: [{ type: "text", text: "live fuse 關咗（config: liveFuse=false）→ 用緊 pi 原始門檻，唔可以主動要求壓縮。" }],
+				details: { requested: false },
+			};
+		}
+		const usage = ctx.getContextUsage();
+		const window = usage?.contextWindow ?? ctx.model?.contextWindow ?? 0;
+		const tokens = usage?.tokens ?? 0;
+		const keepRecent = effectiveKeepRecent(ctx);
+		const conversation = conversationTokens(ctx);
+		// pi 壓縮需要「對話本身」過 keepRecentTokens；唔係就冇嘢可壓（會靜靜哋 skip）。
+		if (conversation > 0 && conversation <= keepRecent) {
+			return {
+				content: [
+					{
+						type: "text",
+						text:
+							`對話本身只有 ${conversation} tokens（未過 pi 嘅 keepRecentTokens=${keepRecent}）→ pi 會原樣保留，冇嘢可壓。` +
+							` 總 context ${tokens} tokens 入面有 system prompt／工具定義，唔算「對話」。繼續做落去，等對話大過 ${keepRecent} tokens 再壓。`,
+					},
+				],
+				details: { requested: false, tokens, conversation, keepRecent },
+			};
+		}
+		forceCompactRequested = true;
+		lastForceOutcome = { state: "pending" };
+		const reason = typeof (params as { reason?: unknown })?.reason === "string" ? (params as { reason: string }).reason : "手動要求";
+		return {
+			content: [
+				{
+					type: "text",
+					text:
+						`已登記壓縮要求（${reason}）。呢個工具批次完之後，pi 會喺下一個安全邊界壓縮，然後**繼續跑**（唔會停、唔使人手）。` +
+						` 壓縮前請確認交接筆記已更新；壓縮後下一輪回應再 call ctx_status 驗證（會顯示壓縮結果）。`,
+				},
+			],
+			details: { requested: true, tokens, window, conversation },
+		};
 	},
 });
 
 export default function (pi: ExtensionAPI): void {
 	pi.registerTool(ctxStatusTool);
+	pi.registerTool(ctxCompactTool);
 
 	// Live fuse 一定要喺第一個回合之前裝好 → extension 載入時即裝。
 	const live = installLiveFuse();
@@ -249,6 +358,17 @@ export default function (pi: ExtensionAPI): void {
 	pi.on("turn_end", (_event, ctx) => {
 		const config = loadConfig();
 		const reading = read(ctx, config);
+		// 壓縮要求喺 turn_end 之後嘅門檻檢查先會執行 → 連續兩個 turn_end 都仲係 pending
+		// 就代表 pi 冇壓（對話未過 keepRecentTokens／回合收尾太快）→ 撤銷要求，唔好連環壓。
+		if (lastForceOutcome?.state === "pending") {
+			const turns = (lastForceOutcome.turns ?? 0) + 1;
+			if (turns >= 2) {
+				lastForceOutcome = { state: "skipped", note: "對話未過 keepRecentTokens（pi 保留近段，冇嘢可壓）", turns };
+				forceCompactRequested = false;
+			} else {
+				lastForceOutcome = { ...lastForceOutcome, turns };
+			}
+		}
 		const text = takeMilestone(config, reading);
 		if (!text) return;
 		if (ctx.hasUI) ctx.ui.notify(text, reading.zone === "smart" ? "info" : "warning");
@@ -267,6 +387,17 @@ export default function (pi: ExtensionAPI): void {
 	// 換 session 就重新開始計里程碑（否則新 session 會漏通知）。
 	pi.on("session_start", () => {
 		resetMilestoneState_();
+		forceCompactRequested = false;
+	});
+
+	// 壓縮成功／失敗 → 撤銷「強制壓縮」旗標（唔好連環壓）。
+	pi.on("session_compact", (event) => {
+		forceCompactRequested = false;
+		lastForceOutcome = { state: "done", tokensBefore: (event as { compactionEntry?: { tokensBefore?: number } })?.compactionEntry?.tokensBefore };
+	});
+	pi.on("session_compact_failed", (event) => {
+		forceCompactRequested = false;
+		lastForceOutcome = { state: "skipped", note: (event as { error?: string })?.error ?? "壓縮失敗" };
 	});
 
 	pi.registerCommand("ctx", {

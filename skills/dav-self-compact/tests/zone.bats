@@ -275,3 +275,15 @@ run_zone() {
     console.log("precedence OK");
   '
 }
+
+@test "F7: 強制壓縮令門檻即刻跨過（觸發點 = 0 tokens），但唔會變成病態值" {
+  ZONE_TS="$ZONE_TS" node --experimental-strip-types --no-warnings -e '
+    const m = await import(process.env.ZONE_TS);
+    if (m.forcedReserveTokens(1000000) !== 1000000) { console.error("forced"); process.exit(1); }
+    if (m.forcedReserveTokens(0) !== 0) { console.error("zero window"); process.exit(1); }
+    // 觸發點 = window − reserve = 0 → shouldCompact(tokens>0) 為真 → pi 會喺下一個邊界壓縮
+    const trigger = 1000000 - m.forcedReserveTokens(1000000);
+    if (trigger !== 0) { console.error("trigger=" + trigger); process.exit(1); }
+    console.log("forced OK");
+  '
+}
