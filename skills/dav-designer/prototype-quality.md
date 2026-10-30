@@ -1,102 +1,61 @@
+---
+name: dav-designer-prototype-quality
+description: dav-designer 的「原型品質」子檔。含 DoD 深度模式、5 種狀態（Happy／Loading／Empty／Error／Edge）、設計自審 6 維度、自審報告模板、追溯矩陣模板。
+---
+
 # Prototype Quality Sub-spec
 
-> 本檔為 `dav-designer` skill 的子檔，補充說明互動原型的品質規範。SKILL.md 為入口，本檔為細節。
+> 本檔為 `dav-designer` 的子檔：原型品質（狀態 + 自審）。demo app 規格（Surface／stack／demo 路線）→ 同套 `system-prototype.md`。
 
-## 0. DoD 深度模式（v2.2 新增）
+## 0. DoD 深度模式
 
-互動原型有兩種 DoD 深度，在 Step 1 一次選定（詳細選擇時機見 SKILL.md Step 1）：
-
-- **DoD-Lite** — 必做狀態：Happy path（§1.1）；略過狀態：Loading / Empty / Error / Edge；⭐ 預設
-- **DoD-Full** — 必做狀態：Happy + Loading + Empty + Error + Edge（§1.1-§1.5）；略過狀態：（無）；選用
+- **DoD-Lite** — 必做：Happy path（§1.1）；略過：Loading／Empty／Error／Edge；⭐ 預設
+- **DoD-Full** — 必做：五狀態全做（§1.1-§1.5）；選用（Step 1 逐 Surface 選定）
 
 ## 1. 原型 DoD（Definition of Done）
 
-互動原型完成前必含狀態，每種都有最低實作要求。**實際要做哪些依 Step 1 選定的 DoD 深度**。
-
 ### 1.1 Happy path（主流程）— **必做**
 
-- **主流程完整** — 說明：從入口到出口的所有步驟都能點擊走完
-- **表單驗證** — 說明：必填欄位未填時擋下、提示訊息
-- **成功回饋** — 說明：完成後有明確成功狀態（toast / 跳頁 / 訊息）
+- **主流程完整**：由入口到出口每步都點得完，冇死路
+- **表單驗證**：必填未填要擋 ＋ 有提示訊息
+- **成功回饋**：完成後有明確成功狀態（toast／跳頁／訊息）
 
 ### 1.2 Loading 狀態
 
-- **至少 1 個 spinner / skeleton** — 說明：送資料中顯示
-- **按鈕 disable** — 說明：loading 期間 CTA 不可重複點擊
-- **最短顯示時間 ≥ 300ms** — 說明：避免 loading 閃一下就消失（體驗差）
+- **至少 1 個 spinner／skeleton** ＋ **CTA 期間 disable**（防重複點擊）＋ **最短顯示 ≥ 300ms**（唔好閃一閃就冇）
 
 ### 1.3 Empty state（空狀態）
 
-- **至少 1 個零資料畫面** — 說明：如「沒有待辦」「沒有訂單」
-- **明確圖示 + 文字** — 說明：不可只放空白
-- **引導動作** — 說明：提示「建立第一個 X」CTA
+- **至少 1 個零資料畫面**（冇待辦／冇訂單）＋ **圖示 + 文字**（唔好淨係空白）＋ **引導動作**（「建立第一個 X」CTA）
 
 ### 1.4 Error state（錯誤狀態）
 
-- **表單錯誤** — 說明：密碼錯誤、Email 格式錯等
-- **系統錯誤** — 說明：「網路斷線」「伺服器錯誤」
-- **錯誤訊息具體** — 說明：不可只寫「發生錯誤」，要告訴用戶如何修正
+- **表單錯誤**（密碼錯／Email 格式錯）＋ **系統錯誤**（網絡斷線／伺服器錯）＋ **訊息要具體**（講點樣修正，唔好淨係「發生錯誤」）
 
 ### 1.5 Edge case（邊界輸入）
 
-- **超長字串** — 說明：輸入框貼 1000 字元是否正常顯示 / 截斷
-- **特殊字元** — 說明：Emoji、`<script>`、SQL 注入字串
-- **邊界數值** — 說明：數量 = 0、= 999999、= -1
+- **超長字串**（貼 1000 字元唔爆版）＋ **特殊字元**（Emoji／`<script>`／注入字串）＋ **邊界數值**（0／999999／-1）
 
-## 2. 設計自審 5 維度（Step 4.5）
+## 2. 設計自審 6 維度（Step 4.5）
 
-Agent 跑完 PRD/DESIGN/system-design 後、進 Step 5 之前，依下列 5 維度逐項檢查並產出「自審報告」。
-
-### 2.1 一致性（Consistency）
-
-- **相同操作跨 Module 統一** — 範例：「刪除確認」按鈕位置 / 顏色一致
-- **相同元件命名統一** — 範例：不可 Module A 叫「用戶」、Module B 叫「會員」
-- **錯誤訊息格式統一** — 範例：全部用 toast 或全部用 inline，不可混用
-
-**不通過時**：統一風格後重生 Step 4。
-
-### 2.2 可達性（Reachability）
-
-- **所有功能都能從主流程點到** — 範例：無孤島畫面（存在但無入口）
-- **深層路徑 ≤ 3 層** — 範例：超過 3 層需重新設計導航
-- **必經節點有 breadcrumb 或返回鍵** — 範例：用戶不會迷路
-
-**不通過時**：加導航或刪除孤島畫面。
-
-### 2.3 錯誤處理（Error handling）
-
-- **每個表單有對應錯誤狀態** — 範例：登入失敗、註冊重複 Email
-- **API 失敗有 fallback** — 範例：「無法載入，請重試」
-- **邊界輸入不當機** — 範例：超長字串、特殊字元不破版
-
-**不通過時**：補錯誤狀態（納入 Step 5 DoD）。
-
-### 2.4 空狀態（Empty state）
-
-- **零資料畫面有設計** — 範例：「尚未建立任何 X」
-- **零搜尋結果畫面有設計** — 範例：「找不到符合條件的項目」
-- **首登體驗（Onboarding）** — 範例：新用戶看到的第一個畫面不是空白
-
-**不通過時**：補空狀態畫面（納入 Step 5 DoD）。
-
-### 2.5 效能預感（Performance anticipation）
-
-- **大量資料 loading** — 範例：列表 1000 筆時是否有分頁 / 虛擬捲動
-- **重操作 loading** — 範例：上傳檔案、批次處理是否有進度條
-- **即時操作節流（throttle）** — 範例：搜尋框輸入是否有 debounce
-
-**不通過時**：補 loading 狀態（納入 Step 5 DoD）或回 Step 3 調整架構。
+- **一致性** — 相同操作跨 Module／Surface 統一（刪除確認位置、命名、錯誤訊息形式）；❌ → 統一風格後重生 Step 4
+- **可達性** — 冇孤島畫面；深層路徑 ≤ 3 層；必經節點有 breadcrumb／返回鍵；❌ → 加導航或刪孤島畫面
+- **錯誤處理** — 每個表單有對應錯誤狀態；失敗有 fallback；邊界輸入唔崩；❌ → 補錯誤狀態（納入 Step 5 DoD）
+- **空狀態** — 零資料畫面、零搜尋結果畫面、首登 onboarding 都有設計；❌ → 補空狀態畫面
+- **效能預感** — 大資料量有分頁／虛擬捲動；重操作有進度條；即時操作有 debounce；❌ → 補 loading 或回 Step 3 調架構
+- **整合性**（v2.6 新增） — 跨 Module／跨 Surface 流程可達；demo 路線行得通；資料真串連；跨端視覺同一套 tokens；❌ → 修 store 接線／補 route／統一 tokens
 
 ## 3. 自審報告模板（Agent 產出格式）
 
 ```markdown
-# 設計自審報告 — Module X
+# 設計自審報告 — <Surface / 批次>
 
 - 一致性：✅ 綠 / ⚠️ 待修 / ❌ 不通過 — <備註>
-- 可達性：✅ 綠 / ⚠️ 待修 / ❌ 不通過 — <備註>
-- 錯誤處理：✅ 綠 / ⚠️ 待修 / ❌ 不通過 — <備註>
-- 空狀態：✅ 綠 / ⚠️ 待修 / ❌ 不通過 — <備註>
-- 效能預感：✅ 綠 / ⚠️ 待修 / ❌ 不通過 — <備註>
+- 可達性：✅ / ⚠️ / ❌ — <備註>
+- 錯誤處理：✅ / ⚠️ / ❌ — <備註>
+- 空狀態：✅ / ⚠️ / ❌ — <備註>
+- 效能預感：✅ / ⚠️ / ❌ — <備註>
+- 整合性：✅ / ⚠️ / ❌ — <備註>
 
 **結論**：全綠 → 進 Step 5 / 有 ⚠️❌ → 用戶決定「退回修改」或「帶條件進 Step 5」
 
@@ -105,20 +64,15 @@ Agent 跑完 PRD/DESIGN/system-design 後、進 Step 5 之前，依下列 5 維�
 
 ## 4. 追溯矩陣模板
 
-PRD.md 必含，缺則視為 PRD 不完整：
+PRD.md 必含（缺欄視為不完整）：`FR / User Story / Surface / 畫面路由 / Demo 步驟 / 狀態`
 
-- **FR-01 登入**
-  - User Story：US-12
-  - 對應畫面：login.html §login
-  - 原型檔案：01-login.html
-  - 狀態：✅ 已原型
-- **FR-02 註冊**
-  - User Story：US-13
-  - 對應畫面：register.html
-  - 原型檔案：01-login.html
-  - 狀態：⏳ 待原型
-- **FR-03 忘記密碼**
-  - User Story：US-14
-  - 對應畫面：forgot.html
-  - 原型檔案：01-login.html
-  - 狀態：❌ 未開始
+```markdown
+| FR | User Story | Surface | 畫面路由 | Demo 步驟 | 狀態 |
+| --- | --- | --- | --- | --- | --- |
+| FR-01 登入 | TMO-012 | web-admin | /w/login | step-1 | ✅ 已原型 |
+| FR-02 註冊 | TMO-013 | web-admin | /w/register | — | ⏳ 待原型 |
+| FR-03 落單 | TMO-015 | mobile-app | /m/orders/new | step-2 | ✅ 已原型 |
+```
+
+- 「User Story」欄填 backlog ID；「畫面路由」填 demo app 內 hash route；「Demo 步驟」填 `step-N` 或 `—`（唔喺 demo 路線內）。
+- 矩陣表頭必須出現「User Story」字樣（下游漂移檢查靠佢定位 US 欄）。

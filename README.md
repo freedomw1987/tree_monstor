@@ -102,7 +102,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | Skill | 一句話 |
 |---|---|
 | [`dav-planner`](skills/dav-planner/SKILL.md) | 規劃：釐清背景/目的/驗收條件，拆 Backlog（含 INVEST AC） |
-| [`dav-designer`](skills/dav-designer/SKILL.md) | 設計：DESIGN.md、system-design.md、PRD、互動 HTML 原型 |
+| [`dav-designer`](skills/dav-designer/SKILL.md) | 設計：DESIGN.md、system-design.md、PRD、**系統 demo 原型 app**（原型單位 = Surface）|
 | [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 1/2/3：依 backlog 先寫測試（紅後綠）→ 埋探針、`REGRESSION_MODE` 自動回歸驗證（自動執行段）|
 | [`dav-jev-oracle`](skills/dav-jev-oracle/SKILL.md) | LLM 語意判斷（Jev Oracle）：PoC ＋ 探針 ＋ 信心度報告，可選加深 |
 | [`dav-reviewer`](skills/dav-reviewer/SKILL.md) | 人手觸發嘅審核＋交付：Gate 4 品質審核 ＋ Gate 4.5 需求對帳（獨立 subagent 逐條比對；未對上不得宣告完成）→ 交付摘要（對話 ＋ Markdown 詳錄 ＋ 六維度反省 ＋ 需求對帳段）＋ 更新受影響文檔同 `docs/backlog.md`|

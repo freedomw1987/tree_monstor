@@ -1,134 +1,83 @@
 ---
 name: dav-designer-workflow
-description: dav-designer 的「6 步流程細節」附件（v2.4 拆分自主檔）。含 Step 1 backlog + Module + DoD、Step 2-5 各步細節、Step 5 互動原型必含 / 禁止二表。
+description: dav-designer 的「6 步流程細節」附件。含 Step 1 backlog + Module + Surface 映射、Step 2-5 各步細節、demo app 產出要求。
 ---
 
 # Dav Designer — Workflow（6 步流程細節）
 
-> 本檔為 dav-designer 的流程細節附件，跑 Step 1-5 時逐條查閱。主檔在 `SKILL.md`。
->
-> **注意**：互動原型的「品質細節（DoD 5 狀態 / 自審 5 維度 / 矩陣模板）」位於同套 `prototype-quality.md`，本檔只放「流程層」內容（做什麼、為什麼、產出、證據）。
+> 本檔為流程細節附件，跑 Step 1-5 時逐條查閱。主檔在 `SKILL.md`。原型品質（狀態／自審）→ 同套 `prototype-quality.md`；系統 demo app 規格 → 同套 `system-prototype.md`。
 
-## Step 1：讀取 backlog 並標定範圍 + 詢問 DoD 深度
+## Step 1：讀 backlog ＋ 切 Module ＋ 映射 Surface ＋ 問 DoD 深度
 
-- **動作**：讀取 monorepo 對應的 backlog 檔，篩選 `status = PENDING` 的項目；依功能內聚性分群為
-  Module。**同時詢問用戶每個 Module 的 DoD 深度（DoD-Lite / DoD-Full）**。
-- **為什麼**：避免一次處理全部 backlog 導致設計過廣；DoD 深度在 Step 1 一次問清，避免 Step 5 再打斷流程。
-- **產出**：Module 清單（含 Module 名稱 / backlog IDs / **DoD 深度**）＋ **批次清單**（1 批次 = 1 Module，見下）。
+- **動作**：讀 monorepo 對應的 backlog 檔，篩 `status = PENDING`；依功能內聚性分群為 Module；**把每 Module 映射到 Surface**；問用戶每個 Surface 嘅 DoD 深度。
+- **為什麼**：避免一次處理全部 backlog 令設計過廣；Surface 映射決定 demo app 分區，Step 1 唔問清，Step 5 要返工。
+- **產出**：Module 清單（名稱／backlog IDs／DoD 深度）＋ **Surface 清單** ＋ Module→Surface 對應 ＋ **批次清單**。
 
-**Module 目的與切割原則**（v2.3 新增）：
+**Module 切割原則**（目的：可按 Module 獨立開發／增減／測試）：
 
-Module 是**功能層級的內聚單位**，dav-designer 用它把大項目切成「可獨立交付的小項目」。建立 Module 不是為了分類，是為了達成三個目的：
+- **功能內聚** — 一 Module 只做一件事；❌ 反例：「用戶 + 訂單 + 支付」同一 Module
+- **低耦合** — 互動經明確介面，不共用內部狀態；❌ 反例：A 直接讀 B 嘅 DB table
+- **可獨立交付** — 移除某 Module，其他仍跑得；❌ 反例：移除「認證」全崩
+- **可獨立測試** — 有 mock 介面就能單獨測；❌ 反例：要起完整後端先測到前端
+- **粒度適中** — 1 Module ≈ 3-15 US；❌ 反例：整個後端當一 Module
 
-1. **可按 Module 獨立開發**：每個 Module 可被不同開發者 / 不同時間切片，Module 間只透過明確定義的介面互動。
-2. **可按 Module 增減**：新增或移除 Module 時，對項目全體影響最小（其他 Module 不需要重寫，只調整連接處）。
-3. **可按 Module 測試**：dav-developer 可針對單一 Module 跑探針、跑校驗；測試粒度與 Module 對齊，不會「測了整個系統卻不知道是哪個 Module
-   壞掉」。
+**Surface 映射（v2.6 新增）**：
 
-**切割原則**（依上述目的倒推）：
+- **Surface = 介面載體**（`web-admin`／`mobile-app`／`tablet-app`／`cli-terminal`），唔等於 Module。
+- **同一 Module 可落多個 Surface**（例：「落單」手機有、後台都有）→ 兩邊都要畫，唔准只畫一邊。
+- **一個 Surface 可裝多個 Module**（例：後台 = 訂單 + 客戶 + 報表）→ 唔重複開多個 app。
+- **Surface 清單格式**：surface 名 ＋ 承載嘅 Module ＋ 外殼（桌面寬版／手機框／終端）＋ 該 Surface 嘅 DoD 深度。
+- **CLI 專案**：冇 GUI → 全系統一個 `cli-terminal` Surface，用假終端 view 呈現。
+- **DoD 深度選項**（Step 1 必問一次，逐 Surface 問）：⭐ **DoD-Lite**（預設；只 Happy path）／**DoD-Full**（Happy + Loading + Empty + Error + Edge）。
+- **證據**：對話列明「2 個 Surface：web-admin（M01, M02）、mobile-app（M03）；web-admin = DoD-Full、mobile-app = DoD-Lite」。
 
-- **功能內聚**
-  - 說明：一個 Module 只做一件事或一類緊密相關的事
-  - 反例：❌ 「用戶 + 訂單 + 支付」塞同一 Module
-- **低耦合**
-  - 說明：Module 間互動透過明確介面（API / 事件 / 資料契約），不共用內部狀態
-  - 反例：❌ Module A 直接讀 Module B 的 DB table
-- **可獨立交付**
-  - 說明：移除某 Module 後，其他 Module 仍能編譯 / 運行（雖可能缺功能）
-  - 反例：❌ 移除「認證」整個系統崩潰
-- **可獨立測試**
-  - 說明：有 mock 介面就能單獨跑該 Module 的測試，不依賴整個系統起起來
-  - 反例：❌ 必須啟動完整後端才能測前端
-- **粒度適中**
-  - 說明：1 個 Module ≈ 3-15 個 User Story；太小（1-2 US）變成分類標籤，太大（20+ US）失去「獨立交付」意義
-  - 反例：❌ 把整個後端當一個 Module
+**批次 = 1 Module**：
 
-**批次 = 1 Module（v2.5 新增）**：
+- **唯一批次單位**：1 批次 = 1 完整 Module；冇 sprint 層、冇 velocity。
+- **批次清單**：Module 名／backlog IDs／DoD 深度／先後次序；次序按依賴排，冇依賴按 P0→P3，可平行者標「可平行」。
+- **為什麼**：批次 = 交付 = 測試 = 回報邊界，四重合一 → 單 Module 探針、單 Module 交付摘要、單 Module 回顧。
+- **INT US 歸屬**：跨 Module 整合測試掛喺後完成嗰個 Module 嘅批次。
+- **證據**：對話列明「批次 1 = M01（含 #A, #B）→ 批次 2 = M02」。
 
-- **唯一批次單位**：1 個批次 = 1 個完整 Module；**冇 sprint 層、冇 velocity 容量**（見同套 `design-gate.md`）
-- **批次清單（Step 1 產出）**：每個 Module 一行 —— Module 名稱／涵蓋 backlog IDs／DoD 深度／先後次序
-- **先後次序**：按「依賴」排（前置 Module 先做）；冇依賴就按 P0 → P3；互唔依賴嘅可標「可平行」
-- **為什麼**：批次 = 交付邊界 = 測試邊界 = 回報邊界，四重合一 → 單 Module 探針、單 Module 交付摘要、單 Module 回顧
-- **INT US 歸屬**：跨 Module 整合測試（`INT-<M>-<M>-01`）掛喺**後完成**嗰個 Module 嘅批次；兩個 Module 都未完成就唔開批次
-- **證據**：對話中列明「批次 1 = M01（含 #A, #B）→ 批次 2 = M02」
+## Step 2：UX/UI ＋ 系統 Shell ＋ Design Tokens（DESIGN.md）
 
-**DoD 深度選項**（Step 1 必問一次）：
-
-- ⭐ **DoD-Lite（預設）**
-  - 必含狀態：Happy path
-  - 適用場景：玩具 / 內部工具 / 簡單模組
-- **DoD-Full**
-  - 必含狀態：Happy + Loading + Empty + Error + Edge
-  - 適用場景：正式產品 / 對外功能 / 複雜模組
-
-- **證據**：對話中明確列出「本次處理 Module X（含 backlog #A, #B）— DoD-Lite / DoD-Full」。
-
-## Step 2：UX/UI 規劃（DESIGN.md）
-
-- **動作**：依 Stitch 規範編寫 / 更新 monorepo 對應的 DESIGN.md，描述畫面結構、互動流程、元件風格。
-- **為什麼**：UX/UI 是 PRD 原型的視覺 / 互動來源；沒有規範會讓原型風格漂移。
-- **產出**：DESIGN.md（含畫面樹、互動流程、元件庫）。
-- **證據**：檔案存在且涵蓋本次所有 Module 的畫面。
+- **動作**：寫 DESIGN.md：畫面樹、互動流程、元件庫（揀用邊啲 shadcn/ui 組件）、**design tokens**（色／字／間距／圓角／陰影，寫實數值）、
+**每個 Surface 嘅 shell 規格**（桌面 sidebar+topbar／手機 header+bottom tab／終端 prompt+output）、
+**畫面地圖**（route → Module → Surface）。
+- **為什麼**：tokens ＋ shell 係跨 Surface 視覺一致嘅唯一來源；冇就每個 Surface 各自漂移，demo 唔似一個系統。
+- **產出**：DESIGN.md。
+- **證據**：tokens 段有具體變數值；每 Surface 有 shell 描述；畫面地圖覆蓋全部 Module。
 
 ## Step 3：系統架構設計（system-design.md）
 
-- **動作**：定義技術棧、系統組成部件（前端 / 後端 / DB / 第三方服務），並依 Module 劃分系統邊界。**禁止**出現真實 / 示範程式碼。
-- **為什麼**：架構設計只描述「為什麼這樣切」與「怎麼互動」，實作留給開發階段。
-- **Module 邊界是測試邊界**（v2.3 新增）：system-design.md 中的 Module 邊界就是未來 dav-developer 的執行邊界 — 探針只針對該
-  Module 的介面與內部狀態，不會跨 Module 檢查（避免一個 Module 壞掉牽扯其他 Module 的綠燈 / 紅燈）。
-- **產出**：system-design.md（含技術棧、模組邊界圖（純文字）、資料流）。
-- **證據**：同步更新 monorepo 對應的 backlog 檔，給每個 User Story 標上 Module 與 Story Point；並按實際依賴**校正批次先後次序**（Step 1 定、Step 3 校正）。
+- **動作**：定義技術棧、系統組成部件（前端／後端／DB／第三方服務），劃 **Module 邊界** ＋ **Surface 邊界**（邊個 Surface 用邊套 UI 組件／邊套 API）。**禁止**真實／示範程式碼。
+- **為什麼**：架構只描述「點解咁切」同「點互動」，實作留俾開發階段。
+- **Module 邊界 = 測試邊界**：探針只針對該 Module 嘅介面與內部狀態，唔跨 Module 檢查（避免一個 Module 壞掉牽扯其他 Module 綠／紅燈）。
+- **產出**：system-design.md（技術棧、Module／Surface 邊界圖（純文字）、資料流）。
+- **證據**：同步更新 backlog 檔，給每個 US 標 Module 與 Story Point；按實際依賴校正批次次序（Step 1 定、Step 3 校正）。
 
 ## Step 4：模組 PRD（md，含追溯矩陣）
 
-- **動作**：為每個 Module 產出 `docs/prd/<序號-module-name>.md`，含 **FR 清單**、**驗收條件 AC**、**依賴關係**，**強制**附「追溯矩陣」段落（模板見子檔）。
-- **為什麼**：追溯矩陣建立「需求 ↔ 設計 ↔ 原型 ↔ 狀態」四向鏈，避免幽靈畫面（設計做但沒對應 US）或幽靈需求（US 有但沒設計）；改 US 時能秒查影響範圍。
+- **動作**：每 Module 一份 `docs/prd/<序號-module-name>.md`，含 **FR 清單**、**驗收條件 AC**、**依賴關係**，**強制**附追溯矩陣。
+- **為什麼**：追溯矩陣建立「需求 ↔ 設計 ↔ demo app ↔ 狀態」四向鏈，攔幽靈畫面（設計做但無對應 US）同幽靈需求（US 有但無設計）；改 US 時秒查影響範圍。
+- **追溯矩陣欄位**：`FR / User Story / Surface / 畫面路由 / Demo 步驟 / 狀態`（缺欄視為 PRD 不完整；模板見同套 `prototype-quality.md` §4）。
 - **產出**：`docs/prd/<序號-module>.md`（每 Module 一份）。
-- **追溯矩陣**：必含 `FR / US / 畫面 / 原型檔案 / 狀態` 五欄，缺欄視為 PRD 不完整（模板見 prototype-quality.md §4）。
-- **證據**：每 Module 都有獨立 md 檔、FR 編號連續無跳號、追溯矩陣每一列都有對應 US。
+- **證據**：每 Module 獨立 md 檔、FR 編號連續無跳號、矩陣每列都有對應 US ＋ Surface ＋ route。
 
 ## Step 4.5：設計自審 + 用戶簽核（必走，不可跳）
 
-- **動作**：Step 5 之前，Agent 跑 5 維度自審（一致性 / 可達性 / 錯誤 / 空狀態 / 效能），產出「自審報告」請用戶簽核。**未簽核不進 Step 5**。
-- **為什麼**：原型做完才發現問題，代價是改 3 個檔；現在自審成本 0，效益最高。
-- **產出**：對話中的「自審報告」（格式見 prototype-quality.md §3）+ 用戶明確「簽核 / 退回修改」。
-- **證據**：對話出現「自審報告：5 維度全綠 / 待修 X」+ 用戶回應「簽核 / 退回」。
-- **詳細維度檢查清單**：見 prototype-quality.md §2（5 維度各檢查什麼、不通過時怎麼辦）。
+- **動作**：Step 5 之前跑 6 維度自審（一致性／可達性／錯誤處理／空狀態／效能預感／整合性），產出自審報告請用戶簽核。**未簽核不進 Step 5**。
+- **為什麼**：原型做完先發現問題，代價係改幾個檔；自審成本 0，效益最高。
+- **產出**：對話中的自審報告 ＋ 用戶明確「簽核 / 退回修改」。
+- **證據**：出現「自審報告：6 維度全綠 / 待修 X」+ 用戶回應「簽核 / 退回」。
+- **維度清單** → 同套 `prototype-quality.md` §2。
 
-## Step 5：互動 HTML 原型（取代靜態 PRD html）
+## Step 5：系統 demo 原型 app
 
-- **動作**：依 Step 1 選定的 **DoD 深度**（DoD-Lite / DoD-Full），為每個 Module 產出 `docs/prd/<序號-module-name>.html`（**單檔 HTML**，內嵌
-  CSS + JS）。
-- **為什麼**：原型是「可即點即試的 PRD」，讓用戶在瀏覽器直接走完整流程，驗收 UX 後才進開發。
-- **產出**：`docs/prd/<序號-module>.html`（單檔、無 build tool、雙擊即開）。
-- **DoD 深度對照**：依 Step 1 選定的 DoD 深度（Lite / Full）實作，詳細見 prototype-quality.md §0-§1。
-- **證據**：
-  - ✅ 必做狀態全實作（依 Step 1 選定的 DoD 深度）
-  - ✅ 檔案 < 500 行（避免過度複雜；超量必拆分為多頁）
-  - ✅ 內嵌 README 區塊（HTML 開頭 `<section class="prototype-readme">`）說明「點哪裡試什麼」
-
-**原型必含規範**：
-
-- **頁面切換**
-  - 說明：多頁 Module 需有 SPA 式切換（hash router 或顯示 / 隱藏）
-- **按鈕點擊**
-  - 說明：所有 CTA 必須有實際反應（切頁、開 modal、顯示 toast）
-- **表單互動**
-  - 說明：input / select / checkbox 改變需即時反映 UI
-- **Mock 資料**
-  - 說明：用 JSON 常數或 JS 變數，不用真實 API / 後端
-- **高保真視覺**
-  - 說明：配色 / 字型 / 間距接近最終產品；避免灰階 wireframe 風格
-
-**原型禁止項**：
-
-- **真實後端 API 呼叫**
-  - 原因：原型階段不應有後端依賴
-- **假資料寫死「使用者看不到的隱藏欄位」**
-  - 原因：容易誤導為「真實功能已實作」
-- **外部 build tool（webpack / vite / npm 依賴）**
-  - 原因：違反「雙擊即開」紀律
-- **跨檔依賴（多 .css / 多 .js）**
-  - 原因：單檔獨立原則；外部 CSS / JS 用 CDN 例外
-
-**互動複雜度判斷**：≤ 3 畫面單頁切換 / 4-7 畫面 hash router / > 7 畫面拆多檔。
+- **動作**：按 Step 1 選定嘅 Surface 清單 ＋ DoD 深度，產出 `prototype/<slug>/`
+（Vite + React + TS + Tailwind + shadcn/ui + HashRouter + zustand）：每 Surface 一條 route、共用 tokens ＋ 單一 mock store、
+內置 demo 路線面板、build 出單檔 `dist/index.html`。
+- **為什麼**：原型係「拎得走就 demo 嘅系統」，唔再係逐 Module 孤島；跨 Surface 資料流（手機落單 → 後台見到）係 demo 最強武器。
+- **產出**：demo app 專案 ＋ `dist/index.html`（單檔、雙擊即開）。
+- **完整規格**（stack／scaffold／目錄／demo 路線／驗收關鍵字）→ 同套 `system-prototype.md`。
+- **證據**：`npm run build` 綠；`dist/index.html` 存在且雙擊即開；demo 路線逐步行得通；至少 1 條流程跨 Surface 串連（A Surface 寫入 → B Surface 讀到）。
