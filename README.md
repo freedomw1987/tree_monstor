@@ -97,7 +97,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 ## Skills
 
-11 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
+12 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
 
 | Skill | 一句話 |
 |---|---|
@@ -112,6 +112,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | [`ask-me`](skills/ask-me/SKILL.md) | 逐題確認 trust 期間的待決擔憂，回寫 backlog |
 | [`dav-skill-creater`](skills/dav-skill-creater/SKILL.md) | 提煉 / 修改 skill，守住 4 段結構、文檔行數限制（主檔 ≤50／子檔 ≤150／context ≤400）|
 | [`pptx-slim`](skills/pptx-slim/SKILL.md) | PPTX 就地減重：轉碼影片／重壓圖片、只換媒體重打包、四關驗證（含畫質關） |
+| [`dav-self-compact`](skills/dav-self-compact/SKILL.md) | context 聰明區治理：量度使用率、soft／hard block 判定、寫交接筆記、對齊原生自動壓縮，令長任務留喺 <50% |
 
 ## 進階
 

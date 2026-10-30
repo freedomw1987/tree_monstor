@@ -65,6 +65,7 @@ prototype/<slug>/
 - **store 單一真相源**：跨 Module、跨 Surface 共用；只經 action 改 state。
 - **layout 分區**：surface 之間用 layout component 隔離（唔係同一頁硬縮），但 tokens／ui 組件／store 共用。
 - **擺位**：跟專案既有前端結構；冇就放專案根 `prototype/<slug>/`（`node_modules/`、`dist/` 唔入版控）。
+  ⚠️ **只係演練／驗證 → 建喺 `/tmp` 或獨立目錄**，唔好喺主 repo 開票、改 PRD／DESIGN（見同套 `rules.md` §2）。
 
 ## §5 Demo 路線（demo script）
 

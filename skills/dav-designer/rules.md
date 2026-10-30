@@ -19,6 +19,9 @@
 - **demo app 必交 build 綠 ＋ 單檔 `dist/index.html` ＋ demo 路線行得通 ＋ 至少 1 條跨 Surface 資料流**
   - 例外：預設 DoD-Lite；用戶要求 wireframe 可降階；用戶要求接真實 API
   - 限制：原型階段禁止實際後端；build 後唔准依賴外部 CDN；單檔必須雙擊即開
+- **演練 demo app 唔好污染主 repo**
+  - 例外：用戶明確要立項（開票做真產品）先落主 repo
+  - 限制：只係驗證／示範 → 建喺 `/tmp` 或獨立目錄；唔准為 demo 開 backlog 票、改 PRD／DESIGN／system-design（避免由「驗證 skill」變成「真做產品」）
 
 ## §3 架構 ＋ PRD 一致性 ＋ demo app 邊界
 
