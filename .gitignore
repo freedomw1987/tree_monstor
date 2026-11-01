@@ -21,3 +21,9 @@ __pycache__/
 skills/dav-jev-oracle/PoC/tmp/
 # regression-guard sandbox 工作目錄（sandbox_runner.py 在 repo root tmp/ 建 .sandbox-*）
 /tmp/
+# Jev oracle PoC 嘅本機快取（機器 state；唔版控）—— 根目錄再加一道**保險**：
+# skill 內本身已有嵌套 .gitignore（skills/dav-jev-oracle/PoC/.gitignore），
+# 但萬一 skill 改名／搬遷令嵌套 .gitignore 走失，快取就會變成「未追蹤但未忽略」
+# → `git add -A` 一次過把上萬個快取檔塞入 repo（實測 12,535 個／49MB）。
+# ⚠️ 呢條唔會誤傷 `cache-fixtures/`（測試素材，必須版控）—— gitignore 只匹配**同名**目錄。
+**/PoC/cache/
