@@ -57,7 +57,7 @@ trust mode 動輒跑幾個鐘、跨多個 Backlog（Step 4 三段接力 L1→L2�
 - 派長工（預計 >20 次工具呼叫／要讀多個大檔）→ Task 描述**必**寫：交付物落檔位置、checkpoint 落檔位置、「≥50% 寫 checkpoint、≥60% 收尾等原生壓縮」。
 - 有 `ctx_status` 就要求 subagent 回報時附 zone（例：「完成，ctx 42%」）；**冇**就要求佢報「大概做咗幾多輪工具呼叫」＋ 主動寫 checkpoint。
 - 前台 subagent **唔會**自動載入全域 extension，`tools` 亦係嚴格 allowlist → 想佢自己量度，要喺 agent frontmatter 加
-  `extensions:` 同 `tools: [..., ctx_status]`（陷阱細節 → 同套 `dav-self-compact` 嘅 `protocol.md` §7）。
+  `extensions:` 同 `tools: [..., ctx_status]`（陷阱細節 → 同套 `dav-self-compact` 嘅 `adapters.md` §2）。
 - **實測**：一次性 subagent 嘅被動提示唔會觸發（usage 未知）→ 子 agent 一定係「有 tool 就主動 call、冇 tool 就靠 Task 指令寫 checkpoint」，唔存在「佢自己會知」。
 - 冇 `ctx_status` 就靠 fallback：**每個 Backlog 完成即寫 checkpoint**，唔好等 context 爆。
 

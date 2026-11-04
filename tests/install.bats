@@ -535,3 +535,49 @@ teardown() {
   [[ "$output" == *$'\033[1m'* ]] || {
     echo 'FAIL: tests/install.bats:571: assertion failed' >&2; return 1; }
 }
+
+# ---------- dav-self-compact: host binding + host notes ----------
+
+@test "AC-17: dav-self-compact host binding + host notes are installed per agent and removed on uninstall" {
+  run run_install --global --yes
+  [ "$status" -eq 0 ]
+
+  # Step 0 of the skill needs to know which host it runs under: the binding
+  # file lives in the agent home (the PARENT of the agent's skills dir).
+  [ "$(cat "$TEST_HOME/.claude/dav-self-compact.host")" = "claude" ]
+  [ "$(cat "$TEST_HOME/.qoder/dav-self-compact.host")" = "qoder" ]
+  [ "$(cat "$TEST_HOME/.pi/agent/dav-self-compact.host")" = "pi" ]
+
+  # Host notes: how to make that host's native auto-compaction fire inside
+  # the opportunity window. We never rewrite the user's settings.json.
+  assert_path_is_file "$TEST_HOME/.claude/dav-self-compact.env"
+  assert_file_contains "$TEST_HOME/.claude/dav-self-compact.env" "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"
+  assert_path_is_file "$TEST_HOME/.qoder/dav-self-compact.env"
+  assert_file_contains "$TEST_HOME/.qoder/dav-self-compact.env" "/context-window"
+
+  # A user-owned file next to ours must survive uninstall.
+  echo "mine" > "$TEST_HOME/.claude/dav-self-compact.user"
+
+  run run_install --uninstall --global --yes
+  [ "$status" -eq 0 ]
+
+  [ ! -e "$TEST_HOME/.claude/dav-self-compact.host" ]
+  [ ! -e "$TEST_HOME/.claude/dav-self-compact.env" ]
+  [ ! -e "$TEST_HOME/.qoder/dav-self-compact.host" ]
+  [ ! -e "$TEST_HOME/.qoder/dav-self-compact.env" ]
+  [ ! -e "$TEST_HOME/.pi/agent/dav-self-compact.host" ]
+  [ -f "$TEST_HOME/.claude/dav-self-compact.user" ]
+}
+
+@test "AC-18: a user-owned dav-self-compact.host is not deleted by uninstall" {
+  run run_install --global --yes
+  [ "$status" -eq 0 ]
+
+  echo "my-own-binding" > "$TEST_HOME/.claude/dav-self-compact.host"
+
+  run run_install --uninstall --global --yes
+  [ "$status" -eq 0 ]
+
+  # Content differs from ours -> keep it (never clobber user-owned state).
+  [ "$(cat "$TEST_HOME/.claude/dav-self-compact.host")" = "my-own-binding" ]
+}

@@ -103,6 +103,37 @@
 3. **文案改掉「叫用戶撳 /compact」**：`SKILL.md`／`protocol.md`／`reference.md`／`dav-trust/long-run-context.md`／
    `agents/dav-long-run.md` 全部改成「agent 自己叫 `ctx_compact`」，並加「唔准硬 loop」紀律。
 
+### 1.9 追加修正（第六輪）：跨 agent 拆分 core ＋ adapter（用戶報：「Claude 同 Qoder 點做？」）
+
+**用戶報**：想知 `dav-self-compact` 喺 Claude Code 同 Qoder 點做壓縮。
+
+**實測結論**（本機 binary 逐個驗）：呢個 skill 原本**只喺 pi 完整運作** —— 機械層（`ctx_status`／`ctx_compact`／live fuse）
+係 pi 專有 extension API；`install.sh` 只為 pi 裝 extension，Claude Code／Qoder 連 skill 都未裝。
+各 host 原生機制（實測）：Claude Code 有 threshold auto-compact（`autoCompactEnabled` ＋ `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`，
+觸發點 = 有效窗口 − summary buffer 再被百分比拉低）＋ `/compact` ＋ `PreCompact`／`PostCompact` hook，**但冇 agent 可呼叫嘅壓縮入口**；
+Qoder 有內建 `/compact`（alias `/summarize`、`/compress`）＋ auto-compact（閾值 ＋ buffer ＋ 熔斷 3 次）＋ `/context`／`/context-window`
+＋ `PreCompact`／`PostCompact` hook，**同樣冇 agent 入口**。
+
+**解法（core ＋ adapter，唔係三份重複 skill）**：
+
+- `SKILL.md`（48 行）重寫：Step 0 先**判定 host**（綁定檔 → 環境變數 → 工具特徵），流程其餘部分全部同 agent 無關
+- `protocol.md`（94 行）：區間定義、量度、soft／opportunity／hard 程序、交接筆記模板、驗證 —— 跨 agent 通用
+- `adapters.md`（51 行）：pi／Claude Code／Qoder 三段，各自講量度／觸發／交接筆記／驗證／限制
+- `ctx-usage.py`（新）：Claude Code／Qoder 通用量度 script —— 解析最新 session transcript 嘅 assistant usage
+  （Claude Code 有精確 token 數；Qoder transcript 冇 usage → 退回估算並標明 `source=estimate`），輸出 used／window／percent／zone／action
+- `install.sh` ＋ `lib/install/agents.sh`：每個 agent home 寫 `dav-self-compact.host`（host 綁定檔）＋ `dav-self-compact.env`
+  （Claude Code 提早開火嘅 env 建議／Qoder 嘅 `/context-window` 提示）—— **唔自動改用戶 settings.json**，只俾建議
+- 「壓縮由 agent 自己發起」呢條規則改寫成**有 host 例外**：Claude Code／Qoder 冇 agent 入口 → 改用原生 auto-compact 提早開火
+
+**數字**：skill context 由 377 行降到 226 行（主檔 48／子檔 ≤150／總 ≤400 全部守住，`tests/skill-size.bats` 全綠）；
+新增 `skills/dav-self-compact/tests/ctx-usage.bats` 7 條（CU1–CU7）鎖住四區判定、絕對上限、壓縮標記、冇資料時 exit 2。
+
+**本機最終閾值（用戶決定）**：`~/.pi/agent/dav-self-compact.json` → `soft 40 / opportunity 45 / hard 50`、`absoluteCapTokens 0`
+（用戶取捨：純比例 → 跟模型窗口自動換算，唔使為唔同 LLM 維護 per-model 數字；代價係大窗口模型會等耐，
+所以用 40/45/50 而唔係 50/55/60 平衡）、`noticePercents [20,40,50]`（原本 60% 已高過新 hard，改埋對齊死線）。
+對應原生門檻 `reserveTokens=550000`（1M 窗口 → 450k = 45% 開火 = 機會窗口內），已寫入 per-model override
+（`compaction.modelOverrides["minimax/MiniMax-M3.1-Flash"]`；global 值唔郁，避免污染窗口大小唔同嘅模型）。
+
 ### 1.5 追加修正：dav-trust 禁止「等時間」（用戶報：完成得快就用 `sleep` 等夠鐘）
 
 用戶報：trust mode 提早做完之後，agent 會用 `sleep` 等 deadline 到 —— 要禁止。純文字規則擋唔住
@@ -153,10 +184,12 @@
 
 | 檔案路徑 | 用途 |
 |---------|------|
-| `skills/dav-self-compact/SKILL.md` | 主檔（4 段結構、46 行）|
-| `skills/dav-self-compact/protocol.md` | 量度時機、soft／hard 程序、交接筆記模板、驗證、subagent 接線 |
-| `skills/dav-self-compact/reference.md` | 區間定義、閾值設定、量度方式、原生壓縮對齊、為何 extension 唔自己壓縮（實測）|
-| `skills/dav-self-compact/setup.md` | 安裝／驗證／故障排除 |
+| `skills/dav-self-compact/SKILL.md` | 主檔（4 段結構、48 行；Step 0 判定 host）|
+| `skills/dav-self-compact/protocol.md` | 區間定義、量度程序、soft／opportunity／hard 執行程序、交接筆記模板、壓縮後驗證（跨 agent 通用）|
+| `skills/dav-self-compact/adapters.md` | host 適配層：pi／Claude Code／Qoder 各自嘅量度／觸發／交接筆記／驗證／限制 |
+| `skills/dav-self-compact/ctx-usage.py` | Claude Code／Qoder 通用量度 script（解析 transcript → used／percent／zone／action）|
+| `skills/dav-self-compact/tests/ctx-usage.bats` | 7 條單元測試（CU1–CU7）鎖住量度同四區判定 |
+| `skills/dav-self-compact/setup.md` | 安裝／驗證／閾值設定／故障排除 |
 | `skills/dav-self-compact/extension/index.ts` | pi 入口：`ctx_status` ＋ `before_agent_start` 注入 ＋ `/ctx` ＋ fuse 審核（讀 settings／config）|
 | `skills/dav-self-compact/extension/lib/zone.ts` | 純計算層（四區判定／機會窗口／fuse 審核／文案），無 I/O 無 pi API → 可單元測試 |
 | `skills/dav-self-compact/tests/zone.bats` | 16 條單元測試（Z1–Z9 ＋ Z10–Z13 里程碑）鎖住關鍵數字 |
@@ -273,7 +306,7 @@
 
 - Skill 主檔: `skills/dav-self-compact/SKILL.md`
 - 執行程序: `skills/dav-self-compact/protocol.md`
-- 參考（區間／閾值／實測）: `skills/dav-self-compact/reference.md`
+- 參考（區間／閾值／實測）: `skills/dav-self-compact/adapters.md`（host 適配層）＋ `skills/dav-self-compact/protocol.md`（區間定義）
 - 安裝／驗證: `skills/dav-self-compact/setup.md`
 - Extension: `skills/dav-self-compact/extension/dav-self-compact.ts`
 - pi 官方壓縮文件: `https://pi.dev/docs/latest/compaction`

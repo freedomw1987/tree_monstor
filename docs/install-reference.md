@@ -117,17 +117,23 @@ description: |
 ```text
 ~/.claude/
 ├── CLAUDE.md        ← wrapper，用 @ 引用 tree_monstor 的 AGENTS.md / SOUL.md
-└── skills/          ← per-skill symlink（merge，保留你原有的 skills）
+├── skills/          ← per-skill symlink（merge，保留你原有的 skills）
+├── dav-self-compact.host   ← host 綁定檔（內容 = claude），俾 skill 判斷自己跑喺邊個 agent
+└── dav-self-compact.env    ← 建議：Claude Code 提早開 auto-compact 嘅 env（要你自己抄入 settings.json）
 
 ~/.pi/
 ├── agent/
 │   ├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink)
-│   └── skills/   ← per-skill symlink（merge，保留你原有的 skills）
+│   ├── skills/   ← per-skill symlink（merge，保留你原有的 skills）
+│   ├── extensions/   ← skill 自帶 extension 目錄 symlink（只有 pi 有機械層）
+│   └── dav-self-compact.host   ← host 綁定檔（內容 = pi）
 
 ~/.qoder/
 ├── AGENTS.md → ~/path/tree_monstor/AGENTS.md   (symlink，Qoder CLI 使用者層記憶)
 ├── skills/   ← per-skill symlink（merge，保留你原有的 skills）
-└── agents/   ← per-file symlink（subagents；來源存在時才會裝）
+├── agents/   ← per-file symlink（subagents；來源存在時才會裝）
+├── dav-self-compact.host   ← host 綁定檔（內容 = qoder）
+└── dav-self-compact.env    ← 建議：Qoder 用 /context-window 提早開火嘅提示
 
 ~/.agents/tree_monstor/   ← 完整副本（排除 .obsidian/.git/.DS_Store）
 ├── AGENTS.md

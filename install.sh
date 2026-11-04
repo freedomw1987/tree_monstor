@@ -280,6 +280,8 @@ print_plan() {
     case "$agent" in
       claude)
         log_plan "$TARGET_ROOT/.claude/CLAUDE.md (wrapper with @references)"
+        log_plan "$TARGET_ROOT/.claude/dav-self-compact.host (host binding for dav-self-compact)"
+        log_plan "$TARGET_ROOT/.claude/dav-self-compact.env (auto-compact notes; paste into settings.json by hand)"
         case "$CLAUDE_SKILLS_MODE" in
           merge)
             log_plan "$TARGET_ROOT/.claude/skills (merge: per-skill symlinks into existing dir if needed)"
@@ -302,6 +304,7 @@ print_plan() {
         # user's other global skills (e.g. ~/.agents/skills/ peers).
         log_plan "$TARGET_ROOT/.pi/agent/skills/ (merge: per-skill symlinks)"
         log_plan "$TARGET_ROOT/.pi/agent/extensions/<skill> (merge: directory symlinks for skill-bundled extensions)"
+        log_plan "$TARGET_ROOT/.pi/agent/dav-self-compact.host (host binding for dav-self-compact)"
         # SOUL.md is intentionally NOT installed globally:
         #   - pi does not read SOUL.md (no mention in any pi doc).
         #   - tree_monstor/AGENTS.md references SOUL.md via [[SOUL]] (same dir).
@@ -325,6 +328,8 @@ print_plan() {
         fi
         # Skills live in <root>/skills/<name>/SKILL.md at BOTH scopes.
         log_plan "$TARGET_ROOT/.qoder/skills/ (merge: per-skill symlinks)"
+        log_plan "$TARGET_ROOT/.qoder/dav-self-compact.host (host binding for dav-self-compact)"
+        log_plan "$TARGET_ROOT/.qoder/dav-self-compact.env (auto-compact notes; /context-window tips)"
         if [[ -d "$SOURCE_DIR/agents" ]]; then
           log_plan "$TARGET_ROOT/.qoder/agents/*.md (merge: per-agent symlinks)"
         fi
@@ -484,6 +489,31 @@ remove_merged_sop() {
 
 # Remove a path only if it looks like something we created.
 # Safe to call on missing paths.
+# remove_host_files <agent_home_dir> <host_name>
+# Remove the dav-self-compact host binding + host notes from an agent home.
+# Only touches files we wrote: the binding must contain exactly the host
+# name; the notes file must carry our marker comment.
+remove_host_files() {
+  local home_dir="$1"
+  local host_name="$2"
+  local binding="$home_dir/dav-self-compact.host"
+  local notes="$home_dir/dav-self-compact.env"
+
+  if [[ -f "$binding" ]] && [[ ! -L "$binding" ]] && [[ "$(cat "$binding")" == "$host_name" ]]; then
+    run rm "$binding"
+    log_ok "removed host binding: $binding"
+  elif [[ -e "$binding" ]]; then
+    log_warn "skipping host binding (not ours): $binding"
+  fi
+
+  if [[ -f "$notes" ]] && [[ ! -L "$notes" ]] && grep -q "dav-self-compact — $host_name host notes" "$notes" 2>/dev/null; then
+    run rm "$notes"
+    log_ok "removed host notes: $notes"
+  elif [[ -e "$notes" ]]; then
+    log_warn "skipping host notes (not ours): $notes"
+  fi
+}
+
 remove_managed_path() {
   local p="$1"
   local kind="$2"  # "symlink" | "marker-file" | "tree"
@@ -523,6 +553,8 @@ remove_managed_path() {
 
 uninstall_claude() {
   local claude_root="$TARGET_ROOT/${DIR_CLAUDE}"
+  # dav-self-compact host binding + host notes (only if they are ours).
+  remove_host_files "$claude_root" claude
   # ~/.claude/skills/ may be either a tree-level symlink (legacy install)
   # or a real directory holding our per-skill symlinks. Handle both:
   #   - symlink: remove only if it points at $SOURCE_DIR/skills.
@@ -544,6 +576,8 @@ uninstall_claude() {
 
 uninstall_pi() {
   local pi_root="$TARGET_ROOT/${DIR_PI}"
+  # dav-self-compact host binding (pi extension removed below).
+  remove_host_files "$pi_root/agent" pi
   # Global AGENTS.md lives at $pi_root/agent/AGENTS.md (NOT $pi_root/AGENTS.md,
   # which pi silently ignores). See install_pi() and pi docs/usage.md.
   remove_managed_path "$pi_root/agent/AGENTS.md" symlink
@@ -586,6 +620,8 @@ remove_symlink_to() {
 
 uninstall_qoder() {
   local qoder_root="$TARGET_ROOT/${DIR_QODER}"
+  # dav-self-compact host binding + host notes (only if they are ours).
+  remove_host_files "$qoder_root" qoder
   # User-level AGENTS.md (global scope only) — only remove it when it points
   # at our source, never a user's own symlink.
   remove_symlink_to "$qoder_root/AGENTS.md" "$SOURCE_DIR/AGENTS.md"

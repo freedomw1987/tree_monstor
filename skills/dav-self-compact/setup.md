@@ -1,85 +1,41 @@
 # dav-self-compact — 安裝／驗證／故障排除
 
-## §1 裝兩樣嘢 ＋ 對齊一個設定
+## §1 安裝
 
-1. **Extension**（提供 `ctx_status` ＋ 每輪注入提示 ＋ `/ctx` 指令）：
-
-   ```bash
-   mkdir -p ~/.pi/agent/extensions
-   # Symlink the DIRECTORY (pi discovers <dir>/index.ts; relative imports keep working)
-   ln -sfn "$PWD/skills/dav-self-compact/extension" ~/.pi/agent/extensions/dav-self-compact
-   ```
-
-   > `./install.sh --agent pi` 會自動做呢步（`install_pi_extensions`）＋ 順手 symlink 現成 agent `~/.agents/dav-long-run.md`；手動裝先用上面兩行。
-
-2. **Skill**（父 session 用；subagent 要另外傳，見 `protocol.md` §7）：
-
-   ```bash
-   ln -sfn "$PWD/skills/dav-self-compact" ~/.pi/agent/skills/dav-self-compact
-   ```
-
-3. **原生自動壓縮對齊（live fuse，自動）** —— 裝好 extension 就自動做，**唔使手改 settings.json**：
-
-   - extension patch 咗 pi 查門檻嘅入口 → 每次都用 `~/.pi/agent/dav-self-compact.json` 嘅閾值**即時**計出
-     `reserveTokens = contextWindow − opportunityTokens`（1M 窗口 ＋ opportunity 55% → `450000`）。
-   - session 開始時仲會把同一個值寫成 per-model override 入 `~/.pi/agent/settings.json`
-     （`compaction.modelOverrides["provider/modelId"]`），令其他工具／下次 session 都啱。
-   - 手動同步嘅公式（只喺 live fuse 裝唔到時用）：`reserveTokens = contextWindow − opportunityTokens`；
-     設咗 `absoluteCapTokens: 200000` → opportunityTokens = 110k → `890000`。
-   - 摘要長度唔受 `reserveTokens` 影響（pi 用模型輸出上限做摘要），所以調大唔會整肥摘要。
-   - **唔好手動改 settings.json 嘅 `reserveTokens`**（會同 config 兩邊打架）；要即刻生效：`/ctx --sync`（寫檔 ＋ reload）。
-   - key 係 `provider/modelId`（大小寫敏感）；同一 provider 其他窗口大小嘅模型要各自計（extension 會自動補）。
-   - **只可以對真係咁大窗口嘅模型設大值**：若模型窗口細過 `reserveTokens`，條件永遠成立 → 每輪都壓縮（extension 有護欄：唔會咁做）。
+- **通用**：`./install.sh --agent <claude|pi|qoder|all>` 會把本 skill symlink 入對應 agent 嘅 skills 目錄，
+  並喺 **skill 目錄上一層**寫 `dav-self-compact.host`（內容＝host 名）俾 Step 0 判定用
+  （Claude Code → `~/.claude/`、Qoder → `~/.qoder/`、pi → `~/.pi/agent/`）。
+- **pi 額外**：本 skill 附 extension（`ctx_status`／`ctx_compact`／`/ctx`），installer 會 symlink 成
+  `~/.pi/agent/extensions/dav-self-compact`；冇 extension → 只有紀律層，冇量度 ＋ 冇自動保險絲。
+- **Claude Code 額外**：手動喺 `~/.claude/settings.json` 加 `autoCompactEnabled: true` 同
+  `env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = 55`；想準確窗口就另建 `~/.claude/dav-self-compact.json`。
+- **Qoder 額外**：用 `/context-window` 設當前模型窗口（設細啲 → auto-compact 提早開火）；確認冇連續壓縮失敗（熔斷）。
+- **跨 agent 量度 script**：`ctx-usage.py` 喺 skill 同一層，Claude Code／Qoder 通用（唔使另外裝）。
 
 ## §2 驗證
 
-- **Extension 載入咗未**：`pi -p "call ctx_status and report the result"` → 應回覆一條
-  `ctx …% … zone=… …（native auto-compaction fires at …% → inside the opportunity window ✓ (live fuse)）`。
-- **手動睇**：`/ctx` → 顯示 usage、zone、action 同保險絲狀態；`/ctx --sync` → 寫檔 ＋ reload，即刻生效。
-- **agent 自己壓縮（`ctx_compact`）work 唔 work**：`pi -p` 跑一個多輪任務，叫 agent 叫 `ctx_compact`，
-  之後查 session JSONL 有冇 `"type":"compaction"`，而且個任務要**照樣做完**（唔係 aborted）→ 兩樣都係就 OK。
-- **live fuse 真係生效**：改 `~/.pi/agent/dav-self-compact.json` 嘅 `opportunityPercent`（例：55 → 58）→
-  即刻再跑 `ctx_status` → 顯示嘅觸發點應該**即刻變**（唔使 `/reload`、唔使開新 session）。
-- **Skill 載入咗未**：開新 session 問「dav-self-compact 嘅三個區係咩？」→ 應答得出 smart／soft／hard。
-- **行數規矩**：`bats tests/skill-size.bats` → 全綠（主檔 ≤50 行、子檔 ≤150 行、context ≤400 行）。
-- **保險絲有冇真係生效**：把 config 嘅 `absoluteCapTokens` 暫時設細（例如 `60000` → 機會窗口 33k），
-  跑一段長對話，睇 session JSONL 有冇 `"type": "compaction"`；驗完記得改返 `absoluteCapTokens: 0`。
+- **pi**：`pi -p "call ctx_status and report the result"` → 應回覆 usage／zone／action ＋保險絲審核；
+  `/ctx` 手動睇；改 config 閾值後即刻再量（live fuse 生效）。
+- **Claude Code**：跑 `ctx-usage.py --host claude` → 應印 used／window／percent／zone；再查 transcript 有冇 `compact_boundary`。
+- **Qoder**：跑 `ctx-usage.py --host qoder`；人手 `/context` 核對。
+- **通用**：跑 `bats tests/skill-size.bats`（行數門檻）＋ `bats skills/dav-self-compact/tests/*.bats`。
 
-## §3 閾值設定檔（可選）
+## §3 閾值設定（單一真相源）
 
-`~/.pi/agent/dav-self-compact.json`：
-
-```json
-{
-  "softPercent": 50,
-  "opportunityPercent": 55,
-  "hardPercent": 60,
-  "targetPercent": 35,
-  "targetMinPercent": 20,
-  "absoluteCapTokens": 0,
-  "noticePercents": [20, 40, 60],
-  "liveFuse": true,
-  "autoSyncSettings": true
-}
-```
-
-- 想真係長期留喺「聰明區」而唔係「窗口嘅一半」→ 設 `absoluteCapTokens`（例：`200000`）。
-- `noticePercents` 係**使用率里程碑**（默認 20／40／60）：每跨過一個就印一次（使用率 ＋ zone ＋ 要做乜）；想更密就加（例：`[10, 20, …, 60]`）。
-- `liveFuse`（默認 true）：即時對齊 fuse —— 改上面任何閾值，即刻生效（唔使 `/reload`）。
-- `autoSyncSettings`（默認 true）：session 開始時把對齊值寫返 settings.json（per-model override）。
-- 檔案唔存在／壞咗 → 用默認值，唔會令 session 死機。
+- **pi**：`~/.pi/agent/dav-self-compact.json`（soft 50／opportunity 55／hard 60／target 35／targetMin 20／
+  absoluteCapTokens 0／noticePercents [20,40,60]／liveFuse true／autoSyncSettings true）→ 改完即時生效；
+  **唔好**手改 `~/.pi/agent/settings.json` 嘅 `reserveTokens`。
+- **Claude Code**：`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`（百分比）＋ `autoCompactEnabled`（開關）→ 改完重開 session。
+- **Qoder**：`/context-window`（窗口）＋ Qoder 內建 auto-compact 閾值。
+- **通用**：想真係長期留喺聰明區（而唔係「窗口的一半」）→ 設絕對上限：pi 用 `absoluteCapTokens`；Claude Code／Qoder 直接把窗口調細。
 
 ## §4 故障排除
 
-- **`ctx_status` 唔見**：extension 冇載入 → 檢查 `~/.pi/agent/extensions/dav-self-compact/`（要係 symlink 去
-  `<repo>/skills/dav-self-compact/extension`，而該目錄有 `index.ts`）＋ `lib/zone.ts` 存在；`/reload` 或重開 pi。
-- **`zone=unknown`**：剛壓縮完、未有新模型回應 → 等下一輪再查（唔係錯誤）。
-- **冇見到里程碑訊息**：① 未跨過門檻（睇 `ctx_status` 嘅實際 %）；② 今個 session 已經印過（唔會重複）；③ 剛壓縮完 → 要再跨過先會再印。
-- **見到 `⚠ native auto-compaction fires at X%`**：live fuse 裝唔到（pi 改咗 API）→ 照 §1 第 3 點手動改 settings.json。
-- **改咗 config 但 settings.json 唔郁**：正常 —— live fuse 已經即刻生效；`settings.json` 會喺**下一個 session** 開始時自動對齊；
-  想即刻寫檔就 `/ctx --sync`。
-- **壓縮冇發生**：先睇 `keepRecentTokens`（默認 20000）——context 未超過它就「冇嘢可壓」；再睇 `compaction.enabled` 有冇被關。
-- **壓縮完 usage 唔跌**：通常係交接筆記太薄，或者對話有超大字串（貼咗長 log）→ 拆細啲、再壓；連續兩次唔跌就停低報告。
-- **前台 subagent 冇 `ctx_status`**：前台 subagent 唔自動載入全域 extension → agent frontmatter 加 `extensions: [<extension 目錄>]` 同
-  `tools: [..., ctx_status]`（見 `protocol.md` §7），或者接受「靠父 agent ＋ 交接筆記」嘅 fallback。
-- **唔好用 `ctx_compact` 呢類自製工具**：pi 1.4.0 喺 tool call 內觸發壓縮會連摘要一齊被 abort（見 `reference.md` §6）。
+- **ctx-usage.py 讀唔到 usage** → transcript 未落盤／格式變／搵錯專案目錄 → 當 soft 區處理，唔好亂報百分比。
+- **percent 唔準** → 窗口值錯（Claude Code／Qoder 靠 `contextWindow` 設定）→ 校準窗口再量。
+- **見到 hard 區** → 保險絲太遲（Claude Code／Qoder：閾值未設或 auto-compact 關咗）→ 收尾 ＋ 報告 ＋ 建議改閾值。
+- **壓縮冇發生** → 對話未過該 host 嘅保留門檻（session too small）＝正常；其他錯誤 → 報告，唔好硬 loop。
+- **pi 嘅 `ctx_status` 唔見** → extension 未載入 → 檢查 `~/.pi/agent/extensions/dav-self-compact` symlink ＋ `/reload`。
+- **前台 subagent 冇 ctx_status** → agent frontmatter 加 `extensions:`（指向本 skill 嘅 extension 目錄）
+  同 `tools: [..., ctx_status]`。
+- **host 判定唔到** → 冇 `dav-self-compact.host` 綁定檔 → 照 `adapters.md` §1 用環境變數判定；仍然唔得就只做紀律層。

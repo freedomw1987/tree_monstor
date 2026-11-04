@@ -19,6 +19,58 @@
 #   TARGET_ROOT, SOURCE_DIR, DIR_CLAUDE, DIR_PI, DIR_QODER, DIR_AGENTS,
 #   VERSION, CLAUDE_SKILLS_MODE, AGENTS, MODE
 
+# install_host_binding <agent_home_dir> <host_name>
+# Write <agent_home>/dav-self-compact.host = host name.
+#
+# Why: dav-self-compact's Step 0 needs to know which host it runs under
+# (pi has ctx_status/ctx_compact; Claude Code and Qoder do not). The file
+# lives in the agent home — i.e. the PARENT of the agent's skills dir —
+# so the skill can find it without knowing the host's home path:
+#   pi     -> ~/.pi/agent/dav-self-compact.host
+#   claude -> ~/.claude/dav-self-compact.host
+#   qoder  -> ~/.qoder/dav-self-compact.host
+install_host_binding() {
+  local home_dir="$1"
+  local host_name="$2"
+  local path="$home_dir/dav-self-compact.host"
+
+  [[ -d "$home_dir" ]] || run mkdir -p "$home_dir"
+  if [[ -f "$path" ]] && [[ ! -L "$path" ]] && [[ "$(cat "$path")" == "$host_name" ]]; then
+    log_ok "host binding OK: $path ($host_name)"
+    return 0
+  fi
+  if [[ ${DRY_RUN:-0} -eq 1 ]]; then
+    log_dry "write host binding: $path ($host_name)"
+    return 0
+  fi
+  printf '%s\n' "$host_name" > "$path"
+  log_ok "host binding written: $path ($host_name)"
+}
+
+# write_host_notes <agent_home_dir> <host_name> <body>
+# Drop a short, human-readable note next to the host binding: how to make
+# that host's native auto-compaction fire inside the opportunity window.
+# Deliberately NOT merged into the user's settings.json — we never rewrite
+# user-owned config; the note says exactly what to paste.
+write_host_notes() {
+  local home_dir="$1"
+  local host_name="$2"
+  local body="$3"
+  local path="$home_dir/dav-self-compact.env"
+
+  [[ -d "$home_dir" ]] || run mkdir -p "$home_dir"
+  if [[ ${DRY_RUN:-0} -eq 1 ]]; then
+    log_dry "write host notes: $path ($host_name)"
+    return 0
+  fi
+  {
+    printf '# dav-self-compact — %s host notes\n' "$host_name"
+    printf '# 呢個檔案係建議，唔係自動生效；要你自己抄去對應設定（步驟見 skill 的 setup.md）。\n'
+    printf '%s\n' "$body"
+  } > "$path"
+  log_ok "host notes written: $path"
+}
+
 # REGRESSION-GUARD PROBE: claude-install
 install_claude() {
   log_info "Installing for Claude Code..."
@@ -74,6 +126,15 @@ EOF
 )"
 
   ensure_file "$wrapper" "$content"
+
+  # dav-self-compact: host binding + Claude Code auto-compact notes.
+  install_host_binding "$claude_root" claude
+  write_host_notes "$claude_root" claude 'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=55
+# 抄去 ~/.claude/settings.json 嘅 env 區塊，然後重開 session：
+#   "env": { "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "55" },
+#   "autoCompactEnabled": true
+# 效果：自動壓縮由 ~95% 提早到 ~55%（機會窗口），唔會撞 hard。
+# 校準窗口：~/.claude/dav-self-compact.json 加 {"contextWindow": 200000}'
 }
 
 # REGRESSION-GUARD PROBE: pi-install
@@ -112,6 +173,9 @@ install_pi() {
   # pi-subagents discovers them automatically and they take precedence
   # over builtins but lose to project-scope agents.
   install_subagents
+
+  # dav-self-compact: host binding (pi extension already installed above).
+  install_host_binding "$agent_root" pi
 }
 
 # REGRESSION-GUARD PROBE: qoder-install
@@ -172,6 +236,15 @@ install_qoder() {
 
   # Subagents: per-file symlinks into <qoder_root>/agents/<name>.md.
   install_subagents "$qoder_root/agents"
+
+  # dav-self-compact: host binding + Qoder auto-compact notes.
+  install_host_binding "$qoder_root" qoder
+  write_host_notes "$qoder_root" qoder '# Qoder 冇 env 開關；用內建命令：
+#   /context-window <tokens>   設當前模型窗口 → auto-compact 會按新窗口提早開火
+#   /context                   睇現時 context 使用率（人手核對用）
+#   /compact                  手動壓縮（alias /summarize、/compress）
+# 注意：autoCompact.maxConsecutiveFailures 默認 3 → 連續失敗 3 次就唔再自動壓。
+# 校準窗口：~/.qoder/dav-self-compact.json 加 {"contextWindow": 200000}'
 }
 
 # REGRESSION-GUARD PROBE: subagent-install
