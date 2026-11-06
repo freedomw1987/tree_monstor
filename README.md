@@ -97,7 +97,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 ## Skills
 
-12 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
+13 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
 
 | Skill | 一句話 |
 |---|---|
@@ -107,6 +107,7 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 | [`dav-jev-oracle`](skills/dav-jev-oracle/SKILL.md) | LLM 語意判斷（Jev Oracle）：PoC ＋ 探針 ＋ 信心度報告，可選加深 |
 | [`dav-reviewer`](skills/dav-reviewer/SKILL.md) | 人手觸發嘅審核＋交付：Gate 4 品質審核 ＋ Gate 4.5 需求對帳（獨立 subagent 逐條比對；未對上不得宣告完成）→ 交付摘要（對話 ＋ Markdown 詳錄 ＋ 六維度反省 ＋ 需求對帳段）＋ 更新受影響文檔同 `docs/backlog.md`|
 | [`dav-router`](skills/dav-router/SKILL.md) | 任務分流 ＋ 防線：一般任務走輕量流程；發現要寫 code 就「任務升級」；跳過 gate／假報通過要即刻停低講 |
+| [`dav-think-sow`](skills/dav-think-sow/SKILL.md) | SOW：多輪提問釐清項目範圍 → 產出 SOW Details 內容（產品功能描述、服務工作項、Assumption；中文內文用書面語；自家產品拆「授權」＋「部署與調試」），可選寫入 Excel（`SOW Details` sheet 只有 `Item` ＋ `Description`） |
 | [`dav-wiki`](skills/dav-wiki/SKILL.md) | 文件知識庫化：PDF / 網頁 / OCR / 字幕 → Markdown |
 | [`dav-trust`](skills/dav-trust/SKILL.md) | 信任模式：給大目標 + deadline 後自主跑完 SOP 執行段（執行 → 反省 → 提交；規劃 / 設計須啟動前完成；支援中斷續跑 / 用戶叫停）|
 | [`ask-me`](skills/ask-me/SKILL.md) | 逐題確認 trust 期間的待決擔憂，回寫 backlog |
