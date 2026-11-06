@@ -59,6 +59,52 @@ description: dav-technical-proposal 的「Technical Proposal 實例拆解」附�
 - **資料流**：門市 POS 每日匯出交易檔至 SFTP → 整合層解析並對賬 → 交易服務寫入主庫並觸發積分計算 → 優惠服務於交易完成後產生個人化推薦 → 推送服務經第三方簡訊／推送閘道發送。
 - **對外接口**：對外 12 個 RESTful 接口（會員 4、交易 5、優惠 3）；對內 6 個 gRPC 接口；對 ERP 4 個 SOAP 接口（既有，不變更）。
 
+- **圖 1 — 系統架構圖**
+
+```mermaid
+graph TB
+    subgraph fe["前端層"]
+        web["響應式 Web App<br/>會員｜店員｜營運"]
+    end
+    subgraph be["後端層"]
+        member["會員服務<br/>帳戶與積分結算"]
+        recon["交易對賬服務<br/>逐筆對賬與差異標記"]
+        promo["優惠推送服務<br/>推薦與優惠券派發"]
+    end
+    subgraph intl["整合層"]
+        adapter["ERP 適配器<br/>SOAP 轉換與逾時重試"]
+    end
+    subgraph base["基建層"]
+        pg[("PostgreSQL 15<br/>交易主庫")]
+        redis[("Redis<br/>快取與分散式鎖")]
+    end
+    erp["客戶 ERP<br/>既有 SOAP 接口"]
+    msg["簡訊與推送閘道<br/>第三方服務"]
+    web --> member
+    web --> recon
+    web --> promo
+    recon --> adapter
+    adapter --> erp
+    member --> pg
+    recon --> pg
+    promo --> pg
+    recon --> redis
+    member -.->|積分結算事件| promo
+    promo --> msg
+    classDef cFe fill:#e7f5ff,stroke:#1971c2,color:#000
+    classDef cBe fill:#d3f9d8,stroke:#2f9e44,color:#000
+    classDef cInt fill:#fff4e6,stroke:#e67700,color:#000
+    classDef cBase fill:#f8f9fa,stroke:#868e96,color:#000
+    classDef cExt fill:#f3d9fa,stroke:#862e9c,color:#000
+    class web cFe
+    class member,recon,promo cBe
+    class adapter cInt
+    class pg,redis cBase
+    class erp,msg cExt
+```
+
+- 圖例：前端（藍）／後端（綠）／整合（橙）／基建（灰）／外部系統（紫）。
+
 ### 2.2 Functional Design Solution（功能設計方案）
 
 #### 2.2.1 User Surface（用戶介面）
@@ -66,6 +112,20 @@ description: dav-technical-proposal 的「Technical Proposal 實例拆解」附�
 - **會員（手機瀏覽器）**：首頁顯示積分與可用優惠；完成個人化優惠瀏覽、優惠券領取、門市交易記錄查閱。
 - **門市店員（門市專用平板）**：掃描會員 QR code 或輸入會員號 → 錄入消費金額 → 提交對賬；支援離線暫存與恢復網絡後自動同步。
 - **總部營運（桌面網頁）**：檢視對賬差異報表、手動調整異常交易、設定優惠活動與推送排程。
+
+- **圖 2 — 門市對賬操作流程**
+
+```mermaid
+graph LR
+    staff["門市店員<br/>門市專用平板"] --> scan["掃描會員 QR code<br/>或輸入會員號"]
+    scan --> amount["錄入消費金額"]
+    amount --> submit["提交對賬"]
+    submit --> net{"網絡狀態"}
+    net -->|在線| sync["即時寫入交易庫<br/>觸發積分計算"]
+    net -->|離線| cache["離線暫存<br/>IndexedDB"]
+    cache -.->|恢復網絡後補傳| sync
+    sync --> reward["產生個人化優惠<br/>並推送予會員"]
+```
 
 #### 2.2.2 Functional Modules（功能模組）
 
@@ -96,6 +156,34 @@ description: dav-technical-proposal 的「Technical Proposal 實例拆解」附�
 - **第三方服務**：簡訊閘道與推送閘道各一項，由客戶方簽訂帳戶；授權費用不包含於本項目。
 - **提供方**：伺服器、儲存、網絡與容器平台由客戶方提供；部署與調校由服務提供方負責。
 
+- **圖 3 — 基礎設施拓撲圖**
+
+```mermaid
+graph TB
+    subgraph site["客戶機房"]
+        lb["負載平衡<br/>TLS 終止"]
+        subgraph appZone["Kubernetes 叢集"]
+            appNode["應用節點 × 4<br/>會員｜對賬｜優惠｜整合"]
+            workerNode["排程與推送節點 × 2<br/>積分計算與訊息派發"]
+        end
+        subgraph dataZone["資料區"]
+            dbNode[("PostgreSQL 15<br/>主庫與讀副本")]
+            fsNode["備份儲存<br/>每日快照"]
+        end
+    end
+    erp["客戶 ERP<br/>總部既有系統"]
+    msg["第三方閘道<br/>簡訊與推送"]
+    endUser["使用者<br/>會員｜店員｜營運"]
+    endUser --> lb
+    lb --> appNode
+    lb --> workerNode
+    appNode --> dbNode
+    workerNode --> dbNode
+    dbNode --> fsNode
+    appNode -->|SOAP| erp
+    workerNode -->|HTTPS| msg
+```
+
 ### 2.5 System Function Screenshots（系統功能畫面）
 
 - **門市對賬（平板）**：店員掃描會員 QR code 後錄入消費金額並提交；圖檔：`docs/proposal/assets/pos-reconcile.png`（待原型定稿後更新）。
@@ -118,6 +206,19 @@ description: dav-technical-proposal 的「Technical Proposal 實例拆解」附�
 3. 試遷移與驗證：遷移 5% 樣本並逐欄核對。
 4. 正式遷移與切換：於停機窗口執行全量遷移並切換讀取來源。
 5. 對賬與回歸驗證：按總筆數與積分結餘總額對賬，差異逐項處理。
+
+- **圖 4 — 數據遷移流程圖**
+
+```mermaid
+graph LR
+    audit["盤點與資料評估<br/>完整性與重複檢查"] --> clean["清洗與轉換<br/>統一編碼與帳戶合併"]
+    clean --> trial["試遷移 5% 樣本<br/>逐欄核對"]
+    trial --> cut["正式遷移與切換<br/>停機窗口 4 小時"]
+    cut --> verify["對賬與回歸驗證<br/>筆數與積分總額"]
+    verify --> diff{"差異數量"}
+    diff -->|大於零| clean
+    diff -->|等於零| done["完成切換<br/>舊系統轉為唯讀"]
+```
 
 #### 2.6.4 Migration Risk and Assumption（遷移風險與假設）
 
@@ -160,4 +261,5 @@ description: dav-technical-proposal 的「Technical Proposal 實例拆解」附�
 - 2.2.3 只列技術名冇講「點解揀佢 ＋ 限制」 → 技術選型無從評審
 - 2.6 冇寫停機窗口前提 → 遷移排期會爆
 - 3.2 冇寫前提 → 排期爭議無仲裁依據
+- 圖上節點名同正文唔一致（例如圖寫「對賬服務」、正文寫「交易對賬服務」）→ 客戶對唔上邊個模組
 - 交付版保留「待確認」段 → 未確認內容直接漏入客戶稿

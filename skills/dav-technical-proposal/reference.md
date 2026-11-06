@@ -15,6 +15,7 @@ description: dav-technical-proposal 的「核心維度／成熟度 gate／三大
   - 交付版：淨稿（剔走待確認、內部註記、括號位）→ `docs/proposal/<client>-<project>-<year>-technical-proposal-delivery.md`
 - **命名** — `<client>-<project>-<year>`，例：`wynn-ai-muse-2026-technical-proposal.md`
 - **語言** — 跟目標客戶／報價文件語言；用戶可指定；中文內文一律書面語（§8）；對話同提問可用口語
+- **圖檔** — 需圖檔（png／svg）或互動式架構圖（html）時，放 `docs/proposal/assets/<client>-<project>/`；檔名同方案書內嘅「圖 N」對應
 - **章節標題** — 保留客戶／投標慣用英文標題 ＋ 中文對照，例：`## 1. Project Background（項目背景）`
 
 ## §2 核心 9 維度（必問；每維度標明落點章節）
@@ -56,12 +57,13 @@ description: dav-technical-proposal 的「核心維度／成熟度 gate／三大
 - **1.3 Project Scope** — 交付範圍清單（按 2.2.2 模組對齊，兩邊可互相對照）
 - **1.4 Assumption** — 三類必寫：環境與資源／範圍與計算基準／商業與技術假設；另加通用條款「任何未於本文件列明之服務或功能均不包含於本次交付範圍」
 - **1.5 Out of Scope** — 明確不做項（至少 2-3 條）
-- **2.1 System Technical Architecture** — 分層描述（前端／後端／整合層／基建層）＋ 資料流 ＋ 對外接口；用文字描述或 mermaid，唔用 ASCII 框圖
-- **2.2.1 User Surface** — 使用者類型 ＋ 各自入口與裝置 ＋ 主要操作路徑
+- **2.1 System Technical Architecture** — 分層（前端／後端／整合／基建）＋ 資料流 ＋ 對外接口；**附系統架構圖**（`graph TB`；見 `diagrams.md`）；唔用 ASCII 框圖
+- **2.2.1 User Surface** — 使用者類型 ＋ 各自入口與裝置 ＋ 主要操作路徑；可附主要操作流程圖（`graph LR`，選做）
 - **2.2.2 Functional Modules** — 每個模組寫「做咩 ＋ 包含咩功能 ＋ 對應使用者角色」；模組名同 1.3 範圍對得上
 - **2.2.3 Technical Stack and Framework** — 每項技術寫「點解揀佢 ＋ 限制條件」；冇理由嘅技術唔好列
 - **2.3 Non Functional Requirement** — 效能／可用性／安全／可擴展／合規；可量度就寫數字，未確認就標「待確認」
-- **2.4 Infrastructure Requirement** — 環境類型、資源規格、網絡與安全要求、第三方服務依賴、邊個提供
+- **2.4 Infrastructure Requirement** — 環境類型、資源規格、網絡與安全要求、第三方服務依賴、邊個提供；**附基礎設施拓撲圖**（環境邊界、負載平衡／應用／資料區、第三方服務）
+- **2.6.3 Migration Process** — 遷移步驟 ＋ 每步產出 ＋ 驗證點；**附遷移流程圖**（`graph LR`；要講對賬時序先用 `sequenceDiagram`）
 - **3.1 Project Organization Structure** — 角色 ＋ 職責 ＋ 投入方式（全職／兼職）
 - **3.2 Project Tentative Schedule** — Phase ＋ milestone ＋ 暫定工期；必寫「暫定」並註明依賴前提
 
@@ -101,6 +103,8 @@ description: dav-technical-proposal 的「核心維度／成熟度 gate／三大
 - 2.1 有分層 ＋ 資料流；2.2.1 有使用者與入口；2.2.2 每模組有「做咩 ＋ 包含咩 ＋ 角色」
 - 2.2.3 同 2.3 每項都寫「點解 ＋ 限制」；無量度者已標待確認
 - 2.4 講明邊個提供環境與資源
+- 2.1／2.4／2.6.3 有架構圖（2.2.1 流程圖為選）；圖種同章節對得上
+- 圖內節點名同正文一致；每張圖有「圖 N — 名稱」標題；已過 Mermaid 語法防錯（`diagrams.md` §3）
 - 2.5 同 2.6 按 §6 規則處理（有待補清單或「不適用 ＋ 原因」）
 - 3.1 角色與職責齊；3.2 有 phase／milestone／暫定工期同前提
 - 工作版有「待確認清單」；交付版無待確認、無內部註記、無括號位

@@ -9,10 +9,12 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 > 用法：工作版填齊所有 `<>` 括號位；交付版刪走「待確認清單」段、所有內部註記、所有 `<>` 括號位。
 > ⚠️ 括號位寫法已用書面語示例 → 填入內容要保持同一語體（禁用字眼對照 `reference.md` §8）。
 > ⚠️ 全份用列表，唔用 markdown 表格。
+> ⚠️ **Mermaid 內嘅佔位符用「〔…〕」**（唔可以用 `<>`，會被當 HTML 標籤；見 `diagrams.md` §3）。
+> ⚠️ 每張圖前加一行 `**圖 N — <圖名>**`；圖檔放 `docs/proposal/assets/<client>-<project>/`。
 
 ## 工作版骨架：docs/proposal/<client>-<project>-<year>-technical-proposal.md
 
-```markdown
+````markdown
 # <客戶／項目> Technical Proposal
 
 ## 1. Project Background（項目背景）
@@ -58,12 +60,55 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 - **資料流**：<主要資料由邊度流去邊度、關鍵處理步驟>
 - **對外接口**：<接口類型、數量、對象>
 
+- **圖 1 — 系統架構圖**
+
+```mermaid
+graph TB
+    subgraph fe["前端層"]
+        ui["〔前端層組件〕<br/>〔職責〕"]
+    end
+    subgraph be["後端層"]
+        svc["〔後端服務〕<br/>〔職責〕"]
+    end
+    subgraph intl["整合層"]
+        adapter["〔整合介面〕<br/>〔對接對象〕"]
+    end
+    subgraph base["基建層"]
+        data[("〔資料庫或儲存〕<br/>〔用途〕")]
+    end
+    ext["〔外部系統〕"]
+    ui --> svc
+    svc --> adapter --> ext
+    svc --> data
+    classDef cFe fill:#e7f5ff,stroke:#1971c2,color:#000
+    classDef cBe fill:#d3f9d8,stroke:#2f9e44,color:#000
+    classDef cInt fill:#fff4e6,stroke:#e67700,color:#000
+    classDef cBase fill:#f8f9fa,stroke:#868e96,color:#000
+    classDef cExt fill:#f3d9fa,stroke:#862e9c,color:#000
+    class ui cFe
+    class svc cBe
+    class adapter cInt
+    class data cBase
+    class ext cExt
+```
+
+- 圖例：前端（藍）／後端（綠）／整合（橙）／基建（灰）／外部（紫）
+
 ### 2.2 Functional Design Solution（功能設計方案）
 
 #### 2.2.1 User Surface（用戶介面）
 
 - **<使用者類型 1>**：<入口／裝置>；<主要操作路徑>
 - **<使用者類型 2>**：<入口／裝置>；<主要操作路徑>
+
+- **圖 2 — 主要操作流程圖**（選做）
+
+```mermaid
+graph LR
+    actor["〔使用者類型〕<br/>〔入口與裝置〕"] --> act1["〔主要操作 1〕"]
+    act1 --> act2["〔主要操作 2〕"]
+    act2 --> result["〔完成後狀態〕"]
+```
 
 #### 2.2.2 Functional Modules（功能模組）
 
@@ -88,6 +133,28 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 - **資源規格**：<伺服器、儲存、網絡規格>
 - **第三方服務**：<名稱、用途、授權由邊個負責>
 - **提供方**：<環境與資源由客戶方抑或服務提供方負責>
+
+- **圖 3 — 基礎設施拓撲圖**
+
+```mermaid
+graph TB
+    subgraph site["〔環境邊界〕"]
+        lb["〔入口或負載平衡〕"]
+        subgraph appZone["應用區"]
+            appNode["〔應用節點〕<br/>〔規格〕"]
+        end
+        subgraph dataZone["資料區"]
+            dbNode[("〔主庫〕<br/>〔用途〕")]
+            fsNode["〔儲存〕<br/>〔用途〕"]
+        end
+    end
+    third["〔外部或第三方服務〕"]
+    endUser["〔使用者〕"]
+    endUser --> lb --> appNode
+    appNode --> dbNode
+    appNode --> fsNode
+    appNode --> third
+```
 
 ### 2.5 System Function Screenshots（系統功能畫面）
 
@@ -125,6 +192,19 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 4. <步驟 4：正式遷移與切換>
 5. <步驟 5：對賬與回歸驗證>
 
+- **圖 4 — 遷移流程圖**
+
+```mermaid
+graph LR
+    step1["〔盤點與資料評估〕"] --> step2["〔清洗與轉換〕"]
+    step2 --> step3["〔試遷移與驗證〕"]
+    step3 --> step4["〔正式遷移與切換〕"]
+    step4 --> step5["〔對賬與回歸驗證〕"]
+    step5 --> check{"〔對賬結果〕"}
+    check -->|有差異| step2
+    check -->|通過| done["〔完成切換〕"]
+```
+
 #### 2.6.4 Migration Risk and Assumption（遷移風險與假設）
 
 - **<風險>**：<影響>；<緩解措施>
@@ -150,7 +230,7 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 
 - <待確認問題 1> — 負責方：<角色>　期限：<日期>
 - <待確認問題 2> — 負責方：<角色>　期限：<日期>
-```
+````
 
 ## 交付版差異：docs/proposal/<client>-<project>-<year>-technical-proposal-delivery.md
 
