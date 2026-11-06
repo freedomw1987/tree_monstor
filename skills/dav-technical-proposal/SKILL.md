@@ -1,7 +1,7 @@
 ---
 name: dav-technical-proposal
 description: >-
-  客戶交付型技術方案書製作。多輪提問釐清技術需求 → 產出 Technical Proposal（Project Background／Technical Solution／Implementation Plan 三大塊）工作版 ＋ 交付版，含 2.x 架構圖（系統架構／基礎設施／數據遷移流程；Mermaid 為正文基線，架構圖類另加 archify 互動圖）。不用於寫 Backlog（見同套 dav-planner）、寫 SOW（見同套 dav-think-sow）、寫代碼。
+  客戶交付型技術方案書製作。多輪提問釐清技術需求 → 產出 Technical Proposal（Project Background／Technical Solution／Implementation Plan 三大塊）工作版 ＋ 交付版，含 2.x 架構圖（系統架構／基礎設施／數據遷移流程；Mermaid 為正文基線，架構圖類另加 archify 互動圖）。成品自足（唔用引用叫客戶睇其他文件）＋ 1.6 Glossary 術語表。不用於寫 Backlog（見同套 dav-planner）、寫 SOW（見同套 dav-think-sow）、寫代碼。
 ---
 
 # Dav Technical Proposal
@@ -11,7 +11,7 @@ description: >-
 1. **做什麼**：多輪提問（核心 9 維度必問 ＋ 觸發式補充維度）→ 成熟度 gate（涵蓋率／清晰度／可行性 3 維度 ≥2）→ 產出技術方案書工作版 ＋ 交付版（含 2.x 架構圖）。
 2. **何時觸發**：客戶／投標／售前要技術方案書；方案書要補章節；要架構圖。
 3. **SOP 路徑**：售前／交付文件段（獨立於規劃 → 設計 → 開發段）。
-4. **關鍵紀律**：三大章節骨架必備；條件式章節按規則出現、唔虛構；未確認內容標「待確認」唔自己作；架構圖用 Mermaid 寫入 2.x 正文 ＋ 架構圖類加出 archify 互動圖；中文內文書面語。
+4. **關鍵紀律**：三大章節骨架必備；條件式章節按規則出現、唔虛構；未確認內容標「待確認」唔自己作；架構圖用 Mermaid 寫入 2.x 正文 ＋ 架構圖類加出 archify 互動圖；成品自足、縮寫入 1.6 Glossary；中文內文書面語。
 5. **必產出物**：`docs/proposal/<client>-<project>-<year>-technical-proposal.md`（工作版 ＋ 交付版 ＋ 圖檔）。
 
 ## 觸發時機
@@ -26,7 +26,7 @@ description: >-
 - **Step 2 多輪提問**：核心 9 維度必問 ＋ 觸發式補充維度；每輪 1 題、2-4 選項、⭐ 推薦放第 1；答案即落對應章節；參考 `reference.md` §2／§3
 - **Step 3 成熟度 gate**：涵蓋率／清晰度／可行性 3 維度 ≥2 先寫；任一 = 0 繼續問；參考 `reference.md` §4
 - **Step 4 產出方案書**：三大章節逐節寫；2.x 按圖種規則繪架構圖（`diagrams.md`）；條件式章節按 `reference.md` §6 規則出現；骨架參考 `templates/proposal-format.md`
-- **Step 5 自查 ＋ 交付**：過 `reference.md` §9 自查清單 → 出工作版 ＋ 交付版 ＋ 圖檔（需時）→ 提示可銜接同套 `dav-planner`／`dav-think-sow` skill
+- **Step 5 自查 ＋ 交付**：過 `reference.md` §10 自查清單 → 出工作版 ＋ 交付版 ＋ 圖檔（需時）→ 提示可銜接同套 `dav-planner`／`dav-think-sow` skill
 
 ## 規則 / 例外 / 限制
 
@@ -36,14 +36,15 @@ description: >-
 - **架構圖只畫喺 2.x、且用 Mermaid 寫入正文** — 例外：用戶指定其他圖種／工具；限制：2.1 架構圖、2.4 基礎設施圖、2.6.3 遷移流程圖（2.2.1 流程圖為選）；冇資料唔畫；唔用 ASCII 框圖；規則見 `diagrams.md`
 - **架構圖類（2.1／2.4）預設加出 archify 互動圖，唔取代正文** — 例外：2.2.1／2.6.3，或未裝 archify → 只交 Mermaid；限制：互動圖與 Mermaid 節點名／分層一致；見 `diagrams.md`
 - **未確認內容唔自己作** — 例外：無；限制：效能數字／容量／排期／人數／第三方授權 → 標「待確認」，工作版集中成清單
-- **中文內文書面語** — 例外：用戶指定語言；限制：繁體書面語、禁口語字眼、專有名詞可保留英文
+- **中文內文書面語 ＋ 內容要可驗證** — 例外：用戶指定語言；限制：繁體書面語、禁口語字眼、專有名詞可保留英文；禁空泛形容詞（高性能／現代化）要改成可驗證描述
+- **方案書要自足，唔准用引用叫客戶去睇其他文件** — 例外：用戶明確要求摘要版／精簡版；限制：範圍、流程、參數、限制、角色、數據流全部寫喺正文；引外部標準要連具體要求一齊寫
+- **縮寫要有術語表（1.6 Glossary）** — 例外：無；限制：每個縮寫正文首次出現寫全稱，術語表有對應條目；交付版必保留 1.6
 - **產出兩版（工作版 ＋ 交付版）** — 例外：用戶只想要一份 → 確認型問一次；限制：交付版剔走待確認與內部註記、保留 Assumption
-- **技術內容要可驗證** — 例外：無；限制：寫「點解咁揀 ＋ 限制條件」，禁空泛形容詞（高性能／現代化／強化）
 - **職能邊界** — 例外：用戶明確要求；限制：唔寫 Backlog／SOW／代碼
 - **改規範自查行數上限（V03）** — 例外：無；限制：主檔 ≤50／子檔 ≤150／context ≤400；代碼品質走同套 `dav-developer` skill
 
 ## 交叉引用（純文字）
 
-- 核心維度／成熟度／各章節寫法／條件式章節／書面語規範／待確認處理／自查清單 → 同套 `reference.md`
+- 核心維度／成熟度／各章節寫法／條件式章節／自足性與術語表／書面語規範／待確認處理／自查清單 → 同套 `reference.md`
 - 圖種對應／Mermaid 語法防錯／圖檔匯出／互動式架構圖升級 → 同套 `diagrams.md`
 - 方案書 markdown 模板（工作版 ＋ 交付版 ＋ 圖骨架）與實例拆解 → 同套 `templates/proposal-format.md`、`examples/proposal-example.md`

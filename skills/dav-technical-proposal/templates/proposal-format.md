@@ -7,10 +7,12 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 
 > 本檔只放「可直接填嘅骨架」；規則語意（維度、成熟度、章節寫法、條件式章節）留喺同套 `reference.md`。
 > 用法：工作版填齊所有 `<>` 括號位；交付版刪走「待確認清單」段、所有內部註記、所有 `<>` 括號位。
-> ⚠️ 括號位寫法已用書面語示例 → 填入內容要保持同一語體（禁用字眼對照 `reference.md` §8）。
+> ⚠️ 括號位寫法已用書面語示例 → 填入內容要保持同一語體（禁用字眼對照 `reference.md` §9）。
 > ⚠️ 全份用列表，唔用 markdown 表格。
 > ⚠️ **Mermaid 內嘅佔位符用「〔…〕」**（唔可以用 `<>`，會被當 HTML 標籤；見 `diagrams.md` §3）。
 > ⚠️ 每張圖前加一行 `**圖 N — <圖名>**`；圖檔放 `docs/proposal/assets/<client>-<project>/`。
+> ⚠️ **成品要自足**：唔准寫「詳見其他文件／參見附件／如前所述」叫客戶去睇另一份文件，細節直接寫喺正文。
+> ⚠️ **1.6 Glossary 交付版必留**：列齊方案書內全部專有名詞縮寫。
 
 ## 工作版骨架：docs/proposal/<client>-<project>-<year>-technical-proposal.md
 
@@ -47,6 +49,12 @@ description: dav-technical-proposal 的「Technical Proposal markdown 產出模�
 - <明確不包含的項目 1>
 - <明確不包含的項目 2>
 - <明確不包含的項目 3>
+
+### 1.6 Glossary（術語與縮寫表）
+
+- **<縮寫>（<英文全稱>，<中文名>）**：<本方案書內嘅具體所指>
+- **<縮寫>（<英文全稱>，<中文名>）**：<本方案書內嘅具體所指>
+- **<專有名詞>（<全稱或出處>）**：<本方案書內嘅具體所指>
 
 ## 2. Technical Solution（技術方案）
 
@@ -238,5 +246,5 @@ graph LR
   - 刪走「待確認（內部用，交付版刪走）」整段
   - 刪走所有 `<!-- 內部：… -->` 註記 ＋ 所有 `<>` 括號位
   - 未確認但對客有風險者 → 改寫成 1.4 Assumption 條文（寫法見 `reference.md` §7），唔係直接刪走
-- **唔好因為「淨係對客」就剪走** 1.4 Assumption 與 1.5 Out of Scope —— 呢兩段係保護自己嘅部分
+- **唔好因為「淨係對客」就剪走** 1.4 Assumption、1.5 Out of Scope、1.6 Glossary —— 前兩段保護自己，Glossary 係客戶讀正文嘅鑰匙
 - 交付版仍然要保留章節編號（2.6 若不適用，保留標題 ＋ 「不適用 ＋ 原因」）

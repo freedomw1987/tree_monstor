@@ -47,6 +47,15 @@ description: dav-technical-proposal 的「Technical Proposal 實例拆解」附�
 - 支付閘道整合與退款流程改版
 - 會員積分商戶之間嘅資金清算流程
 
+### 1.6 Glossary（術語與縮寫表）
+
+- **API（Application Programming Interface，應用程式介面）**：本方案對外提供 12 個 RESTful 介面（會員 4、交易 5、優惠 3），對內 6 個 gRPC 介面
+- **ERP（Enterprise Resource Planning，企業資源規劃系統）**：客戶總部既有 ERP，於本方案以 4 個既有 SOAP 介面對接，介面不變更
+- **POS（Point of Sale，銷售點終端）**：門市收銀系統，每日匯出交易檔至 SFTP 供對賬
+- **SFTP（Secure File Transfer Protocol，安全檔案傳輸協定）**：門市交易檔與主資料檔嘅傳輸通道
+- **SLA（Service Level Agreement，服務水平協議）**：本方案交付後之維護響應時限承諾，詳列於維護條款
+- **P95（95th Percentile，第 95 百分位）**：查詢 API 響應時間之量度方式，見 2.3 效能條款
+
 ## 2. Technical Solution（技術方案）
 
 ### 2.1 System Technical Architecture（系統技術架構）
