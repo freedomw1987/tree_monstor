@@ -50,20 +50,26 @@ description: dav-technical-proposal 的「架構圖能力」附件：圖種對�
 - **冇 CLI 嘅環境唔阻礙交付** — 保留 code block，並於交付說明提「圖檔需於具 Mermaid CLI 嘅環境匯出」
 - **唔准** 用 ASCII 框圖代替（讀唔到、唔可 diff、版本追蹤差）
 
-## §5 可選升級：互動式架構圖
+## §5 互動式架構圖（archify；架構圖類預設加出）
 
-- **基線唔變** — 方案書正文永遠以 Mermaid code block 為準（§4）；互動圖係**加碼**，唔係替代
-- **適用場景** — 用戶／客戶要「點開即睇」嘅互動圖、方案演講展示、要導出長圖或 PDF、想沿路徑探索組件關係
-- **工具** — 外部 skill `archify`（開源、Apache-2.0），會出**已驗證嘅獨立 HTML**（自帶版面／箭嘴／標籤避讓等檢查）；**需另行安裝**，未裝唔影響本 skill 運作
+- **定位** — 正文永遠以 Mermaid code block 為準（§4）；互動 HTML 係**加碼**，唔係替代
+- **預設做邊啲** — 2.1 系統架構圖、2.4 基礎設施圖 → **預設加出**互動圖；2.2.1／2.6.3 → 用戶要求先做
+- **工具** — 外部 skill `archify`（開源、Apache-2.0、v3.2.x）；零依賴 Node CLI；未裝唔影響本 skill 運作
 - **圖種對應**
   - 2.1 系統架構 → `architecture`；2.4 基礎設施（部署視角）→ `architecture`
   - 2.2.1 操作流程 → `workflow`；2.6.3 遷移流程 → `workflow`，講時序先用 `sequence`
-- **輸入** — 可直接餵本 skill 已寫好嘅 Mermaid（避免重複描述、避免兩圖唔一致）；或餵自然語言描述
+- **輸入** — Mermaid 係節點名／分層／連線嘅**唯一真相**：先寫 Mermaid，再照同一組名寫 Archify JSON（archify 接受 Mermaid 拓撲，但要人手改寫成 JSON，唔係自動轉）
+- **指令** — `node <archify>/bin/archify.mjs finalize <type> <candidate.json> <output.html> --quality showcase --json`
+  - 通過 receipt = 內建 validate ＋ deliver ＋ strict check ＋ browser-check 四道閘（比 §3 手動防錯可靠）
 - **產出** — 獨立 HTML 檔放 `docs/proposal/assets/<client>-<project>/`；交付版於圖下註明檔名，並保留同一張 Mermaid code block
-- **未裝時**
-  - 唔阻礙交付：維持 Mermaid 基線，並於交付說明提「如需互動式架構圖，可另裝 `archify` skill（開源、Apache-2.0）」
-  - 安裝指令：`npx -y skills@latest add https://archify.si --skill archify --agent <agent> --global --copy --yes`
-- **邊界** — 互動 HTML 唔可以取代正文（客戶可能只收 md／Word）；Mermaid 圖同互動圖嘅節點名、分層、連線必須一致，唔一致以正文為準並重出互動圖
+- **客戶要圖片／PDF** — 用 archify 內建匯出（PNG／WebP／JPG 長圖／PDF）；或 `mmdc` 由同一張 Mermaid 匯出；**兩者擇一**，唔好兩套內容
+- **未裝時** — 唔阻礙交付：維持 Mermaid 基線，並於交付說明提「可另裝 `archify` skill 升級為互動架構圖（開源、Apache-2.0）」
+- **安裝（pi 讀 `~/.agents/skills/`）**
+  - `npx -y skills@latest add https://archify.si --skill archify --agent claude-code --global --copy --yes`
+  - 再複製 `~/.claude/skills/archify` 去 `~/.agents/skills/archify`
+  - 或直接取 GitHub 嘅 `archify/` 資料夾落 `~/.agents/skills/archify`
+  - 驗證：`node ~/.agents/skills/archify/bin/archify.mjs doctor`
+- **邊界** — 互動 HTML 唔取代正文（客戶可能只收 md／Word）；節點名、分層、連線必須同 Mermaid 一致，唔一致以正文為準並重出互動圖；互動圖唔帶未確認數字
 
 ## §6 圖相關自查（併入交付前自查清單）
 
