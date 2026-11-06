@@ -62,7 +62,8 @@ description: dav-technical-proposal 的「架構圖能力」附件：圖種對�
 - **指令** — `node <archify>/bin/archify.mjs finalize <type> <candidate.json> <output.html> --quality showcase --json`
   - 通過 receipt = 內建 validate ＋ deliver ＋ strict check ＋ browser-check 四道閘（比 §3 手動防錯可靠）
 - **產出** — 獨立 HTML 檔放 `docs/proposal/assets/<client>-<project>/`；交付版於圖下註明檔名，並保留同一張 Mermaid code block
-  - archify 預設喺工作目錄建 `.archify/<type>-<slug>-<時間戳>/` 放 candidate 同 receipt；交到 assets 時用 `finalize <type> <candidate.json> <assets 目標路徑> --out-dir .archify/<type>-<slug>-<時間戳>`
+  - archify 預設喺工作目錄建 `.archify/<type>-<slug>-<時間戳>/` 放 candidate 同 receipt
+  - 交到 assets 時：`finalize <type> <candidate.json> <assets 目標路徑> --out-dir .archify/<type>-<slug>-<時間戳>`
 - **客戶要圖片／PDF** — 用 archify 內建匯出（PNG／WebP／JPG 長圖／PDF）；或 `mmdc` 由同一張 Mermaid 匯出；**兩者擇一**，唔好兩套內容
 - **未裝時** — 唔阻礙交付：維持 Mermaid 基線，並於交付說明提「可另裝 `archify` skill 升級為互動架構圖（開源、Apache-2.0）」
 - **安裝（pi 讀 `~/.agents/skills/`）**
