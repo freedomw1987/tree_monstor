@@ -102,7 +102,7 @@ description: dav-think-sow 的「SOW markdown 產出模板」附件。含工作�
 
 ## Excel 版（如用戶要求）
 
-- 由工作版逐格對應到 `SOW Details` sheet：`Item` ＋ `Description`（模組資訊以 `A.`／`B.`／`C.`／`D.` 分塊寫入 Description）；**唔開 `Modules` 欄**
+- 由工作版逐格對應到 `SOW Details`／`SOW Details CN`：欄位只有 `#`｜`Item`｜`Description`｜`Mandays`；一個 Item 一行；模組資訊以 `A.`／`B.`／`C.`／`D.` 分塊寫入 `Description`；**徹底刪除 `Module` 欄**（唔係留空）；`Mandays` 留空畀用戶自評；`Quotation` 結構跟 template 保留
 - 自家產品 → 授權與部署調試分兩行（兩個 Item 編號）；Item 名保留「（Software License）」／「（Deployment & Setup）」標註
 - `Description` 寫入 cell 時用換行 ＋ `- 功能名 — 說明` 列舉，唔用 markdown 表格
 - 寫入步驟同安全規則見 `reference.md` §6
