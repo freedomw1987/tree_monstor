@@ -17,18 +17,14 @@ dav-trust 沒有系統時間能力時，所有時間戳都是 Agent 自己編的
 
 ### 1.1 動作
 
-- 用 `date` 查系統時間（指令範本 → 同套本 skill 樣例檔（`./examples/time-anchor-formats.md`）§1）→ 取得當前時間
-- 解析為絕對 deadline（見 §1.2）→ 鎖死 `START_TS` + `DEADLINE_TS`
+- 用 `date` 查系統時間（範本 → `./examples/time-anchor-formats.md` §1）→ 解析為絕對 deadline（見 §1.2）→ 鎖死 `START_TS` + `DEADLINE_TS`
 
 ### 1.2 解析 deadline（兩種形式）
 
 - **「trust mode 跑 1 小時」** — Agent 動作：啟動時**必須問**：今天 15:23 還是明天 15:23？；結果：取得明確絕對時間
 - **「trust mode 到 18:00 停」** — Agent 動作：直接解析為今天 18:00:00 +0800；結果：若已過 18:00 → 問用戶是否明天
 
-### 1.3 啟動對話輸出（必含錨點）
-
-- 輸出範本（可直接複製）→ 同套本 skill 樣例檔（`./examples/time-anchor-formats.md`）§2
-- **關鍵**：錨點一啟動就鎖死、不准修改（見主檔底線規則 ③）
+- **啟動對話輸出（必含錨點）**：範本 → 同套本 skill 樣例檔（`./examples/time-anchor-formats.md`）§2；**關鍵**：錨點一啟動就鎖死、不准修改（見主檔底線規則 ③）
 
 ## §2 關鍵節點查時間（4 個 checkpoint + T5 trust-log 記錄）
 
@@ -43,15 +39,9 @@ shell，內心用同樣邏輯判斷即可）
 
 ## §3 trust-log 絕對時間戳格式
 
-### 3.1 格式要求
-
-- **必含 3 項**：
-  1. `YYYY-MM-DD HH:MM:SS ±HHMM` 格式
-  2. 階段標籤（啟動 / 執行 / 反省 / 提交 / 終局 / 執行期最小設計；另有「啟動前（規劃）」/「啟動前（設計）」用於 trust 啟動前完成的記錄）
-  3. 問題 + 決策 + 理由 + 可推翻
+- **必含 3 項**：① `YYYY-MM-DD HH:MM:SS ±HHMM` ② 階段標籤（啟動／執行／反省／提交／終局／執行期最小設計；啟動前則標「啟動前（規劃／設計）」）③ 問題 + 決策 + 理由 + 可推翻
 - **事件標記慣例**：事件類記錄以 `📝` 開頭、置於 `**決策**` 欄首（例：`📝 用戶覆核：設計全缺啟動`、`📝 deadline 變更`、`📝 時間由用戶提供`、`📝 用戶叫停`）
-- **進度錨點**：trust-log **檔頭**另需一行 `> 進度錨點: PHASE=…、DONE=…、NEXT=…、UPDATED_AT=…`，每完成一個 US 或階段切換就更新 —— 中斷（session 崩潰 /
-context 壓縮）後靠它續跑（契約見 resume.md §2）
+- **進度錨點**：檔頭另需 `> 進度錨點: PHASE=…、DONE=…、NEXT=…、UPDATED_AT=…`，每完成一個 US 或階段切換就更新（中斷後靠它續跑；契約 → resume.md §2）
 - 單條記錄格式範本 ＋ **反例**（沒日期 / 相對時間 / 相對 deadline 皆不可）→ 同套本 skill 樣例檔（`./examples/time-anchor-formats.md`）§4、§5
 
 ## §4 邊角情境（8 種）
@@ -62,15 +52,24 @@ context 壓縮）後靠它續跑（契約見 resume.md §2）
 - **4.4 用戶中途改 deadline** — Agent 動作：✅ 可更新錨點 + trust-log 加記錄 `📝 deadline 變更`；「不要 trust mode 了」→ 結束 trust mode
 - **4.5 沙盒無法跑 `date`** — Agent 動作：停下問用戶當前時間（精確到秒）→ 用該時間作 `START_TS` → trust-log 第一條加 `📝 時間由用戶提供（非系統查詢）`；T2-T5 仍需用戶逐個提供
 - **4.6 極短 deadline（< 10 分鐘）** — Agent 動作：啟動時明示警告「L3 不會啟動、僅能完成 0-1 個 Backlog」；跳過 L1→L2；預估時間 > deadline → 標 ⏸️ 不啟動 trust
-- **4.7 DST 切換日**（春/秋令）— Agent 動作：用 `date -d "DEADLINE_TS"` 驗證系統是否自動處理 DST；⚠️ 跨 DST 日子**系統時間可能差 1 小時**；鎖死時用 epoch
-換算（`date -d "DEADLINE"'+%s'`）避免字串比對漂移
+- **4.7 DST 切換日**（春/秋令）— Agent 動作：`date -d "DEADLINE_TS"` 驗系統是否自動處理 DST；跨 DST 可能差 1 小時
+  → 鎖死時用 epoch 換算（`date -d "DEADLINE" '+%s'`），避免字串比對漂移
 - **4.8 Agent 與用戶時區不同** — Agent 動作：啟動時問用戶時區；同時記 `USER_TS` 同 `AGENT_TS`；trust-log 用用戶時區顯示、內部計算用 epoch
 
 ## §6 唔准等時間（deadline 係上限，唔係要坐夠鐘）
 
-- **禁止**：`sleep` 長過 30 秒、長度證明唔到嘅 `sleep`（例：`sleep $(date +%s)`）、空轉迴圈（`while true`／`until false`）、淨係 `wait`。
-  **機械守門**：`skills/dav-trust/extension/`（trust mode 中擋走呢類 bash ＋ 回覆「應該點做」；門檻 → `~/.pi/agent/dav-trust.json` `maxSleepSeconds`）。
+- **禁止**：`sleep` > 30 秒、長度證明唔到嘅 `sleep`（例：`sleep $(date +%s)`）、空轉迴圈（`while true`）、淨係 `wait`。
+  **機械守門**：`extension/` 擋走呢類 bash ＋ 回覆「應該點做」（門檻 → `~/.pi/agent/dav-trust.json` `maxSleepSeconds`）。
 - **為什麼**：deadline 係「幾時一定要停」嘅授權上限；提早做完就係做完，坐夠鐘唔會多咗價值，只燒 token 同時間。
 - **提早做完嘅正確出口**：L1（下一個 PENDING）→ L2（重訪 ⏸️）→ L3（`docs/` 預先規劃擴量）；**全部耗盡** → 收斂 → 同套 `dav-reviewer` skill 交付
-  → 輸出 `🏁 Trust Mode 已結束（提早完成）` → 明示「已無可做工作，要繼續請重新發起」（唔需要等到 deadline，亦唔准問用戶 —— 呢個係報告唔係提問）。
+  → 輸出 `🏁 Trust Mode 已結束（提早完成）` ＋ 明示「已無可做工作，要繼續請重新發起」（唔准等 deadline，亦唔准問 —— 呢個係報告唔係提問）。
 - **唯一例外**：真係等外部事件（CI／port 起）→ 短 sleep（≤ 30 秒）＋ 必須講明等乜；要等好耐 → 用 `bg_wait`／subagent 或收窄 polling 上限，唔准 `sleep 3600`。
+
+## §7 機械報時（time tick，每 30 分鐘）
+
+- **做什麼**：每 30 分鐘（`timeTickMinutes`，0 = 關）讀 trust-log 檔頭 → 注入「現在時間（絕對）＋ deadline ＋ 剩幾多 / 幾 % ＋ 跟住點做」；`終局`／`暫停` 唔報。
+- **為什麼**：agent 冇自己嘅鐘 —— 4 個 checkpoint 之間嘅盲區就係「假時間戳」同「過咗 deadline 唔知」嘅根源。
+- **三個 host 同一支腳本**：判定同文字喺 `extension/clock-tick.py`；pi 用 timer 叫，Claude Code／Qoder 用 hook（`PreToolUse` 等）叫
+  ；共用同一份節流 state → 換 host 唔會重複報；裝法 → `./examples/host-hooks.md`
+- **關係**：唔取代 T1–T5（照查）；只係把「幾點」被動餵到眼前，令 T3 收斂判斷同 T5 時間戳有即時依據。
+- **靠咩成立**：檔頭必含 `> Deadline: YYYY-MM-DD HH:MM:SS ±HHMM`（解析唔到 = 唔報時；sleep 守門同 fuse 審核一樣失效）。

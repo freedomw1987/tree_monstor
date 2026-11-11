@@ -282,6 +282,7 @@ print_plan() {
         log_plan "$TARGET_ROOT/.claude/CLAUDE.md (wrapper with @references)"
         log_plan "$TARGET_ROOT/.claude/dav-self-compact.host (host binding for dav-self-compact)"
         log_plan "$TARGET_ROOT/.claude/dav-self-compact.env (auto-compact notes; paste into settings.json by hand)"
+        log_plan "$TARGET_ROOT/.claude/settings.json hooks (optional trust-mode clock tick; not touched — run: python3 <skill>/extension/clock-tick.py --install-hooks claude --apply)"
         case "$CLAUDE_SKILLS_MODE" in
           merge)
             log_plan "$TARGET_ROOT/.claude/skills (merge: per-skill symlinks into existing dir if needed)"
@@ -330,6 +331,7 @@ print_plan() {
         log_plan "$TARGET_ROOT/.qoder/skills/ (merge: per-skill symlinks)"
         log_plan "$TARGET_ROOT/.qoder/dav-self-compact.host (host binding for dav-self-compact)"
         log_plan "$TARGET_ROOT/.qoder/dav-self-compact.env (auto-compact notes; /context-window tips)"
+        log_plan "$TARGET_ROOT/.qoder/settings.json hooks (optional trust-mode clock tick; not touched — run: python3 <skill>/extension/clock-tick.py --install-hooks qoder --apply)"
         if [[ -d "$SOURCE_DIR/agents" ]]; then
           log_plan "$TARGET_ROOT/.qoder/agents/*.md (merge: per-agent symlinks)"
         fi
