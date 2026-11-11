@@ -10,8 +10,15 @@
 5. **記帳**：每輪寫 `docs/orca-run.md`（時間／事件／Task／決定／下一步）
 6. **唔准空轉**：`check --wait` 係有內容嘅等待；冇訊而又冇 in-flight worker → 去派下一個 Task，唔好 sleep
 7. **數額守門**：每輪順手 `orca worktree ps --json` 數 running worktree；≥ 6 → 先收已 merged 嘅再派新工（策略見 `./dispatch.md` §3）
-- **卡住偵測**：worker 長時間冇 `worker_done` 又冇 heartbeat → `worker-read` 睇最後畫面；
-  真卡 → `worker-stop --dispatch <id>` 再 `worker-start --retry-of <dispatchId>`（retry 唔繼承 `--on`／worktree，要明寫）
+- **停頓守望（唔靠感覺，用時限 ＋ 三查）**：派工後 **dev >45 分鐘／review >60 分鐘**仍無 `worker_done`／`question`／`escalation` → 當**疑似停頓**：
+  1. `worker-show --dispatch <id> --json` 睇 `state`／`agentLiveness`
+  2. `orca terminal read --terminal <id> --limit 20`（或 `worker-read --dispatch <id> --source terminal`）睇最後畫面
+  3. `orca worktree ps`（該 worktree `live:1`／`unread` 狀態）
+- **判讀**：畫面停喺 **shell prompt（`❯`）＋ `Agent liveness: unverifiable`／`live` 但無指令輸出** ＝ **真停頓**（agent 已退出，終端未收）；
+  仍見連續指令輸出 ＝ 仍在跑（繼續等，唔准亂 stop）
+- **處置（先 nudge，後重派）**：① `send --to dispatch:<id>` 要求**即刻用已有證據回報**（並提醒回合要短）；② 15 分鐘無回 → `worker-stop --dispatch <id>` →
+  用**新** dispatch 重派（`--worktree new-child` 新名；spec 補「回合紀律」見 `./dispatch.md` §5）
+- **防復發**：停頓多數源於 spec 冇寫回合紀律（worker 反覆重跑全量 check／靜默等長時間指令）→ 每次派工都要寫（`./dispatch.md` §5）
 - **釋放**：收貨後 `worker-release --dispatch <id> --json`（封存輸出再關該終端）；要除錯才 `worker-retain`。
   唔好用大範圍 `terminal close` 代替 release
 

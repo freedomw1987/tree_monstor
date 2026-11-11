@@ -127,7 +127,8 @@ description: dav-think-sow 的「SOW Details 實例拆解」附件。用通用�
 
 ## 分塊寫法示範（平台模組型 Item）
 
-> 對應 Excel `SOW Details`／`SOW Details CN`：欄位 `#`｜`Item`｜`Description`｜`Mandays`；`Description` 用 `A.`／`B.`／`C.`／`D.` 分塊 ＋ 「功能名 — 說明」短句；**徹底刪除 `Module` 欄**；`Mandays` 留空。
+> 對應 Excel `SOW Details`／`SOW Details CN`：欄位 `#`｜`Item`｜`Description`｜`Mandays`；
+> `Description` 用 `A.`／`B.`／`C.`／`D.` 分塊 ＋ 「功能名 — 說明」短句；**徹底刪除 `Module` 欄**；`Mandays` 留空。
 
 - 壞（逐行列舉，讀起嚟冇範疇層級）：「多源資料接入。文件內容擷取。引用與來源連結。多 Agent 設定。」
 - 好（分塊 ＋ 標題式短句）：

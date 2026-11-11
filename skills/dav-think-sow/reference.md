@@ -71,9 +71,8 @@ description: dav-think-sow 的「6 核心維度／補充維度／成熟度評估
 8. **分塊寫法** — 原 `Modules` 欄內容一律併入 Description，用分塊結構承載
    - 何時用：平台模組型必用；其他 Item 類型如能力範疇 ≥3 項亦建議用
    - 塊標題：`A.`／`B.`／`C.`／`D.` 順號 ＋ 能力範疇名（可加括號註明性質，如「（核心能力）」）
-   - 塊內細項：`- <功能名> — <一句話說明>`，功能名用名詞短語，說明用完整書面語句子
+   - 塊內細項：`- <功能名> — <一句話說明>`，功能名用名詞短語，說明用完整書面語句子（完整範例見同套 `examples/sow-details-example.md`）
    - 塊尾／塊內適當位置補數量或限制：「包含 N 個／上限 N 個／支援 N 台」
-   - 範例：`A. 6-Step Credible Report Workflow` → `- Input research question - Topic, goal, scope definition.`
 9. **自家產品授權型**（公司自家產品；**必須拆成兩個 Item**）
    - **Item A — <產品名稱> 授權（Software License）**：寫授權範圍、授權模組、對象與角色、數量（台／用戶／並發）、授權年期、升級與續約政策
    - **Item B — <產品名稱> 部署與調試（Deployment & Setup）**：寫部署範圍（安裝、初始化、參數設定）、調試（測試、調校、聯調）、驗收交接；必寫交付物 ＋ 工作量（mandays）
@@ -92,16 +91,19 @@ description: dav-think-sow 的「6 核心維度／補充維度／成熟度評估
 - **預設**：每次產出 SOW md 時，**同時**產出 `docs/sow/<client>-<project>-<year>-sow.xlsx`，結構必須跟用戶提供之 Excel template（以最新 template 為準）
 - **例外**：用戶明確只要 markdown、不要 Excel → 可省略，並在對話註明
 - **固定 sheets（順序）**
-  1. `Quotation` — 報價支援頁：**結構跟 template 保留**（客戶、區域、貨幣等表頭；明細列 `Item`／`Description`／`Man day`／`SKU`）；Description 用 `<Ref. to SOW Detail - Item N>` 對齊 SOW Details 編號（可按服務拆 1.1／1.2…）；`Man day` 可留空待用戶填
+  1. `Quotation` — 報價支援頁：**結構跟 template 保留**（客戶、區域、貨幣等表頭；明細列 `Item`／`Description`／`Man day`／`SKU`）；
+     Description 用 `<Ref. to SOW Detail - Item N>` 對齊 SOW Details 編號（可按服務拆 1.1／1.2…）；`Man day` 可留空待用戶填
   2. `SOW Details` — 英文版範圍明細
   3. `SOW Details CN` — 中文書面語版範圍明細（對外中文以此為準）
 - **`SOW Details`／`SOW Details CN` 固定欄位（只有四欄）**：`#`｜`Item`｜`Description`｜`Mandays`
   - **徹底唔開 `Module` 欄**：套用 template 後若仍有 `Module` 欄，必須整欄刪除（`delete_cols`），唔係清空內容
   - **一個 Item 一行**：`#`／`Item`／`Description` 同列填寫；唔再按模組拆多行
-  - `Description`：職責說明 ＋ `A.`／`B.`／`C.`／`D.` 分塊（塊內 `- ` 列點）＋ 交付物 ＋ 數量上限／限制；儲存格內換行；唔用 markdown 表格／`**` 粗體標記
+  - `Description`：職責說明 ＋ `A.`／`B.`／`C.`／`D.` 分塊（塊內 `-` 列點）＋ 交付物 ＋ 數量上限／限制；儲存格內換行；唔用 markdown 表格／`**` 粗體標記
   - `Mandays`：**一律留空**，畀用戶自己評估填寫；唔寫「待確認」／`TBD`／數字／SUM
-- **自家產品** — 授權與部署調試分兩個 Item；Item 名標註「（Software License）」與「（Deployment & Setup）」；`Quotation` 分別 `<Ref. to SOW Detail - Item N>`
-- **寫入／套用 template**：先複製 template 再覆寫內容，保留樣式；若寫入客戶既有報價簿，先確認路徑＋sheet＋欄位，`data_only=True`／`False` 各讀一次，**唔准覆蓋有公式嘅格**；Sheet 唔存在 → 先問用戶
+- **自家產品** — 授權與部署調試分兩個 Item；Item 名標註「（Software License）」與「（Deployment & Setup）」；
+  `Quotation` 分別 `<Ref. to SOW Detail - Item N>`
+- **寫入／套用 template**：先複製 template 再覆寫內容，保留樣式；若寫入客戶既有報價簿，先確認路徑＋sheet＋欄位，
+  `data_only=True`／`False` 各讀一次，**唔准覆蓋有公式嘅格**；Sheet 唔存在 → 先問用戶
 - **唔寫金額**；寫後必驗：三個 sheet 齊、Item 編號同 md／Quotation 引用一致、CN／EN **Item 列數對齊**、兩邊皆無 `Module` 欄、`Mandays` 全空
 
 ## §7 交付格式與語言
@@ -120,14 +122,12 @@ description: dav-think-sow 的「6 核心維度／補充維度／成熟度評估
 - **適用範圍** — 工作版／交付版全文、Item 名、Description、Assumption、Out of scope、交付物與工作量說明、Excel `Description` 欄；同用戶問答同內部討論不受限（可用口語）
 - **原則** — 繁體中文書面語；完整句式、名詞化、可驗證；唔用粵語助詞、語氣詞、縮寫口語
 - **禁用字眼對照**（口語 → 書面語）
-  - 「搞／整／做咗」→ 「開發／建置／完成」
-  - 「有／冇」→ 「包含／不包含」、「提供／未提供」
+  - 「搞／整／做咗」→ 「開發／建置／完成」；「有／冇」→ 「包含／不包含」、「提供／未提供」
   - 「嘅」→ 「的」；「喺度」→ 「於」；「呢個／嗰個」→ 「本項／該項」
   - 「咁／咁樣」→ 「因此／如此」；「啲」→ 「若干」
   - 「唔」→ 「不」；「仲要」→ 「另需」；「要點」→ 「如何」
   - 「交返／搞掂」→ 「交付／完成並通過驗收」
-  - 「頂住／handle」→ 「支援／處理」
-  - 「睇／諗」→ 「檢視／評估」
+  - 「頂住／handle」→ 「支援／處理」；「睇／諗」→ 「檢視／評估」
 - **允許保留** — 產品名、專有名詞、縮寫同英文術語可原文保留（on-premise、AI Agent、RAG、mandays、Item）；客戶慣用名稱照客戶寫法
 - **語氣** — 陳述式、客觀、對外一致；避免第一人稱「我哋」、避免宣傳形容詞（「好好用」「超強」「勁爆」）
 - **稱呼** — 全份統一用「甲方／乙方」或「客戶方／服務提供方」，唔混用
@@ -141,11 +141,9 @@ description: dav-think-sow 的「6 核心維度／補充維度／成熟度評估
 - Assumption 段有通用排除條款「未列明之服務均不包含」（英文：`Any services not specified above are excluded.`）
 - Out of scope 有內容（至少 2-3 條）
 - Item 編號同報價或同其他文件雙向對得上
-- 冇寫未同客戶確認嘅承諾（日期、數量、效能指標）
-- 「待確認」有列出 ＋ 冇自己作
+- 冇寫未同客戶確認嘅承諾（日期、數量、效能指標）；「待確認」有列出 ＋ 冇自己作
 - 中文內文全部書面語（逐句對照 §8 禁用字眼清單）；英文只留專有名詞
 - md Description 用 `A.`／`B.`／`C.`／`D.` 分塊；Excel 版同樣把分塊寫入同一格 `Description`（**無 Module 欄**；一個 Item 一行；`Mandays` 留空）
 - 自家產品已拆成「授權」＋「部署與調試」兩個 Item，各自對應報價表獨立行項
 - 授權 Item 寫明授權數量、年期、升級／續約；部署 Item 寫明交付物 ＋ 工作量（mandays）
-- 語言一致、冇中英無規則夾雜
-- 冇寫死金額（應該冇）
+- 語言一致、冇中英無規則夾雜；冇寫死金額

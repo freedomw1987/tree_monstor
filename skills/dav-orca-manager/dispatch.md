@@ -55,6 +55,8 @@ orca orchestration worker-start --task <taskId> --worktree new-child --name <nam
 - **AC**：逐條抄自 backlog
 - **範圍**：可以改嘅檔案／模組；**禁區**：唔准動嘅檔案
 - **測試要求**：TDD（先寫測試見紅）＋ 改動範圍內回歸（見同套 `dav-developer` skill）
+- **回合紀律（防停頓，必寫；見 `./coordinate.md` §1 停頓守望）**：① 唔准反覆重跑全量 `pnpm check`（並行會爭用共享測試庫；最多一次，其餘用單檔測試／單一 workspace typecheck）
+  ② 任一指令卡住 >10 分鐘即放棄，用已有證據下結論 ③ **必須主動回報**：即使未完美都要交 `worker_done`（body 如實標明未完成／未驗證項），唔准靜默等待
 - **完成訊號**：worker 交貨時自己發（命令見下）；收唔到就當未完成
 - **提問**：有阻塞 → `orca orchestration ask --to <coordinator> --question "..." --options "..."`，唔好自己猜
 - **禁止**：唔准自己 merge／push 到共用分支；合併權只在 orca-manager
