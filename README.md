@@ -97,13 +97,15 @@ bats 另外要**釘版 `v1.14.0`**（發行版會漂移）。完整前置、clea
 
 ## Skills
 
-14 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
+16 個 skill，隨安裝一起 expose；每個的完整規則在 `skills/<name>/SKILL.md`。
 
 | Skill | 一句話 |
 |---|---|
 | [`dav-planner`](skills/dav-planner/SKILL.md) | 規劃：釐清背景/目的/驗收條件，拆 Backlog（含 INVEST AC） |
 | [`dav-designer`](skills/dav-designer/SKILL.md) | 設計：DESIGN.md、system-design.md、PRD、**系統 demo 原型 app**（原型單位 = Surface）|
 | [`dav-developer`](skills/dav-developer/SKILL.md) | Gate 1/2/3：依 backlog 先寫測試（紅後綠）→ 埋探針、`REGRESSION_MODE` 自動回歸驗證（自動執行段）|
+| [`dav-orca-manager`](skills/dav-orca-manager/SKILL.md) | Orca 項目經理（trust mode）：開 worktree／派 agent worker／追進度／解衝突／安排獨立 review／合併收尾，自己唔落手寫 code |
+| [`dav-remotion-3d`](skills/dav-remotion-3d/SKILL.md) | Motion graphic 影片產線：storyboard → 單一時間軸 → Remotion ＋ three.js 3D → **JS 生成配樂** → 決定性出片（產物一律落 project 目錄）|
 | [`dav-jev-oracle`](skills/dav-jev-oracle/SKILL.md) | LLM 語意判斷（Jev Oracle）：PoC ＋ 探針 ＋ 信心度報告，可選加深 |
 | [`dav-reviewer`](skills/dav-reviewer/SKILL.md) | 人手觸發嘅審核＋交付：Gate 4 品質審核 ＋ Gate 4.5 需求對帳（獨立 subagent 逐條比對；未對上不得宣告完成）→ 交付摘要（對話 ＋ Markdown 詳錄 ＋ 六維度反省 ＋ 需求對帳段）＋ 更新受影響文檔同 `docs/backlog.md`|
 | [`dav-router`](skills/dav-router/SKILL.md) | 任務分流 ＋ 防線：一般任務走輕量流程；發現要寫 code 就「任務升級」；跳過 gate／假報通過要即刻停低講 |
