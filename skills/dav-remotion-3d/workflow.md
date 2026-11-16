@@ -93,10 +93,8 @@
 **動作**：先做音軌（配樂／旁白生成 → 落檔凍結 → 混音 duck）→ 本機渲染 → 多比例矩陣 → CI／雲端批量。
 
 **音軌層（配樂／旁白／音效）** —— 細節同選型 → 見同套本 skill 子檔 [`audio.md`](./audio.md)
-- **一律生成器產出 → 落檔凍結**：配樂用 JS 合成（seeded）；旁白用 **AWS Polly neural**（`aws polly synthesize-speech`；實測 byte-stable，但仍必落檔凍結）
-- **落點**：生成器 `tools/make-music.mjs`／`tools/make-vo.mjs`；音檔 `public/audio/*.wav`；量出嘅時長／句界落 `out/check/`
-- **旁白稿 = 字幕稿**（同一份 props 資料檔）：句子時間由 timeline 推導；句長 ≤ 分配時間，**超長改稿減字，唔准加快語速／time-stretch**
-- **混音**：音樂／旁白／音效三條獨立軌，旁白出聲時音樂 −6 dB，全部由 frame 推導
+- **一律生成器產出 → 落檔凍結**：配樂 JS 合成（seeded）；旁白 **AWS Polly neural**（未裝 AWS CLI／credentials 先睇子檔）；落點 `tools/make-*.mjs` ＋ `public/audio/*.wav`，量出嘅時長／句界落 `out/check/`
+- **旁白稿 = 字幕稿**（同一份 props）：句子時間由 timeline 推導；句長 ≤ 分配時間，**超長改稿減字，唔准 time-stretch**；混音時音樂／旁白／音效三條獨立軌、旁白出聲音樂 −6 dB
 - **唔准**：render 時即場生成、mp3 做源、實時 Web Audio 播放、專案外臨時檔
 
 **為什麼**：音軌同畫面一樣要「每次都出同一條片」；生成器 + 落檔令決定性可驗、唔靠外部 API quota／授權；分軌做混音令換旁白、調音量唔使重寫音樂。出片路徑亦要同開發路徑一樣（同一份 code 跑出嚟）。

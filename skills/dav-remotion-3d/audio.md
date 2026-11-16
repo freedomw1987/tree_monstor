@@ -29,6 +29,12 @@
 - **引擎／聲（Polly neural）**：粵語 `yue-CN` → `Hiujin`；普通話 `cmn-CN` → `Zhiyu`（兩把都係女聲）
   - 先確認該 region 有：`aws polly describe-voices --language-code <code> --engine neural --query 'Voices[].[VoiceId,SupportedEngines]' --output text`
   - 要男聲／多把聲／更似真人 → 用戶指定先換引擎（介面不變：一句一個 wav ＋ 同一份稿，其餘規則照跟）
+- **前置：AWS CLI ＋ credentials（唔假設對方有；冇就裝，唔好走去瀏覽器手動合成）**
+  - 檢查：`command -v aws && aws --version`；裝：macOS `brew install awscli`｜Linux 官方 bundled installer（`awscli-exe-linux-*.zip`）或 `pipx install awscli`｜Windows 官方 MSI
+  - credentials：`aws configure`（access key／secret／region，例 `ap-southeast-1`）或 `aws configure sso` ＋ `aws sso login`；驗：`aws sts get-caller-identity`
+  - IAM 最小權限：`polly:SynthesizeSpeech`（＋`polly:DescribeVoices`；用 lexicon 才加 `polly:PutLexicon`）
+  - 唔想裝 CLI：Node SDK `@aws-sdk/client-polly`（一樣出 mp3 → 再轉 wav）；兩條路都必落檔凍結
+  - Smoke test：先一句直出 mp3，確認 region／聲／權限都通，先至寫批量生成
 - **生成（aws CLI，全部實測過）**：
   - 直出：`aws polly synthesize-speech --engine neural --voice-id Hiujin --output-format mp3 --sample-rate 48000 --text "<句子>" out/vo-01.mp3`
   - 修讀音／停頓／語速：`--text-type ssml --text "file://$PWD/vo-01.ssml"`；`<phoneme alphabet="x-amazon-pinyin" ph="hang2">行</phoneme>`、`<break time="500ms"/>`、`<prosody rate="95%">` 都食
@@ -40,8 +46,7 @@
 - **可讀時間**：中文 ≥0.18 秒／字、英文 ≥0.28 秒／詞（最低；有數字、專有名詞再放寬）→ 用來反推「一句最多幾個字」（實測雲端 neural：19 字 → 4.0–4.3 秒，即 ≈0.21–0.22 秒／字）
 - **響度**：TTS 出嚟一律偏細（實測 mean −23.7／max −8.0 dBFS）→ 落檔前做 `loudnorm`／gain staging 到 mean ≈ −16、max ≈ −1.5 dBFS，令旁白比音樂突出 4–8 dB
 - **讀得出嘅寫法**：稿唔可以照抄畫面文字（會分心）；網址、代號、數字要寫成讀得出嘅形式（例：`app.boardware.com` → 「app 點 boardware 點 com」；`1920×1080` → 「一九二零乘一零八零」）
-- **一語一句一個檔**：`vo-01.wav`、`vo-01-en.wav` → 多語言 = 多一組檔，唔 fork 專案；**段落長度要夠最長嗰個語言**
-- **凍結**：TTS 生成 → 試聽 → 揀 take → 落檔入版控；只有改稿先重生
+- **一語一句一個檔**：`vo-01.wav`、`vo-01-en.wav` → 多語言 = 多一組檔，唔 fork 專案；**段落長度要夠最長嗰個語言**；生成 → 試聽 → 揀 take → 落檔入版控（只有改稿先重生）
 - **唔准**：未授權聲音（名人／未買授權嘅聲音克隆）、未核商用條款嘅服務
 
 ## C. 混音（Remotion 內）
@@ -50,11 +55,9 @@
 - `<Audio src={staticFile('audio/vo-01.wav')} />`；音樂用 `volume={(f) => duckAt(f)}`：旁白句子嘅 frame range 內音樂 **−6 dB**，句子前後各約 6 幀 ramp（避免啪聲）
 - 淡入淡出同 duck 全部由 frame 推導（**唔用 CSS／實時**，否則破壞決定性）
 - 音量目標（master）：全片 `mean_volume` −18～−14 dBFS、`max_volume` ≤ −1 dBFS；**人聲要比音樂突出 4–8 dB**
-- 有聲／無聲兩版：同一個 composition 用 prop（`audio`）開關，唔 fork 專案
-- 交付可以另出分軌（`-vn -c:a copy` 抽 `m4a`，或交原始 wav），令對方可重混
+- 有聲／無聲兩版：同一個 composition 用 prop（`audio`）開關，唔 fork 專案；交付可另出分軌（`-vn -c:a copy` 抽 `m4a`），令對方可重混
 
 ## D. 唔准（音軌層）
 
-- render 時即場生成（音樂／TTS 都會唔同 → 決定性崩）
-- mp3 做「源」（交付副本可以）；time-stretch 硬塞字數
+- render 時即場生成（音樂／TTS 都會唔同 → 決定性崩）；mp3 做「源」（交付副本可以）；time-stretch 硬塞字數
 - 用未授權聲音／音樂；把雲端 URL 當專案資產（會過期）
