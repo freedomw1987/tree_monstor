@@ -43,14 +43,19 @@
 - 每 15 幀抽樣一次睇變化：每段開始應該有亮度／構圖變化
 - 變化點要同 storyboard 對得上（例：穿越 logo 嗰幀應該有亮度峰值；結尾淡出應該回落）
 
-### 4. 音軌（有配樂／旁白時必做）
+### 4. 音軌（有配樂／旁白／音效時必做）
 
 - **存在**：`ffprobe -v error -select_streams a -show_entries stream=codec_name,channels,sample_rate,duration -of default=noprint_wrappers=1 out/a.mp4` → 要見到 audio stream
 - **時長對齊**：影音時長差 <0.1 秒；音軌要**長過**片長（尾段靠 fade 收），唔好靠 `-shortest` 硬切
 - **音量**：`ffmpeg -v error -i out/a.mp4 -af volumedetect -f null -` → `max_volume` ≤ −1 dB（唔爆）、`mean_volume` 大約 −18 ～ −14 dBFS
 - **斷音／意外靜音**：`ffmpeg -v error -i out/a.mp4 -af silencedetect=noise=-45dB:d=1 -f null -` → 除設計上嘅留白，唔應該有 ≥1 秒靜音
 - **配樂本身嘅決定性（JS 生成器）**：`node tools/make-music.mjs` 跑兩次、`shasum -a 256 public/audio/<clip>-music.wav` 逐 byte 一致
-- **聽唔到就用數字驗**：冇喇叭／純文字環境靠上面 volumedetect ＋ silencedetect，唔准「冇聽過就算通過」
+- **旁白存在＋句界**：`ffmpeg -hide_banner -i out/a.mp4 -af silencedetect=noise=-40dB:d=0.35 -f null -` → 靜音位應該落喺句子之間，同稿（props 句子表）對得上；多咗／少咗 = 句子被截或漏讀
+- **旁白對比音樂**：出一個「音樂靜音」嘅對照版 → 人聲段能量要比音樂段突出 4–8 dB（`volumedetect` 或分段量）
+- **可讀時間**：句長 ≥ 字數 × 0.18 秒（中文）／詞數 × 0.28 秒（英文）；不夠就改稿，唔准加速
+- **多語言**：每個語言一組 vo 檔、句界要一致；**段長要夠最長嘅語言**
+- **字幕**：SRT 由同一份稿生成（唔准手打第二份），出片前對一次時間軸
+- **聽唔到就用數字驗**：冇喇叭／純文字環境靠上面 volumedetect ＋ silencedetect ＋ 時長，唔准「冇聽過就算通過」
 
 ## 人工抽幀檢查清單
 
@@ -64,7 +69,8 @@
 - 編碼：H.264 mp4（萬能）／AV1 webm（網頁更細）／ProRes 或 webm-alpha（要疊落其他片）
 - 幀率：30fps 起步；有運動模糊或介面錄屏流暢度要求先做 60fps
 - 版本：有聲發布版／無聲網站版／有字幕版／多語言版
-- 音軌：配樂 wav 源檔（`public/audio/`）＋ 分軌（音樂／旁白／音效）令對方可重混；要細檔另出 mp3 交付副本
+- 音軌：配樂 wav 源檔（`public/audio/`）＋ 旁白 wav（逐語一句一個檔）＋ 分軌（音樂／旁白／音效）令對方可重混；要細檔另出 mp3 交付副本
+- 文字：旁白稿（同一份 props）＋ 生成嘅 SRT／多語字幕
 - 檔案大小目標：網站 hero 循環版 3–8 MB 以內；社交平台 15 秒以內、10–20 MB 以內
 - 交付時一併交：storyboard、props 資料檔、渲染指令（對方要能自己重出）
 - 交付路徑要寫明 project 內落點：`<project>/remotion/`（專案）＋ `out/`（出片）
@@ -72,6 +78,7 @@
 ## 授權提醒
 
 - Remotion：個人及 ≤3 人公司免費（含商用）；超出要授權（按人頭／按渲染量計費）
-- 配樂：用 JS 自己合成 = 冇第三方音樂授權／平台條款問題（素材庫同生成平台都要逐首核）；旁白用 TTS 先要核服務條款
+- 配樂：用 JS 自己合成 = 冇第三方音樂授權／平台條款問題（素材庫同生成平台都要逐首核）
+- 旁白：TTS 服務條款（商用／輸出擁有權）＋ 聲音授權（唔准用名人／未授權聲音克隆）；真人錄音要填使用範圍（媒體、期限）
 - 字體、素材 texture 都要確認商用授權
 - 用幾何／程序化生成嘅素材（介面截圖 mockup、logo 形狀）＝ 冇第三方授權風險，最省事

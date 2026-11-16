@@ -88,32 +88,22 @@
 - 文字：全部 DOM；3D 內不畫字
 - 細節規格（強度分檔／鏡頭語言／坑）見 [`3d-checklist.md`](./3d-checklist.md)
 
-## Step 5 配樂＋出片
+## Step 5 音軌＋出片
 
-**動作**：先用 JS 合成配樂（seeded → 落 wav）→ 混音 → 本機渲染 → 多比例矩陣 → CI／雲端批量。
+**動作**：先做音軌（配樂／旁白生成 → 落檔凍結 → 混音 duck）→ 本機渲染 → 多比例矩陣 → CI／雲端批量。
 
-**配樂：一律用 JS 生成（唔用外部音樂 API）**
-- **生成器落點**：`<project>/remotion/tools/make-music.mjs`（`node tools/make-music.mjs`；npm script 例：`"music": "node tools/make-music.mjs"`）
-- **選型（按優先）**：
-  - **純 JS 樣本合成**（零依賴，首選）：自寫 oscillator（sine／saw／square／tri）＋ ADSR envelope ＋ lowpass／delay 近似混響 → 砌 Float32Array → 自寫 16-bit PCM WAV 編碼（44-byte header）
-  - `Tone.js`（`Tone.Offline` 離線 render）：樂器／scheduler／效果器現成，音樂性最快；要鎖版本（依賴 = 決定性風險）
-  - `node-web-audio-api`（`OfflineAudioContext`）：寫法同瀏覽器一致；native binding 要留意跨機一致性
-  - headless 瀏覽器 `OfflineAudioContext`（Playwright／Puppeteer）：環境同 Remotion 最近，多一層 browser
-- **決定性**：seed 由 props／const 傳入（**唔准** `Date.now()`／`Math.random()`）；envelope／filter 參數係常數或由 BPM／frame 推導 → 同一 seed 重生兩次，wav 逐 byte 一致
-- **音樂 spec（先寫落 storyboard 旁邊）**：BPM、調性、結構（intro → build → hook → outro）對 timeline 段落、每 2–3 秒一個 music event 對視覺焦點轉移、總長 = 片長 + 1–2 秒
-- **出檔**：`public/audio/<clip>-music.wav` —— **用 wav 唔用 mp3**（有損編碼有 encoder delay、唔係逐 sample 決定性）；要細檔就出片後另壓交付副本
-- **版控二選一**（唔好兩邊都做）：① wav 一次生成就 commit（大檔用 LFS，出片最穩）② 唔入版控 → 出片前必跑 `npm run music`（idempotent，同一 seed 重生）＋ CI 記住加呢步
-- **混音（Remotion 內）**：`<Audio src={staticFile('audio/<clip>-music.wav')} volume={f(frame)} />`
-  - 音樂／旁白／音效各自一條軌、各自一個檔（`audio/vo-*.wav`、`audio/sfx-*.wav`），唔好喺生成器內混死
-  - 旁白出聲時音樂 duck 6 dB、頭尾 fade，全部由 frame 推導（唔用 CSS／實時）
-  - 有聲／無聲兩版：同一個 composition 用 prop 開關，唔 fork 專案
-- **唔准**：render 時即場隨機生成、實時 Web Audio 播放（要離線 render）、mp3 做源、專案外臨時檔
+**音軌層（配樂／旁白／音效）** —— 細節同選型 → 見同套本 skill 子檔 [`audio.md`](./audio.md)
+- **一律生成器產出 → 落檔凍結**：配樂用 JS 合成（seeded）；旁白用本地離線 TTS 優先，雲端 TTS 只做一次性生成再凍結
+- **落點**：生成器 `tools/make-music.mjs`／`tools/make-vo.mjs`；音檔 `public/audio/*.wav`；量出嘅時長／句界落 `out/check/`
+- **旁白稿 = 字幕稿**（同一份 props 資料檔）：句子時間由 timeline 推導；句長 ≤ 分配時間，**超長改稿減字，唔准加快語速／time-stretch**
+- **混音**：音樂／旁白／音效三條獨立軌，旁白出聲時音樂 −6 dB，全部由 frame 推導
+- **唔准**：render 時即場生成、mp3 做源、實時 Web Audio 播放、專案外臨時檔
 
-**為什麼**：配樂同畫面一樣要「每次都出同一條片」；JS 生成天生可以 seeded ＋ 逐 sample 驗，又唔靠外部 API quota／授權，分軌生成令換旁白、調音量唔使重寫音樂。出片路徑亦要同開發路徑一樣（同一份 code 跑出嚟）。
+**為什麼**：音軌同畫面一樣要「每次都出同一條片」；生成器 + 落檔令決定性可驗、唔靠外部 API quota／授權；分軌做混音令換旁白、調音量唔使重寫音樂。出片路徑亦要同開發路徑一樣（同一份 code 跑出嚟）。
 
-**產出**：`tools/make-music.mjs` ＋ `public/audio/*.wav` ＋ mp4（多比例／多變體，含音軌）→ 落 `<project>/remotion/out/`（唔准 `/tmp` 或 home）。
+**產出**：`tools/make-music.mjs`／`tools/make-vo.*` ＋ `public/audio/*.wav` ＋ mp4（多比例／多變體，含音軌）→ 落 `<project>/remotion/out/`（唔准 `/tmp` 或 home）。
 
-**證據**：同一 seed 重生 wav 雜湊一致；出片有 audio stream、時長對齊；見 [`verify.md`](./verify.md)。
+**證據**：配樂同一 seed 重生逐 byte 一致；旁白句界同稿對得上；出片有 audio stream、時長對齊；見 [`verify.md`](./verify.md)。
 
 ## Step 6 機械驗證
 

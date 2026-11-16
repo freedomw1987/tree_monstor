@@ -11,8 +11,8 @@ description: >-
 1. **做什麼**：將「要交一條 motion graphic 影片」變成可重複嘅產線 — storyboard → 單一時間軸 → 組件＋參數化 → 3D 場景 → 決定性出片 → 機械驗證。
 2. **何時觸發**：用戶要產品簡介片段／片頭／社交動畫（交付 mp4），而且要可重複生成（多比例、多語言、多版本）。
 3. **SOP 路徑**：一般任務（skill 係輔助工具，唔使走完整 SOP）；要出片就直接按本 skill 流程行。
-4. **關鍵紀律**：**決定性三守則**（frame 驅動／seeded 亂數／禁用 CSS 動畫）＋ **全片一個 WebGL canvas** ＋ **文字一律 DOM 疊層** ＋ **配樂一律 JS 生成（seeded）並落檔**；交貨前必過機械驗證。
-5. **必產出物**：**一律喺 project 目錄下** —— `<project>/remotion/`（component＋timeline＋props 資料檔）＋ 配樂 wav（`public/audio/`，JS 生成）＋ 出片 mp4（`out/`）＋ 驗證證據（規格、逐幀雜湊、時間軸曲線、音軌）。
+4. **關鍵紀律**：**決定性三守則**（frame 驅動／seeded 亂數／禁用 CSS 動畫）＋ **全片一個 WebGL canvas** ＋ **文字一律 DOM 疊層** ＋ **音軌（配樂／旁白／音效）一律生成器產出並落檔凍結**；交貨前必過機械驗證。
+5. **必產出物**：**一律喺 project 目錄下** —— `<project>/remotion/`（component＋timeline＋props 資料檔）＋ 音軌 wav（`public/audio/`：配樂／旁白）＋ 出片 mp4（`out/`）＋ 驗證證據（規格、逐幀雜湊、時間軸曲線、音軌）。
 
 ## 觸發時機
 
@@ -28,7 +28,7 @@ description: >-
 - **Step 2 單一時間軸**：所有場景時間集中一個檔，相機同動畫全部由 frame 推導 → 產出：timeline 檔；證據：改節奏只改一處
 - **Step 3 組件＋參數化**：三層 props（資料檔 → composition props（zod 驗證）→ scene props）；3D 喺底、DOM 喺上 → 產出：component 樹＋schema；證據：換文案／比例唔使改 component
 - **Step 4 3D 場景**：揀強度檔位、鏡頭語言、seeded 亂數、效能預算 → 產出：3D 層＋相機關鍵幀；證據：無 `Math.random()`、無 `clock`
-- **Step 5 配樂＋出片**：JS 生成配樂（seeded）→ 落 wav → `<Audio>` 混音、本機渲染、多比例矩陣、CI／雲端 → 產出：mp4（含音軌）；證據：規格檢查含 audio stream
+- **Step 5 音軌＋出片**：生成配樂（JS 合成）同旁白（稿 → TTS → 字幕）→ 落檔凍結 → 分軌混音、本機渲染、多比例矩陣 → 產出：mp4（含音軌）；證據：規格檢查含 audio stream
 - **Step 6 機械驗證**：逐幀雜湊決定性、時間軸亮度曲線、音軌（時長／音量／斷音）、抽幀人工睇 → 產出：驗證證據；證據：兩次 render 影像逐幀一致
 
 ## 規則
@@ -41,10 +41,10 @@ description: >-
 - **產物落點一律喺 project 目錄下** — 例外：用戶另指定；限制：Remotion 專案 `<project>/remotion/`、出片 `<project>/remotion/out/`、驗證中間檔 `out/check/`；唔准寫去 `/tmp`、home、skill 目錄
 - **授權與成本** — 例外：無；限制：Remotion 個人及 ≤3 人公司免費，超出要授權；出片前先確認公司規模
 - **交貨前必機械驗證** — 例外：無；限制：唔可以「睇落啱就算」；逐幀雜湊、規格、時間軸曲線、音軌四項缺一不可
-- **配樂一律由 JS 生成器產出（seeded）＋ 落檔** — 例外：純無聲版；限制：`tools/make-music.mjs` 合成 → 落 `public/audio/*.wav`；唔准外部音樂 API／mp3 做源／render 時即場隨機生成
+- **音軌一律由生成器產出並落檔凍結** — 例外：純無聲版（`audio:false`）；限制：配樂一律 JS 合成（seeded）、旁白本地／雲端 TTS 均可但只可一次性生成再凍結；**旁白稿＝字幕稿（同一份 props）**；唔准 render 時即場生成、mp3 做源、time-stretch 塞字
 - **本 skill 自身規範** — 例外：無；限制：主檔 ≤50 行、子檔 ≤150 行、context ≤400 行；一律用列表不用表格；唔記變動歷史
 
 ## 交叉引用（純文字）
 
-- 產物落點（目錄結構）／配樂 JS 合成（生成器選型）／混音／各步產出 → 見同套本 skill 子檔 [`workflow.md`](./workflow.md)；3D 強度檔位／鏡頭語言／效能預算／3D 坑，以及出片指令／多比例矩陣／驗證指令（含音軌）／交付清單 → 見同套本 skill 子檔 [`3d-checklist.md`](./3d-checklist.md) 同 [`verify.md`](./verify.md)
+- 音軌層（配樂 JS 合成選型／旁白稿 → TTS → 字幕／混音 duck／音軌落點）→ 見同套本 skill 子檔 [`audio.md`](./audio.md)；產物落點（目錄結構）／各步產出 → 見同套本 skill 子檔 [`workflow.md`](./workflow.md)；3D 強度檔位／鏡頭語言／效能預算／3D 坑，以及出片指令／多比例矩陣／驗證指令（含音軌）／交付清單 → 見同套本 skill 子檔 [`3d-checklist.md`](./3d-checklist.md) 同 [`verify.md`](./verify.md)
 - 規劃技巧（V01／V02 提問紀律）→ 見同套 dav-planner skill；SOP 完整流程 → 見各自承載它嘅 skill（dav-planner／dav-designer／dav-developer／dav-reviewer）
