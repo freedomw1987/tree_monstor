@@ -41,7 +41,7 @@ description: >-
 - **產物落點一律喺 project 目錄下** — 例外：用戶另指定；限制：Remotion 專案 `<project>/remotion/`、出片 `<project>/remotion/out/`、驗證中間檔 `out/check/`；唔准寫去 `/tmp`、home、skill 目錄
 - **授權與成本** — 例外：無；限制：Remotion 個人及 ≤3 人公司免費，超出要授權；出片前先確認公司規模
 - **交貨前必機械驗證** — 例外：無；限制：唔可以「睇落啱就算」；逐幀雜湊、規格、時間軸曲線、音軌四項缺一不可
-- **音軌一律由生成器產出並落檔凍結** — 例外：純無聲版（`audio:false`）；限制：配樂一律 JS 合成（seeded）、旁白用 **AWS Polly neural**（**未裝 AWS CLI＋credentials 先裝，指引見子檔**；稿 → SSML → wav）再落檔凍結；**旁白稿＝字幕稿（同一份 props）**；唔准 render 時即場叫 API、mp3 做源、time-stretch 塞字
+- **音軌一律由生成器產出並落檔凍結** — 例外：純無聲版（`audio:false`）；限制：配樂**必須**純 JS 合成（seeded；**唔准外部 API／素材庫**）、旁白用 **AWS Polly neural**（**未裝 AWS CLI＋credentials 先裝，指引見子檔**；稿 → SSML → wav）再落檔凍結；**旁白稿＝字幕稿（同一份 props）**；唔准 render 時即場叫 API、mp3 做源、time-stretch 塞字
 - **本 skill 自身規範** — 例外：無；限制：主檔 ≤50 行、子檔 ≤150 行、context ≤400 行；一律用列表不用表格；唔記變動歷史
 
 ## 交叉引用（純文字）

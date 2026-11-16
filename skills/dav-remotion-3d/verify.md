@@ -49,6 +49,7 @@
 - **時長對齊**：影音時長差 <0.1 秒；音軌要**長過**片長（尾段靠 fade 收），唔好靠 `-shortest` 硬切
 - **音量**：`ffmpeg -v error -i out/a.mp4 -af volumedetect -f null -` → `max_volume` ≤ −1 dB（唔爆）、`mean_volume` 大約 −18 ～ −14 dBFS
 - **斷音／意外靜音**：`ffmpeg -v error -i out/a.mp4 -af silencedetect=noise=-45dB:d=1 -f null -` → 除設計上嘅留白，唔應該有 ≥1 秒靜音
+- **配樂零外部依賴（硬規則）**：`grep -nE "fetch\(|https?://|axios|aws-sdk" tools/make-music.mjs` 要 0 命中（配樂只可以 JS 合成；旁白才用 AWS Polly）
 - **音軌源本身嘅決定性**：配樂 `node tools/make-music.mjs` 跑兩次、`shasum -a 256 public/audio/<clip>-music.wav` 逐 byte 一致；旁白重生一次比 `shasum`（Polly 實測一樣；唔一致就當「已凍結」，唔再重生）
 - **旁白引擎／聲對版**：檔名同 props 要記低用邊個 engine／voice（例：`vo-01.yue-CN.Hiujin.wav` 或落 `out/check/vo-timing.json`），唔好靠記憶
 - **旁白存在＋句界**：`ffmpeg -hide_banner -i out/a.mp4 -af silencedetect=noise=-40dB:d=0.35 -f null -` → 靜音位應該落喺句子之間，同稿（props 句子表）對得上；多咗／少咗 = 句子被截或漏讀

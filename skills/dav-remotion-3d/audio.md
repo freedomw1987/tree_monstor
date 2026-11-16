@@ -10,9 +10,9 @@
 - **量出嚟嘅時長／句界／雜湊**：`<project>/remotion/out/check/`
 - **唔准**：`~/Music/`、`/tmp`、雲端臨時 URL 做「源」（雲端只可以做生成入口，成品一定要落返 project）
 
-## A. 配樂（一律 JS 合成，seeded）
+## A. 配樂（**必須**純 JS 合成，seeded；暫時唔用任何外部 API）
 
-- **生成器**：`node tools/make-music.mjs`（npm script 例：`"music": "node tools/make-music.mjs"`）
+- **生成器**：`node tools/make-music.mjs`（npm script 例：`"music": "node tools/make-music.mjs"`）—— **生成器內唔准有網絡呼叫**（冇 `fetch(`／`https?://`／雲端 SDK）
 - **選型（按優先）**：
   - **純 JS 樣本合成**（零依賴，首選）：自寫 oscillator（sine／saw／square／tri）＋ ADSR envelope ＋ lowpass／delay 近似混響 → 砌 Float32Array → 自寫 16-bit PCM WAV 編碼（44-byte header）
   - 要現成樂器／效果器：`Tone.js`（`Tone.Offline`）或 `node-web-audio-api`（`OfflineAudioContext`）或 headless 瀏覽器 —— 都要鎖版本、留意跨機一致性
@@ -59,5 +59,6 @@
 
 ## D. 唔准（音軌層）
 
+- **配樂用外部 API／雲端音樂服務（Suno／Udio 類）／素材庫**（暫時一律唔准；用戶明確指定先議）
 - render 時即場生成（音樂／TTS 都會唔同 → 決定性崩）；mp3 做「源」（交付副本可以）；time-stretch 硬塞字數
 - 用未授權聲音／音樂；把雲端 URL 當專案資產（會過期）
