@@ -67,8 +67,8 @@ ffmpeg -v error -i out/a.mp4 -vf "signalstats,metadata=print:key=lavfi.signalsta
 
 - **響度**：`loudnorm=print_format=summary` → 睇 input_i 對平台標準（廣播 −23 LUFS；社交常見 −14 LUFS）
 - **字幕＋安全區**：靜音睇一次，重要 claim 有冇出字；字幕有冇被平台 UI 遮（9:16 上下各留約 15%）
-- **合規**：優惠條款（`*受條款限制`）、價格幣值、claim 可驗、肖像／音樂／字體授權
-- **版本齊**：比例 × 時長 × 語言 × 優惠命名清楚（`<clip>_<比例>_<時長>_<語言>_<優惠>`）
+- **合規＋版本齊**：優惠條款／價格幣值／claim 可驗／肖像＋音樂＋字體授權；版本命名
+  `<clip>_<比例>_<時長>_<語言>_<優惠>` 要齊
 
 ## 人工抽幀檢查清單
 

@@ -13,8 +13,7 @@
 ## B. 投放適配（交貨前逐項對）
 
 - **比例 × 平台矩陣**：16:9（YouTube／網站）｜9:16（Reels／TikTok／Stories）｜1:1（feed）；一個 composition 派生
-- **安全區**：9:16 上下各留約 15%（平台 UI）；文字唔好貼邊
-- **時長**：YouTube 可跳過 pre-roll = 頭 5 秒定生死；TikTok／Reels 建議 ≤15 秒
+- **安全區／時長**：9:16 上下各留約 15%（平台 UI）、文字唔貼邊；YouTube pre-roll 頭 5 秒定生死；Reels／TikTok ≤15 秒
 - **響度（廣告要標準化，唔止 peak）**：廣播 EBU R128 **−23 LUFS**；社交平台常見 **−14 LUFS**；
   驗：`ffmpeg -i out/a.mp4 -af loudnorm=print_format=summary -f null -`（睇 input_i）
 - **字幕**：同一份 props 稿出 SRT／burn-in 版本；多語言 = 多組 vo 檔 ＋ 多組字幕
@@ -22,7 +21,7 @@
 - **合規檢查**：優惠條款（`*受條款限制`）、價格幣值、效果 claim 有無根據、肖像／音樂／字體授權、地區法規
 - **封面／poster**：出一張 key frame 做縮圖（`remotion still`），唔使抽片
 
-## C. 3D 動效清單（46 個，按類；成本／風險以 three.js frame-driven 為準）
+## C. 3D 動效清單（46 個；廣告／宣傳片可 3D 主導 ≥80%；成本／風險以 three.js frame-driven 為準）
 
 ### 產品主角（Hero）
 - 1 macro 微距材質特寫（finish／做工）｜2 hero 慢推 ＋ rim light｜3 360° turntable 無縫 loop
@@ -65,10 +64,11 @@
 - **落得到、可決定性驗證**：1–16、23–28、29–37、41–46（全部 frame-driven；爆炸圖／粒子／morph／光帶／隧道已有基礎）
 - **要預烘或外部工具**：17 liquid、20 fabric、21 destruction、19 體積煙 → Blender／Houdini 出序列圖／影片素材再入片
   （或者用 shader 做近似，成本低但唔係真物理）
-- **屬另一 pipeline**：38–40 anamorphic／FOOH → 先定觀眾視點，再反向變形 render，唔係普通 16:9 出片
+- **屬另一 pipeline**：38–40 anamorphic／FOOH → 先定觀眾視點，再反向變形 render（唔係普通 16:9 出片）
+- **3D 主導 ≥80% 可行**：但要守效能預算（每幀 ≤1 秒、3D 段 ≤1.5 秒）同「每段一件事」；平面／DOM 只留嚟講 claim
 
 ## F. 紀律（廣告最容易犯）
 
-- **配額 3–5 個 3D 動效**（12–15 秒片）；每段只做一件事；效果之間留靜止／平面段做呼吸
-- **唔好堆 trend**（堆效果令訊息模糊；3D 唔係目的）；**一條片一個訊息** —— 兩個 claim 就兩條片
+- **配額**：廣告／宣傳片可 3D 主導（≥80% 片長）；產品簡介片 3–5 個動效；同一時間最多 1–2 個 active effect
+- **仍然要守**：每段只做一件事、效果之間留呼吸位、hook 3 秒講清、字幕標配、end card 收尾；兩個 claim 就兩條片
   （多版本矩陣正好做 A／B 測試）
