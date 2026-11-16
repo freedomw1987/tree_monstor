@@ -41,10 +41,10 @@ description: >-
 - **產物落點一律喺 project 目錄下** — 例外：用戶另指定；限制：Remotion 專案 `<project>/remotion/`、出片 `<project>/remotion/out/`、驗證中間檔 `out/check/`；唔准寫去 `/tmp`、home、skill 目錄
 - **授權與成本** — 例外：無；限制：Remotion 個人及 ≤3 人公司免費，超出要授權；出片前先確認公司規模
 - **交貨前必機械驗證** — 例外：無；限制：唔可以「睇落啱就算」；逐幀雜湊、規格、時間軸曲線、音軌四項缺一不可
-- **音軌一律由生成器產出並落檔凍結** — 例外：純無聲版（`audio:false`）；限制：配樂一律 JS 合成（seeded）、旁白本地／雲端 TTS 均可但只可一次性生成再凍結；**旁白稿＝字幕稿（同一份 props）**；唔准 render 時即場生成、mp3 做源、time-stretch 塞字
+- **音軌一律由生成器產出並落檔凍結** — 例外：純無聲版（`audio:false`）；限制：配樂一律 JS 合成（seeded）、旁白用 **AWS Polly neural**（稿 → SSML → wav）再落檔凍結；**旁白稿＝字幕稿（同一份 props）**；唔准 render 時即場叫 API、mp3 做源、time-stretch 塞字
 - **本 skill 自身規範** — 例外：無；限制：主檔 ≤50 行、子檔 ≤150 行、context ≤400 行；一律用列表不用表格；唔記變動歷史
 
 ## 交叉引用（純文字）
 
-- 音軌層（配樂 JS 合成選型／旁白稿 → TTS → 字幕／混音 duck／音軌落點）→ 見同套本 skill 子檔 [`audio.md`](./audio.md)；產物落點（目錄結構）／各步產出 → 見同套本 skill 子檔 [`workflow.md`](./workflow.md)；3D 強度檔位／鏡頭語言／效能預算／3D 坑，以及出片指令／多比例矩陣／驗證指令（含音軌）／交付清單 → 見同套本 skill 子檔 [`3d-checklist.md`](./3d-checklist.md) 同 [`verify.md`](./verify.md)
+- 音軌層（配樂 JS 合成選型／旁白（AWS Polly neural）稿 → SSML → 字幕／混音 duck／音軌落點）→ 見同套本 skill 子檔 [`audio.md`](./audio.md)；產物落點（目錄結構）／各步產出 → 見同套本 skill 子檔 [`workflow.md`](./workflow.md)；3D 強度檔位／鏡頭語言／效能預算／3D 坑，以及出片指令／多比例矩陣／驗證指令（含音軌）／交付清單 → 見同套本 skill 子檔 [`3d-checklist.md`](./3d-checklist.md) 同 [`verify.md`](./verify.md)
 - 規劃技巧（V01／V02 提問紀律）→ 見同套 dav-planner skill；SOP 完整流程 → 見各自承載它嘅 skill（dav-planner／dav-designer／dav-developer／dav-reviewer）

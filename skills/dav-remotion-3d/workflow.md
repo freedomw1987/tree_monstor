@@ -93,7 +93,7 @@
 **動作**：先做音軌（配樂／旁白生成 → 落檔凍結 → 混音 duck）→ 本機渲染 → 多比例矩陣 → CI／雲端批量。
 
 **音軌層（配樂／旁白／音效）** —— 細節同選型 → 見同套本 skill 子檔 [`audio.md`](./audio.md)
-- **一律生成器產出 → 落檔凍結**：配樂用 JS 合成（seeded）；旁白用本地離線 TTS 優先，雲端 TTS 只做一次性生成再凍結
+- **一律生成器產出 → 落檔凍結**：配樂用 JS 合成（seeded）；旁白用 **AWS Polly neural**（`aws polly synthesize-speech`；實測 byte-stable，但仍必落檔凍結）
 - **落點**：生成器 `tools/make-music.mjs`／`tools/make-vo.mjs`；音檔 `public/audio/*.wav`；量出嘅時長／句界落 `out/check/`
 - **旁白稿 = 字幕稿**（同一份 props 資料檔）：句子時間由 timeline 推導；句長 ≤ 分配時間，**超長改稿減字，唔准加快語速／time-stretch**
 - **混音**：音樂／旁白／音效三條獨立軌，旁白出聲時音樂 −6 dB，全部由 frame 推導

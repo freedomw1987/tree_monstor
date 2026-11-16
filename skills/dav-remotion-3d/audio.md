@@ -15,24 +15,27 @@
 - **生成器**：`node tools/make-music.mjs`（npm script 例：`"music": "node tools/make-music.mjs"`）
 - **選型（按優先）**：
   - **純 JS 樣本合成**（零依賴，首選）：自寫 oscillator（sine／saw／square／tri）＋ ADSR envelope ＋ lowpass／delay 近似混響 → 砌 Float32Array → 自寫 16-bit PCM WAV 編碼（44-byte header）
-  - `Tone.js`（`Tone.Offline` 離線 render）：樂器／scheduler／效果器現成，音樂性最快；要鎖版本（依賴 = 決定性風險）
-  - `node-web-audio-api`（`OfflineAudioContext`）：寫法同瀏覽器一致；native binding 要留意跨機一致性
-  - headless 瀏覽器 `OfflineAudioContext`（Playwright／Puppeteer）：環境同 Remotion 最近，多一層 browser
+  - 要現成樂器／效果器：`Tone.js`（`Tone.Offline`）或 `node-web-audio-api`（`OfflineAudioContext`）或 headless 瀏覽器 —— 都要鎖版本、留意跨機一致性
 - **決定性**：seed 由 props／const 傳入（**唔准** `Date.now()`／`Math.random()`）；envelope／filter 參數係常數或由 BPM／frame 推導 → 同一 seed 重生兩次，wav 逐 byte 一致
 - **音樂 spec（先寫落 storyboard 旁邊）**：BPM（令「段長 = 整數小節」最好編）、調性、結構（intro → build → hook → outro）對 timeline 段落、每 2–3 秒一個 music event 對視覺焦點轉移、總長 = 片長 + 1–2 秒（尾段留 fade）
 - **出檔**：`public/audio/<clip>-music.wav` —— **用 wav 唔用 mp3**（有損編碼有 encoder delay、唔係逐 sample 決定性）；要細檔就出片後另壓交付副本
 - **版控二選一**（唔好兩邊都做）：① wav 一次生成就 commit（大檔用 LFS，出片最穩、最快）② 唔入版控 → 出片前必跑生成（idempotent，同一 seed 重生）＋ CI 記住加呢步
 
-## B. 旁白（VO：稿先、聲後）
+## B. 旁白（VO：預設 AWS Polly neural）
 
 - **稿係單一真相**：句子寫落 props 資料檔（例：`vo: [{id, text, from}]`，`from` = 起始 frame）
   - 同一份稿同時做三件事：**TTS 輸入**、**字幕**（DOM 疊層）、**SRT 輸出** → 唔准手打第二份
   - 句子時間由 timeline 推導（每句 assigned frames）→ 改節奏只改一處
-- **來源選型（按優先）**：
-  - **本地離線 TTS**（首選）：Node／JS 跑 VITS／Piper 類 ONNX 模型（onnxruntime bindings）或者系統內建 TTS CLI → 零 API、模型版本可鎖、多數做到**逐 byte 驗**
-  - **雲端 TTS API**：質素天花板、最省事；要 key／quota／商用條款 → 生成一次就**落檔凍結**
-    - 決定性：唔可以假設（實測：有雲端 neural 引擎同一請求兩次輸出 **hash 一樣**，但仍一律以落檔為準；要驗就重生一次比 hash）
-  - **真人錄音**：質素天花板；收 48k／24-bit wav ＋ 逐句時間，TTS 只做後備版本
+- **引擎／聲（Polly neural）**：粵語 `yue-CN` → `Hiujin`；普通話 `cmn-CN` → `Zhiyu`（兩把都係女聲）
+  - 先確認該 region 有：`aws polly describe-voices --language-code <code> --engine neural --query 'Voices[].[VoiceId,SupportedEngines]' --output text`
+  - 要男聲／多把聲／更似真人 → 用戶指定先換引擎（介面不變：一句一個 wav ＋ 同一份稿，其餘規則照跟）
+- **生成（aws CLI，全部實測過）**：
+  - 直出：`aws polly synthesize-speech --engine neural --voice-id Hiujin --output-format mp3 --sample-rate 48000 --text "<句子>" out/vo-01.mp3`
+  - 修讀音／停頓／語速：`--text-type ssml --text "file://$PWD/vo-01.ssml"`；`<phoneme alphabet="x-amazon-pinyin" ph="hang2">行</phoneme>`、`<break time="500ms"/>`、`<prosody rate="95%">` 都食
+  - 落檔：`ffmpeg -y -i out/vo-01.mp3 -ar 48000 -ac 1 -c:a pcm_s16le public/audio/vo-01.wav`（mp3 只做中轉；Polly `pcm` 只 8k／16k，所以走 mp3@48k）
+  - 響度：Polly 出嚟偏細（實測 mean −23.7／max −8.0 dBFS）→ 落檔前 `loudnorm`／gain 到 mean ≈ −16、max ≈ −1.5 dBFS
+  - 限額：同步每次 ≤3000 計費字、音訊 ≤10 分鐘、neural 8 tps；超長改用 `start-speech-synthesis-task`（≤100k 字，但輸出落 S3，要再落返 project）
+  - 決定性：實測同一請求兩次 SHA-256 一樣，但仍然**一律落檔凍結**（唔准 render 時即場叫 API）
 - **長度對齊（硬規則）**：每句量長（`ffprobe -show_entries format=duration`，或 Remotion `getAudioDurationInSeconds`）→ 句長 ≤ 分配時間（通常 = 對應段落 dur − 0.3s 呼吸）；**超長就改稿減字，唔准加快語速／time-stretch**（會似機械，亦破壞可讀時間）
 - **可讀時間**：中文 ≥0.18 秒／字、英文 ≥0.28 秒／詞（最低；有數字、專有名詞再放寬）→ 用來反推「一句最多幾個字」（實測雲端 neural：19 字 → 4.0–4.3 秒，即 ≈0.21–0.22 秒／字）
 - **響度**：TTS 出嚟一律偏細（實測 mean −23.7／max −8.0 dBFS）→ 落檔前做 `loudnorm`／gain staging 到 mean ≈ −16、max ≈ −1.5 dBFS，令旁白比音樂突出 4–8 dB
