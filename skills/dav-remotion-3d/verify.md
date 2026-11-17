@@ -72,8 +72,8 @@ ffmpeg -v error -i out/a.mp4 -vf "signalstats,metadata=print:key=lavfi.signalsta
 
 ## 人工抽幀檢查清單
 
-- 每段抽 1 張 + 每個轉場抽 1 張 + 首尾各 1 張（首 3 秒另抽）
-- 檢查：文字有冇出界／被遮／讀唔切；最小字級（1080p ≥26px、字幕 ≥32px）；安全區；logo 比例；3D 穿幫
+- 每段抽 1 張 + 每個轉場抽 1 張 + 首尾各 1 張（首 3 秒另抽）；檢查：文字有冇出界／被遮／讀唔切；最小字級
+  （1080p ≥26px、字幕 ≥32px）；安全區；logo 比例；3D 穿幫
 - 冇圖片檢視能力（純文字 agent）：`ffmpeg` 轉灰階砌 ASCII 圖睇構圖
 
 ## 交付清單
@@ -89,5 +89,4 @@ ffmpeg -v error -i out/a.mp4 -vf "signalstats,metadata=print:key=lavfi.signalsta
 ## 授權提醒
 
 - Remotion：個人及 ≤3 人公司免費（含商用）；超出要授權；字體、素材 texture 都要確認商用授權
-- 配樂：用 JS 自己合成 = 冇第三方音樂授權問題；旁白：TTS 服務條款（商用／輸出擁有權）＋ 聲音授權
-  （唔准名人／未授權克隆）；真人錄音要填使用範圍
+- 配樂：用 JS 自己合成 = 冇第三方音樂授權問題；旁白：TTS 服務條款 ＋ 聲音授權（唔准名人／未授權克隆）
